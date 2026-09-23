@@ -10,6 +10,29 @@ def inside(row: int, col: int) -> bool:
     return 0 <= row < SIZE and 0 <= col < SIZE
 
 
+def _build_line_info() -> dict[tuple[int, int, int, int], tuple[tuple[tuple[int, int], ...], int]]:
+    """Precompute immutable board geometry for every cell and direction."""
+    result = {}
+    for row in range(SIZE):
+        for col in range(SIZE):
+            for dr, dc in DIRECTIONS:
+                r, c = row, col
+                while inside(r - dr, c - dc):
+                    r -= dr
+                    c -= dc
+                coords = []
+                while inside(r, c):
+                    coords.append((r, c))
+                    r += dr
+                    c += dc
+                line = tuple(coords)
+                result[(row, col, dr, dc)] = (line, line.index((row, col)))
+    return result
+
+
+_LINE_INFO = _build_line_info()
+
+
 def run_length(board: list[list[int]], row: int, col: int, dr: int, dc: int) -> int:
     color = board[row][col]
     count = 1
@@ -22,27 +45,14 @@ def run_length(board: list[list[int]], row: int, col: int, dr: int, dc: int) -> 
     return count
 
 
-def _line(board: list[list[int]], row: int, col: int, dr: int, dc: int):
-    r, c = row, col
-    while inside(r - dr, c - dc):
-        r -= dr
-        c -= dc
-    coords = []
-    while inside(r, c):
-        coords.append((r, c))
-        r += dr
-        c += dc
-    return coords
-
-
 def _fours(board: list[list[int]], move: tuple[int, int], dr: int, dc: int):
     """Four stone sets containing move, with at least one exact-five completion."""
-    coords = _line(board, *move, dr, dc)
+    coords, move_index = _LINE_INFO[(*move, dr, dc)]
     result = set()
-    for start in range(len(coords) - 4):
+    start_min = max(0, move_index - 4)
+    start_max = min(move_index, len(coords) - 5)
+    for start in range(start_min, start_max + 1):
         window = coords[start:start + 5]
-        if move not in window:
-            continue
         black = tuple(p for p in window if board[p[0]][p[1]] == BLACK)
         blanks = [p for p in window if board[p[0]][p[1]] == EMPTY]
         if len(black) == 4 and len(blanks) == 1:
@@ -65,13 +75,15 @@ def _straight_four_after_extension(
     dc: int,
 ) -> bool:
     """Whether an already placed extension makes a straight four containing move."""
-    coords = _line(board, *move, dr, dc)
-    move_index = coords.index(move)
-    extension_index = coords.index(extension)
-    for i in range(max(0, extension_index - 4), min(move_index, extension_index) + 1):
-        group = coords[i:i + 4]
-        if len(group) != 4 or move not in group or extension not in group:
-            continue
+    coords, move_index = _LINE_INFO[(*move, dr, dc)]
+    _, extension_index = _LINE_INFO[(*extension, dr, dc)]
+    later = max(move_index, extension_index)
+    earlier = min(move_index, extension_index)
+    start_min = max(0, later - 3)
+    start_max = min(earlier, len(coords) - 4)
+
+    for start in range(start_min, start_max + 1):
+        group = coords[start:start + 4]
         if not all(board[row][col] == BLACK for row, col in group):
             continue
         before = (group[0][0] - dr, group[0][1] - dc)
@@ -101,8 +113,7 @@ def _straight_four_after_extension(
 
 def _open_three(board: list[list[int]], move: tuple[int, int], dr: int, dc: int) -> bool:
     """Check a three, recursively requiring its straight-four extension to be legal."""
-    coords = _line(board, *move, dr, dc)
-    index = coords.index(move)
+    coords, index = _LINE_INFO[(*move, dr, dc)]
     for pos in coords[max(0, index - 4):index + 5]:
         r, c = pos
         if board[r][c] != EMPTY:

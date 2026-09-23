@@ -1,4 +1,6 @@
 import unittest
+from unittest.mock import patch
+
 from renju import BLACK, WHITE, Game, IllegalMove
 from renju.rules import forbidden_reason
 
@@ -92,6 +94,30 @@ class RulesTest(unittest.TestCase):
         g.play(7, 7)
         self.assertEqual(g.board[7][7], BLACK)
         self.assertEqual(g.to_play, WHITE)
+
+    def test_has_legal_move_matches_full_generation(self):
+        cases = [
+            Game(),
+            position(black=[(7, 6), (7, 8), (6, 7), (8, 7)]),
+            position(black=[(7, 7)], white=[(0, 0)], turn=BLACK),
+            position(black=[(7, 7)], turn=WHITE),
+        ]
+        for game in cases:
+            with self.subTest(turn=game.to_play, history=len(game.history)):
+                self.assertEqual(game.has_legal_move(), bool(game.legal_moves()))
+
+        full = Game()
+        full.board = [[WHITE] * 15 for _ in range(15)]
+        full.to_play = BLACK
+        self.assertFalse(full.has_legal_move())
+        self.assertEqual(full.legal_moves(), [])
+
+    def test_play_terminal_check_does_not_build_full_legal_list(self):
+        game = Game()
+        with patch.object(Game, "legal_moves", side_effect=AssertionError("full list generated")):
+            game.play(7, 7)
+            game.play(0, 0)
+        self.assertEqual(game.history, [(7, 7), (0, 0)])
 
     def test_five_precedes_forks(self):
         g = position(black=[(7, c) for c in (3, 4, 5, 6)] +
