@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from math import log, sqrt
 from random import Random
 
-from renju import Game, IllegalMove
+from renju import BLACK, EMPTY, SIZE, WHITE, Game, IllegalMove
+from renju.rules import DIRECTIONS, forbidden_reason, run_length
 
 
 Move = tuple[int, int]
@@ -34,6 +35,131 @@ class MCTSNode:
         return self.value_sum / self.visits if self.visits else 0.0
 
 
+def _wins_for_player(game: Game, player: int, move: Move) -> bool:
+    """Check a prospective already-legal move without changing Game state."""
+    row, col = move
+    game.board[row][col] = player
+    try:
+        lengths = (run_length(game.board, row, col, dr, dc) for dr, dc in DIRECTIONS)
+        return any(length == 5 if player == BLACK else length >= 5 for length in lengths)
+    finally:
+        game.board[row][col] = EMPTY
+
+
+def _is_legal_for_player(game: Game, player: int, move: Move) -> bool:
+    row, col = move
+    if game.board[row][col] != EMPTY:
+        return False
+    return player == WHITE or forbidden_reason(game.board, row, col) is None
+
+
+def _move_score(game: Game, move: Move) -> tuple[int, int, int, int]:
+    """Rank local moves without changing legality or game rules."""
+    row, col = move
+    score = 0
+    for rr in range(max(0, row - 2), min(SIZE, row + 3)):
+        for cc in range(max(0, col - 2), min(SIZE, col + 3)):
+            stone = game.board[rr][cc]
+            if stone == EMPTY:
+                continue
+            distance = max(abs(rr - row), abs(cc - col))
+            if distance == 1:
+                score += 6 if stone == game.to_play else 5
+            elif distance == 2:
+                score += 2 if stone == game.to_play else 1
+    center_distance = abs(row - SIZE // 2) + abs(col - SIZE // 2)
+    return (-score, center_distance, row, col)
+
+
+def _shortlist_from_legal(
+    game: Game,
+    legal_moves: list[Move],
+    limit: int,
+    priority: tuple[Move, ...] = (),
+) -> list[Move]:
+    """Keep tactical priorities, then the strongest local legal candidates."""
+    if len(legal_moves) <= limit:
+        return legal_moves[:]
+
+    legal = set(legal_moves)
+    result: list[Move] = []
+    seen: set[Move] = set()
+    for move in priority:
+        if move in legal and move not in seen:
+            result.append(move)
+            seen.add(move)
+
+    for move in sorted(legal_moves, key=lambda item: _move_score(game, item)):
+        if move in seen:
+            continue
+        result.append(move)
+        seen.add(move)
+        if len(result) >= max(limit, len(priority)):
+            break
+    return result
+
+
+def _legal_candidates(game: Game, limit: int) -> list[Move]:
+    """Find a small legal shortlist without generating every black legal move.
+
+    Empty cells are ranked first, then legality is checked only until the
+    shortlist is full. This is a search heuristic; Game.legal_moves() remains
+    the source of truth for rules and is used as a defensive fallback.
+    """
+    if game.done:
+        return []
+
+    empties = [
+        (row, col)
+        for row in range(SIZE)
+        for col in range(SIZE)
+        if game.board[row][col] == EMPTY
+    ]
+    empties.sort(key=lambda item: _move_score(game, item))
+
+    result: list[Move] = []
+    for move in empties:
+        if _is_legal_for_player(game, game.to_play, move):
+            result.append(move)
+            if len(result) >= limit:
+                return result
+
+    if result:
+        return result
+    return game.legal_moves()
+
+
+def _immediate_wins(game: Game, player: int, moves: list[Move]) -> list[Move]:
+    return [move for move in moves if _wins_for_player(game, player, move)]
+
+
+def _root_candidates(game: Game, limit: int) -> tuple[list[Move], Move | None]:
+    """Return root shortlist and an optional forced tactical move."""
+    legal = game.legal_moves()
+    if not legal:
+        raise IllegalMove("No legal moves available")
+
+    own_wins = _immediate_wins(game, game.to_play, legal)
+    if own_wins:
+        return legal, own_wins[0]
+
+    opponent = deepcopy(game)
+    opponent.to_play = -game.to_play
+    opponent_legal = opponent.legal_moves()
+    opponent_wins = _immediate_wins(opponent, opponent.to_play, opponent_legal)
+
+    # A single immediate opponent win is a forced block when that point is
+    # legal for us. Multiple distinct winning points cannot all be occupied by
+    # one move, so keep them as high-priority candidates rather than pretending
+    # there is a unique forced defense.
+    legal_set = set(legal)
+    blocking = tuple(move for move in opponent_wins if move in legal_set)
+    if len(opponent_wins) == 1 and blocking:
+        return legal, blocking[0]
+
+    return _shortlist_from_legal(game, legal, limit, blocking), None
+
+
 def _select_child(node: MCTSNode, exploration: float) -> MCTSNode:
     """Select a fully expanded child with UCT."""
     log_parent = log(node.visits)
@@ -46,15 +172,35 @@ def _select_child(node: MCTSNode, exploration: float) -> MCTSNode:
     )
 
 
-def _rollout(game: Game, random: Random) -> int | None:
-    """Finish one simulation with uniformly random legal moves."""
+def _rollout_move(game: Game, random: Random, candidate_limit: int) -> Move | None:
+    """Tactical rollout: win, block a nearby immediate win, then random local play."""
+    moves = _legal_candidates(game, candidate_limit)
+    if not moves:
+        return None
+
+    wins = _immediate_wins(game, game.to_play, moves)
+    if wins:
+        return wins[0]
+
+    opponent = -game.to_play
+    blocks = [
+        move
+        for move in moves
+        if _is_legal_for_player(game, opponent, move)
+        and _wins_for_player(game, opponent, move)
+    ]
+    if blocks:
+        return random.choice(blocks)
+    return random.choice(moves)
+
+
+def _rollout(game: Game, random: Random, candidate_limit: int) -> int | None:
+    """Finish one simulation with a small tactical/local rollout policy."""
     while not game.done:
-        moves = game.legal_moves()
-        if not moves:
-            # Game.play() normally marks this case done. Keep a defensive draw
-            # fallback for externally constructed Game states used in tests.
+        move = _rollout_move(game, random, candidate_limit)
+        if move is None:
             return None
-        game.play(*random.choice(moves))
+        game.play(*move)
     return game.winner
 
 
@@ -73,24 +219,27 @@ def mcts_search(
     *,
     simulations: int = 10,
     exploration: float = sqrt(2.0),
+    candidate_limit: int = 8,
     random: Random | None = None,
 ) -> Move:
-    """Return a legal move using pure UCT MCTS and random rollouts.
+    """Return a legal move using UCT MCTS with a local tactical shortlist.
 
-    The caller's Game is never mutated. Ten simulations is deliberately a
-    small structural baseline; later stages can raise the budget after timing
-    and strength are measured.
+    The caller's Game is never mutated. The default eight search candidates
+    allow a ten-simulation budget to finish initial expansion and enter UCT
+    selection instead of spending every simulation on a different root move.
     """
     if type(simulations) is not int or simulations <= 0:
         raise ValueError("simulations must be a positive integer")
     if exploration <= 0:
         raise ValueError("exploration must be positive")
-
-    root_moves = game.legal_moves()
-    if not root_moves:
-        raise IllegalMove("No legal moves available")
+    if type(candidate_limit) is not int or candidate_limit <= 0:
+        raise ValueError("candidate_limit must be a positive integer")
 
     random = random or Random()
+    root_moves, forced = _root_candidates(game, candidate_limit)
+    if forced is not None:
+        return forced
+
     root = MCTSNode(
         parent=None,
         move=None,
@@ -98,16 +247,21 @@ def mcts_search(
         untried_moves=root_moves[:],
     )
 
+    # Reuse one private state and undo simulations back to the root instead of
+    # deepcopying the whole Game for every simulation.
+    state = deepcopy(game)
+    root_history_length = len(state.history)
+
     for _ in range(simulations):
-        state = deepcopy(game)
         node = root
 
-        # Selection: follow UCT while the node is fully expanded.
+        # Selection: follow UCT while this shortlisted node is fully expanded.
         while not state.done and not node.untried_moves and node.children:
             node = _select_child(node, exploration)
+            assert node.move is not None
             state.play(*node.move)
 
-        # Expansion: add one previously untried legal move.
+        # Expansion: add one previously untried shortlisted legal move.
         if not state.done and node.untried_moves:
             index = random.randrange(len(node.untried_moves))
             move = node.untried_moves.pop(index)
@@ -117,17 +271,17 @@ def mcts_search(
                 parent=node,
                 move=move,
                 player_just_moved=player,
-                untried_moves=[] if state.done else state.legal_moves(),
+                untried_moves=[] if state.done else _legal_candidates(state, candidate_limit),
             )
             node.children.append(child)
             node = child
 
-        # Simulation and backpropagation.
-        winner = state.winner if state.done else _rollout(state, random)
+        winner = state.winner if state.done else _rollout(state, random, candidate_limit)
         _backpropagate(node, winner)
 
-    # Prefer the robust child (most visits). mean_value breaks visit ties,
-    # which is useful with the intentionally tiny initial budget.
+        while len(state.history) > root_history_length:
+            state.undo()
+
     max_visits = max(child.visits for child in root.children)
     candidates = [child for child in root.children if child.visits == max_visits]
     max_value = max(child.mean_value for child in candidates)

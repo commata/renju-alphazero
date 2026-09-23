@@ -6,14 +6,24 @@ from agents import MCTSAgent, RandomAgent, TacticalAgent
 from evaluation import run_match
 
 
-def mcts_factory(simulations: int) -> Callable[[int], MCTSAgent]:
-    return lambda seed: MCTSAgent(seed=seed, simulations=simulations)
+def mcts_factory(simulations: int, candidate_limit: int) -> Callable[[int], MCTSAgent]:
+    return lambda seed: MCTSAgent(
+        seed=seed,
+        simulations=simulations,
+        candidate_limit=candidate_limit,
+    )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--games", type=int, default=1, help="games per matchup (default: 1)")
     parser.add_argument("--simulations", type=int, default=10, help="MCTS simulations per move")
+    parser.add_argument(
+        "--candidate-limit",
+        type=int,
+        default=8,
+        help="maximum local MCTS candidates per node (default: 8)",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--include-tactical",
@@ -25,8 +35,10 @@ def main() -> None:
         parser.error("--games must be positive")
     if args.simulations <= 0:
         parser.error("--simulations must be positive")
+    if args.candidate_limit <= 0:
+        parser.error("--candidate-limit must be positive")
 
-    mcts = mcts_factory(args.simulations)
+    mcts = mcts_factory(args.simulations, args.candidate_limit)
     matchups = [
         ("MCTS", mcts, "Random", RandomAgent),
         ("Random", RandomAgent, "MCTS", mcts),
@@ -39,7 +51,8 @@ def main() -> None:
 
     print(
         f"Seed: {args.seed}; games per matchup: {args.games}; "
-        f"MCTS simulations/move: {args.simulations}",
+        f"MCTS simulations/move: {args.simulations}; "
+        f"candidate limit: {args.candidate_limit}",
         flush=True,
     )
     for black_name, black, white_name, white in matchups:

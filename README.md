@@ -19,37 +19,28 @@ python -m renju
 - 흑은 정확히 5목으로 승리하며 장목·사사·삼삼 착수를 금지합니다. 백은 5목 이상으로 승리합니다. 흑의 장목 판정은 5목보다 우선하며, 장목이 없는 정확히 5목은 다른 금수보다 우선합니다.
 - 삼삼 판정은 열린 3의 연장 수가 다시 금지된 삼삼을 만드는 경우까지 재귀적으로 검사합니다. 금수인 연장으로만 완성되는 겉보기 3은 유효한 열린 3으로 세지 않습니다.
 - 돌을 전부 두거나 현 차례에 합법수가 없으면 무승부로 종료합니다. 금수를 시도하면 상태를 바꾸지 않고 다시 입력받습니다.
-- `Game.play(row, col)`, `Game.undo()`, `Game.legal_moves()`를 제공합니다. Python 좌표는 0부터 시작하고 `board[row][col]`의 돌 값은 흑 `1`, 백 `-1`, 빈칸 `0`입니다. 추후 탐색기의 행동 번호는 `row * 15 + col`로 변환할 수 있습니다.
+- `Game.play(row, col)`, `Game.undo()`, `Game.legal_moves()`를 제공합니다. Python 좌표는 0부터 시작하고 `board[row][col]`의 돌 값은 흑 `1`, 백 `-1`, 빈칸 `0`입니다.
 
 규칙의 세부 판정과 현재 구현의 범위는 [docs/rules.md](docs/rules.md)에 기록했습니다.
 
 ## 2단계 기준선 및 벤치마크
 
-위의 editable 설치 후 저장소 루트에서 실행합니다. 외부 런타임 의존성은 없습니다.
-
 ```bash
-python scripts/run_baseline.py --games 100 --seed 42
-python scripts/benchmark_engine.py --iterations 1000 --games 50 --seed 42
-```
-
-- 기준선은 **대결별** 지정 판수로 Random(흑) vs Random(백), Random(흑) vs Tactical(백), Tactical(흑) vs Random(백)을 실행합니다. 승/무/패, 총 수, 평균 수, 경과 시간, 초당 대국 수와 수순·결과 SHA256을 출력합니다.
-- Random은 `Game.legal_moves()` 중 균등 선택합니다. Tactical은 자기 즉시 승리 → 합법적으로 막을 수 있는 상대 즉시 승리 → 무작위 순입니다.
-- 에이전트는 각자 `random.Random(seed)`를 소유합니다. runner는 master seed에서 각 판·색별 seed를 생성해 매 판 새 에이전트와 `Game()`을 만듭니다.
-- 벤치마크는 `play()+undo()`, 흑/백 `legal_moves()`, 개별 금수 판정, Random 전체 대국 처리량을 측정합니다. `--profile`을 붙이면 별도 한 판의 cProfile 상위 누적 시간을 출력합니다.
-
-```bash
-python -m unittest discover -s tests -v
 python scripts/run_baseline.py --games 20 --seed 42
-python scripts/benchmark_engine.py --iterations 100 --games 10 --seed 42
+python scripts/benchmark_engine.py --iterations 100 --games 10 --seed 42 --profile
 ```
+
+Random은 합법수 중 균등 선택하고 Tactical은 자기 즉시 승리 → 상대 즉시 승리 방어 → seeded random 순으로 선택합니다.
 
 ## 3단계 순수 MCTS
 
-`MCTSAgent`는 신경망 없이 UCT Selection → Expansion → 무작위 Rollout → Backpropagation을 수행합니다. 기본값은 **착수당 10 simulations**입니다.
+`MCTSAgent`는 신경망 없이 UCT Selection → Expansion → Rollout → Backpropagation을 수행합니다. 기본값은 **착수당 10 simulations**, **노드당 최대 8개 탐색 후보**입니다.
+
+2차 구현에서는 작은 10회 예산에서도 UCT 재방문이 발생하도록 지역성 기반 shortlist를 사용하고, 루트의 즉시 승리/단일 즉시 위협 방어와 rollout의 간단한 승리/방어 정책을 추가했습니다. 이 shortlist는 탐색 휴리스틱일 뿐 렌주 합법수 규칙을 변경하지 않습니다.
 
 ```bash
-python scripts/run_mcts.py --games 1 --simulations 10 --seed 42
-python scripts/run_mcts.py --games 1 --simulations 10 --seed 42 --include-tactical
+python scripts/run_mcts.py --games 1 --simulations 10 --candidate-limit 8 --seed 42
+python scripts/run_mcts.py --games 1 --simulations 10 --candidate-limit 8 --seed 42 --include-tactical
 ```
 
 Python에서 직접 사용할 수도 있습니다.
@@ -57,13 +48,13 @@ Python에서 직접 사용할 수도 있습니다.
 ```python
 from agents import MCTSAgent
 
-agent = MCTSAgent(seed=42, simulations=10)
+agent = MCTSAgent(seed=42, simulations=10, candidate_limit=8)
 move = agent.select_move(game)
 ```
 
-현재 10회 탐색은 구조 검증을 위한 작은 예산이며 기력 향상을 보장하는 설정이 아닙니다. 탐색 구조, 가치 부호, 합법수 처리, 재현성과 속도를 검증한 뒤 25/50/100회로 단계적으로 늘립니다. 자세한 설계는 [3단계 MCTS 문서](docs/mcts.md)를 참고하세요.
+현재 10회 탐색은 구조 및 CPU 비용 검증을 위한 작은 예산입니다. 자세한 설계와 1차 측정 결과는 [3단계 MCTS 문서](docs/mcts.md)를 참고하세요.
 
-Python API의 공통 에이전트 인터페이스는 `Agent.select_move(game) -> tuple[int, int]`입니다. 자동 대국은 `play_game()`, `run_match()`를 사용합니다. 합법수가 없는 상태에서 에이전트를 호출하거나 에이전트가 불법 수를 반환하면 `IllegalMove` 예외를 발생시킵니다.
+Python API의 공통 에이전트 인터페이스는 `Agent.select_move(game) -> tuple[int, int]`입니다. 자동 대국은 `play_game()`, `run_match()`를 사용합니다.
 
 ## 커밋 규칙
 
