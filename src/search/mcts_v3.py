@@ -144,11 +144,39 @@ def _can_expand(node: MCTSNode, initial_width: int) -> bool:
     return bool(node.untried_moves) and len(node.children) < _allowed_children(node, initial_width)
 
 
+def _rank_weights(count: int) -> list[int]:
+    """Return descending rank weights, e.g. 5, 4, 3, 2, 1."""
+    return list(range(count, 0, -1))
+
+
+def _ranked_choice_index(length: int, top_k: int, random: Random) -> int:
+    """Choose only among the highest-ranked remaining candidates."""
+    width = min(length, top_k)
+    return random.choices(
+        range(width),
+        weights=_rank_weights(width),
+        k=1,
+    )[0]
+
+
+def _pop_ranked_untried(node: MCTSNode, top_k: int, random: Random) -> Move:
+    """Pop one untried move from the ranked top-k window."""
+    index = _ranked_choice_index(len(node.untried_moves), top_k, random)
+    return node.untried_moves.pop(index)
+
+
+def _ranked_rollout_choice(moves: list[Move], top_k: int, random: Random) -> Move:
+    """Choose a rollout move from the ranked top-k window without removing it."""
+    index = _ranked_choice_index(len(moves), top_k, random)
+    return moves[index]
+
+
 def _rollout_move_v3(
     game: Game,
     random: Random,
     candidate_limit: int,
     radius: int,
+    priority_top_k: int,
 ) -> Move | None:
     """Tactical rollout from a local candidate pool."""
     moves = _local_legal_candidates(game, candidate_limit, radius)
@@ -168,7 +196,7 @@ def _rollout_move_v3(
     ]
     if blocks:
         return random.choice(blocks)
-    return random.choice(moves)
+    return _ranked_rollout_choice(moves, priority_top_k, random)
 
 
 def _rollout_v3(
@@ -176,9 +204,16 @@ def _rollout_v3(
     random: Random,
     candidate_limit: int,
     radius: int,
+    priority_top_k: int,
 ) -> int | None:
     while not game.done:
-        move = _rollout_move_v3(game, random, candidate_limit, radius)
+        move = _rollout_move_v3(
+            game,
+            random,
+            candidate_limit,
+            radius,
+            priority_top_k,
+        )
         if move is None:
             return None
         game.play(*move)
@@ -193,13 +228,15 @@ def mcts_search_v3(
     candidate_limit: int = 16,
     initial_width: int = 6,
     neighborhood_radius: int = 2,
+    priority_top_k: int = 5,
     random: Random | None = None,
 ) -> Move:
     """Return a move using a wider pool and progressive widening.
 
-    V3 uses a 25-simulation budget and up to 16 candidates. It starts with a
-    width of six and exposes more candidates as visits grow, so the larger
-    budget is split between broader move coverage and repeated UCT selection.
+    V3 uses a 25-simulation budget and up to 16 ranked candidates. It starts
+    with a width of six and exposes more candidates as visits grow. New
+    expansions and non-tactical rollout choices are restricted to the best
+    five remaining candidates and sampled with descending rank weights.
     """
     if type(simulations) is not int or simulations <= 0:
         raise ValueError("simulations must be a positive integer")
@@ -213,6 +250,10 @@ def mcts_search_v3(
         raise ValueError("initial_width must not exceed candidate_limit")
     if type(neighborhood_radius) is not int or neighborhood_radius <= 0:
         raise ValueError("neighborhood_radius must be a positive integer")
+    if type(priority_top_k) is not int or priority_top_k <= 0:
+        raise ValueError("priority_top_k must be a positive integer")
+    if priority_top_k > candidate_limit:
+        raise ValueError("priority_top_k must not exceed candidate_limit")
 
     random = random or Random()
     root_moves, forced = _root_candidates_v3(game, candidate_limit, neighborhood_radius)
@@ -237,8 +278,7 @@ def mcts_search_v3(
             state.play(*node.move)
 
         if not state.done and _can_expand(node, initial_width):
-            index = random.randrange(len(node.untried_moves))
-            move = node.untried_moves.pop(index)
+            move = _pop_ranked_untried(node, priority_top_k, random)
             player = state.to_play
             state.play(*move)
             child = MCTSNode(
@@ -257,7 +297,13 @@ def mcts_search_v3(
         winner = (
             state.winner
             if state.done
-            else _rollout_v3(state, random, candidate_limit, neighborhood_radius)
+            else _rollout_v3(
+                state,
+                random,
+                candidate_limit,
+                neighborhood_radius,
+                priority_top_k,
+            )
         )
         _backpropagate(node, winner)
 

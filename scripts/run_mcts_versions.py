@@ -19,6 +19,7 @@ def v3_factory(
     candidate_limit: int,
     initial_width: int,
     radius: int,
+    priority_top_k: int,
 ) -> Callable[[int], MCTSV3Agent]:
     return lambda seed: MCTSV3Agent(
         seed=seed,
@@ -26,6 +27,7 @@ def v3_factory(
         candidate_limit=candidate_limit,
         initial_width=initial_width,
         neighborhood_radius=radius,
+        priority_top_k=priority_top_k,
     )
 
 
@@ -49,6 +51,7 @@ def main() -> None:
     parser.add_argument("--v3-candidate-limit", type=int, default=16)
     parser.add_argument("--v3-initial-width", type=int, default=6)
     parser.add_argument("--v3-radius", type=int, default=2)
+    parser.add_argument("--v3-priority-top-k", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -60,11 +63,14 @@ def main() -> None:
         (args.v3_candidate_limit, "--v3-candidate-limit"),
         (args.v3_initial_width, "--v3-initial-width"),
         (args.v3_radius, "--v3-radius"),
+        (args.v3_priority_top_k, "--v3-priority-top-k"),
     ):
         if value <= 0:
             parser.error(f"{name} must be positive")
     if args.v3_initial_width > args.v3_candidate_limit:
         parser.error("--v3-initial-width must not exceed --v3-candidate-limit")
+    if args.v3_priority_top_k > args.v3_candidate_limit:
+        parser.error("--v3-priority-top-k must not exceed --v3-candidate-limit")
 
     v2 = v2_factory(args.v2_simulations, args.v2_candidate_limit)
     v3 = v3_factory(
@@ -72,6 +78,7 @@ def main() -> None:
         args.v3_candidate_limit,
         args.v3_initial_width,
         args.v3_radius,
+        args.v3_priority_top_k,
     )
 
     print(
@@ -79,7 +86,8 @@ def main() -> None:
         f"V2 simulations/candidates: {args.v2_simulations}/{args.v2_candidate_limit}; "
         f"V3 simulations/candidates: {args.v3_simulations}/{args.v3_candidate_limit}; "
         f"V3 initial width: {args.v3_initial_width}; "
-        f"V3 radius: {args.v3_radius}",
+        f"V3 radius: {args.v3_radius}; "
+        f"V3 priority top-k: {args.v3_priority_top_k}",
         flush=True,
     )
 

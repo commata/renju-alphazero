@@ -5,7 +5,12 @@ import unittest
 from agents import MCTSV2Agent, MCTSV3Agent
 from renju import BLACK, EMPTY, WHITE, Game, IllegalMove
 from search.mcts import MCTSNode
-from search.mcts_v3 import _allowed_children, _root_candidates_v3
+from search.mcts_v3 import (
+    _allowed_children,
+    _pop_ranked_untried,
+    _rank_weights,
+    _root_candidates_v3,
+)
 
 
 def forced_win_position() -> Game:
@@ -38,6 +43,7 @@ class MCTSV3Test(unittest.TestCase):
         self.assertEqual(v3.candidate_limit, 16)
         self.assertEqual(v3.initial_width, 6)
         self.assertEqual(v3.neighborhood_radius, 2)
+        self.assertEqual(v3.priority_top_k, 5)
 
     def test_progressive_widening_keeps_revisits_with_larger_pool(self):
         node = MCTSNode(
@@ -51,6 +57,19 @@ class MCTSV3Test(unittest.TestCase):
         self.assertEqual(_allowed_children(node, 6), 9)
         node.visits = 25
         self.assertEqual(_allowed_children(node, 6), 11)
+
+    def test_ranked_expansion_uses_only_top_five_with_descending_weights(self):
+        self.assertEqual(_rank_weights(5), [5, 4, 3, 2, 1])
+        original = [(0, col) for col in range(10)]
+        for seed in range(20):
+            node = MCTSNode(
+                parent=None,
+                move=None,
+                player_just_moved=None,
+                untried_moves=original[:],
+            )
+            move = _pop_ranked_untried(node, top_k=5, random=random.Random(seed))
+            self.assertIn(move, original[:5])
 
     def test_root_candidates_always_returns_pair(self):
         game = Game()
@@ -107,6 +126,8 @@ class MCTSV3Test(unittest.TestCase):
             {"initial_width": 0},
             {"candidate_limit": 4, "initial_width": 5},
             {"neighborhood_radius": 0},
+            {"priority_top_k": 0},
+            {"candidate_limit": 4, "priority_top_k": 5},
             {"exploration": 0},
         ):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):

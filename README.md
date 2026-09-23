@@ -40,13 +40,14 @@ V3는 V2를 덮어쓰지 않고 별도 `MCTSV3Agent`로 구현합니다.
 - candidate pool: **16**
 - progressive widening initial width: **6**
 - neighborhood radius: **2**
+- priority top-k: **5**
 
-탐색 횟수를 10→25로 늘리면서 후보 pool도 8→16으로 넓혔습니다. 다만 16개를 처음부터 전부 확장하지 않고 progressive widening으로 방문 수가 증가할 때 후보를 단계적으로 추가해 UCT 재탐색을 유지합니다.
+탐색 횟수를 10→25로 늘리면서 후보 pool도 8→16으로 넓혔습니다. 16개를 처음부터 전부 확장하지 않고 progressive widening으로 후보를 단계적으로 추가합니다. 새 후보를 열 때는 아직 보지 않은 후보 중 상위 5개만 대상으로 5:4:3:2:1 순위 가중 랜덤을 적용해, 우선순위를 유지하면서도 탐색 다양성을 남깁니다.
 
 V2와 V3 직접 대결:
 
 ```bash
-python scripts/run_mcts_versions.py --games 5 --v2-simulations 10 --v3-simulations 25 --v2-candidate-limit 8 --v3-candidate-limit 16 --v3-initial-width 6 --v3-radius 2 --seed 42
+python scripts/run_mcts_versions.py --games 5 --v2-simulations 10 --v3-simulations 25 --v2-candidate-limit 8 --v3-candidate-limit 16 --v3-initial-width 6 --v3-radius 2 --v3-priority-top-k 5 --seed 42
 ```
 
 Python API:
@@ -61,6 +62,7 @@ v3 = MCTSV3Agent(
     candidate_limit=16,
     initial_width=6,
     neighborhood_radius=2,
+    priority_top_k=5,
 )
 ```
 

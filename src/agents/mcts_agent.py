@@ -58,6 +58,7 @@ class MCTSV3Agent:
         candidate_limit: int = 16,
         initial_width: int = 6,
         neighborhood_radius: int = 2,
+        priority_top_k: int = 5,
     ):
         if type(simulations) is not int or simulations <= 0:
             raise ValueError("simulations must be a positive integer")
@@ -71,12 +72,17 @@ class MCTSV3Agent:
             raise ValueError("initial_width must not exceed candidate_limit")
         if type(neighborhood_radius) is not int or neighborhood_radius <= 0:
             raise ValueError("neighborhood_radius must be a positive integer")
+        if type(priority_top_k) is not int or priority_top_k <= 0:
+            raise ValueError("priority_top_k must be a positive integer")
+        if priority_top_k > candidate_limit:
+            raise ValueError("priority_top_k must not exceed candidate_limit")
 
         self.simulations = simulations
         self.exploration = exploration
         self.candidate_limit = candidate_limit
         self.initial_width = initial_width
         self.neighborhood_radius = neighborhood_radius
+        self.priority_top_k = priority_top_k
         self._random = Random(seed)
 
     def select_move(self, game: Game) -> tuple[int, int]:
@@ -87,5 +93,6 @@ class MCTSV3Agent:
             candidate_limit=self.candidate_limit,
             initial_width=self.initial_width,
             neighborhood_radius=self.neighborhood_radius,
+            priority_top_k=self.priority_top_k,
             random=self._random,
         )

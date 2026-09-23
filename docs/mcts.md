@@ -25,6 +25,7 @@ seed 42 기준 5판씩 측정에서는 Random/Tactical 양쪽 색 네 조건 모
 - candidate pool: **16**
 - progressive widening initial width: **6**
 - neighborhood radius: **2**
+- priority top-k: **5**
 
 ### 왜 25 / 16 / 6인가
 
@@ -63,6 +64,21 @@ V3는 전체 225칸을 매번 점수화하지 않는다.
 
 루트의 즉시 승리와 단일 즉시 패배 방어는 전체 합법수 기준으로 유지한다.
 
+### V3.1 우선순위 기반 확장 정책
+
+25 simulations / 16 candidates V3를 V2와 10판 직접 대결했을 때 V2 6승, V3 4승이 나왔다. 표본이 작아 우열을 단정할 수는 없지만, 기존 V3가 정렬된 16개 후보를 만들어 놓고도 expansion에서 전체 미확장 후보 중 균등 랜덤으로 하나를 뽑는 문제가 확인됐다.
+
+V3.1은 후보 pool과 progressive widening은 그대로 두고 새 후보를 열 때 정책만 바꾼다.
+
+```text
+정렬된 후보 최대 16개
+→ 아직 보지 않은 후보 중 상위 5개만 선택 창으로 사용
+→ 순위 가중치 5, 4, 3, 2, 1
+→ 가중 랜덤으로 1개 확장
+```
+
+즉 1위 후보를 항상 강제하지는 않지만 6~16위 후보가 초반에 무작위로 먼저 확장되는 일도 막는다. 전술 수가 없는 rollout의 랜덤 수 역시 같은 상위 5개 순위 가중 정책을 사용한다.
+
 ## V2 vs V3 비교
 
 두 revision은 의도적으로 다른 기본 탐색 예산을 유지한다.
@@ -73,7 +89,7 @@ V3는 전체 225칸을 매번 점수화하지 않는다.
 실행:
 
 ```bash
-python scripts/run_mcts_versions.py --games 5 --v2-simulations 10 --v3-simulations 25 --v2-candidate-limit 8 --v3-candidate-limit 16 --v3-initial-width 6 --v3-radius 2 --seed 42
+python scripts/run_mcts_versions.py --games 5 --v2-simulations 10 --v3-simulations 25 --v2-candidate-limit 8 --v3-candidate-limit 16 --v3-initial-width 6 --v3-radius 2 --v3-priority-top-k 5 --seed 42
 ```
 
 이 비교는 "동일 계산량에서 알고리즘만 비교"하는 실험이 아니라, **검증된 V2 기준본과 더 큰 탐색 예산을 사용하는 V3 후보 모델을 비교하는 승급 테스트**다.
@@ -83,7 +99,7 @@ python scripts/run_mcts_versions.py --games 5 --v2-simulations 10 --v3-simulatio
 예:
 
 ```bash
-python scripts/run_mcts_versions.py --games 5 --v2-simulations 25 --v3-simulations 25 --v2-candidate-limit 8 --v3-candidate-limit 16 --v3-initial-width 6 --v3-radius 2 --seed 42
+python scripts/run_mcts_versions.py --games 5 --v2-simulations 25 --v3-simulations 25 --v2-candidate-limit 8 --v3-candidate-limit 16 --v3-initial-width 6 --v3-radius 2 --v3-priority-top-k 5 --seed 42
 ```
 
 ## 검증
