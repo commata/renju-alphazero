@@ -186,3 +186,56 @@ python scripts/run_mcts_v3_policies.py --games 25 --simulations 25 --candidate-l
 ```
 
 이 명령은 V3.1 흑 vs V3.2 백 25판, V3.2 흑 vs V3.1 백 25판으로 총 50판을 실행한다.
+
+
+## 경기 로그 자동 저장
+
+MCTS 비교 runner는 실행할 때 경기 로그를 자동으로 저장한다.
+
+기본 경로:
+
+```text
+logs/mcts_v3_policies/<timestamp>_seedN/
+logs/mcts_versions/<timestamp>_seedN/
+```
+
+생성 파일:
+
+```text
+games.csv   경기별 승자, 에이전트, 수 수, 경기 시간
+moves.csv   모든 착수를 한 행씩 기록
+games.json  실행 설정 + matchup 요약 + 전체 착수 기록
+```
+
+CSV는 Excel에서 한글이 깨지지 않도록 UTF-8 BOM으로 저장한다. `moves.csv`와 JSON에는 내부 0-based 좌표(`row0`, `col0`)와 사람이 보는 1-based 좌표(`row`, `col`)를 모두 기록한다.
+
+원하는 경로를 직접 지정할 수도 있다.
+
+```bash
+python scripts/run_mcts_v3_policies.py --games 25 --seed 42 --log-dir logs/my_experiment
+```
+
+첫 번째 색 배치가 끝난 직후 한 번 checkpoint 저장하고, 두 번째 색 배치가 끝나면 두 matchup을 합쳐 다시 저장한다.
+
+## V3.2 50판 결과와 성능 메모
+
+사용자 로컬 V3.1 vs V3.2 50판 결과:
+
+```text
+V3.1 wins: 16
+V3.2 wins: 34
+Draws: 0
+```
+
+확인 가능한 두 번째 색 배치(V3.2 흑 vs V3.1 백)에서는 V3.2가 19승, V3.1이 6승이었고 평균 13.80수, 25판 실행 시간이 1203.907초였다.
+
+V3.2가 오래 걸리는 주된 원인은 현재 코드 구조상 상세 전술 패턴 평가 비용으로 추정된다.
+
+- 후보 한 수의 `_v32_priority_score()`가 자기/상대 양쪽에 대해 `_pattern_features_for_move()`를 호출한다.
+- 각 pattern feature는 4방향을 검사하면서 여러 extension 후보를 다시 시험한다.
+- 열린 3 검사는 extension을 놓아본 뒤 winning extension을 다시 찾기 때문에 중첩된 후보 검사가 발생한다.
+- 흑 합법성 확인은 `forbidden_reason()`을 호출하며, 이 함수 자체가 재귀적 삼삼/사사 판정을 포함한다.
+- V3.2는 최대 32개를 prefilter한 뒤 상세 점수화를 하고, MCTS expansion 때 생성되는 child 후보에서도 이 과정을 반복한다.
+- 따라서 25 simulations × 여러 실제 착수 × 최대 32개 상세 후보 분석이 누적되어 V3.1보다 큰 CPU 비용이 발생한다.
+
+이 평가는 코드 경로를 기준으로 한 병목 추정이며, 정확한 함수별 비중은 별도의 cProfile로 확인해야 한다. 현재 로그 기능은 판별 실행 시간까지 남기므로 느린 경기와 긴 경기의 상관관계를 먼저 확인할 수 있다.

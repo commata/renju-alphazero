@@ -106,3 +106,27 @@ from agents import MCTSV3Agent, MCTSV32Agent
 v31 = MCTSV3Agent(seed=42)
 v32 = MCTSV32Agent(seed=42)
 ```
+
+
+## 경기 로그
+
+MCTS 비교 runner는 별도 옵션 없이 CSV와 JSON 로그를 자동 저장합니다.
+
+```text
+logs/
+├─ mcts_versions/<timestamp>_seedN/
+│  ├─ games.csv
+│  ├─ moves.csv
+│  └─ games.json
+└─ mcts_v3_policies/<timestamp>_seedN/
+   ├─ games.csv
+   ├─ moves.csv
+   └─ games.json
+```
+
+- `games.csv`: 경기별 요약과 실행 시간
+- `moves.csv`: 모든 착수를 ply 단위로 저장
+- `games.json`: 실험 파라미터와 전체 경기/착수 로그
+- CSV 좌표는 0-based(`row0/col0`)와 1-based(`row/col`)를 함께 제공합니다.
+
+필요하면 `--log-dir`로 저장 경로를 지정할 수 있습니다.
