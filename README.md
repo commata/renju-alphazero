@@ -1,6 +1,6 @@
 # Renju AlphaZero
 
-렌주 규칙 엔진, Random/Tactical 기준선과 **신경망 없는 순수 MCTS**를 개발 중인 프로젝트입니다. 현재 MCTS는 검증 기준 V2와 실험용 V3를 함께 유지해 직접 비교할 수 있습니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
+렌주 규칙 엔진, Random/Tactical 기준선과 **신경망 없는 순수 MCTS**를 개발 중인 프로젝트입니다. 현재 MCTS는 V2, 검증된 V3.1, 색상별 전술 우선순위를 추가한 V3.2를 함께 유지해 직접 비교할 수 있습니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
 
 ## 실행
 
@@ -81,3 +81,28 @@ v3 = MCTSV3Agent(
 ## 커밋 규칙
 
 `유형: 한글 메시지` 형식으로 작성합니다.
+
+
+## MCTS V3.2
+
+V3.2는 V3.1의 25 simulations / 후보 16개 / progressive widening / top-5 가중 선택을 그대로 유지하면서 후보 순위에 렌주 색상 비대칭을 반영합니다.
+
+- 흑: 공격형. 합법적인 43을 가장 강한 비승리 공격 패턴으로 우선하며, 4와 열린 3을 뒤따르게 합니다. 33/44/장목은 규칙 엔진이 후보에서 제거합니다.
+- 백: 방어형. 흑의 43/4/3 차단에 높은 점수를 주고, 동시에 백에게 합법인 44와 33을 적극적으로 우선합니다.
+- 백 5목 이상은 즉시 승리이며, 승리 수가 여러 개면 6목 이상처럼 더 긴 run을 tie-break로 우선합니다.
+- 상세 43/44/33 분석은 저비용 prefilter 이후 bounded candidate set에만 적용해 rollout 전체 비용 폭증을 피합니다.
+
+V3.1과 V3.2 직접 대결:
+
+```bash
+python scripts/run_mcts_v3_policies.py --games 25 --simulations 25 --candidate-limit 16 --initial-width 6 --radius 2 --priority-top-k 5 --seed 42
+```
+
+Python API:
+
+```python
+from agents import MCTSV3Agent, MCTSV32Agent
+
+v31 = MCTSV3Agent(seed=42)
+v32 = MCTSV32Agent(seed=42)
+```

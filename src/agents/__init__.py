@@ -1,5 +1,5 @@
 from .base import Agent
-from .mcts_agent import MCTSAgent, MCTSV2Agent, MCTSV3Agent
+from .mcts_agent import MCTSAgent, MCTSV2Agent, MCTSV3Agent, MCTSV32Agent
 from .random_agent import RandomAgent
 from .tactical_agent import TacticalAgent
 
@@ -8,6 +8,7 @@ __all__ = [
     "MCTSAgent",
     "MCTSV2Agent",
     "MCTSV3Agent",
+    "MCTSV32Agent",
     "RandomAgent",
     "TacticalAgent",
 ]
