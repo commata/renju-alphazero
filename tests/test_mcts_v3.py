@@ -5,7 +5,7 @@ import unittest
 from agents import MCTSV2Agent, MCTSV3Agent
 from renju import BLACK, EMPTY, WHITE, Game, IllegalMove
 from search.mcts import MCTSNode
-from search.mcts_v3 import _allowed_children
+from search.mcts_v3 import _allowed_children, _root_candidates_v3
 
 
 def forced_win_position() -> Game:
@@ -51,6 +51,13 @@ class MCTSV3Test(unittest.TestCase):
         self.assertEqual(_allowed_children(node, 6), 9)
         node.visits = 25
         self.assertEqual(_allowed_children(node, 6), 11)
+
+    def test_root_candidates_always_returns_pair(self):
+        game = Game()
+        moves, forced = _root_candidates_v3(game, candidate_limit=16, radius=2)
+        self.assertIsInstance(moves, list)
+        self.assertEqual(len(moves), 16)
+        self.assertIsNone(forced)
 
     def test_v3_forced_win_and_block_with_one_simulation(self):
         for game, expected in (
