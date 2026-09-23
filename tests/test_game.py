@@ -68,6 +68,31 @@ class RulesTest(unittest.TestCase):
         blocked = position(black=stones, white=[(7, 4), (7, 10)])
         self.assertIsNone(forbidden_reason(blocked.board, 7, 7))
 
+    def test_recursive_double_three_extension_does_not_count_as_open_three(self):
+        black = [
+            (7, 6), (7, 8), (6, 7), (8, 7),
+            (6, 5), (8, 5), (6, 4), (8, 6),
+        ]
+        g = position(black=black, white=[(7, 10)])
+        before = [row[:] for row in g.board]
+
+        # The horizontal apparent three can only be extended at (7, 5).
+        # That extension itself is a forbidden double-three, so the original
+        # move at (7, 7) has only one valid three and must be legal.
+        self.assertIsNone(forbidden_reason(g.board, 7, 7))
+        self.assertEqual(g.board, before)
+
+        g.board[7][7] = BLACK
+        try:
+            self.assertEqual(forbidden_reason(g.board, 7, 5), '삼삼')
+        finally:
+            g.board[7][7] = 0
+        self.assertEqual(g.board, before)
+
+        g.play(7, 7)
+        self.assertEqual(g.board[7][7], BLACK)
+        self.assertEqual(g.to_play, WHITE)
+
     def test_five_precedes_forks(self):
         g = position(black=[(7, c) for c in (3, 4, 5, 6)] +
                      [(6, 7), (8, 7), (6, 6), (8, 8)])
