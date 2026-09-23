@@ -116,7 +116,7 @@ def _root_candidates_v3(
             result.append(move)
             seen.add(move)
             if len(result) >= candidate_limit:
-                return result
+                return result, None
 
     center = SIZE // 2
     remaining = [move for move in legal if move not in seen]
