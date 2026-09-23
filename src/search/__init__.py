@@ -2,6 +2,7 @@ from .mcts import MCTSNode, mcts_search
 from .mcts_v3 import mcts_search_v3
 from .mcts_v32 import mcts_search_v32
 from .mcts_v321 import mcts_search_v321
+from .mcts_v4 import mcts_search_v4
 
 __all__ = [
     "MCTSNode",
@@ -9,4 +10,5 @@ __all__ = [
     "mcts_search_v3",
     "mcts_search_v32",
     "mcts_search_v321",
+    "mcts_search_v4",
 ]
