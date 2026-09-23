@@ -43,17 +43,19 @@ def report(label: str, result) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--games", type=int, default=5, help="games per color assignment")
-    parser.add_argument("--simulations", type=int, default=10)
+    parser.add_argument("--v2-simulations", type=int, default=10)
+    parser.add_argument("--v3-simulations", type=int, default=25)
     parser.add_argument("--v2-candidate-limit", type=int, default=8)
-    parser.add_argument("--v3-candidate-limit", type=int, default=12)
-    parser.add_argument("--v3-initial-width", type=int, default=4)
+    parser.add_argument("--v3-candidate-limit", type=int, default=16)
+    parser.add_argument("--v3-initial-width", type=int, default=6)
     parser.add_argument("--v3-radius", type=int, default=2)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     for value, name in (
         (args.games, "--games"),
-        (args.simulations, "--simulations"),
+        (args.v2_simulations, "--v2-simulations"),
+        (args.v3_simulations, "--v3-simulations"),
         (args.v2_candidate_limit, "--v2-candidate-limit"),
         (args.v3_candidate_limit, "--v3-candidate-limit"),
         (args.v3_initial_width, "--v3-initial-width"),
@@ -64,18 +66,18 @@ def main() -> None:
     if args.v3_initial_width > args.v3_candidate_limit:
         parser.error("--v3-initial-width must not exceed --v3-candidate-limit")
 
-    v2 = v2_factory(args.simulations, args.v2_candidate_limit)
+    v2 = v2_factory(args.v2_simulations, args.v2_candidate_limit)
     v3 = v3_factory(
-        args.simulations,
+        args.v3_simulations,
         args.v3_candidate_limit,
         args.v3_initial_width,
         args.v3_radius,
     )
 
     print(
-        f"Seed: {args.seed}; games/color: {args.games}; simulations: {args.simulations}; "
-        f"V2 candidates: {args.v2_candidate_limit}; "
-        f"V3 candidates: {args.v3_candidate_limit}; "
+        f"Seed: {args.seed}; games/color: {args.games}; "
+        f"V2 simulations/candidates: {args.v2_simulations}/{args.v2_candidate_limit}; "
+        f"V3 simulations/candidates: {args.v3_simulations}/{args.v3_candidate_limit}; "
         f"V3 initial width: {args.v3_initial_width}; "
         f"V3 radius: {args.v3_radius}",
         flush=True,

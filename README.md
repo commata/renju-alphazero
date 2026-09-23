@@ -1,6 +1,6 @@
 # Renju AlphaZero
 
-렌주 규칙 엔진, Random/Tactical 기준선과 **신경망 없는 순수 MCTS**를 개발 중인 프로젝트입니다. 현재 MCTS는 검증된 V2와 실험용 V3를 함께 유지해 직접 비교할 수 있습니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
+렌주 규칙 엔진, Random/Tactical 기준선과 **신경망 없는 순수 MCTS**를 개발 중인 프로젝트입니다. 현재 MCTS는 검증 기준 V2와 실험용 V3를 함께 유지해 직접 비교할 수 있습니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
 
 ## 실행
 
@@ -21,13 +21,14 @@ python -m unittest discover -s tests -v
 
 ## MCTS V2
 
-V2는 10 simulations / 후보 8개 기준본입니다.
+V2는 기존 검증 기준본입니다.
+
+- simulations: 10
+- candidate limit: 8
 
 ```bash
 python scripts/run_mcts.py --games 5 --simulations 10 --candidate-limit 8 --seed 42 --include-tactical
 ```
-
-현재 V2는 지역성 shortlist, 즉시 승리/단일 방어, 전술 rollout, private state 재사용을 사용합니다.
 
 ## MCTS V3
 
@@ -35,17 +36,17 @@ V3는 V2를 덮어쓰지 않고 별도 `MCTSV3Agent`로 구현합니다.
 
 기본 설정:
 
-- simulations: 10
-- candidate pool: 12
-- progressive widening initial width: 4
-- neighborhood radius: 2
+- simulations: **25**
+- candidate pool: **16**
+- progressive widening initial width: **6**
+- neighborhood radius: **2**
 
-후보 pool을 12개로 넓히되 처음부터 모두 확장하지 않고, 노드 방문 수가 늘어날 때 후보를 점진적으로 추가합니다. 또한 rollout 후보는 전체 15×15 빈칸을 매번 정렬하지 않고 기존 돌 주변 거리 2의 local pool에서 우선 생성합니다.
+탐색 횟수를 10→25로 늘리면서 후보 pool도 8→16으로 넓혔습니다. 다만 16개를 처음부터 전부 확장하지 않고 progressive widening으로 방문 수가 증가할 때 후보를 단계적으로 추가해 UCT 재탐색을 유지합니다.
 
 V2와 V3 직접 대결:
 
 ```bash
-python scripts/run_mcts_versions.py --games 5 --simulations 10 --v2-candidate-limit 8 --v3-candidate-limit 12 --v3-initial-width 4 --v3-radius 2 --seed 42
+python scripts/run_mcts_versions.py --games 5 --v2-simulations 10 --v3-simulations 25 --v2-candidate-limit 8 --v3-candidate-limit 16 --v3-initial-width 6 --v3-radius 2 --seed 42
 ```
 
 Python API:
@@ -56,9 +57,9 @@ from agents import MCTSV2Agent, MCTSV3Agent
 v2 = MCTSV2Agent(seed=42, simulations=10, candidate_limit=8)
 v3 = MCTSV3Agent(
     seed=42,
-    simulations=10,
-    candidate_limit=12,
-    initial_width=4,
+    simulations=25,
+    candidate_limit=16,
+    initial_width=6,
     neighborhood_radius=2,
 )
 ```

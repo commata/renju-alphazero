@@ -53,10 +53,10 @@ class MCTSV3Agent:
     def __init__(
         self,
         seed: int = 42,
-        simulations: int = 10,
+        simulations: int = 25,
         exploration: float = sqrt(2.0),
-        candidate_limit: int = 12,
-        initial_width: int = 4,
+        candidate_limit: int = 16,
+        initial_width: int = 6,
         neighborhood_radius: int = 2,
     ):
         if type(simulations) is not int or simulations <= 0:

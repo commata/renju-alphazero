@@ -66,8 +66,6 @@ def _local_legal_candidates(
             if len(result) >= limit:
                 return result
 
-    # Defensive fallback for sparse/endgame positions or a local pool made
-    # entirely illegal by black forbidden moves.
     if len(result) < limit:
         for move in game.legal_moves():
             if move in seen:
@@ -120,9 +118,6 @@ def _root_candidates_v3(
             if len(result) >= candidate_limit:
                 return result
 
-    # Root tactical validation already paid for the full legal list. If the
-    # local pool is too small, fill from the remaining legal moves cheaply by
-    # center distance instead of re-running neighborhood scoring everywhere.
     center = SIZE // 2
     remaining = [move for move in legal if move not in seen]
     remaining.sort(key=lambda move: (
@@ -193,19 +188,18 @@ def _rollout_v3(
 def mcts_search_v3(
     game: Game,
     *,
-    simulations: int = 10,
+    simulations: int = 25,
     exploration: float = sqrt(2.0),
-    candidate_limit: int = 12,
-    initial_width: int = 4,
+    candidate_limit: int = 16,
+    initial_width: int = 6,
     neighborhood_radius: int = 2,
     random: Random | None = None,
 ) -> Move:
-    """Return a move using a 12-candidate pool with progressive widening.
+    """Return a move using a wider pool and progressive widening.
 
-    V2 capped the tree at eight candidates so ten simulations could revisit
-    children. V3 increases the candidate pool to twelve but does not expand all
-    twelve immediately. Progressive widening exposes only part of the pool at
-    first, preserving UCT revisits under the same ten-simulation budget.
+    V3 uses a 25-simulation budget and up to 16 candidates. It starts with a
+    width of six and exposes more candidates as visits grow, so the larger
+    budget is split between broader move coverage and repeated UCT selection.
     """
     if type(simulations) is not int or simulations <= 0:
         raise ValueError("simulations must be a positive integer")
@@ -237,8 +231,6 @@ def mcts_search_v3(
     for _ in range(simulations):
         node = root
 
-        # Selection can happen even while more candidates remain hidden by
-        # progressive widening.
         while not state.done and not _can_expand(node, initial_width) and node.children:
             node = _select_child(node, exploration)
             assert node.move is not None

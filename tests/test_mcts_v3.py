@@ -29,23 +29,28 @@ def forced_block_position() -> Game:
 
 class MCTSV3Test(unittest.TestCase):
     def test_revision_defaults_are_kept_separate(self):
-        self.assertEqual(MCTSV2Agent().candidate_limit, 8)
+        v2 = MCTSV2Agent()
+        self.assertEqual(v2.simulations, 10)
+        self.assertEqual(v2.candidate_limit, 8)
+
         v3 = MCTSV3Agent()
-        self.assertEqual(v3.simulations, 10)
-        self.assertEqual(v3.candidate_limit, 12)
-        self.assertEqual(v3.initial_width, 4)
+        self.assertEqual(v3.simulations, 25)
+        self.assertEqual(v3.candidate_limit, 16)
+        self.assertEqual(v3.initial_width, 6)
         self.assertEqual(v3.neighborhood_radius, 2)
 
-    def test_progressive_widening_does_not_open_all_twelve_immediately(self):
+    def test_progressive_widening_keeps_revisits_with_larger_pool(self):
         node = MCTSNode(
             parent=None,
             move=None,
             player_just_moved=None,
-            untried_moves=[(0, col) for col in range(12)],
+            untried_moves=[(0, col) for col in range(15)] + [(1, 0)],
         )
-        self.assertEqual(_allowed_children(node, 4), 4)
+        self.assertEqual(_allowed_children(node, 6), 6)
         node.visits = 9
-        self.assertEqual(_allowed_children(node, 4), 7)
+        self.assertEqual(_allowed_children(node, 6), 9)
+        node.visits = 25
+        self.assertEqual(_allowed_children(node, 6), 11)
 
     def test_v3_forced_win_and_block_with_one_simulation(self):
         for game, expected in (
