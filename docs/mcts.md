@@ -239,3 +239,61 @@ V3.2가 오래 걸리는 주된 원인은 현재 코드 구조상 상세 전술 
 - 따라서 25 simulations × 여러 실제 착수 × 최대 32개 상세 후보 분석이 누적되어 V3.1보다 큰 CPU 비용이 발생한다.
 
 이 평가는 코드 경로를 기준으로 한 병목 추정이며, 정확한 함수별 비중은 별도의 cProfile로 확인해야 한다. 현재 로그 기능은 판별 실행 시간까지 남기므로 느린 경기와 긴 경기의 상관관계를 먼저 확인할 수 있다.
+
+
+## V3.2.1 성능 최적화
+
+cProfile 2경기에서 V3.2의 병목이 전술 패턴 평가 중 흑 금수 판정 재귀로 확인됐다.
+
+```text
+전체: 326.928 s
+forbidden_reason: 1,610,077회 / 299.878 s 누적
+_forbidden_after_black_move: 약 197만회 / 298.623 s
+_pattern_features_for_move: 28,420회 / 268.153 s
+_search_candidates_v32: 425회 / 259.587 s
+_open_three: 약 777만회 / 226.442 s
+_straight_four_after_extension: 47,281,480회 / 178.082 s
+```
+
+V3.2.1은 V3.2의 점수와 탐색 파라미터를 유지하되, **후보 우선순위용 가상 extension에서는 재귀 `forbidden_reason()` 호출을 제거**한다.
+
+핵심 원칙:
+
+```text
+실제 후보 수의 합법성
+→ 기존 Game/rules 엔진으로 정확히 검사
+
+후보의 43/44/33 휴리스틱 평가
+→ 주변 방향의 구조만 빠르게 검사
+→ 가상 비승리 extension에서는 재귀 33/44 판정 생략
+→ 흑 장목은 run_length로 즉시 거부
+
+흑 상대 위협의 top-level 후보
+→ forbidden_reason을 후보당 최대 한 번만 호출
+```
+
+흑의 exact-five winning extension은 규칙 엔진과 동일하게 다른 방향의 장목 여부만 확인한다. exact five가 성립하면 삼삼/사사보다 승리가 우선되는 기존 규칙 순서를 그대로 이용한다.
+
+V3.2.1은 별도 `MCTSV321Agent`로 보존한다. 따라서 느린 V3.2와 직접 비교하여 속도와 기력 회귀를 따로 측정할 수 있다.
+
+직접 비교:
+
+```bash
+python scripts/run_mcts_v32_optimization.py --games 1 --simulations 25 --candidate-limit 16 --initial-width 6 --radius 2 --priority-top-k 5 --seed 42
+```
+
+프로파일:
+
+```bash
+python -m cProfile -o v321_profile.prof scripts/run_mcts_v32_optimization.py --games 1 --simulations 25 --candidate-limit 16 --initial-width 6 --radius 2 --priority-top-k 5 --seed 42
+python -m pstats v321_profile.prof
+```
+
+pstats에서:
+
+```text
+sort cumulative
+stats 30
+```
+
+V3.2.1의 첫 성능 목표는 `forbidden_reason`과 `_straight_four_after_extension` 호출 수를 V3.2 대비 크게 줄이는 것이다. 상세 전술 스캐너는 규칙 판정기가 아니라 후보 정렬 휴리스틱이므로, 실제 착수 합법성은 계속 `Game.play()`와 기존 rules 엔진이 최종 보장한다.

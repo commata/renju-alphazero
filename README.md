@@ -130,3 +130,21 @@ logs/
 - CSV 좌표는 0-based(`row0/col0`)와 1-based(`row/col`)를 함께 제공합니다.
 
 필요하면 `--log-dir`로 저장 경로를 지정할 수 있습니다.
+
+
+## MCTS V3.2.1
+
+V3.2.1은 V3.2의 흑 공격형 / 백 방어형·33·44 정책을 유지하면서 cProfile에서 확인된 금수 판정 재귀 병목을 최적화한 버전입니다.
+
+- 실제 MCTS 후보 합법성: 기존 Renju rules로 정확히 검사
+- 43/44/33 후보 순위용 가상 extension: 빠른 구조 스캐너 사용
+- 가상 비승리 extension에서 재귀 `forbidden_reason()` 제거
+- 흑 장목은 빠른 run-length 검사로 제거
+- V3.2는 비교 기준으로 보존
+- V3.1 로그 이름도 `MCTS-v3.1`로 명확하게 수정
+
+V3.2와 V3.2.1 속도/기력 비교:
+
+```bash
+python scripts/run_mcts_v32_optimization.py --games 1 --simulations 25 --candidate-limit 16 --initial-width 6 --radius 2 --priority-top-k 5 --seed 42
+```
