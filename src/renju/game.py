@@ -23,6 +23,18 @@ class Game:
                 if self.board[r][c] == EMPTY and
                 (self.to_play == WHITE or forbidden_reason(self.board, r, c) is None)]
 
+    def has_legal_move(self) -> bool:
+        """Return as soon as one legal move exists without building the full list."""
+        if self.done:
+            return False
+        if self.to_play == WHITE:
+            return any(EMPTY in row for row in self.board)
+        for row in range(SIZE):
+            for col in range(SIZE):
+                if self.board[row][col] == EMPTY and forbidden_reason(self.board, row, col) is None:
+                    return True
+        return False
+
     def play(self, row: int, col: int) -> None:
         if self.done:
             raise IllegalMove("이미 종료된 대국입니다")
@@ -41,7 +53,7 @@ class Game:
             self.done = True
         else:
             self.to_play = -player
-            if not self.legal_moves():
+            if not self.has_legal_move():
                 self.done = True
 
     def undo(self) -> tuple[int, int]:
