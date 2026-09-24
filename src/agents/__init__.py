@@ -7,6 +7,7 @@ from .mcts_agent import (
     MCTSV321Agent,
     MCTSV41Agent,
     MCTSV42Agent,
+    MCTSV5Agent,
 )
 from .random_agent import RandomAgent
 from .tactical_agent import TacticalAgent
@@ -20,6 +21,7 @@ __all__ = [
     "MCTSV321Agent",
     "MCTSV41Agent",
     "MCTSV42Agent",
+    "MCTSV5Agent",
     "RandomAgent",
     "TacticalAgent",
 ]

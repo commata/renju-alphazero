@@ -2,12 +2,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from copy import deepcopy
+from math import isfinite, sqrt
+from random import Random
 
 from renju import BLACK, EMPTY, SIZE, Game, IllegalMove
 from renju.rules import DIRECTIONS, inside
-from .mcts import Move, _is_legal_for_player, _wins_for_player
+from .mcts import (Move, MCTSNode, _is_legal_for_player, _wins_for_player,
+                   _move_score, _backpropagate, _select_child)
+from .mcts_v3 import _neighborhood_pool, _can_expand, _pop_ranked_untried
+from .mcts_v4 import _validate_v4_config
 from .mcts_v321 import (
     _best_immediate_win_fast, _fast_pattern_features_for_move,
+    _search_candidates_v321, _rollout_v321,
     _fast_winning_extensions_in_direction, _v321_move_key,
 )
 
@@ -170,3 +177,158 @@ def _forced_v5_move(game: Game, *, context: _RootContext | None = None) -> Move 
         context.injected = [move for move in danger if move in legal]
         diag.stage5_multi_root_injection = bool(context.injected)
     return None
+
+
+V5_PRESETS = {
+    "a": dict(simulations=50, tactical_simulations=50, tactical_score_threshold=None,
+              exploration=sqrt(2), candidate_limit=20, initial_width=8,
+              neighborhood_radius=2, priority_top_k=8),
+    "b": dict(simulations=80, tactical_simulations=150, tactical_score_threshold=600,
+              exploration=1.0, candidate_limit=20, initial_width=8,
+              neighborhood_radius=2, priority_top_k=8),
+    "c": dict(simulations=80, tactical_simulations=150, tactical_score_threshold=600,
+              exploration=1.0, candidate_limit=14, initial_width=6,
+              neighborhood_radius=2, priority_top_k=6),
+}
+
+
+def _validate_v5_config(*, simulations, tactical_simulations, tactical_score_threshold,
+                        exploration, candidate_limit, initial_width,
+                        neighborhood_radius, priority_top_k):
+    if not isinstance(exploration, (int, float)) or not isfinite(exploration):
+        raise ValueError("exploration must be finite and positive")
+    _validate_v4_config(simulations, exploration, candidate_limit, initial_width,
+                        neighborhood_radius, priority_top_k)
+    if type(tactical_simulations) is not int or tactical_simulations < 1:
+        raise ValueError("tactical_simulations must be a positive integer")
+    if tactical_score_threshold is not None and type(tactical_score_threshold) is not int:
+        raise ValueError("tactical_score_threshold must be None or int")
+
+
+def _root_candidates_v5(game: Game, context: _RootContext, limit: int, radius: int):
+    legal = set(context.legal)
+    local = sorted((m for m in _neighborhood_pool(game, radius) if m in legal),
+                   key=lambda m: _move_score(game, m))
+    seen = set(local)
+    pool = (local + [m for m in context.legal if m not in seen])[:limit * 2]
+    for move in context.injected:
+        if move not in pool:
+            pool.append(move)
+    ranked = sorted(pool, key=lambda m: context.key(game, m))
+    injected = sorted(context.injected, key=lambda m: context.key(game, m))
+    selected = injected + [m for m in ranked[:limit] if m not in injected]
+    best_score = max(-context.keys[m][0] for m in selected)
+    return selected, best_score
+
+
+def mcts_search_v5(
+    game: Game, *, simulations: int = 80, tactical_simulations: int = 150,
+    tactical_score_threshold: int | None = 600, exploration: float = 1.0,
+    candidate_limit: int = 14, initial_width: int = 6,
+    neighborhood_radius: int = 2, priority_top_k: int = 6,
+    random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
+) -> Move:
+    """V3.2.1 search with V5 root policy and an adaptive simulation budget.
+
+    An optional caller-owned diagnostic record avoids process-global state.
+    Forced decisions use zero simulations and have no root tactical score.
+    """
+    _validate_v5_config(
+        simulations=simulations, tactical_simulations=tactical_simulations,
+        tactical_score_threshold=tactical_score_threshold, exploration=exploration,
+        candidate_limit=candidate_limit, initial_width=initial_width,
+        neighborhood_radius=neighborhood_radius, priority_top_k=priority_top_k,
+    )
+    diag = diagnostics if diagnostics is not None else SearchDiagnostics()
+    diag.__dict__.update(vars(SearchDiagnostics()))
+    context = _RootContext(game.legal_moves(), diag)
+    forced = _forced_v5_move(game, context=context)
+    if forced is not None:
+        return forced
+    root_moves, best_score = _root_candidates_v5(
+        game, context, candidate_limit, neighborhood_radius,
+    )
+    tactical = tactical_score_threshold is not None and best_score >= tactical_score_threshold
+    simulations = tactical_simulations if tactical else simulations
+    diag.best_root_tactical_score = best_score
+    diag.selected_simulations = simulations
+    diag.simulation_mode = "tactical" if tactical else "normal"
+    diag.root_candidates = tuple(root_moves)
+    random = random or Random()
+    root = MCTSNode(
+        parent=None,
+        move=None,
+        player_just_moved=None,
+        untried_moves=root_moves[:],
+    )
+    state = deepcopy(game)
+    root_history_length = len(state.history)
+
+    for _ in range(simulations):
+        node = root
+
+        while (
+            not state.done
+            and not _can_expand(node, initial_width)
+            and node.children
+        ):
+            node = _select_child(node, exploration)
+            assert node.move is not None
+            state.play(*node.move)
+
+        if not state.done and _can_expand(node, initial_width):
+            move = _pop_ranked_untried(
+                node,
+                priority_top_k,
+                random,
+            )
+            player = state.to_play
+            state.play(*move)
+            child = MCTSNode(
+                parent=node,
+                move=move,
+                player_just_moved=player,
+                untried_moves=(
+                    []
+                    if state.done
+                    else _search_candidates_v321(
+                        state,
+                        candidate_limit,
+                        neighborhood_radius,
+                    )
+                ),
+            )
+            node.children.append(child)
+            node = child
+
+        winner = (
+            state.winner
+            if state.done
+            else _rollout_v321(
+                state,
+                random,
+                candidate_limit,
+                neighborhood_radius,
+                priority_top_k,
+            )
+        )
+        _backpropagate(node, winner)
+
+        while len(state.history) > root_history_length:
+            state.undo()
+
+    max_visits = max(child.visits for child in root.children)
+    candidates = [
+        child
+        for child in root.children
+        if child.visits == max_visits
+    ]
+    max_value = max(child.mean_value for child in candidates)
+    candidates = [
+        child
+        for child in candidates
+        if child.mean_value == max_value
+    ]
+    chosen = random.choice(candidates)
+    assert chosen.move is not None
+    return chosen.move

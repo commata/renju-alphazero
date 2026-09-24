@@ -308,3 +308,51 @@ class MCTSV42Agent(_MCTSV4Base):
             neighborhood_radius=neighborhood_radius,
             priority_top_k=priority_top_k,
         )
+
+
+_UNSET = object()
+
+
+class MCTSV5Agent:
+    """V5 presets; explicit threshold=None disables adaptive simulations."""
+
+    def __init__(
+        self, seed: int = 42, stage: str = "c", *,
+        simulations: int | None = None, tactical_simulations: int | None = None,
+        tactical_score_threshold: int | None | object = _UNSET,
+        exploration: float | None = None, candidate_limit: int | None = None,
+        initial_width: int | None = None, neighborhood_radius: int | None = None,
+        priority_top_k: int | None = None,
+    ):
+        from search.mcts_v5 import V5_PRESETS, SearchDiagnostics, _validate_v5_config
+
+        if stage not in V5_PRESETS:
+            raise ValueError("stage must be a, b, or c")
+        config = V5_PRESETS[stage].copy()
+        overrides = dict(simulations=simulations, tactical_simulations=tactical_simulations,
+                         exploration=exploration, candidate_limit=candidate_limit,
+                         initial_width=initial_width, neighborhood_radius=neighborhood_radius,
+                         priority_top_k=priority_top_k)
+        config.update({key: value for key, value in overrides.items() if value is not None})
+        if tactical_score_threshold is not _UNSET:
+            config["tactical_score_threshold"] = tactical_score_threshold
+        _validate_v5_config(**config)
+        self.stage = stage
+        self.name = f"MCTS-v5{stage}"
+        for key, value in config.items():
+            setattr(self, key, value)
+        self._random = Random(seed)
+        self.diagnostics = SearchDiagnostics()
+
+    def select_move(self, game: Game) -> tuple[int, int]:
+        from search.mcts_v5 import mcts_search_v5
+
+        return mcts_search_v5(
+            game, simulations=self.simulations,
+            tactical_simulations=self.tactical_simulations,
+            tactical_score_threshold=self.tactical_score_threshold,
+            exploration=self.exploration, candidate_limit=self.candidate_limit,
+            initial_width=self.initial_width, neighborhood_radius=self.neighborhood_radius,
+            priority_top_k=self.priority_top_k, random=self._random,
+            diagnostics=self.diagnostics,
+        )
