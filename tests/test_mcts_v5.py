@@ -1,4 +1,4 @@
-﻿from copy import deepcopy
+from copy import deepcopy
 import unittest
 
 from renju import BLACK, WHITE, Game
@@ -73,9 +73,6 @@ class V5PolicyTest(unittest.TestCase):
         game = position([(7,4),(7,5),(7,6)], [(7,3)])
         self.assertFalse(_is_unstoppable_four(game, BLACK, (7,7)))
 
-
-if __name__ == '__main__':
-    unittest.main()
 
 class V5SearchTest(unittest.TestCase):
     def test_presets_and_explicit_none(self):
@@ -177,3 +174,102 @@ class V5SearchTest(unittest.TestCase):
             result = run_match(black, white, games=2, seed=42)
             self.assertEqual(result.games, 2)
             self.assertTrue(all(r.number_of_moves > 0 for r in result.results))
+
+
+class V5BoundaryTest(unittest.TestCase):
+    def test_temporary_board_restored_on_exception(self):
+        from unittest.mock import patch
+        game = position([(7,6),(7,7),(7,8)])
+        before = deepcopy(vars(game))
+        with patch('search.mcts_v5._placed_completions', side_effect=RuntimeError('probe')):
+            with self.assertRaises(RuntimeError):
+                _four_completions(game, BLACK, (7,5))
+        self.assertEqual(vars(game), before)
+        with patch('search.mcts_v5._winning_moves', side_effect=RuntimeError('probe')):
+            with self.assertRaises(RuntimeError):
+                _is_unstoppable_four(game, BLACK, (7,5))
+        self.assertEqual(vars(game), before)
+
+    def test_root_legal_moves_once_and_diagnostics_reset(self):
+        from unittest.mock import patch
+        from search import mcts_search_v5
+        game = Game()
+        diag = SearchDiagnostics(forced_policy_stage=5, stage5_multi_root_injection=True)
+        with patch.object(game, 'legal_moves', wraps=game.legal_moves) as legal, \
+             patch('search.mcts_v5._search_candidates_v321', return_value=[]), \
+             patch('search.mcts_v5._rollout_v321', return_value=None):
+            mcts_search_v5(game, simulations=1, tactical_simulations=1, diagnostics=diag)
+            self.assertEqual(legal.call_count, 1)
+        self.assertIsNone(diag.forced_policy_stage)
+        self.assertFalse(diag.stage5_multi_root_injection)
+        forced = position([(7,6),(7,7),(7,8)])
+        mcts_search_v5(forced, simulations=1, tactical_simulations=1, diagnostics=diag)
+        self.assertEqual(diag.forced_policy_stage, 3)
+        self.assertEqual(diag.selected_simulations, 0)
+        self.assertIsNone(diag.best_root_tactical_score)
+
+    def test_real_engine_all_completions_and_defenses(self):
+        from search.mcts import _is_legal_for_player, _wins_for_player
+        for game, player, creator in [(trap(WHITE),WHITE,(8,6)),
+                                      (position([(7,6),(7,7),(7,8)]),BLACK,(7,5))]:
+            points = _four_completions(game, player, creator)
+            state = deepcopy(game)
+            state.to_play = player
+            state.play(*creator)
+            self.assertTrue(points)
+            for point in points:
+                self.assertTrue(_is_legal_for_player(state, player, point))
+                self.assertTrue(_wins_for_player(state, player, point))
+                if _is_legal_for_player(state, -player, point):
+                    blocked = deepcopy(state)
+                    blocked.play(*point)
+                    winning = [p for p in blocked.legal_moves()
+                               if _wins_for_player(blocked, player, p)]
+                    self.assertTrue(winning)
+
+    def test_script_defaults_and_threshold_cli(self):
+        from scripts.run_mcts_v5_vs_v41 import make_parser
+        parser = make_parser()
+        self.assertEqual(parser.parse_args([]).games, 1)
+        args = parser.parse_args(['--stage','b','--tactical-score-threshold','none'])
+        self.assertIsNone(args.tactical_score_threshold)
+
+
+
+class V5RunnerTest(unittest.TestCase):
+    def test_early_draw_disabled_by_default(self):
+        from scripts.run_mcts_v5_vs_v41 import make_parser
+        self.assertFalse(make_parser().parse_args([]).early_draw)
+
+    def test_early_draw_boundary_streak_reset_and_state(self):
+        from scripts.run_mcts_v5_vs_v41 import EarlyDrawTracker
+        tracker = EarlyDrawTracker()
+        game = Game()
+        game.history = [(0,0)] * 99
+        self.assertFalse(tracker.update(game))
+        for ply in range(100,109):
+            game.history = [(0,0)] * ply
+            self.assertFalse(tracker.update(game))
+        game.history.append((0,0))
+        before = deepcopy(vars(game))
+        self.assertTrue(tracker.update(game))
+        self.assertEqual(vars(game), before)
+        for player in (BLACK,WHITE):
+            game.board[7][5:8] = [player]*3
+            self.assertFalse(tracker.update(game))
+            self.assertEqual(tracker.streak, 0)
+        game.board[7][5:8] = [0]*3
+        game.done = True
+        self.assertFalse(tracker.update(game))
+
+    def test_last_threat_classification(self):
+        from evaluation.match import GameResult
+        from scripts.run_mcts_v5_vs_v41 import last_threat
+        history = ((7,5),(0,0),(7,6),(0,1),(7,7),(1,0),(7,8),(7,4),(7,9))
+        result = GameResult(BLACK, len(history), 0, 'b', 'w', history)
+        self.assertEqual(last_threat(result)['type'], 'open_four')
+        self.assertEqual(last_threat(result)['creator_ply'], 7)
+
+
+if __name__ == '__main__':
+    unittest.main()

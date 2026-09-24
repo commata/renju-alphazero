@@ -1,4 +1,4 @@
-﻿"""V5 vs V4.1: one game per color by default; diagnostics live in summary.json."""
+"""V5 vs V4.1: one game per color by default; diagnostics live in summary.json."""
 from __future__ import annotations
 
 import argparse
@@ -16,7 +16,7 @@ from renju import BLACK, WHITE, Game, IllegalMove
 from renju.rules import DIRECTIONS
 from search.mcts import _is_legal_for_player
 from search.mcts_v321 import _fast_winning_extensions_in_direction
-from search.mcts_v5 import V5_PRESETS, _four_completions
+from search.mcts_v5 import V5_PRESETS, _four_completions, _threat_windows
 
 
 def last_threat(result: GameResult) -> dict:
@@ -51,8 +51,25 @@ def last_threat(result: GameResult) -> dict:
         game.board[move[0]][move[1]] = 0
 
 
+class EarlyDrawTracker:
+    """Optional script-only termination; never changes Game terminal flags."""
+
+    def __init__(self):
+        self.streak = 0
+
+    def update(self, game: Game) -> bool:
+        if game.done or len(game.history) < 100:
+            self.streak = 0
+        elif any(next(_threat_windows(game, player), None) is not None
+                 for player in (BLACK, WHITE)):
+            self.streak = 0
+        else:
+            self.streak += 1
+        return self.streak >= 10
+
+
 def run_color(black_factory, white_factory, games: int, seed: int, records: list,
-              decisions: list) -> MatchResult:
+              decisions: list, early_draw: bool = False) -> MatchResult:
     random = Random(seed)
     results = []
     pairs = [(black_factory(random.getrandbits(64)), white_factory(random.getrandbits(64)))
@@ -60,6 +77,8 @@ def run_color(black_factory, white_factory, games: int, seed: int, records: list
     started = perf_counter()
     for black, white in pairs:
         game = Game()
+        tracker = EarlyDrawTracker() if early_draw else None
+        early_reason = None
         game_id = len(records) + 1
         game_started = perf_counter()
         while not game.done:
@@ -76,11 +95,14 @@ def run_color(black_factory, white_factory, games: int, seed: int, records: list
                 record.update(asdict(agent.diagnostics))
             decisions.append(record)
             game.play(*move)
+            if tracker is not None and tracker.update(game):
+                early_reason = 'no_unblocked_three_window_for_10_plies_at_ply_ge_100'
+                break
         result = GameResult(game.winner, len(game.history), perf_counter() - game_started,
                             black.name, white.name, tuple(game.history))
         results.append(result)
         records.append(dict(game_id=game_id, winner=game.winner, moves=len(game.history),
-                            seconds=result.elapsed_seconds, early_draw_reason=None,
+                            seconds=result.elapsed_seconds, early_draw_reason=early_reason,
                             last_threat=last_threat(result)))
         print(f'Game {game_id}: {black.name} Black vs {white.name} White; '
               f'winner={game.winner}; moves={len(game.history)}; '
@@ -123,6 +145,7 @@ def summarize(matches, records, decisions) -> dict:
                                  max=max(scores) if scores else None,
                                  avg=sum(scores)/len(scores) if scores else None),
         agent_timing=times, last_threat_counts=dict(Counter(r['last_threat']['type'] for r in records)),
+        early_draw_count=sum(r['early_draw_reason'] is not None for r in records),
         game_details=records, decisions=decisions,
     )
 
@@ -137,6 +160,7 @@ def make_parser():
     parser.add_argument('--stage', choices=('a','b','c'), default='c')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--log-dir', type=Path)
+    parser.add_argument('--early-draw', action='store_true', help='optional draw heuristic; default OFF')
     for key in V5_PRESETS['c']:
         kind = threshold_value if key == 'tactical_score_threshold' else float if key == 'exploration' else int
         parser.add_argument('--' + key.replace('_','-'), type=kind, default=argparse.SUPPRESS)
@@ -153,7 +177,7 @@ def main():
         template = MCTSV5Agent(stage=args.stage, **overrides)
     except ValueError as exc:
         parser.error(str(exc))
-    config = dict(seed=args.seed, games_per_color=args.games, stage=args.stage,
+    config = dict(seed=args.seed, games_per_color=args.games, stage=args.stage, early_draw=args.early_draw,
                   v5={key: getattr(template, key) for key in V5_PRESETS['c']},
                   v41=dict(simulations=50, exploration=2**0.5, candidate_limit=20,
                            initial_width=8, neighborhood_radius=2, priority_top_k=8))
@@ -163,7 +187,7 @@ def main():
     records, decisions, matches = [], [], []
     for label, black, white in [('v5_black_vs_v41_white', factory, MCTSV41Agent),
                                 ('v41_black_vs_v5_white', MCTSV41Agent, factory)]:
-        matches.append((label, run_color(black, white, args.games, args.seed, records, decisions)))
+        matches.append((label, run_color(black, white, args.games, args.seed, records, decisions, args.early_draw)))
         save_match_logs(log_dir, matches, config)
         summary = summarize(matches, records, decisions)
         (log_dir / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf-8')
