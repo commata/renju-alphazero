@@ -40,11 +40,15 @@ def _window_candidates(game: Game, player: int, minimum: int = 3) -> list[Move]:
     })
 
 
-def _winning_moves(game: Game, player: int) -> list[Move]:
+def _winning_moves(
+    game: Game, player: int, candidates: list[Move] | None = None,
+    legal: set[Move] | None = None,
+) -> list[Move]:
     return [
-        move for move in _window_candidates(game, player, 4)
-        if _wins_for_player(game, player, move)
-        and _is_legal_for_player(game, player, move)
+        move for move in (candidates if candidates is not None else _window_candidates(game, player, 4))
+        if game.board[move[0]][move[1]] == EMPTY
+        and _wins_for_player(game, player, move)
+        and (move in legal if legal is not None else _is_legal_for_player(game, player, move))
     ]
 
 
@@ -67,16 +71,20 @@ def _four_completions(game: Game, player: int, move: Move) -> set[Move]:
         game.board[r][c] = EMPTY
 
 
-def _is_unstoppable_four(game: Game, player: int, move: Move) -> bool:
+def _is_unstoppable_four(
+    game: Game, player: int, move: Move, *, assume_legal: bool = False,
+    opponent_win_candidates: list[Move] | None = None,
+) -> bool:
     r, c = move
-    if not inside(r, c) or not _is_legal_for_player(game, player, move):
+    if (not inside(r, c) or game.board[r][c] != EMPTY
+            or (not assume_legal and not _is_legal_for_player(game, player, move))):
         return False
     completions = _four_completions(game, player, move)
     if not completions:
         return False
     game.board[r][c] = player
     try:
-        if _winning_moves(game, -player):
+        if _winning_moves(game, -player, opponent_win_candidates):
             return False
         for block in sorted(completions):
             if not _is_legal_for_player(game, -player, block):
@@ -93,9 +101,22 @@ def _is_unstoppable_four(game: Game, player: int, move: Move) -> bool:
         game.board[r][c] = EMPTY
 
 
-def _unstoppable_four_moves(game: Game, player: int) -> list[Move]:
-    return [move for move in _window_candidates(game, player)
-            if _is_unstoppable_four(game, player, move)]
+def _unstoppable_four_moves(
+    game: Game, player: int, *, legal: set[Move] | None = None,
+) -> list[Move]:
+    candidates = _window_candidates(game, player)
+    if not candidates:
+        return []
+    # Placing our stone cannot create a new opponent-only five-cell window.
+    # Cache only this structural superset; test occupancy and exact legality
+    # on the changed board for each creator.
+    opponent_candidates = _window_candidates(game, -player, 4)
+    return [move for move in candidates
+            if (legal is None or move in legal)
+            and _is_unstoppable_four(
+                game, player, move, assume_legal=legal is not None,
+                opponent_win_candidates=opponent_candidates,
+            )]
 
 
 @dataclass
@@ -113,9 +134,9 @@ class _RootContext:
     legal: list[Move]
     diagnostics: SearchDiagnostics
     injected: list[Move] = field(default_factory=list)
-    keys: dict = field(default_factory=dict)
+    keys: dict[Move, tuple[int, int, int, int, int]] = field(default_factory=dict)
 
-    def key(self, game: Game, move: Move):
+    def key(self, game: Game, move: Move) -> tuple[int, int, int, int, int]:
         if move not in self.keys:
             self.keys[move] = _v321_move_key(game, move)
         return self.keys[move]
@@ -123,7 +144,15 @@ class _RootContext:
 
 def _double_threat_moves(game: Game, player: int) -> list[Move]:
     result = []
-    for move in _window_candidates(game, player, 2):
+    directions: dict[Move, set[Move]] = {}
+    for window in _threat_windows(game, player, 2):
+        direction = (window[1][0] - window[0][0], window[1][1] - window[0][1])
+        for r, c in window:
+            if game.board[r][c] == EMPTY:
+                directions.setdefault((r, c), set()).add(direction)
+    # Each qualifying double threat requires two different directions, each
+    # with at least two existing stones. Single-axis patterns cannot qualify.
+    for move in sorted(m for m, axes in directions.items() if len(axes) >= 2):
         features = _fast_pattern_features_for_move(game, player, move)
         if features.legal and (features.open_three_directions >= 2
                                or features.four_directions >= 2
@@ -139,7 +168,7 @@ def _forced_v5_move(game: Game, *, context: _RootContext | None = None) -> Move 
     legal = set(context.legal)
     player = game.to_play
     diag = context.diagnostics
-    own_wins = _winning_moves(game, player)
+    own_wins = _winning_moves(game, player, legal=legal)
     if own_wins:
         diag.forced_policy_stage = 1
         return _best_immediate_win_fast(game, player, own_wins)
@@ -147,15 +176,16 @@ def _forced_v5_move(game: Game, *, context: _RootContext | None = None) -> Move 
     if blocks:
         diag.forced_policy_stage = 2
         return min(blocks, key=lambda move: context.key(game, move))
-    own = _unstoppable_four_moves(game, player)
+    own = _unstoppable_four_moves(game, player, legal=legal)
     if own:
         diag.forced_policy_stage = 3
         return min(own, key=lambda move: context.key(game, move))
     creators = _unstoppable_four_moves(game, -player)
     if creators:
-        defenses = set(creators)
+        creator_set = set(creators)
+        defenses = creator_set.copy()
         for window in _threat_windows(game, -player):
-            if set(creators).intersection(window):
+            if creator_set.intersection(window):
                 defenses.update(pos for pos in window if game.board[pos[0]][pos[1]] == EMPTY)
         defenses &= legal
         if defenses:

@@ -271,5 +271,121 @@ class V5RunnerTest(unittest.TestCase):
         self.assertEqual(last_threat(result)['creator_ply'], 7)
 
 
+
+class V5OracleTest(unittest.TestCase):
+    def test_bounded_wins_match_exhaustive_engine(self):
+        from search.mcts import _wins_for_player
+        from search.mcts_v5 import _winning_moves
+        games = [trap(BLACK), trap(WHITE),
+                 position([(7,3),(7,4),(7,5),(7,6),(5,7),(6,7),(8,7),(9,7),(10,7)]),
+                 position(white=[(7,3),(7,4),(7,5),(7,7),(7,8)], player=WHITE)]
+        for game in games:
+            for player in (BLACK,WHITE):
+                game.to_play = player
+                expected = [m for m in game.legal_moves() if _wins_for_player(game,player,m)]
+                self.assertEqual(_winning_moves(game, player), expected)
+
+    def test_forbidden_creator_is_not_double_threat(self):
+        from search.mcts_v5 import _double_threat_moves
+        game = position([(7,5),(7,6),(5,7),(6,7)])
+        self.assertNotIn((7,7), _double_threat_moves(game, BLACK))
+
+    def test_non_creator_defense_minimizes_remaining_threats(self):
+        from search.mcts_v5 import _threat_windows
+        game = position(white=[(7,6),(7,7),(7,8)])
+        creators = _unstoppable_four_moves(game, WHITE)
+        legal = set(game.legal_moves())
+        defenses = set(creators)
+        for window in _threat_windows(game, WHITE):
+            if set(creators).intersection(window):
+                defenses.update(p for p in window if game.board[p[0]][p[1]] == 0)
+        counts = {}
+        for move in defenses & legal:
+            state = deepcopy(game)
+            state.play(*move)
+            counts[move] = len(_unstoppable_four_moves(state, WHITE))
+        chosen = _forced_v5_move(game)
+        self.assertEqual(counts[chosen], min(counts.values()))
+
+    def test_summary_and_log_schema_without_matches(self):
+        import json
+        import csv
+        from dataclasses import asdict
+        from tempfile import TemporaryDirectory
+        from pathlib import Path
+        from evaluation.match import GameResult, MatchResult
+        from evaluation import save_match_logs
+        from scripts.run_mcts_v5_vs_v41 import summarize
+        result = GameResult(None, 1, 0.1, 'MCTS-v5a', 'MCTS-v4.1', ((7,7),))
+        match = MatchResult(1,0,0,1,1,1,0.1,10,(result,),42)
+        records = [dict(last_threat=dict(type='other'), early_draw_reason=None)]
+        decisions = [dict(agent='MCTS-v5a', seconds=0.1,
+                          **asdict(SearchDiagnostics(forced_policy_stage=3)))]
+        summary = summarize([('test',match)], records, decisions)
+        self.assertEqual(summary['forced_stage_3'],1)
+        self.assertEqual(summary['draws'],1)
+        self.assertIsNone(summary['best_tactical_score']['avg'])
+        with TemporaryDirectory() as directory:
+            save_match_logs(directory, [('test',match)], {})
+            payload = json.loads((Path(directory)/'games.json').read_text(encoding='utf-8'))
+            self.assertEqual(set(payload), {'config','matches','games'})
+            with (Path(directory)/'moves.csv').open(encoding='utf-8-sig', newline='') as stream:
+                self.assertEqual(next(csv.reader(stream)),
+                                 ['game_id','matchup','matchup_game','ply','player','row0','col0','row','col'])
+
+
+
+class V5AgentTacticsTest(unittest.TestCase):
+    def test_agent_end_to_end_required_positions(self):
+        from agents import MCTSV5Agent
+        cases = [(trap(WHITE), {(8,6)}, 3), (trap(BLACK), {(8,6)}, 4),
+                 (position([(10,10),(10,11),(11,10)],[(7,5),(7,6),(5,7),(6,7)]), {(7,7)}, 5),
+                 (position([(7,6),(7,7),(7,8)],[(3,3),(3,4),(4,3)]), {(7,5),(7,9)}, 3),
+                 (position(white=[(7,6),(7,7),(7,8)]), {(7,5),(7,9)}, 4),
+                 (position([(4,c) for c in range(3,7)],[(7,6),(7,7),(7,8)]), {(4,2),(4,7)}, 1)]
+        for stage in ('a','b','c'):
+            for game, expected, forced_stage in cases:
+                with self.subTest(stage=stage, forced_stage=forced_stage):
+                    before = deepcopy(vars(game))
+                    agent = MCTSV5Agent(stage=stage, simulations=1, tactical_simulations=1)
+                    self.assertIn(agent.select_move(game), expected)
+                    self.assertEqual(agent.diagnostics.forced_policy_stage, forced_stage)
+                    self.assertEqual(vars(game), before)
+
+
+
+class V5OptimizationTest(unittest.TestCase):
+    def test_direction_prefilter_matches_original_candidates(self):
+        from search.mcts_v5 import _window_candidates, _double_threat_moves
+        from search.mcts_v321 import _fast_pattern_features_for_move
+        from random import Random
+        games = [trap(BLACK), trap(WHITE),
+                 position(white=[(7,5),(7,6),(5,7),(6,7)]),
+                 position(white=[(7,4),(7,5),(7,6),(4,7),(5,7),(6,7)])]
+        random = Random(9)
+        for _ in range(5):
+            cells = random.sample([(r,c) for r in range(15) for c in range(15)], 50)
+            games.append(position(cells[:25],cells[25:]))
+        for game in games:
+            for player in (BLACK,WHITE):
+                expected = []
+                for move in _window_candidates(game, player, 2):
+                    f = _fast_pattern_features_for_move(game, player, move)
+                    if f.legal and (f.open_three_directions >= 2 or f.four_directions >= 2 or f.has_four_three):
+                        expected.append(move)
+                self.assertEqual(_double_threat_moves(game, player), expected)
+
+    def test_cached_counterwin_candidates_recheck_black_legality(self):
+        from search.mcts_v5 import _window_candidates, _winning_moves
+        game = position([(7,3),(7,4),(7,5),(7,6),(5,7),(6,7),(8,7),(9,7),(10,7)])
+        candidates = _window_candidates(game, BLACK, 4)
+        self.assertIn((7,7), candidates)
+        self.assertNotIn((7,7), _winning_moves(game, BLACK))
+        # A white creator can occupy another black candidate; the cached
+        # structural pool must skip occupied points and recheck all survivors.
+        game.board[7][2] = WHITE
+        self.assertEqual(_winning_moves(game, BLACK, candidates), _winning_moves(game, BLACK))
+
+
 if __name__ == '__main__':
     unittest.main()
