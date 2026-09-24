@@ -297,3 +297,210 @@ stats 30
 ```
 
 V3.2.1의 첫 성능 목표는 `forbidden_reason`과 `_straight_four_after_extension` 호출 수를 V3.2 대비 크게 줄이는 것이다. 상세 전술 스캐너는 규칙 판정기가 아니라 후보 정렬 휴리스틱이므로, 실제 착수 합법성은 계속 `Game.play()`와 기존 rules 엔진이 최종 보장한다.
+
+## V4 기준 정책과 V5
+
+V4.1/V4.2는 기존 구현 그대로 유지한다. V4는 내 즉시 승리, 상대 즉시 승리 차단,
+상대 열린4 생성점 차단 순으로 강제수를 선택한 뒤 V3.2.1을 호출한다.
+V4.1은 50 simulations / 후보 20 / 초기 폭 8 / top-k 8,
+V4.2는 50 / 24 / 10 / 10이다. 두 버전 모두 radius 2, exploration sqrt(2)다.
+
+### V5의 목적과 unstoppable four
+
+V4의 열린4 방어만으로는 백의 사사, 흑 금수점에 완성점이 있는 백 4,
+한 수로 생성되는 복수 위협을 충분히 예방하지 못한다. V5는 이 위협을 먼저
+만들거나 상대가 만들기 전에 방어하는 별도 root 정책이다.
+`src/renju/` 및 V2~V4.2의 정책과 rollout은 수정하지 않는다.
+
+수 하나를 놓은 뒤 다음 조건을 모두 만족하면 unstoppable four로 정의한다.
+
+1. 상대의 합법적인 즉시 승리가 없다.
+2. 방금 놓은 돌을 포함하는 라인에 다음 수 승리 완성점 S가 있다.
+3. 상대가 S의 합법적인 칸을 하나씩 막아 보아도 내 승리 완성점이 남는다.
+   S 전부가 상대 흑에게 금수여도 해당한다.
+
+흑은 정확히 5목이며, 다른 방향에 장목을 만드는 완성점은 제외한다.
+백은 5목 이상이다. 생성수와 흑 방어수의 합법성은 기존 규칙 엔진으로 확인한다.
+임시 board 변경은 `try/finally`로 복구한다. 후보는 4방향의 길이 5 window 중
+내 돌 3개 이상, 상대 돌 0개인 window의 빈칸으로 한정한다.
+
+### V5 강제 정책: Stage 1~6
+
+1. **Own immediate win**: 내 즉시 승리. 백 승리점 동률은 긴 run 우선.
+2. **Immediate block**: 상대 승리점 중 내게 합법인 수를 방어한다.
+   모두 흑 금수이면 불법수를 반환하지 않고 다음 단계로 진행한다.
+3. **Own unstoppable four**: 내 unstoppable creator를 선택한다.
+4. **Prevent opponent unstoppable four**: 상대 creator와 관련 5칸 window의
+   합법 빈칸을 방어 후보로 검사한다. 착수 후 상대 creator가 가장 적게 남는 수를 택한다.
+5. **Double-threat prevention**: 빠른 패턴 검사로 열린3 2방향 이상, 4 2방향 이상,
+   또는 43을 만드는 상대 수를 찾는다. 흑 creator는 실제 합법이어야 한다.
+   정확히 1개이고 내게 합법이면 점유한다. 2개 이상이면 합법적인 모든 creator를
+   MCTS root 후보 앞에 주입하고 candidate limit 초과를 허용한다.
+6. **MCTS**: V3.2.1의 progressive widening, top-k 순위 가중 확장,
+   종국까지 rollout, 최대 visits → mean value 동률 해소를 유지한다.
+
+전술 동률은 `_v321_move_key`를 사용한다. Stage 5는 후보 순위용 빠른 구조 휴리스틱을
+사용하므로 가상 열린3 extension까지 재귀 규칙 검사를 하는 증명 탐색은 아니다.
+실제 흑 착수의 합법성은 정확히 확인한다.
+
+### Adaptive simulations와 프리셋
+
+root 후보 정렬 때 계산한 전술 점수를 재사용한다. 최댓값이 threshold 이상이면
+`tactical_simulations`, 아니면 `simulations`를 적용한다. `None`은 적응형 전환 OFF다.
+
+| 설정 | V5a | V5b | V5c (기본) |
+| --- | ---: | ---: | ---: |
+| simulations | 50 | 80 | 80 |
+| tactical_simulations | 50 | 150 | 150 |
+| tactical_score_threshold | None | 600 | 600 |
+| exploration | sqrt(2) | 1.0 | 1.0 |
+| candidate_limit | 20 | 20 | 14 |
+| initial_width | 8 | 8 | 6 |
+| neighborhood_radius | 2 | 2 | 2 |
+| priority_top_k | 8 | 8 | 6 |
+
+V5a는 V4.1과 동일한 탐색 파라미터로 정책 효과를 분리한다.
+
+```python
+from agents import MCTSV5Agent
+
+agent = MCTSV5Agent(stage="c", seed=42, tactical_score_threshold=None)
+move = agent.select_move(game)
+print(agent.diagnostics)
+```
+
+각 생성자 파라미터를 override할 수 있다. `tactical_score_threshold=None`도 명시적으로
+override된다. `mcts_search_v5(..., diagnostics=SearchDiagnostics())`로도 진단을 수집한다.
+강제수는 `forced_policy_stage=1..5`, `selected_simulations=0`, tactical score는 `None`이다.
+일반 탐색은 forced stage가 `None`이며 `simulation_mode`로 normal/tactical을 구분한다.
+진단은 호출자/에이전트 소유이며 전역 random이나 전역 진단 상태를 사용하지 않는다.
+
+### 2판 smoke와 profile
+
+`--games`는 **색상별 판수**이고 기본값은 1이다. 다음 명령 하나는 총 2판이다.
+V5a 흑 vs V4.1 백 1판, V4.1 흑 vs V5a 백 1판을 실행한다.
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/run_mcts_v5_vs_v41.py --stage a --games 1 --seed 42
+python -m cProfile -o v5_profile_before.prof scripts/run_mcts_v5_vs_v41.py --stage a --games 1 --seed 42
+python -c "import pstats; pstats.Stats('v5_profile_before.prof').strip_dirs().sort_stats('cumtime').print_stats(50)"
+```
+
+최적화 후에도 동일 조건으로 측정한다.
+
+```bash
+python scripts/run_mcts_v5_vs_v41.py --stage a --games 1 --seed 42
+python -m cProfile -o v5_profile_after.prof scripts/run_mcts_v5_vs_v41.py --stage a --games 1 --seed 42
+python -c "import pstats; pstats.Stats('v5_profile_after.prof').strip_dirs().sort_stats('cumtime').print_stats(50)"
+```
+
+일반 smoke와 cProfile은 각각 실제 2판을 실행한다. 따라서 전후 smoke/profile을 모두
+실행하면 2판 × 4회 = 8판이다. unit test의 simulations=1 RandomAgent 회귀는 별도다.
+2판은 불법 착수, crash, 로그, 정책·진단 동작 확인용이며 기력 결론을 내리지 않는다.
+
+기존 `games.csv`, `moves.csv`, `games.json` 스키마를 그대로 사용한다.
+추가 `summary.json`에는 승수, 색상별 승수, 수·시간, 에이전트별 초/수,
+강제 stage 횟수, 복수 주입, normal/tactical decision 횟수, root score min/max/avg,
+착수별 진단, 마지막 위협 유형을 기록한다.
+마지막 위협은 승리 착수 직전의 승자 이전 착수로 정의하고, 패자의 방어 전 국면에서
+열린4 → 사사 → 금수점 4 → 기타 순서로 분류한다. 무승부는 기타로 기록한다.
+이는 마지막 구조 분류이며 전체 승리 원인의 증명은 아니다.
+
+### 선택적 Early Draw
+
+기본 **OFF**. `--early-draw`를 명시하면 100수 이상에서 양쪽 모두 상대 돌 0개,
+내 돌 3개 이상인 5칸 window가 없는 상태가 10수 연속될 때 스크립트가 무승부로
+종료한다. 규칙 엔진의 `done`/`winner`를 변경하지 않는다. 사유는 summary에만 기록한다.
+이것은 비교 시간 단축용 휴리스틱이며 공식 무승부 판정이나 게임 이론적 증명이 아니다.
+
+### 사용자 장기 벤치마크
+
+아래 명령은 사용자가 별도로 실행할 때 총 100판을 수행한다.
+이번 구현 작업에서는 실행하지 않는다.
+
+```bash
+python scripts/run_mcts_v5_vs_v41.py --stage a --games 50 --seed 42
+```
+
+V5b/V5c 실전 비교와 early draw ON 비교도 사용자가 별도로 실행한다.
+CLI에서 `--simulations`, `--tactical-simulations`, `--tactical-score-threshold`,
+`--exploration`, `--candidate-limit`, `--initial-width`, `--neighborhood-radius`,
+`--priority-top-k`는 V5 설정을 override한다. V4.1은 기준 프리셋을 유지한다.
+threshold를 끄려면 `--tactical-score-threshold none`을 사용한다.
+
+
+### V5 ?? ?? ??? ??
+
+? 2? profile?? V5 ?? ?? ??? ?? ?? ?? ??? window ????
+???? ?? ??? ????.
+
+- Stage 5 ?? ?? ??? ?? 2???? ?? ?? ? 2? ??? ?? ????
+  ????. ?? ?? ??? 33/44/43 ??? ??? ? ??.
+- ?? ??? unstoppable creator?? ??? ? ?? ?? ?? window? ? ??
+  ????. ?? ?? ? ? ??? ?? ??? ??? ???? ?? ????.
+- root?? ?? ??? ? ??? ??? ? ?? ??? unstoppable ??? ?????.
+- root ??? ?? ??? adaptive threshold ?? ??? ?????.
+
+?? ?? ???? ??? ???, ??? ?? ???? ??, ?? seed ?? ???
+?? ?? ??? ????. ?? V3.2.1 tree/rollout? ?? ??? ???? ???.
+
+
+### V5 ?? ?? ?? ?? (seed 42)
+
+?? `python -m unittest discover -s tests -v`: **96? PASS**.
+
+?? A/C/E, V4 ?? ??, ???, ???global random ??, ?? ??,
+RandomAgent ?? ?? 2??(simulations=1), root ??, ?? ??? ??? ????.
+
+?? ??? V5a ?? 1?? smoke ?/?? cProfile ?/? ?? ? ?? ????.
+?? early draw OFF??, ? ??? 167? ?? ??? ??? ??? ????.
+
+| Smoke | V5a ? vs V4.1 ? | V4.1 ? vs V5a ? | ? ?? | ?/? |
+| --- | --- | --- | ---: | ---: |
+| ??? ? | ? ?, 110? | ? ?, 57? | 229.492 | 1.374 |
+| ??? ? | ? ?, 110? | ? ?, 57? | 211.258 | 1.265 |
+
+IllegalMove/crash ??. V5a 0?, V4.1 2??? ?? ??? ?? ???.
+V5 Stage 3/4/5-single: **0/11/8**, Stage 5 multi ??: **2**.
+normal/tactical ?? decision: **41/0**. root score min/max/avg: **0/2344/1588.683**.
+??? ?? ??: ?? 1, ??4 1.
+
+?? ??? cProfile ?? ?????. ?? ??? ?? ????? ?? ??? ???.
+
+| ?? | ? | ? |
+| --- | ---: | ---: |
+| ?? ?? ? | 927,635,340 | 926,549,751 |
+| ?? cProfile ??(s) | 1278.537 | 519.323 |
+| ?? cProfile ?? / 167?(s) | 7.656 | 3.110 |
+| `mcts_search_v5` (?? / ?? s) | 83 / 1008.855 | 83 / 213.042 |
+| `_forced_v5_move` (?? / ?? s) | 83 / 1.018 | 83 / 0.495 |
+| `_unstoppable_four_moves` (?? / ?? s) | 165 / 0.469 | 165 / 0.321 |
+| `_is_unstoppable_four` (?? / ?? s) | 713 / 0.416 | 709 / 0.218 |
+| `_four_completions` (?? / ?? s) | 711 / 0.043 | 711 / 0.045 |
+| `forbidden_reason` (?? / ?? s) | 1,388,496 / 1060.856 | 1,388,044 / 272.197 |
+| `legal_moves` (?? / ?? s) | 585 / 833.488 | 585 / 11.202 |
+| `_double_threat_moves` (?? / ?? s) | 49 / 0.457 | 49 / 0.070 |
+| `_window_candidates` (?? / ?? s) | 1,083 / 0.319 | 450 / 0.164 |
+| `deepcopy` (?? / ?? s) | 97,400 / 0.214 | 97,400 / 0.252 |
+
+**?? ???:** ??? ? profile? 2?? ?? 2?(V5a ?) ? ???
+828.772?? ????. ??? ???? ????, ?? ?? ??? ????
+?? ??? ???? ???. ?? ??? ??? ?? ?? ???? ?? ???.
+
+?? ??? 1,085,589? ????. Stage 5 ?? ?? ???
+1,440 ? 158?, window ?? ??? 1,083 ? 450?, ?? ??? 452? ????.
+V5 ?? ?? ?? ??? 1.018 ? 0.495??.
+?? V3.2.1 tree/rollout? ????? ??? ??? ?? ????.
+
+?? smoke?? V5a/V4.1 ?? ?? ??? ? 1.135, ? 0.714??.
+???? +25% ?? ????, ? ??? ????????? ?? ??? ???
+??? ?? ??? ???? ?? ?? ????? ??? ????? ???.
+
+?? profile: `v5_profile_before.prof`, `v5_profile_after.prof`.
+?? ??: `logs/v5_smoke_before`, `logs/v5_profile_before`,
+`logs/v5_smoke_after`, `logs/v5_profile_after`.
+`logs/`? ?? gitignore? ?? ??? ????.
+
+10? ?? ?? ??, 50? ??, 100? ??, V5a/b/c ?? ??? ???.
+??? ?? ???? ??? ?? ????.
