@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from functools import lru_cache
 from math import sqrt
 from random import Random
 
@@ -19,6 +20,16 @@ from .mcts import (
 )
 
 
+@lru_cache(maxsize=None)
+def _neighborhood_cells(row: int, col: int, radius: int) -> tuple[Move, ...]:
+    """Return immutable clipped neighborhood geometry for one board cell."""
+    return tuple(
+        (rr, cc)
+        for rr in range(max(0, row - radius), min(SIZE, row + radius + 1))
+        for cc in range(max(0, col - radius), min(SIZE, col + radius + 1))
+    )
+
+
 def _neighborhood_pool(game: Game, radius: int) -> list[Move]:
     """Return empty cells near existing stones; use a center window on an empty board."""
     occupied = [
@@ -31,17 +42,15 @@ def _neighborhood_pool(game: Game, radius: int) -> list[Move]:
 
     if not occupied:
         center = SIZE // 2
-        for row in range(max(0, center - radius), min(SIZE, center + radius + 1)):
-            for col in range(max(0, center - radius), min(SIZE, center + radius + 1)):
-                if game.board[row][col] == EMPTY:
-                    pool.add((row, col))
+        for row, col in _neighborhood_cells(center, center, radius):
+            if game.board[row][col] == EMPTY:
+                pool.add((row, col))
         return list(pool)
 
     for base_row, base_col in occupied:
-        for row in range(max(0, base_row - radius), min(SIZE, base_row + radius + 1)):
-            for col in range(max(0, base_col - radius), min(SIZE, base_col + radius + 1)):
-                if game.board[row][col] == EMPTY:
-                    pool.add((row, col))
+        for row, col in _neighborhood_cells(base_row, base_col, radius):
+            if game.board[row][col] == EMPTY:
+                pool.add((row, col))
     return list(pool)
 
 

@@ -13,6 +13,31 @@ from renju.rules import DIRECTIONS, forbidden_reason, run_length
 Move = tuple[int, int]
 
 
+def _build_local_score_cells() -> tuple[tuple[tuple[tuple[int, int, int], ...], ...], ...]:
+    """Precompute the radius-2 geometry shared by locality scoring."""
+    rows = []
+    for row in range(SIZE):
+        cols = []
+        for col in range(SIZE):
+            cells = []
+            for rr in range(max(0, row - 2), min(SIZE, row + 3)):
+                for cc in range(max(0, col - 2), min(SIZE, col + 3)):
+                    cells.append((rr, cc, max(abs(rr - row), abs(cc - col))))
+            cols.append(tuple(cells))
+        rows.append(tuple(cols))
+    return tuple(rows)
+
+
+_LOCAL_SCORE_CELLS = _build_local_score_cells()
+_CENTER_DISTANCE = tuple(
+    tuple(
+        abs(row - SIZE // 2) + abs(col - SIZE // 2)
+        for col in range(SIZE)
+    )
+    for row in range(SIZE)
+)
+
+
 @dataclass(slots=True)
 class MCTSNode:
     """One state in the search tree.
@@ -57,18 +82,15 @@ def _move_score(game: Game, move: Move) -> tuple[int, int, int, int]:
     """Rank local moves without changing legality or game rules."""
     row, col = move
     score = 0
-    for rr in range(max(0, row - 2), min(SIZE, row + 3)):
-        for cc in range(max(0, col - 2), min(SIZE, col + 3)):
-            stone = game.board[rr][cc]
-            if stone == EMPTY:
-                continue
-            distance = max(abs(rr - row), abs(cc - col))
-            if distance == 1:
-                score += 6 if stone == game.to_play else 5
-            elif distance == 2:
-                score += 2 if stone == game.to_play else 1
-    center_distance = abs(row - SIZE // 2) + abs(col - SIZE // 2)
-    return (-score, center_distance, row, col)
+    for rr, cc, distance in _LOCAL_SCORE_CELLS[row][col]:
+        stone = game.board[rr][cc]
+        if stone == EMPTY:
+            continue
+        if distance == 1:
+            score += 6 if stone == game.to_play else 5
+        elif distance == 2:
+            score += 2 if stone == game.to_play else 1
+    return (-score, _CENTER_DISTANCE[row][col], row, col)
 
 
 def _shortlist_from_legal(

@@ -7,6 +7,7 @@ from agents import MCTSV321Agent
 from renju import BLACK, WHITE, Game
 from search.mcts_v321 import (
     _fast_pattern_features_for_move,
+    _rollout_move_v321,
     _v321_priority_score,
 )
 
@@ -108,6 +109,24 @@ class MCTSV321OptimizationTest(unittest.TestCase):
             _v321_priority_score(game, (7, 7)),
             _v321_priority_score(game, (0, 0)),
         )
+
+    def test_rollout_checks_win_before_expensive_opponent_legality(self):
+        game = Game()
+        game.to_play = WHITE
+
+        with patch(
+            "search.mcts_v321._is_legal_for_player",
+            side_effect=AssertionError("non-winning rollout move should skip legality"),
+        ):
+            move = _rollout_move_v321(
+                game,
+                random.Random(123),
+                candidate_limit=4,
+                radius=2,
+                priority_top_k=2,
+            )
+
+        self.assertIsNotNone(move)
 
     def test_search_is_seeded_legal_and_preserves_state(self):
         game = Game()

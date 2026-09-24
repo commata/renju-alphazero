@@ -6,11 +6,12 @@ from dataclasses import dataclass
 from math import sqrt
 from random import Random
 
-from renju import BLACK, EMPTY, SIZE, WHITE, Game, IllegalMove
+from renju import BLACK, EMPTY, WHITE, Game, IllegalMove
 from renju.rules import DIRECTIONS, forbidden_reason, inside, run_length
 
 from .mcts import (
     MCTSNode,
+    _LOCAL_SCORE_CELLS,
     Move,
     _backpropagate,
     _immediate_wins,
@@ -170,22 +171,20 @@ def _local_components(game: Game, move: Move, player: int) -> tuple[int, int]:
     row, col = move
     attack = 0
     defense = 0
-    for rr in range(max(0, row - 2), min(SIZE, row + 3)):
-        for cc in range(max(0, col - 2), min(SIZE, col + 3)):
-            stone = game.board[rr][cc]
-            if stone == EMPTY:
-                continue
-            distance = max(abs(rr - row), abs(cc - col))
-            if distance == 1:
-                value = 6
-            elif distance == 2:
-                value = 2
-            else:
-                continue
-            if stone == player:
-                attack += value
-            else:
-                defense += value
+    for rr, cc, distance in _LOCAL_SCORE_CELLS[row][col]:
+        stone = game.board[rr][cc]
+        if stone == EMPTY:
+            continue
+        if distance == 1:
+            value = 6
+        elif distance == 2:
+            value = 2
+        else:
+            continue
+        if stone == player:
+            attack += value
+        else:
+            defense += value
     return attack, defense
 
 

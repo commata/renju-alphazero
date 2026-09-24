@@ -411,8 +411,10 @@ def _rollout_move_v321(
     blocks = [
         move
         for move in moves
-        if _is_legal_for_player(game, opponent, move)
-        and _wins_for_player(game, opponent, move)
+        # Run-length checking is much cheaper than exact black Renju legality.
+        # Only an actual winning point needs the forbidden-move check.
+        if _wins_for_player(game, opponent, move)
+        and _is_legal_for_player(game, opponent, move)
     ]
     if blocks:
         return random.choice(blocks)
