@@ -50,6 +50,25 @@ class V6SearchTest(unittest.TestCase):
                          tactical_score_threshold=1800, exploration=2**0.5,
                          candidate_limit=20, initial_width=8, neighborhood_radius=2, priority_top_k=8))
 
+    def test_white_black_43_defense_injection(self):
+        game = position(opponents=cross(), player=WHITE)
+        diag = SearchDiagnostics()
+        context = _RootContext(game.legal_moves(), diag)
+        moves, _, reasons = _root_candidates_v6(game, context, 1, 2)
+        self.assertIn((7,7), moves)
+        self.assertIn('black_43_defense', reasons[(7,7)])
+        self.assertGreater(diag.black_43_defense_candidates, 1)
+        self.assertEqual(diag.black_43_defense_candidates, diag.black_43_defense_injections)
+        self.assertTrue(set(reasons).issubset(context.legal))
+        self.assertIsNone(diag.forced_policy_stage)
+
+    def test_white_win_precedes_black_43_defense(self):
+        game = position([(2,c) for c in range(4)], WHITE, cross())
+        diag = SearchDiagnostics()
+        self.assertEqual(mcts_search_v6(game, diagnostics=diag), (2,4))
+        self.assertEqual(diag.forced_policy_stage, 1)
+        self.assertEqual(diag.v6_root_injection_count, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

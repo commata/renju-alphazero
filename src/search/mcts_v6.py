@@ -38,7 +38,8 @@ class SearchDiagnostics(V5Diagnostics):
 
 
 # Ordinal root ordering, not arbitrary additions to the V3.2.1 score.
-PRIORITY = {'white_44': 4, 'black_43': 3, 'white_43': 3, 'white_33': 2}
+PRIORITY = {'white_44': 4, 'black_43': 3, 'white_43': 3, 'white_33': 2,
+            'black_43_defense': 3}
 
 
 def plan_root(game: Game, context: _RootContext) -> dict[Move, set[str]]:
@@ -51,6 +52,15 @@ def plan_root(game: Game, context: _RootContext) -> dict[Move, set[str]]:
             reason = f'{color}_{kind}'
             setattr(diag, reason + '_candidates', getattr(diag, reason + '_candidates') + 1)
             reasons.setdefault(move, set()).add(reason)
+    if game.to_play == WHITE:
+        danger = compound_moves(game, BLACK)
+        diag.black_43_candidates = len(danger)
+        defenses = set().union(*(t.defense_points for t in danger.values()))
+        defenses.intersection_update(context.legal)
+        diag.black_43_defense_candidates = len(defenses)
+        diag.black_43_defense_injections = len(defenses)
+        for move in sorted(defenses):
+            reasons.setdefault(move, set()).add('black_43_defense')
     return reasons
 
 
