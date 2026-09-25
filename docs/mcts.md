@@ -837,7 +837,9 @@ Stage 3의 최종 기준 에이전트는 **MCTS-v6**로 확정한다. 이 버전
 > RIF 교정 후 2026-09-26 동일 seed 777로 10판(V6 흑 5, 백 5) smoke를 다시 실행했다.
 > V6는 흑 **1승 2패 2무**, 백 **5승 0패 0무**, 합계 **6승 2패 2무(score 70.0%)**였다.
 > 이 값은 10판 1회 smoke 관측치이며, 과거 100판 55.0%와 직접 비교해 기력 향상으로 해석하지 않는다.
-> 새 결정성 SHA도 아직 만들지 않았다. 동일 조건 2회 로그 hash 일치가 확인될 때만 새 determinism baseline으로 승격한다.
+> 새 결정성 SHA도 아직 만들지 않았다. `run_mcts_v6_vs_v5.py`는 timing/diagnostics를 제외한 `(winner, history)` 목록의
+> SHA256을 `Outcome/history SHA256:`으로 직접 출력하고 `summary.json`에도 저장한다. 동일 seed 777 10판을
+> 두 번 실행해 이 값이 일치할 때만 새 determinism baseline으로 승격한다.
 
 > 재현 명령: `python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 777`
 > 실행 로그: `logs/mcts_v6_vs_v5/20260926-011004_seed777`

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+import hashlib
 from dataclasses import fields
 import json
 from pathlib import Path
@@ -24,6 +25,13 @@ def v5_final(seed):
     agent = MCTSV5Agent(seed=seed, **V5_FINAL)
     agent.name = 'MCTS-v5-final'
     return agent
+
+
+def outcome_history_fingerprint(matches) -> str:
+    """Hash winners and complete histories only; exclude timing/diagnostics."""
+    results = [result for _, match in matches for result in match.results]
+    records = [(result.winner, result.history) for result in results]
+    return hashlib.sha256(json.dumps(records).encode('utf-8')).hexdigest()
 
 
 def annotate_defense_outcomes(matches, decisions):
@@ -184,9 +192,12 @@ def main():
         save_match_logs(log_dir, matches, config)
         annotate_defense_outcomes(matches, decisions)
         summary = summarize(matches, decisions)
+        fingerprint = outcome_history_fingerprint(matches)
+        summary['outcome_history_sha256'] = fingerprint
         (log_dir / 'summary.json').write_text(json.dumps(
             {**summary, 'game_details': records, 'decisions': decisions}, indent=2), encoding='utf-8')
         print(json.dumps(summary, indent=2), flush=True)
+    print(f'Outcome/history SHA256: {fingerprint}', flush=True)
     print('Small smoke: outcomes and timing are observations, not strength or overhead proofs.')
 
 
