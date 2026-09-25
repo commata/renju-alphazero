@@ -108,6 +108,10 @@ Random 대국에서 호출 수와 병목만 확인하는 데 사용한다. 측�
 최종 전체 unit suite는 9.503초였다. compileall과 diff 공백 검사도 통과했다.
 패키지 매니페스트에 별도 lint/typecheck 명령은 없다.
 
+> **해석 주의:** production과 `tests/reference_rules.py`는 같은 규칙 계약을 구현하므로 아래 0 mismatch는
+> 최적화 경로와 reference 경로의 **동작 등가성** 근거다. RIF 규칙 자체의 옳고 그름은
+> `docs/rules.md`의 외부 규칙 근거와 명시적 fixture로 별도 검증한다.
+
 ### 대규모 differential
 
 | 항목 | seed 42 | seed 2026 |

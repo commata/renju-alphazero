@@ -24,15 +24,16 @@ python scripts/benchmark_policy_value.py --threads 1 --iterations 100 --warmup 1
 ```
 
 두 script는 `--output path.json`을 주면 학습 curve 또는 benchmark 전체 통계를 저장한다.
-NumPy는 사용하지 않는다. 이 검증 환경에서는 NumPy 미설치로 torch import 시 optional
-NumPy 초기화 경고가 출력되지만 tensor 연산, 학습, 저장·복원은 모두 실행되었다.
-기본 설치와 engine-only import에는 torch가 필요하지 않다. `model.__init__`도 torch를 import하지 않는다.
+프로젝트 코드는 NumPy를 직접 사용하지 않는다. 2026-09-26 재검증 환경에서도 NumPy 미설치로
+torch import 시 optional NumPy 초기화 경고가 출력됐지만 tensor 연산, 학습, 저장·복원은 정상 통과했다.
+따라서 NumPy는 Stage 4 필수 의존성으로 추가하지 않는다. 기본 설치와 engine-only import에는
+torch가 필요하지 않으며 `model.__init__`도 torch를 import하지 않는다.
 
 ## 입력과 action 계약
 
 - `ENCODER_VERSION = "renju-relative-6p-v1"`
 - `ACTION_INDEX_VERSION = "row-major-15x15-v1"`
-- `CHECKPOINT_FORMAT_VERSION = 1`
+- `CHECKPOINT_FORMAT_VERSION = 2`
 - `coordinate_to_action(r,c) = r*15+c`, `action_to_coordinate(a) = divmod(a,15)`.
   범위 밖, 실수, bool 등 잘못된 좌표/index는 `ValueError`.
 - Single encoding `[6,15,15]`, `torch.stack`으로 batch `[B,6,15,15]` 구성. `torch.float32`.
@@ -50,6 +51,8 @@ Plane 5는 **legal action plane**이다. 중앙 opening restriction, occupied po
 흑 33/44/overline, 백의 정상 합법성을 함께 표현한다.
 `encode_game(game, legal_mask=mask)`는 해당 상태용 mask를 신뢰하고 재사용하며 legality를
 재계산하지 않는다. 호출자가 stale mask를 전달하지 않아야 한다.
+Stage 5 PUCT에서는 leaf/node 확장 시 `Game.legal_moves()`를 **한 번만** 계산하고 그 결과로 만든
+동일한 mask를 plane 5 encoding과 network prior masking에 재사용하는 것을 성능 계약으로 둔다.
 
 ```python
 import torch
@@ -106,14 +109,15 @@ Tiny verification에서는 두 loss를 단순 합산하며 최종 학습 weighti
 `save_checkpoint(path, model)`은 다음 dictionary를 저장한다.
 
 ```text
-checkpoint_format_version: 1
+checkpoint_format_version: 2
 model_state: state_dict (parameters + BatchNorm buffers)
 model_config: dataclass의 8개 구조 필드
 encoder_version: renju-relative-6p-v1
 action_index_version: row-major-15x15-v1
 input_plane_names: 위 표의 6개 이름 (순서 포함)
 torch_version: 실제 torch.__version__ 문자열
-git_commit: 저장 시 소스 저장소 HEAD SHA 또는 null
+git_commit: 저장 중인 `src/model/checkpoint.py`가 실제 worktree 소스일 때 HEAD SHA, 아니면 null
+git_dirty: 위 worktree의 tracked file 변경 여부, provenance를 확인할 수 없으면 null
 ```
 
 `load_checkpoint(path, expected_config=ModelConfig(), device="cpu")`는 **기대 구조를
@@ -121,7 +125,10 @@ git_commit: 저장 시 소스 저장소 HEAD SHA 또는 null
 config를 명시해야 한다. `weights_only=True`, `strict=True`로 읽고 eval model을 반환한다.
 누락/추가 weight와 incompatible metadata는 명시적 오류다. Torch 버전은 provenance로
 기록하며 버전 문자열 차이 자체를 금지하지 않는다. Optimizer/RNG resume snapshot은 아니다.
-Git SHA는 uncommitted 변경까지 식별하지 않으므로 실험에는 커밋된 소스를 사용한다.
+`git_commit`은 설치된 wheel/site-packages가 우연히 상위 Git 저장소 안에 있다는 이유로 잘못된 HEAD를
+기록하지 않도록 실제 `repo/src/model/checkpoint.py`와 현재 파일 경로가 일치할 때만 기록한다.
+`git_dirty`도 함께 저장하므로 실험 checkpoint에서 커밋되지 않은 tracked 변경 여부를 구분할 수 있다.
+Stage 6 resume snapshot은 optimizer/RNG까지 포함하고 임시 파일 + `os.replace` 원자적 교체로 별도 구현한다.
 
 임시 디렉터리 저장·복원 테스트에서 eval mode fixed input의 policy/value가
 `torch.allclose(atol=1e-6, rtol=0)`를 모두 만족했다.
@@ -157,6 +164,8 @@ Dataset fingerprint: `f7999e17e6acfe85a684f8d8e9202ebea51834c6a1d3425bf2ae3baf19
 Adam lr=0.001, full batch=32, deterministic algorithms, 최대 300 steps,
 25 steps마다 평가하며 **50 steps에서 종료**했다. 매 step gradient의 finite 여부를 검사한다.
 Train metric 측정이 BN running buffers를 변경하지 않도록 복원한 후 eval metric을 측정한다.
+여기서 `eval`은 **held-out validation set이 아니라 같은 32개 학습 샘플을 `model.eval()` 모드로 재측정한 값**이다.
+이 실험의 목적은 일반화 성능이 아니라 작은 고정 데이터에 대한 학습 가능성/재현성 확인이다.
 
 | Step | Train loss | Train top-1 | Eval top-1 (masked) | Eval value MSE |
 | --- | ---: | ---: | ---: | ---: |
@@ -185,6 +194,10 @@ forward → masking/softmax 전체를 매번 실행한다. Table의 forward 시�
 | masking + softmax | 0.034 | 0.029 | 0.028 | 0.127 | 29498.53 |
 | full pipeline B1 | 6.224 | 5.933 | 4.401 | 11.456 | 160.68 |
 
+RIF 규칙 교정 후 2026-09-26 동일 환경 재측정에서는 `legal_moves` 2.689 ms,
+`forward B1` 2.615 ms, B8 12.347 ms, B32 49.549 ms, `full_pipeline` 5.726 ms였다.
+이 차이는 로컬 측정 변동 범위로 보고 성능 향상/회귀를 단정하지 않는다.
+
 구간은 별도로 측정하므로 평균 합과 full pipeline이 정확히 같지는 않다. 열·클럭·다른 프로세스
 영향을 받는 로컬 측정이며 latency SLA가 아니다.
 
@@ -194,18 +207,18 @@ forward → masking/softmax 전체를 매번 실행한다. Table의 forward 시�
 > 교정은 모델 구조/가중치 계약을 바꾸지 않지만 engine/search 회귀 테스트를 함께 갱신하므로,
 > 새 기준 성능 수치로 사용할 때는 해당 커밋에서 다시 측정한다.
 
-- `python -m unittest discover -s tests -v`: Stage 4 모델 구현 완료 시점에 기존 149 + Stage 4 23 = **172 PASS**, skip 없음.
-- 별도 프로세스에서 import finder로 torch를 차단: 기존 149 + 순수 계약 3 = **152 PASS**,
-  neural 20개 skip. Engine/agents/evaluation import에 torch가 포함되지 않음도 확인.
+- RIF 규칙 교정 및 V5 회귀 수정 후 Windows/Python 3.13 + torch 환경: **174 PASS**, skip 없음.
+- 별도 Linux/Python 3.12 + torch 미설치 환경: **154 PASS / neural 20개 skip**.
+  따라서 engine/agents/evaluation 경로가 neural extra 없이 동작한다는 계약도 다른 OS/Python에서 재확인했다.
 - `python -m pip check`: No broken requirements found.
 - `python -m pip wheel . --no-deps --no-build-isolation --wheel-dir <temp>`: wheel build 성공.
 - Stage 4 모델 구현 완료 시점에는 `src/renju src/agents src/search src/evaluation` 변경이 없었다.
   후속 규칙 계약 교정에서는 exact-five 우선순위와 동일 의미를 보장하기 위해
   `src/renju/rules.py` 및 `src/search/mcts_v321.py`의 fast scanner만 회귀 수정한다.
-- Engine-only `python scripts/benchmark_engine.py --iterations 100 --games 10 --seed 42`:
-  구현 전 3.095 ms / 732.560 moves/sec, 구현 후 **2.168 ms / 898.827 moves/sec**.
-  사용자 기준 2.435 ms / 약 855 moves/sec와 비교해 악화 징후 없음. 엔진이 동일하므로
-  전후 차이는 속도 개선으로 주장하지 않는다. 두 실행 모두 10판, 총 1252 moves.
+- Engine-only 과거 Stage 4 측정: **2.168 ms / 898.827 moves/sec**. 이 값은 RIF exact-five 교정 전 기록이다.
+- RIF 교정 후 사용자 재측정에서는 midgame black `legal_moves` **2.496 ms**, Random 대국 약 **775 moves/sec**였다.
+  동일한 10판의 총 수는 1252로 유지됐다. 약 14% 수준의 처리량 차이는 열/클럭/백그라운드 작업 영향을
+  받을 수 있으므로 규칙 수정의 성능 회귀로 단정하지 않고, Stage 5 기준 성능에는 교정 후 측정값을 사용한다.
 
 **PASS**: input/action/version, mask/loss/gradient, strict checkpoint, D4 legality,
 eval tiny overfit, 전체 회귀 및 CPU pipeline 측정 기준 충족. Stage 5 PUCT integration을

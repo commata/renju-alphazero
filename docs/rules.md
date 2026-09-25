@@ -1,4 +1,4 @@
-# 규칙 결정 기록 (v0.2)
+# 규칙 결정 기록 (v0.4)
 
 참고:
 - Renju International Federation 국제 규칙: https://www.renju.net/rifrules/
@@ -8,6 +8,18 @@
 다만 공식 대회용 개국/색 교환 절차는 사용하지 않습니다. 흑의 첫 수는 정중앙 `(7,7)`에 고정하고, 그 이후에는 자유 착수합니다.
 또한 현재 action space는 보드 교차점 225개만 사용하므로 RIF 규칙의 `pass`는 구현하지 않습니다.
 따라서 아래에서 별도로 표시한 항목은 **프로젝트 변형 규칙**입니다.
+
+버전 기록:
+- v0.3: 흑 첫 수 중앙 고정 계약과 benchmark 비교 주의사항 추가
+- v0.4: RIF 9.2의 exact-five 우선순위와 RIF 용어 정의를 엔진/탐색에 일치하도록 교정
+
+## 중앙 오프닝
+
+- 빈 보드의 초기 흑 차례에서 `Game.legal_moves()`는 중앙 `(7,7)` 한 칸만 반환합니다.
+- 다른 위치에 첫 수를 두면 `IllegalMove`가 발생합니다.
+- 이 제한은 실제 초기 흑 차례에만 적용되며 두 번째 수부터는 자유 착수입니다.
+- 웹 대국과 MCTS benchmark도 같은 `Game` 합법수 규칙을 사용합니다.
+- 중앙 고정 도입 전 benchmark와 도입 후 benchmark는 동일 조건 비교로 취급하지 않습니다.
 
 ## 핵심 판정
 
@@ -43,11 +55,16 @@
 - `double-four`: 한 착수로 그 착수점을 공유하는 `four`가 둘 이상 생기는 경우
 
 하나의 `straight four`가 양 끝에 두 개의 5목 완성점을 가진다는 이유만으로 두 개의 `four`로 세지 않습니다.
+또한 RIF의 `four` 정의는 추가 한 수로 **five in a row**를 만들 수 있어야 하므로, 유일한 완성점이
+같은 축에서 6목 이상(overline)을 만드는 경우 그 형태는 `four`로 세지 않습니다.
 
 ### Three / Double-three
 
 RIF에서 `three`는 단순히 모양만 보고 정하는 열린 3이 아닙니다.
-그 3을 한 수 더 진행했을 때 **합법적인 straight four로 발전할 수 있는지**를 확인해야 합니다.
+RIF 용어 정의는 `three`를 한 수 더 두어 straight four로 발전시킬 수 있는 형태로 정의하면서,
+그 연장 수에서 **동시에 five in a row가 만들어지면 안 된다**고 명시합니다.
+따라서 연장 수가 다른 축에서 이미 5목을 완성하는 경우 그 연장을 해당 `three`의 straight-four 연장으로 세지 않는 것은
+프로젝트 해석이 아니라 RIF의 `THREE` 정의를 그대로 적용한 것입니다.
 
 특히 흑의 double-three 판정에는 RIF 9.3의 예외 규칙이 적용됩니다.
 
@@ -66,9 +83,11 @@ RIF에서 `three`는 단순히 모양만 보고 정하는 열린 3이 아닙니�
 - 백은 금수 없이 5목 이상을 승리로 처리합니다.
 - 흑 첫 수 중앙 고정과 `pass` 미구현/합법수 없음 무승부는 이 프로젝트의 명시적 변형 규칙입니다.
 
-`tests/reference_rules.py`는 production 최적화와 독립된 differential oracle로 유지하며,
-규칙 계약 자체가 바뀌는 경우 production과 oracle을 함께 수정하고 명시적인 fixture로 우선순위를 고정합니다.
-유한 fixture/differential 검증만으로 모든 가능한 렌주 보드에 대한 형식적 증명을 주장하지는 않습니다.
+`tests/reference_rules.py`는 production 최적화와 독립된 differential oracle로 유지합니다.
+다만 규칙 계약 변경 시 production과 oracle을 함께 수정하므로 differential 0 mismatch는
+**두 구현의 등가성**을 검증할 뿐, 새 규칙 계약 자체가 RIF에 맞다는 독립 증거는 아닙니다.
+규칙 의미는 RIF 원문과 명시적 spec fixture로 검증하며, 유한 fixture/differential만으로 모든 가능한
+렌주 보드에 대한 형식적 증명을 주장하지 않습니다.
 
 ## Stage 4 / Stage 5 적용 기준
 

@@ -85,6 +85,15 @@ class RulesTest(unittest.TestCase):
         g = position(black=[(7, c) for c in (5, 6, 8)])
         self.assertIsNone(forbidden_reason(g.board, 7, 7))
 
+        # RIF FOUR requires a completion to five. The horizontal apparent
+        # four below can only complete at (7,8), which would make six because
+        # (7,9) is already black; it therefore must not become a second four.
+        pseudo = position(
+            black=[(7, c) for c in (4, 5, 6, 9)] + [(r, 7) for r in (5, 6, 8)],
+            white=[(7, 3)],
+        )
+        self.assertIsNone(forbidden_reason(pseudo.board, 7, 7))
+
     def test_double_three_and_blocked_three(self):
         stones = [(7, 6), (7, 8), (6, 7), (8, 7)]
         g = position(black=stones)

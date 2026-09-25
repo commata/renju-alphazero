@@ -9,7 +9,7 @@ INPUT_PLANE_NAMES = (
 )
 ENCODER_VERSION = "renju-relative-6p-v1"
 ACTION_INDEX_VERSION = "row-major-15x15-v1"
-CHECKPOINT_FORMAT_VERSION = 1
+CHECKPOINT_FORMAT_VERSION = 2
 
 
 @dataclass(frozen=True)

@@ -10,17 +10,31 @@ from .config import (ACTION_INDEX_VERSION, CHECKPOINT_FORMAT_VERSION, ENCODER_VE
 from .network import PolicyValueNet
 
 
-def _git_commit() -> str | None:
+def _git_provenance() -> tuple[str | None, bool | None]:
+    """Return source-worktree HEAD/dirty state, never an unrelated parent repo."""
+    source = Path(__file__).resolve()
     try:
-        return subprocess.check_output(
-            ['git', 'rev-parse', 'HEAD'], cwd=Path(__file__).resolve().parents[2],
+        root = Path(subprocess.check_output(
+            ['git', 'rev-parse', '--show-toplevel'], cwd=source.parent,
             stderr=subprocess.DEVNULL, text=True, timeout=5,
+        ).strip()).resolve()
+        if source != (root / 'src' / 'model' / 'checkpoint.py').resolve():
+            return None, None
+        commit = subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'], cwd=root, stderr=subprocess.DEVNULL,
+            text=True, timeout=5,
         ).strip()
-    except (OSError, subprocess.SubprocessError):
-        return None
+        dirty = bool(subprocess.check_output(
+            ['git', 'status', '--porcelain', '--untracked-files=no'], cwd=root,
+            stderr=subprocess.DEVNULL, text=True, timeout=5,
+        ).strip())
+        return commit, dirty
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None, None
 
 
 def save_checkpoint(path: str | Path, model: PolicyValueNet) -> None:
+    git_commit, git_dirty = _git_provenance()
     torch.save({
         'checkpoint_format_version': CHECKPOINT_FORMAT_VERSION,
         'model_state': model.state_dict(),
@@ -29,7 +43,8 @@ def save_checkpoint(path: str | Path, model: PolicyValueNet) -> None:
         'action_index_version': ACTION_INDEX_VERSION,
         'input_plane_names': list(INPUT_PLANE_NAMES),
         'torch_version': str(torch.__version__),
-        'git_commit': _git_commit(),
+        'git_commit': git_commit,
+        'git_dirty': git_dirty,
     }, path)
 
 
@@ -53,10 +68,13 @@ def load_checkpoint(path: str | Path, expected_config: ModelConfig = ModelConfig
         parsed = ModelConfig(**data['model_config'])
     except (ValueError, TypeError) as exc:
         raise ValueError('invalid model_config') from exc
-    if not isinstance(data.get('torch_version'), str) or 'git_commit' not in data:
+    if (not isinstance(data.get('torch_version'), str)
+            or 'git_commit' not in data or 'git_dirty' not in data):
         raise ValueError('missing torch/git metadata')
     if data['git_commit'] is not None and not isinstance(data['git_commit'], str):
         raise ValueError('invalid git_commit')
+    if data['git_dirty'] is not None and type(data['git_dirty']) is not bool:
+        raise ValueError('invalid git_dirty')
     model = PolicyValueNet(parsed).to(device)
     try:
         model.load_state_dict(data['model_state'], strict=True)

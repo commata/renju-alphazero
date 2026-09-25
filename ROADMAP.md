@@ -40,8 +40,8 @@ renju-alphazero/
 | 2. 기준선·속도 측정 | 그램 | Random, 간단한 전술/규칙 기반 상대, 대국 기록; `place/undo`, 합법 수, 대국 속도 측정 | 승률 평가에 쓸 상대와 재현 가능한 벤치마크 확보 |
 | 3. 순수 MCTS | 그램 | 신경망 없는 탐색, 턴 교대 시 가치 부호, 합법 수 확장, 종료 상태 처리 | 강제 승리·방어의 작은 보드 상태에서 예상 수 선택; Random 상대 성능과 속도 기록 |
 | 4. 정책·가치 신경망 | 그램 | 보드 입력, 225개 정책 출력, 현재 차례 기준 가치 출력, 합법 수 마스킹, 대칭 증강 | 작은 고정 데이터에 과적합 가능; 출력·마스킹·회전/반전의 좌표 일치 검사 |
-| 5. AlphaZero 탐색 결합 | 그램 | PUCT 탐색, 배치 추론, 루트 탐색 분포, 자기대국 온도/탐색 노이즈, 종료 결과의 각 수 관점 변환 | 한 판의 `(state, search_policy, outcome)` 생성과 재생 가능; 불법 수 0건 |
-| 6. 자기대국·학습 루프 | 그램 | 데이터 버퍼, 정책/가치 손실, 주기적 평가, 중단·재개, 메트릭/체크포인트 | 적은 판수로 end-to-end 실행; 손실·대국 수·승률 기록; 중단 후 재개 검증 |
+| 5. AlphaZero 탐색 결합 | 그램 | PUCT 탐색, 배치 추론, 루트 탐색 분포, 자기대국 온도/탐색 노이즈, 종료 결과의 각 수 관점 변환; **노드 확장마다 `legal_moves()`를 한 번만 계산해 encoder plane 5와 prior masking에 같은 mask를 재사용** | 한 판의 `(state, search_policy, outcome)` 생성과 재생 가능; 불법 수 0건 |
+| 6. 자기대국·학습 루프 | 그램 | 데이터 버퍼, 정책/가치 손실, 주기적 평가, 중단·재개, 메트릭/체크포인트; resume snapshot은 임시 파일에 쓴 뒤 `os.replace`로 원자적 교체 | 적은 판수로 end-to-end 실행; 손실·대국 수·승률 기록; 중단 후 재개 검증 |
 | 7. 그램 검증 | 그램 | 다양한 시드·선후공으로 기준선과 이전 모델 평가; CPU와 Intel GPU 실행 가능성·발열·시간 측정 | 학습 진행과 병목 파악; 안정적인 소형 설정과 재현 절차 확정 |
 | 8. 데스크톱 이관·규모 확장 | 데스크톱 | 같은 커밋/체크포인트로 재현, RX 6600 가속 경로 확인, 작업자 수·배치·탐색 수를 단계적으로 조정 | 장치별 속도/안정성 비교 후 지속 가능한 설정 선정; 이전 체크포인트에서 정상 재개 |
 | 9. 최종 평가·대국 프로그램 | 데스크톱 + 그램 | 고정된 상대·탐색 예산으로 이전 모델/기준선과 대결, 양쪽 색 균형, 사람용 대국 UI/CLI, 사용 문서 | 승률·판수·탐색 시간·하드웨어 조건 공개; 최종 모델 태그와 설치/대국 방법 제공 |
@@ -49,7 +49,8 @@ renju-alphazero/
 ## 초기 실험값과 조정 순서
 
 Stage 4는 `src/model/`의 versioned encoder/config/masking/network/checkpoint/symmetry로
-구현 완료했다. 전체 172 tests, eval tiny overfit, D4 및 CPU 측정 결과와 재현 명령은
+구현 완료했다. RIF 교정 후 전체 **174 tests PASS**, torch 없는 Linux 환경에서는
+**154 PASS / 20 neural skip**까지 확인했다. tiny overfit, D4 및 CPU 측정 결과와 재현 명령은
 [Policy-Value Network](docs/policy-value-network.md)에 기록한다. 정책/value loss helper와
 weights-only checkpoint는 Stage 4에서 계약을 검증하고, 자기대국 학습·resume은 Stage 6에 남긴다.
 

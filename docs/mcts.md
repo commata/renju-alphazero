@@ -272,7 +272,7 @@ V3.2.1은 V3.2의 점수와 탐색 파라미터를 유지하되, **후보 우선
 → forbidden_reason을 후보당 최대 한 번만 호출
 ```
 
-흑의 exact-five winning extension은 규칙 엔진과 동일하게 다른 방향의 장목 여부만 확인한다. exact five가 성립하면 삼삼/사사보다 승리가 우선되는 기존 규칙 순서를 그대로 이용한다.
+흑의 exact-five winning extension은 규칙 엔진과 동일하게 **다른 방향의 장목이 동시에 생겨도 승리수로 인정**한다. RIF 9.2는 흑의 금수를 "동시에 five in a row를 만들지 않았을 때" 적용하므로, exact five가 성립하면 장목/삼삼/사사보다 승리가 우선한다.
 
 V3.2.1은 별도 `MCTSV321Agent`로 보존한다. 따라서 느린 V3.2와 직접 비교하여 속도와 기력 회귀를 따로 측정할 수 있다.
 
@@ -589,9 +589,9 @@ from search.threat_patterns import (
   검증한 강제승 증명과는 구분한다.
 - 흑 creator, three 연장, 승리 completion, 흑 방어 모두 기존 `forbidden_reason()`에
   기반한 합법성 helper를 사용한다. 흑 금수 규칙을 새 detector에 복제하지 않는다.
-  기존 엔진은 장목 검사 다음에 정확한 5목 승리를 33/44보다 우선한다.
-  따라서 실제 exact-five completion의 금수 반례는 교차 장목으로 검증하고,
-  33/44 금수 반례는 비승리 creator·three 연장 수로 검증한다.
+  현재 엔진은 정확한 5목 승리를 장목/33/44보다 먼저 판정한다.
+  따라서 교차 장목과 동시에 exact five를 만드는 completion은 합법적인 승리수이며,
+  금수 반례는 exact five가 아닌 비승리 creator·three 연장 수로 검증한다.
 - four 방어가 다른 교차선을 막아서 three 연장의 금수를 해소할 수 있으므로,
   흑 43의 three는 실제 four 방어 이후의 보드에서도 검사한다.
 - 백은 독립 four 두 개를 44, three 두 개를 33, four+three를 43으로 인식한다.
@@ -829,6 +829,12 @@ V5 FINAL의 50/100 simulations, threshold 1800, exploration/candidate/width/radi
 Stage 3의 최종 기준 에이전트는 **MCTS-v6**로 확정한다. 이 버전은 이후 정책·가치 신경망 및 AlphaZero 탐색을 평가하기 위한 고정 benchmark baseline으로 사용하며, Stage 4 이후의 학습 경로에서는 V5/V6의 강제수·전술 planner 계층을 직접 재사용하지 않는다.
 
 ### 최종 검증 결과
+
+> 아래 Stage 3 수치와 seed 777 SHA는 **RIF exact-five 우선순위 교정 이전**에 측정한 역사적 baseline이다.
+> V5/V6가 공유 규칙 엔진과 V3.2.1 fast scanner를 사용하므로 현재 규칙 계약과 동일 조건의 수치로
+> 직접 비교하지 않는다. Stage 5 평가 baseline으로 사용하기 전에 seed 777 10판을 다시 측정한다.
+
+> 재측정 명령: `python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 777`
 
 ```text
 Stage 3 Final Baseline

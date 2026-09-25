@@ -37,11 +37,13 @@ class CheckpointTest(unittest.TestCase):
         data = torch.load(self.path, weights_only=True)
         self.assertEqual(data['torch_version'], str(torch.__version__))
         self.assertIn('git_commit', data)
+        self.assertIn('git_dirty', data)
+        self.assertTrue(data['git_dirty'] is None or type(data['git_dirty']) is bool)
 
     def test_metadata_mismatches(self):
         original = torch.load(self.path, weights_only=True)
         for key in ('checkpoint_format_version', 'encoder_version', 'action_index_version',
-                    'input_plane_names', 'torch_version', 'git_commit'):
+                    'input_plane_names', 'torch_version', 'git_commit', 'git_dirty'):
             data = deepcopy(original)
             data[key] = -99
             torch.save(data, self.path)
