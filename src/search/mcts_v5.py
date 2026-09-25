@@ -284,6 +284,15 @@ def mcts_search_v5(
     diag.selected_simulations = simulations
     diag.simulation_mode = "tactical" if tactical else "normal"
     diag.root_candidates = tuple(root_moves)
+    return _search_v5_tree(
+        game, root_moves, simulations, exploration, candidate_limit, initial_width,
+        neighborhood_radius, priority_top_k, random,
+    )
+
+
+def _search_v5_tree(game, root_moves, simulations, exploration, candidate_limit,
+                    initial_width, neighborhood_radius, priority_top_k, random):
+    """Shared unchanged V3.2.1 tree/rollout loop; root policy belongs to callers."""
     random = random or Random()
     root = MCTSNode(
         parent=None,
