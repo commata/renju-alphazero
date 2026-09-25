@@ -823,3 +823,61 @@ detector·주입·선택 계수 불일치 0개를 확인했다. 기존 shared tr
 3. **후속 계측**: 비교 runner의 offline replay가 선택된 백 방어 직후 immediate/future 흑 43 잔여 수와 complete defense 수를 함께 집계한다. 이 계측은 착수 시간 밖에서 수행한다.
 
 V5 FINAL의 50/100 simulations, threshold 1800, exploration/candidate/width/radius/top-k와 Stage 1~5 우선순위는 변경하지 않았다. 점수나 threshold를 3승 4패 3무 결과에 맞춰 조정하지 않았으며, 이 보강 뒤 100판 장기 비교도 아직 실행하지 않는다. 먼저 전체 unit/compile 검증 후 동일 seed의 10판 smoke에서 계획 충돌 감소와 완전 방어 선택 여부를 확인한다.
+
+## Stage 3 Final Baseline
+
+Stage 3의 최종 기준 에이전트는 **MCTS-v6**로 확정한다. 이 버전은 이후 정책·가치 신경망 및 AlphaZero 탐색을 평가하기 위한 고정 benchmark baseline으로 사용하며, Stage 4 이후의 학습 경로에서는 V5/V6의 강제수·전술 planner 계층을 직접 재사용하지 않는다.
+
+### 최종 검증 결과
+
+```text
+Stage 3 Final Baseline
+======================
+
+Final agent:
+MCTS-v6
+
+Regression:
+147 / 147 PASS
+
+V6 vs Random:
+Black : 20-0-0
+White : 20-0-0
+Total : 40-0-0
+Score : 100%
+
+V6 vs Tactical:
+Black : 50-0-0
+White : 50-0-0
+Total : 100-0-0
+Score : 100%
+
+V6 vs V5 Final:
+48W / 38L / 14D
+Score : 55.0%
+
+Determinism:
+seed = 777
+
+SHA256:
+924adffa7e7ef4d81167d98fc8e2688905e6d335ec0cc0f838d8ad5c3f4fa9b2
+
+Result:
+Stage 3 PASS
+MCTS-v6 frozen as benchmark baseline.
+```
+
+### 최종 결과 해설
+
+전체 회귀 테스트는 **147개 모두 통과**했다. 여기에는 렌주 규칙, 금수 판정, 상태 복원, terminal 처리, MCTS V5/V6 탐색, 위협 패턴 및 planner, runner와 웹 대국 관련 검증이 포함된다. 따라서 Stage 3 종료 시점의 엔진과 탐색 구현은 현재 테스트 범위에서 회귀 없이 동작하는 것으로 판단한다.
+
+기준선 대결에서는 V6가 Random 상대 양쪽 색에서 각각 20전 전승하여 총 **40승 0패 0무**, Tactical 상대에서도 양쪽 색 각각 50전 전승하여 총 **100승 0패 0무**를 기록했다. 이 결과는 Random/Tactical 기준선에 대해 탐색 파이프라인이 안정적으로 동작하며 선후공 한쪽에서 구조적으로 붕괴하지 않는다는 sanity check로 사용한다. 다만 두 기준선 상대의 100% 승률만으로 일반적인 렌주 기력을 확정하지는 않는다.
+
+보다 강한 고정 기준인 V5 FINAL과의 100판 비교에서는 **48승 38패 14무**, 무승부를 0.5점으로 계산한 score **55.0%**를 기록했다. 이 결과를 바탕으로 V6를 Stage 3의 최종 MCTS 기준본으로 동결하고, 이후 신경망 체크포인트의 성장 정도를 측정하는 benchmark opponent로 사용한다.
+
+seed 777로 동일한 10판 묶음(V6 흑 5판, V6 백 5판)을 두 번 실행한 결과 SHA256이 두 실행 모두
+`924adffa7e7ef4d81167d98fc8e2688905e6d335ec0cc0f838d8ad5c3f4fa9b2`
+로 일치했다. 따라서 해당 조건에서 경기 결과와 history의 재현성을 최종 확인했다.
+
+Stage 3 이후에는 MCTS-v6의 handcrafted 전술 계층을 더 확장하지 않는다. Stage 4에서는 기존 `Game`/렌주 규칙 엔진과 합법수 판정을 유지하되, 정책·가치 신경망을 별도 경로로 구현한다. V6는 학습 MCTS의 직접적인 부모 구현이 아니라 **비교 평가용 고정 baseline**으로 보존한다.
+
