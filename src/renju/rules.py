@@ -62,9 +62,7 @@ def _fours(board: list[list[int]], move: tuple[int, int], dr: int, dc: int):
         if len(black) == 4 and len(blanks) == 1:
             r, c = blanks[0]
             board[r][c] = BLACK
-            exact = run_length(board, r, c, dr, dc) == 5 and all(
-                run_length(board, r, c, vr, vc) < 6 for vr, vc in DIRECTIONS
-            )
+            exact = run_length(board, r, c, dr, dc) == 5
             board[r][c] = EMPTY
             if exact:
                 result.add(frozenset(black))
@@ -98,17 +96,11 @@ def _straight_four_after_extension(
             continue
 
         board[before[0]][before[1]] = BLACK
-        first = all(
-            run_length(board, before[0], before[1], vr, vc) < 6
-            for vr, vc in DIRECTIONS
-        )
+        first = run_length(board, before[0], before[1], dr, dc) == 5
         board[before[0]][before[1]] = EMPTY
 
         board[after[0]][after[1]] = BLACK
-        second = all(
-            run_length(board, after[0], after[1], vr, vc) < 6
-            for vr, vc in DIRECTIONS
-        )
+        second = run_length(board, after[0], after[1], dr, dc) == 5
         board[after[0]][after[1]] = EMPTY
         if first and second:
             return True
@@ -131,6 +123,10 @@ def _open_three(board: list[list[int]], move: tuple[int, int], dr: int, dc: int)
 
         board[r][c] = BLACK
         try:
+            # A Renju three must grow into a straight four without the extension
+            # already making five in any direction.
+            if any(run_length(board, r, c, vr, vc) == 5 for vr, vc in DIRECTIONS):
+                continue
             # Recurse only after the candidate really makes the required straight four.
             # Keeping ancestor stones on the board makes each recursive step progress.
             if not _straight_four_after_extension(board, move, pos, dr, dc):
@@ -145,10 +141,12 @@ def _open_three(board: list[list[int]], move: tuple[int, int], dr: int, dc: int)
 def _forbidden_after_black_move(board: list[list[int]], row: int, col: int) -> str | None:
     """Classify a black stone that is already present at (row, col)."""
     lengths = [run_length(board, row, col, dr, dc) for dr, dc in DIRECTIONS]
-    if any(length >= 6 for length in lengths):
-        return "장목"
+    # Under RIF 9.2/9.3, a black move that simultaneously makes an exact five
+    # wins; forbidden patterns matter only when the move does not make five.
     if 5 in lengths:
         return None
+    if any(length >= 6 for length in lengths):
+        return "장목"
 
     fours = 0
     for dr, dc in DIRECTIONS:

@@ -63,9 +63,9 @@ class V5PolicyTest(unittest.TestCase):
         black = position(black=stones)
         self.assertFalse(_is_unstoppable_four(black, BLACK, (7,7)))
 
-    def test_black_completion_cross_overline_rejected(self):
+    def test_black_completion_cross_overline_is_winning_completion(self):
         game = position([(7,3),(7,4),(7,5),(4,7),(5,7),(6,7),(8,7),(9,7)])
-        self.assertNotIn((7,7), _four_completions(game, BLACK, (7,6)))
+        self.assertIn((7,7), _four_completions(game, BLACK, (7,6)))
         white = position(white=[(7,3),(7,4),(7,5),(7,8)])
         self.assertIn((7,7), _four_completions(white, WHITE, (7,6)))
 

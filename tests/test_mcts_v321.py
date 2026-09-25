@@ -99,6 +99,15 @@ class MCTSV321OptimizationTest(unittest.TestCase):
         self.assertTrue(features.immediate_win)
         self.assertEqual(features.max_run, 6)
 
+    def test_black_exact_five_with_cross_overline_is_immediate_win(self):
+        game = Game()
+        for move in ([(7, c) for c in (3, 4, 5, 6, 8)] +
+                     [(r, 7) for r in (3, 4, 5, 6)]):
+            game.board[move[0]][move[1]] = BLACK
+        features = _fast_pattern_features_for_move(game, BLACK, (7, 7))
+        self.assertTrue(features.legal)
+        self.assertTrue(features.immediate_win)
+
     def test_black_four_three_scores_above_quiet_move(self):
         game = Game()
         for move in ((7, 5), (7, 6), (7, 8), (6, 7), (8, 7)):

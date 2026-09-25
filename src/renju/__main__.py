@@ -10,7 +10,7 @@ def display(game: Game) -> None:
 
 def main() -> None:
     game = Game()
-    print("렌주 자유 착수 대국 (흑 ● 선공). 행 열: '8 8', 되돌리기: u, 종료: q")
+    print("렌주 대국 (흑 첫 수 중앙 고정, 이후 자유 착수). 행 열: '8 8', 되돌리기: u, 종료: q")
     while True:
         display(game)
         if game.done:

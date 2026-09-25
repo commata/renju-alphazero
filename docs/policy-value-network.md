@@ -3,7 +3,9 @@
 Stage 4는 향후 PUCT가 사용할 **고정된 입력·action·checkpoint 계약**을 검증한다.
 기력 향상이나 AlphaZero 전체 구현이 목표가 아니다. PUCT, self-play, replay buffer,
 noise/temperature, arena, V6 heuristic 통합은 포함하지 않는다. MCTS-v6는 고정
-benchmark opponent로 보존하며 `src/renju`, `src/agents`, `src/search`, `src/evaluation`은 변경하지 않았다.
+benchmark opponent로 보존한다. Stage 4 모델 구현 커밋에서는 기존 engine/search를 변경하지 않았고,
+후속 코드 리뷰에서 발견된 RIF 5목 우선순위 정합성만 `src/renju`와 V3.2.1 fast scanner에
+별도 회귀 수정으로 반영한다.
 
 ## 설치와 실행
 
@@ -188,12 +190,18 @@ forward → masking/softmax 전체를 매번 실행한다. Table의 forward 시�
 
 ## 회귀와 완료 판정
 
-- `python -m unittest discover -s tests -v`: 기존 149 + Stage 4 23 = **172 PASS**, skip 없음.
+> 아래 수치와 benchmark는 Stage 4 모델 구현 완료 시점의 측정 기록이다. 후속 RIF 규칙 계약
+> 교정은 모델 구조/가중치 계약을 바꾸지 않지만 engine/search 회귀 테스트를 함께 갱신하므로,
+> 새 기준 성능 수치로 사용할 때는 해당 커밋에서 다시 측정한다.
+
+- `python -m unittest discover -s tests -v`: Stage 4 모델 구현 완료 시점에 기존 149 + Stage 4 23 = **172 PASS**, skip 없음.
 - 별도 프로세스에서 import finder로 torch를 차단: 기존 149 + 순수 계약 3 = **152 PASS**,
   neural 20개 skip. Engine/agents/evaluation import에 torch가 포함되지 않음도 확인.
 - `python -m pip check`: No broken requirements found.
 - `python -m pip wheel . --no-deps --no-build-isolation --wheel-dir <temp>`: wheel build 성공.
-- `git diff main -- src/renju src/agents src/search src/evaluation`: 변경 없음.
+- Stage 4 모델 구현 완료 시점에는 `src/renju src/agents src/search src/evaluation` 변경이 없었다.
+  후속 규칙 계약 교정에서는 exact-five 우선순위와 동일 의미를 보장하기 위해
+  `src/renju/rules.py` 및 `src/search/mcts_v321.py`의 fast scanner만 회귀 수정한다.
 - Engine-only `python scripts/benchmark_engine.py --iterations 100 --games 10 --seed 42`:
   구현 전 3.095 ms / 732.560 moves/sec, 구현 후 **2.168 ms / 898.827 moves/sec**.
   사용자 기준 2.435 ms / 약 855 moves/sec와 비교해 악화 징후 없음. 엔진이 동일하므로

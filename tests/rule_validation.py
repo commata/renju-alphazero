@@ -19,7 +19,7 @@ def fixtures():
         ('recursive-three', cross + [(6,5),(8,5),(6,4),(8,6)], [(7,10)]),
         ('double-four', [(7,c) for c in (5,6,8)] + [(r,7) for r in (5,6,8)], []),
         ('same-axis-four', [(7,7+i) for i in (-4,-3,-1,1,3,4)], []),
-        ('overline', [(7,c) for c in (3,4,5,6,8)] + [(r,7) for r in (3,4,5,6)], []),
+        ('five-overline-priority', [(7,c) for c in (3,4,5,6,8)] + [(r,7) for r in (3,4,5,6)], []),
         ('exact-five', [(7,c) for c in (3,4,5,6)] + [(6,7),(8,7),(6,6),(8,8)], []),
         ('edge-three', [(1,0),(1,1),(1,2),(0,3),(2,3)], []),
         ('edge-four', [(2,0),(2,1),(2,2),(1,3),(3,3)], []),
