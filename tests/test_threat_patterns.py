@@ -52,6 +52,13 @@ class PatternTest(unittest.TestCase):
             game = position([(2,0),(2,1),(2,2),(1,3),(3,3)], player)
             self.assertIn('43', compound_at(game, player, (2,3)).kinds)
 
+    def test_white_edge_33_and_44(self):
+        for kind in ('33', '44'):
+            game = position(cross(kind=kind, center=(2,2)), WHITE)
+            self.assertIn(kind, compound_at(game, WHITE, (2,2)).kinds)
+        game = position(cross(kind='33', center=(1,1)), WHITE)
+        self.assertIsNone(compound_at(game, WHITE, (1,1)))
+
     def test_forbidden_creator_33_44_overline(self):
         for stones, reason in [(cross(kind='33'), '삼삼'), (cross(kind='44'), '사사'),
                                ([(7,c) for c in (2,3,4,5,6)] + [(6,7),(8,7)], '장목')]:
@@ -81,6 +88,28 @@ class PatternTest(unittest.TestCase):
         with placed(game, BLACK, (7,7)), placed(game, WHITE, (7,8)):
             for extension in ((5,7),(9,7)):
                 self.assertEqual(forbidden_reason(game.board, *extension), '사사')
+
+    def test_fake_43_with_double_three_extensions(self):
+        stones = [(7,4),(7,5),(7,6),(6,7),(8,7)]
+        for row in (5,9):
+            stones += [(row,6),(row,8),(row-1,6),(row+1,8)]
+        game = position(stones, opponents=[(7,3),(4,10),(10,4)])
+        self.assertIsNone(forbidden_reason(game.board, 7,7))
+        self.assertIsNone(compound_at(game, BLACK, (7,7)))
+        with placed(game, BLACK, (7,7)), placed(game, WHITE, (7,8)):
+            self.assertEqual(forbidden_reason(game.board, 5,7), '삼삼')
+            self.assertEqual(forbidden_reason(game.board, 9,7), '사사')
+
+    def test_structural_narrowing_matches_full_board_detector(self):
+        from random import Random
+        rng = Random(81)
+        for player in (BLACK, WHITE):
+            for _ in range(3):
+                cells = rng.sample([(r,c) for r in range(3,12) for c in range(3,12)], 24)
+                game = position(cells[:17], player, cells[17:])
+                expected = {(r,c) for r in range(15) for c in range(15)
+                            if compound_at(game, player, (r,c)) is not None}
+                self.assertEqual(set(compound_moves(game, player)), expected)
 
     def test_43_three_is_validated_after_actual_four_reply(self):
         game = position([(7,5),(7,6),(7,8),(6,7),(8,7),(3,5),(4,6),(6,8)],

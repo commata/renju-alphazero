@@ -58,6 +58,14 @@ class PlanningTest(unittest.TestCase):
         game = position(BLACK_SETUP, opponents=[(1,c) for c in range(4)])
         self.assertEqual(future_setups(game, BLACK), {})
 
+    def test_forced_reply_counter_four_rejects_setup(self):
+        stones = [(6,7),(8,10),(7,8),(7,7),(6,4),(5,6),(10,4),(5,10)]
+        game = position(stones)
+        self.assertIn((9,10), future_setups(game, BLACK))
+        for r, c in ((8,6),(8,7),(8,8)):
+            game.board[r][c] = WHITE
+        self.assertNotIn((9,10), future_setups(game, BLACK))
+
     def test_caps_are_observable(self):
         game = position(WHITE_COMPOUND_SETUP, WHITE)
         stats = PlanningStats()
