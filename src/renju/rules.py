@@ -114,6 +114,12 @@ def _straight_four_after_extension(
 def _open_three(board: list[list[int]], move: tuple[int, int], dr: int, dc: int) -> bool:
     """Check a three, recursively requiring its straight-four extension to be legal."""
     coords, index = _LINE_INFO[(*move, dr, dc)]
+    # A four-cell group containing move and one new extension needs two
+    # existing black stones, both within three cells of move. This necessary
+    # condition only rejects impossible directions; recursive legality follows.
+    near = coords[max(0, index - 3):index] + coords[index + 1:index + 4]
+    if sum(board[r][c] == BLACK for r, c in near) < 2:
+        return False
     for pos in coords[max(0, index - 4):index + 5]:
         r, c = pos
         if board[r][c] != EMPTY:
