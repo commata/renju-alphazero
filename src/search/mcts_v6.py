@@ -11,7 +11,7 @@ from .mcts_v5 import (
     _root_candidates_v5, _search_v5_tree, _validate_v5_config,
 )
 from .threat_patterns import compound_moves
-from .threat_planning import future_setups, PlanningStats
+from .threat_planning import future_setups, PlanningStats, forbidden_defense_attacks
 
 
 V5_FINAL = dict(simulations=50, tactical_simulations=100, tactical_score_threshold=1800,
@@ -43,16 +43,20 @@ class SearchDiagnostics(V5Diagnostics):
     planner_continuation_cap_hits: int = 0
     planner_defense_cap_skips: int = 0
     planner_legal_responses: int = 0
+    legal_defense_count: int = 0
+    forbidden_defense_count: int = 0
+    remaining_winning_continuations: int = 0
 
 
 # Ordinal root ordering, not arbitrary additions to the V3.2.1 score.
 PRIORITY = {'white_44': 4, 'black_43': 3, 'white_43': 3, 'white_33': 2,
             'black_43_defense': 3, 'future_black_43': 1,
             'future_white_43': 1, 'future_white_44': 1, 'future_white_33': 1,
-            'future_black_43_defense': 1}
+            'future_black_43_defense': 1, 'forbidden_defense_induction': 3}
 
 
-def plan_root(game: Game, context: _RootContext) -> dict[Move, set[str]]:
+def plan_root(game: Game, context: _RootContext, *, response_counts=None) -> dict[Move, set[str]]:
+    response_counts = response_counts if response_counts is not None else {}
     diag = context.diagnostics
     own = compound_moves(game, game.to_play)
     reasons: dict[Move, set[str]] = {}
@@ -63,6 +67,14 @@ def plan_root(game: Game, context: _RootContext) -> dict[Move, set[str]]:
             setattr(diag, reason + '_candidates', getattr(diag, reason + '_candidates') + 1)
             reasons.setdefault(move, set()).add(reason)
     if game.to_play == WHITE:
+        induction = forbidden_defense_attacks(game)
+        diag.forbidden_defense_induction_count = len(induction)
+        for move, profile in induction.items():
+            reasons.setdefault(move, set()).add('forbidden_defense_induction')
+            response_counts[move] = profile.legal_defense_count
+            diag.legal_defense_count += profile.legal_defense_count
+            diag.forbidden_defense_count += profile.forbidden_defense_count
+            diag.remaining_winning_continuations += profile.remaining_winning_continuations
         danger = compound_moves(game, BLACK)
         diag.black_43_candidates = len(danger)
         defenses = set().union(*(t.defense_points for t in danger.values()))
@@ -84,6 +96,7 @@ def plan_root(game: Game, context: _RootContext) -> dict[Move, set[str]]:
                 setattr(diag, reason + '_setups', getattr(diag, reason + '_setups') + 1)
                 if player == game.to_play:
                     reasons.setdefault(move, set()).add(reason)
+                    response_counts[move] = setup.legal_defense_count
             if player != game.to_play:
                 for defense in sorted(setup.defenses.intersection(context.legal)):
                     reasons.setdefault(defense, set()).add('future_black_43_defense')
@@ -97,14 +110,16 @@ def _root_candidates_v6(game, context, limit, radius):
     # Select the complete original pool before injection; no generic widening.
     baseline, score = _root_candidates_v5(game, context, limit, radius)
     started = perf_counter()
-    reasons = plan_root(game, context)
+    response_counts = {}
+    reasons = plan_root(game, context, response_counts=response_counts)
     legal = set(context.legal)
     reasons = {m: kinds for m, kinds in reasons.items() if m in legal}
     context.diagnostics.v6_threat_planner_seconds = perf_counter() - started
     context.diagnostics.v6_root_injection_count = len(reasons)
     moves = set(baseline).union(reasons)
     ranked = sorted(moves, key=lambda m: (
-        -max((PRIORITY[k] for k in reasons.get(m, ())), default=0), context.key(game, m),
+        -max((PRIORITY[k] for k in reasons.get(m, ())), default=0),
+        response_counts.get(m, 0), context.key(game, m),
     ))
     # Budget selection uses original V5 scores, not planner ordering tiers.
     score = max(score, max(-context.key(game, m)[0] for m in ranked))

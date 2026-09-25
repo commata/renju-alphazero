@@ -37,6 +37,48 @@ class PlanningStats:
     defense_cap_skips: int = 0
 
 
+@dataclass(frozen=True)
+class DefenseProfile:
+    legal_defense_count: int
+    forbidden_defense_count: int
+    remaining_winning_continuations: int
+
+
+def white_defense_profile(game: Game, move: Move) -> DefenseProfile:
+    """Count exact single-move defenses to the four created by a white move.
+
+    These are winning completion points, not speculative three endpoints.
+    Forbidden defenses are classified on the board AFTER the white attack.
+    """
+    if not _is_legal_for_player(game, WHITE, move):
+        return DefenseProfile(0, 0, 0)
+    with placed(game, WHITE, move):
+        completions = set().union(*(t.continuations for t in fours_at(game, WHITE, move)))
+        legal, forbidden, remaining = 0, 0, 0
+        for block in sorted(completions):
+            if not _is_legal_for_player(game, BLACK, block):
+                forbidden += 1
+                continue
+            with placed(game, BLACK, block):
+                wins = _winning_moves(game, WHITE)
+                remaining += len(wins)
+                legal += not bool(wins)
+        # Counter-wins are real defenses even when all blocking points are forbidden.
+        legal += len(set(_winning_moves(game, BLACK)) - completions)
+        return DefenseProfile(legal, forbidden, remaining if legal else len(completions))
+
+
+def forbidden_defense_attacks(game: Game) -> dict[Move, DefenseProfile]:
+    result = {}
+    for move in _window_candidates(game, WHITE, 3):
+        if _wins_for_player(game, WHITE, move):
+            continue
+        profile = white_defense_profile(game, move)
+        if profile.forbidden_defense_count:
+            result[move] = profile
+    return result
+
+
 def _structure_key(game: Game, player: int, move: Move):
     counts = [sum(game.board[r][c] == player for r, c in w)
               for w in BY_CELL[move] if all(game.board[r][c] != -player for r, c in w)]

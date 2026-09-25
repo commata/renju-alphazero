@@ -3,7 +3,8 @@ import unittest
 
 from renju import BLACK, WHITE
 from search.threat_patterns import compound_at, placed, compound_moves
-from search.threat_planning import future_setups, PlannerLimits, PlanningStats
+from search.threat_planning import (future_setups, PlannerLimits, PlanningStats,
+                                    forbidden_defense_attacks, white_defense_profile)
 from search.mcts_v5 import _RootContext
 from search.mcts_v6 import SearchDiagnostics, plan_root
 from test_threat_patterns import position
@@ -60,6 +61,25 @@ class PlanningTest(unittest.TestCase):
         self.assertEqual(future_setups(game, WHITE, limits=PlannerLimits(defenses=0), stats=stats), {})
         self.assertGreater(stats.defense_cap_skips, 0)
         self.assertGreater(stats.setup_cap_hits, 0)
+
+    def test_forbidden_defense_induction(self):
+        game = position([(4,6),(5,6),(6,6)], WHITE,
+                        [(7,3),(7,4),(7,5),(7,7),(7,8),(3,6)])
+        before = deepcopy(vars(game))
+        profiles = forbidden_defense_attacks(game)
+        self.assertIn((8,6), profiles)
+        profile = profiles[(8,6)]
+        self.assertEqual(profile.legal_defense_count, 0)
+        self.assertEqual(profile.forbidden_defense_count, 1)
+        self.assertEqual(profile.remaining_winning_continuations, 1)
+        self.assertEqual(vars(game), before)
+
+    def test_ordinary_closed_four_has_legal_defense(self):
+        game = position([(7,4),(7,5),(7,6)], WHITE, [(7,3)])
+        profile = white_defense_profile(game, (7,7))
+        self.assertEqual(profile.legal_defense_count, 1)
+        self.assertEqual(profile.forbidden_defense_count, 0)
+        self.assertEqual(profile.remaining_winning_continuations, 0)
 
 
 if __name__ == '__main__':
