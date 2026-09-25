@@ -63,6 +63,19 @@ class PlanningTest(unittest.TestCase):
             self.assertNotIn((7,9), future_setups(game, BLACK, stats=stats))
         self.assertGreater(stats.forced_plan_conflicts, 0)
 
+    def test_future_setup_keeps_stronger_next_turn_forced_attack(self):
+        game = position(BLACK_SETUP)
+
+        def stronger(_game, *, context=None):
+            context.diagnostics.forced_policy_stage = 1
+            return (0,0)
+
+        stats = PlanningStats()
+        with patch('search.threat_planning._forced_v5_move', side_effect=stronger):
+            self.assertIn((7,9), future_setups(game, BLACK, stats=stats))
+        self.assertGreater(stats.forced_plan_preserved, 0)
+        self.assertEqual(stats.forced_plan_conflicts, 0)
+
     def test_immediate_counter_win_rejects_setup(self):
         game = position(BLACK_SETUP, opponents=[(1,c) for c in range(4)])
         self.assertEqual(future_setups(game, BLACK), {})

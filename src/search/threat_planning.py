@@ -197,7 +197,9 @@ def future_setups(game: Game, player: int, *, limits=PlannerLimits(),
                         # actually runs next turn will not force an unrelated move.
                         if forced_stage in (1, 3):
                             # Immediate win / unstoppable four is stronger than
-                            # continuing the speculative compound plan.
+                            # continuing the speculative compound plan. Preserve
+                            # the setup even when no compound continuation remains.
+                            kinds = set(common_kinds)
                             stats.forced_plan_preserved += 1
                         elif forced in following:
                             kinds.intersection_update(following[forced].kinds)
