@@ -1,3 +1,4 @@
+# Python / 환경
 __pycache__/
 .pytest_cache/
 *.py[cod]
@@ -6,6 +7,32 @@ __pycache__/
 .env
 build/
 dist/
-checkpoints/
+
+# 대국 로그·평가 결과 (games.csv, moves.csv, games.json, summary.json, root_audit.json 등)
 logs/
+runs/
+results/
+outputs/
+
+# 프로파일링 산출물
+*.prof
+*.pstats
+
+# 모델 체크포인트
+checkpoints/
 *.pt
+*.pth
+*.ckpt
+*.onnx
+
+# 자기대국 데이터·리플레이 버퍼
+data/
+buffers/
+*.npz
+*.npy
+*.h5
+*.hdf5
+
+# 작은 테스트 fixture는 예외로 유지
+!tests/fixtures/
+!tests/fixtures/**
