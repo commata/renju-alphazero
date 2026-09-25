@@ -125,7 +125,7 @@ def _valid_43(game: Game, player: int, anchor: Move, four: Threat, three: Threat
     return True
 
 
-def compound_at(game: Game, player: int, move: Move) -> Compound | None:
+def compound_at(game: Game, player: int, move: Move, *, required_stone: Move | None = None) -> Compound | None:
     if not inside(*move) or not _is_legal_for_player(game, player, move):
         return None
     if _wins_for_player(game, player, move):
@@ -134,12 +134,15 @@ def compound_at(game: Game, player: int, move: Move) -> Compound | None:
         fours = fours_at(game, player, move)
         threes = threes_at(game, player, move, exact=not bool(fours))
         kinds = set()
-        if any(_valid_43(game, player, move, f, t) for f in fours for t in threes):
+        def linked(a, b):
+            return required_stone is None or required_stone in a.stones or required_stone in b.stones
+
+        if any(linked(f, t) and _valid_43(game, player, move, f, t) for f in fours for t in threes):
             kinds.add('43')
         if player == WHITE:
-            if any(_independent(a, b) for a, b in combinations(fours, 2)):
+            if any(linked(a, b) and _independent(a, b) for a, b in combinations(fours, 2)):
                 kinds.add('44')
-            if any(_independent(a, b) for a, b in combinations(threes, 2)):
+            if any(linked(a, b) and _independent(a, b) for a, b in combinations(threes, 2)):
                 kinds.add('33')
         return Compound(move, frozenset(kinds), fours, threes) if kinds else None
 

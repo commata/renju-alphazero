@@ -44,10 +44,13 @@ class PlanningTest(unittest.TestCase):
         game.play(4,9)
 
     def test_white_future_black_prevention_is_non_forcing(self):
-        game = position(player=WHITE, opponents=BLACK_SETUP)
+        from search.threat_patterns import black_legal_43_moves
+        stones = [(6,7),(8,10),(7,8),(7,7),(6,4),(5,6),(10,4),(5,10)]
+        game = position(player=WHITE, opponents=stones)
+        self.assertEqual(black_legal_43_moves(game), [])
         diag = SearchDiagnostics()
         reasons = plan_root(game, _RootContext(game.legal_moves(), diag))
-        self.assertIn('future_black_43_defense', reasons[(7,9)])
+        self.assertIn('future_black_43_defense', reasons[(9,10)])
         self.assertGreater(diag.future_black_43_setups, 0)
         self.assertIsNone(diag.forced_policy_stage)
 
@@ -80,6 +83,21 @@ class PlanningTest(unittest.TestCase):
         self.assertEqual(profile.legal_defense_count, 1)
         self.assertEqual(profile.forbidden_defense_count, 0)
         self.assertEqual(profile.remaining_winning_continuations, 0)
+
+    def test_planner_restores_state_on_nested_exception(self):
+        from unittest.mock import patch
+        game = position(BLACK_SETUP)
+        before = deepcopy(vars(game))
+        with patch('search.threat_planning._continuations', side_effect=RuntimeError):
+            with self.assertRaises(RuntimeError):
+                future_setups(game, BLACK)
+        self.assertEqual(vars(game), before)
+
+    def test_required_setup_stone_must_participate_in_compound(self):
+        from test_threat_patterns import cross
+        game = position(cross(), WHITE)
+        self.assertIsNotNone(compound_at(game, WHITE, (7,7)))
+        self.assertIsNone(compound_at(game, WHITE, (7,7), required_stone=(0,0)))
 
 
 if __name__ == '__main__':

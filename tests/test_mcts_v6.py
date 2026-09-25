@@ -109,6 +109,21 @@ class V6SearchTest(unittest.TestCase):
         with self.assertRaises(IllegalMove):
             mcts_search_v6(game)
 
+    def test_real_multi_danger_reaches_search_with_defense_injection(self):
+        from agents import MCTSV6Agent
+        stones = [(5,8),(7,8),(8,6),(3,3),(5,3),(10,8),(7,5),(11,10),
+                  (7,4),(9,8),(5,9),(10,5),(9,4),(11,5),(3,9)]
+        game = position(player=WHITE, opponents=stones)
+        before = deepcopy(vars(game))
+        self.assertIsNone(_forced_v5_move(game))
+        agent = MCTSV6Agent(seed=19, simulations=1, tactical_simulations=1)
+        move = agent.select_move(game)
+        self.assertIn(move, game.legal_moves())
+        self.assertTrue({(6,4),(7,7)}.issubset(agent.diagnostics.root_candidates))
+        self.assertGreater(agent.diagnostics.black_43_defense_injections, 0)
+        self.assertIsNone(agent.diagnostics.forced_policy_stage)
+        self.assertEqual(vars(game), before)
+
 
 if __name__ == '__main__':
     unittest.main()

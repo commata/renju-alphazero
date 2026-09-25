@@ -5,7 +5,7 @@ from renju import BLACK, WHITE, Game
 from .mcts import Move, _is_legal_for_player, _wins_for_player
 from .mcts_v5 import _window_candidates, _winning_moves, _four_completions
 from .threat_patterns import (
-    Compound, compound_at, placed, structural_candidates, fours_at, threes_at,
+    compound_at, placed, structural_candidates, fours_at, threes_at,
     BY_CELL,
 )
 
@@ -54,18 +54,22 @@ def white_defense_profile(game: Game, move: Move) -> DefenseProfile:
         return DefenseProfile(0, 0, 0)
     with placed(game, WHITE, move):
         completions = set().union(*(t.continuations for t in fours_at(game, WHITE, move)))
-        legal, forbidden, remaining = 0, 0, 0
+        legal, forbidden = 0, 0
+        residuals = []
         for block in sorted(completions):
             if not _is_legal_for_player(game, BLACK, block):
                 forbidden += 1
                 continue
             with placed(game, BLACK, block):
                 wins = _winning_moves(game, WHITE)
-                remaining += len(wins)
+                residuals.append(len(wins))
                 legal += not bool(wins)
         # Counter-wins are real defenses even when all blocking points are forbidden.
-        legal += len(set(_winning_moves(game, BLACK)) - completions)
-        return DefenseProfile(legal, forbidden, remaining if legal else len(completions))
+        counter_wins = set(_winning_moves(game, BLACK)) - completions
+        legal += len(counter_wins)
+        if counter_wins:
+            residuals.append(0)
+        return DefenseProfile(legal, forbidden, min(residuals, default=len(completions)))
 
 
 def forbidden_defense_attacks(game: Game) -> dict[Move, DefenseProfile]:
@@ -85,18 +89,14 @@ def _structure_key(game: Game, player: int, move: Move):
     return (-max(counts, default=0), -sum(counts), move)
 
 
-def _linked(compound: Compound, setup: Move) -> bool:
-    return any(setup in t.stones for t in compound.fours + compound.threes)
-
-
 def _continuations(game, player, setup, limits, stats):
     candidates = sorted(structural_candidates(game, player),
                         key=lambda m: _structure_key(game, player, m))
     stats.continuation_cap_hits += len(candidates) > limits.continuations
     result = {}
     for move in candidates[:limits.continuations]:
-        compound = compound_at(game, player, move)
-        if compound is not None and _linked(compound, setup):
+        compound = compound_at(game, player, move, required_stone=setup)
+        if compound is not None:
             with placed(game, player, move):
                 if _winning_moves(game, -player):
                     continue
