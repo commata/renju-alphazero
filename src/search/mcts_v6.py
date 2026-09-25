@@ -11,6 +11,7 @@ from .mcts_v5 import (
     _root_candidates_v5, _search_v5_tree, _validate_v5_config,
 )
 from .threat_patterns import compound_moves
+from .threat_planning import future_setups, PlanningStats
 
 
 V5_FINAL = dict(simulations=50, tactical_simulations=100, tactical_score_threshold=1800,
@@ -35,11 +36,20 @@ class SearchDiagnostics(V5Diagnostics):
     v6_selected_threat_type: str | None = None
     v6_selected_reasons: tuple[str, ...] = ()
     v6_threat_planner_seconds: float = 0.0
+    future_black_43_defense_candidates: int = 0
+    planner_structural_candidates: int = 0
+    planner_examined_setups: int = 0
+    planner_setup_cap_hits: int = 0
+    planner_continuation_cap_hits: int = 0
+    planner_defense_cap_skips: int = 0
+    planner_legal_responses: int = 0
 
 
 # Ordinal root ordering, not arbitrary additions to the V3.2.1 score.
 PRIORITY = {'white_44': 4, 'black_43': 3, 'white_43': 3, 'white_33': 2,
-            'black_43_defense': 3}
+            'black_43_defense': 3, 'future_black_43': 1,
+            'future_white_43': 1, 'future_white_44': 1, 'future_white_33': 1,
+            'future_black_43_defense': 1}
 
 
 def plan_root(game: Game, context: _RootContext) -> dict[Move, set[str]]:
@@ -61,6 +71,25 @@ def plan_root(game: Game, context: _RootContext) -> dict[Move, set[str]]:
         diag.black_43_defense_injections = len(defenses)
         for move in sorted(defenses):
             reasons.setdefault(move, set()).add('black_43_defense')
+    stats = PlanningStats()
+    # Geometry is the gate: without a two-stone window future_setups does no work.
+    # No new score threshold is substituted for the fixed V5 threshold.
+    for player in ((BLACK, WHITE) if game.to_play == WHITE else (BLACK,)):
+        setups = future_setups(game, player, stats=stats)
+        setup_color = 'black' if player == BLACK else 'white'
+        for move, setup in setups.items():
+            diag.planner_legal_responses += setup.legal_defense_count
+            for kind in sorted(setup.kinds):
+                reason = f'future_{setup_color}_{kind}'
+                setattr(diag, reason + '_setups', getattr(diag, reason + '_setups') + 1)
+                if player == game.to_play:
+                    reasons.setdefault(move, set()).add(reason)
+            if player != game.to_play:
+                for defense in sorted(setup.defenses.intersection(context.legal)):
+                    reasons.setdefault(defense, set()).add('future_black_43_defense')
+    diag.future_black_43_defense_candidates = sum('future_black_43_defense' in r for r in reasons.values())
+    for key, value in vars(stats).items():
+        setattr(diag, 'planner_' + key, value)
     return reasons
 
 

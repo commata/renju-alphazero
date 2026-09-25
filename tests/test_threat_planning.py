@@ -1,0 +1,66 @@
+from copy import deepcopy
+import unittest
+
+from renju import BLACK, WHITE
+from search.threat_patterns import compound_at, placed, compound_moves
+from search.threat_planning import future_setups, PlannerLimits, PlanningStats
+from search.mcts_v5 import _RootContext
+from search.mcts_v6 import SearchDiagnostics, plan_root
+from test_threat_patterns import position
+
+
+BLACK_SETUP = [(5,10),(9,5),(10,6),(4,7),(8,4),(6,9),(10,9),
+               (4,10),(7,10),(4,4),(8,9),(5,5),(6,4)]
+WHITE_33_SETUP = [(5,9),(5,10),(6,9),(7,5),(4,7),(7,8),(8,5),(9,4),(8,4)]
+WHITE_COMPOUND_SETUP = [(8,5),(9,8),(7,9),(4,4),(10,8),(7,4),(9,5),
+                        (5,5),(8,4),(10,9),(7,7),(10,6),(5,8)]
+
+
+class PlanningTest(unittest.TestCase):
+    def test_actual_two_ply_compounds(self):
+        cases = [(BLACK, BLACK_SETUP, (7,9), '43'),
+                 (WHITE, WHITE_33_SETUP, (9,6), '33'),
+                 (WHITE, WHITE_COMPOUND_SETUP, (7,3), '43'),
+                 (WHITE, WHITE_COMPOUND_SETUP, (7,3), '44')]
+        for player, stones, move, kind in cases:
+            with self.subTest(player=player, kind=kind):
+                game = position(stones, player)
+                before = deepcopy(vars(game))
+                self.assertIsNone(compound_at(game, player, move))
+                setup = future_setups(game, player)[move]
+                self.assertIn(kind, setup.kinds)
+                self.assertEqual(setup.legal_defense_count, setup.surviving_response_count)
+                self.assertGreater(setup.continuation_count, 0)
+                self.assertEqual(vars(game), before)
+
+    def test_black_setup_creator_is_legal_in_engine(self):
+        game = position(BLACK_SETUP)
+        game.play(7,9)
+        # The four has a single forced block, followed by a legal compound.
+        game.play(9,9)
+        moves = compound_moves(game, BLACK)
+        self.assertIn((4,9), moves)
+        game.play(4,9)
+
+    def test_white_future_black_prevention_is_non_forcing(self):
+        game = position(player=WHITE, opponents=BLACK_SETUP)
+        diag = SearchDiagnostics()
+        reasons = plan_root(game, _RootContext(game.legal_moves(), diag))
+        self.assertIn('future_black_43_defense', reasons[(7,9)])
+        self.assertGreater(diag.future_black_43_setups, 0)
+        self.assertIsNone(diag.forced_policy_stage)
+
+    def test_immediate_counter_win_rejects_setup(self):
+        game = position(BLACK_SETUP, opponents=[(1,c) for c in range(4)])
+        self.assertEqual(future_setups(game, BLACK), {})
+
+    def test_caps_are_observable(self):
+        game = position(WHITE_COMPOUND_SETUP, WHITE)
+        stats = PlanningStats()
+        self.assertEqual(future_setups(game, WHITE, limits=PlannerLimits(defenses=0), stats=stats), {})
+        self.assertGreater(stats.defense_cap_skips, 0)
+        self.assertGreater(stats.setup_cap_hits, 0)
+
+
+if __name__ == '__main__':
+    unittest.main()
