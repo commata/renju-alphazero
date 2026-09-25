@@ -73,7 +73,8 @@
     <div class="status">
       <strong id="result">준비 중...</strong><br>
       <span id="turn"></span><br>
-      <span id="info"></span>
+      <span id="info"></span><br>
+      <span id="logInfo"></span>
     </div>
 
     <div class="legend">
@@ -100,6 +101,7 @@ const errorBox = document.getElementById("error");
 const resultBox = document.getElementById("result");
 const turnBox = document.getElementById("turn");
 const infoBox = document.getElementById("info");
+const logInfoBox = document.getElementById("logInfo");
 const diagnosticsBox = document.getElementById("diagnostics");
 let humanColor = "BLACK";
 let state = null;
@@ -223,6 +225,9 @@ function render() {
   }
   const aiTime = state.last_ai_seconds == null ? "-" : state.last_ai_seconds.toFixed(3) + "초";
   infoBox.textContent = `수: ${state.move_count} · AI 최근 계산: ${aiTime} · seed ${state.seed}`;
+  logInfoBox.textContent = state.log_saved
+    ? `로그 저장: ${state.log_directory}`
+    : "로그: 경기 종료 시 자동 저장";
   diagnosticsBox.textContent = JSON.stringify(state.diagnostics || {}, null, 2);
 }
 

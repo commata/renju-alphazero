@@ -11,7 +11,9 @@ Then open:
 from __future__ import annotations
 
 import argparse
+import csv
 from dataclasses import fields, is_dataclass
+from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
@@ -24,6 +26,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 WEB = ROOT / "web"
+LOG_ROOT = ROOT / "logs" / "web_play"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
@@ -129,8 +132,9 @@ class PlaySession:
     not a multi-user service.
     """
 
-    def __init__(self):
+    def __init__(self, *, log_root: Path | None = None):
         self.lock = Lock()
+        self.log_root = Path(log_root) if log_root is not None else LOG_ROOT
         self.game = Game()
         self.agent_key = "v6"
         self.agent = create_agent(self.agent_key)
@@ -139,6 +143,10 @@ class PlaySession:
         self.last_ai_move: tuple[int, int] | None = None
         self.last_ai_seconds: float | None = None
         self.message = "새 게임을 시작했습니다."
+        self.started_at = datetime.now().astimezone()
+        self.move_records: list[dict[str, Any]] = []
+        self.last_log_dir: Path | None = None
+        self.saved_game = False
 
     def reset(self, *, agent_key: str, human_color: int, seed: int = 42) -> dict[str, Any]:
         if agent_key not in VERSION_LABELS:
@@ -154,6 +162,10 @@ class PlaySession:
             self.last_ai_move = None
             self.last_ai_seconds = None
             self.message = "새 게임을 시작했습니다."
+            self.started_at = datetime.now().astimezone()
+            self.move_records = []
+            self.last_log_dir = None
+            self.saved_game = False
             if self.human_color == WHITE:
                 self._play_ai_locked()
             return self._state_locked()
@@ -164,9 +176,13 @@ class PlaySession:
                 raise IllegalMove("이미 종료된 대국입니다.")
             if self.game.to_play != self.human_color:
                 raise IllegalMove("현재는 AI 차례입니다.")
+            player = self.game.to_play
             self.game.play(row, col)
+            self._record_move_locked(player, "HUMAN", (row, col), seconds=None, diagnostics={})
             self.message = f"사람 착수: ({row + 1}, {col + 1})"
-            if not self.game.done:
+            if self.game.done:
+                self._save_completed_game_locked()
+            else:
                 self._play_ai_locked()
             return self._state_locked()
 
@@ -177,13 +193,120 @@ class PlaySession:
     def _play_ai_locked(self) -> None:
         if self.game.done or self.game.to_play == self.human_color:
             return
+        player = self.game.to_play
         started = perf_counter()
         move = self.agent.select_move(self.game)
         elapsed = perf_counter() - started
+        diagnostics = _diagnostics(self.agent)
         self.game.play(*move)
+        self._record_move_locked(player, self.agent.name, move, seconds=elapsed, diagnostics=diagnostics)
         self.last_ai_move = move
         self.last_ai_seconds = elapsed
         self.message = f"AI 착수: ({move[0] + 1}, {move[1] + 1})"
+        if self.game.done:
+            self._save_completed_game_locked()
+
+    def _record_move_locked(
+        self,
+        player: int,
+        actor: str,
+        move: tuple[int, int],
+        *,
+        seconds: float | None,
+        diagnostics: dict[str, Any],
+    ) -> None:
+        row, col = move
+        self.move_records.append({
+            "ply": len(self.game.history),
+            "player": "BLACK" if player == BLACK else "WHITE",
+            "actor": actor,
+            "row0": row,
+            "col0": col,
+            "row": row + 1,
+            "col": col + 1,
+            "seconds": seconds,
+            "diagnostics": diagnostics,
+        })
+
+    def _save_completed_game_locked(self) -> Path | None:
+        """Persist one finished human-vs-MCTS game exactly once."""
+        if not self.game.done or self.saved_game:
+            return self.last_log_dir
+
+        finished_at = datetime.now().astimezone()
+        human_name = "black" if self.human_color == BLACK else "white"
+        stamp = finished_at.strftime("%Y%m%d-%H%M%S-%f")
+        log_dir = self.log_root / f"{stamp}_{self.agent_key}_human-{human_name}_seed{self.seed}"
+        log_dir.mkdir(parents=True, exist_ok=False)
+
+        winner = _winner_name(self.game.winner)
+        winner_actor = None
+        if self.game.winner is not None:
+            winner_actor = "HUMAN" if self.game.winner == self.human_color else self.agent.name
+        result = "DRAW"
+        if self.game.winner is not None:
+            result = "HUMAN_WIN" if self.game.winner == self.human_color else "AI_WIN"
+
+        ai_total_seconds = sum(
+            float(record["seconds"]) for record in self.move_records
+            if record["seconds"] is not None and record["actor"] != "HUMAN"
+        )
+        payload = {
+            "started_at": self.started_at.isoformat(),
+            "finished_at": finished_at.isoformat(),
+            "agent_key": self.agent_key,
+            "agent_name": self.agent.name,
+            "seed": self.seed,
+            "human_color": "BLACK" if self.human_color == BLACK else "WHITE",
+            "winner": winner,
+            "winner_actor": winner_actor,
+            "result": result,
+            "number_of_moves": len(self.game.history),
+            "ai_total_seconds": ai_total_seconds,
+            "moves": self.move_records,
+            "final_board": self.game.board,
+        }
+        (log_dir / "game.json").write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        with (log_dir / "moves.csv").open("w", newline="", encoding="utf-8-sig") as handle:
+            writer = csv.DictWriter(handle, fieldnames=[
+                "ply", "player", "actor", "row0", "col0", "row", "col", "seconds",
+                "forced_policy_stage", "simulation_mode", "selected_simulations",
+                "best_root_tactical_score", "v6_selected_threat_type",
+                "v6_selected_reasons",
+            ])
+            writer.writeheader()
+            for record in self.move_records:
+                diagnostics = record.get("diagnostics", {})
+                writer.writerow({
+                    "ply": record["ply"],
+                    "player": record["player"],
+                    "actor": record["actor"],
+                    "row0": record["row0"],
+                    "col0": record["col0"],
+                    "row": record["row"],
+                    "col": record["col"],
+                    "seconds": record["seconds"],
+                    "forced_policy_stage": diagnostics.get("forced_policy_stage"),
+                    "simulation_mode": diagnostics.get("simulation_mode"),
+                    "selected_simulations": diagnostics.get("selected_simulations"),
+                    "best_root_tactical_score": diagnostics.get("best_root_tactical_score"),
+                    "v6_selected_threat_type": diagnostics.get("v6_selected_threat_type"),
+                    "v6_selected_reasons": json.dumps(
+                        diagnostics.get("v6_selected_reasons", []),
+                        ensure_ascii=False,
+                    ),
+                })
+
+        self.last_log_dir = log_dir
+        self.saved_game = True
+        relative = log_dir.relative_to(ROOT)
+        self.message = f"대국 종료 · 로그 저장: {relative}"
+        print(f"[web] saved game log: {relative}")
+        return log_dir
 
     def _state_locked(self) -> dict[str, Any]:
         return {
@@ -202,6 +325,11 @@ class PlaySession:
             "last_ai_seconds": self.last_ai_seconds,
             "diagnostics": _diagnostics(self.agent),
             "message": self.message,
+            "log_saved": self.saved_game,
+            "log_directory": (
+                str(self.last_log_dir.relative_to(ROOT))
+                if self.last_log_dir is not None else None
+            ),
             "versions": VERSION_LABELS,
         }
 

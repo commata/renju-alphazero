@@ -44,3 +44,19 @@ V5 FINAL과 V6는 현재 코드의 `V5_FINAL` 설정을 그대로 사용합니�
 - V5/V6는 최근 forced stage, simulation mode, V6 threat reason 등 일부 diagnostics를 화면에 표시
 
 이 서버는 단일 로컬 브라우저 세션용입니다. 다중 사용자/배포 서버 용도가 아닙니다.
+
+## 경기 로그
+
+완료된 사람 vs MCTS 대국은 경기 종료 즉시 자동 저장됩니다.
+
+```text
+logs/web_play/<timestamp>_<version>_human-<color>_seed<seed>/
+├─ game.json
+└─ moves.csv
+```
+
+`game.json`에는 상대 버전, seed, 사람 색상, 승자/결과, 전체 착수, AI 착수별 diagnostics, 최종 보드가 저장됩니다.
+
+`moves.csv`에는 각 수의 좌표와 AI 계산 시간, forced stage, simulation mode, selected simulations, V6 threat reason 등 분석에 자주 쓰는 필드를 평탄화해서 저장합니다.
+
+로그는 **대국이 정상적으로 종료된 경우에만** 저장됩니다. 진행 중에 새 게임을 누르거나 서버를 종료한 미완료 대국은 저장하지 않습니다. 저장이 완료되면 웹 화면 상태 영역에 실제 저장 경로가 표시됩니다.
