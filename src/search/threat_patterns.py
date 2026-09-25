@@ -53,12 +53,13 @@ def _axis(window) -> Move:
 
 
 def structural_candidates(game: Game, player: int) -> list[Move]:
-    axes: dict[Move, set[Move]] = {}
+    groups: dict[Move, set[tuple[Move, frozenset[Move]]]] = {}
     for window in _threat_windows(game, player, 2):
+        signature = (_axis(window), frozenset(p for p in window if game.board[p[0]][p[1]] == player))
         for p in window:
             if game.board[p[0]][p[1]] == EMPTY:
-                axes.setdefault(p, set()).add(_axis(window))
-    return sorted(p for p, directions in axes.items() if len(directions) >= 2)
+                groups.setdefault(p, set()).add(signature)
+    return sorted(p for p, threats in groups.items() if len(threats) >= 2)
 
 
 def fours_at(game: Game, player: int, anchor: Move) -> tuple[Threat, ...]:
@@ -106,8 +107,11 @@ def threes_at(game: Game, player: int, anchor: Move, *, exact=True) -> tuple[Thr
 
 
 def _independent(first: Threat, second: Threat) -> bool:
-    # Conservative initial scope: separate axes; no double counting sliding windows.
-    return first.axis != second.axis and not first.defenses.intersection(second.defenses)
+    # Distinct stone sets also admit genuine same-axis compounds. A subset is
+    # just another window onto the stronger pattern, not an independent threat.
+    return (not first.stones.issubset(second.stones)
+            and not second.stones.issubset(first.stones)
+            and not first.defenses.intersection(second.defenses))
 
 
 def _valid_43(game: Game, player: int, anchor: Move, four: Threat, three: Threat) -> bool:

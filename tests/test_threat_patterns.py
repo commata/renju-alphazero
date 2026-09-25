@@ -74,6 +74,15 @@ class PatternTest(unittest.TestCase):
             self.assertEqual(fours[0].continuations, {(7,4),(7,9)})
         self.assertIsNone(compound_at(game, WHITE, (7,7)))
 
+    def test_independent_same_axis_white_fours_are_not_duplicates(self):
+        game = position([(7,7+i) for i in (-4,-3,-1,1,3,4)], WHITE)
+        compound = compound_at(game, WHITE, (7,7))
+        self.assertIn('44', compound.kinds)
+        self.assertIn((7,7), white_44_moves(game))
+        self.assertEqual({t.axis for t in compound.fours}, {(0,1)})
+        self.assertEqual({tuple(sorted(t.continuations)) for t in compound.fours},
+                         {((7,5),), ((7,9),)})
+
     def test_completion_cross_overline_excluded(self):
         game = position([(7,3),(7,4),(7,5),(4,7),(5,7),(6,7),(8,7),(9,7)])
         with placed(game, BLACK, (7,6)):

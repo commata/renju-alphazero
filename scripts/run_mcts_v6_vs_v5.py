@@ -81,17 +81,83 @@ def summarize(matches, decisions):
                 observed_overhead=(timing['MCTS-v6']['seconds_per_move']/baseline - 1) if baseline else None)
 
 
+def audit_root_inputs(log_dir: Path) -> dict:
+    """Replay saved positions without rollouts; verify every V6 search input.
+
+    Equal ordered roots, scores/budgets and forced returns preserve the seeded
+    shared tree's decisions. This does not remeasure end-to-end runtime.
+    """
+    from search.mcts_v5 import _RootContext, _forced_v5_move
+    from search.mcts_v6 import _root_candidates_v6
+
+    payload = json.loads((log_dir / 'games.json').read_text(encoding='utf-8'))
+    if payload['config']['v6'] != V5_FINAL:
+        raise ValueError('root audit requires V5 FINAL parameters')
+    summary = json.loads((log_dir / 'summary.json').read_text(encoding='utf-8'))
+    indexed = {(d['game_id'], d['ply']): d for d in summary['decisions']}
+    forced_count, searched_count, mismatches = 0, 0, []
+    planner_seconds = 0.0
+    diagnostic_mismatches = []
+    counter_fields = [f.name for f in fields(SearchDiagnostics)
+                      if f.type is int and not f.name.startswith('planner_')
+                      and f.name not in {'best_root_tactical_score', 'selected_simulations', 'forced_policy_stage'}]
+    for game_id, result in enumerate(payload['games'], 1):
+        game = Game()
+        for record in result['moves']:
+            move = (record['row0'], record['col0'])
+            previous = indexed[(game_id, record['ply'])]
+            if previous['agent'] == 'MCTS-v6':
+                diag = SearchDiagnostics()
+                context = _RootContext(game.legal_moves(), diag)
+                forced = _forced_v5_move(game, context=context)
+                same = diag.forced_policy_stage == previous['forced_policy_stage']
+                if forced is not None:
+                    forced_count += 1
+                    same = same and forced == move
+                else:
+                    searched_count += 1
+                    roots, score, reasons = _root_candidates_v6(
+                        game, context, V5_FINAL['candidate_limit'], V5_FINAL['neighborhood_radius'],
+                    )
+                    budget = (V5_FINAL['tactical_simulations']
+                              if score >= V5_FINAL['tactical_score_threshold'] else V5_FINAL['simulations'])
+                    planner_seconds += diag.v6_threat_planner_seconds
+                    same = (same and roots == [tuple(m) for m in previous['root_candidates']]
+                            and score == previous['best_root_tactical_score']
+                            and budget == previous['selected_simulations'])
+                    changed = [key for key in counter_fields if getattr(diag, key) != previous.get(key, 0)]
+                    if sorted(reasons.get(move, ())) != sorted(previous.get('v6_selected_reasons', ())):
+                        changed.append('v6_selected_reasons')
+                    if changed:
+                        diagnostic_mismatches.append(dict(game_id=game_id, ply=record['ply'], fields=changed))
+                if not same:
+                    mismatches.append(dict(game_id=game_id, ply=record['ply']))
+            game.play(*move)
+    return dict(games=len(payload['games']), forced_decisions=forced_count,
+                searched_decisions=searched_count, mismatches=mismatches,
+                diagnostic_mismatches=diagnostic_mismatches, planner_seconds=planner_seconds)
+
+
 def make_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--games', type=int, default=1, help='games per color; 1 means 2 total')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--log-dir', type=Path)
+    parser.add_argument('--audit-log-dir', type=Path,
+                        help='replay existing logs and compare V6 root inputs; no new games')
     return parser
 
 
 def main():
     parser = make_parser()
     args = parser.parse_args()
+    if args.audit_log_dir is not None:
+        audit = audit_root_inputs(args.audit_log_dir)
+        (args.audit_log_dir / 'root_audit.json').write_text(json.dumps(audit, indent=2), encoding='utf-8')
+        print(json.dumps(audit, indent=2))
+        if audit['mismatches']:
+            raise SystemExit(1)
+        return
     if args.games < 1:
         parser.error('--games must be positive')
     log_dir = args.log_dir or default_log_dir('mcts_v6_vs_v5', args.seed)

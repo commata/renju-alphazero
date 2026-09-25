@@ -4,7 +4,9 @@ import unittest
 from agents import MCTSV6Agent
 from evaluation.match import GameResult, MatchResult
 from renju import BLACK, WHITE
-from scripts.run_mcts_v6_vs_v5 import make_parser, summarize, annotate_defense_outcomes, v5_final
+from scripts.run_mcts_v6_vs_v5 import (
+    make_parser, summarize, annotate_defense_outcomes, v5_final, audit_root_inputs,
+)
 from search.mcts_v6 import V5_FINAL, SearchDiagnostics
 
 
@@ -34,6 +36,31 @@ class V6RunnerTest(unittest.TestCase):
         self.assertEqual(summary['v6_by_color']['white']['defense_followups_observed'], 0)
         self.assertEqual(summary['observed_overhead'], 1.5)
         self.assertIsNone(decisions[-1]['black_43_on_next_reply'])
+
+    def test_root_audit_accepts_matching_inputs_and_flags_changed_roots(self):
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from renju import Game
+        from evaluation import save_match_logs
+        from search.mcts_v5 import _RootContext
+        from search.mcts_v6 import _root_candidates_v6
+
+        game = Game()
+        roots, score, _ = _root_candidates_v6(game, _RootContext(game.legal_moves(), SearchDiagnostics()), 20, 2)
+        record = dict(game_id=1, ply=1, agent='MCTS-v6', forced_policy_stage=None,
+                      root_candidates=roots, best_root_tactical_score=score, selected_simulations=50)
+        result = GameResult(None,1,0,'MCTS-v6','MCTS-v5-final',((7,7),))
+        match = MatchResult(1,0,0,1,1,1,0,0,(result,),42)
+        with TemporaryDirectory() as directory:
+            path = Path(directory)
+            save_match_logs(path, [('test',match)], dict(v6=V5_FINAL))
+            summary = path / 'summary.json'
+            summary.write_text(json.dumps(dict(decisions=[record])), encoding='utf-8')
+            self.assertEqual(audit_root_inputs(path)['mismatches'], [])
+            record['root_candidates'] = []
+            summary.write_text(json.dumps(dict(decisions=[record])), encoding='utf-8')
+            self.assertEqual(audit_root_inputs(path)['mismatches'], [dict(game_id=1, ply=1)])
 
 
 if __name__ == '__main__':
