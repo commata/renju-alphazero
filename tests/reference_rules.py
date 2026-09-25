@@ -31,10 +31,6 @@ def _build_line_info() -> dict[tuple[int, int, int, int], tuple[tuple[tuple[int,
 
 
 _LINE_INFO = _build_line_info()
-_NEIGHBORS4 = {
-    key: coords[max(0, index - 4):index] + coords[index + 1:index + 5]
-    for key, (coords, index) in _LINE_INFO.items()
-}
 
 
 def run_length(board: list[list[int]], row: int, col: int, dr: int, dc: int) -> int:
@@ -118,12 +114,6 @@ def _straight_four_after_extension(
 def _open_three(board: list[list[int]], move: tuple[int, int], dr: int, dc: int) -> bool:
     """Check a three, recursively requiring its straight-four extension to be legal."""
     coords, index = _LINE_INFO[(*move, dr, dc)]
-    # A four-cell group containing move and one new extension needs two
-    # existing black stones, both within three cells of move. This necessary
-    # condition only rejects impossible directions; recursive legality follows.
-    near = coords[max(0, index - 3):index] + coords[index + 1:index + 4]
-    if sum(board[r][c] == BLACK for r, c in near) < 2:
-        return False
     for pos in coords[max(0, index - 4):index + 5]:
         r, c = pos
         if board[r][c] != EMPTY:
@@ -165,38 +155,10 @@ def _forbidden_after_black_move(board: list[list[int]], row: int, col: int) -> s
     return None
 
 
-def _quiet_black_point(board: list[list[int]], row: int, col: int) -> bool:
-    """Prove safety, or defer to the exact classifier (False is inconclusive).
-
-    Count other black stones within +/-4 on each axis, ignoring blockers.
-    An overline through move needs at least four of these on one axis; a
-    four in a five-cell window needs three. A straight-four extension needs
-    two within +/-3, so double-three requires two axes with at least two.
-    Thus <=2 on every axis, with only one axis reaching two, excludes every
-    forbidden type. Ignoring blockers only overcounts, never certifies a
-    forbidden move. Geometry is immutable; no board results are cached.
-    """
-    two_stone_axes = 0
-    for dr, dc in DIRECTIONS:
-        count = 0
-        for r, c in _NEIGHBORS4[(row, col, dr, dc)]:
-            if board[r][c] == BLACK:
-                count += 1
-                if count > 2:
-                    return False
-        if count == 2:
-            two_stone_axes += 1
-            if two_stone_axes > 1:
-                return False
-    return True
-
-
 def forbidden_reason(board: list[list[int]], row: int, col: int) -> str | None:
     """Classify a prospective black move. Board is restored before returning."""
     if not inside(row, col) or board[row][col] != EMPTY:
         raise ValueError("빈 보드의 범위 내 좌표가 필요합니다")
-    if _quiet_black_point(board, row, col):
-        return None
     board[row][col] = BLACK
     try:
         return _forbidden_after_black_move(board, row, col)

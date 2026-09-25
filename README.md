@@ -198,3 +198,22 @@ python scripts/run_web_play.py
 
 `http://127.0.0.1:8000`에 접속합니다. 완료된 대국은 `logs/web_play/`에 JSON/CSV로 자동 저장됩니다.
 자세한 내용은 [web/README.md](web/README.md)를 참고하세요.
+
+## 규칙 엔진 성능 검증
+
+합법수 집합과 행 우선 순서를 유지하면서 금수 판정의 불필요한 호출을 줄였습니다.
+동결 reference oracle, 단계별 측정값과 정확성 근거는
+[최적화 검증 기록](docs/rule-optimization.md)을 참고하세요.
+
+```powershell
+python -m unittest discover -s tests -v
+python scripts/validate_rule_optimization.py --seed 42 --positions 10000
+python scripts/benchmark_rule_optimization.py --seed 42 --iterations 20 --repeats 5 --games 2
+python scripts/benchmark_rule_optimization.py --seed 42 --smoke
+python scripts/benchmark_engine.py --iterations 100 --games 10 --seed 42 --profile
+```
+
+별도 benchmark는 같은 프로세스에서 reference/optimized를 교대로 실행하며,
+준비·warm-up을 제외한 `perf_counter()` 측정의 mean/median/min/max와 ops/sec를 출력합니다.
+`--smoke`는 V6의 흑·백 각 한 판을 simulations/tactical_simulations=1로 실행하여
+reference와 optimized의 승자 및 전체 기보를 비교합니다.

@@ -1,0 +1,496 @@
+{
+  "baseline_commit": "9f48d146111bd1c1a6154c58dbd10b7aaa26da13",
+  "oracle_git_blob": "7bdd91285ffdb4eb39e007c79485a731da20c69b",
+  "python": "3.13.14",
+  "date": "2026-09-25",
+  "paired": {
+    "baseline": {
+      "black_legal_moves": {
+        "reference": {
+          "mean_ms": 8.358708749983634,
+          "median_ms": 8.22927624994918,
+          "min_ms": 7.995370000026014,
+          "max_ms": 8.760299999994459,
+          "ops_sec": 119.63570330189552
+        },
+        "optimized": {
+          "mean_ms": 8.588865749952674,
+          "median_ms": 8.551406249898719,
+          "min_ms": 8.413474999906612,
+          "max_ms": 8.914324999932433,
+          "ops_sec": 116.42980914045724
+        }
+      },
+      "forbidden_reason": {
+        "reference": {
+          "mean_ms": 0.11791275000107887,
+          "median_ms": 0.11551336538104806,
+          "min_ms": 0.11537250000121556,
+          "max_ms": 0.12632634615539035,
+          "ops_sec": 8480.847066927456
+        },
+        "optimized": {
+          "mean_ms": 0.11591248076281492,
+          "median_ms": 0.1128081730712438,
+          "min_ms": 0.11093499998913522,
+          "max_ms": 0.1252237500011688,
+          "ops_sec": 8627.19867109257
+        }
+      },
+      "random_game": {
+        "reference": {
+          "mean_ms": 370.30977999820607,
+          "median_ms": 367.9978000000119,
+          "min_ms": 338.2004000013694,
+          "max_ms": 405.58859999873675,
+          "ops_sec": 2.700441776084997
+        },
+        "optimized": {
+          "mean_ms": 358.91955999832135,
+          "median_ms": 352.2487000009278,
+          "min_ms": 339.31789999769535,
+          "max_ms": 388.4680999908596,
+          "ops_sec": 2.7861396018781392
+        }
+      },
+      "random_moves_sec": {
+        "reference": 209.28423764658726,
+        "optimized": 215.9258191455558
+      }
+    },
+    "prefilter": {
+      "black_legal_moves": {
+        "reference": {
+          "mean_ms": 8.526516250094573,
+          "median_ms": 8.46919000014168,
+          "min_ms": 8.376633750049223,
+          "max_ms": 8.721948750098818,
+          "ops_sec": 117.28119324101544
+        },
+        "optimized": {
+          "mean_ms": 5.185693999992509,
+          "median_ms": 5.279527499988035,
+          "min_ms": 4.742617500050983,
+          "max_ms": 5.350273749900225,
+          "ops_sec": 192.83821991838403
+        }
+      },
+      "forbidden_reason": {
+        "reference": {
+          "mean_ms": 0.12292748076736014,
+          "median_ms": 0.11939971153389287,
+          "min_ms": 0.11264961538892329,
+          "max_ms": 0.13821230768371606,
+          "ops_sec": 8134.8775209385185
+        },
+        "optimized": {
+          "mean_ms": 0.08952484615012789,
+          "median_ms": 0.09277490384052865,
+          "min_ms": 0.08326903845535036,
+          "max_ms": 0.09474961538776719,
+          "ops_sec": 11170.08342380236
+        }
+      },
+      "random_game": {
+        "reference": {
+          "mean_ms": 366.7107799992664,
+          "median_ms": 368.09374999575084,
+          "min_ms": 338.3058000035817,
+          "max_ms": 381.7490999936126,
+          "ops_sec": 2.7269446510462565
+        },
+        "optimized": {
+          "mean_ms": 197.50460000213934,
+          "median_ms": 198.72280000708997,
+          "min_ms": 180.80010000267066,
+          "max_ms": 214.80730001349002,
+          "ops_sec": 5.063173212113379
+        }
+      },
+      "random_moves_sec": {
+        "reference": 211.33821045608488,
+        "optimized": 392.3959239387869
+      }
+    },
+    "fastpath": {
+      "black_legal_moves": {
+        "reference": {
+          "mean_ms": 8.449378500008606,
+          "median_ms": 8.420938749986817,
+          "min_ms": 8.333417500034557,
+          "max_ms": 8.60755749999953,
+          "ops_sec": 118.35190008341814
+        },
+        "optimized": {
+          "mean_ms": 2.403757999964,
+          "median_ms": 2.371727500030829,
+          "min_ms": 2.2023075000106473,
+          "max_ms": 2.601784999933443,
+          "ops_sec": 416.0152561177025
+        }
+      },
+      "forbidden_reason": {
+        "reference": {
+          "mean_ms": 0.11449715384794847,
+          "median_ms": 0.11322778846079018,
+          "min_ms": 0.10926192307334322,
+          "max_ms": 0.12202942308739204,
+          "ops_sec": 8733.84155319698
+        },
+        "optimized": {
+          "mean_ms": 0.08330221153860642,
+          "median_ms": 0.07968432691995986,
+          "min_ms": 0.07680403846629465,
+          "max_ms": 0.09739750000265374,
+          "ops_sec": 12004.483212748197
+        }
+      },
+      "random_game": {
+        "reference": {
+          "mean_ms": 358.1680300019798,
+          "median_ms": 359.31145001086406,
+          "min_ms": 334.94849999260623,
+          "max_ms": 388.10840000223834,
+          "ops_sec": 2.7919856498484035
+        },
+        "optimized": {
+          "mean_ms": 49.5773199989344,
+          "median_ms": 48.68415000237292,
+          "min_ms": 38.35469999467023,
+          "max_ms": 67.15919999987818,
+          "ops_sec": 20.17051345295578
+        }
+      },
+      "random_moves_sec": {
+        "reference": 216.37888786325126,
+        "optimized": 1563.214792604073
+      }
+    },
+    "final": {
+      "black_legal_moves": {
+        "reference": {
+          "mean_ms": 8.472987500026647,
+          "median_ms": 8.39886125013436,
+          "min_ms": 8.050587499928952,
+          "max_ms": 9.070432499902381,
+          "ops_sec": 118.0221261977378
+        },
+        "optimized": {
+          "mean_ms": 2.4351169999863487,
+          "median_ms": 2.467234999858192,
+          "min_ms": 2.2261962500124355,
+          "max_ms": 2.5680250000732485,
+          "ops_sec": 410.6578862558169
+        }
+      },
+      "forbidden_reason": {
+        "reference": {
+          "mean_ms": 0.11903821153492362,
+          "median_ms": 0.11725442306599758,
+          "min_ms": 0.11246711538450864,
+          "max_ms": 0.13164413461569122,
+          "ops_sec": 8400.663846555006
+        },
+        "optimized": {
+          "mean_ms": 0.08160288461882514,
+          "median_ms": 0.08293615385180321,
+          "min_ms": 0.07506634614960954,
+          "max_ms": 0.08610317307522145,
+          "ops_sec": 12254.468756479571
+        }
+      },
+      "random_game": {
+        "reference": {
+          "mean_ms": 355.39087999932235,
+          "median_ms": 357.34005000267643,
+          "min_ms": 327.48560000618454,
+          "max_ms": 376.82029999268707,
+          "ops_sec": 2.813803212963447
+        },
+        "optimized": {
+          "mean_ms": 48.27852999587776,
+          "median_ms": 48.07070000242675,
+          "min_ms": 40.08139998768456,
+          "max_ms": 59.21370000578463,
+          "ops_sec": 20.713141019111074
+        }
+      },
+      "random_moves_sec": {
+        "reference": 218.06974900466713,
+        "optimized": 1605.2684289811082
+      }
+    }
+  },
+  "profiles": {
+    "baseline": {
+      "forbidden_reason": {
+        "calls": "6994",
+        "self_seconds": 0.005,
+        "cumulative_seconds": 0.947
+      },
+      "_forbidden_after_black_move": {
+        "calls": "7347/6994",
+        "self_seconds": 0.038,
+        "cumulative_seconds": 0.941
+      },
+      "_open_three": {
+        "calls": "29324/27948",
+        "self_seconds": 0.074,
+        "cumulative_seconds": 0.67
+      },
+      "_straight_four_after_extension": {
+        "calls": "150711",
+        "self_seconds": 0.333,
+        "cumulative_seconds": 0.565
+      },
+      "_fours": {
+        "calls": "29354",
+        "self_seconds": 0.147,
+        "cumulative_seconds": 0.219
+      },
+      "run_length": {
+        "calls": "37468",
+        "self_seconds": 0.026,
+        "cumulative_seconds": 0.039
+      }
+    },
+    "prefilter": {
+      "forbidden_reason": {
+        "calls": "6994",
+        "self_seconds": 0.004,
+        "cumulative_seconds": 0.436
+      },
+      "_forbidden_after_black_move": {
+        "calls": "7347/6994",
+        "self_seconds": 0.039,
+        "cumulative_seconds": 0.43
+      },
+      "_fours": {
+        "calls": "29354",
+        "self_seconds": 0.151,
+        "cumulative_seconds": 0.223
+      },
+      "_open_three": {
+        "calls": "29324/27948",
+        "self_seconds": 0.033,
+        "cumulative_seconds": 0.155
+      },
+      "_straight_four_after_extension": {
+        "calls": "7352",
+        "self_seconds": 0.021,
+        "cumulative_seconds": 0.044
+      },
+      "run_length": {
+        "calls": "37468",
+        "self_seconds": 0.026,
+        "cumulative_seconds": 0.039
+      }
+    },
+    "fastpath": {
+      "forbidden_reason": {
+        "calls": "6994",
+        "self_seconds": 0.003,
+        "cumulative_seconds": 0.078
+      },
+      "_forbidden_after_black_move": {
+        "calls": "766/635",
+        "self_seconds": 0.004,
+        "cumulative_seconds": 0.065
+      },
+      "_open_three": {
+        "calls": "3028/2512",
+        "self_seconds": 0.005,
+        "cumulative_seconds": 0.036
+      },
+      "_fours": {
+        "calls": "3044",
+        "self_seconds": 0.018,
+        "cumulative_seconds": 0.03
+      },
+      "_straight_four_after_extension": {
+        "calls": "3181",
+        "self_seconds": 0.008,
+        "cumulative_seconds": 0.017
+      },
+      "_quiet_black_point": {
+        "calls": "6994",
+        "self_seconds": 0.009,
+        "cumulative_seconds": 0.009
+      },
+      "run_length": {
+        "calls": "7012",
+        "self_seconds": 0.006,
+        "cumulative_seconds": 0.008
+      }
+    },
+    "final": {
+      "forbidden_reason": {
+        "calls": "6994",
+        "self_seconds": 0.004,
+        "cumulative_seconds": 0.095
+      },
+      "_forbidden_after_black_move": {
+        "calls": "766/635",
+        "self_seconds": 0.005,
+        "cumulative_seconds": 0.077
+      },
+      "_open_three": {
+        "calls": "3028/2512",
+        "self_seconds": 0.005,
+        "cumulative_seconds": 0.043
+      },
+      "_fours": {
+        "calls": "3044",
+        "self_seconds": 0.021,
+        "cumulative_seconds": 0.035
+      },
+      "_straight_four_after_extension": {
+        "calls": "3181",
+        "self_seconds": 0.009,
+        "cumulative_seconds": 0.02
+      },
+      "_quiet_black_point": {
+        "calls": "6994",
+        "self_seconds": 0.013,
+        "cumulative_seconds": 0.013
+      },
+      "run_length": {
+        "calls": "7012",
+        "self_seconds": 0.006,
+        "cumulative_seconds": 0.01
+      }
+    }
+  },
+  "differential": {
+    "prefilter": {
+      "positions": 1000,
+      "cells": 166515,
+      "None": 161304,
+      "삼삼": 701,
+      "사사": 1761,
+      "장목": 2749,
+      "mismatches": 0,
+      "legal_mismatches": 0,
+      "restoration_failures": 0,
+      "source/double-three": 4,
+      "source/blocked-three": 4,
+      "source/recursive-three": 4,
+      "source/double-four": 4,
+      "source/same-axis-four": 4,
+      "source/overline": 4,
+      "source/exact-five": 4,
+      "source/edge-three": 4,
+      "source/edge-four": 4,
+      "source/cross-overline": 4,
+      "source/forbidden-extension": 4,
+      "source/recursive-extension": 4,
+      "source/v6-replay": 19,
+      "source/synthetic": 311,
+      "source/random": 311,
+      "source/tactical": 311
+    },
+    "fastpath": {
+      "positions": 1000,
+      "cells": 166515,
+      "None": 161304,
+      "삼삼": 701,
+      "사사": 1761,
+      "장목": 2749,
+      "mismatches": 0,
+      "legal_mismatches": 0,
+      "restoration_failures": 0,
+      "source/double-three": 4,
+      "source/blocked-three": 4,
+      "source/recursive-three": 4,
+      "source/double-four": 4,
+      "source/same-axis-four": 4,
+      "source/overline": 4,
+      "source/exact-five": 4,
+      "source/edge-three": 4,
+      "source/edge-four": 4,
+      "source/cross-overline": 4,
+      "source/forbidden-extension": 4,
+      "source/recursive-extension": 4,
+      "source/v6-replay": 19,
+      "source/synthetic": 311,
+      "source/random": 311,
+      "source/tactical": 311
+    },
+    "final_seed42": {
+      "positions": 10000,
+      "cells": 1615570,
+      "None": 1558091,
+      "삼삼": 8778,
+      "사사": 19537,
+      "장목": 29164,
+      "mismatches": 0,
+      "legal_mismatches": 0,
+      "restoration_failures": 0,
+      "source/double-three": 4,
+      "source/blocked-three": 4,
+      "source/recursive-three": 4,
+      "source/double-four": 4,
+      "source/same-axis-four": 4,
+      "source/overline": 4,
+      "source/exact-five": 4,
+      "source/edge-three": 4,
+      "source/edge-four": 4,
+      "source/cross-overline": 4,
+      "source/forbidden-extension": 4,
+      "source/recursive-extension": 4,
+      "source/v6-replay": 19,
+      "source/synthetic": 3311,
+      "source/random": 3311,
+      "source/tactical": 3311
+    },
+    "final_seed2026": {
+      "positions": 1000,
+      "cells": 171673,
+      "None": 166350,
+      "삼삼": 933,
+      "사사": 1757,
+      "장목": 2633,
+      "mismatches": 0,
+      "legal_mismatches": 0,
+      "restoration_failures": 0,
+      "source/double-three": 4,
+      "source/blocked-three": 4,
+      "source/recursive-three": 4,
+      "source/double-four": 4,
+      "source/same-axis-four": 4,
+      "source/overline": 4,
+      "source/exact-five": 4,
+      "source/edge-three": 4,
+      "source/edge-four": 4,
+      "source/cross-overline": 4,
+      "source/forbidden-extension": 4,
+      "source/recursive-extension": 4,
+      "source/v6-replay": 19,
+      "source/synthetic": 311,
+      "source/random": 311,
+      "source/tactical": 311
+    }
+  },
+  "tests": {
+    "baseline": 149,
+    "prefilter": 149,
+    "fastpath": 149,
+    "final": 149
+  },
+  "smoke": [
+    {
+      "seed": 42,
+      "v6_color": "black",
+      "winner": 1,
+      "moves": 9,
+      "sha256": "7000f108b14d5e10cb95490dc9d99697b9b8448a324552f1c9e25497f48f526f"
+    },
+    {
+      "seed": 43,
+      "v6_color": "white",
+      "winner": -1,
+      "moves": 10,
+      "sha256": "8a0a596fdd1cbb6ff1e0f87b044a0657bea6942611117e2e46c31d8b198c7188"
+    }
+  ]
+}
