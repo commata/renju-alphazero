@@ -530,3 +530,285 @@ V5a는 `tactical_score_threshold=None`이므로 adaptive tactical simulation은 
 
 대규모 실전 테스트는 별도로 실행한다.
 
+## V5 FINAL과 V6 Threat Planning
+
+```text
+V5 = reactive forced tactical policy
+V6 = proactive threat construction
+   + proactive opponent threat prevention
+```
+
+### 비교 기준: V5 FINAL
+
+V6 비교 runner는 기존 V5a/b/c 기본값과 별개로 양쪽에 아래 값을 명시적으로 전달한다.
+기존 V5 생성자의 기본값과 공개 API는 바꾸지 않는다. 이번 작업에서 파라미터 튜닝은 하지 않았다.
+
+| 설정 | V5 FINAL / V6 공통 |
+| --- | ---: |
+| simulations | 50 |
+| tactical_simulations | 100 |
+| tactical_score_threshold | 1800 |
+| exploration | sqrt(2) |
+| candidate_limit | 20 |
+| initial_width | 8 |
+| neighborhood_radius | 2 |
+| priority_top_k | 8 |
+
+사용자가 제공한 V5 FINAL 기준 기록이며, 아래 100판을 이번 V6 작업에서 다시 실행한 것은 아니다.
+
+| 검증 | V5 W/L/D | 흑 W/L/D | 백 W/L/D |
+| --- | --- | --- | --- |
+| seed 42, 100판, 상대 V4.1 | 65/19/16 | 28/11/11 | 37/8/5 |
+| seed 43, 20판, 상대 V4.1 | 15/2/3 | 5/2/3 | 10/0/0 |
+
+seed 42 score rate는 전체 73%, 흑 67%, 백 79%다. normal/tactical 결정은
+1665/785회(약 32%), V5/V4.1 착수당 시간은 각각 약 1.499/1.291초/수다.
+seed 43 tactical 비중은 약 26%다. V6의 직접 비교 상대는 **V5 FINAL**이다.
+
+### V6.0: 독립 pattern detector
+
+`src/search/threat_patterns.py`는 AI 선택과 독립적으로 사용할 수 있다.
+
+```python
+from search.threat_patterns import (
+    black_legal_43_moves, black_immediate_43_creators,
+    white_43_moves, white_44_moves, white_33_moves,
+)
+```
+
+- four는 creator를 포함한 네 돌과 실제 승리 completion으로 표현한다.
+  동일한 네 돌을 표현하는 여러 5-cell window는 `(방향, 돌 집합)` 하나로 합친다.
+- three는 creator를 포함한 세 돌을 합법적으로 연장해 양끝에 합법 승리점이 있는
+  곧은 four를 만들 수 있는 구조다. 연장점뿐 아니라 양끝 방어점도 보관한다.
+- 독립성은 **서로 포함되지 않는 돌 집합이며 방어점 집합이 겹치지 않는 위협**으로 정의한다.
+  방향이 같아도 서로 다른 승리점으로 이어지는 독립 44는 탐지한다.
+  같은 돌 집합의 sliding window, 더 강한 패턴의 부분집합, 공통 방어점이 있는 표현을
+  독립 위협 두 개로 세지 않는다.
+- 43은 독립적인 four와 three의 조합이다. four의 각 합법 방어를 실제로 놓은 뒤
+  같은 three의 합법 연장이 남는지 다시 검사한다. 이는 상대의 모든 counter-attack까지
+  검증한 강제승 증명과는 구분한다.
+- 흑 creator, three 연장, 승리 completion, 흑 방어 모두 기존 `forbidden_reason()`에
+  기반한 합법성 helper를 사용한다. 흑 금수 규칙을 새 detector에 복제하지 않는다.
+  기존 엔진은 장목 검사 다음에 정확한 5목 승리를 33/44보다 우선한다.
+  따라서 실제 exact-five completion의 금수 반례는 교차 장목으로 검증하고,
+  33/44 금수 반례는 비승리 creator·three 연장 수로 검증한다.
+- four 방어가 다른 교차선을 막아서 three 연장의 금수를 해소할 수 있으므로,
+  흑 43의 three는 실제 four 방어 이후의 보드에서도 검사한다.
+- 백은 독립 four 두 개를 44, three 두 개를 33, four+three를 43으로 인식한다.
+  즉시 승리수는 compound creator에서 제외하고 기존 Stage 1에 맡긴다.
+
+캐시하는 것은 불변 보드 geometry뿐이다. 상태별 결과를 영구 보관하지 않으므로
+테스트나 호출자가 `game.board`를 직접 바꾸어도 이전 결과가 재사용되지 않는다.
+임시 돌은 context manager의 `try/finally`로 복구하며 turn/history/terminal flags를 바꾸지 않는다.
+
+### V6.1: 공격 후보와 백의 흑 43 예방
+
+`src/search/mcts_v6.py`는 우선 `_forced_v5_move()`를 그대로 호출한다.
+
+1. 내 즉시 승리
+2. 상대 즉시 승리 차단
+3. 내 unstoppable four
+4. 상대 unstoppable four 예방
+5. 상대 double threat: 기존 single forced block / multi-root injection
+6. 위에서 반환하지 않았을 때만 V6 planner와 Adaptive MCTS
+
+흑의 legal 43, 백의 44/43/33 creator를 root에 주입한다.
+백은 상대 흑의 legal 43 creator와 관련 four completion / three 연장·끝점을
+방어 후보로 추가한다. 새 방어는 **forced return이 아니다**.
+백 자신의 즉시 승리나 기존 unstoppable four가 항상 먼저 처리된다.
+
+기존 V5 top candidates와 Stage 5 주입을 먼저 얻고, 그 전체 집합에 V6 후보를 합친다.
+후보는 실제 root 합법수와 교차한다. 일반 candidate limit는 20 그대로이며,
+전술 주입 때문에 root 크기가 20을 넘는 것은 허용한다.
+
+V6 root 정렬은 큰 점수 덧셈 대신 ordinal tier를 사용한다.
+백 44 → legal 43 / 흑 43 방어 / 금수 방어 유도 → 백 33 → future setup 순이며,
+Stage 5 주입은 43 방어와 같은 tier를 유지한다. 같은 tier에서는 관측한 방어 수와
+기존 `_v321_move_key`를 사용한다. future 공격은 검사한 합법 response 수가 적은 것을 우선한다.
+V6 후보가 없으면 기존 V5 root 순서를 그대로 반환한다.
+
+adaptive budget의 전술 점수에는 planner tier를 더하지 않는다. 후보들의 원래 V3.2.1 점수와
+고정 threshold 1800을 사용한다. 탐색 후보 변화로 normal/tactical 비중은 달라질 수 있다.
+공유 `_search_v5_tree()`는 기존 V5 tree loop를 함수로 추출한 것으로,
+progressive widening·UCT·V3.2.1 rollout·seeded tie-break는 그대로다.
+
+### V6.2: 2-ply Threat Planning
+
+`src/search/threat_planning.py`는 `X → 상대 response → Y compound`를 검사한다.
+
+- 내 돌 2개 이상인 unblocked window의 빈칸에서 구조적으로 유망한 X를 선택한다.
+- X 자체가 이미 compound 또는 즉시 승리면 future setup으로 중복 계산하지 않는다.
+- X 이후 Y가 만드는 compound에는 **X가 해당 compound의 구성 돌로 참여**해야 한다.
+  보드 다른 곳에 이미 있던 공격을 X의 효과로 세지 않는다.
+- X가 즉시 four를 만들면 상대의 승리 또는 completion 차단을 response로 검사한다.
+  그 외에는 관련 compound creator·critical window 방어점과 전역 counter-four를 검사한다.
+- 각 합법 response 뒤에 합법 Y와 completion을 다시 검사한다.
+  상대가 먼저 즉시 승리하거나, Y 이후 상대의 즉시 승리가 남으면 제외한다.
+- 검사한 모든 response에서 유지되는 종류만 future 43/44/33으로 기록한다.
+  흑은 legal 43만 기록한다. 이는 제한된 threat-space 평가이며 전체 minimax 증명이 아니다.
+- 백은 흑 future legal-43 setup과 그 연결·방어점을 root에 주입한다.
+  즉시 흑 43이 없는 synthetic position에서도 이를 검증했다.
+
+초기 계산 상한은 setup 6개, 후속 creator 8개, relevant defense 24개다.
+방어가 24개를 넘으면 해당 setup을 제외한다. 방어 일부를 버린 뒤 성공으로 판정하지 않는다.
+setup/continuation 상한은 후보 누락을 허용하는 성능 제약이며 최적값이라고 주장하지 않는다.
+score 기반 새 activation threshold를 튜닝하지 않고 2-stone window 존재를 구조적 gate로 사용한다.
+각 상한 도달 횟수와 검사량을 diagnostics에 노출한다.
+
+### V6.3: WHITE forbidden-defense induction
+
+백의 four 공격 X 이후 completion 방어점이 흑에게 금수인지 기존 엔진으로 검사한다.
+`white_defense_profile()`은 실제로 모든 백 즉시 승리를 없애는 합법 방어 수,
+금수 방어점 수, 상대의 가능한 completion 방어 후 최소 잔여 승리점 수를 제공한다.
+흑의 즉시 counter-win은 합법 방어로 포함한다.
+
+초기 구현의 induction 계수는 **four completion 방어**에 한정된다.
+가상 three 끝점을 곧바로 강제 방어로 간주하지 않는다. 모든 방어가 금수인 명백한 four는
+이미 V5 Stage 3에서 처리되므로, 그 수에서는 V6 planner 계수가 0일 수 있다.
+2-ply 탐색 중에도 흑 response·creator의 합법성을 재검사하지만,
+future induction을 별도 승리 증명으로 반환하지 않는다.
+
+### Diagnostics와 비교 runner
+
+```powershell
+python -m unittest discover -s tests -v
+python -m compileall src tests scripts
+git diff --check
+python scripts/run_mcts_v6_vs_v5.py --games 1 --seed 42
+python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 42
+python scripts/run_mcts_v6_vs_v5.py --audit-log-dir logs/v6_smoke_10
+```
+
+`--games`는 색상별 판수다. 기본 1은 총 2판이다. runner에는 파라미터 튜닝 옵션이나
+early draw를 추가하지 않았다. V6/V5 FINAL에 같은 설정을 전달하고 기존 CSV/JSON exporter를 재사용한다.
+
+`SearchDiagnostics`는 기존 V5 diagnostics를 상속하며 다음을 추가한다.
+
+- `black_43_candidates`, `white_43_candidates`, `white_44_candidates`, `white_33_candidates`
+- `black_43_defense_candidates`, `black_43_defense_injections`
+- `future_black_43_setups`, `future_white_43_setups`, `future_white_44_setups`, `future_white_33_setups`
+- `future_black_43_defense_candidates`, `forbidden_defense_induction_count`
+- `legal_defense_count`, `forbidden_defense_count`, `remaining_winning_continuations`
+- `v6_root_injection_count`, `v6_selected_threat_type`, `v6_selected_reasons`
+- `v6_threat_planner_seconds`, `planner_*` 검사량과 상한 도달 계수
+
+숫자는 후보 수를 합산한 값이다. 같은 수가 여러 위협을 만들면 종류별 계수는 중복될 수 있고,
+root 주입은 좌표별로 한 번만 센다. 기존 후보에 이미 있던 전술 좌표도 주입 계수에 포함한다.
+강제 Stage 1~5에서 반환한 수에서는 V6 planner를 실행하지 않으므로 새 계수는 0이다.
+
+`summary.json`은 V6 흑/백 W/L/D, 색상별 detector·주입·선택 횟수,
+에이전트별 초/수, planner 시간, forced stage와 simulation mode를 집계한다.
+선택된 백의 흑 43 방어는 기보를 별도로 replay하여 방어 직후 남은 흑 43 creator 수와
+바로 다음 흑 착수가 실제 43이었는지도 기록한다. 이 계측은 착수 시간 측정 밖에서 수행한다.
+후속 흑 착수가 없으면 결과를 `null`로 남겨 성공 방어로 잘못 집계하지 않는다.
+
+`--audit-log-dir`는 새 대국 없이 기보를 replay하여 강제 반환수, 순서가 있는 root 후보,
+전술 점수·simulation budget, detector·주입·선택 계수를 기존 로그와 대조한다.
+결과는 `root_audit.json`에 저장한다. tree/rollout과 설정이 같은 상태에서 모든 root 입력이 같으면
+seeded 탐색 경로도 유지되지만, 이 검사는 end-to-end 실행 시간을 재측정하지 않는다.
+
+### 성능과 검증 범위
+
+5-cell window와 cell별 window geometry를 사전 계산하고, 서로 다른 2-stone 이상 구조가 있는
+creator만 상세 분석한다. planner는 root에만 연결되어 rollout에서 재귀 탐색하지 않는다.
+각 호출의 결과와 root tactical score는 호출 안에서만 재사용한다.
+
+새 테스트는 4방향·edge, 33/44/장목 creator, 후속 33/44 금수와 교차 장목 completion,
+canonical window 중복, full-board detector와 structural shortlist 비교,
+실제 규칙 엔진의 completion 승리, 흑/백 future setup, 금수 방어 유도,
+백의 즉시·future 흑 43 예방, forced stage 보존, 예외 복원, seeded determinism,
+직접 board 수정, global random·history·turn·winner 보존, runner 색상 집계를 포함한다.
+
+관측 결과는 아래 검증 기록에 정리한다. 기력에 맞춰 점수나 threshold를 조정하지 않는다.
+
+### V6 검증 기록 (2026-09-25)
+
+- 전체 `python -m unittest discover -s tests -v`: **136 tests PASS**.
+  기존 96개를 그대로 유지하고 V6 관련 40개를 추가했다.
+- `python -m compileall src tests scripts`: PASS.
+- `git diff --check`: PASS.
+- V5 변경은 tree loop를 공통 함수로 추출한 9줄뿐이다. 기존 V5의 정책·설정·diagnostics,
+  V3.2.1/V4·규칙 엔진·기존 runner의 코드는 변경하지 않았다.
+- seed 42 사전 smoke, 1판/색: V6 흑 0W/1L/0D, 백 1W/0L/0D.
+  각각 78수/82수, 총 226.789초. V6 1.473초/수, V5 FINAL 1.361초/수, 관측 비율 +8.24%.
+  이 사전 실행 뒤에는 setup 연결 조건과 잔여 승리점 집계를 보강했고,
+  아래 10판 실행은 보강된 구현을 사용한다.
+- 사전 smoke의 백은 future 43/44/33 후보 7/4/1개, 중복 제거 root 주입 11개,
+  future 44 선택 1회였다. 78수의 future 44 선택 뒤 80수 Stage 3, 82수 Stage 1로 승리했다.
+  인과적 기력 개선의 증명은 아니며 기보·진단에서 확인한 순서다.
+  replay에서 0-based `(3,5) → 흑 (2,4) → 백 (1,5)`의 실제 44 생성을 확인했다.
+
+#### 10판 smoke: seed 42 / 색상당 5판 / early draw OFF
+
+| 배치 | V6 W/L/D | 대국 수 |
+| --- | --- | ---: |
+| V6 Black vs V5 FINAL White | 1/2/2 | 5 |
+| V5 FINAL Black vs V6 White | 2/2/1 | 5 |
+| 합계 | 3/4/3 | 10 |
+
+총 1066수, 1611.504초. IllegalMove·crash 없이 모두 정상 종료했다.
+무승부 3판은 모두 225수로 보드를 채웠으며 조기 종료가 아니다.
+
+| Detector / 정책 | 후보 탐지 수 | 실제 선택 수 |
+| --- | ---: | ---: |
+| 흑 own legal 43 | 4 | 1 |
+| 흑 own future legal 43 | 4 | 1 |
+| 백 own 43 | 6 | 0 |
+| 백 own 44 | 0 | 0 |
+| 백 own 33 | 1 | 1 |
+| 백 future 43 | 17 | 3 |
+| 백 future 44 | 9 | 1 |
+| 백 future 33 | 2 | 0 |
+| 백 forbidden-defense induction | 0 | 0 |
+| 백의 흑 immediate 43 예방 | 흑 creator 2 / 방어 후보 11 | 1 |
+| 백의 흑 future 43 예방 | 흑 setup 11 / 방어 후보 20 | 2 |
+
+중복 제거 root 주입은 흑 8개, 백 64개로 총 72개다. 전술 이유가 있는 수의 실제 선택은
+흑 2회, 백 8회다. 백의 immediate 43 방어 후보 11개는 모두 root에 주입됐다.
+선택된 immediate/future 방어 3회 모두 바로 다음 흑 착수에서 43은 발생하지 않았다.
+그러나 game 10의 immediate 방어 직후에는 흑 43 creator가 여전히 1개 남았다.
+따라서 다음 수의 43 부재를 완전한 방어 성공이나 강제패 회피 증명으로 해석하지 않는다.
+
+| 10판 실행 시간 지표 | 값 |
+| --- | ---: |
+| V6 seconds/move | 1.478502 |
+| V5 FINAL seconds/move | 1.544740 |
+| 관측 시간 비율 V6/V5 - 1 | -4.29% |
+| V6 planner seconds 합계 | 3.778649 |
+| V6 normal / tactical 결정 | 247 / 99 |
+| V6 forced 결정 | 187 |
+
+같은 방향의 독립 44 지원은 smoke 실행 중 최종 보강했다. 보강 후 전체 기보를 재생해
+**533개 V6 결정(강제수 187개 + MCTS 346개)의 반환수/root 순서/점수/budget 불일치 0개**,
+detector·주입·선택 계수 불일치 0개를 확인했다. 기존 shared tree는 변경하지 않았으므로
+이 로그의 seeded 선택 경로를 유지한다. 최종 보강 후 planner 재생 시간은 8.809초였다.
+위 end-to-end 초/수는 10판 실행 당시 관측이며, 보강 후 전체 대국 시간의 재측정값은 아니다.
+서로 다른 국면과 일부 초기 회귀 테스트 동시 실행의 영향도 있으므로 순수 오버헤드 상한으로 주장하지 않는다.
+
+이 결과는 10판 정상 동작과 전술 전달의 증거다. V6 우월성을 입증하지 않으며,
+3승 4패 3무에 맞춰 score/threshold를 재조정하지 않았다.
+
+로그는 `logs/v6_unit_tests.txt`, `logs/v6_smoke_2/`, `logs/v6_smoke_10/`에 저장한다.
+각 smoke 폴더는 `games.csv`, `moves.csv`, `games.json`, `summary.json`을 포함한다.
+`logs/`는 기존 `.gitignore` 대상이므로 로컬 기록이고, 요약은 이 문서에 보존한다.
+
+### 알려진 범위 제한
+
+- 2-ply는 setup/continuation 상한과 relevant-defense 집합을 사용하는 휴리스틱이다.
+  전체 합법 응수에 대한 강제승 증명이 아니므로 forced return으로 승격하지 않는다.
+- 선택된 root 후보가 모두 실제로 tree expansion을 받는 것은 아니다.
+  기존 progressive widening과 50/100 simulations를 유지하기 때문이다.
+- future setup 이후의 계획 수를 자동 실행하지 않는다. 10판 중 game 5의 흑 55수
+  `(2,9)`는 백 `(1,10)` 응수 뒤 legal 43 `(1,9)`를 남겼지만,
+  실제 57수에서는 기존 V5 Stage 5가 `(4,13)` 방어를 선택했다(좌표는 0-based).
+  planner는 compound 가능성을 확인하지만 이후 V5 강제 정책과의 계획 일관성까지 증명하지 않는다.
+  이 사례에서 기존 Stage 5를 덮어쓰는 조정은 하지 않았다.
+- game 10의 백 28수 `(4,9)`는 흑 43 creator `(4,10)`을 방해했지만 `(7,5)`는 남겼다.
+  흑은 29·31·33수에 단일 승리점을 계속 만들었고 백은 매번 Stage 2 방어를 선택했다.
+  흑 35수 Stage 3, 37수 Stage 1로 대국이 끝났다. 새 방어 후보의 주입·선택은 확인했으나
+  모든 상대 위협을 제거하는 방어수라는 보장은 없음을 보여주는 실제 패배 사례다.
+- forced Stage 1~5가 먼저 처리한 수는 V6 detector 계수에 포함되지 않는다.
+  따라서 실전에서 백 44나 금수 방어 유도 계수가 0이어도 해당 전술 자체의 부재를 뜻하지 않는다.
+- 서로 다른 대국 국면의 초/수 비율은 관측 비용이며 순수 planner 오버헤드 상한 증명은 아니다.
+  100판 및 seed 교차검증은 이번 작업에서 실행하지 않는다.
+
