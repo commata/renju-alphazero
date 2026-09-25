@@ -48,6 +48,11 @@ renju-alphazero/
 
 ## 초기 실험값과 조정 순서
 
+Stage 4는 `src/model/`의 versioned encoder/config/masking/network/checkpoint/symmetry로
+구현 완료했다. 전체 172 tests, eval tiny overfit, D4 및 CPU 측정 결과와 재현 명령은
+[Policy-Value Network](docs/policy-value-network.md)에 기록한다. 정책/value loss helper와
+weights-only checkpoint는 Stage 4에서 계약을 검증하고, 자기대국 학습·resume은 Stage 6에 남긴다.
+
 처음에는 엔진 정확성과 한 판 완주를 우선한다. 아래 값은 **출발점**이며, 실제 속도·메모리·온도를 재고 변경한다.
 
 | 항목 | 그램에서 시작 | 데스크톱에서 조정할 방향 |
