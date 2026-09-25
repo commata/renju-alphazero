@@ -19,6 +19,29 @@ from search.mcts_v321 import _fast_winning_extensions_in_direction
 from search.mcts_v5 import V5_PRESETS, _four_completions, _threat_windows
 
 
+def _replay_for_analysis(history) -> Game:
+    """Rebuild historical logs without re-enforcing today's opening rule.
+
+    Old benchmark logs may predate the forced-center opening. This helper is only
+    for offline structural analysis; live games still go through Game.play().
+    """
+    game = Game()
+    game.board = [[0] * 15 for _ in range(15)]
+    game.history = []
+    game.to_play = BLACK
+    game.winner = None
+    game.done = False
+    player = BLACK
+    for row, col in history:
+        if game.board[row][col] != 0:
+            raise IllegalMove(f'historical replay contains occupied move: {(row, col)!r}')
+        game.board[row][col] = player
+        game.history.append((row, col))
+        player = -player
+    game.to_play = player
+    return game
+
+
 def last_threat(result: GameResult) -> dict:
     """Classify the winner's previous move before the final winning move.
 
@@ -28,9 +51,7 @@ def last_threat(result: GameResult) -> dict:
     if result.winner is None or len(result.history) < 3:
         return dict(type='other', creator_ply=None)
     index = len(result.history) - 3
-    game = Game()
-    for move in result.history[:index]:
-        game.play(*move)
+    game = _replay_for_analysis(result.history[:index])
     player = result.winner
     move = result.history[index]
     completions = _four_completions(game, player, move)

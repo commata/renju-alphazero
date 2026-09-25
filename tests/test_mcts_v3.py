@@ -73,6 +73,16 @@ class MCTSV3Test(unittest.TestCase):
 
     def test_root_candidates_always_returns_pair(self):
         game = Game()
+
+        # The real initial position now has exactly one legal opening: center.
+        moves, forced = _root_candidates_v3(game, candidate_limit=16, radius=2)
+        self.assertIsInstance(moves, list)
+        self.assertEqual(moves, [(7, 7)])
+        self.assertIsNone(forced)
+
+        # After the forced opening, ordinary root generation still honors
+        # candidate_limit instead of being accidentally narrowed to one move.
+        game.play(7, 7)
         moves, forced = _root_candidates_v3(game, candidate_limit=16, radius=2)
         self.assertIsInstance(moves, list)
         self.assertEqual(len(moves), 16)
