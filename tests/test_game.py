@@ -35,6 +35,10 @@ class RulesTest(unittest.TestCase):
         g.play(0, 1)
         self.assertEqual(g.board[0][1], WHITE)
 
+        empty_white = Game()
+        empty_white.to_play = WHITE
+        self.assertGreater(len(empty_white.legal_moves()), 1)
+
     def test_turn_undo_and_occupied(self):
         g = Game()
         g.play(7, 7)

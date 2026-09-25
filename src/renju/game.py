@@ -20,7 +20,8 @@ class Game:
         self.history: list[tuple[int, int]] = []
 
     def _is_initial_position(self) -> bool:
-        return not self.history and all(cell == EMPTY for row in self.board for cell in row)
+        return (self.to_play == BLACK and not self.history and
+                all(cell == EMPTY for row in self.board for cell in row))
 
     def legal_moves(self) -> list[tuple[int, int]]:
         if self.done:
