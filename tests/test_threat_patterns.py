@@ -1,0 +1,97 @@
+from copy import deepcopy
+import unittest
+from unittest.mock import patch
+
+from renju import BLACK, WHITE, Game
+from renju.rules import DIRECTIONS, forbidden_reason
+from search.threat_patterns import (
+    compound_at, compound_moves, placed, fours_at, black_legal_43_moves,
+    white_33_moves, white_43_moves, white_44_moves,
+)
+
+
+def position(stones=(), player=BLACK, opponents=()):
+    game = Game()
+    game.to_play = player
+    for color, cells in ((player, stones), (-player, opponents)):
+        for r, c in cells:
+            game.board[r][c] = color
+    return game
+
+
+def cross(axis=(0, 1), kind='43', center=(7, 7)):
+    dr, dc = axis
+    er, ec = -dc, dr
+    r, c = center
+    first = (-2, -1, 1) if kind != '33' else (-1, 1)
+    second = (-2, -1, 1) if kind == '44' else (-1, 1)
+    return [(r+i*dr, c+i*dc) for i in first] + [(r+i*er, c+i*ec) for i in second]
+
+
+class PatternTest(unittest.TestCase):
+    def test_black_43_all_axes(self):
+        for axis in DIRECTIONS:
+            with self.subTest(axis=axis):
+                game = position(cross(axis))
+                before = deepcopy(vars(game))
+                self.assertIsNone(forbidden_reason(game.board, 7, 7))
+                self.assertIn((7, 7), black_legal_43_moves(game))
+                self.assertEqual(vars(game), before)
+
+    def test_white_patterns_all_axes(self):
+        for kind, detector in [('33', white_33_moves), ('43', white_43_moves), ('44', white_44_moves)]:
+            for axis in DIRECTIONS:
+                with self.subTest(kind=kind, axis=axis):
+                    self.assertIn((7, 7), detector(position(cross(axis, kind), WHITE)))
+
+    def test_edge_closed_four_and_open_three(self):
+        for player in (BLACK, WHITE):
+            game = position([(1,0),(1,1),(1,2),(0,3),(2,3)], player)
+            # At row 1 the vertical three cannot grow to an open four.
+            self.assertIsNone(compound_at(game, player, (1,3)))
+            game = position([(2,0),(2,1),(2,2),(1,3),(3,3)], player)
+            self.assertIn('43', compound_at(game, player, (2,3)).kinds)
+
+    def test_forbidden_creator_33_44_overline(self):
+        for stones, reason in [(cross(kind='33'), '삼삼'), (cross(kind='44'), '사사'),
+                               ([(7,c) for c in (2,3,4,5,6)] + [(6,7),(8,7)], '장목')]:
+            game = position(stones)
+            self.assertEqual(forbidden_reason(game.board, 7,7), reason)
+            self.assertIsNone(compound_at(game, BLACK, (7,7)))
+
+    def test_windows_are_canonical(self):
+        game = position([(7,5),(7,6),(7,8)], WHITE)
+        with placed(game, WHITE, (7,7)):
+            fours = fours_at(game, WHITE, (7,7))
+            self.assertEqual(len(fours), 1)
+            self.assertEqual(fours[0].continuations, {(7,4),(7,9)})
+        self.assertIsNone(compound_at(game, WHITE, (7,7)))
+
+    def test_completion_cross_overline_excluded(self):
+        game = position([(7,3),(7,4),(7,5),(4,7),(5,7),(6,7),(8,7),(9,7)])
+        with placed(game, BLACK, (7,6)):
+            self.assertTrue(all((7,7) not in f.continuations for f in fours_at(game, BLACK, (7,6))))
+
+    def test_no_persistent_board_cache(self):
+        game = position(cross(), WHITE)
+        self.assertIn((7,7), white_43_moves(game))
+        game.board[7][7] = BLACK
+        self.assertNotIn((7,7), white_43_moves(game))
+
+    def test_exception_state_restoration(self):
+        game = position(cross(), WHITE)
+        before = deepcopy(vars(game))
+        with patch('search.threat_patterns.fours_at', side_effect=RuntimeError):
+            with self.assertRaises(RuntimeError):
+                compound_at(game, WHITE, (7,7))
+        self.assertEqual(vars(game), before)
+
+    def test_terminal_and_invalid_coordinates(self):
+        game = Game()
+        self.assertIsNone(compound_at(game, BLACK, (-1,0)))
+        game.done = True
+        self.assertEqual(compound_moves(game, WHITE), {})
+
+
+if __name__ == '__main__':
+    unittest.main()
