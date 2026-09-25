@@ -832,9 +832,15 @@ Stage 3의 최종 기준 에이전트는 **MCTS-v6**로 확정한다. 이 버전
 
 > 아래 Stage 3 수치와 seed 777 SHA는 **RIF exact-five 우선순위 교정 이전**에 측정한 역사적 baseline이다.
 > V5/V6가 공유 규칙 엔진과 V3.2.1 fast scanner를 사용하므로 현재 규칙 계약과 동일 조건의 수치로
-> 직접 비교하지 않는다. Stage 5 평가 baseline으로 사용하기 전에 seed 777 10판을 다시 측정한다.
+> 직접 비교하지 않는다.
 
-> 재측정 명령: `python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 777`
+> RIF 교정 후 2026-09-26 동일 seed 777로 10판(V6 흑 5, 백 5) smoke를 다시 실행했다.
+> V6는 흑 **1승 2패 2무**, 백 **5승 0패 0무**, 합계 **6승 2패 2무(score 70.0%)**였다.
+> 이 값은 10판 1회 smoke 관측치이며, 과거 100판 55.0%와 직접 비교해 기력 향상으로 해석하지 않는다.
+> 새 결정성 SHA도 아직 만들지 않았다. 동일 조건 2회 로그 hash 일치가 확인될 때만 새 determinism baseline으로 승격한다.
+
+> 재현 명령: `python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 777`
+> 실행 로그: `logs/mcts_v6_vs_v5/20260926-011004_seed777`
 
 ```text
 Stage 3 Final Baseline
@@ -884,6 +890,11 @@ MCTS-v6 frozen as benchmark baseline.
 seed 777로 동일한 10판 묶음(V6 흑 5판, V6 백 5판)을 두 번 실행한 결과 SHA256이 두 실행 모두
 `924adffa7e7ef4d81167d98fc8e2688905e6d335ec0cc0f838d8ad5c3f4fa9b2`
 로 일치했다. 따라서 해당 조건에서 경기 결과와 history의 재현성을 최종 확인했다.
+
+RIF 교정 후 seed 777 10판 smoke의 전체 착수 시간 집계에서는 V6가 501수에 738.345초,
+V5 FINAL이 498수에 753.295초로 각각 **1.474 s/move**, **1.513 s/move**였다.
+runner가 출력한 observed overhead는 -2.57%였지만, 동일 스크립트가 명시하듯 이는 단일 smoke의 관측치일 뿐
+성능 우위나 일반적인 오버헤드 증명으로 사용하지 않는다.
 
 Stage 3 이후에는 MCTS-v6의 handcrafted 전술 계층을 더 확장하지 않는다. Stage 4에서는 기존 `Game`/렌주 규칙 엔진과 합법수 판정을 유지하되, 정책·가치 신경망을 별도 경로로 구현한다. V6는 학습 MCTS의 직접적인 부모 구현이 아니라 **비교 평가용 고정 baseline**으로 보존한다.
 

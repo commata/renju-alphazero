@@ -5,7 +5,7 @@
 ## 현재 단계
 
 - **Stage 0~3 완료** (태그 `v0.2-mcts`): 저장소·규칙 명세, 렌주 엔진, 기준선·벤치마크, 순수 MCTS
-- **Stage 3 최종 baseline: MCTS-v6** — RIF exact-five 우선순위 교정 전 기준으로 회귀 테스트 147/147 PASS, V5 FINAL 상대 100판 48승 38패 14무(score 55.0%). 에이전트 버전은 고정 비교 상대로 보존하되, Stage 5의 현재 규칙 기준 비교값은 재측정합니다.
+- **Stage 3 최종 baseline: MCTS-v6** — RIF exact-five 우선순위 교정 전 기준으로 회귀 테스트 147/147 PASS, V5 FINAL 상대 100판 48승 38패 14무(score 55.0%). 에이전트 버전은 고정 비교 상대로 보존합니다. 교정 후 seed 777 10판 smoke에서는 6승 2패 2무(score 70.0%)를 관측했으며, 이는 새 장기 승률이 아니라 현재 규칙 기준 smoke baseline입니다.
 - **Stage 4 정책·가치 신경망 완료** (`feat/policy-value-network`): 버전 고정 6-plane 입력, residual policy/value, legal mask/loss, checkpoint, D4, eval tiny overfit 및 CPU benchmark. [계약·검증 결과](docs/policy-value-network.md)를 참고하세요. V5/V6 전술 계층은 학습 경로에서 재사용하지 않습니다. 다음 단계는 PUCT integration입니다.
 
 과거 버전(V2~V5)은 비교 재현을 위해 덮어쓰지 않고 별도 Agent로 보존합니다. 설계와 측정 기록은 [docs/mcts.md](docs/mcts.md)에 있습니다.
@@ -181,11 +181,12 @@ python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 42
 | 회귀 테스트 | 147 / 147 PASS |
 | V6 vs Random | 40승 0패 0무 (흑·백 각 20판) |
 | V6 vs Tactical | 100승 0패 0무 (흑·백 각 50판) |
-| V6 vs V5 FINAL | 48승 38패 14무, score 55.0% (100판) |
-| 결정성 | seed 777 10판 2회 실행 SHA256 일치 |
+| V6 vs V5 FINAL (pre-RIF) | 48승 38패 14무, score 55.0% (100판) |
+| 결정성 (pre-RIF) | seed 777 10판 2회 실행 SHA256 일치 |
+| V6 vs V5 FINAL (post-RIF smoke) | seed 777, 10판: 6승 2패 2무, score 70.0% |
 
 MCTS-v6는 이후 신경망 체크포인트의 성장 정도를 측정하는 **고정 benchmark opponent**로 동결합니다.
-단, 위 승패와 seed 777 SHA는 RIF exact-five 교정 이전 측정값이므로 현재 규칙에서 재측정한 결과와 구분합니다.
+기존 100판 승패와 seed 777 SHA는 RIF exact-five 교정 이전 측정값입니다. 교정 후 10판 결과는 별도 smoke baseline이며, 동일 10판을 두 번 실행해 hash가 일치하기 전에는 새 결정성 baseline으로 취급하지 않습니다.
 세부 기록은 [docs/mcts.md](docs/mcts.md)의 "Stage 3 Final Baseline"을 참고하세요.
 
 ## 로컬 웹 대국

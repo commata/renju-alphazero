@@ -194,9 +194,12 @@ forward → masking/softmax 전체를 매번 실행한다. Table의 forward 시�
 | masking + softmax | 0.034 | 0.029 | 0.028 | 0.127 | 29498.53 |
 | full pipeline B1 | 6.224 | 5.933 | 4.401 | 11.456 | 160.68 |
 
-RIF 규칙 교정 후 2026-09-26 동일 환경 재측정에서는 `legal_moves` 2.689 ms,
-`forward B1` 2.615 ms, B8 12.347 ms, B32 49.549 ms, `full_pipeline` 5.726 ms였다.
-이 차이는 로컬 측정 변동 범위로 보고 성능 향상/회귀를 단정하지 않는다.
+RIF 규칙 교정 후 2026-09-26 재측정에서는 환경 상태에 따라 편차가 컸다.
+한 실행은 `legal_moves` 2.689 ms, `forward B1` 2.615 ms, `full_pipeline` 5.726 ms였고,
+후속 최종 검증 실행은 각각 **3.520 ms / 3.618 ms / 8.476 ms**였다.
+B8/B32도 후속 실행에서 **19.515 ms / 66.983 ms**로 느려졌다.
+코드/seed/model config가 같은 상태에서 발생한 차이이므로 열·클럭·백그라운드 부하에 따른
+로컬 benchmark 변동으로 기록하고, 단일 실행을 성능 향상/회귀 근거로 사용하지 않는다.
 
 구간은 별도로 측정하므로 평균 합과 full pipeline이 정확히 같지는 않다. 열·클럭·다른 프로세스
 영향을 받는 로컬 측정이며 latency SLA가 아니다.
@@ -207,7 +210,7 @@ RIF 규칙 교정 후 2026-09-26 동일 환경 재측정에서는 `legal_moves` 
 > 교정은 모델 구조/가중치 계약을 바꾸지 않지만 engine/search 회귀 테스트를 함께 갱신하므로,
 > 새 기준 성능 수치로 사용할 때는 해당 커밋에서 다시 측정한다.
 
-- RIF 규칙 교정 및 V5 회귀 수정 후 Windows/Python 3.13 + torch 환경: **174 PASS**, skip 없음.
+- RIF 규칙 교정, checkpoint provenance UTF-8 수정까지 포함한 Windows/Python 3.13 + torch 환경: **174 PASS**, skip 없음.
 - 별도 Linux/Python 3.12 + torch 미설치 환경: **154 PASS / neural 20개 skip**.
   따라서 engine/agents/evaluation 경로가 neural extra 없이 동작한다는 계약도 다른 OS/Python에서 재확인했다.
 - `python -m pip check`: No broken requirements found.
@@ -219,6 +222,12 @@ RIF 규칙 교정 후 2026-09-26 동일 환경 재측정에서는 `legal_moves` 
 - RIF 교정 후 사용자 재측정에서는 midgame black `legal_moves` **2.496 ms**, Random 대국 약 **775 moves/sec**였다.
   동일한 10판의 총 수는 1252로 유지됐다. 약 14% 수준의 처리량 차이는 열/클럭/백그라운드 작업 영향을
   받을 수 있으므로 규칙 수정의 성능 회귀로 단정하지 않고, Stage 5 기준 성능에는 교정 후 측정값을 사용한다.
+
+최종 재검증에서 tiny overfit은 seed 42 / 32 samples / 50 steps로 다시 **PASS**했고,
+dataset SHA256은 `f7999e17e6acfe85a684f8d8e9202ebea51834c6a1d3425bf2ae3baf191c5215`,
+eval-mode masked top-1 100%, value MSE 0.009394, nonfinite 0을 재현했다.
+규칙 differential도 seed 42의 **10,000 positions / 1,610,808 cells**에서
+`mismatches=0`, `legal_mismatches=0`, `restoration_failures=0`을 확인했다.
 
 **PASS**: input/action/version, mask/loss/gradient, strict checkpoint, D4 legality,
 eval tiny overfit, 전체 회귀 및 CPU pipeline 측정 기준 충족. Stage 5 PUCT integration을
