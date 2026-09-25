@@ -75,6 +75,13 @@ def _winner_name(winner: int | None) -> str | None:
     return None
 
 
+def _display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
 def _json_value(value: Any):
     if isinstance(value, tuple):
         return [_json_value(item) for item in value]
@@ -303,9 +310,9 @@ class PlaySession:
 
         self.last_log_dir = log_dir
         self.saved_game = True
-        relative = log_dir.relative_to(ROOT)
-        self.message = f"대국 종료 · 로그 저장: {relative}"
-        print(f"[web] saved game log: {relative}")
+        display_path = _display_path(log_dir)
+        self.message = f"대국 종료 · 로그 저장: {display_path}"
+        print(f"[web] saved game log: {display_path}")
         return log_dir
 
     def _state_locked(self) -> dict[str, Any]:
@@ -327,7 +334,7 @@ class PlaySession:
             "message": self.message,
             "log_saved": self.saved_game,
             "log_directory": (
-                str(self.last_log_dir.relative_to(ROOT))
+                _display_path(self.last_log_dir)
                 if self.last_log_dir is not None else None
             ),
             "versions": VERSION_LABELS,
