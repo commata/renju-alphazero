@@ -69,6 +69,46 @@ class V6SearchTest(unittest.TestCase):
         self.assertEqual(diag.forced_policy_stage, 1)
         self.assertEqual(diag.v6_root_injection_count, 0)
 
+    def test_agent_defaults_and_invalid_config(self):
+        from agents import MCTSV6Agent
+        agent = MCTSV6Agent()
+        for key, value in V5_FINAL.items():
+            self.assertEqual(getattr(agent, key), value)
+        for options in (dict(simulations=0), dict(tactical_simulations=True),
+                        dict(exploration=float('nan')), dict(initial_width=21)):
+            with self.assertRaises(ValueError):
+                MCTSV6Agent(**options)
+
+    def test_nonempty_planner_determinism_and_diagnostics_reset(self):
+        from agents import MCTSV6Agent
+        game = position(cross(kind='33'), WHITE)
+        before, rng = deepcopy(vars(game)), random.getstate()
+        first = MCTSV6Agent(seed=22, simulations=2, tactical_simulations=2)
+        second = MCTSV6Agent(seed=22, simulations=2, tactical_simulations=2)
+        self.assertEqual(first.select_move(game), second.select_move(game))
+        self.assertGreater(first.diagnostics.v6_root_injection_count, 0)
+        self.assertEqual(vars(game), before)
+        self.assertEqual(random.getstate(), rng)
+        forced = position([(2,c) for c in range(4)], WHITE)
+        first.select_move(forced)
+        self.assertEqual(first.diagnostics.v6_root_injection_count, 0)
+        self.assertIsNone(first.diagnostics.v6_selected_threat_type)
+
+    def test_no_planner_preserves_v5_root_order(self):
+        from search.mcts_v5 import _root_candidates_v5
+        game = Game()
+        context = _RootContext(game.legal_moves(), SearchDiagnostics(), injected=[(0,0),(14,14)])
+        expected, score = _root_candidates_v5(game, context, 20, 2)
+        moves, observed, _ = _root_candidates_v6(game, context, 20, 2)
+        self.assertEqual((moves, observed), (expected, score))
+
+    def test_terminal_raises(self):
+        from renju import IllegalMove
+        game = Game()
+        game.done = True
+        with self.assertRaises(IllegalMove):
+            mcts_search_v6(game)
+
 
 if __name__ == '__main__':
     unittest.main()

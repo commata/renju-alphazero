@@ -113,7 +113,7 @@ def _independent(first: Threat, second: Threat) -> bool:
 def _valid_43(game: Game, player: int, anchor: Move, four: Threat, three: Threat) -> bool:
     if not _independent(four, three):
         return False
-    # A black three extension can be 44 until the opponent blocks the four.
+    # A four reply can also block a crossing line that made a three extension 44.
     # Validate the actual continuation AFTER that forced reply, not on a pass board.
     for block in sorted(four.continuations):
         if not _is_legal_for_player(game, -player, block):

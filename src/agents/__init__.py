@@ -11,6 +11,7 @@ from .mcts_agent import (
 )
 from .random_agent import RandomAgent
 from .tactical_agent import TacticalAgent
+from .mcts_v6_agent import MCTSV6Agent
 
 __all__ = [
     "Agent",
@@ -22,6 +23,7 @@ __all__ = [
     "MCTSV41Agent",
     "MCTSV42Agent",
     "MCTSV5Agent",
+    "MCTSV6Agent",
     "RandomAgent",
     "TacticalAgent",
 ]

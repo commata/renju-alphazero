@@ -72,6 +72,38 @@ class PatternTest(unittest.TestCase):
         with placed(game, BLACK, (7,6)):
             self.assertTrue(all((7,7) not in f.continuations for f in fours_at(game, BLACK, (7,6))))
 
+    def test_fake_43_with_forbidden_three_extensions(self):
+        stones = [(7,4),(7,5),(7,6),(6,7),(8,7)]
+        stones += [(r,c) for r in (5,9) for c in (4,5,6)]
+        game = position(stones, opponents=[(7,3)])
+        self.assertIsNone(forbidden_reason(game.board, 7,7))
+        self.assertIsNone(compound_at(game, BLACK, (7,7)))
+        with placed(game, BLACK, (7,7)), placed(game, WHITE, (7,8)):
+            for extension in ((5,7),(9,7)):
+                self.assertEqual(forbidden_reason(game.board, *extension), '사사')
+
+    def test_43_three_is_validated_after_actual_four_reply(self):
+        game = position([(7,5),(7,6),(7,8),(6,7),(8,7),(3,5),(4,6),(6,8)],
+                        opponents=[(7,4),(2,4)])
+        self.assertIn('43', compound_at(game, BLACK, (7,7)).kinds)
+        with placed(game, BLACK, (7,7)):
+            self.assertEqual(forbidden_reason(game.board, 5,7), '사사')
+            with placed(game, WHITE, (7,9)):
+                self.assertIsNone(forbidden_reason(game.board, 5,7))
+
+    def test_engine_verifies_each_completion(self):
+        for color in (BLACK, WHITE):
+            for axis in DIRECTIONS:
+                game = position(cross(axis), color)
+                compound = compound_at(game, color, (7,7))
+                game.play(7,7)
+                for threat in compound.fours:
+                    for point in threat.continuations:
+                        state = deepcopy(game)
+                        state.to_play = color
+                        state.play(*point)
+                        self.assertEqual(state.winner, color)
+
     def test_no_persistent_board_cache(self):
         game = position(cross(), WHITE)
         self.assertIn((7,7), white_43_moves(game))

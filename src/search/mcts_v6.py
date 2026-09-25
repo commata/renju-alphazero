@@ -116,9 +116,12 @@ def _root_candidates_v6(game, context, limit, radius):
     reasons = {m: kinds for m, kinds in reasons.items() if m in legal}
     context.diagnostics.v6_threat_planner_seconds = perf_counter() - started
     context.diagnostics.v6_root_injection_count = len(reasons)
+    if not reasons:
+        return baseline, score, reasons
     moves = set(baseline).union(reasons)
     ranked = sorted(moves, key=lambda m: (
-        -max((PRIORITY[k] for k in reasons.get(m, ())), default=0),
+        -max([PRIORITY[k] for k in reasons.get(m, ())]
+             + [3 if m in context.injected else 0]),
         response_counts.get(m, 0), context.key(game, m),
     ))
     # Budget selection uses original V5 scores, not planner ordering tiers.
