@@ -10,27 +10,38 @@ from .config import (ACTION_INDEX_VERSION, CHECKPOINT_FORMAT_VERSION, ENCODER_VE
 from .network import PolicyValueNet
 
 
+def _git_text(args: list[str], cwd: Path) -> str | None:
+    """Read Git text as UTF-8, including non-ASCII Windows worktree paths."""
+    try:
+        output = subprocess.check_output(
+            args, cwd=cwd, stderr=subprocess.DEVNULL, text=True,
+            encoding='utf-8', errors='strict', timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError, UnicodeError):
+        return None
+    if not isinstance(output, str):
+        return None
+    return output.strip()
+
+
 def _git_provenance() -> tuple[str | None, bool | None]:
     """Return source-worktree HEAD/dirty state, never an unrelated parent repo."""
     source = Path(__file__).resolve()
-    try:
-        root = Path(subprocess.check_output(
-            ['git', 'rev-parse', '--show-toplevel'], cwd=source.parent,
-            stderr=subprocess.DEVNULL, text=True, timeout=5,
-        ).strip()).resolve()
-        if source != (root / 'src' / 'model' / 'checkpoint.py').resolve():
-            return None, None
-        commit = subprocess.check_output(
-            ['git', 'rev-parse', 'HEAD'], cwd=root, stderr=subprocess.DEVNULL,
-            text=True, timeout=5,
-        ).strip()
-        dirty = bool(subprocess.check_output(
-            ['git', 'status', '--porcelain', '--untracked-files=no'], cwd=root,
-            stderr=subprocess.DEVNULL, text=True, timeout=5,
-        ).strip())
-        return commit, dirty
-    except (OSError, subprocess.SubprocessError, ValueError):
+    root_text = _git_text(['git', 'rev-parse', '--show-toplevel'], source.parent)
+    if not root_text:
         return None, None
+    try:
+        root = Path(root_text).resolve()
+    except (OSError, ValueError):
+        return None, None
+    if source != (root / 'src' / 'model' / 'checkpoint.py').resolve():
+        return None, None
+
+    commit = _git_text(['git', 'rev-parse', 'HEAD'], root)
+    status = _git_text(['git', 'status', '--porcelain', '--untracked-files=no'], root)
+    if not commit or status is None:
+        return None, None
+    return commit, bool(status)
 
 
 def save_checkpoint(path: str | Path, model: PolicyValueNet) -> None:

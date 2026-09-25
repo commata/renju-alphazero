@@ -1,6 +1,7 @@
 from copy import deepcopy
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 try:
@@ -10,7 +11,8 @@ except ModuleNotFoundError as exc:
         raise
     torch = None
 if torch is not None:
-    from model.checkpoint import load_checkpoint, save_checkpoint
+    import model.checkpoint as checkpoint_module
+    from model.checkpoint import _git_provenance, load_checkpoint, save_checkpoint
     from model.config import ModelConfig
     from model.network import PolicyValueNet
 
@@ -39,6 +41,21 @@ class CheckpointTest(unittest.TestCase):
         self.assertIn('git_commit', data)
         self.assertIn('git_dirty', data)
         self.assertTrue(data['git_dirty'] is None or type(data['git_dirty']) is bool)
+
+        # Git for Windows emits non-ASCII worktree paths as UTF-8. Keep that
+        # decoding explicit so a Korean path does not fall back to cp949.
+        source = Path(checkpoint_module.__file__).resolve()
+        root = source.parents[2]
+        with patch.object(
+            checkpoint_module.subprocess,
+            'check_output',
+            side_effect=[str(root) + '\n', 'deadbeef\n', ' M tracked.py\n'],
+        ) as mocked:
+            self.assertEqual(_git_provenance(), ('deadbeef', True))
+        self.assertEqual(len(mocked.call_args_list), 3)
+        for git_call in mocked.call_args_list:
+            self.assertEqual(git_call.kwargs['encoding'], 'utf-8')
+            self.assertEqual(git_call.kwargs['errors'], 'strict')
 
     def test_metadata_mismatches(self):
         original = torch.load(self.path, weights_only=True)
