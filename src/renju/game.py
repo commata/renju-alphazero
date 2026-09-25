@@ -8,6 +8,9 @@ class IllegalMove(ValueError):
     pass
 
 
+OPENING_MOVE = (SIZE // 2, SIZE // 2)
+
+
 class Game:
     def __init__(self):
         self.board = [[EMPTY] * SIZE for _ in range(SIZE)]
@@ -16,9 +19,14 @@ class Game:
         self.done = False
         self.history: list[tuple[int, int]] = []
 
+    def _is_initial_position(self) -> bool:
+        return not self.history and all(cell == EMPTY for row in self.board for cell in row)
+
     def legal_moves(self) -> list[tuple[int, int]]:
         if self.done:
             return []
+        if self._is_initial_position():
+            return [OPENING_MOVE]
         return [(r, c) for r in range(SIZE) for c in range(SIZE)
                 if self.board[r][c] == EMPTY and
                 (self.to_play == WHITE or forbidden_reason(self.board, r, c) is None)]
@@ -27,6 +35,8 @@ class Game:
         """Return as soon as one legal move exists without building the full list."""
         if self.done:
             return False
+        if self._is_initial_position():
+            return True
         if self.to_play == WHITE:
             return any(EMPTY in row for row in self.board)
         for row in range(SIZE):
@@ -38,6 +48,8 @@ class Game:
     def play(self, row: int, col: int) -> None:
         if self.done:
             raise IllegalMove("이미 종료된 대국입니다")
+        if self._is_initial_position() and (row, col) != OPENING_MOVE:
+            raise IllegalMove("첫 수는 흑이 바둑판 정중앙에 두어야 합니다")
         if not inside(row, col) or self.board[row][col] != EMPTY:
             raise IllegalMove("범위를 벗어났거나 이미 돌이 있습니다")
         if self.to_play == BLACK:

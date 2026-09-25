@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from scripts.run_web_play import VERSION_LABELS, PlaySession, create_agent
-from renju import BLACK
+from renju import BLACK, WHITE
 
 
 class WebPlayTest(unittest.TestCase):
@@ -13,12 +13,15 @@ class WebPlayTest(unittest.TestCase):
             agent = create_agent(key, seed=7)
             self.assertTrue(callable(agent.select_move))
 
-    def test_new_black_session_does_not_make_ai_move(self):
+    def test_new_white_session_starts_with_forced_center_black(self):
         session = PlaySession()
-        state = session.reset(agent_key="v6", human_color=BLACK, seed=7)
-        self.assertEqual(state["move_count"], 0)
-        self.assertEqual(state["to_play"], "BLACK")
-        self.assertEqual(state["human_color"], "BLACK")
+        state = session.reset(agent_key="v6", human_color=WHITE, seed=7)
+        self.assertEqual(state["move_count"], 1)
+        self.assertEqual(state["to_play"], "WHITE")
+        self.assertEqual(state["human_color"], "WHITE")
+        self.assertEqual(state["board"][7][7], BLACK)
+        self.assertEqual(state["history"], [[7, 7]])
+        self.assertEqual(session.move_records[0]["actor"], "OPENING_RULE")
         self.assertEqual(len(state["board"]), 15)
         self.assertTrue(all(len(row) == 15 for row in state["board"]))
 

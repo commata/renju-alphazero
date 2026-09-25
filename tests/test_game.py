@@ -16,6 +16,25 @@ def position(black=(), white=(), turn=BLACK):
 
 
 class RulesTest(unittest.TestCase):
+    def test_opening_move_is_forced_to_center(self):
+        g = Game()
+        self.assertEqual(g.legal_moves(), [(7, 7)])
+        self.assertTrue(g.has_legal_move())
+        with self.assertRaisesRegex(IllegalMove, '정중앙'):
+            g.play(7, 8)
+        self.assertEqual(g.history, [])
+        g.play(7, 7)
+        self.assertEqual(g.board[7][7], BLACK)
+        self.assertEqual(g.to_play, WHITE)
+
+    def test_direct_board_fixture_is_not_treated_as_initial_position(self):
+        g = Game()
+        g.board[0][0] = BLACK
+        g.to_play = WHITE
+        self.assertNotEqual(g.legal_moves(), [(7, 7)])
+        g.play(0, 1)
+        self.assertEqual(g.board[0][1], WHITE)
+
     def test_turn_undo_and_occupied(self):
         g = Game()
         g.play(7, 7)

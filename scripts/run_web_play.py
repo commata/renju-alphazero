@@ -38,6 +38,7 @@ from agents import (  # noqa: E402
     MCTSV6Agent,
 )
 from renju import BLACK, WHITE, Game, IllegalMove  # noqa: E402
+from renju.game import OPENING_MOVE  # noqa: E402
 from search.mcts_v6 import V5_FINAL  # noqa: E402
 
 
@@ -173,7 +174,20 @@ class PlaySession:
             self.move_records = []
             self.last_log_dir = None
             self.saved_game = False
-            if self.human_color == WHITE:
+
+            # Project opening rule: BLACK always starts at board center.
+            opening_player = self.game.to_play
+            self.game.play(*OPENING_MOVE)
+            self._record_move_locked(
+                opening_player,
+                "OPENING_RULE",
+                OPENING_MOVE,
+                seconds=None,
+                diagnostics={},
+            )
+            self.message = "흑 중앙 첫 수가 자동 배치되었습니다."
+
+            if not self.game.done and self.game.to_play != self.human_color:
                 self._play_ai_locked()
             return self._state_locked()
 
