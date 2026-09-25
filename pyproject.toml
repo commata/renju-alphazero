@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "renju-alphazero"
-version = "0.1.0"
-description = "Renju rules engine and local two-player CLI"
+version = "0.2.0"
+description = "Renju rules engine, baseline agents and pure MCTS (Stage 3 baseline: MCTS-v6)"
 requires-python = ">=3.10"
 
 [project.optional-dependencies]

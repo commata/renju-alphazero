@@ -1,6 +1,14 @@
 # Renju AlphaZero
 
-렌주 규칙 엔진, Random/Tactical 기준선과 **신경망 없는 순수 MCTS**를 개발 중인 프로젝트입니다. 현재 MCTS는 V2, 검증된 V3.1, 색상별 전술 우선순위를 추가한 V3.2를 함께 유지해 직접 비교할 수 있습니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
+렌주 규칙 엔진, Random/Tactical 기준선, **신경망 없는 순수 MCTS**(V2~V6)를 구현한 뒤 AlphaZero 방식의 정책·가치 신경망 학습으로 넘어가는 프로젝트입니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
+
+## 현재 단계
+
+- **Stage 0~3 완료** (태그 `v0.2-mcts`): 저장소·규칙 명세, 렌주 엔진, 기준선·벤치마크, 순수 MCTS
+- **Stage 3 최종 baseline: MCTS-v6** — 회귀 테스트 147/147 PASS, V5 FINAL 상대 100판 48승 38패 14무(score 55.0%). 이후 신경망 모델의 고정 비교 상대로 사용합니다.
+- **다음 단계: Stage 4 정책·가치 신경망** (`feat/policy-value-network`). V5/V6의 수작업 전술 계층은 학습 경로에서 재사용하지 않고, 규칙 엔진과 합법수 판정만 공유합니다.
+
+과거 버전(V2~V5)은 비교 재현을 위해 덮어쓰지 않고 별도 Agent로 보존합니다. 설계와 측정 기록은 [docs/mcts.md](docs/mcts.md)에 있습니다.
 
 ## 실행
 
@@ -70,7 +78,7 @@ v3 = MCTSV3Agent(
 
 ## 규칙 엔진
 
-- 15×15, 흑 선공, 자유 착수
+- 15×15, 흑 선공. **흑 첫 수는 정중앙 (8, 8)으로 고정**, 이후 자유 착수
 - 흑은 정확히 5목 승리, 장목·사사·삼삼 금지
 - 백은 5목 이상 승리
 - 재귀적 삼삼 판정
@@ -148,3 +156,45 @@ V3.2와 V3.2.1 속도/기력 비교:
 ```bash
 python scripts/run_mcts_v32_optimization.py --games 1 --simulations 25 --candidate-limit 16 --initial-width 6 --radius 2 --priority-top-k 5 --seed 42
 ```
+
+
+## MCTS V4~V6
+
+V4 이후 버전도 이전 버전을 덮어쓰지 않고 별도 Agent로 유지합니다.
+
+- **V4.1 / V4.2**: 내 즉시 승리 → 상대 즉시 승리 차단 → 상대 열린4 생성점 차단 순의 강제수 뒤 V3.2.1 탐색
+- **V5 FINAL**: 5단계 강제 정책(unstoppable four, 이중 위협 예방)과 adaptive simulations.
+  비교 기준 설정은 50/100 simulations, threshold 1800, 후보 20, 초기 폭 8, top-k 8
+- **V6**: V5 강제 정책 뒤에 43/44/33 위협 탐지, 2-ply threat planning,
+  백의 흑 43 방어 coverage를 root 후보에 주입
+
+V6 vs V5 FINAL 비교:
+
+```bash
+python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 42
+```
+
+## Stage 3 최종 baseline: MCTS V6
+
+| 검증 | 결과 |
+| --- | --- |
+| 회귀 테스트 | 147 / 147 PASS |
+| V6 vs Random | 40승 0패 0무 (흑·백 각 20판) |
+| V6 vs Tactical | 100승 0패 0무 (흑·백 각 50판) |
+| V6 vs V5 FINAL | 48승 38패 14무, score 55.0% (100판) |
+| 결정성 | seed 777 10판 2회 실행 SHA256 일치 |
+
+MCTS-v6는 이후 신경망 체크포인트의 성장 정도를 측정하는 **고정 benchmark opponent**로 동결합니다.
+세부 기록은 [docs/mcts.md](docs/mcts.md)의 "Stage 3 Final Baseline"을 참고하세요.
+
+## 로컬 웹 대국
+
+브라우저에서 V3.2.1 / V4.1 / V4.2 / V5 FINAL / V6와 직접 대국할 수 있습니다.
+외부 패키지 없이 Python 표준 라이브러리 서버를 사용합니다.
+
+```bash
+python scripts/run_web_play.py
+```
+
+`http://127.0.0.1:8000`에 접속합니다. 완료된 대국은 `logs/web_play/`에 JSON/CSV로 자동 저장됩니다.
+자세한 내용은 [web/README.md](web/README.md)를 참고하세요.
