@@ -12,6 +12,7 @@ from evaluation import default_log_dir, save_match_logs
 from renju import BLACK, WHITE, Game
 from search.mcts_v6 import V5_FINAL, SearchDiagnostics
 from search.threat_patterns import compound_at, black_legal_43_moves
+from search.threat_planning import future_setups
 
 if __package__:
     from .run_mcts_v5_vs_v41 import run_color
@@ -44,6 +45,7 @@ def annotate_defense_outcomes(matches, decisions):
                 for reason in ('black_43_defense', 'future_black_43_defense')
             ):
                 record['black_43_available_after_defense'] = len(black_legal_43_moves(game))
+                record['future_black_43_available_after_defense'] = len(future_setups(game, BLACK))
                 record['black_43_on_next_reply'] = None
                 pending = record
 
@@ -70,6 +72,17 @@ def summarize(matches, decisions):
             planner_seconds=sum(d['v6_threat_planner_seconds'] for d in records),
             defense_followups_observed=sum(d.get('black_43_on_next_reply') is not None for d in records),
             black_43_after_selected_defense=sum(d.get('black_43_on_next_reply') is True for d in records),
+            selected_defenses_with_immediate_43_remaining=sum(
+                d.get('black_43_available_after_defense', 0) > 0 for d in records
+            ),
+            selected_defenses_with_future_43_remaining=sum(
+                d.get('future_black_43_available_after_defense', 0) > 0 for d in records
+            ),
+            complete_selected_43_defenses=sum(
+                d.get('black_43_available_after_defense') == 0
+                and d.get('future_black_43_available_after_defense') == 0
+                for d in records
+            ),
         )
     timing = {}
     for name in ('MCTS-v6', 'MCTS-v5-final'):

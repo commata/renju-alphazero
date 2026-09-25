@@ -812,3 +812,14 @@ detector·주입·선택 계수 불일치 0개를 확인했다. 기존 shared tr
 - 서로 다른 대국 국면의 초/수 비율은 관측 비용이며 순수 planner 오버헤드 상한 증명은 아니다.
   100판 및 seed 교차검증은 이번 작업에서 실행하지 않는다.
 
+
+
+### V6 후속 정책 보강: 계획 지속성과 흑 43 방어 coverage
+
+10판 smoke의 3승 4패 3무는 V6 우월성을 보여주지 못했지만, 두 실제 기보가 다음 수정 지점을 분리해 주었다.
+
+1. **future setup 실행 가능성**: game 5에서는 흑 55수의 future legal 43 계획이 존재했지만 다음 흑 차례에 기존 V5 Stage 5가 다른 수를 강제해 계획이 이어지지 않았다. 이제 각 상대 응수 뒤 실제 다음 턴의 V5 Stage 1~5를 재평가한다. Stage 2/4/5 등이 계획된 continuation과 다른 수를 강제하면 해당 future setup을 제외한다. Stage 1 즉시승리나 Stage 3 unstoppable four처럼 계획보다 강한 강제 공격은 유효한 setup으로 유지한다. `planner_forced_plan_conflicts` / `planner_forced_plan_preserved`로 이 필터의 작동을 기록한다.
+2. **백의 흑 43 방어 coverage**: game 10에서는 백의 선택이 한 creator를 막았지만 다른 creator를 남겨 연속 강제방어 뒤 패배했다. 이제 흑 43 방어 후보를 실제로 임시 착수한 뒤 남는 immediate legal 43 수를 먼저 계산하고, immediate 43을 모두 제거한 후보에 대해서만 future legal 43 수까지 계산한다. 같은 V6 priority 안에서는 남는 immediate/future 43이 적은 방어를 먼저 정렬한다. `black_43_defense_complete_candidates`, 최소 잔여 immediate/future 43 diagnostics를 추가한다.
+3. **후속 계측**: 비교 runner의 offline replay가 선택된 백 방어 직후 immediate/future 흑 43 잔여 수와 complete defense 수를 함께 집계한다. 이 계측은 착수 시간 밖에서 수행한다.
+
+V5 FINAL의 50/100 simulations, threshold 1800, exploration/candidate/width/radius/top-k와 Stage 1~5 우선순위는 변경하지 않았다. 점수나 threshold를 3승 4패 3무 결과에 맞춰 조정하지 않았으며, 이 보강 뒤 100판 장기 비교도 아직 실행하지 않는다. 먼저 전체 unit/compile 검증 후 동일 seed의 10판 smoke에서 계획 충돌 감소와 완전 방어 선택 여부를 확인한다.

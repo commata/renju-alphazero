@@ -1,9 +1,13 @@
 """Bounded threat-space probes, never a whole-board forced-win proof."""
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 from renju import BLACK, WHITE, Game
 from .mcts import Move, _is_legal_for_player, _wins_for_player
-from .mcts_v5 import _window_candidates, _winning_moves, _four_completions
+from .mcts_v5 import (
+    _RootContext, SearchDiagnostics as V5Diagnostics, _forced_v5_move,
+    _window_candidates, _winning_moves, _four_completions,
+)
 from .threat_patterns import (
     compound_at, placed, structural_candidates, fours_at, threes_at,
     BY_CELL,
@@ -35,6 +39,8 @@ class PlanningStats:
     setup_cap_hits: int = 0
     continuation_cap_hits: int = 0
     defense_cap_skips: int = 0
+    forced_plan_conflicts: int = 0
+    forced_plan_preserved: int = 0
 
 
 @dataclass(frozen=True)
@@ -42,6 +48,27 @@ class DefenseProfile:
     legal_defense_count: int
     forbidden_defense_count: int
     remaining_winning_continuations: int
+
+
+@contextmanager
+def _as_player(game: Game, player: int):
+    """Temporarily expose a probe position as the requested side to move."""
+    previous = game.to_play
+    game.to_play = player
+    try:
+        yield
+    finally:
+        game.to_play = previous
+
+
+def _forced_next_move(game: Game, player: int):
+    """Return the next-turn V5 forced move/stage without changing the probe state."""
+    with _as_player(game, player):
+        context = _RootContext(game.legal_moves(), V5Diagnostics())
+        if not context.legal:
+            return None, None
+        move = _forced_v5_move(game, context=context)
+        return move, context.diagnostics.forced_policy_stage
 
 
 def white_defense_profile(game: Game, move: Move) -> DefenseProfile:
@@ -164,6 +191,21 @@ def future_setups(game: Game, player: int, *, limits=PlannerLimits(),
                 with placed(game, -player, reply):
                     following = _continuations(game, player, move, limits, stats)
                     kinds = set().union(*(c.kinds for c in following.values()))
+                    forced, forced_stage = _forced_next_move(game, player)
+                    if forced is not None:
+                        # A planned continuation is useful only if the policy that
+                        # actually runs next turn will not force an unrelated move.
+                        if forced_stage in (1, 3):
+                            # Immediate win / unstoppable four is stronger than
+                            # continuing the speculative compound plan.
+                            stats.forced_plan_preserved += 1
+                        elif forced in following:
+                            kinds.intersection_update(following[forced].kinds)
+                            stats.forced_plan_preserved += 1
+                        else:
+                            stats.forced_plan_conflicts += 1
+                            common_kinds.clear()
+                            break
                     common_kinds.intersection_update(kinds)
                     count += len(following)
                     surviving += bool(kinds)

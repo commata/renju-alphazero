@@ -1,5 +1,6 @@
 from copy import deepcopy
 import unittest
+from unittest.mock import patch
 
 from renju import BLACK, WHITE
 from search.threat_patterns import compound_at, placed, compound_moves
@@ -53,6 +54,14 @@ class PlanningTest(unittest.TestCase):
         self.assertIn('future_black_43_defense', reasons[(9,10)])
         self.assertGreater(diag.future_black_43_setups, 0)
         self.assertIsNone(diag.forced_policy_stage)
+
+    def test_future_setup_rejects_next_turn_forced_policy_diversion(self):
+        game = position(BLACK_SETUP)
+        self.assertIn((7,9), future_setups(game, BLACK))
+        stats = PlanningStats()
+        with patch('search.threat_planning._forced_v5_move', return_value=(0,0)):
+            self.assertNotIn((7,9), future_setups(game, BLACK, stats=stats))
+        self.assertGreater(stats.forced_plan_conflicts, 0)
 
     def test_immediate_counter_win_rejects_setup(self):
         game = position(BLACK_SETUP, opponents=[(1,c) for c in range(4)])

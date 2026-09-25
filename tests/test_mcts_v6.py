@@ -5,7 +5,8 @@ from unittest.mock import patch
 
 from renju import BLACK, WHITE, Game
 from search.mcts_v5 import _RootContext, _forced_v5_move
-from search.mcts_v6 import SearchDiagnostics, V5_FINAL, _root_candidates_v6, mcts_search_v6
+from search.mcts_v6 import (SearchDiagnostics, V5_FINAL, _black_43_defense_risk,
+                            _root_candidates_v6, mcts_search_v6)
 from test_threat_patterns import position, cross
 
 
@@ -61,6 +62,28 @@ class V6SearchTest(unittest.TestCase):
         self.assertEqual(diag.black_43_defense_candidates, diag.black_43_defense_injections)
         self.assertTrue(set(reasons).issubset(context.legal))
         self.assertIsNone(diag.forced_policy_stage)
+
+    def test_black_43_defense_risk_counts_uncovered_creator(self):
+        threats = cross(center=(4,4)) + cross(center=(10,10))
+        game = position(opponents=threats, player=WHITE)
+        immediate, _ = _black_43_defense_risk(game, (4,4))
+        self.assertGreaterEqual(immediate, 1)
+
+    def test_complete_black_43_defense_ranks_before_partial_defense(self):
+        game = position(opponents=cross(), player=WHITE)
+        diag = SearchDiagnostics()
+        context = _RootContext(game.legal_moves(), diag)
+
+        def risk(_game, move):
+            return (0, 0) if move == (7,7) else (1, 0)
+
+        with patch('search.mcts_v6._black_43_defense_risk', side_effect=risk):
+            moves, _, reasons = _root_candidates_v6(game, context, 1, 2)
+        defenses = [m for m in moves if 'black_43_defense' in reasons.get(m, ())]
+        self.assertTrue(defenses)
+        self.assertEqual(defenses[0], (7,7))
+        self.assertGreater(diag.black_43_defense_complete_candidates, 0)
+        self.assertEqual(diag.black_43_defense_min_immediate_remaining, 0)
 
     def test_white_win_precedes_black_43_defense(self):
         game = position([(2,c) for c in range(4)], WHITE, cross())

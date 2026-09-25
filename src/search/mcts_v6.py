@@ -10,7 +10,7 @@ from .mcts_v5 import (
     SearchDiagnostics as V5Diagnostics, _RootContext, _forced_v5_move,
     _root_candidates_v5, _search_v5_tree, _validate_v5_config,
 )
-from .threat_patterns import compound_moves
+from .threat_patterns import compound_moves, placed
 from .threat_planning import future_setups, PlanningStats, forbidden_defense_attacks
 
 
@@ -27,6 +27,9 @@ class SearchDiagnostics(V5Diagnostics):
     white_33_candidates: int = 0
     black_43_defense_candidates: int = 0
     black_43_defense_injections: int = 0
+    black_43_defense_complete_candidates: int = 0
+    black_43_defense_min_immediate_remaining: int = 0
+    black_43_defense_min_future_remaining: int = 0
     future_black_43_setups: int = 0
     future_white_43_setups: int = 0
     future_white_44_setups: int = 0
@@ -42,6 +45,8 @@ class SearchDiagnostics(V5Diagnostics):
     planner_setup_cap_hits: int = 0
     planner_continuation_cap_hits: int = 0
     planner_defense_cap_skips: int = 0
+    planner_forced_plan_conflicts: int = 0
+    planner_forced_plan_preserved: int = 0
     planner_legal_responses: int = 0
     legal_defense_count: int = 0
     forbidden_defense_count: int = 0
@@ -53,10 +58,25 @@ PRIORITY = {'white_44': 4, 'black_43': 3, 'white_43': 3, 'white_33': 2,
             'black_43_defense': 3, 'future_black_43': 1,
             'future_white_43': 1, 'future_white_44': 1, 'future_white_33': 1,
             'future_black_43_defense': 1, 'forbidden_defense_induction': 3}
+DEFENSE_REASONS = frozenset({'black_43_defense', 'future_black_43_defense'})
 
 
-def plan_root(game: Game, context: _RootContext, *, response_counts=None) -> dict[Move, set[str]]:
+def _black_43_defense_risk(game: Game, move: Move) -> tuple[int, int]:
+    """Count immediate/future black 43s left after a candidate WHITE defense."""
+    with placed(game, WHITE, move):
+        immediate = sum('43' in threat.kinds for threat in compound_moves(game, BLACK).values())
+        # If an immediate 43 still exists it already dominates the ordering;
+        # avoid the more expensive future probe until immediate coverage is complete.
+        future = 0 if immediate else sum(
+            '43' in setup.kinds for setup in future_setups(game, BLACK).values()
+        )
+    return immediate, future
+
+
+def plan_root(game: Game, context: _RootContext, *, response_counts=None,
+              defense_risk=None) -> dict[Move, set[str]]:
     response_counts = response_counts if response_counts is not None else {}
+    defense_risk = defense_risk if defense_risk is not None else {}
     diag = context.diagnostics
     own = compound_moves(game, game.to_play)
     reasons: dict[Move, set[str]] = {}
@@ -101,6 +121,22 @@ def plan_root(game: Game, context: _RootContext, *, response_counts=None) -> dic
                 for defense in sorted(setup.defenses.intersection(context.legal)):
                     reasons.setdefault(defense, set()).add('future_black_43_defense')
     diag.future_black_43_defense_candidates = sum('future_black_43_defense' in r for r in reasons.values())
+    if game.to_play == WHITE:
+        defense_moves = [move for move, kinds in reasons.items()
+                         if DEFENSE_REASONS.intersection(kinds) and move in context.legal]
+        for move in sorted(defense_moves):
+            defense_risk[move] = _black_43_defense_risk(game, move)
+        if defense_risk:
+            diag.black_43_defense_complete_candidates = sum(
+                risk == (0, 0) for risk in defense_risk.values()
+            )
+            diag.black_43_defense_min_immediate_remaining = min(
+                risk[0] for risk in defense_risk.values()
+            )
+            diag.black_43_defense_min_future_remaining = min(
+                risk[1] for risk in defense_risk.values()
+                if risk[0] == diag.black_43_defense_min_immediate_remaining
+            )
     for key, value in vars(stats).items():
         setattr(diag, 'planner_' + key, value)
     return reasons
@@ -111,7 +147,9 @@ def _root_candidates_v6(game, context, limit, radius):
     baseline, score = _root_candidates_v5(game, context, limit, radius)
     started = perf_counter()
     response_counts = {}
-    reasons = plan_root(game, context, response_counts=response_counts)
+    defense_risk = {}
+    reasons = plan_root(game, context, response_counts=response_counts,
+                        defense_risk=defense_risk)
     legal = set(context.legal)
     reasons = {m: kinds for m, kinds in reasons.items() if m in legal}
     context.diagnostics.v6_threat_planner_seconds = perf_counter() - started
@@ -119,10 +157,19 @@ def _root_candidates_v6(game, context, limit, radius):
     if not reasons:
         return baseline, score, reasons
     moves = set(baseline).union(reasons)
+
+    def secondary(move):
+        kinds = reasons.get(move, ())
+        # Complete coverage ties ordinary same-tier tactics; partial defenses
+        # are ordered after candidates that do not leave an immediate/future 43.
+        immediate, future = (defense_risk.get(move, (10**9, 10**9))
+                             if DEFENSE_REASONS.intersection(kinds) else (0, 0))
+        return immediate, future, response_counts.get(move, 0)
+
     ranked = sorted(moves, key=lambda m: (
         -max([PRIORITY[k] for k in reasons.get(m, ())]
              + [3 if m in context.injected else 0]),
-        response_counts.get(m, 0), context.key(game, m),
+        *secondary(m), context.key(game, m),
     ))
     # Budget selection uses original V5 scores, not planner ordering tiers.
     score = max(score, max(-context.key(game, m)[0] for m in ranked))
