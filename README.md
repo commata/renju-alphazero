@@ -8,6 +8,7 @@
 - **Stage 3 최종 baseline: MCTS-v6** — RIF exact-five 우선순위 교정 전 기준으로 회귀 테스트 147/147 PASS, V5 FINAL 상대 100판 48승 38패 14무(score 55.0%). 에이전트 버전은 고정 비교 상대로 보존합니다. 교정 후 seed 777 10판 smoke에서는 6승 2패 2무(score 70.0%)를 관측했으며, 이는 새 장기 승률이 아니라 현재 규칙 기준 smoke baseline입니다.
 - **Stage 4 정책·가치 신경망 완료** (`feat/policy-value-network`): 버전 고정 6-plane 입력, residual policy/value, legal mask/loss, checkpoint, D4, eval tiny overfit 및 CPU benchmark. [계약·검증 결과](docs/policy-value-network.md)를 참고하세요. V5/V6 전술 계층은 학습 경로에서 재사용하지 않습니다.
 - **Stage 5 AlphaZero 탐색 결합 구현** (`feat/stage5-alphazero-search`): MCTS-v6를 확장하지 않고 `Game`/규칙 엔진과 Stage 4 모델 계약만 공유하는 **별도 AlphaZero PUCT search**(`search.alphazero`), torch-free evaluator 경계(`search.evaluator`), 정책·가치망 evaluator(`model.evaluator`), self-play `Sample`/`GameRecord`·replay·canonical hash(`training.self_play`)를 구현했습니다. terminal value/backup은 player identity 기준이며, 계약과 구현 결정·검증 결과는 [Stage 5 AlphaZero Search Integration](docs/stage5-alphazero.md)에 있습니다.
+- **Stage 6 자기대국·학습 루프 구현** (`feat/stage6-training`): self-play → FIFO replay buffer → D4 augmentation → policy/value 학습 → 평가(Random/Tactical/previous/MCTS-v6 smoke) → 원자적 checkpoint → resume. 연속 실행과 중단·재개 실행의 최종 상태·기보가 정확히 일치함을 확인했습니다. 기력 향상 주장은 없습니다. [Stage 6 Training Loop](docs/training.md)
 
 과거 버전(V2~V5)은 비교 재현을 위해 덮어쓰지 않고 별도 Agent로 보존합니다. 설계와 측정 기록은 [docs/mcts.md](docs/mcts.md)에 있습니다.
 
@@ -70,6 +71,22 @@ python scripts/run_stage5_self_play.py --evaluator neural   --checkpoint checkpo
 ```
 
 같은 commit/checkpoint/config/seed/device/thread 수/batch size에서 두 실행의 `game_sha256`이 같아야 합니다.
+
+## Stage 6 학습 루프
+
+설정은 `configs/*.yaml`(PyYAML)에서 읽습니다. 결과는 `runs/<timestamp>_<run_name>/`에 저장되며 커밋하지 않습니다.
+명령은 bash와 PowerShell에서 동일합니다.
+
+```bash
+python scripts/run_stage6_training.py --config configs/stage6_mvp.yaml
+python scripts/run_stage6_training.py --config configs/stage6_mvp.yaml --stop-after-generation 2
+python scripts/run_stage6_training.py --config configs/stage6_mvp.yaml --resume runs/<run>/checkpoints/latest.pt
+python scripts/run_stage6_training.py --verify-checkpoint runs/<run>/checkpoints/latest.pt
+python scripts/compare_stage6_runs.py runs/<runA> runs/<runB>
+```
+
+checkpoint의 `generation`과 파일 번호 `checkpoint_genNNN.pt`는 **다음에 실행할 generation**입니다.
+resume은 generation 경계에서만 지원하며 checkpoint와 training-critical 설정이 다르면 거부합니다.
 
 ## MCTS V2
 

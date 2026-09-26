@@ -1,0 +1,55 @@
+# Tiny Stage 6 config for unit/integration tests only. Not an experiment setting.
+format_version: stage6-config-v1
+seed: 7
+device: cpu
+torch_threads: 1
+
+model:            # much smaller than Stage 4 default to keep tests fast
+  channels: 8
+  blocks: 1
+  policy_channels: 2
+  value_channels: 1
+  value_hidden: 8
+
+training:
+  generations: 2
+  games_per_generation: 1
+  batch_size: 8
+  steps_per_generation: 2
+  replay_capacity: 400
+  init_checkpoint: null
+  keep_checkpoints: 2
+  grad_clip: null
+
+self_play:
+  simulations: 3
+  max_moves: 225
+
+augmentation:
+  enabled: true
+
+optimizer:
+  name: adam
+  lr: 0.001
+  weight_decay: 0.0001
+
+loss:
+  value_weight: 1.0
+  l2_coeff: 0.0
+
+evaluation:
+  every: 1
+  puct_simulations: 3
+  opening_random_plies: 2
+  random:   {black_games: 1, white_games: 1}
+  tactical: {black_games: 1, white_games: 1}
+  previous: {black_games: 1, white_games: 1}
+  mcts_v6:
+    final_generation_only: true
+    black_games: 0
+    white_games: 0
+    use_frozen_config: true
+
+output:
+  runs_dir: runs
+  run_name: stage6_test
