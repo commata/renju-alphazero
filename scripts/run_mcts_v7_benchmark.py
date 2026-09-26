@@ -64,8 +64,11 @@ def play_one(v7_color: int, opening, opponent_name: str, seed: int):
     diag_totals = {key: 0 for key in (
         "v7_own_vcf_found", "v7_safety_checked", "v7_safety_removed",
         "v7_safety_augmented", "v7_safety_fallback", "v7_safety_nodes",
-        "v7_safety_precheck_skipped", "v7_safety_budget_exhausted",
+        "v7_safety_precheck_nodes", "v7_safety_precheck_skipped",
+        "v7_safety_inconclusive", "v7_safety_budget_exhausted",
         "v7_self_forbidden_penalized", "v7_stage4_tiebreak_applied",
+        "v7_stage4_vcf_nodes", "v7_stage4_vcf_inconclusive",
+        "v7_stage4_vcf_budget_exhausted",
     )}
     v7_module_seconds = 0.0
     max_v7_move_seconds = 0.0
@@ -86,10 +89,17 @@ def play_one(v7_color: int, opening, opponent_name: str, seed: int):
             diag_totals["v7_safety_augmented"] += int(d.v7_safety_augmented)
             diag_totals["v7_safety_fallback"] += int(d.v7_safety_fallback)
             diag_totals["v7_safety_nodes"] += d.v7_safety_nodes
+            diag_totals["v7_safety_precheck_nodes"] += d.v7_safety_precheck_nodes
             diag_totals["v7_safety_precheck_skipped"] += d.v7_safety_precheck_skipped
+            diag_totals["v7_safety_inconclusive"] += d.v7_safety_inconclusive
             diag_totals["v7_safety_budget_exhausted"] += int(d.v7_safety_budget_exhausted)
             diag_totals["v7_self_forbidden_penalized"] += d.v7_self_forbidden_penalized
             diag_totals["v7_stage4_tiebreak_applied"] += int(d.v7_stage4_tiebreak_applied)
+            diag_totals["v7_stage4_vcf_nodes"] += d.v7_stage4_vcf_nodes
+            diag_totals["v7_stage4_vcf_inconclusive"] += d.v7_stage4_vcf_inconclusive
+            diag_totals["v7_stage4_vcf_budget_exhausted"] += int(
+                d.v7_stage4_vcf_budget_exhausted
+            )
             v7_module_seconds += d.v7_module_seconds
         else:
             opponent_times.append(elapsed)

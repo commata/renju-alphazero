@@ -60,11 +60,13 @@ V6 root 후보를 생성한 뒤 후보별로 임시 착수하고 상대 VCF를 �
 - 현재 국면의 상대 VCF를 먼저 한 번 검사한다.
 - **내 후보가 4를 만들면 상대의 유일한 합법 완성점 차단까지 강제 응수로 둔 뒤** 상대 VCF를 검사한다. 단순 4가 상대에게 막는 돌만 공짜로 주고 기존 VCF를 남기는 경우를 안전수로 오판하지 않는다.
 - 현재 상대 VCF가 없고 후보가 4도 아니라면, 그 한 수가 흑 금수 상태를 위험한 방향으로 바꾸는 경우에만 개별 VCF 검사를 한다. BLACK 수는 새 흑 금수점을 만들어 WHITE forcing line의 방어점을 없앨 수 있고, WHITE 수는 기존 흑 금수를 해제해 BLACK 공격수를 합법화할 수 있다.
-- 후보별 VCF는 4,000 node, 한 착수의 M2 전체는 16,000 node로 제한한다. bounded probe가 결론을 내지 못하면 해당 후보를 보수적으로 안전수로 인정하지 않고 budget 소진을 진단에 남긴다.
+- 후보별 VCF는 4,000 node, root 사전 검사는 8,000 node까지 허용하되 둘 다 **한 착수당 총 8,000-node safety budget을 공유**한다. 알려진 5,498-node "VCF 없음" 국면은 사전 검사에서 끝낼 수 있고, 최악 탐색량은 16,000에서 절반으로 제한한다.
+- 상대 VCF가 **확인된 후보만 제거**한다. node 상한으로 결론을 못 낸 후보는 `inconclusive`로 남기되 검증된 안전수 뒤로 보낸다. 따라서 탐색 공간 크기 자체가 제거 사유가 되지 않는다.
 - 상대 VCF를 남기는 후보를 제외한다.
 - 전부 제외되면 현재 상대 VCF 공격/완성점과 내 4 생성점을 보강 후보로 검사한다.
 - 여전히 안전수가 없으면 V6 후보를 그대로 사용하고 fallback 진단을 남긴다.
 - M1이 이미 수를 결정했다면 M2는 실행되지 않는다.
+- 기존 V5/V6 Stage 5 강제수는 V7 M2를 거치지 않는 현재 흐름을 **Stage 6.5 범위 결정으로 유지**한다. V7은 Stage 1~5 강제정책을 재정의하지 않고, 이 예외는 동결 문서에 명시한다.
 
 ## 6. M3 — 흑 자기 금수점 감점
 
@@ -80,8 +82,10 @@ M4는 V5 Stage 4의 **남은 unstoppable four 최소화**를 최우선으로 그
 그 값이 같은 방어 후보끼리만 다음을 추가한다.
 
 1. 착수 후 상대 `_double_threat_moves` 수가 적은 후보
-2. 착수 후 상대 VCF가 없는 후보
+2. 착수 후 상대 VCF 판정: **검증된 안전 < inconclusive < 확인된 VCF** 순
 3. 그 외에는 기존 V6/V5 root key
+
+M4의 후보별 VCF 검사도 M2와 동일한 착수당 총 8,000-node budget을 공유해 Stage 4 동률 판정만으로 무제한 지연이 생기지 않게 한다.
 
 ### seed777-g003-p021 재감사 결과
 
@@ -108,7 +112,8 @@ V7_FINAL = {
     "own_vcf_node_limit": 5000,
     "safety_vcf_max_fours": 10,
     "safety_vcf_node_limit": 4000,
-    "safety_total_node_limit": 16000,
+    "safety_precheck_node_limit": 8000,
+    "safety_total_node_limit": 8000,
     "self_forbidden_min_white": 3,
 }
 ```
@@ -119,9 +124,11 @@ V7_FINAL = {
 
 - `v7_own_vcf_found`, `v7_own_vcf_length`, `v7_own_vcf_nodes`
 - `v7_safety_checked`, `v7_safety_removed`, `v7_safety_augmented`, `v7_safety_fallback`
-- `v7_safety_nodes`, `v7_safety_precheck_skipped`, `v7_safety_budget_exhausted`
+- `v7_safety_nodes`, `v7_safety_precheck_nodes`, `v7_safety_precheck_skipped`
+- `v7_safety_inconclusive`, `v7_safety_budget_exhausted`
 - `v7_self_forbidden_penalized`
-- `v7_stage4_tiebreak_applied`
+- `v7_stage4_tiebreak_applied`, `v7_stage4_vcf_nodes`
+- `v7_stage4_vcf_inconclusive`, `v7_stage4_vcf_budget_exhausted`
 - `v7_module_seconds`
 
 진단 객체는 호출자 소유이며 전역 상태를 사용하지 않는다.
@@ -151,7 +158,9 @@ safety 4개는 V7 선택 후 상대 VCF가 없어야 한다. M3는 기록된 bad
 
 seed 44 재감사에서 기존 M2는 own-four 후보를 상대의 강제 차단 전 상태에서 평가해 단순 4를 과도하게 안전하다고 판정하는 문제가 확인됐다. 수정본은 강제 차단 뒤를 평가하고, 현재 VCF 1회 사전검사 + 흑 금수 변화 precheck + 착수당 총 node budget으로 의미와 최악 VCF 탐색량을 함께 제한한다.
 
-수정 전 표본에서는 안전 fixture 12/12, 평균 착수 시간 V7 1.13초 대 V6 1.01초였지만, 최악 V7 착수는 12.5초(모듈 10.2초)까지 관찰됐다. 이 값은 수정 전 구현의 참고치이며, 동결 전에 같은 장비에서 평균/최악 시간을 다시 측정해야 한다.
+첫 M2 수정본(`d2bac56`)을 동일 122-position 표본에서 재측정한 결과 평균 비율은 약 1.13배로 목표 안이었지만 최악값은 개선되지 않았다. 단독 재측정에서 seed44 game 3 ply 109는 V6 1.8초 대비 V7 11.2초(모듈 9.5초), game 44 ply 88은 V6 2.6초 대비 V7 11.5초(모듈 9.0초), game 94 ply 67 Stage 4는 V6 0.01초 대비 V7 3.8초(모듈 3.8초)였다. 이 재측정은 프로세스 3개 동시 실행이라 절대시간보다 비율/급증 지점 진단에 사용한다.
+
+재감사에서 원인은 두 가지로 분리됐다. (1) bounded probe의 `inconclusive`를 VCF 확인과 동일하게 제거해 총예산 소진이 후보 삭제로 이어진 점, (2) root precheck가 후보별 4,000-node 상한을 공유해 5,498-node "VCF 없음" 국면을 끝내지 못한 점이다. 후속 수정은 inconclusive를 제거하지 않고 뒤로 보내고, precheck 8,000 / 총 safety 8,000으로 제한하며, M4도 같은 총예산을 사용한다. 이 후속값으로 동일 장비 timing을 다시 측정해야 한다.
 
 ## 11. V7_FINAL 동결 게이트
 

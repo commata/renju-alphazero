@@ -27,7 +27,8 @@ V7_FINAL = {
     "own_vcf_node_limit": 5000,
     "safety_vcf_max_fours": 10,
     "safety_vcf_node_limit": 4000,
-    "safety_total_node_limit": 16000,
+    "safety_precheck_node_limit": 8000,
+    "safety_total_node_limit": 8000,
     "self_forbidden_min_white": 3,
 }
 
@@ -51,10 +52,15 @@ class SearchDiagnostics(V6Diagnostics):
     v7_safety_augmented: bool = False
     v7_safety_fallback: bool = False
     v7_safety_nodes: int = 0
+    v7_safety_precheck_nodes: int = 0
     v7_safety_precheck_skipped: int = 0
+    v7_safety_inconclusive: int = 0
     v7_safety_budget_exhausted: bool = False
     v7_self_forbidden_penalized: int = 0
     v7_stage4_tiebreak_applied: bool = False
+    v7_stage4_vcf_nodes: int = 0
+    v7_stage4_vcf_inconclusive: int = 0
+    v7_stage4_vcf_budget_exhausted: bool = False
     v7_module_seconds: float = 0.0
 
 
@@ -81,12 +87,14 @@ class _VCFBudget:
 
 def _validate_v7_config(*, own_vcf_max_fours, own_vcf_node_limit,
                         safety_vcf_max_fours, safety_vcf_node_limit,
-                        safety_total_node_limit, self_forbidden_min_white):
+                        safety_precheck_node_limit, safety_total_node_limit,
+                        self_forbidden_min_white):
     for name, value in (
         ("own_vcf_max_fours", own_vcf_max_fours),
         ("own_vcf_node_limit", own_vcf_node_limit),
         ("safety_vcf_max_fours", safety_vcf_max_fours),
         ("safety_vcf_node_limit", safety_vcf_node_limit),
+        ("safety_precheck_node_limit", safety_precheck_node_limit),
         ("safety_total_node_limit", safety_total_node_limit),
     ):
         if type(value) is not int or value < 1:
@@ -303,7 +311,7 @@ def _candidate_allows_vcf(
                     node_limit=node_limit,
                     budget=budget,
                 )
-            return result is not None or inconclusive, result, inconclusive
+            return result is not None, result, inconclusive
 
         result, inconclusive = _budgeted_find_vcf(
             game,
@@ -312,7 +320,7 @@ def _candidate_allows_vcf(
             node_limit=node_limit,
             budget=budget,
         )
-    return result is not None or inconclusive, result, inconclusive
+    return result is not None, result, inconclusive
 
 
 def _own_four_creators(game: Game, player: int, legal: set[Move]) -> set[Move]:
@@ -330,23 +338,28 @@ def _apply_vcf_safety(
     *,
     max_fours: int,
     node_limit: int,
+    precheck_node_limit: int,
     total_node_limit: int,
 ) -> list[Move]:
     opponent = -game.to_play
     player = game.to_play
     budget = _VCFBudget(total_node_limit)
 
-    # One root precheck avoids repeating the same VCF search for quiet moves.
+    # The one-time root probe gets a larger per-probe cap than candidates but
+    # still consumes the same per-move safety budget. This lets known wide
+    # "no VCF" positions finish once instead of triggering 20 repeated probes.
     opponent_line: VCFResult | None = None
     baseline_inconclusive = False
     if _has_four_material(game, opponent):
+        before = budget.used
         opponent_line, baseline_inconclusive = _budgeted_find_vcf(
             game,
             opponent,
             max_fours=max_fours,
-            node_limit=node_limit,
+            node_limit=precheck_node_limit,
             budget=budget,
         )
+        diag.v7_safety_precheck_nodes += budget.used - before
 
     forbidden_before = (
         _black_forbidden_points(game)
@@ -355,7 +368,6 @@ def _apply_vcf_safety(
     )
 
     def needs_probe(move: Move) -> bool:
-        # A four must be evaluated after the opponent's forced block.
         if _four_completions(game, player, move):
             return True
         if opponent_line is not None or baseline_inconclusive:
@@ -364,15 +376,13 @@ def _apply_vcf_safety(
             game, move, player, forbidden_before,
         )
 
-    safe: list[Move] = []
-    removed: list[Move] = []
-    for move in moves:
+    def classify(move: Move) -> str:
         if not needs_probe(move):
             diag.v7_safety_precheck_skipped += 1
-            safe.append(move)
-            continue
+            return "safe"
+
         diag.v7_safety_checked += 1
-        unsafe, _, _ = _candidate_allows_vcf(
+        unsafe, _, inconclusive = _candidate_allows_vcf(
             game,
             move,
             player,
@@ -381,17 +391,32 @@ def _apply_vcf_safety(
             node_limit=node_limit,
             budget=budget,
         )
+        if inconclusive:
+            diag.v7_safety_inconclusive += 1
+            return "inconclusive"
         if unsafe:
-            removed.append(move)
-        else:
-            safe.append(move)
+            diag.v7_safety_removed += 1
+            return "unsafe"
+        return "safe"
 
-    diag.v7_safety_removed += len(removed)
+    safe: list[Move] = []
+    inconclusive: list[Move] = []
+    for move in moves:
+        status = classify(move)
+        if status == "safe":
+            safe.append(move)
+        elif status == "inconclusive":
+            inconclusive.append(move)
+
     diag.v7_safety_nodes = budget.used
     diag.v7_safety_budget_exhausted = budget.exhausted
     if safe:
-        return safe
+        # Preserve V6 ordering inside each group, but verified-safe candidates
+        # must precede candidates whose bounded VCF probe did not finish.
+        return safe + inconclusive
 
+    # With no verified-safe root candidate, try the original augmentation path.
+    # Inconclusive candidates are retained rather than treated as confirmed VCF.
     legal = set(context.legal)
     augmentation: set[Move] = set()
     if opponent_line is not None:
@@ -402,32 +427,24 @@ def _apply_vcf_safety(
     augmented = [move for move in sorted(augmentation) if move not in moves]
     diag.v7_safety_augmented = bool(augmented)
 
-    rescued: list[Move] = []
+    rescued_safe: list[Move] = []
+    rescued_inconclusive: list[Move] = []
     for move in augmented:
-        if not needs_probe(move):
-            diag.v7_safety_precheck_skipped += 1
-            rescued.append(move)
-            continue
-        diag.v7_safety_checked += 1
-        unsafe, _, _ = _candidate_allows_vcf(
-            game,
-            move,
-            player,
-            opponent,
-            max_fours=max_fours,
-            node_limit=node_limit,
-            budget=budget,
-        )
-        if unsafe:
-            diag.v7_safety_removed += 1
-        else:
-            rescued.append(move)
+        status = classify(move)
+        if status == "safe":
+            rescued_safe.append(move)
+        elif status == "inconclusive":
+            rescued_inconclusive.append(move)
 
     diag.v7_safety_nodes = budget.used
     diag.v7_safety_budget_exhausted = budget.exhausted
-    if rescued:
-        return rescued
+    if rescued_safe:
+        return rescued_safe + inconclusive + rescued_inconclusive
+    if inconclusive or rescued_inconclusive:
+        return inconclusive + rescued_inconclusive
 
+    # Fallback is now reserved for the meaningful case: every considered
+    # candidate was positively confirmed to leave an opponent VCF.
     diag.v7_safety_fallback = True
     return moves
 
@@ -480,13 +497,15 @@ def _stage4_v7_move(
     *,
     max_fours: int,
     node_limit: int,
+    total_node_limit: int,
 ) -> Move:
     """Refine genuine Stage-4 ties without weakening V5/V6 defense.
 
     V5 Stage 4 first minimizes remaining opponent unstoppable fours. V7 keeps
     that criterion first. Only among equally complete defenses does M4 prefer
-    fewer opponent double-threat creators, then a position without opponent
-    VCF; remaining ties use the unchanged V6/V5 ordering key.
+    fewer opponent double-threat creators, then verified VCF safety. An
+    inconclusive bounded VCF probe ranks behind verified-safe but ahead of a
+    confirmed opponent VCF.
     """
     player = game.to_play
     opponent = -player
@@ -503,28 +522,42 @@ def _stage4_v7_move(
     if len(defenses) < 2:
         return original
 
+    budget = _VCFBudget(total_node_limit)
     rows = []
     for move in sorted(defenses):
         with placed(game, player, move):
             remaining = len(_unstoppable_four_moves(game, opponent))
             double_threats = len(_double_threat_moves(game, opponent))
-            has_vcf = find_vcf(
-                game, opponent, max_fours=max_fours, node_limit=node_limit,
-            ) is not None
-        rows.append((remaining, double_threats, int(has_vcf),
+            result, inconclusive = _budgeted_find_vcf(
+                game,
+                opponent,
+                max_fours=max_fours,
+                node_limit=node_limit,
+                budget=budget,
+            )
+        if inconclusive:
+            vcf_rank = 1
+            diag.v7_stage4_vcf_inconclusive += 1
+        elif result is not None:
+            vcf_rank = 2
+        else:
+            vcf_rank = 0
+        rows.append((remaining, double_threats, vcf_rank,
                      context.key(game, move), move))
 
+    diag.v7_stage4_vcf_nodes = budget.used
+    diag.v7_stage4_vcf_budget_exhausted = budget.exhausted
     chosen = min(rows)[-1]
     diag.v7_stage4_tiebreak_applied = chosen != original
     return chosen
-
 def mcts_search_v7(
     game: Game, *, simulations=50, tactical_simulations=100,
     tactical_score_threshold=1800, exploration=sqrt(2), candidate_limit=20,
     initial_width=8, neighborhood_radius=2, priority_top_k=8,
     own_vcf_max_fours=10, own_vcf_node_limit=5000,
     safety_vcf_max_fours=10, safety_vcf_node_limit=4000,
-    safety_total_node_limit=16000, self_forbidden_min_white=3,
+    safety_precheck_node_limit=8000, safety_total_node_limit=8000,
+    self_forbidden_min_white=3,
     random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
 ) -> Move:
     """V6 search with fixed V7 root-only VCF and forbidden-point modules."""
@@ -539,6 +572,7 @@ def mcts_search_v7(
         own_vcf_node_limit=own_vcf_node_limit,
         safety_vcf_max_fours=safety_vcf_max_fours,
         safety_vcf_node_limit=safety_vcf_node_limit,
+        safety_precheck_node_limit=safety_precheck_node_limit,
         safety_total_node_limit=safety_total_node_limit,
         self_forbidden_min_white=self_forbidden_min_white,
     )
@@ -570,6 +604,7 @@ def mcts_search_v7(
                 game, context, forced, diag,
                 max_fours=safety_vcf_max_fours,
                 node_limit=safety_vcf_node_limit,
+                total_node_limit=safety_total_node_limit,
             )
         diag.v7_module_seconds = perf_counter() - module_started
         return forced
@@ -581,6 +616,7 @@ def mcts_search_v7(
         game, context, moves, diag,
         max_fours=safety_vcf_max_fours,
         node_limit=safety_vcf_node_limit,
+        precheck_node_limit=safety_precheck_node_limit,
         total_node_limit=safety_total_node_limit,
     )
     moves = _apply_self_forbidden_penalty(
