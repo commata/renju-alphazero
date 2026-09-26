@@ -30,6 +30,31 @@ python -m renju
 python -m unittest discover -s tests -v
 ```
 
+## CI
+
+GitHub Actions는 `.github/workflows/ci.yml`에서 다음 4개 고정 job을 실행합니다. Required Check는
+job 이름을 그대로 사용할 수 있도록 matrix를 쓰지 않습니다.
+
+- `core-no-torch`: Python 3.10, torch가 설치되지 않았음을 먼저 확인한 뒤 전체 회귀를 실행합니다.
+  skip은 사유가 정확히 `requires torch`인 neural 테스트만 허용합니다.
+- `full-tests`: Python 3.13 + 고정 CPU torch 2.14.0에서 전체 회귀를 실행하며 **skip 0**을 강제합니다.
+- `fake-smoke`: uniform evaluator, seed 42, 8 simulations의 Stage 5 game SHA256을 golden 값과 비교합니다.
+- `frozen-baseline`: V5/V6/threat 구현 파일 SHA-256 잠금과 post-RIF seed 777 V6-vs-V5
+  outcome/history fingerprint를 검증합니다.
+
+CI 러너는 테스트 개수를 하드코딩하지 않습니다.
+
+```bash
+python scripts/ci_run_tests.py --skip-policy none
+python scripts/check_frozen_baseline.py
+python scripts/run_stage5_self_play.py --seed 42 --simulations 8 \
+  --expect-sha256 7e1b04a0fedc3e8c11a22069222ecbf4dbcfb74f0efe3907c9dcfead124b4510
+```
+
+`tests/frozen_baseline.sha256` 또는 golden fingerprint가 달라졌다고 해서 CI를 통과시키기 위해
+값만 갱신하면 안 됩니다. 의도적인 benchmark 변경인지 원인을 먼저 확인하고, 변경 이유와 새 검증 기록을
+같은 PR에 남긴 뒤 잠금값을 갱신합니다.
+
 ## Stage 5 self-play smoke
 
 `uniform` evaluator 모드는 torch 없이 동작합니다. neural 모드는 checkpoint **파일**을 사용하고 그 SHA256을 기록합니다.

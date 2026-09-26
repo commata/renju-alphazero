@@ -166,12 +166,16 @@ def make_parser():
     parser.add_argument('--log-dir', type=Path)
     parser.add_argument('--audit-log-dir', type=Path,
                         help='replay existing logs and compare V6 root inputs; no new games')
+    parser.add_argument('--expect-sha256',
+                        help='require final outcome/history SHA256 to match this value')
     return parser
 
 
 def main():
     parser = make_parser()
     args = parser.parse_args()
+    if args.audit_log_dir is not None and args.expect_sha256 is not None:
+        parser.error('--expect-sha256 cannot be used with --audit-log-dir')
     if args.audit_log_dir is not None:
         audit = audit_root_inputs(args.audit_log_dir)
         (args.audit_log_dir / 'root_audit.json').write_text(json.dumps(audit, indent=2), encoding='utf-8')
@@ -198,6 +202,12 @@ def main():
             {**summary, 'game_details': records, 'decisions': decisions}, indent=2), encoding='utf-8')
         print(json.dumps(summary, indent=2), flush=True)
     print(f'Outcome/history SHA256: {fingerprint}', flush=True)
+    if args.expect_sha256 is not None:
+        if fingerprint != args.expect_sha256:
+            print(f'fingerprint mismatch: expected={args.expect_sha256} actual={fingerprint}',
+                  flush=True)
+            raise SystemExit(1)
+        print(f'expected fingerprint matched: {fingerprint}', flush=True)
     print('Small smoke: outcomes and timing are observations, not strength or overhead proofs.')
 
 

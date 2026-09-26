@@ -49,7 +49,7 @@ def seeded_model(seed=7):
         return PolicyValueNet().eval()
 
 
-@unittest.skipIf(torch is None, 'install the neural extra')
+@unittest.skipIf(torch is None, 'requires torch')
 class PolicyValueEvaluatorTest(unittest.TestCase):
     def setUp(self):
         old_threads = torch.get_num_threads()
@@ -135,7 +135,7 @@ class PolicyValueEvaluatorTest(unittest.TestCase):
         self.assertEqual(before, ([row[:] for row in game.board], list(game.history)))
 
 
-@unittest.skipIf(torch is None, 'install the neural extra')
+@unittest.skipIf(torch is None, 'requires torch')
 class RandomCheckpointTest(unittest.TestCase):
     def test_save_hash_load(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  core-no-torch:
+    name: core-no-torch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project without neural extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Assert torch is absent
+        run: |
+          python -c "import importlib.util,sys; spec=importlib.util.find_spec('torch'); print('torch spec:', spec); sys.exit(spec is not None)"
+      - name: Run torch-free regression with strict skip policy
+        run: python scripts/ci_run_tests.py --skip-policy torch-only
+
+  full-tests:
+    name: full-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project and pinned CPU torch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install "torch==2.14.0" --index-url https://download.pytorch.org/whl/cpu
+      - name: Verify CPU torch
+        run: |
+          python -c "import torch; print('torch', torch.__version__); print('cuda', torch.cuda.is_available()); assert not torch.cuda.is_available()"
+      - name: Renju rules contract
+        run: python -m unittest tests.test_game -v
+      - name: Run full regression with zero skips
+        run: python scripts/ci_run_tests.py --skip-policy none
+
+  fake-smoke:
+    name: fake-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Assert torch is absent
+        run: |
+          python -c "import importlib.util,sys; spec=importlib.util.find_spec('torch'); print('torch spec:', spec); sys.exit(spec is not None)"
+      - name: Verify Stage 5 deterministic golden hash
+        run: |
+          python scripts/run_stage5_self_play.py \
+            --evaluator uniform \
+            --seed 42 \
+            --simulations 8 \
+            --expect-sha256 7e1b04a0fedc3e8c11a22069222ecbf4dbcfb74f0efe3907c9dcfead124b4510 \
+            --output logs/stage5/ci_uniform_seed42.json
+
+  frozen-baseline:
+    name: frozen-baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Verify frozen implementation hashes
+        run: python scripts/check_frozen_baseline.py
+      - name: Verify post-RIF V6 behavior fingerprint
+        run: |
+          python scripts/run_mcts_v6_vs_v5.py \
+            --games 5 \
+            --seed 777 \
+            --expect-sha256 fd3f8ee61cb954c7c91249eeb79f420b5829c43f361f50e1055ebfbafa851d0f \
+            --log-dir logs/ci-v6-v5

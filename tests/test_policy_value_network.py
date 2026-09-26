@@ -13,7 +13,7 @@ if torch is not None:
     from model.masking import policy_loss, value_loss
 
 
-@unittest.skipIf(torch is None, 'install the neural extra')
+@unittest.skipIf(torch is None, 'requires torch')
 class NetworkTest(unittest.TestCase):
     def test_forward_backward_optimizer(self):
         torch.manual_seed(42)

@@ -16,7 +16,7 @@ if torch is not None:
                                 transform_spatial)
 
 
-@unittest.skipIf(torch is None, 'install the neural extra')
+@unittest.skipIf(torch is None, 'requires torch')
 class SymmetryTest(unittest.TestCase):
     def test_asymmetric_alignment_and_inverse(self):
         game = Game()

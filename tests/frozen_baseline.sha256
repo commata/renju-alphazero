@@ -1,0 +1,6 @@
+# Stage 3 frozen MCTS-v6 benchmark implementation files.
+# Do not update these hashes only to make CI green. Review the behavior change first.
+a3619de6f21b9b8ce52ebe3d9ca2feb9fb55e0d5771362b0c7b711a33fade98e  src/search/mcts_v5.py
+f41f87ebb44b48b18323e4e4a07f6095ddc33faa7d75ba4f8e07dd8b00fd0493  src/search/mcts_v6.py
+3e18fc4ce057627eb6677fd84c8dde735b1a46b312eab668b8d2d4039c6fa6f4  src/search/threat_patterns.py
+b5d5915dcc9841f98482120c23b5724b449187a666f3f235be8617f1d45960cf  src/search/threat_planning.py
