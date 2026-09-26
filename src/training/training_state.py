@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+from pathlib import Path
 import random
 from random import Random
 
@@ -55,6 +56,7 @@ class TrainingState:
     sample_rng: Random
     augment_rng: Random
     source_checkpoint_hash: str | None = None   # file whose contents equal this state
+    run_dir: Path | None = None                 # set by the training loop
 
 
 def python_rng_state(rng: Random) -> dict:
