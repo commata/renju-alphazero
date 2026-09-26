@@ -42,6 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--output', type=Path, help='JSON report path (default: logs/stage5/...)')
     parser.add_argument('--expect-sha256',
                         help='require the single game SHA256 to match this value')
+    parser.add_argument('--expect-record-sha256',
+                        help='require the single record SHA256 (moves + visit-count targets) '
+                             'to match this value')
     return parser
 
 
@@ -78,8 +81,9 @@ def main() -> int:
     args = parser.parse_args()
     if args.games <= 0:
         parser.error('--games must be positive')
-    if args.expect_sha256 is not None and args.games != 1:
-        parser.error('--expect-sha256 requires --games 1')
+    expecting = args.expect_sha256 is not None or args.expect_record_sha256 is not None
+    if expecting and args.games != 1:
+        parser.error('--expect-sha256/--expect-record-sha256 require --games 1')
     config = SearchConfig(
         num_simulations=args.simulations, c_puct=args.c_puct, tau=args.temperature,
         temperature_moves=args.temperature_moves, dirichlet_alpha=args.dirichlet_alpha,
@@ -147,14 +151,19 @@ def main() -> int:
           f"total={total['total_move_ms']:.2f} (n={total['count']})")
     print(f"diversity (from ply {DIVERSITY_START_PLY}): {report['diversity']}")
     print(f'report: {output}')
-    if args.expect_sha256 is not None:
-        actual = games[0]['game_sha256']
-        if actual != args.expect_sha256:
-            print(f'game SHA256 mismatch: expected={args.expect_sha256} actual={actual}',
+    failed = False
+    for label, key, expected in (('game', 'game_sha256', args.expect_sha256),
+                                 ('record', 'record_sha256', args.expect_record_sha256)):
+        if expected is None:
+            continue
+        actual = games[0][key]
+        if actual != expected:
+            print(f'{label} SHA256 mismatch: expected={expected} actual={actual}',
                   file=sys.stderr)
-            return 1
-        print(f'expected game SHA256 matched: {actual}')
-    return 0
+            failed = True
+        else:
+            print(f'expected {label} SHA256 matched: {actual}')
+    return 1 if failed else 0
 
 
 if __name__ == '__main__':
