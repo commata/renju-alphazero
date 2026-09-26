@@ -1,6 +1,6 @@
 # Renju AlphaZero
 
-렌주 규칙 엔진, Random/Tactical 기준선, **신경망 없는 순수 MCTS**(V2~V6)를 구현한 뒤 AlphaZero 방식의 정책·가치 신경망 학습으로 넘어가는 프로젝트입니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
+렌주 규칙 엔진, Random/Tactical 기준선, 동결된 **순수 MCTS-v6 benchmark**, 정책·가치 신경망을 기반으로 AlphaZero PUCT/self-play/학습 파이프라인을 단계적으로 구현하는 프로젝트입니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
 
 ## 현재 단계
 
@@ -23,6 +23,8 @@ python -m renju
 `8 8`처럼 **행 열**을 1부터 15까지 입력합니다. `u`는 한 수 되돌리기, `q`는 종료입니다.
 
 ## 테스트
+
+기본 회귀 테스트는 Python 표준 라이브러리 `unittest`를 사용하므로 별도 `test` extra가 필요하지 않습니다. Torch가 없는 환경에서는 neural 전용 테스트가 skip되고 engine/search 회귀는 계속 실행됩니다.
 
 ```bash
 python -m unittest discover -s tests -v

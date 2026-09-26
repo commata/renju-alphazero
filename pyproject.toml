@@ -4,17 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "renju-alphazero"
-version = "0.2.0"
-description = "Renju rules engine, baseline agents and pure MCTS (Stage 3 baseline: MCTS-v6)"
+version = "0.3.0.dev0"
+description = "Renju rules, frozen MCTS-v6 benchmark, policy-value network, and AlphaZero search pipeline"
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
 neural = ["torch==2.14.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
