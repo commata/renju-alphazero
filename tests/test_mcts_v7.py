@@ -7,7 +7,7 @@ import unittest
 from agents import MCTSV7Agent
 from renju import BLACK, WHITE, Game
 from search.mcts_v6 import V5_FINAL
-from search.mcts_v7 import V7_FINAL, SearchDiagnostics, find_vcf, mcts_search_v7
+from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _apply_self_forbidden_penalty,\n                            find_vcf, mcts_search_v7)
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mcts_v7_positions.json"
@@ -141,7 +141,19 @@ class V7FixtureTest(unittest.TestCase):
             random=random.Random(31), diagnostics=diag,
         )
         self.assertNotEqual(move, avoid)
-        self.assertGreater(diag.v7_self_forbidden_penalized, 0)
+
+        # M1/M2 precede M3 in the V7 decision flow, so the end-to-end move may
+        # avoid the logged move before M3 runs. Test M3 itself on the recorded
+        # V6 root ordering to prove the logged move is demoted when reached.
+        root_moves = [_coord(value) for value in item["root_candidates_in_log"]]
+        module_diag = SearchDiagnostics()
+        ranked = _apply_self_forbidden_penalty(
+            game, root_moves, module_diag,
+            minimum_white=V7_FINAL["self_forbidden_min_white"],
+        )
+        self.assertGreater(module_diag.v7_self_forbidden_penalized, 0)
+        penalized_start = len(ranked) - module_diag.v7_self_forbidden_penalized
+        self.assertGreaterEqual(ranked.index(avoid), penalized_start)
 
     def test_stage4_fixture_applies_v7_tiebreak(self):
         item = FIXTURES["seed777-g003-p021"]
