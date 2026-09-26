@@ -95,7 +95,7 @@ jobs:
             --output logs/stage5/ci_uniform_seed42.json
       - name: Upload smoke report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: stage5-uniform-smoke-report
           path: logs/stage5/ci_uniform_seed42.json
