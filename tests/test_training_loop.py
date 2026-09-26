@@ -19,6 +19,7 @@ if torch is not None:
     from training.metrics import read_metrics
     from training.self_play import GameRecord, replay_record
     from training.training_checkpoint import load_checkpoint_payload
+    from scripts.verify_stage6_evaluation import verify_run
 
 
 @unittest.skipIf(torch is None, 'requires torch')
@@ -109,6 +110,13 @@ class TrainingLoopEndToEndTest(unittest.TestCase):
         self.assertEqual(result['generation'], 2)
         self.assertGreater(result['moves'], 0)
         self.assertEqual(result['illegal_moves'], 0)
+
+    def test_persisted_evaluation_wld_audit(self):
+        result = verify_run(self.run_dir)
+        self.assertEqual(result['status'], 'PASS')
+        self.assertEqual(result['generations'], [0, 1])
+        self.assertEqual(result['opponents'], 6)
+        self.assertEqual(result['games'], 12)
 
     def test_new_run_refuses_non_empty_directory(self):
         with self.assertRaises(FileExistsError):

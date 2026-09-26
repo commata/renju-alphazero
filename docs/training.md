@@ -406,7 +406,16 @@ checkpoint 수가 늘면 디스크 사용량도 크게 증가한다. 실행 전 
 Stage 6의 상대별 2~4판 W/L/D는 monitoring/smoke 값이다. `tests/test_evaluation.py`는 평가 기보를
 `Game`으로 다시 재생한 뒤 실제 `winner`와 `model_color`에서 W/L/D를 재계산하여 저장된
 `result` 및 summary 집계와 일치하는지 검증한다. 다만 ignore된 기존 MVP run 파일 자체는 저장소에
-없으므로, 과거 run의 JSON을 독립 재검증하려면 해당 로컬 run을 보존해야 한다.
+없으므로, 과거 run의 JSON을 독립 재검증하려면 해당 로컬 run을 보존해야 한다. 보존된 MVP run은 Stage 7-A를
+시작하기 전에 다음 명령으로 실제 기보를 엔진에 재생해 winner/model_color → W/L/D → summary →
+`metrics.jsonl`까지 대조한다.
+
+```powershell
+python scripts/verify_stage6_evaluation.py runs\stage6_mvp_A
+python scripts/verify_stage6_evaluation.py runs\stage6_mvp_B
+```
+
+두 명령이 모두 `"status": "PASS"`여야 Stage 7-A 승률 기록을 해석한다.
 
 Stage 7에서는 한 generation의 4판 승률을 곧바로 기력 추세로 해석하지 않는다.
 
