@@ -1,0 +1,64 @@
+# Stage 6 MVP: end-to-end training infrastructure check (not a strength experiment).
+# Omitted keys use training.config.DEFAULTS; the resolved file is written to the run dir.
+format_version: stage6-config-v1
+seed: 42
+device: cpu
+torch_threads: 1
+
+model:            # Stage 4 default architecture
+  channels: 64
+  blocks: 4
+  policy_channels: 2
+  value_channels: 1
+  value_hidden: 64
+
+training:
+  generations: 3
+  games_per_generation: 4
+  batch_size: 32
+  steps_per_generation: 50
+  replay_capacity: 10000
+  init_checkpoint: null
+  keep_checkpoints: 3
+  grad_clip: null
+
+self_play:        # Stage 5 defaults except simulations
+  simulations: 25
+  c_puct: 1.5
+  tau: 1.0
+  temperature_moves: 10
+  dirichlet_alpha: 0.05
+  dirichlet_epsilon: 0.25
+  max_moves: 225  # board limit only; Stage 5 self-play has no truncation
+
+augmentation:
+  enabled: true
+
+optimizer:        # Stage 4 tiny-overfit optimizer (Adam, lr 1e-3)
+  name: adam
+  lr: 0.001
+  weight_decay: 0.0001
+  momentum: 0.0
+
+loss:
+  value_weight: 1.0
+  l2_coeff: 0.0
+
+evaluation:
+  every: 1
+  puct_simulations: 25
+  c_puct: 1.5
+  opening_random_plies: 2
+  opening_radius: 2
+  random:   {black_games: 2, white_games: 2}
+  tactical: {black_games: 2, white_games: 2}
+  previous: {black_games: 2, white_games: 2}
+  mcts_v6:
+    final_generation_only: true
+    black_games: 1
+    white_games: 1
+    use_frozen_config: true
+
+output:
+  runs_dir: runs
+  run_name: stage6_mvp

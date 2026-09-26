@@ -7,6 +7,8 @@ name = "renju-alphazero"
 version = "0.3.0.dev0"
 description = "Renju rules, frozen MCTS-v6 benchmark, policy-value network, and AlphaZero search pipeline"
 requires-python = ">=3.10"
+# Stage 6 training configs are YAML (configs/*.yaml); PyYAML is pure-Python and torch-free.
+dependencies = ["PyYAML>=6.0"]
 
 [project.optional-dependencies]
 neural = ["torch==2.14.0"]
