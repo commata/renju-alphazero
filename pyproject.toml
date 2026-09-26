@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "renju-alphazero"
-version = "0.3.0.dev0"
+version = "0.4.0"
 description = "Renju rules, frozen MCTS-v6 benchmark, policy-value network, and AlphaZero search pipeline"
 requires-python = ">=3.10"
 # Stage 6 training configs are YAML (configs/*.yaml); PyYAML is pure-Python and torch-free.

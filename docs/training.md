@@ -358,6 +358,8 @@ replay·`validate_samples` 통과, illegal 0, checkpoint SHA256 `d9e62e0e…`.
 
 ## 15. Stage 7 이관 규칙과 중간 길이 검증
 
+> Stage 7의 최신 실험 계약과 우선순위는 [Stage 7 Validation Plan](stage7-plan.md)을 기준으로 한다. 이 절은 Stage 6 종료 시점의 이관 기록이며, probe 정의·profiling·search 실험의 세부 설계가 충돌할 경우 `docs/stage7-plan.md`가 우선한다.
+
 Stage 6의 두 MVP run은 연속 실행/중단·재개 등가성을 증명한 **증거물**이므로 Stage 7 실험을
 원본 run 디렉터리에서 계속하지 않는다. Stage 7-A가 Stage 6과 동일한 training-critical 설정을
 연장해서 보는 실험이라면 run 디렉터리를 통째로 복사한 뒤 복사본에서 resume한다.
@@ -425,9 +427,10 @@ Stage 7에서는 한 generation의 4판 승률을 곧바로 기력 추세로 해
 - replay buffer 크기, sample reuse ratio, 평균 대국 길이, self-play/학습 시간도 함께 기록한다.
 - Tactical 1승을 단독 milestone으로 사용하지 않는다.
 
-Stage 7에서 대국 결과보다 덜 흔들리는 보조 지표로 **고정 tactical probe set**을 추가한다.
-Stage 3/규칙 테스트의 즉시 승리·필수 방어 국면 30~50개를 재사용해 checkpoint별 policy top-1
-정답률과 value 부호를 측정한다. probe 구현은 Stage 6 PASS 조건이 아니므로 별도 Stage 7 브랜치에서 한다.
+Stage 7에서 대국 결과보다 덜 흔들리는 보조 지표로 **고정 tactical/value probe set**을 추가한다.
+최신 정의는 `docs/stage7-plan.md`를 따른다. policy probe는 즉시 승리·필수 방어 등 정답 수 집합의 top-1과
+correct-set probability mass를 측정하고, value 부호 평가는 결과가 확실한 forced win/loss 국면에만 적용한다.
+probe 구현은 Stage 6 PASS 조건이 아니므로 별도 Stage 7 브랜치에서 한다.
 
 ### Stage 7-B 새 설정으로 넘어갈 때
 
