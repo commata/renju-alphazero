@@ -355,3 +355,91 @@ replay·`validate_samples` 통과, illegal 0, checkpoint SHA256 `d9e62e0e…`.
 - 장치 간(CPU↔GPU) bit-exact resume은 요구하지 않는다. 등가성은 같은 장치·thread 수·torch 버전 조건에서만 검증했다.
 - 테스트 시간: Stage 6 테스트 추가로 전체 회귀가 기준 약 21 s에서 약 86 s(torch 설치, 339 tests)로 늘었다
   (대부분 `test_training_resume`의 3-run 비교와 `legal_moves` 비용).
+
+## 15. Stage 7 이관 규칙과 중간 길이 검증
+
+Stage 6의 두 MVP run은 연속 실행/중단·재개 등가성을 증명한 **증거물**이므로 Stage 7 실험을
+원본 run 디렉터리에서 계속하지 않는다. Stage 7-A가 Stage 6과 동일한 training-critical 설정을
+연장해서 보는 실험이라면 run 디렉터리를 통째로 복사한 뒤 복사본에서 resume한다.
+
+PowerShell 예:
+
+```powershell
+Copy-Item -Recurse runs\stage6_mvp_B runs\stage6_mvp_B_stage7a
+Copy-Item configs\stage6_mvp.yaml runs\stage7a-continuation.yaml
+```
+
+`runs\stage7a-continuation.yaml`에서는 **실행 제어 값만** 바꾼다.
+
+```yaml
+training:
+  generations: 30
+  keep_checkpoints: 32
+```
+
+`games_per_generation`, `batch_size`, `steps_per_generation`, replay capacity, optimizer/loss,
+self-play/evaluation 탐색 설정과 seed는 training-critical이므로 Stage 7-A continuation에서 바꾸지 않는다.
+그 값을 바꾸는 실험은 기존 run의 resume이 아니라 Stage 7-B 새 run으로 분리한다.
+
+실행:
+
+```powershell
+python scripts/run_stage6_training.py --config runs\stage7a-continuation.yaml --resume runs\stage6_mvp_B_stage7a\checkpoints\latest.pt --generations 30
+```
+
+CLI 계약은 `scripts/run_stage6_training.py` 기준 다음과 같다.
+
+- 새 run에는 `--config`가 필수다.
+- resume은 `--config`를 생략할 수 있으며, 이 경우 checkpoint 안의 config를 사용한다.
+- `--generations`는 총 목표 generation을 덮어쓸 수 있다.
+- `keep_checkpoints`는 CLI override가 없으므로 보존 개수를 늘리려면 resume 시 호환되는 config 파일을
+  함께 전달해야 한다. 이 값은 training-critical이 아닌 실행 제어 값이다.
+- resume은 checkpoint가 속한 run 디렉터리에 계속 기록하므로, Stage 6 증거 run을 보존하려면 반드시
+  복사본을 사용한다.
+
+Stage 7-A에서는 중간 checkpoint 비교가 목적이므로 `keep_checkpoints: 3`을 그대로 두지 않는다.
+예를 들어 gen 30까지 모두 보존하려면 30 이상으로 설정한다. ReplayBuffer가 checkpoint 안에 포함되므로
+checkpoint 수가 늘면 디스크 사용량도 크게 증가한다. 실행 전 여유 공간을 확인한다.
+
+### 평가 해석
+
+Stage 6의 상대별 2~4판 W/L/D는 monitoring/smoke 값이다. `tests/test_evaluation.py`는 평가 기보를
+`Game`으로 다시 재생한 뒤 실제 `winner`와 `model_color`에서 W/L/D를 재계산하여 저장된
+`result` 및 summary 집계와 일치하는지 검증한다. 다만 ignore된 기존 MVP run 파일 자체는 저장소에
+없으므로, 과거 run의 JSON을 독립 재검증하려면 해당 로컬 run을 보존해야 한다.
+
+Stage 7에서는 한 generation의 4판 승률을 곧바로 기력 추세로 해석하지 않는다.
+
+- Random/Tactical/previous 결과는 **5 generation 이동 구간**으로 묶어 상대별 약 20판 단위 추세를 본다.
+- 흑/백 결과를 분리해 색 편향도 함께 본다.
+- loss는 step-level moving average와 policy/value loss를 각각 본다.
+- replay buffer 크기, sample reuse ratio, 평균 대국 길이, self-play/학습 시간도 함께 기록한다.
+- Tactical 1승을 단독 milestone으로 사용하지 않는다.
+
+Stage 7에서 대국 결과보다 덜 흔들리는 보조 지표로 **고정 tactical probe set**을 추가한다.
+Stage 3/규칙 테스트의 즉시 승리·필수 방어 국면 30~50개를 재사용해 checkpoint별 policy top-1
+정답률과 value 부호를 측정한다. probe 구현은 Stage 6 PASS 조건이 아니므로 별도 Stage 7 브랜치에서 한다.
+
+### Stage 7-B 새 설정으로 넘어갈 때
+
+Stage 6 training checkpoint(`stage6-training-checkpoint-v1`)는 optimizer/buffer/RNG까지 포함하는
+resume snapshot이고, `training.init_checkpoint`는 Stage 4의 모델 전용 checkpoint 형식을 읽는다.
+따라서 simulations, games/generation, optimizer 등 training-critical 설정을 바꾸는 Stage 7-B에서는
+resume snapshot을 억지로 재사용하지 않는다.
+
+별도 Stage 7 브랜치에서 **weights-only export**를 추가한다. export된 정식 모델 파일에는 최소한
+원본 run, generation, critical config hash, git commit과 모델 구조/version provenance를 남기고,
+기존 Stage 4 checkpoint loader의 구조 호환성 검사를 유지한다. 이 파일은 Stage 7-B 새 run의
+`training.init_checkpoint`와 Stage 9 대국 프로그램에서 공통으로 사용할 수 있어야 한다.
+
+### 현재 병목의 해석
+
+저장소의 `perf/renju-legal-moves`, `perf/rules-engine` 브랜치는 현재 `main`보다 ahead가 0인
+ancestor 상태이므로 기존 규칙/합법수 최적화는 이미 Stage 6 기반에 포함되어 있다. 따라서 MVP에서
+관측한 searched move당 `legal_moves` 약 56 ms는 미병합 최적화 때문이 아니라 **최적화 이후에도
+남아 있는 실제 Stage 7 병목 후보**다. batch inference(Stage 5 carry-over)와 함께 별도로 profile한다.
+
+Stage 6이 main에 병합되고 CI가 통과한 뒤 완료 태그는 기존 `v0.3-search`와 충돌하지 않도록
+**`v0.4-training`**을 사용한다. 장시간/대규모 학습은 Stage 7에서 학습 신호와 병목을 확인한 뒤
+Stage 8 데스크톱 규모 확장에서 수행한다.
+

@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from renju import BLACK, Game
+from renju import BLACK, WHITE, Game
 from training.config import evaluation_search_config, load_config
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,12 +61,24 @@ class EvaluationTest(unittest.TestCase):
 
     def test_games_replay_legally_with_consistent_result(self):
         for data in self.results['opponents'].values():
+            replayed_results = []
             for record in data['games']:
                 game = Game()
                 for move in record['moves']:
                     game.play(*move)
                 self.assertTrue(game.done)
                 self.assertEqual(game.winner, record['winner'])
+
+                model_color = BLACK if record['model_color'] == 'black' else WHITE
+                expected = ('draw' if game.winner is None else
+                            'win' if game.winner == model_color else 'loss')
+                self.assertEqual(record['result'], expected)
+                replayed_results.append(expected)
+
+            summary = data['summary']
+            self.assertEqual(summary['wins'], replayed_results.count('win'))
+            self.assertEqual(summary['losses'], replayed_results.count('loss'))
+            self.assertEqual(summary['draws'], replayed_results.count('draw'))
 
     def test_evaluation_is_stateless_and_reproducible(self):
         again = evaluate_generation(self.state.model, self.previous, 0, self.config, 1)
