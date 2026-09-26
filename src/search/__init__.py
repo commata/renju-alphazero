@@ -16,6 +16,7 @@ _EXPORTS = {
     "mcts_search_v4": "mcts_v4",
     "mcts_search_v5": "mcts_v5",
     "mcts_search_v6": "mcts_v6",
+    "mcts_search_v7": "mcts_v7",
 }
 
 __all__ = list(_EXPORTS)
