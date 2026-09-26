@@ -7,7 +7,8 @@ import unittest
 from agents import MCTSV7Agent
 from renju import BLACK, WHITE, Game
 from search.mcts_v6 import V5_FINAL
-from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _apply_self_forbidden_penalty,\n                            find_vcf, mcts_search_v7)
+from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _apply_self_forbidden_penalty,
+                            find_vcf, mcts_search_v7)
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mcts_v7_positions.json"
