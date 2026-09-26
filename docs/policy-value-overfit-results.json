@@ -1,0 +1,79 @@
+{
+  "seed": 42,
+  "samples": 32,
+  "steps": 50,
+  "max_steps": 300,
+  "eval_every": 25,
+  "learning_rate": 0.001,
+  "optimizer": "Adam",
+  "dataset_sha256": "f7999e17e6acfe85a684f8d8e9202ebea51834c6a1d3425bf2ae3baf191c5215",
+  "model_config": {
+    "board_size": 15,
+    "input_planes": 6,
+    "channels": 64,
+    "blocks": 4,
+    "policy_channels": 2,
+    "value_channels": 1,
+    "value_hidden": 64
+  },
+  "parameters": 415722,
+  "python": "3.13.14",
+  "torch": "2.14.0+cpu",
+  "threads": 1,
+  "device": "cpu",
+  "elapsed_seconds": 9.441272399999434,
+  "curve": [
+    {
+      "step": 0,
+      "train": {
+        "policy_loss": 5.402106761932373,
+        "value_mse": 0.6858088374137878,
+        "loss": 6.087915420532227,
+        "masked_top1": 0.03125,
+        "nonfinite": 0
+      },
+      "eval": {
+        "policy_loss": 16.60245704650879,
+        "value_mse": 1.0223371982574463,
+        "loss": 17.624794006347656,
+        "masked_top1": 0.0,
+        "nonfinite": 0
+      }
+    },
+    {
+      "step": 25,
+      "train": {
+        "policy_loss": 0.02097667008638382,
+        "value_mse": 0.0007727308548055589,
+        "loss": 0.021749401465058327,
+        "masked_top1": 1.0,
+        "nonfinite": 0
+      },
+      "eval": {
+        "policy_loss": 4.222068786621094,
+        "value_mse": 0.5772467255592346,
+        "loss": 4.799315452575684,
+        "masked_top1": 0.59375,
+        "nonfinite": 0
+      }
+    },
+    {
+      "step": 50,
+      "train": {
+        "policy_loss": 0.004798876121640205,
+        "value_mse": 9.257475176127627e-05,
+        "loss": 0.004891450982540846,
+        "masked_top1": 1.0,
+        "nonfinite": 0
+      },
+      "eval": {
+        "policy_loss": 0.08596145361661911,
+        "value_mse": 0.00939399003982544,
+        "loss": 0.09535544365644455,
+        "masked_top1": 1.0,
+        "nonfinite": 0
+      }
+    }
+  ],
+  "result": "PASS"
+}

@@ -6,11 +6,16 @@
 기준 커밋은 `9f48d146111bd1c1a6154c58dbd10b7aaa26da13`이다.
 CPU 식별 출력은 `Intel64 Family 6 Model 170 Stepping 4, GenuineIntel`이다.
 
-`tests/reference_rules.py`는 기준 `src/renju/rules.py`의 독립적인 전체 복사본이다.
-두 파일의 기준 Git blob hash는 `7bdd91285ffdb4eb39e007c79485a731da20c69b`로 같다.
-oracle은 production 함수를 import하지 않으며, production도 oracle을 import하지 않는다.
-동결 이후 oracle은 수정하지 않았다. 합법수 기대 목록은 oracle의 빈칸별 판정에
-기존 첫 수 중앙 고정, 종료 상태, 백 차례 규칙을 적용해 행 우선으로 구성한다.
+최초 최적화 검증 당시 `tests/reference_rules.py`는 기준 `src/renju/rules.py`의 독립적인
+전체 복사본이었고 두 파일의 기준 Git blob hash는
+`7bdd91285ffdb4eb39e007c79485a731da20c69b`로 같았다. 이 문서 아래의 성능/호출 수치는
+그 시점의 동결 oracle을 기준으로 한 역사적 측정값이다.
+
+후속 Stage 4 코드 리뷰에서 RIF의 **정확히 5목 우선순위** 계약을 바로잡으면서 production과
+`tests/reference_rules.py`를 함께 갱신했다. 과거 oracle은 Git history의 위 hash로 재현할 수 있다.
+현재 oracle도 production 함수를 import하지 않고, production도 oracle을 import하지 않는 독립 구조를
+유지한다. 합법수 기대 목록은 현재 oracle의 빈칸별 판정에 첫 수 중앙 고정, 종료 상태, 백 차례 규칙을
+적용해 행 우선으로 구성한다.
 
 ## 변경과 정확성 근거
 
@@ -102,6 +107,10 @@ Random 대국에서 호출 수와 병목만 확인하는 데 사용한다. 측�
 모든 단계에서 규칙/합법수 불일치와 복원 실패는 0이었다. 기준 147개와 추가 2개 모두 통과했다.
 최종 전체 unit suite는 9.503초였다. compileall과 diff 공백 검사도 통과했다.
 패키지 매니페스트에 별도 lint/typecheck 명령은 없다.
+
+> **해석 주의:** production과 `tests/reference_rules.py`는 같은 규칙 계약을 구현하므로 아래 0 mismatch는
+> 최적화 경로와 reference 경로의 **동작 등가성** 근거다. RIF 규칙 자체의 옳고 그름은
+> `docs/rules.md`의 외부 규칙 근거와 명시적 fixture로 별도 검증한다.
 
 ### 대규모 differential
 

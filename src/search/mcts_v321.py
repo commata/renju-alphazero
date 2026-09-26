@@ -75,9 +75,9 @@ def _fast_winning_extensions_in_direction(
 ) -> set[Move]:
     """Find structural winning extensions without recursive forbidden checks.
 
-    For black, an exact-five extension is legal unless the same placement also
-    creates an overline. Renju 3-3/4-4 checks are unnecessary after exact five,
-    matching the rule engine's ordering.
+    For black, an exact-five extension wins even if the same placement also
+    creates an overline on another axis. Renju 3-3/4-4 checks are unnecessary
+    after exact five, matching the rule engine's ordering.
     """
     row, col = anchor
     result: set[Move] = set()
@@ -99,8 +99,6 @@ def _fast_winning_extensions_in_direction(
                 anchor,
             )
             if not contains_anchor or not _is_winning_run(player, length):
-                continue
-            if player == BLACK and _black_overline_at(board, rr, cc):
                 continue
             result.add((rr, cc))
         finally:
@@ -132,6 +130,13 @@ def _fast_open_three_in_direction(
 
         board[rr][cc] = player
         try:
+            # An extension that already wins is not a three -> straight-four
+            # extension. Reject it before the cheaper overline heuristic.
+            if any(
+                _is_winning_run(player, run_length(board, rr, cc, vr, vc))
+                for vr, vc in DIRECTIONS
+            ):
+                continue
             if player == BLACK and _black_overline_at(board, rr, cc):
                 continue
 
@@ -143,7 +148,7 @@ def _fast_open_three_in_direction(
                 dc,
                 anchor,
             )
-            if not contains_anchor or _is_winning_run(player, length):
+            if not contains_anchor:
                 continue
 
             if len(

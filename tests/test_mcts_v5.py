@@ -63,9 +63,9 @@ class V5PolicyTest(unittest.TestCase):
         black = position(black=stones)
         self.assertFalse(_is_unstoppable_four(black, BLACK, (7,7)))
 
-    def test_black_completion_cross_overline_rejected(self):
+    def test_black_completion_cross_overline_is_winning_completion(self):
         game = position([(7,3),(7,4),(7,5),(4,7),(5,7),(6,7),(8,7),(9,7)])
-        self.assertNotIn((7,7), _four_completions(game, BLACK, (7,6)))
+        self.assertIn((7,7), _four_completions(game, BLACK, (7,6)))
         white = position(white=[(7,3),(7,4),(7,5),(7,8)])
         self.assertIn((7,7), _four_completions(white, WHITE, (7,6)))
 
@@ -375,16 +375,25 @@ class V5OptimizationTest(unittest.TestCase):
                         expected.append(move)
                 self.assertEqual(_double_threat_moves(game, player), expected)
 
-    def test_cached_counterwin_candidates_recheck_black_legality(self):
+    def test_cached_counterwin_candidates_recheck_occupancy_and_survivors(self):
         from search.mcts_v5 import _window_candidates, _winning_moves
         game = position([(7,3),(7,4),(7,5),(7,6),(5,7),(6,7),(8,7),(9,7),(10,7)])
         candidates = _window_candidates(game, BLACK, 4)
         self.assertIn((7,7), candidates)
-        self.assertNotIn((7,7), _winning_moves(game, BLACK))
-        # A white creator can occupy another black candidate; the cached
+        # Exact five wins even when the same move also makes an overline on
+        # another axis, so both structural completions are legal wins here.
+        initial_wins = _winning_moves(game, BLACK)
+        self.assertIn((7,2), initial_wins)
+        self.assertIn((7,7), initial_wins)
+
+        # A white creator can occupy a cached black candidate; the cached
         # structural pool must skip occupied points and recheck all survivors.
         game.board[7][2] = WHITE
-        self.assertEqual(_winning_moves(game, BLACK, candidates), _winning_moves(game, BLACK))
+        cached = _winning_moves(game, BLACK, candidates)
+        fresh = _winning_moves(game, BLACK)
+        self.assertNotIn((7,2), cached)
+        self.assertIn((7,7), cached)
+        self.assertEqual(cached, fresh)
 
 
 if __name__ == '__main__':

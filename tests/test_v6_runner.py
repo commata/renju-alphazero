@@ -6,6 +6,7 @@ from evaluation.match import GameResult, MatchResult
 from renju import BLACK, WHITE
 from scripts.run_mcts_v6_vs_v5 import (
     make_parser, summarize, annotate_defense_outcomes, v5_final, audit_root_inputs,
+    outcome_history_fingerprint,
 )
 from search.mcts_v6 import V5_FINAL, SearchDiagnostics
 
@@ -36,6 +37,10 @@ class V6RunnerTest(unittest.TestCase):
         self.assertEqual(summary['v6_by_color']['white']['defense_followups_observed'], 0)
         self.assertEqual(summary['observed_overhead'], 1.5)
         self.assertIsNone(decisions[-1]['black_43_on_next_reply'])
+        self.assertEqual(
+            outcome_history_fingerprint([('test', match)]),
+            'ba95251a98f9f7755d8cf5cc98ce73989f3660dcc88d6d8d922e905663424d0e',
+        )
 
     def test_root_audit_accepts_matching_inputs_and_flags_changed_roots(self):
         import json

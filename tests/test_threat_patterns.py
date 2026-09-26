@@ -83,10 +83,10 @@ class PatternTest(unittest.TestCase):
         self.assertEqual({tuple(sorted(t.continuations)) for t in compound.fours},
                          {((7,5),), ((7,9),)})
 
-    def test_completion_cross_overline_excluded(self):
+    def test_completion_cross_overline_included_when_it_makes_exact_five(self):
         game = position([(7,3),(7,4),(7,5),(4,7),(5,7),(6,7),(8,7),(9,7)])
         with placed(game, BLACK, (7,6)):
-            self.assertTrue(all((7,7) not in f.continuations for f in fours_at(game, BLACK, (7,6))))
+            self.assertTrue(any((7,7) in f.continuations for f in fours_at(game, BLACK, (7,6))))
 
     def test_fake_43_with_forbidden_three_extensions(self):
         stones = [(7,4),(7,5),(7,6),(6,7),(8,7)]

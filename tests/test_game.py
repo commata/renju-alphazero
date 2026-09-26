@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from renju import BLACK, WHITE, Game, IllegalMove
-from renju.rules import forbidden_reason
+from renju.rules import _open_three, forbidden_reason
 
 
 def position(black=(), white=(), turn=BLACK):
@@ -63,15 +63,16 @@ class RulesTest(unittest.TestCase):
         g.undo()
         self.assertFalse(g.done)
 
-    def test_overline_precedes_five_and_restores_board(self):
+    def test_exact_five_precedes_simultaneous_overline_and_restores_board(self):
         g = position(black=[(7, c) for c in (3, 4, 5, 6, 8)] +
                      [(r, 7) for r in (3, 4, 5, 6)])
         before = [row[:] for row in g.board]
-        self.assertEqual(forbidden_reason(g.board, 7, 7), '장목')
+        self.assertIsNone(forbidden_reason(g.board, 7, 7))
         self.assertEqual(g.board, before)
-        with self.assertRaisesRegex(IllegalMove, '장목'):
-            g.play(7, 7)
-        self.assertNotIn((7, 7), g.legal_moves())
+        self.assertIn((7, 7), g.legal_moves())
+        g.play(7, 7)
+        self.assertTrue(g.done)
+        self.assertEqual(g.winner, BLACK)
 
     def test_white_overline_wins(self):
         g = position(white=[(7, c) for c in (3, 4, 5, 6, 8)], turn=WHITE)
@@ -83,6 +84,15 @@ class RulesTest(unittest.TestCase):
         self.assertEqual(forbidden_reason(g.board, 7, 7), '사사')
         g = position(black=[(7, c) for c in (5, 6, 8)])
         self.assertIsNone(forbidden_reason(g.board, 7, 7))
+
+        # RIF FOUR requires a completion to five. The horizontal apparent
+        # four below can only complete at (7,8), which would make six because
+        # (7,9) is already black; it therefore must not become a second four.
+        pseudo = position(
+            black=[(7, c) for c in (4, 5, 6, 9)] + [(r, 7) for r in (5, 6, 8)],
+            white=[(7, 3)],
+        )
+        self.assertIsNone(forbidden_reason(pseudo.board, 7, 7))
 
     def test_double_three_and_blocked_three(self):
         stones = [(7, 6), (7, 8), (6, 7), (8, 7)]
@@ -117,6 +127,13 @@ class RulesTest(unittest.TestCase):
         g.play(7, 7)
         self.assertEqual(g.board[7][7], BLACK)
         self.assertEqual(g.to_play, WHITE)
+
+    def test_three_extension_that_already_makes_five_is_not_three(self):
+        g = position(
+            black=[(7, 6), (7, 7), (7, 8), (3, 5), (4, 5), (5, 5), (6, 5)],
+            white=[(7, 10)],
+        )
+        self.assertFalse(_open_three(g.board, (7, 7), 0, 1))
 
     def test_has_legal_move_matches_full_generation(self):
         cases = [

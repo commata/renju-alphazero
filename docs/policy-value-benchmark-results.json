@@ -1,0 +1,89 @@
+{
+  "python": "3.13.14",
+  "torch": "2.14.0+cpu",
+  "threads": 1,
+  "device": "cpu",
+  "cpu": "Intel64 Family 6 Model 170 Stepping 4, GenuineIntel",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "model_config": {
+    "board_size": 15,
+    "input_planes": 6,
+    "channels": 64,
+    "blocks": 4,
+    "policy_channels": 2,
+    "value_channels": 1,
+    "value_hidden": 64
+  },
+  "parameters": 415722,
+  "seed": 42,
+  "position_seed": 42,
+  "plies": 60,
+  "iterations": 100,
+  "warmup": 10,
+  "results": {
+    "legal_moves": {
+      "mean_ms": 2.5984459997562226,
+      "median_ms": 2.612300006148871,
+      "min_ms": 1.7833000019891188,
+      "max_ms": 4.2465000005904585,
+      "ops_sec": 384.8454037889633,
+      "samples_sec": 384.8454037889633
+    },
+    "mask_construction": {
+      "mean_ms": 0.10029400000348687,
+      "median_ms": 0.10010000551119447,
+      "min_ms": 0.0881000014487654,
+      "max_ms": 0.12739999510813504,
+      "ops_sec": 9970.686182276442,
+      "samples_sec": 9970.686182276442
+    },
+    "encode_reusing_mask": {
+      "mean_ms": 0.051091999775962904,
+      "median_ms": 0.05075000080978498,
+      "min_ms": 0.03999999898951501,
+      "max_ms": 0.1480999926570803,
+      "ops_sec": 19572.535903565607,
+      "samples_sec": 19572.535903565607
+    },
+    "masking_softmax": {
+      "mean_ms": 0.03389999983482994,
+      "median_ms": 0.029300004825927317,
+      "min_ms": 0.02819999644998461,
+      "max_ms": 0.12740000966005027,
+      "ops_sec": 29498.525217471182,
+      "samples_sec": 29498.525217471182
+    },
+    "full_pipeline": {
+      "mean_ms": 6.223711999336956,
+      "median_ms": 5.932800006121397,
+      "min_ms": 4.400899997563101,
+      "max_ms": 11.456100008217618,
+      "ops_sec": 160.67581535047495,
+      "samples_sec": 160.67581535047495
+    },
+    "forward_B1": {
+      "mean_ms": 2.8568650005036034,
+      "median_ms": 2.8394499968271703,
+      "min_ms": 1.9669999892357737,
+      "max_ms": 5.116499989526346,
+      "ops_sec": 350.0340407487654,
+      "samples_sec": 350.0340407487654
+    },
+    "forward_B8": {
+      "mean_ms": 14.15031600088696,
+      "median_ms": 14.251549990149215,
+      "min_ms": 11.129299993626773,
+      "max_ms": 16.72580000013113,
+      "ops_sec": 70.6697998784846,
+      "samples_sec": 565.3583990278768
+    },
+    "forward_B32": {
+      "mean_ms": 55.32855999990716,
+      "median_ms": 54.59725000400795,
+      "min_ms": 46.07450000185054,
+      "max_ms": 74.00629999756347,
+      "ops_sec": 18.07384829826907,
+      "samples_sec": 578.3631455446102
+    }
+  }
+}
