@@ -6,7 +6,8 @@
 
 - **Stage 0~3 완료** (태그 `v0.2-mcts`): 저장소·규칙 명세, 렌주 엔진, 기준선·벤치마크, 순수 MCTS
 - **Stage 3 최종 baseline: MCTS-v6** — RIF exact-five 우선순위 교정 전 기준으로 회귀 테스트 147/147 PASS, V5 FINAL 상대 100판 48승 38패 14무(score 55.0%). 에이전트 버전은 고정 비교 상대로 보존합니다. 교정 후 seed 777 10판 smoke에서는 6승 2패 2무(score 70.0%)를 관측했으며, 이는 새 장기 승률이 아니라 현재 규칙 기준 smoke baseline입니다.
-- **Stage 4 정책·가치 신경망 완료** (`feat/policy-value-network`): 버전 고정 6-plane 입력, residual policy/value, legal mask/loss, checkpoint, D4, eval tiny overfit 및 CPU benchmark. [계약·검증 결과](docs/policy-value-network.md)를 참고하세요. V5/V6 전술 계층은 학습 경로에서 재사용하지 않습니다. 다음 단계는 PUCT integration입니다.
+- **Stage 4 정책·가치 신경망 완료** (`feat/policy-value-network`): 버전 고정 6-plane 입력, residual policy/value, legal mask/loss, checkpoint, D4, eval tiny overfit 및 CPU benchmark. [계약·검증 결과](docs/policy-value-network.md)를 참고하세요. V5/V6 전술 계층은 학습 경로에서 재사용하지 않습니다.
+- **Stage 5 구현 기준 확정**: MCTS-v6를 확장하지 않고 `Game`/규칙 엔진과 Stage 4 모델 계약만 공유하는 **별도 AlphaZero PUCT search**를 구현합니다. terminal value/backup은 현재 엔진의 `to_play` 의미를 반영해 player identity 기준으로 처리하며, 세부 작업과 완료 기준은 [Stage 5 AlphaZero Search Integration](docs/stage5-alphazero.md)에 고정합니다.
 
 과거 버전(V2~V5)은 비교 재현을 위해 덮어쓰지 않고 별도 Agent로 보존합니다. 설계와 측정 기록은 [docs/mcts.md](docs/mcts.md)에 있습니다.
 

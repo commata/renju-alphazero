@@ -40,7 +40,7 @@ renju-alphazero/
 | 2. 기준선·속도 측정 | 그램 | Random, 간단한 전술/규칙 기반 상대, 대국 기록; `place/undo`, 합법 수, 대국 속도 측정 | 승률 평가에 쓸 상대와 재현 가능한 벤치마크 확보 |
 | 3. 순수 MCTS | 그램 | 신경망 없는 탐색, 턴 교대 시 가치 부호, 합법 수 확장, 종료 상태 처리 | 강제 승리·방어의 작은 보드 상태에서 예상 수 선택; Random 상대 성능과 속도 기록 |
 | 4. 정책·가치 신경망 | 그램 | 보드 입력, 225개 정책 출력, 현재 차례 기준 가치 출력, 합법 수 마스킹, 대칭 증강 | 작은 고정 데이터에 과적합 가능; 출력·마스킹·회전/반전의 좌표 일치 검사 |
-| 5. AlphaZero 탐색 결합 | 그램 | PUCT 탐색, 배치 추론, 루트 탐색 분포, 자기대국 온도/탐색 노이즈, 종료 결과의 각 수 관점 변환; **노드 확장마다 `legal_moves()`를 한 번만 계산해 encoder plane 5와 prior masking에 같은 mask를 재사용** | 한 판의 `(state, search_policy, outcome)` 생성과 재생 가능; 불법 수 0건 |
+| 5. AlphaZero 탐색 결합 | 그램 | **V6와 독립된 신규 PUCT search**, Evaluator/fake evaluator, player-identity 기반 terminal/backup, legal mask 재사용, `pi=N/sum(N)` target과 착수 temperature 분리, 합법 root Dirichlet noise, batch evaluator 인터페이스, raw `Sample`/`GameRecord` | 한 판의 학습 샘플과 기보를 생성·replay 가능; 모든 `pi`의 illegal mass 0/합 1; action 합법; 동일 장치·백엔드에서 결과/기보 hash 재현; 기존+신규 회귀 PASS |
 | 6. 자기대국·학습 루프 | 그램 | 데이터 버퍼, 정책/가치 손실, 주기적 평가, 중단·재개, 메트릭/체크포인트; resume snapshot은 임시 파일에 쓴 뒤 `os.replace`로 원자적 교체 | 적은 판수로 end-to-end 실행; 손실·대국 수·승률 기록; 중단 후 재개 검증 |
 | 7. 그램 검증 | 그램 | 다양한 시드·선후공으로 기준선과 이전 모델 평가; CPU와 Intel GPU 실행 가능성·발열·시간 측정 | 학습 진행과 병목 파악; 안정적인 소형 설정과 재현 절차 확정 |
 | 8. 데스크톱 이관·규모 확장 | 데스크톱 | 같은 커밋/체크포인트로 재현, RX 6600 가속 경로 확인, 작업자 수·배치·탐색 수를 단계적으로 조정 | 장치별 속도/안정성 비교 후 지속 가능한 설정 선정; 이전 체크포인트에서 정상 재개 |
@@ -53,6 +53,13 @@ Stage 4는 `src/model/`의 versioned encoder/config/masking/network/checkpoint/s
 **154 PASS / 20 neural skip**까지 확인했다. tiny overfit, D4 및 CPU 측정 결과와 재현 명령은
 [Policy-Value Network](docs/policy-value-network.md)에 기록한다. 정책/value loss helper와
 weights-only checkpoint는 Stage 4에서 계약을 검증하고, 자기대국 학습·resume은 Stage 6에 남긴다.
+
+Stage 5는 Stage 3 MCTS-v6를 부모 구현으로 사용하지 않는다. V6는 고정 benchmark로 보존하고,
+`src/search/`에 별도 AlphaZero search를 추가한다. 현재 `Game.play()`는 승리 terminal에서
+`to_play`를 상대에게 넘기지 않으므로 terminal/backup 부호를 단순 ply 홀짝으로 계산하지 않고
+실제 player identity로 처리한다. 저장 `pi`와 실제 착수 temperature도 분리한다. 구현 계약,
+fake evaluator 테스트, self-play record/replay, 재현성 및 성능 계측 범위는
+[Stage 5 AlphaZero Search Integration](docs/stage5-alphazero.md)에 따른다.
 
 처음에는 엔진 정확성과 한 판 완주를 우선한다. 아래 값은 **출발점**이며, 실제 속도·메모리·온도를 재고 변경한다.
 
@@ -78,7 +85,7 @@ CPU 추론도 비교 기준으로 유지한다. **RX 6600에는 CUDA를 사용�
 1. 로컬 저장소를 만들고 `README.md`, 이 로드맵, `.gitignore`, `pyproject.toml`을 커밋한다.
 2. 사용할 렌주 규칙 판본과 개국 방식, 흑·백 승리 및 금수 우선순위를 `docs/rules.md`에 적는다.
 3. `Board`의 상태·착수·undo와 턴별 종료 판정을 구현한다.
-4. 판정 사례를 pytest로 만들고 삼삼·사사·장목 및 예외를 검증한다.
+4. 판정 사례를 `unittest` 회귀 테스트로 만들고 삼삼·사사·장목 및 예외를 검증한다.
 5. `get_legal_moves()`와 콘솔 Human vs Human을 완성한 뒤 `v0.1-engine` 태그를 붙인다.
 
 **다음 단계로 넘어가는 조건:** 명세에 맞는 렌주 한 판을 불법 착수 없이 끝낼 수 있고, 규칙 회귀 테스트가 모두 통과해야 한다.
