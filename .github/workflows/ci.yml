@@ -117,4 +117,4 @@ jobs:
       - name: Verify frozen implementation hashes
         run: python scripts/check_frozen_baseline.py
       - name: Verify low-budget V6 behavior fingerprint
-        run: python scripts/ci_v6_behavior.py
+        run: python scripts/ci_v6_behavior.py --expect-sha256 91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44

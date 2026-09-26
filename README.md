@@ -40,15 +40,16 @@ job 이름을 그대로 사용할 수 있도록 matrix를 쓰지 않습니다.
 - `full-tests`: Python 3.13 + 고정 CPU torch 2.14.0에서 전체 회귀를 실행하며 **skip 0**을 강제합니다.
 - `fake-smoke`: uniform evaluator, seed 42, 8 simulations의 Stage 5 game SHA256을 golden 값과 비교합니다.
 - `frozen-baseline`: V5/V6/threat 구현 파일 SHA-256 잠금과 seed 777, 1 game per color,
-  reduced simulation budget의 V6-vs-V5 outcome/history fingerprint를 검증합니다. 기존 post-RIF
-  10게임 `fd3f8ee6...851d0f`는 장기 검증 기록으로 문서에 계속 보존합니다.
+  reduced simulation budget의 V6-vs-V5 outcome/history fingerprint
+  `91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44`를 검증합니다. 기존 post-RIF 10게임 `fd3f8ee6...851d0f`는 장기 검증 기록으로
+  문서에 계속 보존합니다.
 
 CI 러너는 테스트 개수를 하드코딩하지 않습니다.
 
 ```bash
 python scripts/ci_run_tests.py --skip-policy none
 python scripts/check_frozen_baseline.py
-python scripts/ci_v6_behavior.py
+python scripts/ci_v6_behavior.py --expect-sha256 91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44
 python scripts/run_stage5_self_play.py --seed 42 --simulations 8 \
   --expect-sha256 7e1b04a0fedc3e8c11a22069222ecbf4dbcfb74f0efe3907c9dcfead124b4510
 ```
