@@ -42,6 +42,7 @@ renju-alphazero/
 | 4. 정책·가치 신경망 | 그램 | 보드 입력, 225개 정책 출력, 현재 차례 기준 가치 출력, 합법 수 마스킹, 대칭 증강 | 작은 고정 데이터에 과적합 가능; 출력·마스킹·회전/반전의 좌표 일치 검사 |
 | 5. AlphaZero 탐색 결합 | 그램 | **V6와 독립된 신규 PUCT search**, torch-free Evaluator/fake evaluator, player-identity terminal/backup, root 사전 확장 후 정확히 N simulations, 단일 합법수 fast path, `pi=N/sum(N)` target과 착수 temperature 분리, local RNG 기반 합법 root Dirichlet, raw visit counts/GameRecord | 한 판의 학습 샘플과 기보를 생성·replay 가능; searched root의 child visit 합=N; 모든 `pi` illegal mass 0/합 1; action 합법; 동일 장치·백엔드·batch size에서 결과/기보 hash 재현; 기존+신규 회귀 PASS |
 | 6. 자기대국·학습 루프 | 그램 | 데이터 버퍼, 정책/가치 손실, 주기적 평가, 중단·재개, 메트릭/체크포인트; resume snapshot은 임시 파일에 쓴 뒤 `os.replace`로 원자적 교체 | 적은 판수로 end-to-end 실행; 손실·대국 수·승률 기록; 중단 후 재개 검증 |
+| 6.5. MCTS-v7 기준선 | 그램 | V6를 수정하지 않고 VCF(M0/M1), 상대 VCF 안전 필터(M2), 흑 자기 금수점 감점(M3), Stage 4 동률 규칙(M4)을 별도 V7에 추가; fixture·비용·결정성·V6/V5 비교 | `V7_FINAL` 설정/해시/behavior fingerprint 동결; 이후 AlphaZero 학습 곡선의 고정 benchmark로 사용 |
 | 7. 그램 검증 | 그램 | Stage 6 기준선으로 중간 길이 continuation; tactical/value probe; `inference_s` 세부 profile과 batch microbenchmark; `legal_moves` 의미보존 최적화; weights-only export 후 탐색 예산·FPU 단일 변수 실험 | 학습 진행·병목과 장치별 처리량 파악; 안정적인 소형 설정·검색 설정·재현 절차 확정 |
 | 8. 데스크톱 이관·규모 확장 | 데스크톱 | 같은 커밋/체크포인트로 재현, RX 6600 가속 경로 확인, 작업자 수·배치·탐색 수를 단계적으로 조정 | 장치별 속도/안정성 비교 후 지속 가능한 설정 선정; 이전 체크포인트에서 정상 재개 |
 | 9. 최종 평가·대국 프로그램 | 데스크톱 + 그램 | 고정된 상대·탐색 예산으로 이전 모델/기준선과 대결, 양쪽 색 균형, 사람용 대국 UI/CLI, 사용 문서 | 승률·판수·탐색 시간·하드웨어 조건 공개; 최종 모델 태그와 설치/대국 방법 제공 |
