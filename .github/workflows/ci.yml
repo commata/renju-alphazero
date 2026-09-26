@@ -11,9 +11,11 @@ permissions:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Supersede stale PR runs, but let every push to main finish with a recorded result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
+  # Runner image is pinned (ubuntu-24.04) so golden hashes only move on a deliberate upgrade.
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
   PYTHONHASHSEED: "0"
   PYTHONUNBUFFERED: "1"
@@ -21,13 +23,11 @@ env:
 jobs:
   core-no-torch:
     name: core-no-torch
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           cache: pip
@@ -44,13 +44,11 @@ jobs:
 
   full-tests:
     name: full-tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
           cache: pip
@@ -70,13 +68,11 @@ jobs:
 
   fake-smoke:
     name: fake-smoke
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
           cache: pip
@@ -95,17 +91,24 @@ jobs:
             --seed 42 \
             --simulations 8 \
             --expect-sha256 7e1b04a0fedc3e8c11a22069222ecbf4dbcfb74f0efe3907c9dcfead124b4510 \
+            --expect-record-sha256 8ed202869a0c1f5da752011386989e19711e2e041094df773a688319e4c2b179 \
             --output logs/stage5/ci_uniform_seed42.json
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: stage5-uniform-smoke-report
+          path: logs/stage5/ci_uniform_seed42.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   frozen-baseline:
     name: frozen-baseline
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
           cache: pip
