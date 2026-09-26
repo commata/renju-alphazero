@@ -100,7 +100,7 @@ jobs:
   frozen-baseline:
     name: frozen-baseline
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -116,10 +116,5 @@ jobs:
           python -m pip install -e .
       - name: Verify frozen implementation hashes
         run: python scripts/check_frozen_baseline.py
-      - name: Verify post-RIF V6 behavior fingerprint
-        run: |
-          python scripts/run_mcts_v6_vs_v5.py \
-            --games 5 \
-            --seed 777 \
-            --expect-sha256 fd3f8ee61cb954c7c91249eeb79f420b5829c43f361f50e1055ebfbafa851d0f \
-            --log-dir logs/ci-v6-v5
+      - name: Verify low-budget V6 behavior fingerprint
+        run: python scripts/ci_v6_behavior.py
