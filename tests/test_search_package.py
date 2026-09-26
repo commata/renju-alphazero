@@ -14,7 +14,8 @@ class SearchLazyExportTest(unittest.TestCase):
     EXPECTED = {
         'MCTSNode': 'mcts', 'mcts_search': 'mcts', 'mcts_search_v3': 'mcts_v3',
         'mcts_search_v32': 'mcts_v32', 'mcts_search_v321': 'mcts_v321',
-        'mcts_search_v4': 'mcts_v4', 'mcts_search_v5': 'mcts_v5', 'mcts_search_v6': 'mcts_v6',\n        'mcts_search_v7': 'mcts_v7',
+        'mcts_search_v4': 'mcts_v4', 'mcts_search_v5': 'mcts_v5', 'mcts_search_v6': 'mcts_v6',
+        'mcts_search_v7': 'mcts_v7',
     }
 
     def test_all_names_importable_and_identical(self):
