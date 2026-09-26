@@ -9,8 +9,13 @@ Policies intentionally avoid hard-coded test counts:
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
 import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 TORCH_SKIP_REASON = "requires torch"
 
