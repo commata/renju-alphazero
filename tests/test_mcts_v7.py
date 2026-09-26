@@ -3,15 +3,14 @@ from copy import deepcopy
 from pathlib import Path
 import random
 import unittest
+from unittest.mock import patch
 
 from agents import MCTSV7Agent
 from renju import BLACK, WHITE, Game
 from search.mcts_v6 import V5_FINAL
-from search.mcts_v5 import (_RootContext, _forced_v5_move, _threat_windows,
-                            _unstoppable_four_moves)
+from search.mcts_v5 import _RootContext
 from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _apply_self_forbidden_penalty,
-                            find_vcf, mcts_search_v7)
-from search.threat_patterns import compound_moves, placed
+                            _stage4_v7_move, find_vcf, mcts_search_v7)
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mcts_v7_positions.json"
@@ -159,7 +158,10 @@ class V7FixtureTest(unittest.TestCase):
         penalized_start = len(ranked) - module_diag.v7_self_forbidden_penalized
         self.assertGreaterEqual(ranked.index(avoid), penalized_start)
 
-    def test_stage4_fixture_applies_v7_tiebreak(self):
+    def test_stage4_fixture_records_no_discriminating_m4_choice(self):
+        # The supplied seed777 fixture motivated M4, but replay audit shows all
+        # three legal Stage-4 defenses leave the same opponent 43/VCF. M4 has no
+        # evidence-backed discriminator here, so V7 must preserve V6's choice.
         item = FIXTURES["seed777-g003-p021"]
         game = _game(item)
         diag = SearchDiagnostics()
@@ -167,36 +169,32 @@ class V7FixtureTest(unittest.TestCase):
             game, simulations=1, tactical_simulations=1,
             random=random.Random(41), diagnostics=diag,
         )
-        self.assertIn(move, game.legal_moves())
+        self.assertEqual(move, _coord(item["actual_move_in_log"]))
         self.assertEqual(diag.forced_policy_stage, 4)
-        if not diag.v7_stage4_tiebreak_applied:
-            debug_diag = SearchDiagnostics()
-            context = _RootContext(game.legal_moves(), debug_diag)
-            original = _forced_v5_move(game, context=context)
-            opponent = -game.to_play
-            creators = _unstoppable_four_moves(game, opponent)
-            defenses = set(creators)
-            for window in _threat_windows(game, opponent):
-                if set(creators).intersection(window):
-                    defenses.update(
-                        pos for pos in window if game.board[pos[0]][pos[1]] == 0
-                    )
-            defenses.intersection_update(context.legal)
-            rows = []
-            for candidate in sorted(defenses):
-                with placed(game, game.to_play, candidate):
-                    rows.append({
-                        "move": candidate,
-                        "remaining": len(_unstoppable_four_moves(game, opponent)),
-                        "compound": sorted(compound_moves(game, opponent)),
-                        "vcf": find_vcf(
-                            game, opponent,
-                            max_fours=V7_FINAL["safety_vcf_max_fours"],
-                            node_limit=V7_FINAL["safety_vcf_node_limit"],
-                        ) is not None,
-                        "key": context.key(game, candidate),
-                    })
-            self.fail(f"M4 unchanged: original={original}, selected={move}, rows={rows}")
+        self.assertFalse(diag.v7_stage4_tiebreak_applied)
+
+    def test_stage4_tiebreak_applies_when_secondary_signal_exists(self):
+        game = Game()
+        game.play(7, 7)  # WHITE to play; candidate cells remain empty.
+        first, second = (6, 7), (7, 6)
+        context = _RootContext([first, second], SearchDiagnostics())
+        diag = SearchDiagnostics()
+
+        # Initial call finds the opponent creator; the next two calls are the
+        # equal Stage-4 "remaining unstoppable" values for first/second.
+        with patch("search.mcts_v7._unstoppable_four_moves",
+                   side_effect=[[(5, 5)], [], []]), \
+             patch("search.mcts_v7._threat_windows",
+                   return_value=[((5, 5), first, second, (5, 6), (5, 7))]), \
+             patch("search.mcts_v7._double_threat_moves",
+                   side_effect=[[(3, 3)], []]), \
+             patch("search.mcts_v7.find_vcf", return_value=None):
+            chosen = _stage4_v7_move(
+                game, context, first, diag, max_fours=10, node_limit=1000,
+            )
+
+        self.assertEqual(chosen, second)
+        self.assertTrue(diag.v7_stage4_tiebreak_applied)
 
     def test_seeded_determinism_and_state(self):
         game = _game(FIXTURES["seed44-g009-p039"])

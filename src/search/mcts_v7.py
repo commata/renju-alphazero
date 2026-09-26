@@ -18,7 +18,7 @@ from .mcts_v5 import (
 from .mcts_v6 import (
     PRIORITY, SearchDiagnostics as V6Diagnostics, V5_FINAL, _root_candidates_v6,
 )
-from .threat_patterns import compound_moves, placed
+from .threat_patterns import placed
 
 
 V7_FINAL = {
@@ -321,12 +321,12 @@ def _stage4_v7_move(
     max_fours: int,
     node_limit: int,
 ) -> Move:
-    """Refine only Stage-4 ties without changing V5/V6 forced-policy stages.
+    """Refine genuine Stage-4 ties without weakening V5/V6 defense.
 
-    V5 Stage 4 first minimizes the number of remaining unstoppable fours.
-    Among candidates with that same best value, V7 prefers a defense that also
-    removes opponent compound-threat creators (43/44/33), then one that leaves
-    no opponent VCF. The final key is the unchanged V6/V5 root ordering.
+    V5 Stage 4 first minimizes remaining opponent unstoppable fours. V7 keeps
+    that criterion first. Only among equally complete defenses does M4 prefer
+    fewer opponent double-threat creators, then a position without opponent
+    VCF; remaining ties use the unchanged V6/V5 ordering key.
     """
     player = game.to_play
     opponent = -player
@@ -347,16 +347,14 @@ def _stage4_v7_move(
     for move in sorted(defenses):
         with placed(game, player, move):
             remaining = len(_unstoppable_four_moves(game, opponent))
-            compound_count = len(compound_moves(game, opponent))
+            double_threats = len(_double_threat_moves(game, opponent))
             has_vcf = find_vcf(
                 game, opponent, max_fours=max_fours, node_limit=node_limit,
             ) is not None
-        rows.append((remaining, compound_count, int(has_vcf),
+        rows.append((remaining, double_threats, int(has_vcf),
                      context.key(game, move), move))
 
-    best_remaining = min(row[0] for row in rows)
-    tied = [row for row in rows if row[0] == best_remaining]
-    chosen = min(tied, key=lambda row: row[1:])[-1]
+    chosen = min(rows)[-1]
     diag.v7_stage4_tiebreak_applied = chosen != original
     return chosen
 
