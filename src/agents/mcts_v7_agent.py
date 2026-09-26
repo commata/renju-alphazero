@@ -19,6 +19,7 @@ class MCTSV7Agent(MCTSV6Agent):
             own_vcf_node_limit=config["own_vcf_node_limit"],
             safety_vcf_max_fours=config["safety_vcf_max_fours"],
             safety_vcf_node_limit=config["safety_vcf_node_limit"],
+            safety_total_node_limit=config["safety_total_node_limit"],
             self_forbidden_min_white=config["self_forbidden_min_white"],
         )
         super().__init__(seed=seed, **{key: config[key] for key in V5_FINAL})

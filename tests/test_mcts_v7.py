@@ -9,11 +9,13 @@ from agents import MCTSV7Agent
 from renju import BLACK, WHITE, Game
 from search.mcts_v6 import V5_FINAL
 from search.mcts_v5 import _RootContext
-from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _apply_self_forbidden_penalty,
+from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _VCFBudget,
+                            _apply_self_forbidden_penalty, _candidate_allows_vcf,
                             _stage4_v7_move, find_vcf, mcts_search_v7)
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mcts_v7_positions.json"
+REGRESSION_FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mcts_v7_vcf_regression.json"
 
 
 def _coord(value):
@@ -27,6 +29,15 @@ def _load_fixtures():
 
 
 FIXTURES = _load_fixtures()
+
+
+def _load_regression_fixtures():
+    data = json.loads(REGRESSION_FIXTURE_PATH.read_text(encoding="utf-8"))
+    assert data["format"] == "mcts-v7-vcf-regression-v1"
+    return data["fixtures"]
+
+
+REGRESSION_FIXTURES = _load_regression_fixtures()
 
 
 def _game(item):
@@ -47,9 +58,10 @@ class V7ConfigTest(unittest.TestCase):
             {key: V7_FINAL[key] for key in V7_FINAL if key not in V5_FINAL},
             dict(
                 own_vcf_max_fours=10,
-                own_vcf_node_limit=2000,
+                own_vcf_node_limit=5000,
                 safety_vcf_max_fours=10,
-                safety_vcf_node_limit=1000,
+                safety_vcf_node_limit=4000,
+                safety_total_node_limit=16000,
                 self_forbidden_min_white=3,
             ),
         )
@@ -63,6 +75,7 @@ class V7ConfigTest(unittest.TestCase):
             dict(own_vcf_max_fours=0),
             dict(own_vcf_node_limit=True),
             dict(safety_vcf_node_limit=0),
+            dict(safety_total_node_limit=0),
             dict(self_forbidden_min_white=5),
         ):
             with self.assertRaises(ValueError):
@@ -76,11 +89,57 @@ class VCFTest(unittest.TestCase):
                 continue
             game = _game(item)
             before = deepcopy(vars(game))
-            result = find_vcf(game, game.to_play, max_fours=10, node_limit=2000)
+            result = find_vcf(
+                game,
+                game.to_play,
+                max_fours=V7_FINAL["own_vcf_max_fours"],
+                node_limit=V7_FINAL["own_vcf_node_limit"],
+            )
             self.assertIsNotNone(result, item["id"])
             expected = {_coord(move) for move in item["expected"]["vcf_first_moves"]}
             self.assertIn(result.first_move, expected, item["id"])
             self.assertEqual(vars(game), before, item["id"])
+
+    def test_regression_124_positions_match_reference(self):
+        counts = {}
+        for item in REGRESSION_FIXTURES:
+            counts[item["kind"]] = counts.get(item["kind"], 0) + 1
+            game = _game(item)
+            if item["kind"] == "losing_move_allows_vcf":
+                game.play(*_coord(item["losing_move"]))
+                attacker = game.to_play
+                node_limit = V7_FINAL["safety_vcf_node_limit"]
+            else:
+                attacker = game.to_play
+                node_limit = V7_FINAL["own_vcf_node_limit"]
+
+            before = deepcopy(vars(game))
+            result = find_vcf(
+                game, attacker, max_fours=10, node_limit=node_limit,
+            )
+            self.assertIsNotNone(result, item["id"])
+            self.assertEqual(
+                result.fours, item["expected"]["reference_fours"], item["id"],
+            )
+            if "reference_first_move" in item["expected"]:
+                self.assertEqual(
+                    result.first_move,
+                    _coord(item["expected"]["reference_first_move"]),
+                    item["id"],
+                )
+            self.assertEqual(
+                result.nodes, item["expected"]["reference_nodes"], item["id"],
+            )
+            self.assertEqual(vars(game), before, item["id"])
+
+        self.assertEqual(
+            counts,
+            dict(
+                vcf_streak_start=27,
+                missed_own_vcf=79,
+                losing_move_allows_vcf=18,
+            ),
+        )
 
     def test_node_limit_and_argument_validation(self):
         game = _game(FIXTURES["seed44-g005-p025"])
@@ -124,15 +183,45 @@ class V7FixtureTest(unittest.TestCase):
                 game, simulations=1, tactical_simulations=1,
                 random=random.Random(23), diagnostics=diag,
             )
-            self.assertGreater(diag.v7_safety_checked, 0, item["id"])
-            game.play(*move)
-            if not game.done:
-                result = find_vcf(
-                    game, opponent,
-                    max_fours=V7_FINAL["safety_vcf_max_fours"],
-                    node_limit=V7_FINAL["safety_vcf_node_limit"],
-                )
-                self.assertIsNone(result, item["id"])
+            self.assertGreater(
+                diag.v7_safety_checked + diag.v7_safety_precheck_skipped,
+                0, item["id"],
+            )
+            budget = _VCFBudget(V7_FINAL["safety_total_node_limit"])
+            unsafe, _, inconclusive = _candidate_allows_vcf(
+                game,
+                move,
+                player,
+                opponent,
+                max_fours=V7_FINAL["safety_vcf_max_fours"],
+                node_limit=V7_FINAL["safety_vcf_node_limit"],
+                budget=budget,
+            )
+            self.assertFalse(inconclusive, item["id"])
+            self.assertFalse(unsafe, item["id"])
+
+    def test_safety_probe_evaluates_unique_forced_four_reply(self):
+        item = next(
+            row for row in REGRESSION_FIXTURES
+            if row["id"] == "safety-seed44-g020-p055"
+        )
+        game = _game(item)
+        player = game.to_play
+        opponent = -player
+        losing = _coord(item["losing_move"])
+        budget = _VCFBudget(V7_FINAL["safety_total_node_limit"])
+        unsafe, result, inconclusive = _candidate_allows_vcf(
+            game,
+            losing,
+            player,
+            opponent,
+            max_fours=V7_FINAL["safety_vcf_max_fours"],
+            node_limit=V7_FINAL["safety_vcf_node_limit"],
+            budget=budget,
+        )
+        self.assertFalse(inconclusive)
+        self.assertTrue(unsafe)
+        self.assertIsNotNone(result)
 
     def test_self_forbidden_fixture_avoids_logged_move(self):
         item = FIXTURES["seed777-g003-p031"]
@@ -211,7 +300,8 @@ class V7FixtureTest(unittest.TestCase):
         self.assertEqual(moves[0], moves[1])
         comparable = [
             (d.v7_own_vcf_found, d.v7_safety_checked, d.v7_safety_removed,
-             d.v7_safety_augmented, d.v7_safety_fallback,
+             d.v7_safety_augmented, d.v7_safety_fallback, d.v7_safety_nodes,
+             d.v7_safety_precheck_skipped, d.v7_safety_budget_exhausted,
              d.v7_self_forbidden_penalized, d.v7_stage4_tiebreak_applied,
              d.root_candidates)
             for d in diagnostics

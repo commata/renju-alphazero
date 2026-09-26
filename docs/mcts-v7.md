@@ -57,9 +57,12 @@ M1은 기존 Stage 1~3보다 뒤, Stage 4/5보다 앞에서 own VCF를 찾으면
 
 V6 root 후보를 생성한 뒤 후보별로 임시 착수하고 상대 VCF를 검사한다.
 
-- 상대에게 4를 만들 구조적 재료가 없으면 건너뛴다.
+- 현재 국면의 상대 VCF를 먼저 한 번 검사한다.
+- **내 후보가 4를 만들면 상대의 유일한 합법 완성점 차단까지 강제 응수로 둔 뒤** 상대 VCF를 검사한다. 단순 4가 상대에게 막는 돌만 공짜로 주고 기존 VCF를 남기는 경우를 안전수로 오판하지 않는다.
+- 현재 상대 VCF가 없고 후보가 4도 아니라면, 그 한 수가 흑 금수 상태를 위험한 방향으로 바꾸는 경우에만 개별 VCF 검사를 한다. BLACK 수는 새 흑 금수점을 만들어 WHITE forcing line의 방어점을 없앨 수 있고, WHITE 수는 기존 흑 금수를 해제해 BLACK 공격수를 합법화할 수 있다.
+- 후보별 VCF는 4,000 node, 한 착수의 M2 전체는 16,000 node로 제한한다. bounded probe가 결론을 내지 못하면 해당 후보를 보수적으로 안전수로 인정하지 않고 budget 소진을 진단에 남긴다.
 - 상대 VCF를 남기는 후보를 제외한다.
-- 전부 제외되면 상대 VCF 공격/완성점과 내 4 생성점을 보강 후보로 검사한다.
+- 전부 제외되면 현재 상대 VCF 공격/완성점과 내 4 생성점을 보강 후보로 검사한다.
 - 여전히 안전수가 없으면 V6 후보를 그대로 사용하고 fallback 진단을 남긴다.
 - M1이 이미 수를 결정했다면 M2는 실행되지 않는다.
 
@@ -102,9 +105,10 @@ M4 로직 자체는 동일한 Stage-4 방어력에서 secondary signal이 실제
 V7_FINAL = {
     **V5_FINAL,
     "own_vcf_max_fours": 10,
-    "own_vcf_node_limit": 2000,
+    "own_vcf_node_limit": 5000,
     "safety_vcf_max_fours": 10,
-    "safety_vcf_node_limit": 1000,
+    "safety_vcf_node_limit": 4000,
+    "safety_total_node_limit": 16000,
     "self_forbidden_min_white": 3,
 }
 ```
@@ -115,6 +119,7 @@ V7_FINAL = {
 
 - `v7_own_vcf_found`, `v7_own_vcf_length`, `v7_own_vcf_nodes`
 - `v7_safety_checked`, `v7_safety_removed`, `v7_safety_augmented`, `v7_safety_fallback`
+- `v7_safety_nodes`, `v7_safety_precheck_skipped`, `v7_safety_budget_exhausted`
 - `v7_self_forbidden_penalized`
 - `v7_stage4_tiebreak_applied`
 - `v7_module_seconds`
@@ -133,9 +138,20 @@ V7_FINAL = {
 own VCF 4개는 expected VCF first-move set을 만족하고 M0가 Game 상태를 복원해야 한다.
 safety 4개는 V7 선택 후 상대 VCF가 없어야 한다. M3는 기록된 bad move를 실제 root ordering에서 감점한다.
 
-원 명세가 요구한 “실제 4-only 최종 공격 27판 전체” 원시 position 목록은 현재 제공 fixture에 포함되어
-있지 않으므로 27개 자동 회귀 테스트를 임의로 재구성하지 않는다. 그 데이터가 저장소에 추가되면 별도
-fixture set으로 편입한다.
+`tests/fixtures/mcts_v7_vcf_regression.json`에는 seed 44 로그에서 추출한 VCF 회귀 124국면을 추가한다.
+
+- `vcf_streak_start` 27개: 현재 차례의 VCF가 검출되어야 한다.
+- `missed_own_vcf` 79개: V6가 놓친 own VCF를 5,000-node M1 상한 안에서 모두 검출해야 한다.
+- `losing_move_allows_vcf` 18개: 기록된 패배수를 둔 뒤 상대 VCF를 4,000-node safety 상한 안에서 검출해야 한다.
+- 각 항목의 first move/fours/nodes 참조값은 50,000-node 분석 탐색 결과와 일치해야 한다.
+
+이 회귀 집합의 최대 참조 node는 3,603이므로 M1 5,000 / M2 per-probe 4,000 상한은 관찰된 124국면을 모두 포괄한다.
+
+### 10.1 M2 재감사 반영
+
+seed 44 재감사에서 기존 M2는 own-four 후보를 상대의 강제 차단 전 상태에서 평가해 단순 4를 과도하게 안전하다고 판정하는 문제가 확인됐다. 수정본은 강제 차단 뒤를 평가하고, 현재 VCF 1회 사전검사 + 흑 금수 변화 precheck + 착수당 총 node budget으로 의미와 최악 VCF 탐색량을 함께 제한한다.
+
+수정 전 표본에서는 안전 fixture 12/12, 평균 착수 시간 V7 1.13초 대 V6 1.01초였지만, 최악 V7 착수는 12.5초(모듈 10.2초)까지 관찰됐다. 이 값은 수정 전 구현의 참고치이며, 동결 전에 같은 장비에서 평균/최악 시간을 다시 측정해야 한다.
 
 ## 11. V7_FINAL 동결 게이트
 

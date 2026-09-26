@@ -24,9 +24,10 @@ from .threat_patterns import placed
 V7_FINAL = {
     **V5_FINAL,
     "own_vcf_max_fours": 10,
-    "own_vcf_node_limit": 2000,
+    "own_vcf_node_limit": 5000,
     "safety_vcf_max_fours": 10,
-    "safety_vcf_node_limit": 1000,
+    "safety_vcf_node_limit": 4000,
+    "safety_total_node_limit": 16000,
     "self_forbidden_min_white": 3,
 }
 
@@ -49,6 +50,9 @@ class SearchDiagnostics(V6Diagnostics):
     v7_safety_removed: int = 0
     v7_safety_augmented: bool = False
     v7_safety_fallback: bool = False
+    v7_safety_nodes: int = 0
+    v7_safety_precheck_skipped: int = 0
+    v7_safety_budget_exhausted: bool = False
     v7_self_forbidden_penalized: int = 0
     v7_stage4_tiebreak_applied: bool = False
     v7_module_seconds: float = 0.0
@@ -68,14 +72,22 @@ class _VCFState:
         return True
 
 
+@dataclass
+class _VCFBudget:
+    remaining: int
+    used: int = 0
+    exhausted: bool = False
+
+
 def _validate_v7_config(*, own_vcf_max_fours, own_vcf_node_limit,
                         safety_vcf_max_fours, safety_vcf_node_limit,
-                        self_forbidden_min_white):
+                        safety_total_node_limit, self_forbidden_min_white):
     for name, value in (
         ("own_vcf_max_fours", own_vcf_max_fours),
         ("own_vcf_node_limit", own_vcf_node_limit),
         ("safety_vcf_max_fours", safety_vcf_max_fours),
         ("safety_vcf_node_limit", safety_vcf_node_limit),
+        ("safety_total_node_limit", safety_total_node_limit),
     ):
         if type(value) is not int or value < 1:
             raise ValueError(f"{name} must be a positive integer")
@@ -155,14 +167,14 @@ def _find_vcf_recursive(
     return None
 
 
-def find_vcf(
+def _find_vcf_with_stats(
     game: Game,
     attacker: int,
     *,
     max_fours: int,
     node_limit: int,
-) -> VCFResult | None:
-    """Return one deterministic conservative VCF line without changing game."""
+) -> tuple[VCFResult | None, int, bool]:
+    """Return result, consumed nodes and whether the bounded search exhausted."""
     if attacker not in (BLACK, WHITE):
         raise ValueError("attacker must be BLACK or WHITE")
     if type(max_fours) is not int or max_fours < 1:
@@ -175,32 +187,132 @@ def find_vcf(
         game, attacker, max_fours=max_fours, fours_used=0, state=state,
     )
     if found is None:
-        return None
+        return None, state.nodes, state.exhausted
     attack_moves, completion_points, fours = found
-    return VCFResult(
-        first_move=attack_moves[0],
-        fours=fours,
-        nodes=state.nodes,
-        attack_moves=attack_moves,
-        completion_points=completion_points,
+    return (
+        VCFResult(
+            first_move=attack_moves[0],
+            fours=fours,
+            nodes=state.nodes,
+            attack_moves=attack_moves,
+            completion_points=completion_points,
+        ),
+        state.nodes,
+        state.exhausted,
     )
+
+
+def find_vcf(
+    game: Game,
+    attacker: int,
+    *,
+    max_fours: int,
+    node_limit: int,
+) -> VCFResult | None:
+    """Return one deterministic conservative VCF line without changing game."""
+    result, _, _ = _find_vcf_with_stats(
+        game, attacker, max_fours=max_fours, node_limit=node_limit,
+    )
+    return result
+
+
+def _budgeted_find_vcf(
+    game: Game,
+    attacker: int,
+    *,
+    max_fours: int,
+    node_limit: int,
+    budget: _VCFBudget,
+) -> tuple[VCFResult | None, bool]:
+    """Run one VCF probe under both per-probe and per-move node limits."""
+    if budget.remaining <= 0:
+        budget.exhausted = True
+        return None, True
+    limit = min(node_limit, budget.remaining)
+    result, nodes, exhausted = _find_vcf_with_stats(
+        game, attacker, max_fours=max_fours, node_limit=limit,
+    )
+    budget.used += nodes
+    budget.remaining -= nodes
+    inconclusive = result is None and exhausted
+    if budget.remaining <= 0 and result is None:
+        budget.exhausted = True
+        inconclusive = True
+    return result, inconclusive
 
 
 def _has_four_material(game: Game, player: int) -> bool:
     return next(_threat_windows(game, player, 3), None) is not None
 
 
-def _candidate_allows_vcf(
-    game: Game, move: Move, player: int, opponent: int,
-    *, max_fours: int, node_limit: int,
-) -> tuple[bool, VCFResult | None]:
-    if _wins_for_player(game, player, move):
-        return False, None
+def _black_forbidden_points(game: Game) -> set[Move]:
+    """Exact black-forbidden signature for all currently empty points."""
+    return {
+        (row, col)
+        for row, cells in enumerate(game.board)
+        for col, value in enumerate(cells)
+        if value == EMPTY and forbidden_reason(game.board, row, col) is not None
+    }
+
+
+def _candidate_changes_black_legality(
+    game: Game,
+    move: Move,
+    player: int,
+    before: set[Move],
+) -> bool:
+    """Whether a quiet move changes black legality in the dangerous direction."""
     with placed(game, player, move):
-        result = find_vcf(
-            game, opponent, max_fours=max_fours, node_limit=node_limit,
+        after = _black_forbidden_points(game)
+    if player == BLACK:
+        # New black forbidden defense points can help a WHITE forcing line.
+        return bool(after - before)
+    # A WHITE move can release an old black forbidden point and legalize BLACK.
+    return bool((before - {move}) - after)
+
+
+def _candidate_allows_vcf(
+    game: Game,
+    move: Move,
+    player: int,
+    opponent: int,
+    *,
+    max_fours: int,
+    node_limit: int,
+    budget: _VCFBudget,
+) -> tuple[bool, VCFResult | None, bool]:
+    """Check VCF after the candidate and its unique forced four-block reply."""
+    if _wins_for_player(game, player, move):
+        return False, None, False
+
+    with placed(game, player, move):
+        completions = _legal_completions(game, player, move)
+        if len(completions) >= 2:
+            return False, None, False
+        if len(completions) == 1:
+            block = completions[0]
+            if not _is_legal_for_player(game, opponent, block):
+                return False, None, False
+            if _wins_for_player(game, opponent, block):
+                return True, None, False
+            with placed(game, opponent, block):
+                result, inconclusive = _budgeted_find_vcf(
+                    game,
+                    opponent,
+                    max_fours=max_fours,
+                    node_limit=node_limit,
+                    budget=budget,
+                )
+            return result is not None or inconclusive, result, inconclusive
+
+        result, inconclusive = _budgeted_find_vcf(
+            game,
+            opponent,
+            max_fours=max_fours,
+            node_limit=node_limit,
+            budget=budget,
         )
-    return result is not None, result
+    return result is not None or inconclusive, result, inconclusive
 
 
 def _own_four_creators(game: Game, player: int, legal: set[Move]) -> set[Move]:
@@ -218,58 +330,106 @@ def _apply_vcf_safety(
     *,
     max_fours: int,
     node_limit: int,
+    total_node_limit: int,
 ) -> list[Move]:
     opponent = -game.to_play
-    if not _has_four_material(game, opponent):
-        return moves
-
     player = game.to_play
+    budget = _VCFBudget(total_node_limit)
+
+    # One root precheck avoids repeating the same VCF search for quiet moves.
+    opponent_line: VCFResult | None = None
+    baseline_inconclusive = False
+    if _has_four_material(game, opponent):
+        opponent_line, baseline_inconclusive = _budgeted_find_vcf(
+            game,
+            opponent,
+            max_fours=max_fours,
+            node_limit=node_limit,
+            budget=budget,
+        )
+
+    forbidden_before = (
+        _black_forbidden_points(game)
+        if opponent_line is None and not baseline_inconclusive
+        else set()
+    )
+
+    def needs_probe(move: Move) -> bool:
+        # A four must be evaluated after the opponent's forced block.
+        if _four_completions(game, player, move):
+            return True
+        if opponent_line is not None or baseline_inconclusive:
+            return True
+        return _candidate_changes_black_legality(
+            game, move, player, forbidden_before,
+        )
+
     safe: list[Move] = []
     removed: list[Move] = []
     for move in moves:
+        if not needs_probe(move):
+            diag.v7_safety_precheck_skipped += 1
+            safe.append(move)
+            continue
         diag.v7_safety_checked += 1
-        unsafe, _ = _candidate_allows_vcf(
-            game, move, player, opponent,
-            max_fours=max_fours, node_limit=node_limit,
+        unsafe, _, _ = _candidate_allows_vcf(
+            game,
+            move,
+            player,
+            opponent,
+            max_fours=max_fours,
+            node_limit=node_limit,
+            budget=budget,
         )
         if unsafe:
             removed.append(move)
         else:
             safe.append(move)
+
     diag.v7_safety_removed += len(removed)
+    diag.v7_safety_nodes = budget.used
+    diag.v7_safety_budget_exhausted = budget.exhausted
     if safe:
         return safe
 
     legal = set(context.legal)
     augmentation: set[Move] = set()
-    opponent_line = find_vcf(
-        game, opponent, max_fours=max_fours, node_limit=node_limit,
-    )
     if opponent_line is not None:
         augmentation.update(opponent_line.attack_moves)
         augmentation.update(opponent_line.completion_points)
     augmentation.update(_own_four_creators(game, player, legal))
     augmentation.intersection_update(legal)
-    augmented = [m for m in sorted(augmentation) if m not in moves]
+    augmented = [move for move in sorted(augmentation) if move not in moves]
     diag.v7_safety_augmented = bool(augmented)
 
     rescued: list[Move] = []
     for move in augmented:
+        if not needs_probe(move):
+            diag.v7_safety_precheck_skipped += 1
+            rescued.append(move)
+            continue
         diag.v7_safety_checked += 1
-        unsafe, _ = _candidate_allows_vcf(
-            game, move, player, opponent,
-            max_fours=max_fours, node_limit=node_limit,
+        unsafe, _, _ = _candidate_allows_vcf(
+            game,
+            move,
+            player,
+            opponent,
+            max_fours=max_fours,
+            node_limit=node_limit,
+            budget=budget,
         )
         if unsafe:
             diag.v7_safety_removed += 1
         else:
             rescued.append(move)
+
+    diag.v7_safety_nodes = budget.used
+    diag.v7_safety_budget_exhausted = budget.exhausted
     if rescued:
         return rescued
 
     diag.v7_safety_fallback = True
     return moves
-
 
 def _white_pressure_points(game: Game, minimum_white: int) -> set[Move]:
     result: set[Move] = set()
@@ -362,9 +522,9 @@ def mcts_search_v7(
     game: Game, *, simulations=50, tactical_simulations=100,
     tactical_score_threshold=1800, exploration=sqrt(2), candidate_limit=20,
     initial_width=8, neighborhood_radius=2, priority_top_k=8,
-    own_vcf_max_fours=10, own_vcf_node_limit=2000,
-    safety_vcf_max_fours=10, safety_vcf_node_limit=1000,
-    self_forbidden_min_white=3,
+    own_vcf_max_fours=10, own_vcf_node_limit=5000,
+    safety_vcf_max_fours=10, safety_vcf_node_limit=4000,
+    safety_total_node_limit=16000, self_forbidden_min_white=3,
     random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
 ) -> Move:
     """V6 search with fixed V7 root-only VCF and forbidden-point modules."""
@@ -379,6 +539,7 @@ def mcts_search_v7(
         own_vcf_node_limit=own_vcf_node_limit,
         safety_vcf_max_fours=safety_vcf_max_fours,
         safety_vcf_node_limit=safety_vcf_node_limit,
+        safety_total_node_limit=safety_total_node_limit,
         self_forbidden_min_white=self_forbidden_min_white,
     )
     diag = diagnostics if diagnostics is not None else SearchDiagnostics()
@@ -420,6 +581,7 @@ def mcts_search_v7(
         game, context, moves, diag,
         max_fours=safety_vcf_max_fours,
         node_limit=safety_vcf_node_limit,
+        total_node_limit=safety_total_node_limit,
     )
     moves = _apply_self_forbidden_penalty(
         game, moves, diag, minimum_white=self_forbidden_min_white,
