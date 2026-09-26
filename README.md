@@ -184,9 +184,10 @@ python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 42
 | V6 vs V5 FINAL (pre-RIF) | 48승 38패 14무, score 55.0% (100판) |
 | 결정성 (pre-RIF) | seed 777 10판 2회 실행 SHA256 일치 |
 | V6 vs V5 FINAL (post-RIF smoke) | seed 777, 10판: 6승 2패 2무, score 70.0% |
+| 결정성 (post-RIF) | seed 777 10판 2회 실행 SHA256 `fd3f8ee6...851d0f` 일치 |
 
 MCTS-v6는 이후 신경망 체크포인트의 성장 정도를 측정하는 **고정 benchmark opponent**로 동결합니다.
-기존 100판 승패와 seed 777 SHA는 RIF exact-five 교정 이전 측정값입니다. 교정 후 10판 결과는 별도 smoke baseline이며, 동일 10판을 두 번 실행해 hash가 일치하기 전에는 새 결정성 baseline으로 취급하지 않습니다.
+기존 100판 승패와 기존 seed 777 SHA는 RIF exact-five 교정 이전 측정값입니다. 교정 후 seed 777 10판을 두 번 실행해 `(winner, history)` SHA256이 동일함을 확인했으며, `fd3f8ee61cb954c7c91249eeb79f420b5829c43f361f50e1055ebfbafa851d0f`를 post-RIF 결정성 baseline으로 사용합니다.
 세부 기록은 [docs/mcts.md](docs/mcts.md)의 "Stage 3 Final Baseline"을 참고하세요.
 
 ## 로컬 웹 대국
