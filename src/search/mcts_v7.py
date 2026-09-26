@@ -18,7 +18,7 @@ from .mcts_v5 import (
 from .mcts_v6 import (
     PRIORITY, SearchDiagnostics as V6Diagnostics, V5_FINAL, _root_candidates_v6,
 )
-from .threat_patterns import placed
+from .threat_patterns import compound_moves, placed
 
 
 V7_FINAL = {
@@ -321,6 +321,13 @@ def _stage4_v7_move(
     max_fours: int,
     node_limit: int,
 ) -> Move:
+    """Refine only Stage-4 ties without changing V5/V6 forced-policy stages.
+
+    V5 Stage 4 first minimizes the number of remaining unstoppable fours.
+    Among candidates with that same best value, V7 prefers a defense that also
+    removes opponent compound-threat creators (43/44/33), then one that leaves
+    no opponent VCF. The final key is the unchanged V6/V5 root ordering.
+    """
     player = game.to_play
     opponent = -player
     creators = _unstoppable_four_moves(game, opponent)
@@ -336,25 +343,22 @@ def _stage4_v7_move(
     if len(defenses) < 2:
         return original
 
-    initial_double_threats = set(_double_threat_moves(game, opponent))
-    ranked = []
+    rows = []
     for move in sorted(defenses):
         with placed(game, player, move):
             remaining = len(_unstoppable_four_moves(game, opponent))
-            double_threats = len(_double_threat_moves(game, opponent))
+            compound_count = len(compound_moves(game, opponent))
             has_vcf = find_vcf(
                 game, opponent, max_fours=max_fours, node_limit=node_limit,
             ) is not None
-        # M4 first prefers a Stage-4 defense that directly occupies an
-        # opponent double-threat creator; residual threat count is a secondary
-        # guard before the VCF and original V6 ordering keys.
-        covers_double_creator = move in initial_double_threats
-        ranked.append((int(not covers_double_creator), double_threats, int(has_vcf),
-                       remaining, context.key(game, move), move))
-    chosen = min(ranked)[-1]
+        rows.append((remaining, compound_count, int(has_vcf),
+                     context.key(game, move), move))
+
+    best_remaining = min(row[0] for row in rows)
+    tied = [row for row in rows if row[0] == best_remaining]
+    chosen = min(tied, key=lambda row: row[1:])[-1]
     diag.v7_stage4_tiebreak_applied = chosen != original
     return chosen
-
 
 def mcts_search_v7(
     game: Game, *, simulations=50, tactical_simulations=100,
