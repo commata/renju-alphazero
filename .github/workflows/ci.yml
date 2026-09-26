@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Supersede stale PR runs, but let every push to main finish with a recorded result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Runner image is pinned (ubuntu-24.04) so golden hashes only move on a deliberate upgrade.
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONHASHSEED: "0"
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  core-no-torch:
+    name: core-no-torch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project without neural extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Assert torch is absent
+        run: |
+          python -c "import importlib.util,sys; spec=importlib.util.find_spec('torch'); print('torch spec:', spec); sys.exit(spec is not None)"
+      - name: Run torch-free regression with strict skip policy
+        run: python scripts/ci_run_tests.py --skip-policy torch-only
+
+  full-tests:
+    name: full-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project and pinned CPU torch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install "torch==2.14.0" --index-url https://download.pytorch.org/whl/cpu
+      - name: Verify CPU torch
+        run: |
+          python -c "import torch; print('torch', torch.__version__); print('cuda', torch.cuda.is_available()); assert not torch.cuda.is_available()"
+      - name: Renju rules contract
+        run: python -m unittest tests.test_game -v
+      - name: Run full regression with zero skips
+        run: python scripts/ci_run_tests.py --skip-policy none
+
+  fake-smoke:
+    name: fake-smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Assert torch is absent
+        run: |
+          python -c "import importlib.util,sys; spec=importlib.util.find_spec('torch'); print('torch spec:', spec); sys.exit(spec is not None)"
+      - name: Verify Stage 5 deterministic golden hash
+        run: |
+          python scripts/run_stage5_self_play.py \
+            --evaluator uniform \
+            --seed 42 \
+            --simulations 8 \
+            --expect-sha256 7e1b04a0fedc3e8c11a22069222ecbf4dbcfb74f0efe3907c9dcfead124b4510 \
+            --expect-record-sha256 8ed202869a0c1f5da752011386989e19711e2e041094df773a688319e4c2b179 \
+            --output logs/stage5/ci_uniform_seed42.json
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: stage5-uniform-smoke-report
+          path: logs/stage5/ci_uniform_seed42.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  frozen-baseline:
+    name: frozen-baseline
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+      - name: Verify frozen implementation hashes
+        run: python scripts/check_frozen_baseline.py
+      - name: Verify low-budget V6 behavior fingerprint
+        run: python scripts/ci_v6_behavior.py --expect-sha256 91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44

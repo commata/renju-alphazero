@@ -541,7 +541,7 @@ total_move_ms
 - seeded local RNG 사용 전후 module-level global random state가 변하지 않음
 - `evaluate_batch([x])`와 동일 입력의 batch N 결과가 허용오차 내 일치
 - scripted/bounded fixture에서 terminal 승리와 상대 승리 회피가 올바른 Q로 전달됨
-- 저장된 모든 `action`이 해당 `GameRecord.moves[:ply]` 상태에서 합법
+- 저장된 모든 `action`이 해당 `GameRecord.moves[:ply]` 상태에서 합법이고 `visit_counts[action] > 0`
 - visit counts의 illegal 위치가 0이고 searched/forced 합계 규약이 맞음
 - `z`가 `winner`와 sample `to_play` 비교로 계산됨
 - GameRecord replay 결과가 원래 final board/result/history와 일치
@@ -575,3 +575,139 @@ Stage 5 완료 시에는 고정 숫자 147을 gate로 쓰지 않고, 이 기존 
 
 **기력, V6 상대 승률, loss 감소는 Stage 5 PASS 조건이 아니다.**
 Stage 6부터 replay buffer와 학습 루프를 연결한 뒤 고정 baseline을 상대로 성장 여부를 평가한다.
+
+## 17. 구현 결과 (feat/stage5-alphazero-search)
+
+기준 커밋 `cf75e07`에서 분기해 5-0 ~ 5-F를 구현했다. 위 1~16장의 설계 계약은 바꾸지 않았고,
+구현 중 필요했던 구체화 결정을 아래에 "왜 / 무엇을 / 어떤 테스트로" 형식으로 기록한다.
+
+### 17.1 모듈 구성
+
+```text
+src/search/__init__.py   # lazy export (PEP 562), 동작 불변
+src/search/evaluator.py  # EvaluationSnapshot/Result, Evaluator Protocol, 출력 검증, Uniform/Scripted
+src/search/alphazero.py  # SearchConfig, Node, PUCT, root/terminal/backup, visit target, temperature, Dirichlet
+src/model/evaluator.py   # PolicyValueEvaluator, random-init checkpoint 헬퍼 (torch는 여기서만)
+src/training/provenance.py  # torch-free git provenance, runtime env
+src/training/self_play.py   # Sample/GameRecord, z, replay 검증, canonical hash, timing 요약
+scripts/run_stage5_self_play.py  # smoke runner (uniform 모드는 torch 없이 동작)
+
+tests/test_search_package.py        # lazy export 회귀
+tests/test_alphazero_evaluator.py   # evaluator/검증/snapshot
+tests/test_alphazero_search.py      # PUCT, root 계약, terminal/backup, invariant, Game 불변
+tests/test_alphazero_policy.py      # pi, temperature, tie-break, Dirichlet, RNG
+tests/test_alphazero_neural.py      # PolicyValueEvaluator, batch, checkpoint (torch 필요)
+tests/test_self_play_record.py      # Sample/GameRecord, replay, hash
+tests/test_alphazero_isolation.py   # V5/V6/threat/agents/torch 미import, torch 차단 상태 실행
+```
+
+### 17.2 결정 기록
+
+**`search/__init__.py` lazy export**
+- 왜: 기존 `__init__`이 `mcts_v5`/`mcts_v6`를 eager import해서 `import search.alphazero`만으로도
+  `search.mcts_v5`, `search.mcts_v6`, `search.threat_patterns`, `search.threat_planning`이 로드됐다.
+  이 상태에서는 V5/V6 격리 테스트가 원천적으로 불가능하다.
+- 무엇을: PEP 562 모듈 `__getattr__`로 기존 `__all__` 8개 이름을 첫 접근 시 해당 서브모듈에서 가져온다.
+  V2~V6 알고리즘 코드는 한 줄도 바꾸지 않았다.
+- 테스트: `test_search_package.py` — 모든 `__all__` 이름이 `from search import X`로 import되고
+  서브모듈 객체와 identity가 같음, `import search`만으로는 서브모듈이 로드되지 않음,
+  `from search import mcts_search_v6`는 기존처럼 V6 의존 모듈을 로드함.
+
+**snapshot 기반 evaluator 인터페이스**
+- 왜: search는 working `Game` 하나를 `play()/undo()`로 계속 바꾼다. 4장의 개념 인터페이스
+  `evaluate(game, legal_moves)`처럼 live `Game`을 넘기면 batch item이 같은 객체를 가리키거나
+  evaluator가 상태를 오염시킬 수 있다.
+- 무엇을: `EvaluationSnapshot(board, to_play, last_move, legal_moves)` frozen dataclass로 입력을 통일했다.
+  `legal_moves`는 search가 한 번 계산한 tuple이며 snapshot에는 `legal_moves()` 메서드가 없다.
+  `evaluate(s)`는 `evaluate_batch([s])[0]`과 같은 경로다. search는 모든 결과를 `validate_evaluation()`으로
+  검사하고(길이 225, finite, ≥0, illegal 정확히 0, legal 합 1±1e-5, value finite ∈[-1,1]) 위반 시
+  `EvaluatorOutputError`를 던진다. 보정/정규화는 하지 않는다.
+- neural 경로: `PolicyValueEvaluator`는 snapshot을 `board`/`history`(마지막 수)/`to_play`만 가진
+  읽기 전용 view로 감싸 Stage 4 `encode_game(view, mask)`를 **그대로** 호출한다. `encode_game`
+  시그니처는 바꾸지 않았다. mask는 `legal_moves_to_mask(snapshot.legal_moves)`로 1회 만들고
+  encoder plane 5와 `masked_softmax`에 같이 쓴다.
+- 테스트: snapshot 독립성(원본 Game 변경 후 불변), 각 검증 실패 유형, `Game.legal_moves`/
+  `has_legal_move`를 예외로 patch한 상태의 neural 평가, 초기/흑 차례/백 차례/흑 금수 포함/금수 셋업 후
+  백 차례 국면에서 `encode_game(live_game, mask)`와 `torch.equal`.
+
+**torch-free git provenance**
+- 왜: `model.checkpoint._git_provenance`는 모듈이 torch를 import하므로 core self-play에서 쓸 수 없다.
+- 무엇을: `training/provenance.py`에 같은 방식(`git rev-parse HEAD`,
+  `git status --porcelain --untracked-files=no`, 소스 worktree 일치 확인, 실패 시 `None`)의 헬퍼를 두었다.
+  checkpoint 파일 내부 git 필드와는 별개다.
+- 테스트: isolation 테스트가 `training.self_play` import 시 torch 미로드를 확인하고,
+  record 테스트가 `git_commit`이 `None` 또는 40자 SHA인지 확인한다.
+
+**RNG 호출 순서와 tie-break prior**
+- 게임당 `random.Random(seed)` 1개. searched move마다 (1) noise가 켜져 있으면 합법 action 오름차순으로
+  `gammavariate(alpha, 1.0)`를 합법수 개수만큼, (2) `ply < temperature_moves`이면 `random()` 1회 후
+  action 오름차순 누적합으로 선택. 단일 합법수 fast path와 noise OFF search는 RNG를 쓰지 않는다.
+  temperature 가중치는 overflow 방지를 위해 `(N/max N)^(1/tau)`로 계산한다(비율은 `N^(1/tau)`와 동일).
+- gamma 합이 0 이하이거나 non-finite면 `ValueError`. noise 혼합 후 합이 1±1e-5가 아니면 `ValueError`.
+- temperature 종료 후 argmax와 PUCT의 prior tie-break는 모두 **그 root 탐색에서 실제 사용한 prior**
+  (self-play에서는 noise 적용 후)를 쓴다. `SearchResult.priors`에 이 값을 기록한다.
+- 테스트: `test_alphazero_policy.py` — 같은 seed로 복제한 RNG와 상태 비교(정확히 합법수 개수 draw),
+  noise 식 검증, fast path/noise OFF의 RNG 무소비, 전역 `random.getstate()` 불변, 누적합 경계값.
+
+**기타 구현 결정**
+- `c_puct` 기본값은 1.5(프로젝트 출발값). FPU는 0 이외 값을 config에서 거부한다.
+- `evaluator_batch_size`는 config/hash에 기록하되 Stage 5 search는 leaf를 하나씩 만들므로 `1`만 허용한다
+  (virtual loss 없음). `PolicyValueEvaluator.evaluate_batch`의 batch N 동등성은 별도 테스트로 확인한다.
+- terminal child를 재방문하면 `play()`도 생략하고 캐시된 terminal value로 backup한다.
+- `done=False`인데 합법수가 없으면 root/leaf 모두 `RuntimeError`.
+- search 호출당 `deepcopy(game)` 1회, simulation마다 history 길이 복원 확인. 예외 시 working copy만 폐기된다.
+- batch 1 vs N 허용오차: `atol=1e-6`에서 시작했으나 CPU에서 최대 |차이| prior ≈2.5e-6, value ≈1.9e-6
+  (batch 크기에 따른 float32 커널 경로 차이)로 실패해 policy 합 검사와 같은 `1e-5`로 완화했다.
+  bit-exact 요구는 batch size 고정 조건에서만 한다.
+- `MoveStats.tree_ms = total_move_ms - legal_moves_ms - inference_ms`이며 snapshot 생성·검증은 inference에,
+  action 선택·`Game.play()`는 tree에 포함된다.
+- 다양성은 `DIVERSITY_START_PLY = 1`(강제 중앙 첫 수 제외)부터 `moves[1:temperature_moves]` prefix의
+  서로 다른 개수로 측정한다.
+- record hash payload: `{"format": "stage5-record-hash-v1", winner, moves, samples[{ply,to_play,action,visit_counts}]}`.
+  game hash payload: `{"format": "stage5-game-v1", winner, moves}`. 둘 다 `training.self_play.canonical_sha256`
+  하나로 계산하며 timing, derived `pi`, runtime_env는 제외한다.
+- replay는 action이 합법인지만 보지 않고 **실제로 둔 action의 visit count가 양수인지**도 검증한다.
+  temperature/argmax는 방문된 action 집합에서만 고르므로, 이 조건이 깨지면 record를 거부한다.
+- `git_dirty`는 checkpoint provenance와 동일하게 `--untracked-files=no` 기준이다. 따라서 Stage 6 실험 전에
+  새 소스 파일은 반드시 commit하거나, untracked 파일이 provenance에 반영되지 않는다는 제한을 실험 기록에 남긴다.
+- 4판 × 16 simulations의 opening diversity는 탐색/RNG 파이프라인 smoke일 뿐 hyperparameter tuning 근거가 아니다.
+  학습된 prior가 뾰족해진 뒤 Stage 6에서 판 수를 늘려 `temperature_moves`와 Dirichlet 설정을 다시 측정한다.
+
+### 17.3 검증 결과 (2026-09-26, Windows 11, Python 3.13.14, CPU)
+
+회귀:
+
+| 환경 | 명령 | 결과 |
+|---|---|---|
+| torch 2.14.0+cpu | `python -m unittest discover -s tests -v` | 258 tests OK, skipped 0 |
+| torch 미설치 venv (`pip install -e .`만) | 같은 명령 | 258 tests OK, skipped 28 (기존 neural 20 + Stage 5 neural 8) |
+
+fake(uniform) smoke — `python scripts/run_stage5_self_play.py --seed 42 --simulations 8`:
+winner -1(백), 52수, samples 52, illegal 0, fast path 1, replay PASS,
+game SHA256 `7e1b04a0fedc3e8c11a22069222ecbf4dbcfb74f0efe3907c9dcfead124b4510`
+(2회 실행 및 torch 미설치 venv 실행 모두 동일).
+
+neural smoke — random-init checkpoint(`--model-seed 0`)을 1회 생성·저장 후 파일을 다시 load:
+
+```bash
+python scripts/run_stage5_self_play.py --evaluator neural \
+  --create-random-checkpoint checkpoints/stage5_random_init_seed0.pt --model-seed 0 \
+  --seed 42 --simulations 64 --threads 1
+python scripts/run_stage5_self_play.py --evaluator neural \
+  --checkpoint checkpoints/stage5_random_init_seed0.pt --model-seed 0 \
+  --seed 42 --simulations 64 --threads 1
+```
+
+- checkpoint SHA256 `fe7d1572a4b6e21a12adf946c87fa15bd610dbcddceb781d886b941fab5703f9`
+- config hash `3acf355f3cefef05f837dae580850ea84b80ee6626ef44655cc4dfb701960b29`
+- winner 1(흑), 71수, samples 71, illegal 0, fast path 1, replay PASS
+- game SHA256 `6d044f846341d084535819ba7074ffbcb5daad37d80affddf569f327e855b142` (2회 동일)
+- record SHA256 `90e77ff0a0ade3140e90a425dbc5ef2f7cc912d9d5245cae851ecb9a2e2d9426` (2회 동일)
+- 조건: CPU, torch 2.14.0+cpu, threads 1, evaluator batch size 1, `model.eval()` + `inference_mode`
+
+수당 시간(searched move 평균, 64 simulations, neural run 1): legal_moves 31.97 ms,
+inference 280.27 ms, tree 25.42 ms, total 337.66 ms (n=70). leaf 평가 1회당 inference ≈4.3 ms,
+legal_moves ≈0.5 ms로 Stage 4 CPU 측정 범위와 일관된다. fast path는 1회, 0.10 ms.
+같은 checkpoint로 seed 100~103, 16 simulations 4판에서 ply 1~9 opening prefix는 4개 모두 달랐다.
+
+checkpoint는 `checkpoints/`, smoke JSON은 `logs/stage5/`에 두며 커밋하지 않는다.

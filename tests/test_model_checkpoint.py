@@ -17,7 +17,7 @@ if torch is not None:
     from model.network import PolicyValueNet
 
 
-@unittest.skipIf(torch is None, 'install the neural extra')
+@unittest.skipIf(torch is None, 'requires torch')
 class CheckpointTest(unittest.TestCase):
     def setUp(self):
         self.temp = TemporaryDirectory()

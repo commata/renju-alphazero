@@ -11,7 +11,7 @@ if torch is not None:
     from model.masking import legal_moves_to_mask, masked_softmax, policy_loss, value_loss
 
 
-@unittest.skipIf(torch is None, 'install the neural extra')
+@unittest.skipIf(torch is None, 'requires torch')
 class MaskingTest(unittest.TestCase):
     def test_mapping(self):
         moves = [(0, 14), (1, 0), (14, 14)]

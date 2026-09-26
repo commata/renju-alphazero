@@ -38,7 +38,7 @@ class ActionTest(unittest.TestCase):
                 ModelConfig(**kwargs)
 
 
-@unittest.skipIf(torch is None, 'install the neural extra')
+@unittest.skipIf(torch is None, 'requires torch')
 class EncodingTest(unittest.TestCase):
     def test_opening(self):
         x = encode_game(Game())
