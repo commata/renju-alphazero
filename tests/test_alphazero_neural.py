@@ -126,10 +126,12 @@ class PolicyValueEvaluatorTest(unittest.TestCase):
     def test_search_with_neural_evaluator(self):
         game = positions()['black_to_play']
         before = ([row[:] for row in game.board], list(game.history))
+        torch_rng = torch.random.get_rng_state()
         result = run_search(game, self.evaluator, SearchConfig(num_simulations=6,
                                                                noise_enabled=False))
         self.assertEqual(sum(result.visit_counts), 6)
         self.assertEqual(result.evaluator_calls, 7)
+        self.assertTrue(torch.equal(torch_rng, torch.random.get_rng_state()))
         self.assertEqual(before, ([row[:] for row in game.board], list(game.history)))
 
 

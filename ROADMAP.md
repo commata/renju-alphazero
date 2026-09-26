@@ -63,6 +63,12 @@ one-hot target을 저장하고, 일반 root는 NN 확장을 simulation 예산 �
 temperature를 분리한다. 구현 계약, self-play record/replay, 재현성 및 성능 계측 범위는
 [Stage 5 AlphaZero Search Integration](docs/stage5-alphazero.md)에 따른다.
 
+Stage 5 구현(`feat/stage5-alphazero-search`)은 `search.alphazero`/`search.evaluator`(torch-free),
+`model.evaluator`, `training.self_play`로 완료했다. `search/__init__.py`는 V5/V6 격리를 위해 lazy export로
+전환했다(동작 불변). 전체 회귀 258 tests PASS(torch 미설치 환경 28 skip), fake/neural self-play smoke의
+replay와 동일 조건 2회 game hash 일치를 확인했다. 결정 기록과 수치는
+[Stage 5 구현 결과](docs/stage5-alphazero.md#17-구현-결과-featstage5-alphazero-search)에 있다.
+
 처음에는 엔진 정확성과 한 판 완주를 우선한다. 아래 값은 **출발점**이며, 실제 속도·메모리·온도를 재고 변경한다.
 
 | 항목 | 그램에서 시작 | 데스크톱에서 조정할 방향 |
