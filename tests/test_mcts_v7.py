@@ -7,8 +7,11 @@ import unittest
 from agents import MCTSV7Agent
 from renju import BLACK, WHITE, Game
 from search.mcts_v6 import V5_FINAL
+from search.mcts_v5 import (_RootContext, _forced_v5_move, _threat_windows,
+                            _unstoppable_four_moves)
 from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _apply_self_forbidden_penalty,
                             find_vcf, mcts_search_v7)
+from search.threat_patterns import compound_moves, placed
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mcts_v7_positions.json"
@@ -166,7 +169,34 @@ class V7FixtureTest(unittest.TestCase):
         )
         self.assertIn(move, game.legal_moves())
         self.assertEqual(diag.forced_policy_stage, 4)
-        self.assertTrue(diag.v7_stage4_tiebreak_applied)
+        if not diag.v7_stage4_tiebreak_applied:
+            debug_diag = SearchDiagnostics()
+            context = _RootContext(game.legal_moves(), debug_diag)
+            original = _forced_v5_move(game, context=context)
+            opponent = -game.to_play
+            creators = _unstoppable_four_moves(game, opponent)
+            defenses = set(creators)
+            for window in _threat_windows(game, opponent):
+                if set(creators).intersection(window):
+                    defenses.update(
+                        pos for pos in window if game.board[pos[0]][pos[1]] == 0
+                    )
+            defenses.intersection_update(context.legal)
+            rows = []
+            for candidate in sorted(defenses):
+                with placed(game, game.to_play, candidate):
+                    rows.append({
+                        "move": candidate,
+                        "remaining": len(_unstoppable_four_moves(game, opponent)),
+                        "compound": sorted(compound_moves(game, opponent)),
+                        "vcf": find_vcf(
+                            game, opponent,
+                            max_fours=V7_FINAL["safety_vcf_max_fours"],
+                            node_limit=V7_FINAL["safety_vcf_node_limit"],
+                        ) is not None,
+                        "key": context.key(game, candidate),
+                    })
+            self.fail(f"M4 unchanged: original={original}, selected={move}, rows={rows}")
 
     def test_seeded_determinism_and_state(self):
         game = _game(FIXTURES["seed44-g009-p039"])
