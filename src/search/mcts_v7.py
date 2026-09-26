@@ -336,6 +336,7 @@ def _stage4_v7_move(
     if len(defenses) < 2:
         return original
 
+    initial_double_threats = set(_double_threat_moves(game, opponent))
     ranked = []
     for move in sorted(defenses):
         with placed(game, player, move):
@@ -344,7 +345,12 @@ def _stage4_v7_move(
             has_vcf = find_vcf(
                 game, opponent, max_fours=max_fours, node_limit=node_limit,
             ) is not None
-        ranked.append((double_threats, int(has_vcf), remaining, context.key(game, move), move))
+        # M4 first prefers a Stage-4 defense that directly occupies an
+        # opponent double-threat creator; residual threat count is a secondary
+        # guard before the VCF and original V6 ordering keys.
+        covers_double_creator = move in initial_double_threats
+        ranked.append((int(not covers_double_creator), double_threats, int(has_vcf),
+                       remaining, context.key(game, move), move))
     chosen = min(ranked)[-1]
     diag.v7_stage4_tiebreak_applied = chosen != original
     return chosen
