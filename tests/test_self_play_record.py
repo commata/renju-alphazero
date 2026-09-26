@@ -108,8 +108,24 @@ class SelfPlayRecordTest(unittest.TestCase):
         bad_counts[stone] = 1
         index = next(a for a, n in enumerate(bad_counts) if n > 0 and a != stone)
         bad_counts[index] -= 1
+
+        # The played action must come from the searched support, not merely be legal.
+        unvisited_action_counts = list(second.visit_counts)
+        removed = unvisited_action_counts[second.action]
+        self.assertGreater(removed, 0)
+        replay_state = Game()
+        replay_state.play(*action_to_coordinate(self.record.moves[0]))
+        replacement = next(
+            a for a in (r * 15 + c for r, c in replay_state.legal_moves())
+            if a != second.action
+        )
+        unvisited_action_counts[second.action] = 0
+        unvisited_action_counts[replacement] += removed
+
         cases = {
             'illegal count': dataclasses.replace(second, visit_counts=tuple(bad_counts)),
+            'played action unvisited': dataclasses.replace(
+                second, visit_counts=tuple(unvisited_action_counts)),
             'wrong z': dataclasses.replace(second, z=-second.z if second.z else 1.0),
             'wrong to_play': dataclasses.replace(second, to_play=-second.to_play),
             'wrong sum': dataclasses.replace(

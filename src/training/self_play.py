@@ -205,6 +205,8 @@ def replay_record(record: GameRecord, final_game: Game | None = None) -> Game:
                f'sample {index}: visit counts must be 225 non-negative integers')
         legal = {coordinate_to_action(r, c) for r, c in game.legal_moves()}
         _check(sample.action in legal, f'sample {index}: illegal action')
+        _check(counts[sample.action] > 0,
+               f'sample {index}: played action must have a positive visit count')
         _check(all(n == 0 for a, n in enumerate(counts) if a not in legal),
                f'sample {index}: illegal visit count')
         expected_total = 1 if len(legal) == 1 else num_simulations

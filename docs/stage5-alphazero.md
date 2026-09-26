@@ -541,7 +541,7 @@ total_move_ms
 - seeded local RNG 사용 전후 module-level global random state가 변하지 않음
 - `evaluate_batch([x])`와 동일 입력의 batch N 결과가 허용오차 내 일치
 - scripted/bounded fixture에서 terminal 승리와 상대 승리 회피가 올바른 Q로 전달됨
-- 저장된 모든 `action`이 해당 `GameRecord.moves[:ply]` 상태에서 합법
+- 저장된 모든 `action`이 해당 `GameRecord.moves[:ply]` 상태에서 합법이고 `visit_counts[action] > 0`
 - visit counts의 illegal 위치가 0이고 searched/forced 합계 규약이 맞음
 - `z`가 `winner`와 sample `to_play` 비교로 계산됨
 - GameRecord replay 결과가 원래 final board/result/history와 일치
@@ -666,6 +666,12 @@ tests/test_alphazero_isolation.py   # V5/V6/threat/agents/torch 미import, torch
 - record hash payload: `{"format": "stage5-record-hash-v1", winner, moves, samples[{ply,to_play,action,visit_counts}]}`.
   game hash payload: `{"format": "stage5-game-v1", winner, moves}`. 둘 다 `training.self_play.canonical_sha256`
   하나로 계산하며 timing, derived `pi`, runtime_env는 제외한다.
+- replay는 action이 합법인지만 보지 않고 **실제로 둔 action의 visit count가 양수인지**도 검증한다.
+  temperature/argmax는 방문된 action 집합에서만 고르므로, 이 조건이 깨지면 record를 거부한다.
+- `git_dirty`는 checkpoint provenance와 동일하게 `--untracked-files=no` 기준이다. 따라서 Stage 6 실험 전에
+  새 소스 파일은 반드시 commit하거나, untracked 파일이 provenance에 반영되지 않는다는 제한을 실험 기록에 남긴다.
+- 4판 × 16 simulations의 opening diversity는 탐색/RNG 파이프라인 smoke일 뿐 hyperparameter tuning 근거가 아니다.
+  학습된 prior가 뾰족해진 뒤 Stage 6에서 판 수를 늘려 `temperature_moves`와 Dirichlet 설정을 다시 측정한다.
 
 ### 17.3 검증 결과 (2026-09-26, Windows 11, Python 3.13.14, CPU)
 
