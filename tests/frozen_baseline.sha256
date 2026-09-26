@@ -1,5 +1,11 @@
-# Stage 3 frozen MCTS-v6 benchmark implementation files.
+# Stage 3 frozen MCTS-v6 benchmark implementation files, including every search module
+# that mcts_v5/mcts_v6 import (mcts -> v3 -> v32 -> v321 -> v4 -> v5 -> v6).
 # Do not update these hashes only to make CI green. Review the behavior change first.
+5e1b14de7bc9f9e944a0905c7753b46cf7ff9e29698c6df893a5a3df912d7dfa  src/search/mcts.py
+49e8c6bd1a790aff7d3bd97d2f7ed1b1e3c7199d5d299acadc57e3a050a97f04  src/search/mcts_v3.py
+de9bddf9a1d63a2dec18d800297b7c52266bb5647414087a52595d5920594f76  src/search/mcts_v32.py
+dfc56de80dd9e6b4ab4bf47c208bcf9ed32d2ad125faf1c3096a2ee13bdcf826  src/search/mcts_v321.py
+adfdb86ca95e6f8156d35a80e443d2193bd3c3e1ee5e5ffc2dab58a564da6e73  src/search/mcts_v4.py
 a3619de6f21b9b8ce52ebe3d9ca2feb9fb55e0d5771362b0c7b711a33fade98e  src/search/mcts_v5.py
 ec51e7130f2380266fa28cd8eeb7e5c0bee86e14a6c0c4c1c90b5a7c1a7998fc  src/search/mcts_v6.py
 ed55fb44bd00ed620ea650eee528c0a6865abc0304a9dca9d793bd95fc02f3ab  src/search/threat_patterns.py
