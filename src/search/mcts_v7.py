@@ -341,6 +341,31 @@ def _apply_vcf_safety(
     precheck_node_limit: int,
     total_node_limit: int,
 ) -> list[Move]:
+    return [move for tier in _vcf_safety_tiers(
+        game, context, moves, diag,
+        max_fours=max_fours,
+        node_limit=node_limit,
+        precheck_node_limit=precheck_node_limit,
+        total_node_limit=total_node_limit,
+    ) for move in tier]
+
+
+def _vcf_safety_tiers(
+    game: Game,
+    context: _RootContext,
+    moves: list[Move],
+    diag: SearchDiagnostics,
+    *,
+    max_fours: int,
+    node_limit: int,
+    precheck_node_limit: int,
+    total_node_limit: int,
+) -> list[list[Move]]:
+    """Return M2 tiers in priority order: verified-safe, then inconclusive.
+
+    Each tier keeps V6 order. The flattened tiers never exceed the V6 root
+    candidate count.
+    """
     opponent = -game.to_play
     player = game.to_play
     budget = _VCFBudget(total_node_limit)
@@ -411,12 +436,17 @@ def _apply_vcf_safety(
     diag.v7_safety_nodes = budget.used
     diag.v7_safety_budget_exhausted = budget.exhausted
     if safe:
-        # Preserve V6 ordering inside each group, but verified-safe candidates
-        # must precede candidates whose bounded VCF probe did not finish.
-        return safe + inconclusive
+        # Verified-safe candidates precede those whose bounded probe did not
+        # finish; the latter are demoted, not removed.
+        return [safe, inconclusive]
 
-    # With no verified-safe root candidate, try the original augmentation path.
-    # Inconclusive candidates are retained rather than treated as confirmed VCF.
+    # With the budget spent there is nothing to learn about augmentation
+    # moves, so keep the unverified V6 candidates instead of adding more
+    # unverified moves on top of them.
+    if budget.exhausted and inconclusive:
+        return [inconclusive]
+
+    # No verified-safe root candidate: try the original augmentation path.
     legal = set(context.legal)
     augmentation: set[Move] = set()
     if opponent_line is not None:
@@ -425,7 +455,6 @@ def _apply_vcf_safety(
     augmentation.update(_own_four_creators(game, player, legal))
     augmentation.intersection_update(legal)
     augmented = [move for move in sorted(augmentation) if move not in moves]
-    diag.v7_safety_augmented = bool(augmented)
 
     rescued_safe: list[Move] = []
     rescued_inconclusive: list[Move] = []
@@ -438,15 +467,26 @@ def _apply_vcf_safety(
 
     diag.v7_safety_nodes = budget.used
     diag.v7_safety_budget_exhausted = budget.exhausted
+    limit = len(moves)
     if rescued_safe:
-        return rescued_safe + inconclusive + rescued_inconclusive
-    if inconclusive or rescued_inconclusive:
-        return inconclusive + rescued_inconclusive
+        # Only verified-safe augmentation joins the root, capped at the V6
+        # candidate count; unverified originals keep the remaining slots.
+        rescued_safe = rescued_safe[:limit]
+        diag.v7_safety_augmented = True
+        return [rescued_safe, inconclusive[:limit - len(rescued_safe)]]
+    if inconclusive:
+        return [inconclusive]
+    if rescued_inconclusive:
+        # Every original candidate is a confirmed VCF loss; an unverified
+        # augmentation move is strictly preferable to a confirmed loss.
+        diag.v7_safety_augmented = True
+        return [rescued_inconclusive[:limit]]
 
-    # Fallback is now reserved for the meaningful case: every considered
+    # Fallback is reserved for the meaningful case: every considered
     # candidate was positively confirmed to leave an opponent VCF.
     diag.v7_safety_fallback = True
-    return moves
+    return [moves]
+
 
 def _white_pressure_points(game: Game, minimum_white: int) -> set[Move]:
     result: set[Move] = set()
@@ -489,6 +529,29 @@ def _apply_self_forbidden_penalty(
     return normal + penalized
 
 
+def _penalize_within_tiers(
+    game: Game,
+    tiers: list[list[Move]],
+    diag: SearchDiagnostics,
+    *,
+    minimum_white: int,
+) -> list[Move]:
+    """Apply M3 inside each M2 tier.
+
+    M2 tiers encode VCF evidence, so a self-forbidden penalty never lifts an
+    unverified candidate above a verified-safe one.
+    """
+    moves: list[Move] = []
+    penalized = 0
+    for tier in tiers:
+        diag.v7_self_forbidden_penalized = 0
+        moves.extend(_apply_self_forbidden_penalty(
+            game, tier, diag, minimum_white=minimum_white,
+        ))
+        penalized += diag.v7_self_forbidden_penalized
+    diag.v7_self_forbidden_penalized = penalized
+    return moves
+
 def _stage4_v7_move(
     game: Game,
     context: _RootContext,
@@ -505,7 +568,8 @@ def _stage4_v7_move(
     that criterion first. Only among equally complete defenses does M4 prefer
     fewer opponent double-threat creators, then verified VCF safety. An
     inconclusive bounded VCF probe ranks behind verified-safe but ahead of a
-    confirmed opponent VCF.
+    confirmed opponent VCF. A defense that makes a four is evaluated after the
+    opponent's forced block, exactly as in M2.
     """
     player = game.to_play
     opponent = -player
@@ -522,34 +586,55 @@ def _stage4_v7_move(
     if len(defenses) < 2:
         return original
 
-    budget = _VCFBudget(total_node_limit)
     rows = []
     for move in sorted(defenses):
         with placed(game, player, move):
             remaining = len(_unstoppable_four_moves(game, opponent))
             double_threats = len(_double_threat_moves(game, opponent))
-            result, inconclusive = _budgeted_find_vcf(
-                game,
-                opponent,
-                max_fours=max_fours,
-                node_limit=node_limit,
-                budget=budget,
-            )
+        rows.append((remaining, double_threats, context.key(game, move), move))
+
+    # VCF safety is only the third criterion, so only the tie group with the
+    # best (remaining, double-threat) signature can be affected by it.
+    best = min(row[:2] for row in rows)
+    tied = sorted(row for row in rows if row[:2] == best)
+    if len(tied) == 1:
+        chosen = tied[0][-1]
+        diag.v7_stage4_tiebreak_applied = chosen != original
+        return chosen
+
+    # Probe in root-key order and stop at the first verified-safe defense:
+    # every later tied row has a larger key and cannot outrank it. The probe
+    # uses the same forced-four-reply semantics as M2.
+    budget = _VCFBudget(total_node_limit)
+    ranked = []
+    for _, _, key, move in tied:
+        unsafe, _, inconclusive = _candidate_allows_vcf(
+            game,
+            move,
+            player,
+            opponent,
+            max_fours=max_fours,
+            node_limit=node_limit,
+            budget=budget,
+        )
         if inconclusive:
             vcf_rank = 1
             diag.v7_stage4_vcf_inconclusive += 1
-        elif result is not None:
+        elif unsafe:
             vcf_rank = 2
         else:
             vcf_rank = 0
-        rows.append((remaining, double_threats, vcf_rank,
-                     context.key(game, move), move))
+        ranked.append((vcf_rank, key, move))
+        if vcf_rank == 0:
+            break
 
     diag.v7_stage4_vcf_nodes = budget.used
     diag.v7_stage4_vcf_budget_exhausted = budget.exhausted
-    chosen = min(rows)[-1]
+    chosen = min(ranked)[-1]
     diag.v7_stage4_tiebreak_applied = chosen != original
     return chosen
+
+
 def mcts_search_v7(
     game: Game, *, simulations=50, tactical_simulations=100,
     tactical_score_threshold=1800, exploration=sqrt(2), candidate_limit=20,
@@ -586,14 +671,17 @@ def mcts_search_v7(
         return forced
 
     module_started = perf_counter()
-    own_vcf = find_vcf(
+    # M1 is bounded by its own node limit and sits outside the M2/M4 safety
+    # budget; its nodes are recorded even on a miss so per-move totals are
+    # measurable (worst case: own + safety total).
+    own_vcf, own_nodes, _ = _find_vcf_with_stats(
         game, game.to_play,
         max_fours=own_vcf_max_fours, node_limit=own_vcf_node_limit,
     )
+    diag.v7_own_vcf_nodes = own_nodes
     if own_vcf is not None:
         diag.v7_own_vcf_found = True
         diag.v7_own_vcf_length = own_vcf.fours
-        diag.v7_own_vcf_nodes = own_vcf.nodes
         diag.forced_policy_stage = None
         diag.v7_module_seconds = perf_counter() - module_started
         return own_vcf.first_move
@@ -612,15 +700,15 @@ def mcts_search_v7(
     moves, score, reasons = _root_candidates_v6(
         game, context, candidate_limit, neighborhood_radius,
     )
-    moves = _apply_vcf_safety(
+    tiers = _vcf_safety_tiers(
         game, context, moves, diag,
         max_fours=safety_vcf_max_fours,
         node_limit=safety_vcf_node_limit,
         precheck_node_limit=safety_precheck_node_limit,
         total_node_limit=safety_total_node_limit,
     )
-    moves = _apply_self_forbidden_penalty(
-        game, moves, diag, minimum_white=self_forbidden_min_white,
+    moves = _penalize_within_tiers(
+        game, tiers, diag, minimum_white=self_forbidden_min_white,
     )
     diag.v7_module_seconds = perf_counter() - module_started
 

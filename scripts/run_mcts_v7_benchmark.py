@@ -62,7 +62,7 @@ def play_one(v7_color: int, opening, opponent_name: str, seed: int):
 
     v7_times, opponent_times = [], []
     diag_totals = {key: 0 for key in (
-        "v7_own_vcf_found", "v7_safety_checked", "v7_safety_removed",
+        "v7_own_vcf_found", "v7_own_vcf_nodes", "v7_safety_checked", "v7_safety_removed",
         "v7_safety_augmented", "v7_safety_fallback", "v7_safety_nodes",
         "v7_safety_precheck_nodes", "v7_safety_precheck_skipped",
         "v7_safety_inconclusive", "v7_safety_budget_exhausted",
@@ -84,6 +84,7 @@ def play_one(v7_color: int, opening, opponent_name: str, seed: int):
             max_v7_move_seconds = max(max_v7_move_seconds, elapsed)
             d = v7.diagnostics
             diag_totals["v7_own_vcf_found"] += int(d.v7_own_vcf_found)
+            diag_totals["v7_own_vcf_nodes"] += d.v7_own_vcf_nodes
             diag_totals["v7_safety_checked"] += d.v7_safety_checked
             diag_totals["v7_safety_removed"] += d.v7_safety_removed
             diag_totals["v7_safety_augmented"] += int(d.v7_safety_augmented)

@@ -2,17 +2,19 @@ import json
 from copy import deepcopy
 from pathlib import Path
 import random
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from agents import MCTSV7Agent
 from renju import BLACK, WHITE, Game
+from search.threat_patterns import placed
 from search.mcts_v6 import V5_FINAL
 from search.mcts_v5 import _RootContext
 from search.mcts_v7 import (V7_FINAL, SearchDiagnostics, _VCFBudget,
                             _apply_self_forbidden_penalty, _apply_vcf_safety,
-                            _candidate_allows_vcf, _stage4_v7_move,
-                            find_vcf, mcts_search_v7)
+                            _candidate_allows_vcf, _penalize_within_tiers,
+                            _stage4_v7_move, find_vcf, mcts_search_v7)
 
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "mcts_v7_positions.json"
@@ -360,41 +362,190 @@ class V7FixtureTest(unittest.TestCase):
         self.assertEqual(chosen, second)
         self.assertTrue(diag.v7_stage4_tiebreak_applied)
 
-    def test_stage4_vcf_checks_share_total_budget_and_demote_inconclusive(self):
+    def test_stage4_probes_only_best_tie_group_and_stops_at_first_safe(self):
         game = Game()
         game.play(7, 7)  # WHITE
-        first, second, third = (6, 7), (7, 6), (8, 7)
-        context = _RootContext([first, second, third], SearchDiagnostics())
+        a, b, c, d = (6, 7), (7, 6), (8, 7), (7, 8)
+        # Root key order is the move itself, so the probe order is a, b, c.
+        context = SimpleNamespace(legal=[a, b, c, d], key=lambda _g, m: m)
         diag = SearchDiagnostics()
-        seen_budget_ids = []
+        probed = []
 
-        def probe(_game, _attacker, *, max_fours, node_limit, budget):
-            seen_budget_ids.append(id(budget))
-            use = min(4000, budget.remaining)
-            budget.used += use
-            budget.remaining -= use
-            if budget.remaining == 0:
-                budget.exhausted = True
-            # first verified safe; later probes become inconclusive under cap
-            return (None, False) if len(seen_budget_ids) == 1 else (None, True)
+        def probe(_game, move, _player, _opponent, *, max_fours, node_limit,
+                  budget):
+            probed.append(move)
+            budget.used += 100
+            budget.remaining -= 100
+            return {a: (False, None, True), b: (False, None, False)}[move]
 
         with patch("search.mcts_v7._unstoppable_four_moves",
-                   side_effect=[[(5, 5)], [], [], []]), \
+                   side_effect=[[(5, 5)], [], [], [], []]), \
              patch("search.mcts_v7._threat_windows",
-                   return_value=[((5, 5), first, second, third, (5, 6))]), \
+                   return_value=[((5, 5), a, b, c, d)]), \
              patch("search.mcts_v7._double_threat_moves",
-                   side_effect=[[], [], []]), \
-             patch("search.mcts_v7._budgeted_find_vcf", side_effect=probe):
+                   side_effect=[[], [], [], [(3, 3)]]), \
+             patch("search.mcts_v7._candidate_allows_vcf",
+                   side_effect=probe):
             chosen = _stage4_v7_move(
-                game, context, second, diag, max_fours=10, node_limit=4000,
+                game, context, a, diag, max_fours=10, node_limit=4000,
                 total_node_limit=8000,
             )
 
-        self.assertEqual(chosen, first)
-        self.assertEqual(len(set(seen_budget_ids)), 1)
-        self.assertEqual(diag.v7_stage4_vcf_nodes, 8000)
-        self.assertEqual(diag.v7_stage4_vcf_inconclusive, 2)
-        self.assertTrue(diag.v7_stage4_vcf_budget_exhausted)
+        # d is outside the best (remaining, double-threat) group and c comes
+        # after the first verified-safe defense, so neither is probed.
+        self.assertEqual(probed, [a, b])
+        self.assertEqual(chosen, b)
+        self.assertTrue(diag.v7_stage4_tiebreak_applied)
+        self.assertEqual(diag.v7_stage4_vcf_nodes, 200)
+        self.assertEqual(diag.v7_stage4_vcf_inconclusive, 1)
+        self.assertFalse(diag.v7_stage4_vcf_budget_exhausted)
+
+    def test_stage4_single_best_defense_skips_vcf_probes(self):
+        game = Game()
+        game.play(7, 7)  # WHITE
+        a, b = (6, 7), (7, 6)
+        context = SimpleNamespace(legal=[a, b], key=lambda _g, m: m)
+        diag = SearchDiagnostics()
+        with patch("search.mcts_v7._unstoppable_four_moves",
+                   side_effect=[[(5, 5)], [], []]), \
+             patch("search.mcts_v7._threat_windows",
+                   return_value=[((5, 5), a, b, (5, 6), (5, 7))]), \
+             patch("search.mcts_v7._double_threat_moves",
+                   side_effect=[[(3, 3)], []]), \
+             patch("search.mcts_v7._candidate_allows_vcf") as probe:
+            chosen = _stage4_v7_move(
+                game, context, a, diag, max_fours=10, node_limit=4000,
+                total_node_limit=8000,
+            )
+        probe.assert_not_called()
+        self.assertEqual(chosen, b)
+        self.assertEqual(diag.v7_stage4_vcf_nodes, 0)
+
+    def test_stage4_evaluates_four_defense_after_forced_block(self):
+        # A raw VCF probe right after a four-making move misses the opponent
+        # VCF (every attacker four is refuted by our pending win). M4 must use
+        # the M2 forced-reply probe instead.
+        item = next(
+            row for row in REGRESSION_FIXTURES
+            if row["id"] == "streak-seed44-g010-p027"
+        )
+        game = _game(item)
+        player, opponent = game.to_play, -game.to_play
+        four = (7, 4)
+        with placed(game, player, four):
+            raw = find_vcf(game, opponent, max_fours=10, node_limit=4000)
+        unsafe, _, inconclusive = _candidate_allows_vcf(
+            game, four, player, opponent, max_fours=10, node_limit=4000,
+            budget=_VCFBudget(8000),
+        )
+        self.assertIsNone(raw)
+        self.assertTrue(unsafe)
+        self.assertFalse(inconclusive)
+
+        other = next(m for m in game.legal_moves() if m != four)
+        # The four-making defense comes first in root-key order, so it is
+        # always probed and must be ranked as a confirmed VCF.
+        context = SimpleNamespace(legal=[four, other],
+                                  key=lambda _g, m: (m != four, m))
+        diag = SearchDiagnostics()
+        with patch("search.mcts_v7._unstoppable_four_moves",
+                   side_effect=[[(5, 5)], [], []]), \
+             patch("search.mcts_v7._threat_windows",
+                   return_value=[((5, 5), four, other, (5, 6), (5, 7))]), \
+             patch("search.mcts_v7._double_threat_moves",
+                   side_effect=[[], []]), \
+             patch("search.mcts_v7._candidate_allows_vcf",
+                   wraps=_candidate_allows_vcf) as probe:
+            _stage4_v7_move(
+                game, context, other, diag, max_fours=10, node_limit=4000,
+                total_node_limit=8000,
+            )
+        self.assertEqual(probe.call_args_list[0].args[1], four)
+        self.assertEqual(diag.v7_stage4_vcf_inconclusive, 0)
+
+    def test_safety_exhausted_budget_skips_augmentation(self):
+        game = Game()
+        game.play(7, 7)  # WHITE
+        moves = [(6, 7), (7, 6), (8, 7)]
+        context = _RootContext(game.legal_moves(), SearchDiagnostics())
+        diag = SearchDiagnostics()
+
+        def exhausted(_game, _move, _player, _opponent, *, max_fours,
+                      node_limit, budget):
+            budget.used += budget.remaining
+            budget.remaining = 0
+            budget.exhausted = True
+            return False, None, True
+
+        with patch("search.mcts_v7._has_four_material", return_value=False), \
+             patch("search.mcts_v7._candidate_changes_black_legality",
+                   return_value=True), \
+             patch("search.mcts_v7._candidate_allows_vcf",
+                   side_effect=exhausted), \
+             patch("search.mcts_v7._own_four_creators") as creators:
+            ranked = _apply_vcf_safety(
+                game, context, moves, diag, max_fours=10, node_limit=4000,
+                precheck_node_limit=8000, total_node_limit=8000,
+            )
+        creators.assert_not_called()
+        self.assertEqual(ranked, moves)
+        self.assertFalse(diag.v7_safety_augmented)
+        self.assertTrue(diag.v7_safety_budget_exhausted)
+
+    def test_safety_unverified_augmentation_is_not_added(self):
+        game = Game()
+        game.play(7, 7)  # WHITE
+        moves = [(6, 7), (7, 6)]
+        extra = (0, 0)
+        context = _RootContext(game.legal_moves(), SearchDiagnostics())
+
+        def run(extra_status):
+            diag = SearchDiagnostics()
+            statuses = {moves[0]: (False, None, True),
+                        moves[1]: (False, None, True),
+                        extra: extra_status}
+            with patch("search.mcts_v7._has_four_material",
+                       return_value=False), \
+                 patch("search.mcts_v7._candidate_changes_black_legality",
+                       return_value=True), \
+                 patch("search.mcts_v7._candidate_allows_vcf",
+                       side_effect=lambda _g, m, *_a, **_k: statuses[m]), \
+                 patch("search.mcts_v7._own_four_creators",
+                       return_value={extra}):
+                ranked = _apply_vcf_safety(
+                    game, context, moves, diag, max_fours=10,
+                    node_limit=4000, precheck_node_limit=8000,
+                    total_node_limit=8000,
+                )
+            return ranked, diag
+
+        ranked, diag = run((False, None, True))
+        self.assertEqual(ranked, moves)
+        self.assertFalse(diag.v7_safety_augmented)
+
+        ranked, diag = run((False, None, False))
+        # Verified-safe augmentation leads, total stays at the V6 count.
+        self.assertEqual(ranked, [extra, moves[0]])
+        self.assertTrue(diag.v7_safety_augmented)
+
+    def test_self_forbidden_penalty_stays_inside_m2_tiers(self):
+        game = Game()
+        safe_penalized, safe_normal = (1, 1), (1, 2)
+        unverified = (2, 2)
+
+        def risky(_game, _minimum_white):
+            # Only the safe_penalized move creates a new risky point.
+            return {(9, 9)} if _game.board[1][1] == BLACK else set()
+
+        diag = SearchDiagnostics()
+        with patch("search.mcts_v7._risky_black_forbidden_points",
+                   side_effect=risky):
+            ranked = _penalize_within_tiers(
+                game, [[safe_penalized, safe_normal], [unverified]], diag,
+                minimum_white=3,
+            )
+        self.assertEqual(ranked, [safe_normal, safe_penalized, unverified])
+        self.assertEqual(diag.v7_self_forbidden_penalized, 1)
 
     def test_seeded_determinism_and_state(self):
         game = _game(FIXTURES["seed44-g009-p039"])
