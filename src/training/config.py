@@ -41,6 +41,7 @@ DEFAULTS: dict = {
         'replay_capacity': 10000,
         'init_checkpoint': None,
         'keep_checkpoints': 3,
+        'keep_every': None,        # also keep every K-th generation checkpoint (execution only)
         'grad_clip': None,
     },
     'self_play': {
@@ -76,7 +77,7 @@ DEFAULTS: dict = {
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
     ('device',), ('torch_threads',), ('output',),
-    ('training', 'generations'), ('training', 'keep_checkpoints'),
+    ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
     ('training', 'init_checkpoint'),
 )
 
@@ -141,6 +142,8 @@ def validate_config(config: dict) -> dict:
     for key in ('generations', 'games_per_generation', 'batch_size', 'steps_per_generation',
                 'replay_capacity', 'keep_checkpoints'):
         _int(t[key], f'training.{key}')
+    if t.get('keep_every') is not None:
+        _int(t['keep_every'], 'training.keep_every')
     if t['init_checkpoint'] is not None and not isinstance(t['init_checkpoint'], str):
         raise ConfigError('training.init_checkpoint must be null or a path')
     if t['grad_clip'] is not None:

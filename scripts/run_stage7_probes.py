@@ -74,6 +74,11 @@ def main() -> int:
     parser.add_argument('--generations', type=int, nargs='+',
                         help='with --run-dir: only these checkpoint generations')
     parser.add_argument('--probes', type=Path, default=DEFAULT_PROBES)
+    parser.add_argument('--suffix', default='',
+                        help='with --run-dir: write probes/genNNN<suffix>.json (e.g. _defense '
+                             'for tests/fixtures/stage7_probes_defense_v1.json)')
+    parser.add_argument('--skip-existing', action='store_true',
+                        help='with --run-dir: skip generations whose output already exists')
     parser.add_argument('--output', type=Path,
                         help='with --checkpoint: output JSON (default: print only)')
     args = parser.parse_args()
@@ -95,8 +100,11 @@ def main() -> int:
     out_dir = args.run_dir / 'probes'
     out_dir.mkdir(parents=True, exist_ok=True)
     for generation, path in run_checkpoints(args.run_dir, args.generations):
+        target = out_dir / f'gen{generation:03d}{args.suffix}.json'
+        if args.skip_existing and target.exists():
+            continue
         result = run_probe_file(path, args.probes)
-        (out_dir / f'gen{generation:03d}.json').write_text(
+        target.write_text(
             json.dumps(result, indent=1), encoding='utf-8')
         print(summary_line(result), flush=True)
     print(f'wrote {out_dir}')

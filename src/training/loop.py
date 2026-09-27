@@ -70,7 +70,8 @@ def save_generation_checkpoint(state: TrainingState, checkpoint_dir: Path) -> Pa
     path = checkpoint_dir / generation_checkpoint_name(state.generation)
     state.source_checkpoint_hash = save_atomic(path, build_checkpoint(state))
     copy_atomic(path, checkpoint_dir / LATEST_NAME)
-    prune_checkpoints(checkpoint_dir, state.config['training']['keep_checkpoints'])
+    prune_checkpoints(checkpoint_dir, state.config['training']['keep_checkpoints'],
+                      state.config['training'].get('keep_every'))
     return path
 
 

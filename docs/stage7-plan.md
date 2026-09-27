@@ -340,6 +340,33 @@ PUCT v2 규칙(`search.tactics.tactical_filter`):
 
 같은 PC에서 두 arm을 동시에 돌리면 시간 지표가 서로 오염되므로 시간 비교는 하지 않고, 기력·probe만 비교한다.
 
+### 8.4 Stage 7-B 결과와 Stage 7-C 장기 continuation
+
+7-B 결과(gen 30, 외부 평가 상대별 10판): network 자체(v1 search)에서 B가 A보다 Tactical 14/20 대 5/20
+(gen 20+30, p=0.005). MCTS-v2 상대 차이(B 3/10 대 A 1/10)는 아직 유의하지 않고, v321/v7에는 두 arm 모두 전패.
+A는 v2 search로 평가할 때만 좋아져 규모 확대만으로는 network 향상이 없었다. B self-play는 후반 흑 85%·평균 21수로
+치우쳤는데, PUCT v2가 4는 막지만 **열린 3 방어(2수 앞)는 규칙 범위 밖**이기 때문이다(무작위 network, 800
+simulations에서도 v2 방어 2/10).
+
+**결정: 탐색 규칙은 v2(1수 사실)에서 고정한다.** 열린 3 방어·VCT·VCF를 규칙으로 계속 추가하면 AlphaZero search가
+MCTS-v5~v7의 강제정책을 재구현하게 되어 network가 배울 몫과 V7 대비 측정의 독립성이 사라진다. 2수 이상의 전술은
+self-play 학습으로 해결되는지 먼저 확인한다(공격 policy가 배워지면 상대 탐색이 그 응수를 먼저 방문하므로
+방어도 따라 배워질 수 있다).
+
+Stage 7-C: 두 arm을 같은 설정 그대로 gen 30 → 110까지 이어간다(각 +80 generation, +1,280 self-play games).
+
+- `configs/stage7c_b_rules_long.yaml`, `configs/stage7c_a_scale_long.yaml`: 7-B 설정과 critical hash가 같고
+  `generations`, `keep_checkpoints: 5`, `keep_every: 10`(새 실행 제어 키), `run_name`만 다르다. 7-B run의
+  **복사본**을 resume한다.
+- 비교는 같은 generation(= 같은 self-play 판수)의 checkpoint끼리 한다(gen 40…110, 10 간격 보존).
+- 측정 추가(규칙 아님): `tests/fixtures/stage7_probes_defense_v1.json`(`must_defend_open3` 40국면, 흑/백 20씩;
+  상대의 열린 4·4-4 생성수를 없애는 수만 정답, 반격용 4가 없는 국면만). `run_stage7_probes.py --probes ... --suffix _defense`.
+- `scripts/summarize_stage7_runs.py`: metrics를 10-gen 묶음 표(흑 승률, 길이, 재사용, loss, in-loop 평가)로 요약.
+
+판단 기준: B의 self-play 흑 승률이 내려오고(평균 길이 증가), `must_defend_open3` probe와 v1 search 외부 평가
+(Tactical·MCTS-v2 각 50판)가 오르면 v2 경계를 확정한다. gen 110에서도 변화가 없으면 V7 기보 지도학습 초기화(선택지 c)
+또는 Stage 8 규모 확대를 **명시적으로** 선택한다.
+
 ## 9. FPU 단일 변수 실험
 
 현재 PUCT v1은 미방문 child Q를 0으로 고정한다. 적은 simulation 환경에서는 이 선택이 탐색 폭에
