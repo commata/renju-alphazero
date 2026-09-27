@@ -1,6 +1,6 @@
 # Renju AlphaZero
 
-렌주 규칙 엔진, Random/Tactical 기준선, 동결된 **순수 MCTS-v6 benchmark**, 정책·가치 신경망을 기반으로 AlphaZero PUCT/self-play/학습 파이프라인을 단계적으로 구현하는 프로젝트입니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
+렌주 규칙 엔진, Random/Tactical 기준선, 동결된 **classical MCTS benchmark(V6, 이후 V7 FINAL)**, 정책·가치 신경망을 기반으로 AlphaZero PUCT/self-play/학습 파이프라인을 단계적으로 구현하는 프로젝트입니다. 전체 계획은 [ROADMAP.md](ROADMAP.md)를 참고하세요.
 
 ## 현재 단계
 
@@ -9,6 +9,7 @@
 - **Stage 4 정책·가치 신경망 완료** (`feat/policy-value-network`): 버전 고정 6-plane 입력, residual policy/value, legal mask/loss, checkpoint, D4, eval tiny overfit 및 CPU benchmark. [계약·검증 결과](docs/policy-value-network.md)를 참고하세요. V5/V6 전술 계층은 학습 경로에서 재사용하지 않습니다.
 - **Stage 5 AlphaZero 탐색 결합 구현** (`feat/stage5-alphazero-search`): MCTS-v6를 확장하지 않고 `Game`/규칙 엔진과 Stage 4 모델 계약만 공유하는 **별도 AlphaZero PUCT search**(`search.alphazero`), torch-free evaluator 경계(`search.evaluator`), 정책·가치망 evaluator(`model.evaluator`), self-play `Sample`/`GameRecord`·replay·canonical hash(`training.self_play`)를 구현했습니다. terminal value/backup은 player identity 기준이며, 계약과 구현 결정·검증 결과는 [Stage 5 AlphaZero Search Integration](docs/stage5-alphazero.md)에 있습니다.
 - **Stage 6.5 MCTS-v7 동결 benchmark** (`feat/mcts-v7-benchmark`): V6를 수정하지 않고 VCF(M1), 상대 VCF 안전 필터(M2), 흑 자기 금수점 감점(M3), Stage 4 동률 규칙(M4)을 별도 V7에 추가해 `V7_FINAL`로 동결했습니다. seed 6507, 오프닝 50쌍 색 교환 100판에서 V7 vs V6 89승 2무 9패(score 0.90), V7 vs V5 FINAL 86승 2무 12패(score 0.87), 평균 착수 시간은 상대의 1.16배입니다. [MCTS-v7 명세·검증 기록](docs/mcts-v7.md)
+- **Stage 7 그램 검증 진행 중** (`feat/stage7-validation`): Stage 6 설정을 바꾸지 않은 gen 3 → 30 continuation, 고정 tactical/value probe(`scripts/run_stage7_probes.py`), 학습 루프 밖 MCTS-v7 checkpoint 평가(`scripts/run_stage7_checkpoint_eval.py`). [Stage 7 계획](docs/stage7-plan.md)
 - **Stage 6 자기대국·학습 루프 구현** (`feat/stage6-training`): self-play → FIFO replay buffer → D4 augmentation → policy/value 학습 → 평가(Random/Tactical/previous/MCTS-v6 smoke) → 원자적 checkpoint → resume. 연속 실행과 중단·재개 실행의 최종 상태·기보가 정확히 일치함을 확인했습니다. 기력 향상 주장은 없습니다. [Stage 6 Training Loop](docs/training.md)
 
 과거 버전(V2~V5)은 비교 재현을 위해 덮어쓰지 않고 별도 Agent로 보존합니다. 설계와 측정 기록은 [docs/mcts.md](docs/mcts.md)에 있습니다.
@@ -250,13 +251,13 @@ python scripts/run_mcts_v6_vs_v5.py --games 5 --seed 42
 | V6 vs V5 FINAL (post-RIF smoke) | seed 777, 10판: 6승 2패 2무, score 70.0% |
 | 결정성 (post-RIF) | seed 777 10판 2회 실행 SHA256 `fd3f8ee6...851d0f` 일치 |
 
-MCTS-v6는 이후 신경망 체크포인트의 성장 정도를 측정하는 **고정 benchmark opponent**로 동결합니다.
+MCTS-v6는 고정 benchmark opponent로 동결되어 있으며, Stage 6.5부터 신경망 체크포인트의 classical benchmark는 동결된 **MCTS-v7 FINAL**([docs/mcts-v7.md](docs/mcts-v7.md))입니다.
 기존 100판 승패와 기존 seed 777 SHA는 RIF exact-five 교정 이전 측정값입니다. 교정 후 seed 777 10판을 두 번 실행해 `(winner, history)` SHA256이 동일함을 확인했으며, `fd3f8ee61cb954c7c91249eeb79f420b5829c43f361f50e1055ebfbafa851d0f`를 post-RIF 결정성 baseline으로 사용합니다.
 세부 기록은 [docs/mcts.md](docs/mcts.md)의 "Stage 3 Final Baseline"을 참고하세요.
 
 ## 로컬 웹 대국
 
-브라우저에서 V3.2.1 / V4.1 / V4.2 / V5 FINAL / V6와 직접 대국할 수 있습니다.
+브라우저에서 V3.2.1 / V4.1 / V4.2 / V5 FINAL / V6 / V7 FINAL과 직접 대국할 수 있습니다.
 외부 패키지 없이 Python 표준 라이브러리 서버를 사용합니다.
 
 ```bash
