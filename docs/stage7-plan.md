@@ -9,9 +9,15 @@ Stage 7의 목적은 강한 최종 모델을 만드는 것이 아니다. Stage 6
 
 ## 1. 기준선과 변경 원칙
 
-- 기준선: Stage 6 완료 태그 `v0.4-training`.
+- 코드 기준선: MCTS-v7 동결을 포함한 main `6f00c13` (Stage 6 학습 코드는 태그 `v0.4-training`과 동일).
+- 학습 기준선: Stage 6 증거 run `stage6_mvp_A` / `stage6_mvp_B` (generation 3, global_step 150,
+  replay 1,035). 두 run은 연속 실행과 중단·재개 재현성의 증거물이므로 **원본은 수정하지 않는다.**
 - PUCT v1은 Stage 7-A에서 알고리즘적으로 변경하지 않는다.
-- MCTS-v6는 frozen benchmark로만 사용하고 AlphaZero search에 전술 정책을 주입하지 않는다.
+- **Classical benchmark는 MCTS-v7 FINAL**(Stage 6.5 동결, [mcts-v7.md](mcts-v7.md))이다.
+  classical 엔진은 AlphaZero search에 전술 정책을 주입하지 않고 평가 상대로만 쓴다.
+- 학습 루프 내부 평가(`evaluation.mcts_v6`)는 Stage 6과의 연속성 때문에 그대로 둔다.
+  `evaluation`은 critical config이므로 V7로 바꾸면 resume이 거부된다. **V7 평가는 학습 루프 밖의
+  checkpoint 평가**(§3.4)로만 수행한다.
 - 의미보존 최적화와 탐색 알고리즘 변경은 같은 PR에 섞지 않는다.
 - 한 generation의 2~4판 W/L/D를 기력 향상으로 해석하지 않는다.
 - 장시간/대규모 self-play는 Stage 8에서 시작한다.
@@ -32,6 +38,24 @@ replay_capacity = 10000
 추가 27 generations × 4 games = 108 games이며, Stage 6의 12 games를 포함해 총 약 120
 self-play games다. 이 규모는 기력 결론이 아니라 장기 실행 안정성과 초기 추세를 보는 데 사용한다.
 
+설정은 `configs/stage7a_continuation.yaml`이다. `configs/stage6_mvp.yaml`과 비교해 execution-control
+키(`training.generations: 30`, `training.keep_checkpoints: 32`, `output.run_name`)만 다르고
+critical config hash는 동일하다(`tests/test_stage7_foundation.py`). `keep_checkpoints: 32`는 gen 3~30
+checkpoint를 모두 남겨 probe와 외부 평가에 쓰기 위한 값이다.
+
+`--resume`은 checkpoint 경로의 부모 run 디렉터리에 이어 쓰므로, Stage 6 run을 **복사한 뒤 복사본의
+`latest.pt`로 resume**한다. 원본이 변경되지 않음은 같은 테스트에서 확인한다.
+
+```powershell
+Copy-Item -Recurse runs\stage6_mvp_B runs\stage7a
+python scripts/run_stage6_training.py --config configs/stage7a_continuation.yaml `
+  --resume runs\stage7a\checkpoints\latest.pt
+```
+
+학습 중에는 profile, 외부 평가, 다른 benchmark를 **동시에 실행하지 않는다.** 같은 장비에서 동시에
+돌리면 self-play/학습 시간 지표와 profile이 서로 오염된다. probe와 외부 평가는 continuation 종료 후
+저장된 checkpoint에 대해 실행한다.
+
 ### 2.1 Stage 7-A 핵심 지표
 
 - crash, NaN/Inf, illegal move/policy mass
@@ -47,7 +71,33 @@ Random/Tactical의 단일 generation 결과나 Tactical 1승을 milestone으로 
 
 ## 3. Tactical / Value Probe
 
-기존 Stage 3~6 테스트 fixture의 전술 국면을 정식 probe로 재구성한다.
+구현: probe set `tests/fixtures/stage7_probes_v1.json`(`stage7-probes-v1`, 178국면),
+생성기 `scripts/build_stage7_probes.py`, 측정 `src/training/probes.py`,
+실행 `scripts/run_stage7_probes.py`(run의 모든 `checkpoint_genNNN.pt` → `<run>/probes/genNNN.json`).
+
+| kind | 출처 | policy 정답 | value 부호 |
+|---|---|---|---|
+| `immediate_win` (40) | MCTS-v7 benchmark 200판의 모든 국면 | 모든 합법 승리수(규칙 엔진 exact) | + |
+| `must_block` (40) | 〃 | 상대의 유일한 승리점 | 없음 |
+| `forced_loss` (40) | 〃 (상대 승리점 2개 이상, 내 즉시 승리 없음) | 없음 | − |
+| `vcf` (40) | seed 44 VCF 회귀 fixture | VCF를 시작하는 **모든** 첫 수(보수적 VCF solver, 20개 4·20,000 node) | + |
+| `avoid` (18) | seed 44 `losing_move_allows_vcf` | 기록된 패배수에 준 mass (낮을수록 좋음) | 없음 |
+
+각 kind는 흑/백 차례를 최대한 반씩 뽑고, 위치 SHA-256 순으로 결정적으로 선택한다. 테스트는 생성기와
+독립적으로 규칙 엔진에서 라벨을 다시 계산해 대조한다.
+
+주의 — 설계 결정:
+
+- **흑 금수는 policy 정답으로 쓰지 않는다.** 엔진의 `legal_moves()`가 금수를 이미 제외하고 같은 mask가
+  입력 plane과 policy mask에 쓰이므로 masked policy의 금수 mass는 항상 0이다. 대신
+  `forbidden_diagnostic`에서 **mask 전 softmax**가 금수점에 주는 mass를 균등 분포 대비 배율로 기록한다.
+- 초기 network는 거의 균등하므로 절대 mass 대신 **`mass_lift = correct_mass / uniform_mass`**
+  (`uniform_mass = |정답| / |합법수|`)를 핵심 학습 신호로 본다. 1.0이 무작위 수준이다.
+- value는 한쪽 부호로 치우친 head가 한 kind에서 100%를 받을 수 있으므로, 핵심 value 지표는 kind를 합친
+  `value_overall.separation`(승리 라벨 평균 − 패배 라벨 평균)과 `balanced_sign_accuracy`다.
+- D4 증강은 v1에서 사용하지 않는다(필요하면 v2에서 state와 정답 집합을 함께 변환).
+
+아래 §3.1~3.3은 원래 요구사항이며 위 구현이 이를 충족한다.
 
 ### 3.1 Policy probe
 
@@ -83,6 +133,19 @@ value sign 정답은 결과가 실제로 확실한 국면에만 부여한다.
 - probe set version을 기록한다.
 - D4 변환 사용 시 state와 정답 수 집합을 함께 변환하고 중복을 제거한다.
 - checkpoint 비교에서는 동일 probe set을 사용한다.
+
+### 3.4 외부 checkpoint 평가 (MCTS-v7 포함)
+
+`scripts/run_stage7_checkpoint_eval.py`는 학습 루프 밖에서 checkpoint를 고정 classical 상대와 대국시킨다.
+모델은 루프 내부 평가와 같은 결정적 PUCT(noise OFF, temperature 0, checkpoint의 `puct_simulations`)를 쓴다.
+
+- 오프닝과 상대 seed는 `(seed, opponent, pair)`에서만 파생하고 **generation과 무관**하다. 모든 checkpoint가
+  같은 오프닝·같은 상대를 만나므로 generation 간 비교가 가능하다.
+- 상대 사다리(약→강): `random`, `tactical`, `mcts_v2`(순수 MCTS), `mcts_v321`, `mcts_v5`, `mcts_v6`,
+  `mcts_v7`. V7은 V6 상대 score 0.90이므로 초기 checkpoint는 V7에 전패할 가능성이 높다. 신호는 probe와
+  중간 사다리(`mcts_v2`, `mcts_v321`)에서 먼저 본다.
+- 권장: gen 3/10/20/30에서 `--opponents mcts_v2 mcts_v321 mcts_v7 --pairs 5`(상대별 10판).
+  경쟁력이 보이기 시작하면 판수를 늘린다. 결과는 `<run>/external_eval/genNNN.json`.
 
 ## 4. PUCT profile 분해
 
