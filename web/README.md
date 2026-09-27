@@ -31,8 +31,9 @@ python scripts/run_web_play.py --port 8080
 - MCTS V4.2
 - MCTS V5 FINAL
 - MCTS V6
+- MCTS V7 FINAL (기본 선택)
 
-V5 FINAL과 V6는 현재 코드의 `V5_FINAL` 설정을 그대로 사용합니다.
+V5 FINAL과 V6는 현재 코드의 `V5_FINAL` 설정을, V7은 동결된 `V7_FINAL` 설정을 그대로 사용합니다.
 
 ## 동작
 
@@ -41,7 +42,8 @@ V5 FINAL과 V6는 현재 코드의 `V5_FINAL` 설정을 그대로 사용합니�
 - 사람이 백이면 새 게임 직후 AI가 흑 첫 수를 둠
 - 사람 착수는 기존 `Game.play()`로 검증하므로 흑 33/44/장목 금수도 기존 엔진과 동일하게 처리
 - AI는 기존 Agent의 `select_move()`를 그대로 호출
-- V5/V6는 최근 forced stage, simulation mode, V6 threat reason 등 일부 diagnostics를 화면에 표시
+- V5/V6/V7은 최근 forced stage, simulation mode, V6 threat reason 등 일부 diagnostics를 화면에 표시
+- V7은 자기 VCF 발견(M1), 상대 VCF 안전 필터(M2) 제거/판정 보류 수, 흑 자기 금수 감점(M3), Stage 4 동률 규칙(M4), 모듈 시간도 표시
 
 이 서버는 단일 로컬 브라우저 세션용입니다. 다중 사용자/배포 서버 용도가 아닙니다.
 
@@ -57,7 +59,7 @@ logs/web_play/<timestamp>_<version>_human-<color>_seed<seed>/
 
 `game.json`에는 상대 버전, seed, 사람 색상, 승자/결과, 전체 착수, AI 착수별 diagnostics, 최종 보드가 저장됩니다.
 
-`moves.csv`에는 각 수의 좌표와 AI 계산 시간, forced stage, simulation mode, selected simulations, V6 threat reason 등 분석에 자주 쓰는 필드를 평탄화해서 저장합니다.
+`moves.csv`에는 각 수의 좌표와 AI 계산 시간, forced stage, simulation mode, selected simulations, V6 threat reason, V7 모듈 발동 여부 등 분석에 자주 쓰는 필드를 평탄화해서 저장합니다.
 
 로그는 **대국이 정상적으로 종료된 경우에만** 저장됩니다. 진행 중에 새 게임을 누르거나 서버를 종료한 미완료 대국은 저장하지 않습니다. 저장이 완료되면 웹 화면 상태 영역에 실제 저장 경로가 표시됩니다.
 

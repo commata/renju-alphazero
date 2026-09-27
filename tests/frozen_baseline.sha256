@@ -10,3 +10,9 @@ a3619de6f21b9b8ce52ebe3d9ca2feb9fb55e0d5771362b0c7b711a33fade98e  src/search/mct
 ec51e7130f2380266fa28cd8eeb7e5c0bee86e14a6c0c4c1c90b5a7c1a7998fc  src/search/mcts_v6.py
 ed55fb44bd00ed620ea650eee528c0a6865abc0304a9dca9d793bd95fc02f3ab  src/search/threat_patterns.py
 25678c557f8357a5f593739d2cfc8c801897f0e87496590c1492bb78035c6113  src/search/threat_planning.py
+# Stage 6.5 frozen MCTS-v7 benchmark (V7_FINAL, frozen at 24a755f after the
+# seed 6507 V7-vs-V6 / V7-vs-V5 100-game gate). mcts_v7 imports only frozen
+# V5/V6 search modules above; the V7 agent subclasses the V6 agent.
+e290e0fd807e1dd62c2744255948ecbf5e2d7ac2ff3209b833e29da5f550f93a  src/search/mcts_v7.py
+77595e89599112e150e4ad229f1f4ebd68b205b047c86ffc3b60e234b4c556f4  src/agents/mcts_v7_agent.py
+70abb4c0a3d7023e4174ef2498e302196fca74ee406164e859351529150c1541  src/agents/mcts_v6_agent.py

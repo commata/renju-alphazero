@@ -8,6 +8,7 @@
 - **Stage 3 최종 baseline: MCTS-v6** — RIF exact-five 우선순위 교정 전 기준으로 회귀 테스트 147/147 PASS, V5 FINAL 상대 100판 48승 38패 14무(score 55.0%). 에이전트 버전은 고정 비교 상대로 보존합니다. 교정 후 seed 777 10판 smoke에서는 6승 2패 2무(score 70.0%)를 관측했으며, 이는 새 장기 승률이 아니라 현재 규칙 기준 smoke baseline입니다.
 - **Stage 4 정책·가치 신경망 완료** (`feat/policy-value-network`): 버전 고정 6-plane 입력, residual policy/value, legal mask/loss, checkpoint, D4, eval tiny overfit 및 CPU benchmark. [계약·검증 결과](docs/policy-value-network.md)를 참고하세요. V5/V6 전술 계층은 학습 경로에서 재사용하지 않습니다.
 - **Stage 5 AlphaZero 탐색 결합 구현** (`feat/stage5-alphazero-search`): MCTS-v6를 확장하지 않고 `Game`/규칙 엔진과 Stage 4 모델 계약만 공유하는 **별도 AlphaZero PUCT search**(`search.alphazero`), torch-free evaluator 경계(`search.evaluator`), 정책·가치망 evaluator(`model.evaluator`), self-play `Sample`/`GameRecord`·replay·canonical hash(`training.self_play`)를 구현했습니다. terminal value/backup은 player identity 기준이며, 계약과 구현 결정·검증 결과는 [Stage 5 AlphaZero Search Integration](docs/stage5-alphazero.md)에 있습니다.
+- **Stage 6.5 MCTS-v7 동결 benchmark** (`feat/mcts-v7-benchmark`): V6를 수정하지 않고 VCF(M1), 상대 VCF 안전 필터(M2), 흑 자기 금수점 감점(M3), Stage 4 동률 규칙(M4)을 별도 V7에 추가해 `V7_FINAL`로 동결했습니다. seed 6507, 오프닝 50쌍 색 교환 100판에서 V7 vs V6 89승 2무 9패(score 0.90), V7 vs V5 FINAL 86승 2무 12패(score 0.87), 평균 착수 시간은 상대의 1.16배입니다. [MCTS-v7 명세·검증 기록](docs/mcts-v7.md)
 - **Stage 6 자기대국·학습 루프 구현** (`feat/stage6-training`): self-play → FIFO replay buffer → D4 augmentation → policy/value 학습 → 평가(Random/Tactical/previous/MCTS-v6 smoke) → 원자적 checkpoint → resume. 연속 실행과 중단·재개 실행의 최종 상태·기보가 정확히 일치함을 확인했습니다. 기력 향상 주장은 없습니다. [Stage 6 Training Loop](docs/training.md)
 
 과거 버전(V2~V5)은 비교 재현을 위해 덮어쓰지 않고 별도 Agent로 보존합니다. 설계와 측정 기록은 [docs/mcts.md](docs/mcts.md)에 있습니다.
@@ -40,9 +41,10 @@ job 이름을 그대로 사용할 수 있도록 matrix를 쓰지 않습니다.
   skip은 사유가 정확히 `requires torch`인 neural 테스트만 허용합니다.
 - `full-tests`: Python 3.13 + 고정 CPU torch 2.14.0에서 전체 회귀를 실행하며 **skip 0**을 강제합니다.
 - `fake-smoke`: uniform evaluator, seed 42, 8 simulations의 Stage 5 game SHA256을 golden 값과 비교합니다.
-- `frozen-baseline`: V5/V6/threat 구현 파일 SHA-256 잠금과 seed 777, 1 game per color,
+- `frozen-baseline`: V5/V6/V7/threat 구현 파일 SHA-256 잠금과 seed 777, 1 game per color,
   reduced simulation budget의 V6-vs-V5 outcome/history fingerprint
-  `91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44`를 검증합니다. 기존 post-RIF 10게임 `fd3f8ee6...851d0f`는 장기 검증 기록으로
+  `91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44`, 같은 조건의 V7-vs-V6 fingerprint
+  `97cd4ec06ca2842c2cef9b932f4000c7941287775cfcdfe0b6dcaf06cddd1488`를 검증합니다. 기존 post-RIF 10게임 `fd3f8ee6...851d0f`는 장기 검증 기록으로
   문서에 계속 보존합니다.
 
 CI 러너는 테스트 개수를 하드코딩하지 않습니다.
@@ -51,6 +53,7 @@ CI 러너는 테스트 개수를 하드코딩하지 않습니다.
 python scripts/ci_run_tests.py --skip-policy none
 python scripts/check_frozen_baseline.py
 python scripts/ci_v6_behavior.py --expect-sha256 91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44
+python scripts/ci_v7_behavior.py --expect-sha256 97cd4ec06ca2842c2cef9b932f4000c7941287775cfcdfe0b6dcaf06cddd1488
 python scripts/run_stage5_self_play.py --seed 42 --simulations 8 \
   --expect-sha256 7e1b04a0fedc3e8c11a22069222ecbf4dbcfb74f0efe3907c9dcfead124b4510
 ```

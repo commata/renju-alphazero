@@ -35,6 +35,23 @@ class WebPlayTest(unittest.TestCase):
         self.assertEqual(agent.neighborhood_radius, 2)
         self.assertEqual(agent.priority_top_k, 8)
 
+    def test_v7_uses_frozen_final_configuration_and_reports_diagnostics(self):
+        from search.mcts_v7 import V7_FINAL
+
+        agent = create_agent("v7", seed=7)
+        for key, value in V7_FINAL.items():
+            self.assertEqual(getattr(agent, key), value, key)
+
+        session = PlaySession()
+        state = session.reset(agent_key="v7", human_color=WHITE, seed=7)
+        self.assertEqual(state["agent_key"], "v7")
+        state = session.play_human(7, 8)
+        self.assertEqual(state["move_count"], 3)
+        diagnostics = session.move_records[-1]["diagnostics"]
+        self.assertEqual(session.move_records[-1]["actor"], "MCTS-v7")
+        self.assertIn("v7_own_vcf_found", diagnostics)
+        self.assertIn("v7_module_seconds", diagnostics)
+
     def test_completed_game_is_saved_once_as_json_and_csv(self):
         with TemporaryDirectory() as tmp:
             session = PlaySession(log_root=Path(tmp))

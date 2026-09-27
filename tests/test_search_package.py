@@ -15,6 +15,7 @@ class SearchLazyExportTest(unittest.TestCase):
         'MCTSNode': 'mcts', 'mcts_search': 'mcts', 'mcts_search_v3': 'mcts_v3',
         'mcts_search_v32': 'mcts_v32', 'mcts_search_v321': 'mcts_v321',
         'mcts_search_v4': 'mcts_v4', 'mcts_search_v5': 'mcts_v5', 'mcts_search_v6': 'mcts_v6',
+        'mcts_search_v7': 'mcts_v7',
     }
 
     def test_all_names_importable_and_identical(self):
@@ -40,7 +41,7 @@ class SearchLazyExportTest(unittest.TestCase):
     def test_package_import_is_lazy(self):
         loaded = _loaded_modules('import search')
         self.assertIn('search', loaded)
-        for name in ('search.mcts', 'search.mcts_v5', 'search.mcts_v6',
+        for name in ('search.mcts', 'search.mcts_v5', 'search.mcts_v6', 'search.mcts_v7',
                      'search.threat_patterns', 'search.threat_planning'):
             self.assertNotIn(name, loaded)
 

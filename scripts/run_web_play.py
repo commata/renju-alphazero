@@ -36,6 +36,7 @@ from agents import (  # noqa: E402
     MCTSV42Agent,
     MCTSV5Agent,
     MCTSV6Agent,
+    MCTSV7Agent,
 )
 from renju import BLACK, WHITE, Game, IllegalMove  # noqa: E402
 from renju.game import OPENING_MOVE  # noqa: E402
@@ -48,6 +49,7 @@ VERSION_LABELS = {
     "v42": "MCTS V4.2",
     "v5": "MCTS V5 FINAL",
     "v6": "MCTS V6",
+    "v7": "MCTS V7 FINAL",
 }
 
 
@@ -65,6 +67,8 @@ def create_agent(version: str, *, seed: int = 42):
         return agent
     if version == "v6":
         return MCTSV6Agent(seed=seed)
+    if version == "v7":
+        return MCTSV7Agent(seed=seed)
     raise ValueError(f"unknown MCTS version: {version}")
 
 
@@ -94,7 +98,7 @@ def _json_value(value: Any):
 
 
 def _diagnostics(agent) -> dict[str, Any]:
-    """Return only the small fields useful while manually testing V5/V6."""
+    """Return only the small fields useful while manually testing V5/V6/V7."""
     diagnostics = getattr(agent, "diagnostics", None)
     if diagnostics is None:
         return {}
@@ -120,6 +124,20 @@ def _diagnostics(agent) -> dict[str, Any]:
         "black_43_defense_complete_candidates",
         "planner_forced_plan_conflicts",
         "planner_forced_plan_preserved",
+        "v7_own_vcf_found",
+        "v7_own_vcf_length",
+        "v7_own_vcf_nodes",
+        "v7_safety_checked",
+        "v7_safety_removed",
+        "v7_safety_inconclusive",
+        "v7_safety_augmented",
+        "v7_safety_fallback",
+        "v7_safety_nodes",
+        "v7_safety_budget_exhausted",
+        "v7_self_forbidden_penalized",
+        "v7_stage4_tiebreak_applied",
+        "v7_stage4_vcf_nodes",
+        "v7_module_seconds",
     }
     if is_dataclass(diagnostics):
         available = {field.name for field in fields(diagnostics)}
@@ -144,7 +162,7 @@ class PlaySession:
         self.lock = Lock()
         self.log_root = Path(log_root) if log_root is not None else LOG_ROOT
         self.game = Game()
-        self.agent_key = "v6"
+        self.agent_key = "v7"
         self.agent = create_agent(self.agent_key)
         self.human_color = BLACK
         self.seed = 42
@@ -297,7 +315,9 @@ class PlaySession:
                 "ply", "player", "actor", "row0", "col0", "row", "col", "seconds",
                 "forced_policy_stage", "simulation_mode", "selected_simulations",
                 "best_root_tactical_score", "v6_selected_threat_type",
-                "v6_selected_reasons",
+                "v6_selected_reasons", "v7_own_vcf_found", "v7_safety_removed",
+                "v7_safety_inconclusive", "v7_self_forbidden_penalized",
+                "v7_stage4_tiebreak_applied", "v7_module_seconds",
             ])
             writer.writeheader()
             for record in self.move_records:
@@ -320,6 +340,16 @@ class PlaySession:
                         diagnostics.get("v6_selected_reasons", []),
                         ensure_ascii=False,
                     ),
+                    "v7_own_vcf_found": diagnostics.get("v7_own_vcf_found"),
+                    "v7_safety_removed": diagnostics.get("v7_safety_removed"),
+                    "v7_safety_inconclusive": diagnostics.get("v7_safety_inconclusive"),
+                    "v7_self_forbidden_penalized": diagnostics.get(
+                        "v7_self_forbidden_penalized"
+                    ),
+                    "v7_stage4_tiebreak_applied": diagnostics.get(
+                        "v7_stage4_tiebreak_applied"
+                    ),
+                    "v7_module_seconds": diagnostics.get("v7_module_seconds"),
                 })
 
         self.last_log_dir = log_dir
@@ -389,7 +419,7 @@ class Handler(BaseHTTPRequestHandler):
                 color = str(payload.get("human_color", "BLACK")).upper()
                 human_color = BLACK if color == "BLACK" else WHITE if color == "WHITE" else 0
                 state = SESSION.reset(
-                    agent_key=str(payload.get("agent", "v6")),
+                    agent_key=str(payload.get("agent", "v7")),
                     human_color=human_color,
                     seed=int(payload.get("seed", 42)),
                 )
