@@ -33,6 +33,11 @@ class SearchConfig:
     dirichlet_epsilon: float = 0.25
     noise_enabled: bool = True
     evaluator_batch_size: int = 1
+    # Stage 7 experiment option. None keeps the Stage 5 rule (unvisited child Q = 0)
+    # and is omitted from to_dict(), so every existing config hash is unchanged.
+    # A number r uses parent-relative FPU: unvisited Q = (parent value) - r, where the
+    # parent value is the root NN value at the root and -parent.q elsewhere.
+    fpu_reduction: float | None = None
 
     def __post_init__(self):
         def positive_int(name):
@@ -65,10 +70,15 @@ class SearchConfig:
         if self.evaluator_batch_size != 1:
             # Sequential PUCT produces one leaf at a time; no virtual loss in Stage 5.
             raise ValueError('Stage 5 search evaluates leaves with batch size 1')
+        if self.fpu_reduction is not None and real('fpu_reduction') < 0:
+            raise ValueError('fpu_reduction must be non-negative')
 
     def to_dict(self) -> dict:
-        """The exact field set that is hashed into ``config_hash``."""
-        return {
+        """The exact field set that is hashed into ``config_hash``.
+
+        Optional Stage 7 fields appear only when enabled (Stage 5 hashes unchanged).
+        """
+        data = {
             'format_version': SEARCH_CONFIG_FORMAT,
             'num_simulations': self.num_simulations,
             'c_puct': float(self.c_puct),
@@ -80,6 +90,9 @@ class SearchConfig:
             'noise_enabled': self.noise_enabled,
             'evaluator_batch_size': self.evaluator_batch_size,
         }
+        if self.fpu_reduction is not None:
+            data['fpu_reduction'] = float(self.fpu_reduction)
+        return data
 
     @classmethod
     def from_dict(cls, data: dict) -> SearchConfig:
@@ -91,7 +104,7 @@ class SearchConfig:
 
 class Node:
     __slots__ = ('action', 'prior', 'visit_count', 'value_sum', 'player_who_moved', 'to_play',
-                 'children', 'is_expanded', 'is_terminal', 'terminal_value')
+                 'children', 'is_expanded', 'is_terminal', 'terminal_value', 'nn_value')
 
     def __init__(self, action: int | None, prior: float, player_who_moved: int | None):
         self.action = action
@@ -104,6 +117,7 @@ class Node:
         self.is_expanded = False
         self.is_terminal = False
         self.terminal_value: float | None = None  # to_play perspective when terminal
+        self.nn_value: float | None = None  # evaluator value at expansion (to_play view)
 
     @property
     def q(self) -> float:
@@ -137,14 +151,26 @@ def terminal_value(game, perspective: int) -> float:
     return 1.0 if game.winner == perspective else -1.0
 
 
-def puct_score(parent: Node, child: Node, c_puct: float) -> float:
-    return child.q + c_puct * child.prior * sqrt(max(1, parent.visit_count)) / (1 + child.visit_count)
+def puct_score(parent: Node, child: Node, c_puct: float, fpu_value: float = 0.0) -> float:
+    q = child.q if child.visit_count else fpu_value
+    return q + c_puct * child.prior * sqrt(max(1, parent.visit_count)) / (1 + child.visit_count)
 
 
-def select_child(node: Node, c_puct: float) -> Node:
+def fpu_value(node: Node, fpu_reduction: float | None) -> float:
+    """Q assigned to unvisited children of ``node`` (node.to_play perspective)."""
+    if fpu_reduction is None:
+        return 0.0
+    # Children Q is from node.to_play's view; node.q is from the previous mover's view.
+    base = node.nn_value if node.action is None else -node.q
+    return base - fpu_reduction
+
+
+def select_child(node: Node, c_puct: float, fpu_reduction: float | None = None) -> Node:
     """Highest PUCT; ties by larger prior, then smaller action index."""
+    fpu = fpu_value(node, fpu_reduction)
     return max(node.children.values(),
-               key=lambda child: (puct_score(node, child, c_puct), child.prior, -child.action))
+               key=lambda child: (puct_score(node, child, c_puct, fpu), child.prior,
+                                  -child.action))
 
 
 def backup(root: Node, path: list[Node], leaf_value: float, leaf_player: int) -> None:
@@ -185,7 +211,8 @@ def _expand(node: Node, game, legal_moves, evaluator: Evaluator, timing: SearchT
         action = coordinate_to_action(row, col)
         node.children[action] = Node(action, float(result.priors[action]), player)
     node.is_expanded = True
-    return float(result.value)
+    node.nn_value = float(result.value)
+    return node.nn_value
 
 
 def _legal_moves(game, timing: SearchTiming):
@@ -244,7 +271,7 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
         path: list[Node] = []
         played = 0
         while node.is_expanded and not node.is_terminal:
-            child = select_child(node, config.c_puct)
+            child = select_child(node, config.c_puct, config.fpu_reduction)
             path.append(child)
             node = child
             if child.is_terminal:
