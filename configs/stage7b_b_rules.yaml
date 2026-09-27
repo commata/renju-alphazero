@@ -1,0 +1,72 @@
+# Stage 7-B arm B (main): same scale as arm A plus the PUCT v2 teacher
+# (search.tactics: immediate win / single forced block / rule-proven win-loss).
+# Both Stage 7-B arms start from the same exported Stage 7-A gen 30 weights
+# (runs/stage7a/checkpoints/checkpoint_gen030.pt, SHA-256 1fd22c6f2144...) and are
+# identical except self_play.tactical_rules / evaluation.tactical_rules
+# (tests/test_stage7b_teacher.py). Changed from Stage 7-A on purpose, for BOTH arms:
+# games_per_generation 4 -> 16 and self-play simulations 25 -> 50. Everything else
+# (model, batch, steps, replay, optimizer, evaluation opponents) is unchanged.
+format_version: stage6-config-v1
+seed: 42
+device: cpu
+torch_threads: 1
+
+model:            # Stage 4 default architecture
+  channels: 64
+  blocks: 4
+  policy_channels: 2
+  value_channels: 1
+  value_hidden: 64
+
+training:
+  generations: 30
+  games_per_generation: 16          # Stage 7-A: 4
+  batch_size: 32
+  steps_per_generation: 50
+  replay_capacity: 10000
+  init_checkpoint: runs/stage7b_init/stage7a_gen030_weights.pt   # scripts/export_stage7_weights.py
+  keep_checkpoints: 32
+  grad_clip: null
+
+self_play:        # Stage 5 defaults except simulations
+  simulations: 50                   # Stage 7-A: 25
+  tactical_rules: true
+  c_puct: 1.5
+  tau: 1.0
+  temperature_moves: 10
+  dirichlet_alpha: 0.05
+  dirichlet_epsilon: 0.25
+  max_moves: 225  # board limit only; Stage 5 self-play has no truncation
+
+augmentation:
+  enabled: true
+
+optimizer:        # Stage 4 tiny-overfit optimizer (Adam, lr 1e-3)
+  name: adam
+  lr: 0.001
+  weight_decay: 0.0001
+  momentum: 0.0
+
+loss:
+  value_weight: 1.0
+  l2_coeff: 0.0
+
+evaluation:
+  every: 1
+  puct_simulations: 25
+  c_puct: 1.5
+  tactical_rules: true
+  opening_random_plies: 2
+  opening_radius: 2
+  random:   {black_games: 2, white_games: 2}
+  tactical: {black_games: 2, white_games: 2}
+  previous: {black_games: 2, white_games: 2}
+  mcts_v6:
+    final_generation_only: true
+    black_games: 1
+    white_games: 1
+    use_frozen_config: true
+
+output:
+  runs_dir: runs
+  run_name: stage7b_b_rules

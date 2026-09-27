@@ -51,6 +51,7 @@ DEFAULTS: dict = {
         'dirichlet_alpha': _STAGE5.dirichlet_alpha,
         'dirichlet_epsilon': _STAGE5.dirichlet_epsilon,
         'max_moves': BOARD_PLY_LIMIT,
+        'tactical_rules': False,   # Stage 7-B PUCT v2 teacher (search.tactics)
     },
     'augmentation': {'enabled': True},
     'optimizer': {'name': 'adam', 'lr': 0.001, 'weight_decay': 0.0001, 'momentum': 0.0},
@@ -59,6 +60,7 @@ DEFAULTS: dict = {
         'every': 1,
         'puct_simulations': 25,
         'c_puct': _STAGE5.c_puct,
+        'tactical_rules': False,   # search used by the model in in-loop evaluation
         'opening_random_plies': 2,
         'opening_radius': 2,
         'random': {'black_games': 2, 'white_games': 2},
@@ -79,6 +81,14 @@ NON_CRITICAL = (
 )
 
 OPPONENTS = ('random', 'tactical', 'previous', 'mcts_v6')
+
+# Stage 7 options whose default keeps pre-Stage-7 behavior. A key at its default is
+# dropped from the critical config, so configs/checkpoints written before the key
+# existed keep the same critical hash and still resume.
+OPTIONAL_CRITICAL_DEFAULTS = (
+    (('self_play', 'tactical_rules'), False),
+    (('evaluation', 'tactical_rules'), False),
+)
 
 
 class ConfigError(ValueError):
@@ -215,6 +225,12 @@ def critical_config(config: dict) -> dict:
         for key in path[:-1]:
             node = node[key]
         node.pop(path[-1], None)
+    for path, default in OPTIONAL_CRITICAL_DEFAULTS:
+        node = critical
+        for key in path[:-1]:
+            node = node[key]
+        if node.get(path[-1], default) == default:
+            node.pop(path[-1], None)
     return critical
 
 
@@ -243,11 +259,13 @@ def self_play_search_config(config: dict) -> SearchConfig:
     return SearchConfig(num_simulations=s['simulations'], c_puct=s['c_puct'], tau=s['tau'],
                         temperature_moves=s['temperature_moves'],
                         dirichlet_alpha=s['dirichlet_alpha'],
-                        dirichlet_epsilon=s['dirichlet_epsilon'], noise_enabled=True)
+                        dirichlet_epsilon=s['dirichlet_epsilon'], noise_enabled=True,
+                        tactical_rules=s.get('tactical_rules', False))
 
 
 def evaluation_search_config(config: dict) -> SearchConfig:
     """Noise OFF, temperature 0 (argmax with the Stage 5 visit/prior/index tie-break)."""
     e = config['evaluation']
     return SearchConfig(num_simulations=e['puct_simulations'], c_puct=e['c_puct'],
-                        temperature_moves=0, noise_enabled=False)
+                        temperature_moves=0, noise_enabled=False,
+                        tactical_rules=e.get('tactical_rules', False))

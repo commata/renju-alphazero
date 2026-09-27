@@ -72,18 +72,24 @@ def make_opponent(name: str, seed: int):
     raise ValueError(f'unknown opponent: {name}')
 
 
-def search_config_for(checkpoint: Path, simulations: int | None) -> SearchConfig:
+def search_config_for(checkpoint: Path, simulations: int | None,
+                      tactical_rules: str = 'auto') -> SearchConfig:
+    """``tactical_rules``: 'auto' = the checkpoint's evaluation setting, or 'on'/'off'."""
     evaluation = load_checkpoint_payload(checkpoint)['config']['evaluation']
+    rules = (evaluation.get('tactical_rules', False) if tactical_rules == 'auto'
+             else tactical_rules == 'on')
     return SearchConfig(
         num_simulations=simulations if simulations is not None else evaluation['puct_simulations'],
-        c_puct=evaluation['c_puct'], temperature_moves=0, noise_enabled=False)
+        c_puct=evaluation['c_puct'], temperature_moves=0, noise_enabled=False,
+        tactical_rules=rules)
 
 
 def evaluate_checkpoint(checkpoint: Path, opponents, *, pairs: int, seed: int,
-                        simulations: int | None = None, opening_random_plies: int = 2,
+                        simulations: int | None = None, tactical_rules: str = 'auto',
+                        opening_random_plies: int = 2,
                         opening_radius: int = 2, log=print) -> dict:
     model, info = load_model_from_training_checkpoint(checkpoint)
-    search = search_config_for(checkpoint, simulations)
+    search = search_config_for(checkpoint, simulations, tactical_rules)
     model_agent = PUCTAgent('model', model, search)
     result = {'format_version': RESULT_FORMAT, **info, 'model_search': search.to_dict(),
               'seed': seed, 'pairs': pairs, 'opening_random_plies': opening_random_plies,
@@ -104,7 +110,8 @@ def evaluate_checkpoint(checkpoint: Path, opponents, *, pairs: int, seed: int,
         summary['score'] = (summary['wins'] + 0.5 * summary['draws']) / summary['games']
         summary['seconds'] = perf_counter() - started
         result['opponents'][name] = {'summary': summary, 'games': games}
-        log(f"gen {info['generation']:3d} vs {name}: W{summary['wins']} L{summary['losses']} "
+        log(f"gen {info['generation']:3d} [{'v2' if search.tactical_rules else 'v1'}] vs {name}: "
+            f"W{summary['wins']} L{summary['losses']} "
             f"D{summary['draws']} score {summary['score']:.2f} "
             f"({summary['seconds']:.0f}s)")
     return result
@@ -125,6 +132,11 @@ def main() -> int:
     parser.add_argument('--seed', type=int, default=7007)
     parser.add_argument('--simulations', type=int,
                         help='override the checkpoint evaluation.puct_simulations')
+    parser.add_argument('--tactical-rules', choices=('auto', 'on', 'off'), default='auto',
+                        help="model search: 'auto' = checkpoint's evaluation.tactical_rules "
+                             "(PUCT v2 when on); use on/off to compare arms under one search")
+    parser.add_argument('--suffix', default='',
+                        help='with --run-dir: output name genNNN<suffix>.json')
     parser.add_argument('--output', type=Path, help='with --checkpoint: output JSON path')
     args = parser.parse_args()
     if args.pairs < 1:
@@ -146,11 +158,12 @@ def main() -> int:
             path = args.run_dir / 'checkpoints' / f'checkpoint_gen{generation:03d}.pt'
             if not path.is_file():
                 raise SystemExit(f'missing checkpoint: {path}')
-            targets.append((path, out_dir / f'gen{generation:03d}.json'))
+            targets.append((path, out_dir / f'gen{generation:03d}{args.suffix}.json'))
 
     for checkpoint, output in targets:
         result = evaluate_checkpoint(checkpoint, args.opponents, pairs=args.pairs,
-                                     seed=args.seed, simulations=args.simulations)
+                                     seed=args.seed, simulations=args.simulations,
+                                     tactical_rules=args.tactical_rules)
         if output is not None:
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(json.dumps(result, indent=1), encoding='utf-8')
