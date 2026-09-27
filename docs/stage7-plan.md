@@ -69,6 +69,48 @@ python scripts/run_stage6_training.py --config configs/stage7a_continuation.yaml
 
 Random/Tactical의 단일 generation 결과나 Tactical 1승을 milestone으로 사용하지 않는다.
 
+### 2.2 Stage 7-A 결과 (gen 3 → 30, 코드 `adce150`)
+
+실행: 사용자 Windows PC, `configs/stage7a_continuation.yaml`, Stage 6 B run 복사본에서 resume.
+시작 checkpoint SHA-256 `d9e62e0e…`(Stage 6 B `latest.pt`), 종료 gen 30 checkpoint `1fd22c6f…`,
+global_step 1,500, replay 9,042.
+
+| 항목 | 결과 | 판정 |
+|---|---|---|
+| 27 generations 실행, resume, checkpoint | crash·NaN·illegal 0, generation당 self-play 22~70 s / 학습 8~13 s | ✅ |
+| network 변화 | checkpoint SHA 모두 다름, 같은 오프닝에서 3~6수부터 수순이 달라짐 | ✅ |
+| Random (루프 내) | 80승 40패 (66.7%), 5-gen 묶음 55% → 75% (표본 작음) | 🟡 |
+| previous (루프 내) | 58승 62패 (48.3%) | 🟡 |
+| Tactical (루프 내) | 2승 118패 (1.7%) | ❌ |
+| 외부 평가 gen 3/10/20/30 vs mcts_v2 / v321 / v7 | **0승 120패**, 흑·백 모두 0승, 12~22수 패배 | ❌ |
+| policy loss / value loss (5-gen 평균) | 4.62 → 4.62 / 0.30 → 0.53 | ❌ 정체 |
+| probe gen 30 top-1 (즉시승 / 필수방어 / VCF) | 2.5% / 0% / 0%, mass lift 1.26 / 1.23 / 1.15 | ❌ |
+| probe value | separation −0.17, balanced accuracy 0.45, 30 gen 모두 separation ≤ 0 | ❌ |
+
+### 2.3 원인 진단
+
+1. **value target 부호는 정상이다.** 실제 self-play 기록을 텐서 수준에서 확인하면 z가 수마다 +1/−1로
+   교대하고 입력의 `current_is_black` plane과 일치한다(`tests/test_stage7_diagnostics.py`).
+   음수 separation은 value가 전술이 아니라 **색 사전확률**을 배운 결과다. value와 "흑 차례" 상관
+   +0.24~+0.62, self-play 흑:백 승 68:52.
+2. **구현은 전술을 학습할 수 있다.** `scripts/run_stage7_supervised_sanity.py`:
+   - 암기: probe 160국면에 새 network를 학습하면 100 step에 모든 kind top-1 1.00, value 1.00.
+   - 일반화: V7-vs-V5 기보의 전술 국면 1,098개(D4 증강)로 학습하고 V7-vs-V6 기보 probe로 평가하면
+     필수방어 top-1 0.67~0.78, forced_loss value 0.75~0.85 (self-play gen 30: 0.00 / 0.45).
+3. **병목은 teacher(탐색 target)다.** 거의 균등한 prior + FPU 0 PUCT는 합법수 약 200개 중 10~80개만
+   보고 필수방어를 찾지 못한다(학습 안 된 network: 800 simulations에서도 0/20). self-play 방문 비율에
+   전술 정보가 거의 없으므로 policy가 학습할 target이 없다(cold start).
+
+결론: Stage 7-A는 **파이프라인 검증 PASS, 기력 학습 FAIL**이며 원인은 구현 버그가 아니라 teacher 품질이다.
+같은 설정으로 generation만 늘리지 않는다. 다음 실험은 §2.4.
+
+### 2.4 진단 도구
+
+- `scripts/run_stage7_search_probes.py`: 학습 없이 checkpoint(또는 무작위 초기화)의 PUCT가 probe를
+  푸는 비율을 simulations × FPU 격자로 측정한다. `SearchConfig.fpu_reduction`(기본 `None` = Stage 5
+  FPU 0, `to_dict`에 나타나지 않아 기존 hash 불변)으로 parent-relative FPU를 켠다.
+- `scripts/run_stage7_supervised_sanity.py`: 위 암기/일반화 검증 재현.
+
 ## 3. Tactical / Value Probe
 
 구현: probe set `tests/fixtures/stage7_probes_v1.json`(`stage7-probes-v1`, 178국면),
