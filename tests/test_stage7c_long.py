@@ -36,6 +36,41 @@ class LongContinuationConfigTest(unittest.TestCase):
         self.assertEqual(critical_config_hash(config), before)
 
 
+def _evals(opponent, wins_by_generation, games=4):
+    return [{'type': 'evaluation', 'generation': g, 'opponent': opponent, 'games': games,
+             'wins': w, 'losses': games - w, 'draws': 0}
+            for g, w in wins_by_generation.items()]
+
+
+class MilestoneDetectionTest(unittest.TestCase):
+    SETTINGS = {'window': 3, 'threshold': 0.25, 'opponents': ['tactical'],
+                'first_win': ['tactical']}
+
+    def test_jump_first_win_and_cooldown(self):
+        from training.milestones import detect_milestones
+
+        # gens 0-2: 0/12, gens 3-5: 1+3+4 = 8/12 -> +0.67 at gen 5
+        evaluations = _evals('tactical', {0: 0, 1: 0, 2: 0, 3: 1, 4: 3, 5: 4, 6: 4})
+        self.assertEqual([m['kind'] for m in detect_milestones(evaluations, [], 3,
+                                                                self.SETTINGS)],
+                         ['first_win'])
+        jumps = detect_milestones(evaluations, [], 5, self.SETTINGS)
+        self.assertEqual([m['kind'] for m in jumps], ['win_rate_jump'])
+        self.assertAlmostEqual(jumps[0]['delta'], 8 / 12)
+        self.assertEqual(jumps[0]['generations'], [3, 5])
+        logged = [{'generation': 5, **jumps[0]}]
+        # the sliding window would repeat the jump at gen 6: suppressed by the cooldown
+        self.assertEqual(detect_milestones(evaluations, logged, 6, self.SETTINGS), [])
+
+    def test_continuation_configs_enable_monitoring_only(self):
+        for arm in ('b_rules', 'a_scale'):
+            config = load_config(ROOT / 'configs' / f'stage7c_{arm}_long.yaml')
+            self.assertTrue(config['milestones']['enabled'])
+            config['milestones']['enabled'] = False
+            self.assertEqual(critical_config_hash(config), critical_config_hash(
+                load_config(ROOT / 'configs' / f'stage7b_{arm}.yaml')))
+
+
 class DefenseProbeFixtureTest(unittest.TestCase):
     def test_labels_are_exact_rule_facts(self):
         import sys
@@ -54,6 +89,36 @@ class DefenseProbeFixtureTest(unittest.TestCase):
                 self.assertEqual(defense_label(game),
                                  [tuple(m) for m in probe['correct_moves']])
                 self.assertLess(len(probe['correct_moves']), len(game.legal_moves()))
+
+
+@unittest.skipIf(torch is None, 'requires torch')
+class MilestonePinTest(unittest.TestCase):
+    def test_record_milestones_pins_checkpoint_and_logs(self):
+        from types import SimpleNamespace
+
+        from training.loop import record_milestones
+        from training.metrics import MetricsLogger, read_metrics
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run = Path(tmp)
+            (run / 'checkpoints').mkdir()
+            checkpoint = run / 'checkpoints' / generation_checkpoint_name(6)
+            checkpoint.write_bytes(b'weights')
+            metrics = MetricsLogger(run / 'metrics.jsonl')
+            for event in _evals('tactical', {0: 0, 1: 0, 2: 0, 3: 1, 4: 3, 5: 4}):
+                metrics.log(event)
+            state = SimpleNamespace(generation=6, config={'milestones': {
+                'enabled': True, 'window': 3, 'threshold': 0.25,
+                'opponents': ['tactical'], 'first_win': []}})
+            found = record_milestones(state, run, metrics, 5, checkpoint, lambda _: None)
+            self.assertEqual([m['kind'] for m in found], ['win_rate_jump'])
+            pinned = run / 'checkpoints' / 'milestone_gen006.pt'
+            self.assertEqual(pinned.read_bytes(), b'weights')
+            logged = [e for e in read_metrics(run / 'metrics.jsonl') if e['type'] == 'milestone']
+            self.assertEqual(logged[0]['checkpoint'], 'checkpoints/milestone_gen006.pt')
+            # pruning never removes the pin
+            prune_checkpoints(run / 'checkpoints', 0)
+            self.assertTrue(pinned.is_file())
 
 
 @unittest.skipIf(torch is None, 'requires torch')

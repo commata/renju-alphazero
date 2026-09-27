@@ -71,12 +71,15 @@ DEFAULTS: dict = {
                     'use_frozen_config': True},
     },
     'output': {'runs_dir': 'runs', 'run_name': 'stage6'},
+    # Stage 7 execution-only monitoring (training.milestones); not training-critical.
+    'milestones': {'enabled': False, 'window': 5, 'threshold': 0.25,
+                   'opponents': ['random', 'tactical'], 'first_win': ['tactical', 'mcts_v6']},
 }
 
 # Execution-control keys: may differ between a checkpoint and --config / CLI on resume.
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
-    ('device',), ('torch_threads',), ('output',),
+    ('device',), ('torch_threads',), ('output',), ('milestones',),
     ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
     ('training', 'init_checkpoint'),
 )
@@ -193,6 +196,16 @@ def validate_config(config: dict) -> dict:
         raise ConfigError('evaluation.mcts_v6.use_frozen_config must be true (frozen benchmark)')
     if type(v6['final_generation_only']) is not bool:
         raise ConfigError('evaluation.mcts_v6.final_generation_only must be a bool')
+
+    m = config.get('milestones')
+    if m is not None:
+        if type(m['enabled']) is not bool:
+            raise ConfigError('milestones.enabled must be a bool')
+        _int(m['window'], 'milestones.window')
+        _real(m['threshold'], 'milestones.threshold', positive=True)
+        for key in ('opponents', 'first_win'):
+            if not isinstance(m[key], list) or any(o not in OPPONENTS for o in m[key]):
+                raise ConfigError(f'milestones.{key} must be a list of {OPPONENTS}')
 
     out = config['output']
     if not isinstance(out['runs_dir'], str) or not isinstance(out['run_name'], str):

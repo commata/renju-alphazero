@@ -363,6 +363,16 @@ Stage 7-C: 두 arm을 같은 설정 그대로 gen 30 → 110까지 이어간다(
   상대의 열린 4·4-4 생성수를 없애는 수만 정답, 반격용 4가 없는 국면만). `run_stage7_probes.py --probes ... --suffix _defense`.
 - `scripts/summarize_stage7_runs.py`: metrics를 10-gen 묶음 표(흑 승률, 길이, 재사용, loss, in-loop 평가)로 요약.
 
+- 급상승 기록(`milestones`, 실행 제어 전용·critical hash 무관): 매 generation 평가 후 최근 5 generation과 그 전
+  5 generation의 in-loop 점수(random/tactical/previous)를 비교해 +0.25 이상 오르면, 그리고 tactical/mcts_v6 첫 승을
+  `metrics.jsonl`에 `milestone` 이벤트로 남기고 해당 checkpoint를 `checkpoints/milestone_genNNN.pt`로 보존한다
+  (가지치기 대상 아님). 같은 상대의 반복 보고는 5 generation 동안 억제한다. `summarize_stage7_runs.py`는 기록된
+  이벤트와 함께 사후 급상승(창·기준 변경 가능)과 self-play 흑 승률 급변을 generation 단위로 출력하고, probe·외부 평가
+  스크립트는 가지치기된 generation이면 milestone 파일을 사용한다.
+- **probe는 규칙이 아니다.** `training.probes`와 probe fixture/생성기는 `scripts/`·`tests/`에서만 쓰이며 학습 루프,
+  self-play, 탐색, 학습 target, loss 어디에서도 import되지 않는다. 저장된 checkpoint를 학습이 끝난 뒤 읽기 전용으로
+  채점할 뿐이다. 탐색이 쓰는 규칙은 PUCT v2의 `search.tactics.tactical_filter`(1수 사실)뿐이다.
+
 판단 기준: B의 self-play 흑 승률이 내려오고(평균 길이 증가), `must_defend_open3` probe와 v1 search 외부 평가
 (Tactical·MCTS-v2 각 50판)가 오르면 v2 경계를 확정한다. gen 110에서도 변화가 없으면 V7 기보 지도학습 초기화(선택지 c)
 또는 Stage 8 규모 확대를 **명시적으로** 선택한다.

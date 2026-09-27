@@ -4,7 +4,9 @@
 # execution-control keys differ: generations 30 -> 110 (+80 generations = +1,280
 # self-play games), keep_checkpoints 5 + keep_every 10 (every 10th checkpoint is
 # kept; one checkpoint with a full replay buffer is ~80 MB), output.run_name.
-# init_checkpoint is ignored on resume.
+# init_checkpoint is ignored on resume. milestones (execution-only) records sudden
+# in-loop win-rate jumps at any generation and pins that checkpoint
+# (checkpoints/milestone_genNNN.pt), so pruning never deletes it.
 format_version: stage6-config-v1
 seed: 42
 device: cpu
@@ -70,3 +72,10 @@ evaluation:
 output:
   runs_dir: runs
   run_name: stage7c_a_scale
+
+milestones:       # execution-only (not in the critical hash)
+  enabled: true
+  window: 5          # compare the last 5 evaluated generations with the 5 before
+  threshold: 0.25    # score increase that counts as a jump (5 gens x 4 games = 20 games)
+  opponents: [random, tactical, previous]
+  first_win: [tactical, mcts_v6]

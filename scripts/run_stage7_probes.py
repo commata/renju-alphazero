@@ -29,15 +29,20 @@ import torch  # noqa: E402
 from training.probes import run_probe_file  # noqa: E402
 
 DEFAULT_PROBES = ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'
-CHECKPOINT_RE = re.compile(r'checkpoint_gen(\d{3})\.pt$')
+CHECKPOINT_RE = re.compile(r'(?:checkpoint|milestone)_gen(\d{3,})\.pt$')
 
 
 def run_checkpoints(run_dir: Path, generations: list[int] | None) -> list[tuple[int, Path]]:
     found = []
-    for path in sorted((run_dir / 'checkpoints').glob('checkpoint_gen*.pt')):
-        match = CHECKPOINT_RE.search(path.name)
-        if match:
-            found.append((int(match.group(1)), path))
+    seen = set()
+    # checkpoint_genNNN.pt first; a milestone_genNNN.pt pin fills in pruned generations.
+    for pattern in ('checkpoint_gen*.pt', 'milestone_gen*.pt'):
+        for path in sorted((run_dir / 'checkpoints').glob(pattern)):
+            match = CHECKPOINT_RE.search(path.name)
+            if match and int(match.group(1)) not in seen:
+                seen.add(int(match.group(1)))
+                found.append((int(match.group(1)), path))
+    found.sort()
     if generations is not None:
         wanted = set(generations)
         missing = wanted - {g for g, _ in found}

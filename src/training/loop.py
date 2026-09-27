@@ -23,8 +23,9 @@ from renju import BLACK, WHITE
 from .config import dump_config, self_play_search_config
 from .dataset import build_batch, samples_from_record, validate_samples
 from .evaluation import evaluate_generation, should_evaluate
-from .metrics import (MetricsLogger, RunMetadata, timestamp, truncate_for_resume, utc_now,
-                      write_json)
+from .metrics import (MetricsLogger, RunMetadata, read_metrics, timestamp, truncate_for_resume,
+                      utc_now, write_json)
+from .milestones import detect_milestones
 from .provenance import base_runtime_env, git_provenance
 from .self_play import game_hash, play_self_play_game, record_hash, replay_record, summarize_timing
 from .trainer import inference_mode_for, train_step
@@ -166,7 +167,31 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
                  'path': str(path.relative_to(run_dir)).replace('\\', '/'),
                  'sha256': state.source_checkpoint_hash})
     log(f'gen {gen}: checkpoint {path.name} (generation={state.generation})')
+    record_milestones(state, run_dir, metrics, gen, path, log)
     return generation_event
+
+
+def record_milestones(state: TrainingState, run_dir: Path, metrics: MetricsLogger, gen: int,
+                      checkpoint: Path, log: Callable[[str], None]) -> list[dict]:
+    """Execution-only: log win-rate jumps / first wins and pin the checkpoint."""
+    settings = state.config.get('milestones')
+    if not settings or not settings['enabled']:
+        return []
+    events = read_metrics(run_dir / 'metrics.jsonl')
+    evaluations = [e for e in events if e['type'] == 'evaluation']
+    previous = [e for e in events if e['type'] == 'milestone']
+    found = detect_milestones(evaluations, previous, gen, settings)
+    if not found:
+        return []
+    pinned = checkpoint.with_name(f'milestone_gen{state.generation:03d}.pt')
+    copy_atomic(checkpoint, pinned)
+    for event in found:
+        event = {'type': 'milestone', 'generation': gen, **event,
+                 'checkpoint': str(pinned.relative_to(run_dir)).replace('\\', '/')}
+        metrics.log(event)
+        log(f"gen {gen}: MILESTONE {event['kind']} vs {event['opponent']} "
+            f"-> {pinned.name}")
+    return found
 
 
 def new_run_dir(config: dict) -> Path:
