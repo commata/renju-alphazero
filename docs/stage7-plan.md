@@ -15,6 +15,10 @@ Stage 7의 목적은 강한 최종 모델을 만드는 것이 아니다. Stage 6
 - PUCT v1은 Stage 7-A에서 알고리즘적으로 변경하지 않는다.
 - **Classical benchmark는 MCTS-v7 FINAL**(Stage 6.5 동결, [mcts-v7.md](mcts-v7.md))이다.
   classical 엔진은 AlphaZero search에 전술 정책을 주입하지 않고 평가 상대로만 쓴다.
+- **Stage 7-B 결정(7-A 진단 후):** AlphaZero search에 휴리스틱·threat planner·VCF는 넣지 않되,
+  렌주 규칙에서 바로 나오는 **1수 사실**(즉시 승리, 유일한 필수 방어, 규칙으로 증명된 승/패)만 쓰는
+  PUCT v2 teacher(`search.tactics`, `tactical_rules`)를 옵션으로 허용한다. 기본값은 끈 상태이며 Stage 5/6
+  동작과 hash는 그대로다(§8.3).
 - 학습 루프 내부 평가(`evaluation.mcts_v6`)는 Stage 6과의 연속성 때문에 그대로 둔다.
   `evaluation`은 critical config이므로 V7로 바꾸면 resume이 거부된다. **V7 평가는 학습 루프 밖의
   checkpoint 평가**(§3.4)로만 수행한다.
@@ -298,6 +302,43 @@ Run B: self-play 50 simulations
 opening/game diversity를 비교해 더 비싼 search가 더 좋은 teacher `pi`를 만드는지 본다.
 
 Search-only 실험과 training-data 실험을 혼동하지 않는다.
+
+### 8.3 Stage 7-B teacher 실험 — arm B(주 개발) vs arm A(대조군)
+
+기준점: 코드 `adce150`(브랜치 `checkpoint/stage7a-baseline`, 태그 `stage7a-baseline`), 가중치 `runs/stage7a`
+gen 30 checkpoint(SHA-256 `1fd22c6f…`). 두 arm은 같은 export 가중치로 **새 run**을 시작한다(training-critical
+설정이 바뀌므로 resume이 아니라 `training.init_checkpoint`; 새 optimizer·빈 replay·generation 0부터).
+
+| | arm A `configs/stage7b_a_scale.yaml` | arm B `configs/stage7b_b_rules.yaml` |
+|---|---|---|
+| 역할 | 대조군: 규모만 확대(선택지 a) | 주 개발: 규모 + 규칙 teacher(선택지 b) |
+| self-play search | PUCT v1, 50 simulations | **PUCT v2**, 50 simulations |
+| in-loop 평가 search | PUCT v1, 25 simulations | PUCT v2, 25 simulations |
+| games / generation | 16 | 16 |
+| 그 외 | Stage 7-A와 동일 (64ch×4, batch 32, 50 steps, replay 10,000, seed 42) | 동일 |
+
+두 arm의 critical config 차이는 `self_play.tactical_rules`, `evaluation.tactical_rules` 두 키뿐이다
+(`tests/test_stage7b_teacher.py`). 7-A 대비 두 arm 모두 games 4→16, simulations 25→50을 함께 바꿨으므로
+**arm A 대 7-A는 규모 효과, arm B 대 arm A는 teacher 효과**로 읽는다.
+
+PUCT v2 규칙(`search.tactics.tactical_filter`):
+
+- 둘 차례가 즉시 5목을 만들 수 있으면 자식을 승리수로 제한하고, root가 아닌 노드는 +1로 증명 종료한다.
+- 상대 승리점이 1개이고 합법이면 자식을 그 방어점 하나로 제한한다.
+- 상대 승리점이 2개 이상이거나 유일한 방어점이 흑 금수면 root가 아닌 노드를 −1로 증명 종료한다.
+- network 입력은 항상 전체 합법수 mask를 쓰고, prior만 허용 자식 안에서 다시 정규화한다. root는 증명 종료하지 않고
+  정확히 N회 탐색하므로 기존 record/replay 계약(방문 합 = N)을 그대로 지킨다.
+- 측정: 무작위 초기 network에서도 25 simulations로 즉시 승리·필수 방어 probe 100% 해결, VCF는 규칙 범위 밖(0.05).
+  50 simulations self-play 착수당 약 220~260 ms로 v1과 같은 수준이다(증명 노드는 network 호출 생략).
+
+비교 지표(같은 generation끼리):
+
+1. raw network probe(`run_stage7_probes.py`) — teacher와 무관한 network 자체의 학습 신호. **주 지표.**
+2. 외부 평가를 **같은 search로** 두 arm에 모두 실행(`--tactical-rules off`와 `on` 각각) — network 비교와
+   system(network+search) 비교를 분리한다.
+3. in-loop 평가·loss·self-play 길이/흑백 결과.
+
+같은 PC에서 두 arm을 동시에 돌리면 시간 지표가 서로 오염되므로 시간 비교는 하지 않고, 기력·probe만 비교한다.
 
 ## 9. FPU 단일 변수 실험
 

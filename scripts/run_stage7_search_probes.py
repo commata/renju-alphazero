@@ -46,6 +46,8 @@ def main() -> int:
     parser.add_argument('--simulations', type=int, nargs='+', default=[25, 50, 100, 200])
     parser.add_argument('--fpu', type=parse_fpu, nargs='+', default=[None],
                         help="'none' (Stage 5, Q=0) and/or parent-relative reductions")
+    parser.add_argument('--tactical-rules', choices=('off', 'on'), nargs='+', default=['off'],
+                        help='PUCT v1 (off) and/or the Stage 7-B PUCT v2 teacher (on)')
     parser.add_argument('--c-puct', type=float, default=1.5)
     parser.add_argument('--kinds', nargs='+', choices=POLICY_KINDS, default=list(POLICY_KINDS))
     parser.add_argument('--probes', type=Path, default=DEFAULT_PROBES)
@@ -63,20 +65,22 @@ def main() -> int:
         info = {'random_init_seed': args.random_init}
 
     grid = []
-    for fpu in args.fpu:
-        for sims in args.simulations:
-            config = SearchConfig(num_simulations=sims, c_puct=args.c_puct, temperature_moves=0,
-                                  noise_enabled=False, fpu_reduction=fpu)
-            result = evaluate_search_probes(model, probes, config, tuple(args.kinds))
-            grid.append(result)
-            cells = ' | '.join(
-                f"{k} {s['solved']:.2f} (share {s['visit_share']:.2f}, "
-                f"children {s['visited_children']:.0f})"
-                for k, s in result['summary'].items())
-            seconds = sum(s['seconds'] * s['probes'] for s in result['summary'].values()) \
-                / sum(s['probes'] for s in result['summary'].values())
-            print(f"fpu {'none' if fpu is None else fpu:>5} sims {sims:4d} | {cells} | "
-                  f"{seconds * 1000:.0f} ms/probe", flush=True)
+    for rules, fpu, sims in ((r, f, n) for r in args.tactical_rules for f in args.fpu
+                             for n in args.simulations):
+        config = SearchConfig(num_simulations=sims, c_puct=args.c_puct, temperature_moves=0,
+                              noise_enabled=False, fpu_reduction=fpu,
+                              tactical_rules=rules == 'on')
+        result = evaluate_search_probes(model, probes, config, tuple(args.kinds))
+        grid.append(result)
+        cells = ' | '.join(
+            f"{k} {s['solved']:.2f} (share {s['visit_share']:.2f}, "
+            f"children {s['visited_children']:.0f})"
+            for k, s in result['summary'].items())
+        seconds = sum(s['seconds'] * s['probes'] for s in result['summary'].values()) \
+            / sum(s['probes'] for s in result['summary'].values())
+        print(f"{'v2' if rules == 'on' else 'v1'} fpu {'none' if fpu is None else fpu:>5} "
+              f"sims {sims:4d} | {cells} | "
+              f"{seconds * 1000:.0f} ms/probe", flush=True)
 
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

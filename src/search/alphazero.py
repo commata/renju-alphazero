@@ -4,6 +4,11 @@ Shares only ``Game``/Renju legality and the torch-free Stage 4 action contract.
 No rollouts, forced moves, tactical planners, candidate injection or widening:
 children are exactly ``Game.legal_moves()`` with evaluator priors.
 
+Stage 7-B option ``tactical_rules`` (PUCT v2, default off): rule-level one-ply facts
+from ``search.tactics`` restrict children to immediate wins / the single forced block
+and mark proven wins/losses at non-root nodes. Network input is unchanged (the full
+legal mask is always encoded); priors are renormalized over the allowed children.
+
 Statistics convention: a child's ``value_sum`` is stored from the perspective of
 ``player_who_moved`` (the parent's ``to_play``), so selection maximizes child Q.
 """
@@ -18,6 +23,7 @@ from time import perf_counter
 from model.config import ACTION_COUNT, action_to_coordinate, coordinate_to_action
 
 from .evaluator import POLICY_SUM_TOLERANCE, EvaluationSnapshot, Evaluator, evaluate_validated
+from .tactics import tactical_filter
 
 SEARCH_CONFIG_FORMAT = 'stage5-search-config-v1'
 
@@ -38,6 +44,9 @@ class SearchConfig:
     # A number r uses parent-relative FPU: unvisited Q = (parent value) - r, where the
     # parent value is the root NN value at the root and -parent.q elsewhere.
     fpu_reduction: float | None = None
+    # Stage 7-B PUCT v2 teacher. False keeps Stage 5 behavior and is omitted from
+    # to_dict(); see search.tactics for the exact rule-level facts used.
+    tactical_rules: bool = False
 
     def __post_init__(self):
         def positive_int(name):
@@ -72,6 +81,8 @@ class SearchConfig:
             raise ValueError('Stage 5 search evaluates leaves with batch size 1')
         if self.fpu_reduction is not None and real('fpu_reduction') < 0:
             raise ValueError('fpu_reduction must be non-negative')
+        if type(self.tactical_rules) is not bool:
+            raise ValueError('tactical_rules must be a bool')
 
     def to_dict(self) -> dict:
         """The exact field set that is hashed into ``config_hash``.
@@ -92,6 +103,8 @@ class SearchConfig:
         }
         if self.fpu_reduction is not None:
             data['fpu_reduction'] = float(self.fpu_reduction)
+        if self.tactical_rules:
+            data['tactical_rules'] = True
         return data
 
     @classmethod
@@ -200,16 +213,28 @@ def apply_root_noise(root: Node, rng: Random, alpha: float, epsilon: float) -> N
         raise ValueError(f'noised root priors must sum to 1 (got {total!r})')
 
 
-def _expand(node: Node, game, legal_moves, evaluator: Evaluator, timing: SearchTiming) -> float:
-    """Create children for the supplied legal moves; return value from node.to_play view."""
+def _expand(node: Node, game, legal_moves, evaluator: Evaluator, timing: SearchTiming,
+            allowed=None) -> float:
+    """Create children for the legal (or ``allowed``) moves; return node.to_play value.
+
+    The evaluator always sees the full legal list; with a strict ``allowed`` subset the
+    children's priors are renormalized over that subset.
+    """
     started = perf_counter()
     snapshot = EvaluationSnapshot.from_game(game, legal_moves)
     result = evaluate_validated(evaluator, [snapshot])[0]
     timing.inference_s += perf_counter() - started
     player = game.to_play
-    for row, col in legal_moves:
+    moves = legal_moves if allowed is None else allowed
+    priors = {coordinate_to_action(r, c): float(result.priors[coordinate_to_action(r, c)])
+              for r, c in moves}
+    if allowed is not None and len(allowed) != len(legal_moves):
+        total = sum(priors.values())
+        priors = {a: (p / total if total > 0 else 1.0 / len(priors))
+                  for a, p in priors.items()}
+    for row, col in moves:
         action = coordinate_to_action(row, col)
-        node.children[action] = Node(action, float(result.priors[action]), player)
+        node.children[action] = Node(action, priors[action], player)
     node.is_expanded = True
     node.nn_value = float(result.value)
     return node.nn_value
@@ -262,7 +287,11 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
     root = Node(None, 1.0, None)
     root.to_play = to_play
     evaluator_calls = 1
-    _expand(root, work, legal_moves, evaluator, timing)
+    root_allowed = None
+    if config.tactical_rules:
+        # The root is never marked terminal: it only restricts the children.
+        root_allowed, _ = tactical_filter(work, legal_moves)
+    _expand(root, work, legal_moves, evaluator, timing, root_allowed)
     if config.noise_enabled:
         apply_root_noise(root, rng, config.dirichlet_alpha, config.dirichlet_epsilon)
 
@@ -287,8 +316,18 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
         if node.is_terminal:
             value = node.terminal_value
         else:
-            value = _expand(node, work, _legal_moves(work, timing), evaluator, timing)
-            evaluator_calls += 1
+            node_legal = _legal_moves(work, timing)
+            allowed, proven = (tactical_filter(work, node_legal) if config.tactical_rules
+                               else (None, None))
+            if proven is not None:
+                # Rule-proven win/loss: cache as terminal (no evaluator call).
+                node.is_terminal = True
+                node.is_expanded = True
+                node.terminal_value = proven
+                value = proven
+            else:
+                value = _expand(node, work, node_legal, evaluator, timing, allowed)
+                evaluator_calls += 1
         backup(root, path, value, node.to_play)
         for _ in range(played):
             work.undo()
