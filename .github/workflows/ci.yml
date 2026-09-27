@@ -121,3 +121,5 @@ jobs:
         run: python scripts/check_frozen_baseline.py
       - name: Verify low-budget V6 behavior fingerprint
         run: python scripts/ci_v6_behavior.py --expect-sha256 91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44
+      - name: Verify low-budget V7 behavior fingerprint
+        run: python scripts/ci_v7_behavior.py --expect-sha256 97cd4ec06ca2842c2cef9b932f4000c7941287775cfcdfe0b6dcaf06cddd1488

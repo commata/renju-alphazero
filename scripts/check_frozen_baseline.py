@@ -1,4 +1,4 @@
-"""Verify SHA-256 locks for the frozen Stage 3 benchmark implementation files."""
+"""Verify SHA-256 locks for the frozen MCTS-v6 (Stage 3) and MCTS-v7 (Stage 6.5) benchmark files."""
 from __future__ import annotations
 
 import argparse
