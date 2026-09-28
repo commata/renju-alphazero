@@ -189,6 +189,30 @@ CPU 기준선에서 기록:
 **512판 전체를 CPU serial로 먼저 돌리는 것을 Stage 8 선행 조건으로 두지 않는다.**
 GPU 경로를 최대한 빨리 검증하기 위해 correctness와 throughput 기준선에 필요한 짧은 run만 수행한다.
 
+### 3.2.1 데스크톱 CPU 기준선 실측 (i5-12600K, Windows, Python 3.13, torch 2.14 CPU, 1 thread)
+
+`configs/stage8_d16.yaml`로 `runs/stage8_d16`(D16 복사본)을 gen 160 → 163까지 이어서 실행했다. 비교 대상은 그램 D16의 마지막 10세대(gen 150~159)다.
+
+| 항목 (generation당) | 그램 gen 150~159 | 데스크톱 gen 160~162 | 배율 |
+|---|---|---|---|
+| self-play | 36.2 s | 22.0 s | 1.65 |
+| 학습 50 step | 10.0 s | 6.4 s | 1.56 |
+| 루프 내 평가 12판 | — | 4.7 s | |
+| 착수당 시간 (searched) | 184 ms | 118.7 ms | 1.55 |
+| └ `inference_ms` | 146.7 ms (80%) | 93.8 ms (79%) | |
+| └ tree | 34.4 ms | 23.9 ms | |
+| 착수당 NN 호출 | 37.6 | 37.2 | |
+
+- 정상 동작: 불법수 0, checkpoint 161~163 저장. `color_imbalance` 경고는 gen 160에 한 번 나왔다(백 우세, 흑 4.4%,
+  극단 구간 37세대 연속). gen 161~162에서는 중복 억제가 동작했다.
+- generation당 약 34 s(self-play 64%, 학습 19%, 평가 14%, 나머지 약 3%)이면 **CPU 직렬만으로 약 1,700판/시간**이다.
+  gate 1(512판)은 약 20분, gate 2(2,048판)는 약 1.2시간, gate 3(5,120판)은 약 3시간이다.
+- **generation 수준의 Amdahl:** self-play만 무한히 빨라져도 학습과 평가(약 11 s)가 남아 전체는 최대 약 3배다.
+  GPU로 세대 시간을 크게 줄이려면 학습(GPU), 루프 내 평가 batching(§8.1)도 함께 줄여야 한다.
+- 결론: 현재 64×4 / 50 sims / 16판 설정에서는 **처리량이 Stage 8 gate의 병목이 아니다.** gate 1~2는 CPU 직렬로
+  바로 진행할 수 있다(§12). GPU 경로는 Stage 9 이후의 규모 확대(더 큰 network, 더 많은 simulation, 더 긴 학습)를
+  위한 투자로 계속 개발한다.
+
 ### 3.3 재현성 범위
 
 같은 기계/같은 backend/B=1 CPU에서는 같은 checkpoint·seed의 game/record hash가 같아야 한다.
