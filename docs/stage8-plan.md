@@ -90,7 +90,29 @@ train_step()
 
 provenance는 loss에 필요하지 않으므로 CPU에 남겨도 되고, states/policies/values/legal_masks만 옮기는 방식을 우선한다.
 
-### 2.4 기존 CPU/frozen 경로는 바꾸지 않는다
+### 2.4 GPU 한 장으로 얻을 수 있는 상한 (Amdahl)
+
+GPU는 NN 부분만 줄인다. selection·`legal_moves`·규칙 필터·play/undo·encode는 CPU Python에 남는다.
+사용자 PC의 D16 gen 160 profile(v2 50 sims, probe 국면, 최적화 후)에서 착수당 72 ms 중
+NN forward·softmax·전송은 약 40 ms, CPU에 남는 부분(흑/백 `legal_moves` 13.2, 규칙 필터 6.0, tree 6.4,
+snapshot 2.1, encode 3.3, play/undo 0.9 ms)은 약 32 ms였다.
+
+~~~text
+단일 프로세스 GPU batching 상한 ≈ 72 / 32 ≈ 2.2배 (NN 시간이 0이 되어도)
+CPU worker k개                   ≈ k배에 가까움 (코어가 남는 한)
+hybrid (producer k개 + GPU)      ≈ k × (1 / CPU 잔여 비중)
+~~~
+
+probe 국면은 즉시 승리·필수 방어가 많아 착수당 NN 호출이 적다(12.2회). 실제 self-play는 착수당 호출이
+더 많아 NN 비중이 더 클 가능성이 높다. 그래서 **8-A에서 기존 D16 `metrics.jsonl`의
+`self_play_timing.searched`**(`inference_ms`, `legal_moves_ms`, `tree_ms`, `total_move_ms`)로 실제 self-play의
+상한을 먼저 계산한다. 새 실행은 필요 없다.
+
+결론: **GPU는 CPU 병렬화를 대체하지 않고 곱해진다.** 코어가 여러 개인 데스크톱에서 GPU-batched 단일
+프로세스는 CPU worker 방식보다 느릴 수 있다. GPU 이득을 최대화하는 최종 형태는 hybrid(§9.1)이고, 그 판단은 §8의
+실측으로 한다.
+
+### 2.5 기존 CPU/frozen 경로는 바꾸지 않는다
 
 새 GPU 최적화 evaluator와 batched scheduler를 추가하더라도 기존:
 
@@ -142,6 +164,12 @@ CPU 기준선에서 기록:
 - samples/s
 - searched move ms
 - NN calls/move
+
+추가로 두 가지를 잰다(코드 변경 없음).
+
+- 기존 D16 `metrics.jsonl`의 `self_play_timing`으로 실제 self-play의 NN 비중과 GPU 단일 프로세스 상한(§2.4)
+- **CPU 확장성 프록시:** `--verify-checkpoint` 같은 1-thread self-play 프로세스를 k개(1/2/4/물리 코어 − 1)
+  동시에 띄워 프로세스당 속도 저하를 잰다. multiprocessing을 구현하지 않고도 CPU-workers 상한을 알 수 있다.
 
 **512판 전체를 CPU serial로 먼저 돌리는 것을 Stage 8 선행 조건으로 두지 않는다.**
 GPU 경로를 최대한 빨리 검증하기 위해 correctness와 throughput 기준선에 필요한 짧은 run만 수행한다.
@@ -221,6 +249,16 @@ RX 6600은 포함하지 않는다.
 - multi-arch release table에 `AMD Radeon RX 6600 XT / 6600 -> device-gfx1032` 명시
 - Linux/Windows용 ROCm/PyTorch multi-arch package 제공
 - PyTorch compatibility table에 torch 2.14 조합 명시
+
+확인한 원문(2026-09-28, `ROCm/TheRock` `SUPPORTED_GPUS.md`, `RELEASES.md`):
+
+- gfx1032는 Linux·Windows 모두 Build Passing ✅ / Sanity Tested ✅ / Release Ready ✅다.
+- 같은 문서에 "still under active development and is not yet stable for production use"라고 적혀 있다.
+  Build Passing은 "런타임이 대상 하드웨어에서 동작한다는 뜻이 아니다"라는 주석도 있다.
+- PyTorch 설치: `pip install --index-url https://nightly.repo.amd.com/rocm/whl-next/ "torch[device-gfx1032]" …`.
+  이 주소는 **nightly 저장소**이므로 설치 시점의 정확한 버전과 wheel hash를 기록해 고정한다.
+- 확인 절차가 `torch.cuda.is_available()`, `torch.cuda.get_device_name(0)`이다. ROCm PyTorch는 **`cuda` device API를
+  그대로 쓰므로** 코드에서는 `device: cuda`로 지정한다(§10).
 
 따라서 Stage 8의 RX 6600 우선순위는 다음으로 바꾼다.
 
@@ -453,6 +491,10 @@ gpu:
 batch를 채우기 위해 인위적으로 긴 sleep을 넣지 않는다.
 16개 active game에서 즉시 준비된 request를 모아 실행하고 실제 batch-size histogram을 기록한다.
 
+**꼬리 효과:** 16판은 동시에 시작하지만 길이가 다르다(D16 후반 평균 약 12수). 먼저 끝난 게임이 빠지면서
+generation 후반에는 batch가 줄어든다. 다음 generation의 게임은 새 가중치가 필요하므로 앞당겨 시작할 수 없다.
+그래서 active game 수와 batch 크기의 시간 분포를 함께 기록하고, 평균 유효 batch로 §6.2 벤치마크를 해석한다.
+
 ### 7.5 의미보존 계약
 
 CPU B=1 SearchSession wrapper는 기존 search와 exact equality여야 한다.
@@ -505,6 +547,13 @@ raw NN benchmark만 보고 GPU를 채택하지 않는다.
 
 **최종 선택 기준은 positions/s가 아니라 total generation wall time이다.**
 
+판단 규칙:
+
+- GPU-batched(단일 프로세스)가 CPU-workers보다 느리거나 비슷하면 **hybrid로 바로 간다**(§9.1). §2.4 상한상
+  코어가 많을수록 이 경우가 흔하다.
+- hybrid도 CPU-workers 대비 1.3배 미만이면 복잡도를 감수할 가치가 없으므로 CPU-workers를 채택한다.
+- 벤치마크 중에는 학습이나 다른 측정을 동시에 돌리지 않는다. 전원은 최고 성능 모드로 둔다(stage7-plan §4).
+
 ### 8.1 in-loop evaluation도 GPU batching 재사용
 
 self-play만 빨라지고 매 generation의 12판 평가가 serial이면 전체 속도 향상이 제한된다.
@@ -550,7 +599,7 @@ GPU pipeline이 안정화된 뒤에만 다음을 하나씩 비교한다.
 3. training batch/step 조합
 4. mixed precision 가능성
 
-Stage 7 `9.1에서 100 simulations의 search-only 이득은 제한적이었으므로
+Stage 7 §9.1에서 100 simulations의 search-only 이득은 제한적이었으므로
 단순히 GPU를 더 사용하기 위해 simulations를 늘리지 않는다.
 teacher 품질 또는 최종 실력이 좋아지는지 별도 run으로 확인한다.
 
@@ -569,7 +618,7 @@ parallel:
   self_play_concurrency: 16
 
 accelerator:
-  backend: cpu                 # cpu | rocm | directml
+  backend: torch               # torch | directml
   max_batch_size: 16
   encode_on_cpu: true
 
@@ -580,6 +629,10 @@ health:
     lower: 0.10
     upper: 0.90
 ~~~
+
+장치는 이미 있는 `device` 키(non-critical)로 지정한다. ROCm PyTorch는 `device: cuda`, CPU는 `device: cpu`다.
+`accelerator.backend`는 DirectML처럼 문자열 device로 표현할 수 없는 경우에만 `directml`로 둔다.
+backend 종류(`torch.version.hip`, driver, wheel)는 run metadata에 기록한다.
 
 `parallel`, `accelerator`, `health`는 `NON_CRITICAL`에 둔다.
 
@@ -640,6 +693,10 @@ GPU/CPU 실행 경로를 먼저 선택한 뒤 pilot을 시작한다.
 Gate 1은 더 이상 CPU worker=1로 고정하지 않는다.
 GPU batched path가 smoke/재현성/처리량 gate를 통과하면 **Gate 1부터 GPU 경로를 사용**한다.
 
+선택: GPU 경로 개발이 길어지면 그동안 데스크톱을 CPU serial로 Gate 1에 쓸 수 있다. 실행 방식은 critical이
+아니므로 CPU로 만든 checkpoint에서 나중에 GPU 경로로 이어가도 학습 계약이 유지된다(기계·backend 간 bit 재현만
+포기). 벤치마크를 잴 때는 학습을 멈춘다.
+
 판단은 루프 내 previous 단기 승률이 아니라:
 
 - MCTS-v2/Tactical 색별 외부 평가
@@ -667,6 +724,9 @@ GPU batched path가 smoke/재현성/처리량 gate를 통과하면 **Gate 1부�
 | 8-G | external evaluation orchestration |
 | 8-H | 512/2,048/5,120 pilot 결과와 최종 config |
 | 별도 실험 | simulations/network/within-tree batching/mixed precision/tree reuse |
+
+**8-C 직후 결정 지점:** §2.4 상한(실제 self-play NN 비중), CPU 확장성 프록시(§3.2), GPU B=16 raw 처리량을 나란히 놓고
+GPU 주 경로를 유지할지 정한다. 8-E(SearchSession)는 hybrid에서도 그대로 쓰이므로 GPU를 채택하면 낭비가 없다.
 
 8-C에서 RX 6600 GPU backend가 실패하면 8-D/8-E를 억지로 진행하지 않고 CPU-workers를 주 경로로 전환한다.
 반대로 GPU backend가 정상이고 B=8~16에서 CPU보다 유의하게 빠르면 CPU multiprocessing을 먼저 완성하는 대신
