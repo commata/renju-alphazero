@@ -103,14 +103,29 @@ CPU worker k개                   ≈ k배에 가까움 (코어가 남는 한)
 hybrid (producer k개 + GPU)      ≈ k × (1 / CPU 잔여 비중)
 ~~~
 
-probe 국면은 즉시 승리·필수 방어가 많아 착수당 NN 호출이 적다(12.2회). 실제 self-play는 착수당 호출이
-더 많아 NN 비중이 더 클 가능성이 높다. 그래서 **8-A에서 기존 D16 `metrics.jsonl`의
-`self_play_timing.searched`**(`inference_ms`, `legal_moves_ms`, `tree_ms`, `total_move_ms`)로 실제 self-play의
-상한을 먼저 계산한다. 새 실행은 필요 없다.
+probe 국면은 즉시 승리·필수 방어가 많아 착수당 NN 호출이 적다(12.2회). 실제 self-play 값은 기존 D16
+`metrics.jsonl`의 `self_play_timing.searched`로 계산했다(새 실행 없음).
 
-결론: **GPU는 CPU 병렬화를 대체하지 않고 곱해진다.** 코어가 여러 개인 데스크톱에서 GPU-batched 단일
-프로세스는 CPU worker 방식보다 느릴 수 있다. GPU 이득을 최대화하는 최종 형태는 hybrid(§9.1)이고, 그 판단은 §8의
-실측으로 한다.
+**실측(D16 마지막 20 generation, 그램, D32 동시 실행 중, `legal_moves` 최적화 전):**
+
+| 항목 | 값 |
+|---|---|
+| 착수당 전체 | 246.8 ms |
+| `inference_ms` (snapshot + encode + NN + 검증) | 200.9 ms (81%) |
+| 나머지 (`legal_moves` + tree) | 45.9 ms |
+
+~~~text
+낙관 상한 = 246.8 / 45.9 ≈ 5.4배        (inference 전체가 0이 된다고 가정)
+보수 상한 ≈ 246.8 / (45.9 + 약 26) ≈ 3.4배 (inference 안의 CPU 부분 약 13% = snapshot·encode는 남음, probe 비율 적용)
+~~~
+
+실제 self-play에서는 **NN이 착수 시간의 약 80%**이므로 GPU 단일 프로세스만으로도 약 3.4~5.4배까지 가능하다.
+그 뒤 `legal_moves`가 2.6배 빨라져 CPU 잔여가 줄었으므로 실제 상한은 이 범위의 위쪽일 가능성이 있다. GPU 우선 방향을 유지한다.
+단, 이 상한은 GPU batch가 NN 시간을 거의 없앨 만큼 빠르고 batch가 충분히 찰 때의 값이다. §6.2와 §7.4의 실측으로 확인한다.
+
+결론: **GPU는 CPU 병렬화를 대체하지 않고 곱해진다.** GPU-batched 단일 프로세스(상한 약 3.4~5.4배)가
+주 경로다. 데스크톱 CPU 코어 수가 이 배수보다 많으면 CPU worker가 더 빠를 수 있으므로 §8에서 함께 비교한다.
+GPU가 굶는 것이 확인되면 hybrid(§9.1)로 곱한다.
 
 ### 2.5 기존 CPU/frozen 경로는 바꾸지 않는다
 
