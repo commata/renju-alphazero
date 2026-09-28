@@ -1,7 +1,8 @@
 """Mutable game state with validated moves and reversible history."""
 from __future__ import annotations
 
-from .rules import BLACK, WHITE, EMPTY, SIZE, DIRECTIONS, forbidden_reason, inside, run_length
+from .rules import (BLACK, WHITE, EMPTY, SIZE, DIRECTIONS, forbidden_reason, inside,
+                    legal_black_points, run_length)
 
 
 class IllegalMove(ValueError):
@@ -28,9 +29,9 @@ class Game:
             return []
         if self._is_initial_position():
             return [OPENING_MOVE]
-        return [(r, c) for r in range(SIZE) for c in range(SIZE)
-                if self.board[r][c] == EMPTY and
-                (self.to_play == WHITE or forbidden_reason(self.board, r, c) is None)]
+        if self.to_play == BLACK:
+            return legal_black_points(self.board)
+        return [(r, c) for r in range(SIZE) for c in range(SIZE) if self.board[r][c] == EMPTY]
 
     def has_legal_move(self) -> bool:
         """Return as soon as one legal move exists without building the full list."""

@@ -35,6 +35,15 @@ _NEIGHBORS4 = {
     key: coords[max(0, index - 4):index] + coords[index + 1:index + 5]
     for key, (coords, index) in _LINE_INFO.items()
 }
+# Split of _NEIGHBORS4 into the cells within +/-3 and the (at most two) cells at +/-4.
+_NEAR3 = {
+    key: coords[max(0, index - 3):index] + coords[index + 1:index + 4]
+    for key, (coords, index) in _LINE_INFO.items()
+}
+_EDGE4 = {
+    key: tuple(coords[k] for k in (index - 4, index + 4) if 0 <= k < len(coords))
+    for key, (coords, index) in _LINE_INFO.items()
+}
 
 
 def run_length(board: list[list[int]], row: int, col: int, dr: int, dc: int) -> int:
@@ -138,9 +147,39 @@ def _open_three(board: list[list[int]], move: tuple[int, int], dr: int, dc: int)
     return False
 
 
-def _forbidden_after_black_move(board: list[list[int]], row: int, col: int) -> str | None:
-    """Classify a black stone that is already present at (row, col)."""
-    lengths = [run_length(board, row, col, dr, dc) for dr, dc in DIRECTIONS]
+def _axis_counts(board: list[list[int]], row: int, col: int) -> tuple[tuple[int, int], ...]:
+    """Per axis, other black stones within +/-4 and within +/-3 of (row, col).
+
+    Blockers are ignored, so these only overcount. They give necessary conditions
+    taken from the exact classifiers below: five/overline through the point needs
+    four others within +/-4, a four (``_fours``) needs three others in one five-cell
+    window, and ``_open_three`` itself returns False with fewer than two within +/-3.
+    """
+    result = []
+    for dr, dc in DIRECTIONS:
+        key = (row, col, dr, dc)
+        near = 0
+        for r, c in _NEAR3[key]:
+            if board[r][c] == BLACK:
+                near += 1
+        wide = near
+        for r, c in _EDGE4[key]:
+            if board[r][c] == BLACK:
+                wide += 1
+        result.append((wide, near))
+    return tuple(result)
+
+
+def _classify_black_stone(board: list[list[int]], row: int, col: int,
+                          counts: tuple[tuple[int, int], ...]) -> str | None:
+    """Exact classification of a placed black stone; axes skipped only when impossible.
+
+    Same result as evaluating every axis: run_length only where five/overline is
+    possible, ``_fours`` only where a four is possible, and ``_open_three`` only on
+    candidate axes and only while two threes are still reachable.
+    """
+    lengths = [run_length(board, row, col, dr, dc)
+               for (dr, dc), (wide, _) in zip(DIRECTIONS, counts) if wide >= 4]
     # Under RIF 9.2/9.3, a black move that simultaneously makes an exact five
     # wins; forbidden patterns matter only when the move does not make five.
     if 5 in lengths:
@@ -149,13 +188,17 @@ def _forbidden_after_black_move(board: list[list[int]], row: int, col: int) -> s
         return "장목"
 
     fours = 0
-    for dr, dc in DIRECTIONS:
-        fours += len(_fours(board, (row, col), dr, dc))
-        if fours >= 2:
-            return "사사"
+    for (dr, dc), (wide, _) in zip(DIRECTIONS, counts):
+        if wide >= 3:
+            fours += len(_fours(board, (row, col), dr, dc))
+            if fours >= 2:
+                return "사사"
 
+    candidates = [direction for direction, (_, near) in zip(DIRECTIONS, counts) if near >= 2]
     threes = 0
-    for dr, dc in DIRECTIONS:
+    for index, (dr, dc) in enumerate(candidates):
+        if threes + len(candidates) - index < 2:
+            return None
         if _open_three(board, (row, col), dr, dc):
             threes += 1
             if threes >= 2:
@@ -163,40 +206,83 @@ def _forbidden_after_black_move(board: list[list[int]], row: int, col: int) -> s
     return None
 
 
-def _quiet_black_point(board: list[list[int]], row: int, col: int) -> bool:
-    """Prove safety, or defer to the exact classifier (False is inconclusive).
+def _forbidden_after_black_move(board: list[list[int]], row: int, col: int) -> str | None:
+    """Classify a black stone that is already present at (row, col)."""
+    return _classify_black_stone(board, row, col, _axis_counts(board, row, col))
 
-    Count other black stones within +/-4 on each axis, ignoring blockers.
-    An overline through move needs at least four of these on one axis; a
-    four in a five-cell window needs three. A straight-four extension needs
-    two within +/-3, so double-three requires two axes with at least two.
-    Thus <=2 on every axis, with only one axis reaching two, excludes every
-    forbidden type. Ignoring blockers only overcounts, never certifies a
-    forbidden move. Geometry is immutable; no board results are cached.
+
+def _quiet_counts(counts: tuple[tuple[int, int], ...]) -> bool:
+    """True proves the point is not forbidden; False is inconclusive.
+
+    No axis with three others within +/-4 excludes five, overline and every four;
+    at most one axis with two others within +/-3 leaves at most one open three.
     """
     two_stone_axes = 0
-    for dr, dc in DIRECTIONS:
-        count = 0
-        for r, c in _NEIGHBORS4[(row, col, dr, dc)]:
-            if board[r][c] == BLACK:
-                count += 1
-                if count > 2:
-                    return False
-        if count == 2:
+    for wide, near in counts:
+        if wide > 2:
+            return False
+        if near == 2:
             two_stone_axes += 1
             if two_stone_axes > 1:
                 return False
     return True
 
 
+def _quiet_black_point(board: list[list[int]], row: int, col: int) -> bool:
+    """Prove safety, or defer to the exact classifier (False is inconclusive)."""
+    return _quiet_counts(_axis_counts(board, row, col))
+
+
 def forbidden_reason(board: list[list[int]], row: int, col: int) -> str | None:
     """Classify a prospective black move. Board is restored before returning."""
     if not inside(row, col) or board[row][col] != EMPTY:
         raise ValueError("빈 보드의 범위 내 좌표가 필요합니다")
-    if _quiet_black_point(board, row, col):
+    counts = _axis_counts(board, row, col)
+    if _quiet_counts(counts):
         return None
     board[row][col] = BLACK
     try:
-        return _forbidden_after_black_move(board, row, col)
+        return _classify_black_stone(board, row, col, counts)
     finally:
         board[row][col] = EMPTY
+
+
+def legal_black_points(board: list[list[int]]) -> list[tuple[int, int]]:
+    """Row-major empty points that are not forbidden for black.
+
+    Same list as filtering every empty point with ``forbidden_reason``. The per-axis
+    counts of ``_axis_counts`` are accumulated once from the black stones (the
+    +/-4 and +/-3 neighbourhoods are symmetric), so quiet points cost a table lookup
+    and only the rest reach the exact classifier.
+    """
+    wide = [[0] * (SIZE * SIZE) for _ in DIRECTIONS]
+    near = [[0] * (SIZE * SIZE) for _ in DIRECTIONS]
+    for row in range(SIZE):
+        for col in range(SIZE):
+            if board[row][col] != BLACK:
+                continue
+            for axis, (dr, dc) in enumerate(DIRECTIONS):
+                key = (row, col, dr, dc)
+                axis_wide, axis_near = wide[axis], near[axis]
+                for r, c in _NEAR3[key]:
+                    axis_wide[r * SIZE + c] += 1
+                    axis_near[r * SIZE + c] += 1
+                for r, c in _EDGE4[key]:
+                    axis_wide[r * SIZE + c] += 1
+    result = []
+    for row in range(SIZE):
+        for col in range(SIZE):
+            if board[row][col] != EMPTY:
+                continue
+            index = row * SIZE + col
+            counts = tuple((wide[axis][index], near[axis][index]) for axis in range(len(DIRECTIONS)))
+            if not _quiet_counts(counts):
+                board[row][col] = BLACK
+                try:
+                    reason = _classify_black_stone(board, row, col, counts)
+                finally:
+                    board[row][col] = EMPTY
+                if reason is not None:
+                    continue
+            result.append((row, col))
+    return result
