@@ -97,6 +97,38 @@ class ReplayBuffer:
             raise ValueError('cannot sample from an empty replay buffer')
         return [rng.randrange(self._size) for _ in range(batch_size)]
 
+    def winner_groups(self) -> tuple[list[int], list[int]]:
+        """Logical indices of samples from black-won and from white-won games.
+
+        The winner follows from the side to move (encoder plane 3 = black to move) and the
+        side-to-move value target: +1 for the winner's positions, -1 for the loser's.
+        Draw samples (target 0) are in neither group.
+        """
+        logical = torch.arange(self._size)
+        physical = self._physical(logical)
+        black_to_move = self._states[physical, 3, 0, 0] > 0
+        values = self._values[physical]
+        black_won = (black_to_move & (values > 0)) | (~black_to_move & (values < 0))
+        white_won = (black_to_move & (values < 0)) | (~black_to_move & (values > 0))
+        return (logical[black_won].tolist(), logical[white_won].tolist())
+
+    def sample_indices_balanced(self, batch_size: int, *, rng: Random) -> tuple[list[int], dict]:
+        """Stage 8 colour-balanced sampling: half the batch from black-won games, half
+        from white-won games (even positions black, odd white), uniform within a group.
+
+        Falls back to ``sample_indices`` when either group is empty (then no colour
+        balance is possible). One ``rng.randrange`` per item, as in uniform sampling.
+        """
+        if not isinstance(rng, Random):
+            raise TypeError('rng must be a caller-owned random.Random')
+        black, white = self.winner_groups()
+        info = {'black_won_samples': len(black), 'white_won_samples': len(white)}
+        if not black or not white:
+            return self.sample_indices(batch_size, rng=rng), {**info, 'balanced': False}
+        indices = [group[rng.randrange(len(group))]
+                   for group in ((black, white)[i % 2] for i in range(batch_size))]
+        return indices, {**info, 'balanced': True}
+
     def get(self, indices: Sequence[int]) -> Batch:
         logical = torch.as_tensor(list(indices), dtype=torch.int64)
         if logical.numel() == 0 or logical.min() < 0 or logical.max() >= self._size:

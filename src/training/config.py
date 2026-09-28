@@ -43,6 +43,7 @@ DEFAULTS: dict = {
         'keep_checkpoints': 3,
         'keep_every': None,        # also keep every K-th generation checkpoint (execution only)
         'grad_clip': None,
+        'balanced_sampling': False,  # Stage 8: half black-won / half white-won samples
     },
     'self_play': {
         'simulations': 25,
@@ -99,6 +100,7 @@ OPPONENTS = ('random', 'tactical', 'previous', 'mcts_v6')
 OPTIONAL_CRITICAL_DEFAULTS = (
     (('self_play', 'tactical_rules'), False),
     (('evaluation', 'tactical_rules'), False),
+    (('training', 'balanced_sampling'), False),
 )
 
 
@@ -156,6 +158,8 @@ def validate_config(config: dict) -> dict:
         _int(t['keep_every'], 'training.keep_every')
     if t['init_checkpoint'] is not None and not isinstance(t['init_checkpoint'], str):
         raise ConfigError('training.init_checkpoint must be null or a path')
+    if type(t.get('balanced_sampling', False)) is not bool:
+        raise ConfigError('training.balanced_sampling must be a bool')
     if t['grad_clip'] is not None:
         _real(t['grad_clip'], 'training.grad_clip', positive=True)
 

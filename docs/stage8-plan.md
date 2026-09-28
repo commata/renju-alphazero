@@ -935,6 +935,43 @@ buffer 구성을 약간 늦게 따라간다. **두 색이 모두 정상인 것�
 - checkpoint 대 checkpoint 직접 대국(색 교대, 100판 이상): gen 200 / 280 / 320과 A/B 결과 모델의 순위를 정한다.
 - GPU 학습은 선택 사항이다. self-play도 같은 `device`를 따라가서 B=1 GPU가 되고, 이득이 확인되지 않았다. 당분간 CPU로 한다.
 
+### 12.5 Gate 3 구현과 실행 계획 (약 8시간)
+
+**구현:**
+
+- `training.balanced_sampling`:
+  - `ReplayBuffer.winner_groups()`는 표본의 차례 색과 value target으로 흑승/백승 게임 표본을 나눈다(무승부는 제외).
+  - `sample_indices_balanced()`는 batch의 짝수 자리를 흑승, 홀수 자리를 백승 표본에서 균등하게 뽑는다.
+    한쪽이 비어 있으면 균등 샘플링과 완전히 같다.
+  - 기본값 false는 critical config에서 빠지므로 기존 hash가 모두 그대로다.
+  - 켜져 있으면 generation 이벤트에 `balanced_sampling`(두 그룹 표본 수, 소수 색 표본당 이번 세대 예상 반복 수)을 남긴다.
+- `configs/stage8_g3_{c,b,w}.yaml`:
+  - C는 `25ab9c5a…`(D16과 같음), B는 `balanced_sampling`, W는 `replay_capacity` 40,000만 다르다.
+  - 공통: 초기 가중치 = stage8_d16 gen 200 export, 480 generation(7,680판), `keep_every` 20, `keep_checkpoints` 3,
+    `flush_denormal`, milestones 끔.
+- `run_stage8_training.py --new-run --anchor 0`: 새 run을 만들고 gen 0(초기 가중치)부터 평가 일정을 따른다.
+  같은 명령을 다시 실행하면 이어간다.
+- `scripts/run_stage8_head_to_head.py`: checkpoint 라운드로빈.
+  - 오프닝 쌍마다 색을 바꿔 두 판씩 둔다(v1 25 sims, seed 8008).
+  - 결과는 A의 점수, A의 색별 성적, 양측 이항 p, Elo 추정이다.
+- `tests/test_stage8_gate3.py`
+
+**실행:** 세 arm을 동시에 돌린다(각 1 thread, 데스크톱 CPU 코어 10개).
+
+- 단독 실행 기준 세대당 약 35 s + 평가(light 24회, heavy 6회)로 arm당 약 5.5~6시간이다.
+  동시 실행에 따른 경쟁을 넣으면 **약 7~8시간**이다.
+- 20 generation 뒤의 실측 속도로 목표를 조정한다. `--target-generation`으로 줄이거나 늘릴 수 있다.
+- 디스크: checkpoint 약 80 MB(C, B), 약 320 MB(W) × 약 27개 보존 → **여유 공간 약 15 GB 필요.**
+
+**판정(gen 160·320·480, C와 비교):**
+
+1. `color_bias` 절댓값 ≤ 0.15 유지
+2. replay 흑승 표본 비율이 극단(>90% 또는 <10%)에 머무는 기간
+3. MCTS-v2 백 ≥ 20/25, 전체 ≥ C
+4. v321 heavy(10쌍) ≥ C
+5. 방어 probe 유지
+6. 마지막에 C·B·W와 d16 gen 200·320의 라운드로빈(쌍당 50오프닝 = 100판)
+
 ## 13. PR 분리
 
 | PR | 내용 |

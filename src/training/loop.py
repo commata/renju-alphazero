@@ -122,7 +122,8 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
     for _ in range(t['steps_per_generation']):
         batch = build_batch(state.buffer, t['batch_size'], sample_rng=state.sample_rng,
                             augment_rng=state.augment_rng,
-                            augment=config['augmentation']['enabled'])
+                            augment=config['augmentation']['enabled'],
+                            balanced=t.get('balanced_sampling', False))
         step = train_step(state.model, state.optimizer, batch, config['loss']['value_weight'],
                           t['grad_clip'], config['loss']['l2_coeff'])
         state.global_step += 1
@@ -149,6 +150,13 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
         'first_step': first, 'last_step': last,
         'self_play_timing': summarize_timing(s for stats in move_stats for s in stats),
     }
+    if t.get('balanced_sampling', False):
+        black_won, white_won = state.buffer.winner_groups()
+        minority = min(len(black_won), len(white_won))
+        generation_event['balanced_sampling'] = {
+            'black_won_samples': len(black_won), 'white_won_samples': len(white_won),
+            # expected draws per minority-group sample this generation (half of all draws)
+            'minority_reuse': (drawn / 2) / minority if minority else None}
     metrics.log(generation_event)
     record_health(state, run_dir, metrics, gen, log)
     log(f'gen {gen}: trained {t["steps_per_generation"]} steps, total loss '

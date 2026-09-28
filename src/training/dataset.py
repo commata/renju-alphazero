@@ -90,9 +90,17 @@ def augment_batch(batch: Batch, rng: Random) -> tuple[Batch, list[int]]:
 
 
 def build_batch(buffer: ReplayBuffer, batch_size: int, *, sample_rng: Random,
-                augment_rng: Random, augment: bool) -> Batch:
-    """Indices come only from ``sample_rng``; symmetries only from ``augment_rng``."""
-    batch = buffer.get(buffer.sample_indices(batch_size, rng=sample_rng))
+                augment_rng: Random, augment: bool, balanced: bool = False) -> Batch:
+    """Indices come only from ``sample_rng``; symmetries only from ``augment_rng``.
+
+    ``balanced`` (Stage 8, ``training.balanced_sampling``): half from black-won and half
+    from white-won games (``ReplayBuffer.sample_indices_balanced``).
+    """
+    if balanced:
+        indices, _ = buffer.sample_indices_balanced(batch_size, rng=sample_rng)
+    else:
+        indices = buffer.sample_indices(batch_size, rng=sample_rng)
+    batch = buffer.get(indices)
     if augment:
         batch, _ = augment_batch(batch, augment_rng)
     return batch

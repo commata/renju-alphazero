@@ -19,6 +19,9 @@ the segmented run trains the same model as an uninterrupted one.
     python scripts/run_stage8_training.py --run-dir runs/stage8_d16 --config configs/stage8_d16.yaml \
         --target-generation 288            # gate 2
     python scripts/run_stage8_training.py --run-dir runs/stage8_d16 --eval-only   # catch up only
+    # Gate 3 arm: a NEW run from exported weights, schedule from its own generation 0
+    python scripts/run_stage8_training.py --run-dir runs/stage8_g3_b --config configs/stage8_g3_b.yaml \
+        --new-run --anchor 0
 """
 from __future__ import annotations
 
@@ -41,7 +44,8 @@ from training.health import replay_color_stats  # noqa: E402
 from training.loop import run_training  # noqa: E402
 from training.probes import run_probe_file  # noqa: E402
 from training.schedule import color_regression_summary, next_stop, schedule_points  # noqa: E402
-from training.training_checkpoint import load_checkpoint_payload, load_training_state  # noqa: E402
+from training.training_checkpoint import (INIT_NAME, load_checkpoint_payload,  # noqa: E402
+                                          load_training_state)
 
 PROBE_SETS = (('', ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'),
               ('_defense', ROOT / 'tests' / 'fixtures' / 'stage7_probes_defense_v1.json'))
@@ -55,7 +59,10 @@ def _write_json(path: Path, data) -> None:
 
 
 def checkpoint_for(run_dir: Path, generation: int) -> Path | None:
-    for name in (f'checkpoint_gen{generation:03d}.pt', f'milestone_gen{generation:03d}.pt'):
+    names = [f'checkpoint_gen{generation:03d}.pt', f'milestone_gen{generation:03d}.pt']
+    if generation == 0:
+        names.append(INIT_NAME)  # a new run's starting weights (e.g. an exported checkpoint)
+    for name in names:
         path = run_dir / 'checkpoints' / name
         if path.is_file():
             return path
@@ -124,6 +131,14 @@ def catch_up(run_dir: Path, upto: int, args, log=print) -> None:
 
 
 def orchestrate(run_dir: Path, config: dict | None, args, log=print) -> int:
+    if getattr(args, 'new_run', False) and not (run_dir / 'checkpoints' / 'latest.pt').is_file():
+        # Start a new run (training.init_checkpoint = exported weights) and stop at the
+        # first schedule point; generation 0 (init.pt) is evaluated by the catch-up below.
+        target = config['training']['generations']
+        stop = next_stop(0, args.anchor, args.light_every, target)
+        stop = stop if stop > 0 else min(args.light_every, target)
+        log(f'new run {run_dir}: training gen 0 -> {stop} (target {target})')
+        run_training(config, run_dir=run_dir, stop_after=stop, log=log)
     generation = current_generation(run_dir)
     catch_up(run_dir, generation, args, log)
     if args.eval_only:
@@ -148,6 +163,9 @@ def build_parser() -> argparse.ArgumentParser:
                         help='run config (execution-control values may differ, e.g. generations)')
     parser.add_argument('--target-generation', type=int,
                         help='override training.generations (gate target: 192 / 288 / 480)')
+    parser.add_argument('--new-run', action='store_true',
+                        help='start a NEW run in --run-dir (must not exist or be empty) from '
+                             '--config; later invocations resume it (use --anchor 0)')
     parser.add_argument('--eval-only', action='store_true',
                         help='only evaluate scheduled checkpoints that already exist')
     parser.add_argument('--anchor', type=int, default=160,
@@ -171,8 +189,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
-    if not (args.run_dir / 'checkpoints' / 'latest.pt').is_file():
-        parser.error(f'{args.run_dir} has no checkpoints/latest.pt')
+    has_latest = (args.run_dir / 'checkpoints' / 'latest.pt').is_file()
+    if not has_latest and not args.new_run:
+        parser.error(f'{args.run_dir} has no checkpoints/latest.pt (use --new-run to start one)')
+    if args.new_run and args.eval_only:
+        parser.error('--new-run cannot be combined with --eval-only')
     if args.heavy_every % args.light_every:
         parser.error('--heavy-every must be a multiple of --light-every')
     config = None
