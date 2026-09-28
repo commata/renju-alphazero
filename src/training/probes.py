@@ -44,6 +44,7 @@ from .training_checkpoint import load_checkpoint_payload
 PROBE_FORMAT = 'stage7-probes-v1'
 RESULT_FORMAT = 'stage7-probe-results-v1'
 POLICY_KINDS = ('immediate_win', 'must_block', 'vcf')
+DEFENSE_KINDS = ('must_defend_open3',)  # tests/fixtures/stage7_probes_defense_v1.json
 
 
 @dataclass(frozen=True)

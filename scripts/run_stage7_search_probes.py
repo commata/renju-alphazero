@@ -26,7 +26,7 @@ import torch  # noqa: E402
 from model.config import ModelConfig  # noqa: E402
 from model.network import PolicyValueNet  # noqa: E402
 from search.alphazero import SearchConfig  # noqa: E402
-from training.probes import (POLICY_KINDS, evaluate_search_probes,  # noqa: E402
+from training.probes import (DEFENSE_KINDS, POLICY_KINDS, evaluate_search_probes,  # noqa: E402
                              load_model_from_training_checkpoint, load_probe_set)
 
 DEFAULT_PROBES = ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'
@@ -49,7 +49,8 @@ def main() -> int:
     parser.add_argument('--tactical-rules', choices=('off', 'on'), nargs='+', default=['off'],
                         help='PUCT v1 (off) and/or the Stage 7-B PUCT v2 teacher (on)')
     parser.add_argument('--c-puct', type=float, default=1.5)
-    parser.add_argument('--kinds', nargs='+', choices=POLICY_KINDS, default=list(POLICY_KINDS))
+    parser.add_argument('--kinds', nargs='+', choices=POLICY_KINDS + DEFENSE_KINDS,
+                        help='default: every policy kind present in --probes')
     parser.add_argument('--probes', type=Path, default=DEFAULT_PROBES)
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
@@ -64,13 +65,15 @@ def main() -> int:
         model = PolicyValueNet(ModelConfig()).eval()
         info = {'random_init_seed': args.random_init}
 
+    kinds = tuple(args.kinds) if args.kinds else tuple(
+        k for k in POLICY_KINDS + DEFENSE_KINDS if any(p.kind == k for p in probes))
     grid = []
     for rules, fpu, sims in ((r, f, n) for r in args.tactical_rules for f in args.fpu
                              for n in args.simulations):
         config = SearchConfig(num_simulations=sims, c_puct=args.c_puct, temperature_moves=0,
                               noise_enabled=False, fpu_reduction=fpu,
                               tactical_rules=rules == 'on')
-        result = evaluate_search_probes(model, probes, config, tuple(args.kinds))
+        result = evaluate_search_probes(model, probes, config, kinds)
         grid.append(result)
         cells = ' | '.join(
             f"{k} {s['solved']:.2f} (share {s['visit_share']:.2f}, "

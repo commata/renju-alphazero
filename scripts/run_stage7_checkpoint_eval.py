@@ -156,6 +156,8 @@ def main() -> int:
         targets = []
         for generation in args.generations:
             path = args.run_dir / 'checkpoints' / f'checkpoint_gen{generation:03d}.pt'
+            if not path.is_file():  # pruned: fall back to a milestone pin
+                path = path.with_name(f'milestone_gen{generation:03d}.pt')
             if not path.is_file():
                 raise SystemExit(f'missing checkpoint: {path}')
             targets.append((path, out_dir / f'gen{generation:03d}{args.suffix}.json'))

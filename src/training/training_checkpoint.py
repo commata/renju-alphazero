@@ -115,11 +115,19 @@ def copy_atomic(source: str | Path, destination: str | Path) -> None:
         _atomic_write(Path(destination), lambda handle: shutil.copyfileobj(src, handle))
 
 
-def prune_checkpoints(directory: str | Path, keep: int) -> list[Path]:
-    """Keep the newest ``keep`` generation files; never touch init/latest."""
+def prune_checkpoints(directory: str | Path, keep: int, keep_every: int | None = None
+                      ) -> list[Path]:
+    """Keep the newest ``keep`` generation files; never touch init/latest.
+
+    With ``keep_every`` = K, generation files whose number is a multiple of K are
+    also kept (long runs keep periodic checkpoints for probes/evaluation).
+    """
     files = sorted((int(m.group(1)), p) for p in Path(directory).iterdir()
                    if (m := _GENERATION_FILE.match(p.name)))
     removed = [p for _, p in files[:-keep]] if keep > 0 else []
+    if keep_every:
+        removed = [p for p in removed
+                   if int(_GENERATION_FILE.match(p.name).group(1)) % keep_every != 0]
     for path in removed:
         path.unlink()
     return removed
