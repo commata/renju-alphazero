@@ -719,6 +719,25 @@ resume
 외부 평가도 GPU multi-game scheduler가 검증된 뒤 선택적으로 같은 evaluator batching을 쓸 수 있지만,
 결과 비교를 위해 search config/opening/seed는 바꾸지 않는다.
 
+**구현(8-G):** `scripts/run_stage8_training.py` + `training.schedule`.
+
+- `<run>/checkpoints/latest.pt`에서 이어가며, 다음 평가 지점(`anchor + k × light_every`, 목표 generation으로 제한)에서
+  `run_training(stop_after=…)`로 멈춘다.
+- 이미 지난 평가 지점을 먼저 따라잡는다. 예: 데스크톱 기준선이 gen 163에서 멈췄으면 gen 160 light+heavy부터 평가한다.
+- 출력:
+  - `external_eval/genNNN_light.json`: Tactical·MCTS-v2 각 25쌍, 규칙 끈 v1, seed 7007(Stage 7과 같은 오프닝)
+  - `external_eval/genNNN_heavy.json`: v321·v7 각 5쌍
+  - `probes/genNNN.json`, `probes/genNNN_defense.json`
+  - `external_eval/color_regression.json`: 모든 light 결과를 generation 순으로 다시 계산
+- 파일이 있으면 건너뛰고 원자적으로 쓴다. 중단 후 다시 실행해도 안전하고, `--eval-only`는 평가만 따라잡는다.
+- `color_regression`이 `confirmed`이면 로그에 `*** CONFIRMED`를 남긴다. 학습은 멈추지 않는다(§4.2, 사람이 판단).
+- 시작할 때 `keep_every`가 `light_every`와 `anchor`를 나누는지 검사한다.
+- `tests/test_stage8_schedule.py`:
+  - 평가 지점 계산
+  - D32형 붕괴는 후보 → 확정으로 잡히고, D16형은 경보 없음
+  - 작은 run으로 지점별 파일 생성, 재실행 시 파일 불변
+  - **구간으로 끊어 학습한 모델 = 한 번에 학습한 모델**(가중치 동일)
+
 ---
 
 ## 12. 장기 학습 pilot
