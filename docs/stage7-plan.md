@@ -226,6 +226,24 @@ profile 변경은 탐색 결과에 영향을 주지 않는 계측 PR로 분리�
 NN forward 48%, **흑 차례 `legal_moves` 27%**(호출당 약 1 ms, 백 차례는 약 0.02 ms — 흑 금수 판정),
 tree 기타 10%, encode 4%, 규칙 필터 4%. 확정 수치는 사용자 PC의 학습된 checkpoint로 다시 잰다.
 
+**사용자 PC 결과**(Windows 11, Intel Family 6 Model 170, torch 2.14 CPU, 1 thread, D32 gen 80, probe 80국면,
+최적화 전 코드 `a436bfc`):
+
+| | v1 25 sims | v1 50 sims | v2 25 sims | v2 50 sims |
+|---|---|---|---|---|
+| ms / 착수 | 443 | 780 | 85 | 287 |
+| 평가 / 착수 | 24.4 | 47.0 | 6.6 | 12.2 |
+| NN forward | 66% | 65% | 47% | 51% |
+| **흑 `legal_moves`** | 17% | 17% | **33%** | **30%** |
+| 규칙 필터 | — | — | 6% | 5% |
+| encode / tree 기타 | 4% / 7% | 4% / 7% | 3% / 6% | 3% / 6% |
+
+- 흑 `legal_moves`는 호출당 2.7~4.5 ms로 백(0.04~0.06 ms)의 70~100배다 → §6에서 최적화.
+- NN forward는 평가당 6~12 ms로 같은 실행 안에서도 2배 흔들렸다. P/E 코어 혼합 CPU의 스레드 배치·전원
+  상태 영향으로 보고, **절대 시간은 전원 연결·최고 성능 모드에서만 비교**한다(재측정한 §9.1 격자는 탐색 횟수에
+  정확히 비례해 안정적이었다).
+- v2의 평가 수 감소는 probe 국면(즉시 승리·필수 방어 비중이 큼)의 효과라 일반 국면 추정에 쓰지 않는다.
+
 ## 5. Batch microbenchmark
 
 `PolicyValueEvaluator.evaluate_batch`는 이미 batch N을 지원하므로 실제 PUCT를 변경하기 전에
@@ -251,6 +269,20 @@ CPU에서 batching이 큰 향상을 낸다고 가정하지 않는다. Stage 8의
 참고(개발 컨테이너, 무작위 64×4): 1 thread에서는 B에 따른 이득이 거의 없고(약 3 ms/국면), 4 threads에서는
 B=8이 약 0.8 ms/국면으로 가장 좋았다. batch와 B=1의 차이는 약 1e-6. 공유 CPU라 확정값은 사용자 PC에서 잰다.
 
+**사용자 PC 결과**(같은 PC·checkpoint, 128국면, full `evaluate_batch` ms/국면):
+
+| B | 1 thread | 2 threads | 4 threads |
+|---|---|---|---|
+| 1 | 8.4 | 8.8 | 6.1 |
+| 8 | 8.1 | 5.1 | 3.8 |
+| 16 | 8.6 | **4.5** | 3.2 |
+| 32 | 8.0 | 4.6 | **2.8** |
+
+- 1 thread에서는 batch 이득이 없다. 4 threads·B=32가 B=1 대비 2.2배(스레드 4배 대비 효율 낮음).
+- batch와 B=1의 최대 차이: prior 5×10⁻⁷, value 2×10⁻⁶(§5.1 허용 범위).
+- Stage 8 후보: 이 CPU에서는 **1-thread worker 여러 개의 병렬 self-play**가 batch보다 유리할 가능성이 높다.
+  worker 수별 처리량을 Stage 8 첫 측정으로 정한다(§11).
+
 ### 5.1 수치 재현성 계약
 
 batch 크기가 달라지면 float32 kernel 경로 때문에 bit-exact 출력은 요구하지 않는다.
@@ -269,6 +301,22 @@ Stage 6 MVP에서 searched move의 `legal_moves`가 약 56 ms로 관측되었으
 - 규칙 regression, differential tests, frozen MCTS behavior, Stage 5 search 계약을 그대로 통과해야 한다.
 
 최적화 전후에 같은 fixture의 합법수 목록과 순서를 비교한다.
+
+**구현(Stage 7 완료 기준 5).** `Game.legal_moves()`의 흑 차례는 `renju.rules.legal_black_points()`를 쓴다.
+
+- 흑돌마다 네 축의 ±4/±3 이웃 칸에 개수를 더해 **빈칸별 축 개수를 한 번에** 만든다(이웃 관계는 대칭).
+  이전에는 빈칸마다 32칸을 다시 셌다.
+- 조용한 점 판정(`_quiet_counts`): 어느 축에도 ±4 안에 다른 흑이 3개 이상 없고, ±3 안에 2개인 축이 하나 이하면
+  금수가 아니다. 쌍삼 조건을 ±4 대신 `_open_three`의 전제와 같은 ±3으로 좁혀 더 많은 점을 바로 통과시킨다.
+- 정밀 판정(`_classify_black_stone`)은 결과가 바뀔 수 없는 축만 건너뛴다. run_length는 ±4에 4개 이상인 축,
+  `_fours`는 3개 이상인 축, `_open_three`는 ±3에 2개 이상인 후보 축에서, 삼이 두 개 나올 여지가 있을 때만 부른다.
+  모두 기존 함수 안에 이미 있던 필요조건이다.
+- 판정 규칙, 결과 문자열, 합법수 순서는 그대로다. `tests/reference_rules.py`와의 차분 테스트(기존 seed 42
+  240국면 + 새 seed 7 400국면 + Stage 7 probe 전체, 보드 복원 포함), frozen hash, V6/V7 동작 지문, Stage 5
+  golden hash가 모두 통과한다.
+
+효과(개발 컨테이너, 무작위 64×4, v2 50 sims, probe 60국면, 탐색 결과 동일): 흑 `legal_moves` 호출당
+1.72 → 0.66 ms(2.6배), 착수당 116 → 91 ms(−22%), 흑 `legal_moves` 비중 36% → 18%.
 
 ## 7. Weights-only export
 
@@ -441,6 +489,37 @@ Stage 7-C: 두 arm을 같은 설정 그대로 gen 30 → 110까지 이어간다(
 비교는 **같은 누적 판수**(320판 간격) checkpoint끼리 외부 평가(v1, MCTS-v2 50판 흑/백 분리)·probe·value loss로 한다.
 D32가 같은 판수에서 같거나 더 강하면 Stage 8 기본값을 D32 쪽으로 정한다.
 
+### 8.7 Stage 7-D 결과 (두 arm 모두 2,560 self-play games)
+
+외부 평가는 §8.5와 같다(규칙 끈 PUCT v1 25 sims, 고정 오프닝; Tactical·MCTS-v2 50판, v321·v7 10판).
+
+| checkpoint | Tactical | MCTS-v2 | v2 흑 / 백 | v321 | v7 |
+|---|---|---|---|---|---|
+| 7-C B gen 110(출발점) | 47 | 21 | 11 / 10 | 1/10 | 0/10 |
+| D16 gen 40 / 80 | 49 / **50** | 39 / 39 | 18·21 / 22·17 | — | — |
+| **D16 gen 160** | 49 | **43** | 20 / **23** | **7/10** | 0/10 |
+| D32 gen 20 / 40 | 49 / 46 | 33 / 18 | 16·17 / 15·3 | — | — |
+| D32 gen 80 | 39 | 16 | 15 / **1** | 2/10 | 0/10 |
+
+- **D16이 출발점보다 강해졌다**: MCTS-v2 43 대 21(p = 4×10⁻⁶), 백 23/25 대 10/25(p = 0.0001),
+  v321 7/10 대 1/10(p = 0.01). gen 80 → 160은 MCTS-v2 기준 포화(39 → 43, p = 0.22).
+- **D32는 출발점보다 약해졌다**: 백 1/25(p = 0.002), Tactical 백 22 → 14/25. 같은 판수 비교에서 D16이 우세
+  (1,280판: 39 대 18, p = 2×10⁻⁵; 2,560판: 43 대 16, p = 3×10⁻⁸).
+- 원인은 self-play 흑백 흐름이다. D16은 흑 승률 21% → 97%(gen 50~59) → 3%(gen 120~)로 **두 번 뒤집히며**
+  공격과 방어를 번갈아 배웠다. D32는 gen 0~9부터 흑 90%, 이후 98~99%로 **한 색에 갇혔고** value loss가
+  0.39 → 0.09로 떨어졌다("흑이 이긴다"만 맞히면 되는 목표). 백 방어 예시가 사라져 백 방어가 퇴화했다.
+- **주의:** arm당 seed 하나다. 두 arm은 첫 10 generation에 이미 갈렸으므로 "32판이 붕괴를 부른다"가 아니라
+  "**v2 경계에서 한 색 붕괴가 실제로 일어나고, 스스로 빠져나오지 못할 수 있다**"까지만 결론으로 삼는다.
+  D32 재사용 3.6배, D16 8~10배로 §8.5가 걱정한 과다 재사용은 이번엔 문제가 아니었다.
+- raw probe(D16 gen 160, 7-C gen 110 대비): 즉시 승리 배율 1.6 → 5.0(gen 80은 9.6), 열린 3 방어 top-3
+  25% → 40%. 필수 방어 top-1은 0~5% 그대로이고 value 분리는 +0.30 → +0.04로 줄었다(흑백 흐름이 극단을 오간 영향).
+  D32는 방어 top-3 20%로 7-C보다 낮다.
+- 급상승 기록(D16 gen 19/81/144/157, D32 gen 14/30)은 모두 previous 6/20 → 12/20 수준(p ≈ 0.055)으로 잡음이다.
+  의미 있는 사건은 `black_rate_shifts`에 잡힌 흑백 우세 전환이었다.
+
+**결정:** Stage 8 기본값은 D16 설정(세대당 16판)이고 최종 Stage 7 checkpoint는 D16 gen 160
+(SHA-256 `58aea679…`)이다. self-play 흑 승률이 한쪽으로 오래 머무는지 감시하는 경고를 Stage 8 필수 항목으로 둔다(§10.2).
+
 ## 9. FPU 단일 변수 실험
 
 현재 PUCT v1은 미방문 child Q를 0으로 고정한다. 적은 simulation 환경에서는 이 선택이 탐색 폭에
@@ -465,6 +544,33 @@ root는 현재 value_sum을 backup하지 않으므로 root NN value를 별도 �
 
 먼저 적절한 simulation 예산을 고정한 뒤 FPU만 변경해 비교한다.
 
+### 9.1 Search-only 격자 결과 (완료 기준 7·8)
+
+D16 gen 160, PUCT v2, 학습 없음. 즉시 승리·필수 방어는 모든 설정에서 100%(v2 규칙이 해결)다.
+
+| 설정 | VCF 40 | 열린 3 방어 40 (흑 / 백) | ms / probe |
+|---|---|---|---|
+| FPU 0, 25 sims | 20% | 22.5% (4 / 5) | 114~136 |
+| **FPU 0, 50 sims** | 20% | 27.5% | 226~273 |
+| FPU 0, 100 sims | 22.5% | 32.5% (6 / 7) | 437~480 |
+| FPU 0.25, 25 / 50 / 100 | 15 / 27.5 / 27.5% | 25 / 30 / 25% | 96~483 |
+
+같은 probe끼리 짝지은 McNemar 검정:
+
+- 25 → 100 sims: 방어는 100에서만 푼 것 4개, 25에서만 푼 것 0개(p = 0.12, 25 → 50 → 100에서 단조 증가).
+  VCF는 차이 1개. **탐색을 4배 늘린 이득은 유의하지 않다.**
+- FPU 0 대 0.25: 모든 sims에서 p = 0.38~1.0. 0.25는 방문 child 수만 줄인다(방어 100 sims 52 → 31).
+- 시간은 탐색 횟수에 비례했다(1 simulation당 약 4.4~5.4 ms).
+- D32 gen 80으로 먼저 잰 격자도 결론이 같았다(VCF 12~17%, 방어 10~15%). 모델이 강할수록 해법 비율이 높다.
+
+**결정:**
+
+- **FPU = 0 유지**(기준 8). 0.25는 품질 이득 없이 탐색 폭만 줄인다.
+- **self-play는 검증된 50 simulations 유지**(기준 7). 7-B~7-D 학습은 모두 50으로 했다. search-only로는
+  25와 50의 차이가 작지만, teacher 분포(`pi`) 품질은 학습 A/B(§8.2) 없이는 판단할 수 없으므로 25로 줄이는 것은
+  Stage 8 처리량 후보로만 남긴다.
+- 평가·사람 대국에서는 100 simulations를 선택지로 둔다(방어에 약한 상승 경향, 학습 비용과 무관).
+
 ## 10. Stage 7 완료 기준
 
 다음을 만족하면 Stage 8로 넘어간다.
@@ -482,19 +588,39 @@ root는 현재 value_sum을 backup하지 않으므로 root NN value를 별도 �
 학습 향상이 명확하지 않더라도 원인이 search/data/throughput 중 어디에 가까운지 설명할 수 있으면
 Stage 7의 검증 목적은 달성한 것으로 본다.
 
-### 10.1 현황 (Stage 7-C 종료 시점)
+### 10.1 현황 (Stage 7 종료 시점)
 
-| # | 기준 | 상태 | 남은 일 |
+| # | 기준 | 상태 | 근거 |
 |---|---|---|---|
-| 1 | 7-A continuation 무결성 | ✅ | — |
-| 2 | 학습 신호/병목 설명 | ✅ | teacher 품질(§2.3) → v2(§8.3) → 2수 방어 학습(§8.5) |
-| 3 | `inference_s`·`legal_moves` 비용 분해 | 🟡 | 도구 완료(`profile_stage7_search.py`, §4). 7-D 최종 checkpoint로 사용자 PC 측정 |
-| 4 | batch microbenchmark | 🟡 | 도구 완료(`benchmark_stage7_batch.py`, §5). 같은 checkpoint로 측정 |
-| 5 | `legal_moves` 의미보존 최적화 | ❌ | 3번 결과를 보고 결정(필요 없으면 "불필요"로 기록) |
+| 1 | 7-A continuation 무결성 | ✅ | §2.2 |
+| 2 | 학습 신호/병목 설명 | ✅ | teacher 품질(§2.3) → v2(§8.3) → 2수 방어 학습(§8.5) → 한 색 붕괴 위험(§8.7) |
+| 3 | `inference_s`·`legal_moves` 비용 분해 | ✅ | §4: NN forward 47~66%, 흑 `legal_moves` 17~33% |
+| 4 | batch microbenchmark | ✅ | §5: 1 thread 이득 없음, 4 threads B=32 2.2배, 수치 계약 통과 |
+| 5 | `legal_moves` 의미보존 최적화 | ✅ | §6: 흑 호출 2.6배, 차분 테스트·frozen·golden hash 통과 |
 | 6 | weights-only export round-trip | ✅ | `scripts/export_stage7_weights.py` |
-| 7 | 25/50/100 simulation trade-off | 🟡 | 50을 측정 없이 채택. search probe로 gen 110에서 25/50/100 기록 |
-| 8 | FPU 효과(simulation과 분리) | 🟡 | 옵션·측정 도구만 있음. search probe 격자로 search-only 기록(학습 실험은 선택) |
-| 9 | 그램 소형 설정 선택 | 🟡 | B(v2, 50 sims, 64×4)로 사실상 확정. games/gen은 7-D 결과로 확정 |
+| 7 | 25/50/100 simulation trade-off | ✅ | §9.1: 100까지 유의한 이득 없음, self-play 50 유지 |
+| 8 | FPU 효과(simulation과 분리) | ✅ | §9.1: search-only로 효과 없음, FPU 0 유지 |
+| 9 | 그램 소형 설정 선택 | ✅ | §10.2 |
+
+### 10.2 최종 소형 설정 (Stage 8 출발점)
+
+| 항목 | 값 |
+|---|---|
+| config | `configs/stage7d_b16.yaml` (critical hash `25ab9c5a…`) |
+| 초기 가중치 | D16 gen 160 (`runs/stage7d_b16/checkpoints/checkpoint_gen160.pt`, SHA-256 `58aea679…`) |
+| network | 64 channels × 4 blocks (Stage 4 기본) |
+| search | PUCT v2(`tactical_rules: true`), 50 simulations, c_puct 1.5, FPU 0 |
+| self-play | 16 games / generation, temperature 10수, Dirichlet α 0.05 · ε 0.25 |
+| training | batch 32, 50 steps / generation, replay 10,000, Adam lr 1e-3, 8-way augmentation |
+| 장치 | CPU, torch_threads 1 |
+| 평가 | 루프 내 in-loop 평가 + 루프 밖 외부 평가(v1 25 sims, Tactical·MCTS-v2 50판, v321·v7 10판) |
+
+Stage 8 착수 조건으로 함께 넣을 것:
+
+1. **self-play 흑 승률 치우침 경고**: 최근 10 generation 흑 승률이 90% 이상 또는 10% 이하이면 경고를 남긴다
+   (D32 붕괴, §8.7). 붕괴가 확인되면 이전 checkpoint로 돌아가거나 seed를 바꾸는 운영 절차를 정한다.
+2. 1-thread worker 수별 self-play 처리량 측정으로 병렬화 방식 결정(§5, §11).
+3. 외부 평가 주기화: 320판마다 MCTS-v2 50판, 1,280판마다 v321·v7 10판.
 
 ## 11. Stage 8로 미루는 구조적 변경
 
