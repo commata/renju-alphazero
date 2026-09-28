@@ -29,15 +29,20 @@ import torch  # noqa: E402
 from training.probes import run_probe_file  # noqa: E402
 
 DEFAULT_PROBES = ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'
-CHECKPOINT_RE = re.compile(r'checkpoint_gen(\d{3})\.pt$')
+CHECKPOINT_RE = re.compile(r'(?:checkpoint|milestone)_gen(\d{3,})\.pt$')
 
 
 def run_checkpoints(run_dir: Path, generations: list[int] | None) -> list[tuple[int, Path]]:
     found = []
-    for path in sorted((run_dir / 'checkpoints').glob('checkpoint_gen*.pt')):
-        match = CHECKPOINT_RE.search(path.name)
-        if match:
-            found.append((int(match.group(1)), path))
+    seen = set()
+    # checkpoint_genNNN.pt first; a milestone_genNNN.pt pin fills in pruned generations.
+    for pattern in ('checkpoint_gen*.pt', 'milestone_gen*.pt'):
+        for path in sorted((run_dir / 'checkpoints').glob(pattern)):
+            match = CHECKPOINT_RE.search(path.name)
+            if match and int(match.group(1)) not in seen:
+                seen.add(int(match.group(1)))
+                found.append((int(match.group(1)), path))
+    found.sort()
     if generations is not None:
         wanted = set(generations)
         missing = wanted - {g for g, _ in found}
@@ -74,6 +79,11 @@ def main() -> int:
     parser.add_argument('--generations', type=int, nargs='+',
                         help='with --run-dir: only these checkpoint generations')
     parser.add_argument('--probes', type=Path, default=DEFAULT_PROBES)
+    parser.add_argument('--suffix', default='',
+                        help='with --run-dir: write probes/genNNN<suffix>.json (e.g. _defense '
+                             'for tests/fixtures/stage7_probes_defense_v1.json)')
+    parser.add_argument('--skip-existing', action='store_true',
+                        help='with --run-dir: skip generations whose output already exists')
     parser.add_argument('--output', type=Path,
                         help='with --checkpoint: output JSON (default: print only)')
     args = parser.parse_args()
@@ -95,8 +105,11 @@ def main() -> int:
     out_dir = args.run_dir / 'probes'
     out_dir.mkdir(parents=True, exist_ok=True)
     for generation, path in run_checkpoints(args.run_dir, args.generations):
+        target = out_dir / f'gen{generation:03d}{args.suffix}.json'
+        if args.skip_existing and target.exists():
+            continue
         result = run_probe_file(path, args.probes)
-        (out_dir / f'gen{generation:03d}.json').write_text(
+        target.write_text(
             json.dumps(result, indent=1), encoding='utf-8')
         print(summary_line(result), flush=True)
     print(f'wrote {out_dir}')

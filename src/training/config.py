@@ -41,6 +41,7 @@ DEFAULTS: dict = {
         'replay_capacity': 10000,
         'init_checkpoint': None,
         'keep_checkpoints': 3,
+        'keep_every': None,        # also keep every K-th generation checkpoint (execution only)
         'grad_clip': None,
     },
     'self_play': {
@@ -51,6 +52,7 @@ DEFAULTS: dict = {
         'dirichlet_alpha': _STAGE5.dirichlet_alpha,
         'dirichlet_epsilon': _STAGE5.dirichlet_epsilon,
         'max_moves': BOARD_PLY_LIMIT,
+        'tactical_rules': False,   # Stage 7-B PUCT v2 teacher (search.tactics)
     },
     'augmentation': {'enabled': True},
     'optimizer': {'name': 'adam', 'lr': 0.001, 'weight_decay': 0.0001, 'momentum': 0.0},
@@ -59,6 +61,7 @@ DEFAULTS: dict = {
         'every': 1,
         'puct_simulations': 25,
         'c_puct': _STAGE5.c_puct,
+        'tactical_rules': False,   # search used by the model in in-loop evaluation
         'opening_random_plies': 2,
         'opening_radius': 2,
         'random': {'black_games': 2, 'white_games': 2},
@@ -68,17 +71,28 @@ DEFAULTS: dict = {
                     'use_frozen_config': True},
     },
     'output': {'runs_dir': 'runs', 'run_name': 'stage6'},
+    # Stage 7 execution-only monitoring (training.milestones); not training-critical.
+    'milestones': {'enabled': False, 'window': 5, 'threshold': 0.25,
+                   'opponents': ['random', 'tactical'], 'first_win': ['tactical', 'mcts_v6']},
 }
 
 # Execution-control keys: may differ between a checkpoint and --config / CLI on resume.
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
-    ('device',), ('torch_threads',), ('output',),
-    ('training', 'generations'), ('training', 'keep_checkpoints'),
+    ('device',), ('torch_threads',), ('output',), ('milestones',),
+    ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
     ('training', 'init_checkpoint'),
 )
 
 OPPONENTS = ('random', 'tactical', 'previous', 'mcts_v6')
+
+# Stage 7 options whose default keeps pre-Stage-7 behavior. A key at its default is
+# dropped from the critical config, so configs/checkpoints written before the key
+# existed keep the same critical hash and still resume.
+OPTIONAL_CRITICAL_DEFAULTS = (
+    (('self_play', 'tactical_rules'), False),
+    (('evaluation', 'tactical_rules'), False),
+)
 
 
 class ConfigError(ValueError):
@@ -131,6 +145,8 @@ def validate_config(config: dict) -> dict:
     for key in ('generations', 'games_per_generation', 'batch_size', 'steps_per_generation',
                 'replay_capacity', 'keep_checkpoints'):
         _int(t[key], f'training.{key}')
+    if t.get('keep_every') is not None:
+        _int(t['keep_every'], 'training.keep_every')
     if t['init_checkpoint'] is not None and not isinstance(t['init_checkpoint'], str):
         raise ConfigError('training.init_checkpoint must be null or a path')
     if t['grad_clip'] is not None:
@@ -181,6 +197,16 @@ def validate_config(config: dict) -> dict:
     if type(v6['final_generation_only']) is not bool:
         raise ConfigError('evaluation.mcts_v6.final_generation_only must be a bool')
 
+    m = config.get('milestones')
+    if m is not None:
+        if type(m['enabled']) is not bool:
+            raise ConfigError('milestones.enabled must be a bool')
+        _int(m['window'], 'milestones.window')
+        _real(m['threshold'], 'milestones.threshold', positive=True)
+        for key in ('opponents', 'first_win'):
+            if not isinstance(m[key], list) or any(o not in OPPONENTS for o in m[key]):
+                raise ConfigError(f'milestones.{key} must be a list of {OPPONENTS}')
+
     out = config['output']
     if not isinstance(out['runs_dir'], str) or not isinstance(out['run_name'], str):
         raise ConfigError('output.runs_dir and output.run_name must be strings')
@@ -215,6 +241,12 @@ def critical_config(config: dict) -> dict:
         for key in path[:-1]:
             node = node[key]
         node.pop(path[-1], None)
+    for path, default in OPTIONAL_CRITICAL_DEFAULTS:
+        node = critical
+        for key in path[:-1]:
+            node = node[key]
+        if node.get(path[-1], default) == default:
+            node.pop(path[-1], None)
     return critical
 
 
@@ -243,11 +275,13 @@ def self_play_search_config(config: dict) -> SearchConfig:
     return SearchConfig(num_simulations=s['simulations'], c_puct=s['c_puct'], tau=s['tau'],
                         temperature_moves=s['temperature_moves'],
                         dirichlet_alpha=s['dirichlet_alpha'],
-                        dirichlet_epsilon=s['dirichlet_epsilon'], noise_enabled=True)
+                        dirichlet_epsilon=s['dirichlet_epsilon'], noise_enabled=True,
+                        tactical_rules=s.get('tactical_rules', False))
 
 
 def evaluation_search_config(config: dict) -> SearchConfig:
     """Noise OFF, temperature 0 (argmax with the Stage 5 visit/prior/index tie-break)."""
     e = config['evaluation']
     return SearchConfig(num_simulations=e['puct_simulations'], c_puct=e['c_puct'],
-                        temperature_moves=0, noise_enabled=False)
+                        temperature_moves=0, noise_enabled=False,
+                        tactical_rules=e.get('tactical_rules', False))

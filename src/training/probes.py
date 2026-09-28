@@ -44,6 +44,7 @@ from .training_checkpoint import load_checkpoint_payload
 PROBE_FORMAT = 'stage7-probes-v1'
 RESULT_FORMAT = 'stage7-probe-results-v1'
 POLICY_KINDS = ('immediate_win', 'must_block', 'vcf')
+DEFENSE_KINDS = ('must_defend_open3',)  # tests/fixtures/stage7_probes_defense_v1.json
 
 
 @dataclass(frozen=True)
@@ -225,3 +226,50 @@ def run_probe_file(checkpoint: str | Path, probe_path: str | Path) -> dict:
     result = evaluate_probes(model, probes)
     return {'format_version': RESULT_FORMAT, 'probe_set': str(probe_path),
             'probe_set_sha256': probe_sha, **info, **result}
+
+
+def evaluate_search_probes(model: PolicyValueNet, probes: list[Probe], search_config,
+                           kinds: tuple[str, ...] = POLICY_KINDS) -> dict:
+    """Solve policy probes with deterministic PUCT (no training, no noise).
+
+    Per kind: ``solved`` = fraction whose argmax-visit action is correct,
+    ``visit_share`` = mean fraction of root visits on the correct set, plus mean
+    evaluator calls and seconds per probe.
+    """
+    from time import perf_counter
+
+    from model.evaluator import PolicyValueEvaluator
+    from search.alphazero import argmax_action, run_search
+
+    if search_config.noise_enabled or search_config.temperature_moves != 0:
+        raise ValueError('search probes require noise OFF and temperature 0')
+    evaluator = PolicyValueEvaluator(model)
+    rows = []
+    for probe in probes:
+        if probe.kind not in kinds or not probe.correct:
+            continue
+        game = _replay(probe.moves)
+        started = perf_counter()
+        result = run_search(game, evaluator, search_config, None)
+        seconds = perf_counter() - started
+        total = sum(result.visit_counts)
+        rows.append({
+            'id': probe.id, 'kind': probe.kind, 'to_play': probe.to_play,
+            'solved': argmax_action(result) in probe.correct,
+            'visit_share': sum(result.visit_counts[a] for a in probe.correct) / total,
+            'visited_children': sum(1 for c in result.visit_counts if c),
+            'evaluator_calls': result.evaluator_calls, 'seconds': seconds,
+        })
+    summary = {}
+    for kind in kinds:
+        subset = [r for r in rows if r['kind'] == kind]
+        if subset:
+            summary[kind] = {
+                'probes': len(subset),
+                'solved': _mean(float(r['solved']) for r in subset),
+                'visit_share': _mean(r['visit_share'] for r in subset),
+                'visited_children': _mean(r['visited_children'] for r in subset),
+                'evaluator_calls': _mean(r['evaluator_calls'] for r in subset),
+                'seconds': _mean(r['seconds'] for r in subset),
+            }
+    return {'search': search_config.to_dict(), 'rows': rows, 'summary': summary}
