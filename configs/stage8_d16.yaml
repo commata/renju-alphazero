@@ -3,7 +3,8 @@
 # the Stage 7 run is evidence and is not modified. Training-critical settings are
 # identical to configs/stage7d_b16.yaml (critical hash 25ab9c5a..., pinned by
 # tests/test_stage8_health.py). Only execution-control keys differ:
-# generations (gate target: 192 = +512 games; raise to 288 / 480 for gates 2 / 3),
+# generations (gate target: 200 = +640 games; raise to 320 / 480 for gates 2 / 3,
+# aligned with the 320-game external evaluation points of run_stage8_training.py),
 # run_name, and the execution-only health block.
 format_version: stage6-config-v1
 seed: 42
@@ -18,7 +19,7 @@ model:            # Stage 4 default architecture
   value_hidden: 64
 
 training:
-  generations: 192        # Stage 8 gate 1 (+512 games from gen 160)
+  generations: 200        # Stage 8 gate 1 (+640 games from gen 160, an eval point)
   games_per_generation: 16
   batch_size: 32
   steps_per_generation: 50

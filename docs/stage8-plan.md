@@ -186,7 +186,7 @@ CPU 기준선에서 기록:
 - **CPU 확장성 프록시:** `--verify-checkpoint` 같은 1-thread self-play 프로세스를 k개(1/2/4/물리 코어 − 1)
   동시에 띄워 프로세스당 속도 저하를 잰다. multiprocessing을 구현하지 않고도 CPU-workers 상한을 알 수 있다.
 
-**512판 전체를 CPU serial로 먼저 돌리는 것을 Stage 8 선행 조건으로 두지 않는다.**
+**Gate 1 전체를 CPU serial로 먼저 돌리는 것을 Stage 8 선행 조건으로 두지 않는다.**
 GPU 경로를 최대한 빨리 검증하기 위해 correctness와 throughput 기준선에 필요한 짧은 run만 수행한다.
 
 ### 3.2.1 데스크톱 CPU 기준선 실측 (i5-12600K, Windows, Python 3.13, torch 2.14 CPU, 1 thread)
@@ -206,7 +206,7 @@ GPU 경로를 최대한 빨리 검증하기 위해 correctness와 throughput 기
 - 정상 동작: 불법수 0, checkpoint 161~163 저장. `color_imbalance` 경고는 gen 160에 한 번 나왔다(백 우세, 흑 4.4%,
   극단 구간 37세대 연속). gen 161~162에서는 중복 억제가 동작했다.
 - generation당 약 34 s(self-play 64%, 학습 19%, 평가 14%, 나머지 약 3%)이면 **CPU 직렬만으로 약 1,700판/시간**이다.
-  gate 1(512판)은 약 20분, gate 2(2,048판)는 약 1.2시간, gate 3(5,120판)은 약 3시간이다.
+  gate 1(640판)은 약 25분, gate 2(2,560판)는 약 1.5시간, gate 3(5,120판)은 약 3시간이다.
 - **generation 수준의 Amdahl:** self-play만 무한히 빨라져도 학습과 평가(약 11 s)가 남아 전체는 최대 약 3배다.
   GPU로 세대 시간을 크게 줄이려면 학습(GPU), 루프 내 평가 batching(§8.1)도 함께 줄여야 한다.
 - 결론: 현재 64×4 / 50 sims / 16판 설정에서는 **처리량이 Stage 8 gate의 병목이 아니다.** gate 1~2는 CPU 직렬로
@@ -747,9 +747,13 @@ GPU/CPU 실행 경로를 먼저 선택한 뒤 pilot을 시작한다.
 | gate | Stage 8 추가 self-play | generation | 목적 |
 |---|---:|---:|---|
 | pre-pilot | 3~5 gen | 160 → 163~165 | CPU/GPU correctness와 throughput |
-| Gate 1 | 512판 | 160 → 192 | 선택한 최종 execution path 안정성 |
-| Gate 2 | 2,048판 | 160 → 288 | 외부 평가/색별 성능/probe 추세 |
-| Gate 3 | 5,120판 선택 | 160 → 480 | Gate 2에서 퇴행 없을 때 |
+| Gate 1 | 640판 | 160 → 200 | 선택한 최종 execution path 안정성 |
+| Gate 2 | 2,560판 | 160 → 320 | 외부 평가/색별 성능/probe 추세 (heavy 평가 지점) |
+| Gate 3 | 5,120판 선택 | 160 → 480 | Gate 2에서 퇴행 없을 때 (heavy 평가 지점) |
+
+gate 끝을 평가 지점(light 20세대, heavy 80세대 간격, gen 160 기준)에 맞췄다. 원래 목표였던 512 / 2,048판(gen 192 / 288)은
+평가 지점이 아니어서, gate가 끝나는 checkpoint에 외부 평가가 돌지 않기 때문이다. 데스크톱 CPU 기준선(§3.2.1)으로
+Gate 1은 약 25분, Gate 2는 약 1.5시간이다.
 
 Gate 1은 더 이상 CPU worker=1로 고정하지 않는다.
 GPU batched path가 smoke/재현성/처리량 gate를 통과하면 **Gate 1부터 GPU 경로를 사용**한다.
@@ -783,7 +787,7 @@ GPU batched path가 smoke/재현성/처리량 gate를 통과하면 **Gate 1부�
 | 8-E | SearchSession + 16-game GPU scheduler, 기존 B=1 exact regression |
 | 8-F | CPU-worker/hybrid feeder + in-loop evaluation batching(필요한 경우) |
 | 8-G | external evaluation orchestration |
-| 8-H | 512/2,048/5,120 pilot 결과와 최종 config |
+| 8-H | 640/2,560/5,120 pilot 결과와 최종 config |
 | 별도 실험 | simulations/network/within-tree batching/mixed precision/tree reuse |
 
 **8-C 직후 결정 지점:** §2.4 상한(실제 self-play NN 비중), CPU 확장성 프록시(§3.2), GPU B=16 raw 처리량을 나란히 놓고
@@ -827,8 +831,8 @@ Stage 8 전체 완료 기준과 별도로 GPU path는 다음을 만족해야 한
 9. CPU/GPU/hybrid의 generation wall time을 비교해 지속 가능한 실행 방식을 하나 선택한다.
 10. `color_imbalance`와 healthy-reference 기반 `color_regression`이 동작한다.
 11. 320판/1,280판 외부 평가와 probe orchestration이 동작한다.
-12. Gate 1 512판이 crash·NaN·illegal 없이 끝난다.
-13. Gate 2 2,048판까지 진행할 수 있는 장기 설정을 확정한다.
+12. Gate 1 640판(gen 200)이 crash·NaN·illegal 없이 끝난다.
+13. Gate 2 2,560판(gen 320)까지 진행할 수 있는 장기 설정을 확정한다.
 14. GPU utilization을 더 높이기 위한 training-critical 변경은 별도 실험으로 분리되어 있다.
 15. 최종 config/환경/성능 결과를 문서화하고 `v0.7-stage8` 태그를 만든다.
 

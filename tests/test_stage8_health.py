@@ -36,7 +36,7 @@ class Stage8ConfigTest(unittest.TestCase):
         self.assertEqual(critical_config_hash(stage7), D16_HASH)
         self.assertEqual(critical_config_hash(stage8), D16_HASH)
         self.assertTrue(stage8['health']['color_imbalance']['enabled'])
-        self.assertEqual(stage8['training']['generations'], 192)
+        self.assertEqual(stage8['training']['generations'], 200)
         self.assertEqual(stage8['training']['keep_every'], 20)  # 16 x 20 = 320 games
 
     def test_health_is_execution_only(self):
