@@ -399,7 +399,26 @@ Stage 7-C: 두 arm을 같은 설정 그대로 gen 30 → 110까지 이어간다(
 - 급상승 기록 검증: B gen 48(previous 기준) → 외부 평가 gen 49는 gen 30과 같음(오탐). B gen 106 → gen 107은
   MCTS-v2 19/50으로 gen 70(10/50) 대비 실제 향상(p = 0.04). 루프 내 previous 기준(창당 20판)은 후보 신호로만 쓴다.
 - 운영 지표(B 후반): 평균 17수, 샘플 재사용 5.8배, value loss 0.57 → 0.73, self-play 흑 72%. 짧은 대국의
-  과다 재사용이 다음 병목이다.
+  과다 재사용이 다음 병목이다(§8.6).
+
+### 8.6 Stage 7-D — 샘플 재사용 실험 (D16 대 D32)
+
+7-C B gen 110 가중치를 export해 두 arm을 **새 run으로 동시에** 시작한다. critical 설정 차이는
+`training.games_per_generation` 하나뿐이다(`tests/test_stage7d_reuse.py`). 둘 다 새 optimizer·빈 replay로
+시작하므로 이어가기 대 새 run의 차이가 섞이지 않는다.
+
+| | D16 `configs/stage7d_b16.yaml` | D32 `configs/stage7d_b32.yaml` |
+|---|---|---|
+| games / generation | 16 | 32 |
+| generations | 160 | 80 |
+| 총 self-play | 2,560 | 2,560 |
+| 총 학습 step | 8,000 | 4,000 |
+| 예상 재사용 | 약 5~6배 | 약 2.5~3배 |
+| 체크포인트 보존 | 20 gen마다 | 10 gen마다 (= 같은 판수 지점) |
+
+그 외는 B와 동일하다(PUCT v2, 50 simulations, 64ch×4, batch 32, 50 steps/gen, replay 10,000, seed 42).
+비교는 **같은 누적 판수**(320판 간격) checkpoint끼리 외부 평가(v1, MCTS-v2 50판 흑/백 분리)·probe·value loss로 한다.
+D32가 같은 판수에서 같거나 더 강하면 Stage 8 기본값을 D32 쪽으로 정한다.
 
 ## 9. FPU 단일 변수 실험
 
@@ -441,6 +460,20 @@ root는 현재 value_sum을 backup하지 않으므로 root NN value를 별도 �
 
 학습 향상이 명확하지 않더라도 원인이 search/data/throughput 중 어디에 가까운지 설명할 수 있으면
 Stage 7의 검증 목적은 달성한 것으로 본다.
+
+### 10.1 현황 (Stage 7-C 종료 시점)
+
+| # | 기준 | 상태 | 남은 일 |
+|---|---|---|---|
+| 1 | 7-A continuation 무결성 | ✅ | — |
+| 2 | 학습 신호/병목 설명 | ✅ | teacher 품질(§2.3) → v2(§8.3) → 2수 방어 학습(§8.5) |
+| 3 | `inference_s`·`legal_moves` 비용 분해 | ❌ | PUCT profile 계측(결과 불변 PR) |
+| 4 | batch microbenchmark | ❌ | B=1/2/4/8/16, 고정 checkpoint(7-C B gen 110) |
+| 5 | `legal_moves` 의미보존 최적화 | ❌ | 3번 결과를 보고 결정(필요 없으면 "불필요"로 기록) |
+| 6 | weights-only export round-trip | ✅ | `scripts/export_stage7_weights.py` |
+| 7 | 25/50/100 simulation trade-off | 🟡 | 50을 측정 없이 채택. search probe로 gen 110에서 25/50/100 기록 |
+| 8 | FPU 효과(simulation과 분리) | 🟡 | 옵션·측정 도구만 있음. search probe 격자로 search-only 기록(학습 실험은 선택) |
+| 9 | 그램 소형 설정 선택 | 🟡 | B(v2, 50 sims, 64×4)로 사실상 확정. games/gen은 7-D 결과로 확정 |
 
 ## 11. Stage 8로 미루는 구조적 변경
 
