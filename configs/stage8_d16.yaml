@@ -79,6 +79,8 @@ milestones:       # execution-only (not in the critical hash)
   opponents: [random, tactical, previous]
   first_win: [tactical, mcts_v6]
 
+flush_denormal: true   # execution-only; Gate 2 found subnormals made training ~3x slower
+
 health:           # execution-only (not in the critical hash), Stage 8
   color_imbalance:
     enabled: true

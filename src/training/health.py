@@ -113,3 +113,24 @@ def update_color_regression(reference: dict | None, current: dict,
         best = current if current['wins'] / current['games'] >= ref['wins'] / ref['games'] else ref
         state = {'reference': dict(best), 'pending': None}
     return {'status': status, **current, 'reference': dict(ref), 'p_value': p}, state
+
+
+def replay_color_stats(buffer) -> dict:
+    """Value targets in a replay buffer by side to move (encoder plane 3 = black to move).
+
+    From one-sided self-play (e.g. 98% black wins) almost every black-to-move sample has
+    target +1 and every white-to-move sample -1: a colour shortcut the value head can fit.
+    """
+    size = len(buffer)
+    if not size:
+        return {'samples': 0}
+    batch = buffer.get(list(range(size)))
+    black = batch.states[:, 3, 0, 0] > 0.5
+    values = batch.values.reshape(-1)
+    out = {'samples': size}
+    for name, mask in (('black_to_move', black), ('white_to_move', ~black)):
+        v = values[mask]
+        out[name] = {'samples': int(mask.sum()), 'target_plus': int((v > 0).sum()),
+                     'target_minus': int((v < 0).sum()), 'target_zero': int((v == 0).sum()),
+                     'target_mean': float(v.mean()) if v.numel() else None}
+    return out

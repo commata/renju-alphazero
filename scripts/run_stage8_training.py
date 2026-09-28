@@ -37,10 +37,11 @@ import torch  # noqa: E402
 
 from run_stage7_checkpoint_eval import OPPONENTS, evaluate_checkpoint  # noqa: E402
 from training.config import load_config, validate_config  # noqa: E402
+from training.health import replay_color_stats  # noqa: E402
 from training.loop import run_training  # noqa: E402
 from training.probes import run_probe_file  # noqa: E402
 from training.schedule import color_regression_summary, next_stop, schedule_points  # noqa: E402
-from training.training_checkpoint import load_checkpoint_payload  # noqa: E402
+from training.training_checkpoint import load_checkpoint_payload, load_training_state  # noqa: E402
 
 PROBE_SETS = (('', ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'),
               ('_defense', ROOT / 'tests' / 'fixtures' / 'stage7_probes_defense_v1.json'))
@@ -87,6 +88,11 @@ def evaluate_point(run_dir: Path, generation: int, kinds: list[str], args, log=p
             output = run_dir / 'probes' / f'gen{generation:03d}{suffix}.json'
             if not output.exists():
                 _write_json(output, run_probe_file(checkpoint, probes))
+        output = run_dir / 'external_eval' / f'gen{generation:03d}_replay.json'
+        if not output.exists():
+            state = load_training_state(checkpoint)
+            _write_json(output, {'generation': generation, 'checkpoint': str(checkpoint),
+                                 **replay_color_stats(state.buffer)})
 
 
 def update_color_summary(run_dir: Path, log=print) -> dict:

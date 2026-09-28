@@ -249,6 +249,8 @@ def run_training(config: dict | None, *, run_dir: str | Path | None = None,
         state = init_training_state(config)
     config = state.config
     torch.set_num_threads(config['torch_threads'])
+    flush_denormal = bool(config.get('flush_denormal', False))
+    torch.set_flush_denormal(flush_denormal)
     checkpoint_dir = run_dir / 'checkpoints'
     (run_dir / 'config.yaml').write_text(dump_config(config), encoding='utf-8')
     metadata = RunMetadata(run_dir / 'metadata.json', _metadata_base(config))
@@ -261,7 +263,8 @@ def run_training(config: dict | None, *, run_dir: str | Path | None = None,
     metadata.start_segment(start_generation=state.generation, resumed=resume is not None,
                            extra={'resume_from': str(resume) if resume else None,
                                   'truncation': truncation, 'git_commit': commit,
-                                  'git_dirty': dirty, 'target_generations':
+                                  'git_dirty': dirty, 'flush_denormal': flush_denormal,
+                                  'target_generations':
                                   config['training']['generations'], 'stop_after': stop_after})
     started = perf_counter()
     status = 'completed'

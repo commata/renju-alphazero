@@ -81,8 +81,12 @@ class OrchestrationTest(unittest.TestCase):
                 self.assertEqual(orchestrate(run_dir, target, args, log=logs.append), 3)
                 out = run_dir / 'external_eval'
                 self.assertEqual(sorted(p.name for p in out.glob('gen*.json')),
-                                 ['gen001_heavy.json', 'gen001_light.json', 'gen002_light.json',
-                                  'gen003_heavy.json', 'gen003_light.json'])
+                                 ['gen001_heavy.json', 'gen001_light.json', 'gen001_replay.json',
+                                  'gen002_light.json', 'gen002_replay.json', 'gen003_heavy.json',
+                                  'gen003_light.json', 'gen003_replay.json'])
+                replay = json.loads((out / 'gen003_replay.json').read_text(encoding='utf-8'))
+                self.assertEqual(replay['black_to_move']['samples']
+                                 + replay['white_to_move']['samples'], replay['samples'])
                 self.assertEqual(sorted(p.name for p in (run_dir / 'probes').glob('*.json')),
                                  ['gen001.json', 'gen001_defense.json', 'gen002.json',
                                   'gen002_defense.json', 'gen003.json', 'gen003_defense.json'])

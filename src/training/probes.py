@@ -204,11 +204,30 @@ def summarize_value(rows: list[dict]) -> dict:
     loss_acc = _mean(float(r['value_sign_correct']) for r in losses)
     win_mean = _mean(r['value'] for r in wins)
     loss_mean = _mean(r['value'] for r in losses)
-    return {'win_probes': len(wins), 'loss_probes': len(losses),
-            'win_value_mean': win_mean, 'loss_value_mean': loss_mean,
-            'separation': win_mean - loss_mean,
-            'win_sign_accuracy': win_acc, 'loss_sign_accuracy': loss_acc,
-            'balanced_sign_accuracy': (win_acc + loss_acc) / 2}
+    result = {'win_probes': len(wins), 'loss_probes': len(losses),
+              'win_value_mean': win_mean, 'loss_value_mean': loss_mean,
+              'separation': win_mean - loss_mean,
+              'win_sign_accuracy': win_acc, 'loss_sign_accuracy': loss_acc,
+              'balanced_sign_accuracy': (win_acc + loss_acc) / 2}
+    # Stage 8: colour split. A value head that learned "black to move = good" from
+    # one-sided self-play shows up as black > white at the same label (color_bias > 0).
+    by_color = {}
+    for color in ('BLACK', 'WHITE'):
+        w = [r for r in wins if r['to_play'] == color]
+        l = [r for r in losses if r['to_play'] == color]
+        if w and l:
+            by_color[color.lower()] = {
+                'win_probes': len(w), 'loss_probes': len(l),
+                'win_value_mean': _mean(r['value'] for r in w),
+                'loss_value_mean': _mean(r['value'] for r in l),
+                'win_sign_accuracy': _mean(float(r['value_sign_correct']) for r in w),
+                'loss_sign_accuracy': _mean(float(r['value_sign_correct']) for r in l)}
+    if len(by_color) == 2:
+        b, w = by_color['black'], by_color['white']
+        result['by_color'] = by_color
+        result['color_bias'] = ((b['win_value_mean'] - w['win_value_mean'])
+                                + (b['loss_value_mean'] - w['loss_value_mean'])) / 2
+    return result
 
 
 def summarize_forbidden(rows: list[dict]) -> dict:

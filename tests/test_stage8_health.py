@@ -163,5 +163,63 @@ class HealthInLoopTest(unittest.TestCase):
             torch.set_num_threads(threads)
 
 
+class ColorAwareMeasurementTest(unittest.TestCase):
+    @unittest.skipIf(torch is None, 'requires torch')  # training.probes imports torch
+    def test_value_probe_color_bias(self):
+        from training.probes import summarize_value
+
+        def row(color, sign, value):
+            return {'to_play': color, 'value_sign': sign, 'value': value,
+                    'value_sign_correct': (value > 0) == (sign > 0)}
+        # "black to move = good": black wins +0.5, black losses +0.3, white wins -0.3,
+        # white losses -0.5 -> overall separation looks fine, colour bias is +0.8
+        rows = ([row('BLACK', 1, 0.5)] * 2 + [row('BLACK', -1, 0.3)] * 2
+                + [row('WHITE', 1, -0.3)] * 2 + [row('WHITE', -1, -0.5)] * 2)
+        summary = summarize_value(rows)
+        self.assertAlmostEqual(summary['separation'], 0.2)
+        self.assertAlmostEqual(summary['color_bias'], 0.8)
+        self.assertEqual(summary['by_color']['white']['win_sign_accuracy'], 0.0)
+        self.assertEqual(summary['by_color']['black']['loss_sign_accuracy'], 0.0)
+
+    def test_flush_denormal_is_execution_only(self):
+        from training.config import ConfigError
+        config = load_config(ROOT / 'configs' / 'stage8_d16.yaml')
+        self.assertTrue(config['flush_denormal'])
+        config['flush_denormal'] = False
+        self.assertEqual(critical_config_hash(config), D16_HASH)
+        config['flush_denormal'] = 1
+        with self.assertRaises(ConfigError):
+            validate_config(config)
+
+
+@unittest.skipIf(torch is None, 'requires torch')
+class ReplayColorStatsTest(unittest.TestCase):
+    def test_counts_targets_by_side_to_move(self):
+        from training.health import replay_color_stats
+        from training.replay_buffer import ReplayBuffer
+        from training.dataset import samples_from_record
+        from training.self_play import play_self_play_game
+        from model.evaluator import PolicyValueEvaluator
+        from model.network import PolicyValueNet
+        from model.config import ModelConfig
+        from search.alphazero import SearchConfig
+
+        torch.manual_seed(0)
+        model = PolicyValueNet(ModelConfig(channels=8, blocks=1, value_hidden=8)).eval()
+        game = play_self_play_game(PolicyValueEvaluator(model),
+                                   SearchConfig(num_simulations=2), seed=3)
+        samples = samples_from_record(game.record, generation=0, game_id=0)
+        buffer = ReplayBuffer(1000)
+        buffer.extend(samples)
+        stats = replay_color_stats(buffer)
+        self.assertEqual(stats['samples'], len(samples))
+        black, white = stats['black_to_move'], stats['white_to_move']
+        self.assertEqual(black['samples'] + white['samples'], len(samples))
+        winner = game.record.winner
+        if winner:  # one decisive game: every sample of the winner's side is +1
+            side = black if winner == 1 else white
+            self.assertEqual(side['target_plus'], side['samples'])
+
+
 if __name__ == '__main__':
     unittest.main()

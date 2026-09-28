@@ -74,6 +74,10 @@ DEFAULTS: dict = {
     # Stage 7 execution-only monitoring (training.milestones); not training-critical.
     'milestones': {'enabled': False, 'window': 5, 'threshold': 0.25,
                    'opponents': ['random', 'tactical'], 'first_win': ['tactical', 'mcts_v6']},
+    # Stage 8: flush subnormal floats to zero on the CPU (torch.set_flush_denormal). Long runs
+    # accumulate subnormal weights / Adam state that made 50 training steps ~3x slower
+    # (Gate 2: 20.6 s -> 6.3 s). Numerically negligible but not bit-identical to False.
+    'flush_denormal': False,
     # Stage 8 execution-only self-play colour health (training.health); not training-critical.
     'health': {'color_imbalance': {'enabled': False, 'window': 10, 'lower': 0.10, 'upper': 0.90}},
 }
@@ -82,6 +86,7 @@ DEFAULTS: dict = {
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
     ('device',), ('torch_threads',), ('output',), ('milestones',), ('health',),
+    ('flush_denormal',),
     ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
     ('training', 'init_checkpoint'),
 )
@@ -209,6 +214,8 @@ def validate_config(config: dict) -> dict:
             if not isinstance(m[key], list) or any(o not in OPPONENTS for o in m[key]):
                 raise ConfigError(f'milestones.{key} must be a list of {OPPONENTS}')
 
+    if type(config.get('flush_denormal', False)) is not bool:
+        raise ConfigError('flush_denormal must be a bool')
     h = config.get('health')
     if h is not None:
         c = h['color_imbalance']
