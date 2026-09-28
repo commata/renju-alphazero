@@ -212,6 +212,20 @@ Stage 6의 약 132 ms `inference_s`를 NN 시간으로 직접 해석하지 않�
 
 profile 변경은 탐색 결과에 영향을 주지 않는 계측 PR로 분리한다.
 
+구현: `src/training/profiling.py` + `scripts/profile_stage7_search.py`. 탐색 코드는 바꾸지 않는다.
+
+- `ProfiledEvaluator`는 `PolicyValueEvaluator.evaluate_batch`와 같은 연산을 같은 순서로 수행하면서
+  encode(legal mask + plane) / stack / forward / masked softmax / CPU 전송 / 결과 객체를 따로 잰다.
+- `instrument_search()`는 측정 동안에만 `_legal_moves`(흑/백 차례 분리), PUCT v2 `tactical_filter`,
+  `Game.play`/`Game.undo`를 감싼다. snapshot+검증 = `inference_s` − evaluator 시간, tree 기타 =
+  `tree_s` − 규칙 필터 − play − undo로 계산한다.
+- 계측 전후 방문 수가 같고 감싼 함수가 원래대로 복원됨을 `tests/test_stage7_profiling.py`가 확인한다.
+- 입력: 고정 probe 국면(기본 80개), 측정 전 워밍업 5개.
+
+참고(개발 컨테이너, 무작위 64×4 network, 1 thread, 50 simulations, PUCT v2): 착수당 약 170 ms 중
+NN forward 48%, **흑 차례 `legal_moves` 27%**(호출당 약 1 ms, 백 차례는 약 0.02 ms — 흑 금수 판정),
+tree 기타 10%, encode 4%, 규칙 필터 4%. 확정 수치는 사용자 PC의 학습된 checkpoint로 다시 잰다.
+
 ## 5. Batch microbenchmark
 
 `PolicyValueEvaluator.evaluate_batch`는 이미 batch N을 지원하므로 실제 PUCT를 변경하기 전에
@@ -229,6 +243,13 @@ B = 1 / 2 / 4 / 8 / 16
 - CPU utilization / 온도(가능한 범위)
 
 CPU에서 batching이 큰 향상을 낸다고 가정하지 않는다. Stage 8의 병렬화 방식은 이 실측과 장치 지원 여부로 결정한다.
+
+구현: `scripts/benchmark_stage7_batch.py`. 같은 고정 국면(기본 128개)을 B = 1/2/4/8/16/32로 나눠
+`evaluate_batch` 전체(full)와 forward 단독을 torch thread 수별로 재고(median), batch 결과와 B=1 결과의
+최대 prior/value 차이(§5.1)를 함께 기록한다. 탐색·학습 코드는 바꾸지 않는다.
+
+참고(개발 컨테이너, 무작위 64×4): 1 thread에서는 B에 따른 이득이 거의 없고(약 3 ms/국면), 4 threads에서는
+B=8이 약 0.8 ms/국면으로 가장 좋았다. batch와 B=1의 차이는 약 1e-6. 공유 CPU라 확정값은 사용자 PC에서 잰다.
 
 ### 5.1 수치 재현성 계약
 
@@ -467,8 +488,8 @@ Stage 7의 검증 목적은 달성한 것으로 본다.
 |---|---|---|---|
 | 1 | 7-A continuation 무결성 | ✅ | — |
 | 2 | 학습 신호/병목 설명 | ✅ | teacher 품질(§2.3) → v2(§8.3) → 2수 방어 학습(§8.5) |
-| 3 | `inference_s`·`legal_moves` 비용 분해 | ❌ | PUCT profile 계측(결과 불변 PR) |
-| 4 | batch microbenchmark | ❌ | B=1/2/4/8/16, 고정 checkpoint(7-C B gen 110) |
+| 3 | `inference_s`·`legal_moves` 비용 분해 | 🟡 | 도구 완료(`profile_stage7_search.py`, §4). 7-D 최종 checkpoint로 사용자 PC 측정 |
+| 4 | batch microbenchmark | 🟡 | 도구 완료(`benchmark_stage7_batch.py`, §5). 같은 checkpoint로 측정 |
 | 5 | `legal_moves` 의미보존 최적화 | ❌ | 3번 결과를 보고 결정(필요 없으면 "불필요"로 기록) |
 | 6 | weights-only export round-trip | ✅ | `scripts/export_stage7_weights.py` |
 | 7 | 25/50/100 simulation trade-off | 🟡 | 50을 측정 없이 채택. search probe로 gen 110에서 25/50/100 기록 |
