@@ -377,6 +377,49 @@ Stage 7-C: 두 arm을 같은 설정 그대로 gen 30 → 110까지 이어간다(
 (Tactical·MCTS-v2 각 50판)가 오르면 v2 경계를 확정한다. gen 110에서도 변화가 없으면 V7 기보 지도학습 초기화(선택지 c)
 또는 Stage 8 규모 확대를 **명시적으로** 선택한다.
 
+### 8.5 Stage 7-C 결과 (gen 30 → 110, arm당 +1,280 self-play games)
+
+외부 평가는 규칙을 끈 PUCT v1(25 simulations)로 network만 비교했다(Tactical·MCTS-v2 50판, v321·v7 10판).
+같은 명령을 두 번 실행해 결과가 한 판도 다르지 않음을 확인했다.
+
+| 상대 | B gen 30 → 70 → 110 | A gen 30 → 70 → 110 |
+|---|---|---|
+| Tactical | 30 → 44 → **47**/50 | 8 → 16 → 3/50 |
+| MCTS-v2 | 7 → 10 → **21**/50 (42%) | 0 → 0 → 0/50 |
+| MCTS-v2, B 흑 / 백 | 7/25·0/25 → 9/25·1/25 → 11/25·**10/25** | 0 |
+| MCTS-v3.2.1 / v7 | 0 → 0 → 1/10 / 0/10 | 0 / 0 |
+
+- **B는 규칙 추가 없이 2수 방어를 학습했다.** MCTS-v2 상대로 백 승리가 0/25(gen 30)에서 10/25(gen 110)로
+  늘었다(p = 0.0003). 백이 이기려면 흑의 선공을 막아야 한다. §8.4의 "v2 경계 유지" 판단을 확정한다.
+- B gen 110 대 A gen 110, MCTS-v2 21/50 대 0/50(p ≈ 3×10⁻⁸). **A(규모만 확대)는 종료한다.** A의 value는 self-play
+  승률을 따라 색을 예측했다(백 차례 상관 최대 −0.48).
+- raw network probe(B, gen 30 → 110): 필수 방어 정답 확률 배율 1.60 → 2.85, 열린 3 방어(`must_defend_open3`)
+  top-3 10% → 25~38%·배율 2.4 → 3.8~4.4, value 차이 +0.06 → **+0.30**(균형 정답률 0.60, 색 상관 ≈ 0).
+  즉시 승리·필수 방어 top-1은 두 arm 모두 0~7%로, **raw policy는 여전히 약하다.**
+- 급상승 기록 검증: B gen 48(previous 기준) → 외부 평가 gen 49는 gen 30과 같음(오탐). B gen 106 → gen 107은
+  MCTS-v2 19/50으로 gen 70(10/50) 대비 실제 향상(p = 0.04). 루프 내 previous 기준(창당 20판)은 후보 신호로만 쓴다.
+- 운영 지표(B 후반): 평균 17수, 샘플 재사용 5.8배, value loss 0.57 → 0.73, self-play 흑 72%. 짧은 대국의
+  과다 재사용이 다음 병목이다(§8.6).
+
+### 8.6 Stage 7-D — 샘플 재사용 실험 (D16 대 D32)
+
+7-C B gen 110 가중치를 export해 두 arm을 **새 run으로 동시에** 시작한다. critical 설정 차이는
+`training.games_per_generation` 하나뿐이다(`tests/test_stage7d_reuse.py`). 둘 다 새 optimizer·빈 replay로
+시작하므로 이어가기 대 새 run의 차이가 섞이지 않는다.
+
+| | D16 `configs/stage7d_b16.yaml` | D32 `configs/stage7d_b32.yaml` |
+|---|---|---|
+| games / generation | 16 | 32 |
+| generations | 160 | 80 |
+| 총 self-play | 2,560 | 2,560 |
+| 총 학습 step | 8,000 | 4,000 |
+| 예상 재사용 | 약 5~6배 | 약 2.5~3배 |
+| 체크포인트 보존 | 20 gen마다 | 10 gen마다 (= 같은 판수 지점) |
+
+그 외는 B와 동일하다(PUCT v2, 50 simulations, 64ch×4, batch 32, 50 steps/gen, replay 10,000, seed 42).
+비교는 **같은 누적 판수**(320판 간격) checkpoint끼리 외부 평가(v1, MCTS-v2 50판 흑/백 분리)·probe·value loss로 한다.
+D32가 같은 판수에서 같거나 더 강하면 Stage 8 기본값을 D32 쪽으로 정한다.
+
 ## 9. FPU 단일 변수 실험
 
 현재 PUCT v1은 미방문 child Q를 0으로 고정한다. 적은 simulation 환경에서는 이 선택이 탐색 폭에
