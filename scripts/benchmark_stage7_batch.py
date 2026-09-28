@@ -59,8 +59,16 @@ def _median_seconds(fn, repeats: int) -> float:
     return statistics.median(samples)
 
 
-def benchmark(model, snapshots, batch_sizes, repeats: int, warmup: int) -> list[dict]:
-    evaluator = PolicyValueEvaluator(model)
+def _synchronize(device: torch.device) -> None:
+    if device.type == 'cuda':  # ROCm builds also use the cuda device API
+        torch.cuda.synchronize(device)
+
+
+def benchmark(model, snapshots, batch_sizes, repeats: int, warmup: int,
+              device: str = 'cpu') -> list[dict]:
+    """``device`` (Stage 8): full = evaluate_batch incl. the D2H copy; forward is synchronized."""
+    device = torch.device(device)
+    evaluator = PolicyValueEvaluator(model, device=device)
     single = [evaluator.evaluate_batch([s])[0] for s in snapshots]
     rows = []
     for batch in batch_sizes:
@@ -76,6 +84,7 @@ def benchmark(model, snapshots, batch_sizes, repeats: int, warmup: int) -> list[
             with torch.inference_mode():
                 for x in planes:
                     model(x)
+            _synchronize(device)
 
         for _ in range(warmup):
             run_full()

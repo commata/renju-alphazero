@@ -42,9 +42,25 @@ def compute_losses(logits: torch.Tensor, values: torch.Tensor, batch: Batch,
     return policy, value, policy + value_weight * value
 
 
+def batch_to_device(batch: Batch, device: str | torch.device) -> Batch:
+    """Move the loss tensors to ``device`` (Stage 8 GPU training).
+
+    Replay buffer, sampling and augmentation stay on the CPU; provenance is not used by
+    the loss and stays there too. A batch already on ``device`` is returned unchanged
+    (the same object), so CPU training is bit-for-bit what it was.
+    """
+    device = torch.device(device)
+    if batch.states.device == device or (
+            device.index is None and batch.states.device.type == device.type):
+        return batch
+    return Batch(batch.states.to(device), batch.policies.to(device), batch.values.to(device),
+                 batch.legal_masks.to(device), batch.provenance)
+
+
 def train_step(model: nn.Module, optimizer: torch.optim.Optimizer, batch: Batch,
                value_weight: float, grad_clip: float | None = None,
                l2_coeff: float = 0.0) -> dict:
+    batch = batch_to_device(batch, next(model.parameters()).device)
     model.train()
     logits, values = model(batch.states)
     if not (torch.isfinite(logits).all() and torch.isfinite(values).all()):

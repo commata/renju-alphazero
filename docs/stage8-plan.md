@@ -359,6 +359,25 @@ backend가 무엇이든 다음을 통과해야 GPU 경로 구현을 계속한다
 9. 같은 GPU/backend에서 반복 inference tolerance 확인
 10. `torch.use_deterministic_algorithms(True)` 실행 가능 여부 기록
 
+**구현(8-C):**
+
+- `training.trainer.batch_to_device`: `train_step`이 batch를 모델이 있는 장치로 옮긴다(loss 텐서 4개만, provenance는 CPU에 둔다).
+  batch가 이미 그 장치에 있으면 같은 객체를 그대로 돌려주므로 CPU 학습은 비트 단위로 이전과 같다.
+  자가대국과 루프 내 평가는 이미 `config['device']`를 evaluator에 넘기고 있었다.
+- `scripts/benchmark_stage7_batch.py`: `benchmark(..., device=)`. forward 시간은 동기화한 뒤 잰다.
+- `scripts/check_stage8_gpu.py`: 위 게이트를 실제 checkpoint(D16 gen 160)로 한 번에 점검하고 JSON으로 남긴다.
+  1. backend 정보
+  2. B=1·B=16 추론을 CPU와 비교(허용 오차 1e-3)
+  3. 같은 batch 반복 추론 비교
+  4. checkpoint의 replay·optimizer로 실제 학습 100 step(유한성, step당 ms를 CPU와 비교)
+  5. 장치에서 저장한 checkpoint를 CPU에서 다시 읽어 가중치 동일 확인
+  6. `use_deterministic_algorithms(True)`에서 forward+backward
+  7. B=1…64 벤치마크(장치/CPU)
+
+  run 디렉터리에는 아무것도 쓰지 않는다. `--device cpu`는 스크립트 자체를 검증하는 모의 실행이다(`tests/test_stage8_gpu.py`).
+- 주의: 학습 CLI(`run_stage6_training.py`, `run_stage8_training.py`)는 `torch.use_deterministic_algorithms(True)`를 켠다.
+  6번이 실패하면 GPU 학습 전에 이 설정을 장치별로 다루는 변경이 필요하다.
+
 ---
 
 ## 6. Stage 8-D — GPU용 evaluator data path
