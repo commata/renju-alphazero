@@ -154,7 +154,7 @@ Stage 7 증거 run을 직접 이어 쓰지 않는다.
 
 ~~~text
 runs/stage7d_b16/  # 원본 보존
-runs/stage8_cpu/   # Stage 8 복사본
+runs/stage8_d16/   # Stage 8 복사본 (configs/stage8_d16.yaml, 실행 방식과 무관하게 같은 run)
 ~~~
 
 복사본의 `latest.pt`에서 resume한다.
@@ -232,7 +232,8 @@ float 연산 차이로 탐색 tie가 달라질 수 있으므로 game hash exact 
 직전 checkpoint만 기준으로 Fisher 검정을 반복하면 이미 붕괴한 뒤
 `17/25 -> 3/25 -> 1/25`처럼 유지되는 경우 두 번째 비교가 유의하지 않아 지속 붕괴를 놓칠 수 있다.
 
-따라서 각 색에 대해 **마지막 healthy reference 평가**를 유지한다.
+따라서 각 색에 대해 **healthy reference 평가**를 유지한다. reference는 지금까지 healthy였던 결과 중 **가장 좋은 것**이다
+(마지막 healthy 결과를 쓰면 17 → 14 → 11 → 8처럼 조금씩 떨어질 때 기준도 같이 내려가 붕괴를 놓친다).
 
 light evaluation마다:
 
@@ -240,7 +241,9 @@ light evaluation마다:
 2. 현재 결과를 그 색의 healthy reference와 Fisher 단측 검정한다.
 3. p < 0.05로 하락하면 `color_regression_candidate`를 기록하고 reference는 유지한다.
 4. 다음 light 평가에서도 **같은 reference 대비** p < 0.05 하락이면 `color_regression_confirmed`로 올린다.
-5. 하락이 해소되면 현재 checkpoint를 새 healthy reference 후보로 갱신한다.
+5. 하락이 아니면 healthy로 돌아가고, 현재 결과가 reference보다 좋으면 reference를 갱신한다.
+
+구현: `training.health.update_color_regression`(8-B). 외부 평가 orchestration(8-G)이 light 평가마다 호출한다.
 
 confirmed 신호에서도 자동 rollback은 하지 않는다.
 사람이 마지막 healthy checkpoint, seed 분기, 계속 학습 중 하나를 선택한다.

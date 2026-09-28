@@ -74,12 +74,14 @@ DEFAULTS: dict = {
     # Stage 7 execution-only monitoring (training.milestones); not training-critical.
     'milestones': {'enabled': False, 'window': 5, 'threshold': 0.25,
                    'opponents': ['random', 'tactical'], 'first_win': ['tactical', 'mcts_v6']},
+    # Stage 8 execution-only self-play colour health (training.health); not training-critical.
+    'health': {'color_imbalance': {'enabled': False, 'window': 10, 'lower': 0.10, 'upper': 0.90}},
 }
 
 # Execution-control keys: may differ between a checkpoint and --config / CLI on resume.
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
-    ('device',), ('torch_threads',), ('output',), ('milestones',),
+    ('device',), ('torch_threads',), ('output',), ('milestones',), ('health',),
     ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
     ('training', 'init_checkpoint'),
 )
@@ -206,6 +208,17 @@ def validate_config(config: dict) -> dict:
         for key in ('opponents', 'first_win'):
             if not isinstance(m[key], list) or any(o not in OPPONENTS for o in m[key]):
                 raise ConfigError(f'milestones.{key} must be a list of {OPPONENTS}')
+
+    h = config.get('health')
+    if h is not None:
+        c = h['color_imbalance']
+        if type(c['enabled']) is not bool:
+            raise ConfigError('health.color_imbalance.enabled must be a bool')
+        _int(c['window'], 'health.color_imbalance.window')
+        _real(c['lower'], 'health.color_imbalance.lower', minimum=0)
+        _real(c['upper'], 'health.color_imbalance.upper', minimum=0)
+        if not c['lower'] < c['upper'] <= 1:
+            raise ConfigError('health.color_imbalance needs 0 <= lower < upper <= 1')
 
     out = config['output']
     if not isinstance(out['runs_dir'], str) or not isinstance(out['run_name'], str):

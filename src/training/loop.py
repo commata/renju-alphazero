@@ -23,6 +23,7 @@ from renju import BLACK, WHITE
 from .config import dump_config, self_play_search_config
 from .dataset import build_batch, samples_from_record, validate_samples
 from .evaluation import evaluate_generation, should_evaluate
+from .health import detect_color_imbalance
 from .metrics import (MetricsLogger, RunMetadata, read_metrics, timestamp, truncate_for_resume,
                       utc_now, write_json)
 from .milestones import detect_milestones
@@ -149,6 +150,7 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
         'self_play_timing': summarize_timing(s for stats in move_stats for s in stats),
     }
     metrics.log(generation_event)
+    record_health(state, run_dir, metrics, gen, log)
     log(f'gen {gen}: trained {t["steps_per_generation"]} steps, total loss '
         f'{first["total_loss"]:.4f} -> {last["total_loss"]:.4f}')
 
@@ -169,6 +171,26 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
     log(f'gen {gen}: checkpoint {path.name} (generation={state.generation})')
     record_milestones(state, run_dir, metrics, gen, path, log)
     return generation_event
+
+
+def record_health(state: TrainingState, run_dir: Path, metrics: MetricsLogger, gen: int,
+                  log: Callable[[str], None]) -> dict | None:
+    """Execution-only: log the self-play colour window and an imbalance warning."""
+    settings = (state.config.get('health') or {}).get('color_imbalance')
+    if not settings or not settings['enabled']:
+        return None
+    events = read_metrics(run_dir / 'metrics.jsonl')
+    generations = [e for e in events if e['type'] == 'generation']
+    warnings = [e for e in events if e['type'] == 'health_warning']
+    health, warning = detect_color_imbalance(generations, warnings, gen, settings)
+    if health is not None:
+        metrics.log({'type': 'health', 'generation': gen, **health})
+    if warning is not None:
+        metrics.log({'type': 'health_warning', 'generation': gen, **warning})
+        log(f"gen {gen}: WARNING color_imbalance ({warning['dominant']} dominant, black "
+            f"{warning['black_win_rate']:.0%} over gens {warning['generations'][0]}-"
+            f"{warning['generations'][1]}, {warning['extreme_generations']} extreme windows)")
+    return warning
 
 
 def record_milestones(state: TrainingState, run_dir: Path, metrics: MetricsLogger, gen: int,
