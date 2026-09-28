@@ -399,26 +399,7 @@ Stage 7-C: 두 arm을 같은 설정 그대로 gen 30 → 110까지 이어간다(
 - 급상승 기록 검증: B gen 48(previous 기준) → 외부 평가 gen 49는 gen 30과 같음(오탐). B gen 106 → gen 107은
   MCTS-v2 19/50으로 gen 70(10/50) 대비 실제 향상(p = 0.04). 루프 내 previous 기준(창당 20판)은 후보 신호로만 쓴다.
 - 운영 지표(B 후반): 평균 17수, 샘플 재사용 5.8배, value loss 0.57 → 0.73, self-play 흑 72%. 짧은 대국의
-  과다 재사용이 다음 병목이다(§8.6).
-
-### 8.6 Stage 7-D — 샘플 재사용 실험 (D16 대 D32)
-
-7-C B gen 110 가중치를 export해 두 arm을 **새 run으로 동시에** 시작한다. critical 설정 차이는
-`training.games_per_generation` 하나뿐이다(`tests/test_stage7d_reuse.py`). 둘 다 새 optimizer·빈 replay로
-시작하므로 이어가기 대 새 run의 차이가 섞이지 않는다.
-
-| | D16 `configs/stage7d_b16.yaml` | D32 `configs/stage7d_b32.yaml` |
-|---|---|---|
-| games / generation | 16 | 32 |
-| generations | 160 | 80 |
-| 총 self-play | 2,560 | 2,560 |
-| 총 학습 step | 8,000 | 4,000 |
-| 예상 재사용 | 약 5~6배 | 약 2.5~3배 |
-| 체크포인트 보존 | 20 gen마다 | 10 gen마다 (= 같은 판수 지점) |
-
-그 외는 B와 동일하다(PUCT v2, 50 simulations, 64ch×4, batch 32, 50 steps/gen, replay 10,000, seed 42).
-비교는 **같은 누적 판수**(320판 간격) checkpoint끼리 외부 평가(v1, MCTS-v2 50판 흑/백 분리)·probe·value loss로 한다.
-D32가 같은 판수에서 같거나 더 강하면 Stage 8 기본값을 D32 쪽으로 정한다.
+  과다 재사용이 다음 병목이다.
 
 ## 9. FPU 단일 변수 실험
 
