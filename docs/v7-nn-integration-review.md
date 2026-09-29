@@ -17,7 +17,7 @@
 |---|---|---|
 | 29수 패배는 24·26·28수 stage 2(탐색 0회) 때문이다 | **틀림** | §1.3. 22수 시점에 모든 합법수가 VCF로 패배함이 증명된다(safe 0, unknown 0) |
 | 강제 규칙이 MCTS를 우회해 약점이 생긴다 | **부분적으로 맞음** | 대상은 stage 4/5다. 패배 4판 중 3판에서 마지막으로 safe 수가 남아 있던 착수가 stage 4였다 |
-| 근본 원인은 VCT | **가설(가장 유력)** | VCF가 없던 국면에서 사람이 한 수 둔 뒤 모든 후보가 VCF 패배가 됐다. 삼을 섞은 forcing 수순과 맞지만 VCT solver로 증명하지 않았다 |
+| 근본 원인은 VCT | **깊이 1에서 확인** | §6.1: 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고, 사람의 실제 다음 수가 증명된 승리 위협이었다. stage 4 3판에는 VCT1로도 지지 않는 대안이 있었다 |
 | 이제 정책·가치망을 도입해야 한다 | **이미 되어 있음** | Stage 4~8(정책·가치망, 독립 PUCT, self-play, 학습, 외부 평가) 운영 중, 현재 B400 |
 | 즉승·즉방 hard rule + 그래도 탐색 | **이미 되어 있음** | PUCT v2 `tactical_filter`가 모든 노드에 적용되고, root는 정확히 N회 탐색한다 |
 | v7에 NN을 연결 | **하지 않음** | `tests/frozen_baseline.sha256`에 `mcts_v7.py`·`mcts_v7_agent.py`가 잠겨 있는 동결 benchmark다 |
@@ -95,10 +95,9 @@ v7 VCF solver는 `max_fours` 한도에 걸려도 "소진"으로 보고하지 않
 - **SAFE의 범위:** 동결된 v7 solver 기준이다. 이 solver는 방어자의 강제 방어가 4를 만드는 수순을 건너뛴다.
   그래서 SAFE는 "그 범위의 VCF가 없다"는 뜻이지 "강제승이 없다"는 뜻이 아니다. VCT는 아예 탐색하지 않는다.
 - **VCT 가설:** "VCF 없음 → 사람 한 수 → 모든 후보 VCF 패배"라는 흐름은 삼을 섞은 forcing 공격과 맞는다.
-  하지만 증명은 VCT solver certificate가 있어야 한다(§4 작업 2).
-- **stage 4는 원인 후보일 뿐이다.** 마지막 SAFE 착수에서 SAFE 후보가 2~4개뿐이었다(`164723` 20수 제외).
-  그 후보들이 사람의 응수 뒤에도 살아남는지는 확인하지 못했다(3수 앞 확인은 비용이 컸다).
-  "stage 4가 이길 수 있는 방어를 두고 틀린 수를 골랐다"는 아직 말할 수 없다.
+  이후 VCT solver certificate로 깊이 1에서 확인했다(§6.1).
+- **stage 4:** 마지막 SAFE 착수에서 SAFE 후보가 2~4개뿐이었다(`164723` 20수 제외). 이 표만으로는 판단할 수 없었지만,
+  §6.1의 VCT1 증명으로 stage 4 3판 모두 VCT1로도 지지 않는 대안이 있었음을 확인했다.
 - **`164723` 20수는 MCTS 100회로 둔 수다.** 탐색을 거쳐도 같은 종류의 실수가 나왔다. stage 4를 MCTS로 바꾸는 것만으로
   해결된다는 근거는 없다.
 - 6판, 사람 한 명, 비슷한 수법이다. 일반화하지 않는다.
@@ -167,14 +166,19 @@ v7 VCF solver는 `max_fours` 한도에 걸려도 "소진"으로 보고하지 않
    낮은 lr로 fine-tune한다(B400 replay와 섞어 망각을 막는다). 그다음 균형 샘플링 PUCT v2 self-play를 **새 run**으로
    분기한다(`branch_stage8_run.py` 규칙). 대조군은 같은 분기점에서의 B400 continuation이다.
 
-수집기와 추출기는 frozen 파일을 수정하지 않는다. 새 모듈에서 v7 함수를 호출하고, 재생한 착수가 frozen v7과
-같다는 fingerprint 테스트를 둔다.
+구현(§6): v7을 다시 두지 않는다. 이미 있는 기보(benchmark 결과 파일, 웹 대국, self-play 기록)에서 국면만 꺼내고
+label은 `analysis.tactical_labels`가 규칙과 VCF 증명으로 붙인다. 그래서 v7 fingerprint 테스트가 필요 없고, frozen 파일은
+읽기만 한다(`_winning_moves`, `_unstoppable_four_moves`, VCF solver). probe fixture에 있는 국면은 D4 동치까지 빼서
+probe를 held-out으로 유지한다.
 
 ### 3.3 VCT/open-three probe와 offline solver
 
 - 사람 승리 4판의 마지막 SAFE 착수 국면(§1.3 굵은 행)과 그 직후 국면을 추출한다. D4 대칭 8배로 `must_defend_vct` probe를 만든다.
-- **offline bounded VCT solver**(분석 전용, 탐색에 넣지 않음)로 각 국면의 정답을 certificate로 검증한다. 검증되지 않은
-  국면은 probe에서 뺀다. solver는 방어자 4 반격 수순도 다뤄서 §1.4의 SAFE 범위 한계를 함께 해소한다.
+- **offline bounded VCT solver**(`analysis.threats`, 분석 전용, 탐색에 넣지 않음)로 각 국면의 정답을 certificate로 검증한다.
+  검증되지 않은(UNKNOWN) 국면은 probe에서 뺀다. VCT 깊이 d는 "조용한 위협수 d번 뒤 VCF"이고, 위협수 후보는 null-move
+  검사(우리가 한 수 쉬어도 상대에게 VCF가 생기는 수)로 고른다. 이 가지치기는 백 공격에는 정확하다. 흑 공격에서는 우리 돌이
+  흑 금수를 풀어 줄 수 있는 희귀한 경우를 모델링하지 않는다. VCF 단계는 동결 solver를 그대로 쓰므로 §1.4의 범위 한계
+  (방어 수가 4가 되는 수순을 건너뜀)는 **그대로 남는다.**
 - 이 solver의 label을 **학습 target**으로 쓸지는 별도 결정이다. 7-B 원칙(규칙이 network의 몫을 대신하지 않는다)과
   충돌할 수 있으므로 teacher arm 1차 결과를 본 뒤 정한다.
 
@@ -222,20 +226,162 @@ p ≥ 0.05이면 향상 없음으로 본다. 이것이 3회 연속이면 plateau
 | # | 작업 | 완료 기준 | 상태 |
 |---|---|---|---|
 | 1 | 분석기 3상태화, 6판 재실행 | SAFE/UNSAFE/UNKNOWN, `max_fours` 한도 제거, 재실행 표(§1.3), 단위 테스트 | **완료** |
-| 2 | VCT/open-three probe + offline bounded VCT solver(분석 전용) | 4판에서 추출한 국면이 certificate로 검증되고, D4 확장 probe fixture가 생성됨. solver는 search/학습 경로에서 import되지 않음(격리 테스트) | |
-| 3 | 웹 대국 AlphaZero 에이전트 + 착수별 root 로그(§3.4) | B400과 대국 가능, 로그로 `pi`·top-k Q 재구성 가능, 기존 V2~V7 대국 동작 불변 | |
-| 4 | B400 continuation 유지 | heavy 지점 B480·B560·B640에서 B400 anchor h2h, plateau 판정 기록 | 진행 |
-| 5 | 증명된 전술 국면 추출기 + teacher dataset | frozen 파일 불변, fingerprint 일치, 공급원·종류별 개수와 증명 방식 기록 | |
-| 6 | Teacher arm: B400 fine-tune → probe → 분기 self-play | fine-tune 전후 probe 표(기존 + VCT). 같은 판수 지점에서 대조군과 §3.6 순서로 비교 | |
-| 7 | Stage 9 진입 판단 | §3.7 표에 따라 결정하고 근거를 이 문서와 Stage 8 계획에 기록 | |
+| 2 | VCT/open-three probe + offline bounded VCT solver(분석 전용) | 4판에서 추출한 국면이 certificate로 검증되고, D4 확장 probe fixture가 생성됨. solver는 search/학습 경로에서 import되지 않음(격리 테스트) | **완료**(§6.1) |
+| 3 | 웹 대국 AlphaZero 에이전트 + 착수별 root 로그(§3.4) | B400과 대국 가능, 로그로 `pi`·top-k Q 재구성 가능, 기존 V2~V7 대국 동작 불변 | **완료**(§6.2) |
+| 4 | B400 continuation 유지 | heavy 지점 B480·B560·B640에서 B400 anchor h2h, plateau 판정 기록 | 데스크톱 실행(§6.5) |
+| 5 | 증명된 전술 국면 추출기 + teacher dataset | frozen 파일 불변, 공급원·종류별 개수와 증명 방식 기록, probe 국면 제외 | **도구 완료**, benchmark 기보로 검증(§6.3). self-play 기보 추출은 데스크톱 |
+| 6 | Teacher arm: B400 fine-tune → probe → 분기 self-play | fine-tune 전후 지표 기록, 가중치 외 상태 동일 | **도구 완료**(§6.4). 실행은 데스크톱 |
+| 7 | Stage 9 진입 판단 | §3.7 표에 따라 결정 | **판정 도구 완료**(§6.5). 판정은 B640 이후 |
 
-작업 2와 3은 서로 독립이라 병행할 수 있다. 작업 4는 계속 돌아간다. 작업 6은 5가 끝나야 시작한다.
+B400 checkpoint와 run 디렉터리는 데스크톱에만 있다(`runs/`는 커밋하지 않음). 그래서 4·6·7의 **실행**은 데스크톱 몫이고,
+이 저장소에는 도구, 테스트, 실행 절차를 넣었다.
 
 ## 5. 재현
 
 ```bash
-python scripts/analyze_web_play_losses.py logs/web_play --losses-only --tail 6
-python -m unittest tests.test_analyze_web_play_losses
+python scripts/analyze_web_play_losses.py logs/web_play --losses-only --tail 6          # VCF
+python scripts/analyze_web_play_losses.py logs/web_play --losses-only --tail 2 --vct-depth 1
+python scripts/build_vct_probes.py                                                    # 약 1~2시간
+python -m unittest tests.test_analysis_threats tests.test_alphazero_web_agent \
+    tests.test_teacher_branch tests.test_compare_teacher_arms
 ```
 
-기본값은 노드 한도 100,000, 4 연쇄 한도 6이다. 한 판에 수 분이 걸리고, 대부분의 시간은 패배가 증명되는 국면에서 쓴다.
+## 6. 구현과 결과
+
+### 6.1 VCT solver와 probe (작업 2)
+
+`src/analysis/threats.py`(`ThreatSolver`)는 SAFE/UNSAFE/UNKNOWN과 증거 수순을 돌려준다.
+`search`·`training`·`model`은 `analysis`를 import하지 않는다(`tests/test_analysis_threats.py` 격리 테스트).
+
+`scripts/build_vct_probes.py`(VCT 깊이 1, 노드 한도 100,000, 후보 상한 40). 결과 fixture는 `tests/fixtures/vct_probes_v1.json`이고,
+기본 probe 11개를 D4로 8배 늘려 88개다. 노드 한도에 걸린 탐색은 0회였다(VCF 호출 27,375회).
+
+| 판 | 분기 착수(경로) | VCF-safe 후보 | VCT1 결과 | v7 착수 | 증명된 대안 | 사람 실제 다음 수 |
+|---|---|---|---|---|---|---|
+| `163810` | 15(stage 4) | 4 | SAFE 2 / UNSAFE 2 | (12,7) **UNSAFE** | (5,8), (8,11) | (11,10) = 유일한 승리 위협 |
+| `163903` | 13(stage 4) | 4 | SAFE 2 / UNSAFE 2 | (7,9) **UNSAFE** | (7,5), (12,9) | (9,6) = 유일한 승리 위협 |
+| `164445` | 14(stage 4) | 2 | SAFE 1 / UNSAFE 1 | (8,4) **UNSAFE** | (4,8) | (6,7) ∈ 승리 위협 {(6,7), (6,8)} |
+| `164723` | 20(MCTS 100회) | 206 | v7 착수만 증명 | (11,9) **UNSAFE** | 미증명(후보 206개) | (6,10) ∈ 승리 위협 {(6,10), (4,10)} |
+
+(좌표 1-based. UNSAFE = 사람의 위협 1수 뒤 모든 응수가 VCF로 진다는 증명이 있음. SAFE = 위협 1수 + VCF로는 지지 않음.)
+
+- **§1.4의 VCT 가설은 깊이 1에서 확인됐다.** 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고,
+  사람이 실제로 둔 다음 수가 증명된 승리 위협이었다.
+- **stage 4 3판에서는 VCT1로도 지지 않는 대안이 있었다.** 그러니 "stage 4가 VCT를 못 보고 틀린 방어를 골랐다"는
+  깊이 1 기준에서 증명된 사실이다. 다만 대안이 더 깊은 VCT(위협 2수 이상)로 질 수 있는지는 확인하지 않았다.
+- `164723`은 MCTS 100회로 둔 수도 같은 종류의 실수였다. 탐색만 늘리는 방식으로는 해결되지 않는다는 §1.4 판단과 맞는다.
+- 후보가 40개를 넘는 국면(`164723` 20수)은 정답 집합을 완전하게 만들 수 없어서 `must_defend_vct`를 만들지 않았다.
+  top-k만 검사한 정답 집합으로는 검사하지 않은 안전한 수를 오답으로 채점하게 된다.
+
+| probe kind | 기본 개수 | D4 후 | 채점 |
+|---|---|---|---|
+| `must_defend_vct` | 3 | 24 | policy top-1/top-3이 VCT1-SAFE 집합 안인가, `avoid_moves`(증명된 UNSAFE)의 확률 |
+| `vct_attack` | 4 | 32 | 증명된 승리 위협수를 찾는가 + value +1 |
+| `vcf_loss` | 4 | 32 | value −1(VCF 패배 증명) |
+
+비용: 후보가 적은 판은 한 판에 1~5분이 걸렸다. 가장 비싼 단계는 "승리 위협수 전부 찾기"였다(`164723` 21수 29분).
+VCT가 **없음**을 증명하는 쪽이 있음을 증명하는 쪽보다 훨씬 비싸다.
+
+### 6.2 웹 대국 AlphaZero 에이전트 (작업 3)
+
+```bash
+python scripts/run_web_play.py --az-checkpoint runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt
+# 옵션: --az-simulations 100, --az-tactical-rules on|off|auto(기본: checkpoint의 평가 설정)
+```
+
+- 상대 목록에 `az`가 추가된다. 탐색은 외부 평가와 같다(noise 끔, temperature 0).
+- `game.json`에는 착수마다 `root_visits`(전체), `top_visits`(visits·prior·Q), `top_priors`, `root_value`, `root_q`,
+  `tactical_allowed`·`tactical_proven`이 저장된다. 대국 단위로는 `agent_info`(checkpoint SHA-256, generation, search 설정)가 저장된다.
+- `moves.csv`에는 `az_*` 요약 열이 추가된다(`az` 대국에만). V2~V7 대국의 CSV 열과 동작은 그대로다.
+- 사람이 이긴 판은 `analyze_web_play_losses.py`로 분기점을 찾고, 그 착수의 `top_visits`/`top_priors`를 본다.
+  정답 수의 prior가 낮으면 policy 문제, 방문은 됐는데 Q가 틀리면 value 문제, prior는 있는데 방문이 적으면 탐색 예산 문제다.
+
+### 6.3 증명된 전술 dataset (작업 5)
+
+`src/analysis/tactical_labels.py` + `scripts/build_tactical_dataset.py`. 국면은 D4 동치로 중복을 제거하고, probe fixture의
+국면(D4 포함)은 뺀다. VCF 탐색이 노드 한도에 걸린 국면은 label을 붙이지 않는다(건전성 우선, 완전성 포기).
+
+benchmark 기보(V7 대 V5/V6, 200판)와 사람 대국 6판 기준, 워커 3개로 15분:
+
+| 전체 국면 | 중복(D4) | probe 국면 제외 | 노드 한도로 label 없음 | must_block | vcf | unstoppable_four | forced_loss | immediate_win |
+|---|---|---|---|---|---|---|---|---|
+| 11,186 | 796 | 160 | 86 | 1,869 | 609 | 202 | 162 | 162 |
+
+독립 검증:
+
+- 규칙 label 3,004개 전부 PUCT v2 `search.tactics.tactical_filter`(별도 구현)와 일치했다(즉승 집합, 유일 방어점,
+  −1 증명).
+- `vcf` 609개 전부에서 동결 VCF solver가 찾은 첫 수가 label 집합 안에 있었다.
+
+**held-out sanity(새 64×4 network, 이 dataset만으로 2,000 step):** Stage 7 sanity와 같은 분리 방식을 썼다.
+학습은 V7 대 V5 기보(label 1,443개)만 썼고, 평가는 V7 대 V6 기보와 VCF 회귀 국면에서 나온 probe로 했다.
+
+| probe(held-out) | 학습 전 | 학습 후 | 참고: Stage 7 sanity |
+|---|---|---|---|
+| must_block top-1 | 0.00 | **0.72** | 0.67~0.78 |
+| vcf top-1 / top-3 | 0.00 / 0.05 | **0.38 / 0.63** | 학습 안 함 |
+| immediate_win top-1 / top-3 | 0.00 / 0.05 | 0.11 / 0.42 | ≤ 0.11 |
+| forced_loss value 부호 | 0.00 | **0.85** | 0.75~0.85 |
+| value 균형 정답률 / separation | 0.42 / −0.03 | **0.91 / +1.66** | — |
+| must_defend_open3 top-1 / top-3 (학습 kind 아님) | 0.00 / 0.06 | **0.88 / 1.00** | — |
+
+- 증명 label만으로 raw network에 전술을 넣을 수 있고, 학습하지 않은 열린 3 방어까지 일반화된다.
+- 이것은 "tactical bootstrap이 가능하다"는 근거일 뿐 **기력 향상 근거가 아니다.** 기력은 §6.5의 두 arm 비교로만 판단한다.
+- Stage 7-C의 B gen 110 raw network는 must_block top-1 0~7%, open3 top-3 25~38%였다. B400의 값은 데스크톱 probe
+  결과(`probes/gen400*.json`)로 확인해야 한다. B400이 이미 높다면 teacher arm이 얻을 몫도 작다.
+
+### 6.4 Teacher branch (작업 6)
+
+`scripts/make_teacher_branch.py`:
+
+1. `branch_stage8_run.branch`로 gen N을 새 디렉터리에 복사한다.
+2. gen N 자체의 external_eval/probe 결과는 지운다(옛 가중치 결과이므로 orchestrator가 다시 계산한다).
+3. dataset과 run 자신의 replay(균형 샘플링 설정을 따름)를 절반씩 섞어 fine-tune한다. 기본값: 1,000 step,
+   batch 64, lr 2e-4, Adam은 fine-tune 전용으로 새로 만든다.
+4. `checkpoint_genNNN.pt`와 `latest.pt`의 `model_state_dict`만 바꾼다. config, optimizer 상태, replay, RNG,
+   generation은 그대로다.
+
+그래서 대조군(같은 run의 gen N continuation)과 teacher arm은 **가중치만 다르고 self-play seed까지 같다**(짝지은 비교).
+`TEACHER.json`에는 dataset 해시, 설정, 전후 지표(전술 set top-1/value 부호, 고정 replay 표본의 policy/value loss)가 남는다.
+replay loss가 크게 오르면 fine-tune이 self-play 지식을 덮은 것이므로 step이나 lr을 줄인다.
+
+### 6.5 데스크톱 실행 절차 (작업 4~7)
+
+```bash
+# 0) 대조군: §12.8의 B400 continuation (이미 진행 중이면 그대로). heavy 지점마다 B400과 100판.
+python scripts/run_stage8_training.py --run-dir runs/stage8_b400_long --config configs/stage8_g3_b.yaml \
+    --anchor 400 --target-generation 640 \
+    --light-opponents tactical mcts_v2 mcts_v321 --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 \
+    --heavy-pairs 10 --h2h-anchor B400=runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt
+
+# 1) dataset: benchmark + 사람 대국 + B 계열 self-play (gen 160~400)
+python scripts/build_tactical_dataset.py --benchmark "docs/mcts-v7-results/*.json" \
+    --web-games tests/fixtures/web_play_v7_human_games_v1.json \
+    --self-play-run runs/stage8_g3_b --generations 160 400 --workers 6 \
+    --output runs/teacher/tactical_v1.json
+
+# 2) teacher branch (B400 = stage8_g3_b gen 400, 대조군과 같은 분기점)
+python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400 \
+    --dataset runs/teacher/tactical_v1.json --dest runs/stage8_b400_teacher
+
+# 3) teacher arm 학습: 0)과 같은 옵션, run-dir만 다르게
+python scripts/run_stage8_training.py --run-dir runs/stage8_b400_teacher --config configs/stage8_g3_b.yaml \
+    --anchor 400 --target-generation 640 \
+    --light-opponents tactical mcts_v2 mcts_v321 --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 \
+    --heavy-pairs 10 --h2h-anchor B400=runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt
+
+# 4) heavy 지점마다 직접 대국 (480, 560, 640)
+python scripts/run_stage8_head_to_head.py \
+    --checkpoint control480=runs/stage8_b400_long/checkpoints/checkpoint_gen480.pt \
+    --checkpoint teacher480=runs/stage8_b400_teacher/checkpoints/checkpoint_gen480.pt \
+    --pairs 50 --output runs/teacher_h2h/gen480.json
+
+# 5) 판정 (§3.7)
+python scripts/compare_teacher_arms.py --control runs/stage8_b400_long \
+    --teacher runs/stage8_b400_teacher --direct "runs/teacher_h2h/*.json" --output runs/teacher_h2h/verdict.json
+```
+
+- 0)의 run이 이미 다른 옵션으로 돌고 있다면, 3)을 **그 옵션에 맞춘다**. 두 arm의 평가 설정이 같아야 한다.
+- teacher arm의 gen 400 지표(anchor h2h 제외)는 fine-tune 직후 값이다. B400(0세대 차)과의 차이가 fine-tune 효과다.
+- light probe 지점마다 `probes/genNNN_vct.json`이 새로 생긴다. 대조군의 과거 지점도 catch-up에서 계산된다(raw network라 몇 초).
+- `compare_teacher_arms.py` 판정: `teacher_better` / `capacity` / `undecided`. 기준 수치(55%, p 0.05, probe +0.05)는 스크립트 상단에 있다.

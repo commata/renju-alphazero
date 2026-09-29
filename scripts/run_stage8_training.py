@@ -5,7 +5,7 @@ scheduled generations. At every scheduled checkpoint it runs, outside the traini
 
 - light (every ``--light-every`` generations, default 20 = 320 games): tactical and
   MCTS-v2 with ``--light-pairs`` openings (x2 colours), PUCT v1 25 sims (rules off),
-  plus the tactical/value probes and the open-three defense probes;
+  plus the tactical/value probes, the open-three defense probes and the VCT probes;
 - heavy (every ``--heavy-every`` generations, default 80 = 1,280 games): MCTS-v3.2.1 and
   MCTS-v7 with ``--heavy-pairs`` openings;
 - the per-colour ``color_regression`` summary over all light results so far
@@ -50,7 +50,9 @@ from training.training_checkpoint import (INIT_NAME, load_checkpoint_payload,  #
                                           load_training_state)
 
 PROBE_SETS = (('', ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'),
-              ('_defense', ROOT / 'tests' / 'fixtures' / 'stage7_probes_defense_v1.json'))
+              ('_defense', ROOT / 'tests' / 'fixtures' / 'stage7_probes_defense_v1.json'),
+              # VCT / open-three probes proven offline (scripts/build_vct_probes.py)
+              ('_vct', ROOT / 'tests' / 'fixtures' / 'vct_probes_v1.json'))
 
 
 def _write_json(path: Path, data) -> None:

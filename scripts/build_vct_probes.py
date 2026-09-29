@@ -5,7 +5,8 @@ default) this finds the **last AI decision that still had a VCF-safe move** and
 proves, with ``analysis.threats.ThreatSolver`` at ``--vct-depth`` (default 1), what
 happened around it. Only proven positions become probes:
 
-- ``must_defend_vct``: that AI decision. ``correct_moves`` = moves proven SAFE at the
+- ``must_defend_vct``: that AI decision (only when it has at most ``--max-candidates``
+  VCF-safe moves; otherwise only the AI's own move is proven, for ``vct_attack``). ``correct_moves`` = moves proven SAFE at the
   VCT depth, ``avoid_moves`` = VCF-safe moves proven UNSAFE (the AI's choice when it
   was one). Emitted only when no candidate is UNKNOWN and at least one is SAFE.
 - ``vct_loss``: the same decision when every move is proven UNSAFE (value -1).
@@ -86,7 +87,8 @@ def winning_threats(solver: ThreatSolver, game: Game, vct_depth: int) -> list:
     return found
 
 
-def base_probes(game_record: dict, solver: ThreatSolver, vct_depth: int, log) -> list[dict]:
+def base_probes(game_record: dict, solver: ThreatSolver, vct_depth: int, log,
+                max_candidates: int = 40) -> list[dict]:
     moves = [tuple(m) for m in game_record['moves']]
     ai_plies = [i for i, actor in enumerate(game_record['actors']) if actor == 'AI']
     # Walk AI decisions backwards to the last one with a VCF-safe move.
@@ -113,18 +115,19 @@ def base_probes(game_record: dict, solver: ThreatSolver, vct_depth: int, log) ->
     chosen = moves[index]
     vcf_safe = sorted(m for m, (status, _) in per_move.items() if status == SAFE)
     started = perf_counter()
-    deep = solver.classify(game, vcf_safe, vct_depth=vct_depth)
+    complete = len(vcf_safe) <= max_candidates
+    deep = solver.classify(game, vcf_safe if complete else [chosen], vct_depth=vct_depth)
     counts = Counter(status for status, _ in deep.values())
     log(f"  ply {index + 1} ({source['route']}): VCF-safe {len(vcf_safe)} -> "
         f"VCT{vct_depth} {dict(counts)} ({perf_counter() - started:.0f}s)")
     proof = {'vct_depth': vct_depth, 'node_limit': solver.node_limit,
              'vcf_safe': len(vcf_safe), 'vcf_unsafe': len(per_move) - len(vcf_safe),
-             'deep': dict(counts),
+             'deep': dict(counts), 'all_candidates_proven': complete,
              'witnesses': {f'{m[0]},{m[1]}': list(w) for m, (s, w) in deep.items()
                            if s == UNSAFE}}
     result = []
     history = [list(m) for m in moves[:index]]
-    if not counts[UNKNOWN]:
+    if complete and not counts[UNKNOWN]:
         safe = sorted(m for m, (s, _) in deep.items() if s == SAFE)
         if safe:
             result.append({'kind': 'must_defend_vct', 'to_play': _color(me), 'moves': history,
@@ -174,7 +177,8 @@ def expand_d4(probe: dict, number: int) -> list[dict]:
     return out
 
 
-def build(games_path: Path, *, vct_depth: int, node_limit: int, log=print) -> dict:
+def build(games_path: Path, *, vct_depth: int, node_limit: int, max_candidates: int = 40,
+          log=print) -> dict:
     data = json.loads(games_path.read_bytes())
     solver = ThreatSolver(node_limit=node_limit)
     bases = []
@@ -182,7 +186,7 @@ def build(games_path: Path, *, vct_depth: int, node_limit: int, log=print) -> di
         if record['result'] != 'HUMAN_WIN':
             continue
         log(f"== {record['name']}")
-        bases.extend(base_probes(record, solver, vct_depth, log))
+        bases.extend(base_probes(record, solver, vct_depth, log, max_candidates))
     probes = []
     for number, probe in enumerate(bases):
         probes.extend(expand_d4(probe, number))
@@ -194,7 +198,8 @@ def build(games_path: Path, *, vct_depth: int, node_limit: int, log=print) -> di
         else str(games_path),
         'source_sha256': hashlib.sha256(games_path.read_bytes()).hexdigest(),
         'solver': {'module': 'analysis.threats', 'vct_depth': vct_depth,
-                   'node_limit': node_limit, 'vcf_calls': solver.vcf_calls,
+                   'node_limit': node_limit, 'max_candidates': max_candidates,
+                   'vcf_calls': solver.vcf_calls,
                    'vcf_exhausted': solver.vcf_exhausted},
         'counts': dict(Counter(p['kind'] for p in probes)),
         'base_probes': len(bases),
@@ -208,8 +213,11 @@ def main() -> None:
     parser.add_argument('--output', type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument('--vct-depth', type=int, default=1)
     parser.add_argument('--node-limit', type=int, default=100_000)
+    parser.add_argument('--max-candidates', type=int, default=40,
+                        help='prove every VCF-safe move only up to this many (else the AI move only)')
     args = parser.parse_args()
-    result = build(args.games.resolve(), vct_depth=args.vct_depth, node_limit=args.node_limit)
+    result = build(args.games.resolve(), vct_depth=args.vct_depth, node_limit=args.node_limit,
+                   max_candidates=args.max_candidates)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=1) + '\n',
                            encoding='utf-8')
     print(f"wrote {args.output}: {result['counts']} (base {result['base_probes']})")

@@ -1065,6 +1065,9 @@ v7은 동결 상대로 두고 NN을 연결하지 않는다. B400 정체가 학�
   B400을 fine-tune한 뒤 self-play
 
 VCT probe, 웹 대국 NN 에이전트, Stage 9 진입 기준은 [v7-nn-integration-review.md](v7-nn-integration-review.md)에 있다.
+도구(`analysis.threats`, `build_vct_probes.py`, `build_tactical_dataset.py`, `make_teacher_branch.py`,
+`compare_teacher_arms.py`, `run_web_play.py --az-checkpoint`)는 구현했고, 데스크톱 실행 절차는 그 문서 §6.5에 있다.
+light 지점 probe에 VCT set(`probes/genNNN_vct.json`)이 추가된다.
 
 ## 13. PR 분리
 

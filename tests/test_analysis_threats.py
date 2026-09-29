@@ -114,3 +114,32 @@ class WebPlayGamesFixtureTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class VctProbeFixtureTest(unittest.TestCase):
+    """Structure of tests/fixtures/vct_probes_v1.json (proofs: scripts/build_vct_probes.py)."""
+
+    def setUp(self):
+        path = ROOT / 'tests' / 'fixtures' / 'vct_probes_v1.json'
+        self.data = json.loads(path.read_text(encoding='utf-8'))
+
+    def test_probes_replay_and_labels_are_legal(self):
+        self.assertEqual(self.data['format'], 'stage7-probes-v1')
+        self.assertEqual(len(self.data['probes']), 8 * self.data['base_probes'])
+        for probe in self.data['probes']:
+            game = play(probe['moves'])
+            self.assertFalse(game.done, probe['id'])
+            self.assertEqual('BLACK' if game.to_play == 1 else 'WHITE', probe['to_play'])
+            legal = set(game.legal_moves())
+            for move in probe['correct_moves'] + probe['avoid_moves']:
+                self.assertIn(tuple(move), legal, probe['id'])
+            self.assertTrue(probe['correct_moves'] or probe['value_sign'] is not None)
+
+    def test_d4_images_share_the_base_proof(self):
+        groups = {}
+        for probe in self.data['probes']:
+            groups.setdefault(probe['id'].rsplit('-s', 1)[0], []).append(probe)
+        for images in groups.values():
+            self.assertEqual(sorted(p['symmetry'] for p in images), list(range(8)))
+            self.assertEqual(len({json.dumps(p['proof'], sort_keys=True) for p in images}), 1)
+            self.assertEqual(len({len(p['correct_moves']) for p in images}), 1)

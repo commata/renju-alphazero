@@ -15,7 +15,8 @@ appear in a probe set (``--exclude-probes``, default every ``tests/fixtures/*pro
 are dropped so the probes stay held out.
 
     python scripts/build_tactical_dataset.py --benchmark docs/mcts-v7-results/*.json \
-        --self-play-run runs/stage8_g3_b --generations 200 400 --output runs/teacher/tactical.json
+        --self-play-run runs/stage8_g3_b --generations 200 400 --workers 6 \
+        --output runs/teacher/tactical.json
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ from collections import Counter
 import glob
 import hashlib
 import json
+from multiprocessing import Pool
 from pathlib import Path
 import sys
 from time import perf_counter
@@ -95,39 +97,83 @@ def probe_keys(paths) -> set:
     return keys
 
 
-def build(games, *, exclude: set, node_limit: int, prove_losses: bool, log=print) -> dict:
-    solver = ThreatSolver(node_limit=node_limit)
+def unique_positions(games, exclude: set, stats: Counter) -> list[dict]:
+    """Deduplicate every position (D4) in game order; drop probe positions."""
     seen = set()
-    positions = []
-    stats = Counter()
-    started = perf_counter()
-    for game_index, record in enumerate(games):
-        game = Game()
-        for ply, move in enumerate(record['moves']):
-            key = canonical_key(record['moves'][:ply])
+    tasks = []
+    for record in games:
+        for ply in range(len(record['moves'])):
+            prefix = record['moves'][:ply]
+            key = canonical_key(prefix)
             stats['positions'] += 1
             if key in seen:
                 stats['duplicates'] += 1
-            elif key in exclude:
+                continue
+            seen.add(key)
+            if key in exclude:
                 stats['excluded_probe'] += 1
-                seen.add(key)
-            else:
-                seen.add(key)
-                label = label_position(game, solver, prove_losses=prove_losses)
-                if label is not None:
-                    positions.append({'moves': [list(m) for m in record['moves'][:ply]],
-                                      'kind': label['kind'],
-                                      'policy': [list(m) for m in label['policy']],
-                                      'value': label['value'], 'source': record['source']})
-                    stats[label['kind']] += 1
-            game.play(*move)
-        if (game_index + 1) % 100 == 0:
-            log(f'{game_index + 1} games, {len(positions)} labels '
-                f'({perf_counter() - started:.0f}s)')
+                continue
+            tasks.append({'moves': [list(m) for m in prefix], 'source': record['source']})
+    return tasks
+
+
+_WORKER_SOLVER = None
+
+
+def _init_worker(node_limit: int) -> None:
+    global _WORKER_SOLVER
+    _WORKER_SOLVER = ThreatSolver(node_limit=node_limit)
+
+
+def _label_task(args):
+    task, prove_losses = args
+    game = Game()
+    for move in task['moves']:
+        game.play(*move)
+    solver = _WORKER_SOLVER
+    before = solver.vcf_exhausted
+    label = label_position(game, solver, prove_losses=prove_losses)
+    # Keep the per-worker caches small: positions rarely repeat across tasks.
+    solver._vcf_cache.clear()
+    solver._after_cache.clear()
+    return label, solver.vcf_exhausted - before
+
+
+def build(games, *, exclude: set, node_limit: int, prove_losses: bool, workers: int = 1,
+          log=print) -> dict:
+    stats = Counter()
+    tasks = unique_positions(games, exclude, stats)
+    log(f"{len(tasks)} unique positions to label ({stats['duplicates']} duplicates, "
+        f"{stats['excluded_probe']} probe positions dropped)")
+    started = perf_counter()
+    jobs = ((task, prove_losses) for task in tasks)
+    if workers > 1:
+        pool = Pool(workers, initializer=_init_worker, initargs=(node_limit,))
+        results = pool.imap(_label_task, jobs, chunksize=16)
+    else:
+        pool = None
+        _init_worker(node_limit)
+        results = map(_label_task, jobs)
+    positions = []
+    try:
+        for index, (task, (label, exhausted)) in enumerate(zip(tasks, results)):
+            stats['vcf_budget_cut'] += exhausted
+            if label is not None:
+                positions.append({'moves': task['moves'], 'kind': label['kind'],
+                                  'policy': [list(m) for m in label['policy']],
+                                  'value': label['value'], 'source': task['source']})
+                stats[label['kind']] += 1
+            if (index + 1) % 2000 == 0:
+                log(f'{index + 1}/{len(tasks)} positions, {len(positions)} labels '
+                    f'({perf_counter() - started:.0f}s)')
+    finally:
+        if pool is not None:
+            pool.close()
+            pool.join()
     return {'format': DATASET_FORMAT, 'coordinates': '0-based [row, col]',
             'labeler': {'module': 'analysis.tactical_labels', 'node_limit': node_limit,
-                        'prove_losses': prove_losses, 'vcf_calls': solver.vcf_calls,
-                        'vcf_exhausted': solver.vcf_exhausted},
+                        'prove_losses': prove_losses,
+                        'note': 'a VCF probe cut by the node budget gives no vcf label'},
             'stats': dict(stats), 'positions': positions}
 
 
@@ -139,7 +185,9 @@ def main() -> None:
     parser.add_argument('--generations', nargs=2, type=int, metavar=('FROM', 'TO'))
     parser.add_argument('--exclude-probes', nargs='*',
                         default=sorted(glob.glob(str(ROOT / 'tests' / 'fixtures' / '*probes*.json'))))
-    parser.add_argument('--node-limit', type=int, default=100_000)
+    parser.add_argument('--node-limit', type=int, default=20_000,
+                        help='VCF node budget; a cut probe gives no label (sound, not complete)')
+    parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--prove-losses', action='store_true',
                         help='also label vcf_loss positions (slow: a full VCF decision each)')
     parser.add_argument('--output', type=Path, required=True)
@@ -164,7 +212,7 @@ def main() -> None:
 
     exclude = probe_keys(args.exclude_probes)
     result = build(games(), exclude=exclude, node_limit=args.node_limit,
-                   prove_losses=args.prove_losses)
+                   prove_losses=args.prove_losses, workers=args.workers)
     result['sources'] = [{'kind': kind, 'path': str(path),
                           'sha256': hashlib.sha256(path.read_bytes()).hexdigest()
                           if path.is_file() else None} for kind, path in sources]
