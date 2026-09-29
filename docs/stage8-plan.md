@@ -1051,6 +1051,13 @@ buffer 구성을 약간 늦게 따라간다. **두 색이 모두 정상인 것�
   세대 시간이 약 2.4배 줄 것으로 본다. 학습 GPU는 그다음이다.
 - GPU 묶음 self-play(8-D/8-E)는 network를 키워 NN 비중이 커지는 Stage 9에서 한다.
 
+### 12.9 v7 인간 대국과 v7 증류 arm
+
+사람 대 v7 6판(사람 4승)을 분석했다. 패배는 강제 방어(stage 2)가 아니라 삼을 섞은 연속 위협(VCT)을 못 본 데서
+나왔고, 마지막 분기점은 stage 4(탐색 0회) 3판, MCTS 100회 1판이었다. v7은 동결 상대로 두고 NN을 연결하지 않는다.
+대신 B400 정체의 대안으로 **v7 기보 증류 warm start**를 B400 continuation과 같은 판수로 비교하는 arm을 둔다.
+먼저 웹 대국에 AlphaZero 에이전트와 root visit 로그를 추가한다. 상세: [v7-nn-integration-review.md](v7-nn-integration-review.md).
+
 ## 13. PR 분리
 
 | PR | 내용 |
