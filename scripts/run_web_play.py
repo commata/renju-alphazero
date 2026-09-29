@@ -5,6 +5,9 @@ No third-party web framework is required.
 Run:
     python scripts/run_web_play.py
 
+With an AlphaZero checkpoint (requires torch; adds the "az" opponent):
+    python scripts/run_web_play.py --az-checkpoint runs/<run>/checkpoints/checkpoint_gen400.pt
+
 Then open:
     http://127.0.0.1:8000
 """
@@ -53,8 +56,21 @@ VERSION_LABELS = {
 }
 
 
+ALPHAZERO_KEY = "az"
+_ALPHAZERO_FACTORY = None
+
+
+def register_alphazero(factory, label: str) -> None:
+    """Add the "az" opponent; ``factory()`` returns a fresh ``AlphaZeroAgent``."""
+    global _ALPHAZERO_FACTORY
+    _ALPHAZERO_FACTORY = factory
+    VERSION_LABELS[ALPHAZERO_KEY] = label
+
+
 def create_agent(version: str, *, seed: int = 42):
     """Build one of the frozen/versioned agents used by the benchmark scripts."""
+    if version == ALPHAZERO_KEY and _ALPHAZERO_FACTORY is not None:
+        return _ALPHAZERO_FACTORY()  # deterministic search: the seed is unused
     if version == "v321":
         return MCTSV321Agent(seed=seed)
     if version == "v41":
@@ -102,6 +118,8 @@ def _diagnostics(agent) -> dict[str, Any]:
     diagnostics = getattr(agent, "diagnostics", None)
     if diagnostics is None:
         return {}
+    if isinstance(diagnostics, dict):  # AlphaZeroAgent: already JSON-shaped
+        return _json_value(diagnostics)
     names = {
         "forced_policy_stage",
         "simulation_mode",
@@ -149,6 +167,32 @@ def _diagnostics(agent) -> dict[str, Any]:
             if value is not None:
                 result[name] = _json_value(value)
     return result
+
+
+ALPHAZERO_CSV_FIELDS = (
+    "az_root_value", "az_root_q", "az_tactical_allowed", "az_tactical_proven",
+    "az_chosen_visits", "az_chosen_prior", "az_top_visits",
+)
+
+
+def _alphazero_csv(diagnostics: dict[str, Any]) -> dict[str, Any]:
+    """Compact per-move summary; the full root record stays in game.json."""
+    if not diagnostics:
+        return {}
+    chosen = diagnostics.get("chosen")
+    top = diagnostics.get("top_visits", [])
+    chosen_row = next((item for item in top if item["move"] == chosen), {})
+    return {
+        "az_root_value": diagnostics.get("root_value"),
+        "az_root_q": diagnostics.get("root_q"),
+        "az_tactical_allowed": diagnostics.get("tactical_allowed"),
+        "az_tactical_proven": diagnostics.get("tactical_proven"),
+        "az_chosen_visits": chosen_row.get("visits"),
+        "az_chosen_prior": chosen_row.get("prior"),
+        "az_top_visits": json.dumps(
+            [[item["move"][0] + 1, item["move"][1] + 1, item["visits"]] for item in top[:3]]
+        ),
+    }
 
 
 class PlaySession:
@@ -305,6 +349,9 @@ class PlaySession:
             "moves": self.move_records,
             "final_board": self.game.board,
         }
+        alphazero = self.agent_key == ALPHAZERO_KEY
+        if alphazero:
+            payload["agent_info"] = _json_value(getattr(self.agent, "info", {}))
         (log_dir / "game.json").write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -318,7 +365,7 @@ class PlaySession:
                 "v6_selected_reasons", "v7_own_vcf_found", "v7_safety_removed",
                 "v7_safety_inconclusive", "v7_self_forbidden_penalized",
                 "v7_stage4_tiebreak_applied", "v7_module_seconds",
-            ])
+            ] + (list(ALPHAZERO_CSV_FIELDS) if alphazero else []))
             writer.writeheader()
             for record in self.move_records:
                 diagnostics = record.get("diagnostics", {})
@@ -350,6 +397,7 @@ class PlaySession:
                         "v7_stage4_tiebreak_applied"
                     ),
                     "v7_module_seconds": diagnostics.get("v7_module_seconds"),
+                    **(_alphazero_csv(diagnostics) if alphazero else {}),
                 })
 
         self.last_log_dir = log_dir
@@ -460,7 +508,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Play Renju against local MCTS versions in a browser.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--az-checkpoint", type=Path,
+                        help="training checkpoint for the AlphaZero opponent (needs torch)")
+    parser.add_argument("--az-simulations", type=int,
+                        help="PUCT simulations per move (default: the checkpoint's evaluation setting)")
+    parser.add_argument("--az-tactical-rules", choices=("auto", "on", "off"), default="auto",
+                        help="PUCT v2 rules (auto = the checkpoint's evaluation setting)")
     args = parser.parse_args()
+    if args.az_checkpoint is not None:
+        from agents.alphazero_agent import AlphaZeroAgent
+
+        probe = AlphaZeroAgent.from_checkpoint(
+            args.az_checkpoint, simulations=args.az_simulations,
+            tactical_rules=args.az_tactical_rules)
+        register_alphazero(
+            lambda: AlphaZeroAgent(probe.evaluator, probe.config, name=probe.name, info=probe.info),
+            f"{probe.name} ({probe.config.num_simulations} sims)")
+        print(f"AlphaZero opponent: {probe.name}, {probe.config.to_dict()}")
     server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"Renju local web: http://{args.host}:{args.port}")
     print("종료: Ctrl+C")

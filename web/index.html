@@ -44,7 +44,7 @@
 
   <aside class="card side">
     <div>
-      <label for="agent">상대 MCTS 버전</label>
+      <label for="agent">상대 AI</label>
       <select id="agent">
         <option value="v321">MCTS V3.2.1</option>
         <option value="v41">MCTS V4.1</option>
@@ -210,9 +210,19 @@ function drawBoard() {
   }
 }
 
+function syncVersions() {
+  // Versions registered by the server (e.g. an AlphaZero checkpoint) join the list.
+  for (const [key, label] of Object.entries(state.versions || {})) {
+    if (![...agentSelect.options].some(option => option.value === key)) {
+      agentSelect.add(new Option(label, key));
+    }
+  }
+}
+
 function render() {
   drawBoard();
   if (!state) return;
+  syncVersions();
   const human = state.human_color === "BLACK" ? "흑" : "백";
   const turn = state.to_play === "BLACK" ? "흑" : "백";
   if (state.done) {
