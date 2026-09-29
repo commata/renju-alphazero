@@ -38,11 +38,13 @@ for path in (ROOT / 'src', ROOT / 'scripts', ROOT):
 
 import torch  # noqa: E402
 
-from run_stage7_checkpoint_eval import OPPONENTS, evaluate_checkpoint  # noqa: E402
+from run_stage7_checkpoint_eval import OPPONENTS, evaluate_checkpoint, search_config_for  # noqa: E402
+from run_stage8_head_to_head import play_match  # noqa: E402
+from training.evaluation import PUCTAgent  # noqa: E402
 from training.config import load_config, validate_config  # noqa: E402
 from training.health import replay_color_stats  # noqa: E402
 from training.loop import run_training  # noqa: E402
-from training.probes import run_probe_file  # noqa: E402
+from training.probes import load_model_from_training_checkpoint, run_probe_file  # noqa: E402
 from training.schedule import color_regression_summary, next_stop, schedule_points  # noqa: E402
 from training.training_checkpoint import (INIT_NAME, load_checkpoint_payload,  # noqa: E402
                                           load_training_state)
@@ -90,6 +92,10 @@ def evaluate_point(run_dir: Path, generation: int, kinds: list[str], args, log=p
                                      tactical_rules=args.tactical_rules, log=log)
         result['schedule'] = {'kind': kind, 'generation': generation}
         _write_json(output, result)
+    if 'heavy' in kinds and getattr(args, 'h2h_anchor', None):
+        output = run_dir / 'external_eval' / f'gen{generation:03d}_h2h.json'
+        if not output.exists():
+            _write_json(output, head_to_head_vs_anchor(checkpoint, generation, args, log))
     if 'light' in kinds and not args.skip_probes:
         for suffix, probes in PROBE_SETS:
             output = run_dir / 'probes' / f'gen{generation:03d}{suffix}.json'
@@ -100,6 +106,32 @@ def evaluate_point(run_dir: Path, generation: int, kinds: list[str], args, log=p
             state = load_training_state(checkpoint)
             _write_json(output, {'generation': generation, 'checkpoint': str(checkpoint),
                                  **replay_color_stats(state.buffer)})
+
+
+_ANCHOR_CACHE: dict = {}
+
+
+def _player(label: str, path: Path, args) -> dict:
+    model, info = load_model_from_training_checkpoint(path)
+    search = search_config_for(path, args.simulations, args.tactical_rules)
+    return {'label': label, 'path': str(path), 'info': info, 'search': search.to_dict(),
+            'agent': PUCTAgent(label, model, search)}
+
+
+def head_to_head_vs_anchor(checkpoint: Path, generation: int, args, log=print) -> dict:
+    """Heavy points: the checkpoint vs a fixed anchor checkpoint (saturation check)."""
+    label, _, path = args.h2h_anchor.partition('=')
+    key = (label, path)
+    if key not in _ANCHOR_CACHE:
+        _ANCHOR_CACHE[key] = _player(label, Path(path), args)
+    anchor = _ANCHOR_CACHE[key]
+    current = _player(f'gen{generation:03d}', checkpoint, args)
+    match = play_match(current, anchor, pairs=args.h2h_pairs, seed=args.h2h_seed,
+                       opening_plies=2, radius=2, log=log)
+    return {'format_version': 'stage8-h2h-anchor-v1', 'generation': generation,
+            'checkpoint': str(checkpoint), 'anchor': {k: v for k, v in anchor.items()
+                                                      if k != 'agent'},
+            'seed': args.h2h_seed, 'pairs': args.h2h_pairs, **match}
 
 
 def update_color_summary(run_dir: Path, log=print) -> dict:
@@ -183,6 +215,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--tactical-rules', choices=('auto', 'on', 'off'), default='off',
                         help='model search in external eval (Stage 7 comparisons used off)')
     parser.add_argument('--skip-probes', action='store_true')
+    parser.add_argument('--h2h-anchor', metavar='LABEL=PATH',
+                        help='at heavy points also play a fixed anchor checkpoint '
+                             '(genNNN_h2h.json; e.g. B400=runs/.../checkpoint_gen400.pt)')
+    parser.add_argument('--h2h-pairs', type=int, default=50)
+    parser.add_argument('--h2h-seed', type=int, default=8008, help='same openings as round robins')
     return parser
 
 
