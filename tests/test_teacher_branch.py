@@ -198,3 +198,59 @@ class TeacherBranchTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+@unittest.skipIf(torch is None, 'requires torch')
+class RecipeBranchTest(unittest.TestCase):
+    def test_recipe_branch_changes_only_the_config_and_resumes(self):
+        import yaml
+        from make_recipe_branch import make_recipe_branch
+        from training.config import ConfigError, load_config
+        from training.loop import run_training
+        from training.training_checkpoint import load_checkpoint_payload
+
+        threads = torch.get_num_threads()
+        config = load_config(ROOT / 'configs' / 'stage6_test.yaml')
+        config['training'].update(generations=3, keep_every=1)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                source = Path(tmp) / 'source'
+                run_training(config, run_dir=source, stop_after=2, log=lambda m: None)
+                recipe = json.loads(json.dumps(config))
+                recipe['self_play']['temperature_moves'] = 1
+                recipe_path = Path(tmp) / 'recipe.yaml'
+                recipe_path.write_text(yaml.safe_dump(recipe), encoding='utf-8')
+                dest = Path(tmp) / 'recipe'
+                result = make_recipe_branch(source, 2, recipe_path, dest)
+                self.assertEqual(list(result['critical_changes']), ['self_play.temperature_moves'])
+                original = load_checkpoint_payload(source / 'checkpoints' / 'checkpoint_gen002.pt')
+                changed = load_checkpoint_payload(dest / 'checkpoints' / 'latest.pt')
+                self.assertNotEqual(original['critical_config_hash'],
+                                    changed['critical_config_hash'])
+                for key in ('generation', 'global_step', 'component_rng'):
+                    self.assertEqual(original[key], changed[key], key)
+                self.assertTrue(all(torch.equal(original['model_state_dict'][k],
+                                                changed['model_state_dict'][k])
+                                    for k in original['model_state_dict']))
+                with self.assertRaises(ConfigError):   # the old recipe no longer resumes it
+                    run_training(config, resume=dest / 'checkpoints' / 'latest.pt',
+                                 log=lambda m: None)
+                state = run_training(load_config(recipe_path),
+                                     resume=dest / 'checkpoints' / 'latest.pt', log=lambda m: None)
+                self.assertEqual(state.generation, 3)
+                self.assertEqual(state.config['self_play']['temperature_moves'], 1)
+                with self.assertRaises(ValueError):    # no critical change left
+                    make_recipe_branch(None, 3, recipe_path, dest, in_place=True)
+        finally:
+            torch.set_num_threads(threads)
+
+
+class RecipeConfigTest(unittest.TestCase):
+    def test_temp4_differs_from_g3_b_only_in_temperature(self):
+        from training.config import config_differences, critical_config, load_config
+
+        base = load_config(ROOT / 'configs' / 'stage8_g3_b.yaml')
+        temp4 = load_config(ROOT / 'configs' / 'stage8_b400_temp4.yaml')
+        self.assertEqual(config_differences(critical_config(base), critical_config(temp4)),
+                         ['self_play.temperature_moves'])
+        self.assertEqual(temp4['self_play']['temperature_moves'], 4)

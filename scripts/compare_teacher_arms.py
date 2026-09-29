@@ -22,7 +22,12 @@ Rules (a heavy point "improves" when its anchor score > 55 % and p < 0.05):
 Verdict:
 
 - ``teacher_better``   -> learning signal was the bottleneck: keep 64x4, adopt the teacher step;
-- ``capacity``         -> both plateau, no difference, probes flat: start Stage 9 (bigger net);
+- ``capacity``         -> both plateau, no difference, probes flat AND the raw must_block
+                          top-1 of both arms >= MUST_BLOCK_CEILING (the network is near
+                          what 64x4 is known to learn): start Stage 9 (bigger net);
+- ``signal``           -> both plateau and flat, but raw tactics stay far below that
+                          ceiling: fix the learning signal (self-play recipe / teacher)
+                          before a bigger network;
 - ``undecided``        -> no difference yet but probes still rising, or too few points.
 
     python scripts/compare_teacher_arms.py --control runs/stage8_b400_long \
@@ -40,6 +45,10 @@ GEN = re.compile(r'gen(\d{3,})')
 IMPROVE_SCORE = 0.55
 IMPROVE_P = 0.05
 PROBE_RISE = 0.05
+# A 64x4 network trained only on 1,443 proof labels reaches held-out must_block top-1
+# 0.72 (review §6.3). Below this the network is not saturated, so a plateau there is a
+# learning-signal problem, not a capacity limit.
+MUST_BLOCK_CEILING = 0.6
 KEY_PROBES = (
     ('', 'must_block', 'top1'),
     ('', None, 'separation'),
@@ -155,15 +164,24 @@ def verdict(control: dict, teacher: dict, control_run: Path, teacher_run: Path,
     rising = {'control': probes_rising(control_run, control),
               'teacher': probes_rising(teacher_run, teacher)}
     reasons.append(f'plateau {plateaus}, probes rising {rising}')
+    saturated = {}
+    for name, rows, run in (('control', control, control_run), ('teacher', teacher, teacher_run)):
+        value = probe_metric(run, max(rows), '', 'must_block', 'top1') if rows else None
+        saturated[name] = None if value is None else value >= MUST_BLOCK_CEILING
+    reasons.append(f'raw must_block top-1 >= {MUST_BLOCK_CEILING}: {saturated}')
+    flat = (plateaus['control'] and plateaus['teacher']
+            and rising['control'] is False and rising['teacher'] is False)
     if stronger:
         decision = 'teacher_better'
-    elif (plateaus['control'] and plateaus['teacher']
-          and rising['control'] is False and rising['teacher'] is False):
+    elif flat and saturated['control'] and saturated['teacher']:
         decision = 'capacity'
+    elif flat and saturated['control'] is False and saturated['teacher'] is False:
+        decision = 'signal'
     else:
         decision = 'undecided'
     return {'decision': decision, 'common_heavy_points': common, 'reasons': reasons,
-            'plateau': plateaus, 'probes_rising': rising, 'direct': direct}
+            'plateau': plateaus, 'probes_rising': rising, 'saturated': saturated,
+            'direct': direct}
 
 
 def main() -> int:

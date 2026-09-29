@@ -12,7 +12,7 @@ if str(ROOT / 'scripts') not in sys.path:
 from compare_teacher_arms import arm_table, direct_result, verdict  # noqa: E402
 
 
-def write_run(root: Path, scores: dict, vct_top3: dict) -> Path:
+def write_run(root: Path, scores: dict, vct_top3: dict, must_block: float | None = 0.7) -> Path:
     for generation, (score, p) in scores.items():
         path = root / 'external_eval' / f'gen{generation:03d}_h2h.json'
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -22,6 +22,9 @@ def write_run(root: Path, scores: dict, vct_top3: dict) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({'summary': {'must_defend_vct': {'top3': top3}},
                                     'value_overall': {}}))
+        if must_block is not None:
+            (root / 'probes' / f'gen{generation:03d}.json').write_text(json.dumps(
+                {'summary': {'must_block': {'top1': must_block}}, 'value_overall': {}}))
     return root
 
 
@@ -29,15 +32,21 @@ FLAT = {480: (0.52, 0.7), 560: (0.50, 1.0), 640: (0.54, 0.5)}
 
 
 class CompareTeacherArmsTest(unittest.TestCase):
-    def run_verdict(self, control_scores, teacher_scores, control_vct, teacher_vct, direct=None):
+    def run_verdict(self, control_scores, teacher_scores, control_vct, teacher_vct, direct=None,
+                    must_block=0.7):
         with tempfile.TemporaryDirectory() as tmp:
-            c = write_run(Path(tmp) / 'c', control_scores, control_vct)
-            t = write_run(Path(tmp) / 't', teacher_scores, teacher_vct)
+            c = write_run(Path(tmp) / 'c', control_scores, control_vct, must_block)
+            t = write_run(Path(tmp) / 't', teacher_scores, teacher_vct, must_block)
             return verdict(arm_table(c), arm_table(t), c, t, direct)
 
     def test_both_flat_is_capacity(self):
         flat = {560: 0.3, 640: 0.31}
         self.assertEqual(self.run_verdict(FLAT, FLAT, flat, flat)['decision'], 'capacity')
+
+    def test_flat_but_unsaturated_is_a_signal_problem(self):
+        flat = {560: 0.3, 640: 0.31}
+        result = self.run_verdict(FLAT, FLAT, flat, flat, must_block=0.2)
+        self.assertEqual(result['decision'], 'signal')
 
     def test_rising_probes_keep_it_undecided(self):
         result = self.run_verdict(FLAT, FLAT, {560: 0.3, 640: 0.31}, {560: 0.3, 640: 0.4})

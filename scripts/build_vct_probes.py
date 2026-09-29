@@ -221,6 +221,8 @@ def main() -> None:
     parser.add_argument('--output', type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument('--vct-depth', type=int, default=1)
     parser.add_argument('--node-limit', type=int, default=100_000)
+    parser.add_argument('--check-against', type=Path,
+                        help='compare the new probes with this file (ids, correct/avoid moves)')
     parser.add_argument('--max-candidates', type=int, default=40,
                         help='prove every VCF-safe move only up to this many (else the AI move only)')
     args = parser.parse_args()
@@ -229,6 +231,11 @@ def main() -> None:
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=1) + '\n',
                            encoding='utf-8')
     print(f"wrote {args.output}: {result['counts']} (base {result['base_probes']})")
+    if args.check_against is not None:
+        old = json.loads(args.check_against.read_text(encoding='utf-8'))
+        key = lambda p: (p['id'], p['correct_moves'], p['avoid_moves'], p['value_sign'])
+        same = [key(p) for p in old['probes']] == [key(p) for p in result['probes']]
+        print('check: SAME' if same else f'check: DIFFERENT from {args.check_against}')
 
 
 if __name__ == '__main__':

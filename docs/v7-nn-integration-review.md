@@ -474,11 +474,136 @@ python scripts/compare_teacher_arms.py --control runs/stage8_b400_long --teacher
 | GitHub에 CI 기록이 없음 | 사실 | `.github/workflows/ci.yml`은 `pull_request`와 `main` push에서만 돈다. 이 브랜치의 결과는 로컬 실행(`ci_run_tests.py --skip-policy none`, torch 차단 `--skip-policy torch-only`, `check_frozen_baseline.py`)이다. PR을 열면 CI가 돈다 |
 
 **재검증이 필요한 산출물:** `tests/fixtures/vct_probes_v1.json`은 가지치기 solver로 만들었다. UNSAFE(v7 착수 패배, 사람 수 승리)는
-유효하지만, `must_defend_vct` 정답 집합과 `vct_attack` 정답 집합의 완전성은 새 solver로 다시 확인해야 한다. 데스크톱에서 실행한다:
+유효하지만, `must_defend_vct` 정답 집합과 `vct_attack` 정답 집합의 완전성은 새 solver로 다시 확인해야 한다. 명령은 §10의 0단계에 있다.
+`check: SAME`이면 그대로 두고, `DIFFERENT`면 새 파일을 fixture로 교체해 커밋한다(§6.1 표도 갱신).
 
-```bash
-python scripts/build_vct_probes.py --output runs/vct_probes_v1_recheck.json
-python -c "import json;a=json.load(open('tests/fixtures/vct_probes_v1.json'));b=json.load(open('runs/vct_probes_v1_recheck.json'));print('same' if [(p['id'],p['correct_moves'],p['avoid_moves']) for p in a['probes']]==[(p['id'],p['correct_moves'],p['avoid_moves']) for p in b['probes']] else 'DIFFERENT')"
+## 9. B400 장기 학습 결과 반영 (gen 400 → 880)
+
+결과 표와 수치는 [Stage 8 계획 §12.10](stage8-plan.md)에 있다. 설계에 반영한 점:
+
+1. **정체는 확정됐지만 원인은 용량이 아니다.** B400 대비 6개 heavy 지점에서 향상이 없었고(640은 유의하게 약함), 탐색 예산 25/50/100도
+   효과가 없었다. 그러나 raw 전술 probe(must_block top-1 0.10~0.28)는 같은 64×4가 증명 label만으로 도달하는 수준(0.72)보다 훨씬 낮다.
+   `compare_teacher_arms.py`에 이 기준(`MUST_BLOCK_CEILING = 0.6`)을 넣었다. 두 arm이 정체해도 raw 전술이 이 아래면 판정은
+   `capacity`가 아니라 `signal`이다. 이번 run의 판정은 `signal`이다.
+2. **새 원인 후보: self-play 퇴화.** 게임의 84%가 9~10수(방어 없는 최단 5목)에 끝나고, `temperature_moves: 10`이라 그 게임 전체가
+   샘플링으로 두어졌다. teacher보다 싸고 영향이 클 수 있어서 **레시피 arm S4(temperature_moves 4)**를 T1과 함께 1순위로 올린다.
+   다만 온도 때문이라는 것은 **가설**이다. 방문 분포 자체가 방어를 선호하지 않을 수도 있다. S4에서 게임 길이 분포가 바뀌는지가
+   첫 확인 지표다(`metrics.jsonl`의 `game_lengths`).
+3. **S4는 짝지은 branch로 만든다.** 새 run(가중치만 export)은 replay·optimizer·RNG가 초기화되어 대조군과 조건이 달라진다.
+   `make_recipe_branch.py`는 gen 400 상태를 그대로 두고 checkpoint 설정과 critical hash만 바꾼다. `--in-place`로 T1 branch에도
+   적용할 수 있다(S4+T1).
+4. **대조군은 다시 돌리지 않는다.** `runs/stage8_b400_long`이 이미 gen 480~880까지 있다. 각 arm은 gen 640까지(heavy 3지점) 돌리고,
+   같은 세대의 대조군 checkpoint와 직접 대국한다.
+5. **판정 순서:** (a) S4 게임 길이 분포 → (b) arm 대 대조군 직접 대국(480/560/640) → (c) raw probe(기존 + VCT) → (d) v321/v5/v6/v7.
+   S4나 T1이 대조군보다 유의하게 강하면 그 레시피로 64×4를 계속한다. 둘 다 효과가 없고 raw 전술이 여전히 낮으면, 다음 후보는
+   self-play 탐색 설정(Dirichlet ε, 방문 수)과 지속 혼합(T4)이다. Stage 9는 raw 전술이 기준선 가까이 올라온 뒤에 정체할 때 간다.
+
+| 결과 | 해석 | 다음 |
+|---|---|---|
+| S4 ≫ 대조군 | self-play 레시피가 병목이었다 | S4를 기본 설정으로 채택하고, 그 위에서 T1/T2 |
+| T1 ≫ 대조군, S4 ≈ 대조군 | 전술 학습 신호 부족 | T2(VCT label)로 확장 |
+| S4, T1 모두 ≫ | 둘 다 기여 | S4+T1 조합을 확인 |
+| 모두 ≈ 대조군, raw 전술 낮음 | 판정 `signal` 유지 | 탐색 설정·지속 혼합(T4) 검토 |
+| 모두 ≈ 대조군, raw 전술 높음(≥ 0.6) | 판정 `capacity` | Stage 9(network 확대) |
+
+## 10. 데스크톱 실행 명령 총정리 (PowerShell)
+
+저장소 루트(`C:\오목 강화학습\renju-alphazero`)에서 `.venv-cpu`를 활성화한 상태를 기준으로 한다. 시간은 실측 전 추정치다.
+CPU 코어: S4·T1 학습은 각 1코어(`torch_threads 1`)이므로 동시에 돌려도 된다. dataset 생성(워커 5~6개)은 학습과 코어를 나눈다.
+권장 순서: 0 → 1 → 2를 창 하나에서 시작 → 다른 창에서 3 → 4 → 둘 다 gen 640까지 끝나면 5 → 6.
+긴 학습 명령은 `Tee-Object`로 화면과 로그 파일에 같이 남긴다(Windows PowerShell 5에서 torch 경고가 빨간 오류처럼 보여도 무시해도 된다).
+
+```powershell
+# ---------------------------------------------------------------------------
+# 0. 최신 코드 + VCT probe fixture 재검증 (약 30~60분). 결과가 SAME이면 끝, DIFFERENT면 알려 주기
+# ---------------------------------------------------------------------------
+git fetch origin feat/stage8-plan
+git checkout feat/stage8-plan
+git pull origin feat/stage8-plan
+python scripts/ci_run_tests.py --skip-policy none                       # 로컬 회귀 (수 분)
+python scripts/build_vct_probes.py --output runs/vct_probes_v1_recheck.json `
+    --check-against tests/fixtures/vct_probes_v1.json
+
+# ---------------------------------------------------------------------------
+# 1. 대조군(stage8_b400_long)에 VCT probe만 추가 계산 (학습 없음, 수 분)
+# ---------------------------------------------------------------------------
+python scripts/run_stage8_training.py --run-dir runs/stage8_b400_long --eval-only `
+    --anchor 400 --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 10 `
+    --h2h-anchor B400=runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt
+
+# ---------------------------------------------------------------------------
+# 2. S4 arm: temperature_moves 10 -> 4, gen 400 상태 그대로 분기 → gen 640까지 (약 2~3시간)
+# ---------------------------------------------------------------------------
+python scripts/make_recipe_branch.py --source runs/stage8_g3_b --generation 400 `
+    --config configs/stage8_b400_temp4.yaml --dest runs/stage8_b400_s4
+python scripts/run_stage8_training.py --run-dir runs/stage8_b400_s4 `
+    --config configs/stage8_b400_temp4.yaml --anchor 400 --target-generation 640 `
+    --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 10 `
+    --h2h-anchor B400=runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt `
+    2>&1 | Tee-Object -FilePath runs/stage8_b400_s4.log
+
+# ---------------------------------------------------------------------------
+# 3. T1 dataset: VCF 수준 증명 label, probe 게임 전체 제외 (워커 5개, 1~2시간 추정)
+# ---------------------------------------------------------------------------
+python scripts/build_tactical_dataset.py --benchmark "docs/mcts-v7-results/*.json" `
+    --web-games tests/fixtures/web_play_v7_human_games_v1.json `
+    --self-play-run runs/stage8_g3_b --generations 160 400 --workers 5 `
+    --output runs/teacher/tactical_t1.json
+
+# ---------------------------------------------------------------------------
+# 4. T1 arm: 가중치만 fine-tune (수 분) → gen 640까지 (약 2~3시간)
+# ---------------------------------------------------------------------------
+python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400 `
+    --dataset runs/teacher/tactical_t1.json --dest runs/stage8_b400_t1 --balance-kinds
+python scripts/run_stage8_training.py --run-dir runs/stage8_b400_t1 `
+    --config configs/stage8_g3_b.yaml --anchor 400 --target-generation 640 `
+    --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 10 `
+    --h2h-anchor B400=runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt `
+    2>&1 | Tee-Object -FilePath runs/stage8_b400_t1.log
+
+# ---------------------------------------------------------------------------
+# 5. 직접 대국: arm마다 대조군과 1:1, heavy 지점 480 / 560 / 640 (지점당 수 분)
+# ---------------------------------------------------------------------------
+foreach ($g in 480, 560, 640) {
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "control$($g)=runs/stage8_b400_long/checkpoints/checkpoint_gen$($g).pt" `
+      --checkpoint "S4_$($g)=runs/stage8_b400_s4/checkpoints/checkpoint_gen$($g).pt" `
+      --pairs 50 --output "runs/arm_h2h/s4_gen$($g).json"
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "control$($g)=runs/stage8_b400_long/checkpoints/checkpoint_gen$($g).pt" `
+      --checkpoint "T1_$($g)=runs/stage8_b400_t1/checkpoints/checkpoint_gen$($g).pt" `
+      --pairs 50 --output "runs/arm_h2h/t1_gen$($g).json"
+}
+
+# ---------------------------------------------------------------------------
+# 6. 판정 (파일만 읽음, 즉시)
+# ---------------------------------------------------------------------------
+python scripts/compare_teacher_arms.py --control runs/stage8_b400_long --teacher runs/stage8_b400_s4 `
+    --direct "runs/arm_h2h/s4_*.json" --teacher-label-prefix S4 --output runs/arm_h2h/s4_verdict.json
+python scripts/compare_teacher_arms.py --control runs/stage8_b400_long --teacher runs/stage8_b400_t1 `
+    --direct "runs/arm_h2h/t1_*.json" --teacher-label-prefix T1 --output runs/arm_h2h/t1_verdict.json
 ```
 
-`same`이면 그대로 두고, `DIFFERENT`면 새 파일을 fixture로 교체해 커밋한다(§6.1 표도 갱신).
+**선택 단계 (6의 결과를 본 뒤):**
+
+```powershell
+# S4+T1 조합: T1 branch를 하나 더 만들고 같은 자리에서 temperature만 바꾼다
+python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400 `
+    --dataset runs/teacher/tactical_t1.json --dest runs/stage8_b400_s4t1 --balance-kinds
+python scripts/make_recipe_branch.py --in-place --dest runs/stage8_b400_s4t1 --generation 400 `
+    --config configs/stage8_b400_temp4.yaml
+# 학습은 2와 같은 명령에서 run-dir만 runs/stage8_b400_s4t1
+
+# T2 pilot: VCT label 처리량 측정 (20세대 분량). 로그의 "VCT phase: N threat candidates"와 걸린 시간을 알려 주기
+python scripts/build_tactical_dataset.py --self-play-run runs/stage8_g3_b --generations 380 400 `
+    --vct-depth 1 --workers 5 --output runs/teacher/tactical_t2_pilot.json
+
+# 사람 대국: B400과 S4/T1 결과물을 직접 두어 보기 (착수마다 root 로그 저장)
+python scripts/run_web_play.py --az-checkpoint runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt
+```
+
+**공유해 줄 것:** 0단계 `check:` 줄, `runs/stage8_b400_s4`·`runs/stage8_b400_t1`의 `metrics.jsonl`·`external_eval/`·`probes/`·로그,
+`runs/stage8_b400_t1/TEACHER.json`, `runs/stage8_b400_s4/RECIPE.json`, `runs/arm_h2h/` 전체.
