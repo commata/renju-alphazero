@@ -16,7 +16,17 @@ kind                      policy target                   value (side to move)
 ``vcf``                   every move that starts a VCF    +1
 ``vcf_loss`` (opt-in)     none                            -1  (every move proven
                                                                UNSAFE to VCF)
+``vct_attack`` (opt-in)   the proven threat move          +1  (after it every reply
+                                                               loses to VCF)
+``must_defend_vct``       every move that survives a      none
+(opt-in)                  depth-1 VCT (complete set)
+``vct_loss`` (opt-in)     none                            -1  (every move loses to
+                                                               a depth-1 VCT)
 ========================  ==============================  ==================
+
+``vct_attack`` is one-hot on the threat found in the game: other winning threats may
+exist (enumerating them all is too slow), so this policy target is sound but not
+complete.
 
 ``must_block`` has no value label: blocking is forced but the result is unknown.
 ``vcf`` first moves are the fours after which (opponent's forced block) the
@@ -25,7 +35,7 @@ frozen V7 solver, budget-only cut); a position whose VCF probe is cut is skipped
 """
 from __future__ import annotations
 
-from analysis.threats import UNSAFE, VCF_WIN, ThreatSolver, decision_status
+from analysis.threats import SAFE, UNKNOWN, UNSAFE, VCF_WIN, ThreatSolver, decision_status
 from renju import Game
 from search.mcts_v5 import _unstoppable_four_moves, _window_candidates, _winning_moves
 
@@ -101,3 +111,46 @@ def label_position(game: Game, solver: ThreatSolver, *, prove_losses: bool = Fal
         if decision_status(counts) == UNSAFE:
             return {'kind': 'vcf_loss', 'policy': [], 'value': -1}
     return None
+
+
+# -- VCT labels (opt-in; slow) ------------------------------------------------
+#
+# These need a game continuation to find candidates cheaply: the builder calls them
+# only where the game itself shows a threat that led to a VCF two plies later.
+
+VCT_KINDS = ('vct_attack', 'must_defend_vct', 'vct_loss')
+
+
+def proves_threat(game: Game, move, solver: ThreatSolver) -> bool:
+    """True when ``move`` (a quiet move of ``game.to_play``) leaves every reply lost to VCF."""
+    game.play(*move)
+    try:
+        if game.done:
+            return False
+        counts, _ = solver.decision(game, 0)
+        return decision_status(counts) == UNSAFE
+    finally:
+        game.undo()
+
+
+def defense_label(game: Game, solver: ThreatSolver, *, max_candidates: int,
+                  vct_depth: int = 1) -> dict | None:
+    """``must_defend_vct`` (every VCT-safe move) or ``vct_loss``; None when unproven.
+
+    Only positions with at most ``max_candidates`` VCF-safe moves are classified, so
+    the correct set is complete (every other legal move is proven UNSAFE).
+    """
+    counts, per_move = solver.decision(game, 0)
+    if counts[UNKNOWN]:
+        return None
+    vcf_safe = sorted(m for m, (status, _) in per_move.items() if status == SAFE)
+    if not vcf_safe or len(vcf_safe) > max_candidates:
+        return None
+    deep = solver.classify(game, vcf_safe, vct_depth=vct_depth)
+    statuses = [status for status, _ in deep.values()]
+    if UNKNOWN in statuses:
+        return None
+    safe = sorted(m for m, (status, _) in deep.items() if status == SAFE)
+    if safe:
+        return {'kind': 'must_defend_vct', 'policy': safe, 'value': None}
+    return {'kind': 'vct_loss', 'policy': [], 'value': -1}

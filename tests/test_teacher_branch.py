@@ -34,6 +34,9 @@ OPEN_FOUR = [(7, 7), (0, 0), (7, 6), (0, 14), (7, 5), (14, 0), (7, 4)]
 OPEN_THREE_BLACK_TO_MOVE = [(7, 7), (0, 0), (7, 6), (0, 14), (7, 5), (14, 0)]
 # White closed four (3,3..3,6) blocked by black (3,2); black to move must block (3,7).
 CLOSED_FOUR = [(7, 7), (3, 3), (3, 2), (3, 4), (7, 6), (3, 5), (12, 12), (3, 6)]
+# White (3,3)(3,4) + (4,5)(5,5), white to move: (3,5) is a 3-3 (legal for white).
+DOUBLE_THREE_WHITE_TO_MOVE = [(7, 7), (3, 3), (12, 1), (3, 4), (12, 5), (4, 5), (1, 12),
+                              (5, 5), (12, 9)]
 
 
 class TacticalLabelTest(unittest.TestCase):
@@ -71,8 +74,43 @@ class TacticalLabelTest(unittest.TestCase):
         mirrored = [(r, 14 - c) for r, c in OPEN_FOUR]
         excluded = build(iter(games), exclude={canonical_key(mirrored)}, node_limit=20_000,
                          prove_losses=False, log=lambda m: None)
-        self.assertNotIn('forced_loss', [p['kind'] for p in excluded['positions']])
-        self.assertEqual(excluded['stats']['excluded_probe'], 1)
+        # The whole game is dropped, not only the probe position (neighbouring plies leak).
+        self.assertEqual(excluded['positions'], [])
+        self.assertEqual(excluded['stats']['excluded_probe_games'], 1)
+        self.assertIn('forced_loss|WHITE|opening', full['balance'])
+
+    def test_vct_threat_proof(self):
+        from analysis.tactical_labels import defense_label, proves_threat
+
+        game = play(DOUBLE_THREE_WHITE_TO_MOVE)
+        self.assertTrue(proves_threat(game, (3, 5), self.solver))   # white 3-3
+        self.assertFalse(proves_threat(game, (14, 14), self.solver))
+        self.assertEqual(game.history, DOUBLE_THREE_WHITE_TO_MOVE)
+        game.undo()  # black to move before the threat: far too many candidates
+        self.assertIsNone(defense_label(game, self.solver, max_candidates=5))
+
+    def test_vct_candidates_come_from_the_continuation(self):
+        from build_tactical_dataset import canonical_key, vct_tasks
+
+        moves = DOUBLE_THREE_WHITE_TO_MOVE + [(3, 5), (3, 6), (3, 2)]
+        keys = [canonical_key(moves[:ply]) for ply in range(len(moves))]
+        t = len(DOUBLE_THREE_WHITE_TO_MOVE)
+        labels = {keys[t + 2]: {'kind': 'unstoppable_four'}}
+        tasks = vct_tasks([{'moves': moves, 'keys': keys, 'source': 's'}], labels)
+        self.assertEqual([len(task['moves']) for task in tasks], [t + 1])
+        self.assertEqual(tasks[0]['moves'][-1], [3, 5])
+        self.assertTrue(tasks[0]['defend'])
+
+    def test_vct_task_emits_attack_and_loss_labels(self):
+        from build_tactical_dataset import _init_worker, _vct_task
+
+        _init_worker(20_000)
+        task = {'moves': [list(m) for m in DOUBLE_THREE_WHITE_TO_MOVE + [(3, 5)]],
+                'defend': False, 'source': 's'}
+        found = _vct_task((task, 1, 12))
+        self.assertEqual([label['kind'] for _, label in found], ['vct_attack', 'vcf_loss'])
+        self.assertEqual(found[0][1]['policy'], [(3, 5)])
+        self.assertEqual(len(found[1][0]), len(DOUBLE_THREE_WHITE_TO_MOVE) + 1)
 
 
 @unittest.skipIf(torch is None, 'requires torch')
@@ -104,7 +142,8 @@ class TeacherBranchTest(unittest.TestCase):
                 ]}))
                 dest = Path(tmp) / 'teacher'
                 result = make_teacher_branch(source, 2, dataset, dest, steps=5, batch_size=8,
-                                             log=lambda m: None)
+                                             balance_kinds=True, log=lambda m: None)
+                self.assertEqual(result['settings']['teacher_rows_drawn'], 20)
                 self.assertEqual(result['removed_results'], ['external_eval/gen002_light.json'])
                 self.assertTrue((dest / 'external_eval' / 'gen001_light.json').is_file())
                 self.assertEqual(result['dataset_kinds'],

@@ -168,7 +168,7 @@ v7 VCF solver는 `max_fours` 한도에 걸려도 "소진"으로 보고하지 않
 
 구현(§6): v7을 다시 두지 않는다. 이미 있는 기보(benchmark 결과 파일, 웹 대국, self-play 기록)에서 국면만 꺼내고
 label은 `analysis.tactical_labels`가 규칙과 VCF 증명으로 붙인다. 그래서 v7 fingerprint 테스트가 필요 없고, frozen 파일은
-읽기만 한다(`_winning_moves`, `_unstoppable_four_moves`, VCF solver). probe fixture에 있는 국면은 D4 동치까지 빼서
+읽기만 한다(`_winning_moves`, `_unstoppable_four_moves`, VCF solver). probe fixture 국면을 지나는 게임은 통째로 빼서
 probe를 held-out으로 유지한다.
 
 ### 3.3 VCT/open-three probe와 offline solver
@@ -298,8 +298,8 @@ python scripts/run_web_play.py --az-checkpoint runs/stage8_g3_b/checkpoints/chec
 
 ### 6.3 증명된 전술 dataset (작업 5)
 
-`src/analysis/tactical_labels.py` + `scripts/build_tactical_dataset.py`. 국면은 D4 동치로 중복을 제거하고, probe fixture의
-국면(D4 포함)은 뺀다. VCF 탐색이 노드 한도에 걸린 국면은 label을 붙이지 않는다(건전성 우선, 완전성 포기).
+`src/analysis/tactical_labels.py` + `scripts/build_tactical_dataset.py`. 국면은 D4 동치로 중복을 제거하고, probe fixture
+국면을 지나는 게임은 통째로 뺀다(§7-1; 아래 표는 그 수정 전, 국면 단위 제외로 만든 것이다). VCF 탐색이 노드 한도에 걸린 국면은 label을 붙이지 않는다(건전성 우선, 완전성 포기).
 
 benchmark 기보(V7 대 V5/V6, 200판)와 사람 대국 6판 기준, 워커 3개로 15분:
 
@@ -347,6 +347,8 @@ replay loss가 크게 오르면 fine-tune이 self-play 지식을 덮은 것이�
 
 ### 6.5 데스크톱 실행 절차 (작업 4~7)
 
+오래 걸리는 증명·라벨링·학습은 모두 데스크톱에서 실행한다. 시간은 실측 전 추정치다.
+
 ```bash
 # 0) 대조군: §12.8의 B400 continuation (이미 진행 중이면 그대로). heavy 지점마다 B400과 100판.
 python scripts/run_stage8_training.py --run-dir runs/stage8_b400_long --config configs/stage8_g3_b.yaml \
@@ -354,18 +356,18 @@ python scripts/run_stage8_training.py --run-dir runs/stage8_b400_long --config c
     --light-opponents tactical mcts_v2 mcts_v321 --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 \
     --heavy-pairs 10 --h2h-anchor B400=runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt
 
-# 1) dataset: benchmark + 사람 대국 + B 계열 self-play (gen 160~400)
+# 1) T1 dataset: VCF 수준 증명 label (워커 6개, 1~2시간 추정). probe가 나온 게임은 통째로 빠진다.
 python scripts/build_tactical_dataset.py --benchmark "docs/mcts-v7-results/*.json" \
     --web-games tests/fixtures/web_play_v7_human_games_v1.json \
     --self-play-run runs/stage8_g3_b --generations 160 400 --workers 6 \
-    --output runs/teacher/tactical_v1.json
+    --output runs/teacher/tactical_t1.json
 
-# 2) teacher branch (B400 = stage8_g3_b gen 400, 대조군과 같은 분기점)
+# 2) T1 branch (B400 = stage8_g3_b gen 400, 대조군과 같은 분기점)
 python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400 \
-    --dataset runs/teacher/tactical_v1.json --dest runs/stage8_b400_teacher
+    --dataset runs/teacher/tactical_t1.json --dest runs/stage8_b400_t1 --balance-kinds
 
-# 3) teacher arm 학습: 0)과 같은 옵션, run-dir만 다르게
-python scripts/run_stage8_training.py --run-dir runs/stage8_b400_teacher --config configs/stage8_g3_b.yaml \
+# 3) T1 학습: 0)과 같은 옵션, run-dir만 다르게
+python scripts/run_stage8_training.py --run-dir runs/stage8_b400_t1 --config configs/stage8_g3_b.yaml \
     --anchor 400 --target-generation 640 \
     --light-opponents tactical mcts_v2 mcts_v321 --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 \
     --heavy-pairs 10 --h2h-anchor B400=runs/stage8_g3_b/checkpoints/checkpoint_gen400.pt
@@ -373,15 +375,75 @@ python scripts/run_stage8_training.py --run-dir runs/stage8_b400_teacher --confi
 # 4) heavy 지점마다 직접 대국 (480, 560, 640)
 python scripts/run_stage8_head_to_head.py \
     --checkpoint control480=runs/stage8_b400_long/checkpoints/checkpoint_gen480.pt \
-    --checkpoint teacher480=runs/stage8_b400_teacher/checkpoints/checkpoint_gen480.pt \
-    --pairs 50 --output runs/teacher_h2h/gen480.json
+    --checkpoint T1_480=runs/stage8_b400_t1/checkpoints/checkpoint_gen480.pt \
+    --pairs 50 --output runs/teacher_h2h/t1_gen480.json
 
 # 5) 판정 (§3.7)
-python scripts/compare_teacher_arms.py --control runs/stage8_b400_long \
-    --teacher runs/stage8_b400_teacher --direct "runs/teacher_h2h/*.json" --output runs/teacher_h2h/verdict.json
+python scripts/compare_teacher_arms.py --control runs/stage8_b400_long --teacher runs/stage8_b400_t1 \
+    --direct "runs/teacher_h2h/t1_*.json" --teacher-label-prefix T1 --output runs/teacher_h2h/t1_verdict.json
 ```
 
-- 0)의 run이 이미 다른 옵션으로 돌고 있다면, 3)을 **그 옵션에 맞춘다**. 두 arm의 평가 설정이 같아야 한다.
+T2(§7)는 1)~5)에서 dataset, run-dir, label만 바꾼다.
+
+```bash
+# T2 pilot: 처리량부터 잰다 (20세대 분량). 로그의 "VCT phase: N threat candidates"와 걸린 시간을 확인한다.
+python scripts/build_tactical_dataset.py --self-play-run runs/stage8_g3_b --generations 380 400 \
+    --vct-depth 1 --workers 6 --output runs/teacher/tactical_t2_pilot.json
+# T2 본 실행: T1과 같은 소스 + VCT label
+python scripts/build_tactical_dataset.py --benchmark "docs/mcts-v7-results/*.json" \
+    --web-games tests/fixtures/web_play_v7_human_games_v1.json \
+    --self-play-run runs/stage8_g3_b --generations 160 400 --vct-depth 1 --workers 6 \
+    --output runs/teacher/tactical_t2.json
+python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400 \
+    --dataset runs/teacher/tactical_t2.json --dest runs/stage8_b400_t2 --balance-kinds
+# 이후 3)~5)와 같다 (run-dir runs/stage8_b400_t2, label T2_480 ..., 직접 대국은 control·T1·T2 세 checkpoint)
+```
+
+- 0)의 run이 이미 다른 옵션으로 돌고 있다면, 3)을 **그 옵션에 맞춘다**. 모든 arm의 평가 설정이 같아야 한다.
 - teacher arm의 gen 400 지표(anchor h2h 제외)는 fine-tune 직후 값이다. B400(0세대 차)과의 차이가 fine-tune 효과다.
 - light probe 지점마다 `probes/genNNN_vct.json`이 새로 생긴다. 대조군의 과거 지점도 catch-up에서 계산된다(raw network라 몇 초).
 - `compare_teacher_arms.py` 판정: `teacher_better` / `capacity` / `undecided`. 기준 수치(55%, p 0.05, probe +0.05)는 스크립트 상단에 있다.
+- 결과를 받으면 `TEACHER.json`, `verdict.json`, 각 run의 `external_eval/`·`probes/`를 공유해 달라. 그걸로 이 문서의 판정을 갱신한다.
+
+## 7. 데이터 규모 단계(T1/T2/T3) 검토
+
+제안: T1(현재 3,004) → T2(약 1만) → T3(3만 이상)으로 늘리고, 개수보다 VCT 공격·방어 데이터를 우선한다.
+방향에 동의한다. 다음을 고치거나 덧붙였다.
+
+1. **누수를 코드에서 막았다(버그 수정).** 이전 추출기는 probe와 **같은 국면**(D4 포함)만 뺐다. 그래서 probe가 나온 게임의
+   앞뒤 수는 학습에 들어갔다(stage7 probe 94판, 열린 3 probe 35판, VCT probe 4판). 이제 probe 국면을 지나는 게임은
+   **통째로** 뺀다(`excluded_probe_games`). §6.3의 benchmark 표(3,004개)는 수정 전 방식이었다. 다만 held-out sanity는 학습
+   게임과 평가 게임을 따로 나눠서 영향이 없다.
+2. **T1은 3,004개가 아니다.** 3,004개는 이 컨테이너에서 benchmark 200판만 돌린 표본이다. §6.5의 T1은 B 계열 self-play
+   gen 160~400(약 3,840판)을 포함해서 훨씬 크다. 게임 단위 제외 때문에 benchmark 쪽은 오히려 줄어든다.
+   T1은 "개수"가 아니라 **"VCF 수준 증명 label 전체"**로 정의하고, 실제 개수는 dataset `stats`에 기록한다.
+3. **T2는 개수가 아니라 내용으로 정의한다.** T2 = T1 + VCT label(`--vct-depth 1`). 추가되는 kind:
+   - `vct_attack`: 게임에서 실제로 둔 위협수 h. h 뒤 모든 응수가 VCF로 진다는 증명이 있고 value는 +1이다.
+     다른 승리 위협수가 더 있을 수 있어서 **정답 집합이 완전하지 않다(one-hot)**. 전부 찾는 데 한 국면에 30분까지 걸린 적이 있다.
+   - `vcf_loss`: h 뒤 방어자 국면. value −1이다.
+   - `must_defend_vct` / `vct_loss`: h 직전 방어자 국면. VCF-safe 후보가 12개 이하일 때만 전부 분류해서, 정답 집합이 완전하다.
+     후보가 적은 **날카로운 국면에 치우친다**는 편향이 있다.
+   - 후보는 게임 진행으로 고른다. "t에는 VCF 수준 label이 없고 t+2에 같은 편의 VCF 승리가 있음"인 곳만 증명한다. 그래서 모든
+     국면을 VCT 탐색하지 않는다. 대신 게임에서 실제로 나오지 않은 VCT는 빠진다.
+   - T3(개수 확대)는 T2가 T1보다 나을 때만 한다. 소스는 더 많은 self-play 세대나 새 benchmark 기보다. 같은 국면 복제는 의미가 없다.
+4. **투입량(dose)을 고정해야 데이터 효과만 본다.** fine-tune이 보는 teacher 행 수는 dataset 크기가 아니라
+   `steps × batch × teacher_fraction`(기본 1,000 × 64 × 0.5 = 32,000행, `TEACHER.json`의 `teacher_rows_drawn`)이다.
+   T1·T2·T3는 같은 step·lr·비율로 돌린다. 그러면 3천 개 set은 행마다 약 10번, 3만 개 set은 약 1번 본다. 두 arm의 차이는
+   "같은 양의 학습에서 **내용**의 차이"가 된다. 두 arm 모두 `--balance-kinds`(kind를 균등하게 뽑은 뒤 국면을 뽑음)를 써서,
+   must_block이 많다고 VCT kind가 묻히지 않게 한다.
+5. **통계 해상도.** anchor h2h 100판의 표준오차는 약 5%p다. 그래서 "+2% 대 +3%" 같은 차이는 구분할 수 없고,
+   약 10~14%p 이상 차이가 나야 유의하다. 판정은 arm끼리 **직접 대국**(heavy 지점마다 100판)으로 한다.
+   세 지점을 모두 보면 흔들림이 줄어든다.
+6. **한 번의 fine-tune은 씻겨 나갈 수 있다.** 240세대 self-play 동안 전술 지식이 다시 흐려질 수 있다. gen 400~480에는 이득이
+   보이다가 640에서 사라지면, 매 세대 학습 batch에 전술 행을 섞는 방식(T4)을 검토한다. 이 방식은 학습 루프 변경이라
+   training-critical 설정이 바뀐다. 그러니 T1/T2 결과를 먼저 본다.
+7. **실행 순서.** 대조군과 T1을 먼저 시작한다. T2 dataset은 그동안 만든다(pilot으로 처리량부터 확인). 모든 arm이 같은 gen 400
+   상태에서 분기하므로, T2를 늦게 시작해도 짝지은 비교는 유지된다. Gate 3처럼 세 arm을 동시에 돌려도 되지만,
+   그때는 시간 지표를 비교하지 않는다.
+
+| 결과 | 해석 |
+|---|---|
+| T1 ≫ 대조군 | 학습 신호 부족이 병목이다. T2로 VCT 내용을 더한다 |
+| T1 ≈ 대조군, T2 ≫ 대조군 | VCF 수준 지식은 이미 있다. 부족했던 건 VCT 계열이다 |
+| T1 ≈ T2 ≈ 대조군, probe도 포화 | 데이터보다 64×4 용량이나 탐색 구조를 의심한다. Stage 9로 간다 |
+| T1·T2 초반 이득 → 640에서 소멸 | fine-tune이 씻겨 나간다. T4(지속 혼합)를 검토한다 |

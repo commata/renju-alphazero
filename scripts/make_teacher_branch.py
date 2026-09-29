@@ -141,8 +141,18 @@ def replay_losses(model, batch) -> dict:
 
 def fine_tune(model, data: dict, buffer: ReplayBuffer, *, steps: int, batch_size: int,
               teacher_fraction: float, lr: float, value_weight: float, balanced: bool,
-              seed: int, log=print) -> list[dict]:
+              seed: int, balance_kinds: bool = False, log=print) -> list[dict]:
     rng = Random(seed)
+    by_kind = {}
+    for position, kind in enumerate(data['kinds']):
+        by_kind.setdefault(kind, []).append(position)
+    kind_names = sorted(by_kind)
+
+    def draw() -> int:
+        if balance_kinds:  # kind uniformly, then a position of that kind
+            return rng.choice(by_kind[rng.choice(kind_names)])
+        return rng.randrange(data['size'])
+
     sample_rng, augment_rng = Random(seed + 1), Random(seed + 2)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     teacher_rows = max(1, round(batch_size * teacher_fraction))
@@ -150,7 +160,7 @@ def fine_tune(model, data: dict, buffer: ReplayBuffer, *, steps: int, batch_size
     history = []
     model.train()
     for step in range(steps):
-        index = torch.tensor([rng.randrange(data['size']) for _ in range(teacher_rows)])
+        index = torch.tensor([draw() for _ in range(teacher_rows)])
         states, policies, masks = _augment(data['states'][index], data['policies'][index],
                                            data['masks'][index], augment_rng)
         values = data['values'][index]
@@ -182,7 +192,8 @@ def fine_tune(model, data: dict, buffer: ReplayBuffer, *, steps: int, batch_size
 
 def make_teacher_branch(source: Path, generation: int, dataset: Path, dest: Path, *,
                         steps: int = 1000, batch_size: int = 64, teacher_fraction: float = 0.5,
-                        lr: float = 2e-4, seed: int = 0, log=print) -> dict:
+                        lr: float = 2e-4, seed: int = 0, balance_kinds: bool = False,
+                        log=print) -> dict:
     record = branch(source, generation, dest)
     removed = []
     for sub in ('external_eval', 'probes'):
@@ -208,7 +219,7 @@ def make_teacher_branch(source: Path, generation: int, dataset: Path, dest: Path
     history = fine_tune(model, data, buffer, steps=steps, batch_size=batch_size,
                         teacher_fraction=teacher_fraction, lr=lr,
                         value_weight=config['loss']['value_weight'], balanced=balanced,
-                        seed=seed, log=log)
+                        seed=seed, balance_kinds=balance_kinds, log=log)
     after = {'tactical': tactical_metrics(model, data),
              'replay': replay_losses(model, probe_batch) if probe_batch else None}
 
@@ -221,6 +232,8 @@ def make_teacher_branch(source: Path, generation: int, dataset: Path, dest: Path
         'dataset_kinds': dict(Counter(data['kinds'])),
         'settings': {'steps': steps, 'batch_size': batch_size,
                      'teacher_fraction': teacher_fraction, 'lr': lr, 'seed': seed,
+                     'balance_kinds': balance_kinds,
+                     'teacher_rows_drawn': steps * max(1, round(batch_size * teacher_fraction)),
                      'replay_balanced': balanced, 'optimizer': 'fresh Adam (fine-tune only); '
                      'the run optimizer state is kept unchanged'},
         'before': before, 'after': after, 'history': history,
@@ -243,12 +256,14 @@ def main() -> int:
     parser.add_argument('--lr', type=float, default=2e-4)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--threads', type=int, default=4)
+    parser.add_argument('--balance-kinds', action='store_true',
+                        help='draw each teacher row from a uniformly chosen kind')
     args = parser.parse_args()
     torch.set_num_threads(args.threads)
     result = make_teacher_branch(args.source, args.generation, args.dataset, args.dest,
                                  steps=args.steps, batch_size=args.batch_size,
                                  teacher_fraction=args.teacher_fraction, lr=args.lr,
-                                 seed=args.seed)
+                                 seed=args.seed, balance_kinds=args.balance_kinds)
     print(json.dumps({k: result[k] for k in ('dataset_kinds', 'before', 'after')}, indent=1))
     return 0
 
