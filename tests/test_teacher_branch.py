@@ -79,6 +79,16 @@ class TacticalLabelTest(unittest.TestCase):
         self.assertEqual(excluded['stats']['excluded_probe_games'], 1)
         self.assertIn('forced_loss|WHITE|opening', full['balance'])
 
+    def test_probe_at_the_final_position_drops_the_game(self):
+        from build_tactical_dataset import build, canonical_key
+
+        moves = OPEN_FOUR + [(7, 3)]              # black completes five: final position
+        games = [{'source': 't', 'moves': moves}]
+        result = build(iter(games), exclude={canonical_key(moves)}, node_limit=20_000,
+                       prove_losses=False, log=lambda m: None)
+        self.assertEqual(result['positions'], [])
+        self.assertEqual(result['stats']['excluded_probe_games'], 1)
+
     def test_vct_threat_proof(self):
         from analysis.tactical_labels import defense_label, proves_threat
 
@@ -115,6 +125,17 @@ class TacticalLabelTest(unittest.TestCase):
 
 @unittest.skipIf(torch is None, 'requires torch')
 class TeacherBranchTest(unittest.TestCase):
+    def test_kind_shares_and_weights(self):
+        from make_teacher_branch import kind_shares, parse_kind_weights
+
+        kinds = ['must_block'] * 8 + ['vcf'] * 2
+        self.assertEqual(kind_shares(kinds, False, None), {'must_block': 0.8, 'vcf': 0.2})
+        self.assertEqual(kind_shares(kinds, True, None), {'must_block': 0.5, 'vcf': 0.5})
+        weights = parse_kind_weights('vcf=3')
+        self.assertEqual(kind_shares(kinds, True, weights), {'must_block': 0.25, 'vcf': 0.75})
+        with self.assertRaises(ValueError):
+            parse_kind_weights('vcf=-1')
+
     def test_branch_changes_only_weights_and_resumes(self):
         from make_teacher_branch import make_teacher_branch
         from training.config import load_config

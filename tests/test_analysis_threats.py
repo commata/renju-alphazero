@@ -77,6 +77,22 @@ class ThreatSolverTest(unittest.TestCase):
         self.assertEqual(witness, ('threat', (3, 5)))
 
 
+class UnprunedDefaultTest(unittest.TestCase):
+    """The default solver tries every quiet move (no null-move pruning).
+
+    Pruning is unsound for SAFE: a defender's own stone can create (black) or remove
+    (black forbidden point next to a white stone) forbidden points, so a move with no
+    VCF "if the defender passed" can still win. ``prune_quiet`` stays analysis-only.
+    """
+
+    def test_default_is_unpruned_and_agrees_on_a_real_threat(self):
+        game = play([(7, 7), (3, 3), (12, 1), (3, 4), (12, 5), (4, 5), (1, 12), (5, 5),
+                     (12, 9)])
+        self.assertFalse(ThreatSolver().prune_quiet)
+        self.assertEqual(ThreatSolver().after_move(game, 1), ('UNSAFE', ('threat', (3, 5))))
+        self.assertEqual(ThreatSolver(prune_quiet=True).after_move(game, 1)[0], UNSAFE)
+
+
 class AnalysisIsolationTest(unittest.TestCase):
     def test_search_training_model_do_not_import_analysis(self):
         code = ('import search.alphazero, search.tactics, training.self_play, '

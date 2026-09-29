@@ -40,7 +40,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / 'src') not in sys.path:
     sys.path.insert(0, str(ROOT / 'src'))
 
-from analysis.threats import (SAFE, UNKNOWN, UNSAFE, VCF_NONE,  # noqa: E402
+from analysis.threats import (SAFE, UNKNOWN, UNSAFE,  # noqa: E402
                               ThreatSolver, decision_status, ordered_moves)
 from renju import BLACK, Game  # noqa: E402
 
@@ -70,21 +70,28 @@ def _replay(moves) -> Game:
     return game
 
 
-def winning_threats(solver: ThreatSolver, game: Game, vct_depth: int) -> list:
-    """Every quiet move of ``game.to_play`` after which all replies lose (depth - 1)."""
-    attacker = game.to_play
-    found = []
+def winning_threats(solver: ThreatSolver, game: Game, vct_depth: int) -> tuple[list, int]:
+    """Every quiet move of ``game.to_play`` after which all replies lose (depth - 1).
+
+    Every legal move is tried (no null-move shortcut, see ``analysis.threats``); a move
+    is refuted at the first SAFE reply. Returns the winning moves and how many moves
+    stayed UNKNOWN (then the set may be incomplete).
+    """
+    found, unknown = [], 0
     for move in ordered_moves(game):
         game.play(*move)
         try:
-            if game.done or solver.vcf(game, attacker)[0] == VCF_NONE:
+            if game.done:
                 continue
-            counts, _ = solver.decision(game, vct_depth - 1)
-            if decision_status(counts) == UNSAFE:
+            counts, _ = solver.decision(game, vct_depth - 1, stop_at_safe=True)
+            status = decision_status(counts)
+            if status == UNSAFE:
                 found.append(move)
+            elif status == UNKNOWN:
+                unknown += 1
         finally:
             game.undo()
-    return found
+    return found, unknown
 
 
 def base_probes(game_record: dict, solver: ThreatSolver, vct_depth: int, log,
@@ -143,9 +150,10 @@ def base_probes(game_record: dict, solver: ThreatSolver, vct_depth: int, log,
     if chosen in deep and deep[chosen][0] == UNSAFE and deep[chosen][1][0] == 'threat':
         game.play(*chosen)
         started = perf_counter()
-        threats = winning_threats(solver, game, vct_depth)
-        log(f"  ply {index + 2}: {len(threats)} winning threat(s) ({perf_counter() - started:.0f}s)")
-        if threats:
+        threats, unknown = winning_threats(solver, game, vct_depth)
+        log(f"  ply {index + 2}: {len(threats)} winning threat(s), {unknown} unknown "
+            f"({perf_counter() - started:.0f}s)")
+        if threats and not unknown:
             result.append({'kind': 'vct_attack', 'to_play': _color(game.to_play),
                            'moves': history + [list(chosen)],
                            'correct_moves': [list(m) for m in threats], 'avoid_moves': [],

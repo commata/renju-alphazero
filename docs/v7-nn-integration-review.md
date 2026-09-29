@@ -17,7 +17,7 @@
 |---|---|---|
 | 29수 패배는 24·26·28수 stage 2(탐색 0회) 때문이다 | **틀림** | §1.3. 22수 시점에 모든 합법수가 VCF로 패배함이 증명된다(safe 0, unknown 0) |
 | 강제 규칙이 MCTS를 우회해 약점이 생긴다 | **부분적으로 맞음** | 대상은 stage 4/5다. 패배 4판 중 3판에서 마지막으로 safe 수가 남아 있던 착수가 stage 4였다 |
-| 근본 원인은 VCT | **깊이 1에서 확인** | §6.1: 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고, 사람의 실제 다음 수가 증명된 승리 위협이었다. stage 4 3판에는 VCT1로도 지지 않는 대안이 있었다 |
+| 근본 원인은 VCT | **깊이 1에서 확인** | §6.1: 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고, 사람의 실제 다음 수가 증명된 승리 위협이었다. stage 4 3판의 "VCT1로도 지지 않는 대안"은 가지치기 solver 판정이라 재검증 대기(§8) |
 | 이제 정책·가치망을 도입해야 한다 | **이미 되어 있음** | Stage 4~8(정책·가치망, 독립 PUCT, self-play, 학습, 외부 평가) 운영 중, 현재 B400 |
 | 즉승·즉방 hard rule + 그래도 탐색 | **이미 되어 있음** | PUCT v2 `tactical_filter`가 모든 노드에 적용되고, root는 정확히 N회 탐색한다 |
 | v7에 NN을 연결 | **하지 않음** | `tests/frozen_baseline.sha256`에 `mcts_v7.py`·`mcts_v7_agent.py`가 잠겨 있는 동결 benchmark다 |
@@ -97,7 +97,8 @@ v7 VCF solver는 `max_fours` 한도에 걸려도 "소진"으로 보고하지 않
 - **VCT 가설:** "VCF 없음 → 사람 한 수 → 모든 후보 VCF 패배"라는 흐름은 삼을 섞은 forcing 공격과 맞는다.
   이후 VCT solver certificate로 깊이 1에서 확인했다(§6.1).
 - **stage 4:** 마지막 SAFE 착수에서 SAFE 후보가 2~4개뿐이었다(`164723` 20수 제외). 이 표만으로는 판단할 수 없었지만,
-  §6.1의 VCT1 증명으로 stage 4 3판 모두 VCT1로도 지지 않는 대안이 있었음을 확인했다.
+  §6.1에서 stage 4 3판 모두 VCT1로도 지지 않는 대안이 있다는 결과가 나왔지만, 그 SAFE 판정은 가지치기 solver 기준이라
+  재검증이 필요하다(§8). v7의 착수가 진다는 UNSAFE 증명은 가지치기와 무관하게 성립한다.
 - **`164723` 20수는 MCTS 100회로 둔 수다.** 탐색을 거쳐도 같은 종류의 실수가 나왔다. stage 4를 MCTS로 바꾸는 것만으로
   해결된다는 근거는 없다.
 - 6판, 사람 한 명, 비슷한 수법이다. 일반화하지 않는다.
@@ -175,10 +176,11 @@ probe를 held-out으로 유지한다.
 
 - 사람 승리 4판의 마지막 SAFE 착수 국면(§1.3 굵은 행)과 그 직후 국면을 추출한다. D4 대칭 8배로 `must_defend_vct` probe를 만든다.
 - **offline bounded VCT solver**(`analysis.threats`, 분석 전용, 탐색에 넣지 않음)로 각 국면의 정답을 certificate로 검증한다.
-  검증되지 않은(UNKNOWN) 국면은 probe에서 뺀다. VCT 깊이 d는 "조용한 위협수 d번 뒤 VCF"이고, 위협수 후보는 null-move
-  검사(우리가 한 수 쉬어도 상대에게 VCF가 생기는 수)로 고른다. 이 가지치기는 백 공격에는 정확하다. 흑 공격에서는 우리 돌이
-  흑 금수를 풀어 줄 수 있는 희귀한 경우를 모델링하지 않는다. VCF 단계는 동결 solver를 그대로 쓰므로 §1.4의 범위 한계
-  (방어 수가 4가 되는 수순을 건너뜀)는 **그대로 남는다.**
+  검증되지 않은(UNKNOWN) 국면은 probe에서 뺀다. VCT 깊이 d는 "조용한 수 d번 뒤 VCF"다. 모든 조용한 수를 두고, 방어자의
+  응수도 실제로 두므로 금수점 효과를 엔진이 처리한다. 흑 방어자가 자기 돌로 막을 자리를 금수로 만드는 경우와, 백 돌이 흑
+  금수를 풀어 주는 경우가 모두 들어간다. 처음 구현은 null-move 가지치기를 썼는데, 위 두 경우 때문에 **두 색 모두에서
+  SAFE가 건전하지 않았다**(§8). 지금은 분석용 옵션 `prune_quiet`로만 남겼다. VCF 단계는 동결 solver를 그대로 쓰므로
+  §1.4의 범위 한계(방어 수가 4가 되는 수순을 건너뜀)는 **그대로 남는다.**
 - 이 solver의 label을 **학습 target**으로 쓸지는 별도 결정이다. 7-B 원칙(규칙이 network의 몫을 대신하지 않는다)과
   충돌할 수 있으므로 teacher arm 1차 결과를 본 뒤 정한다.
 
@@ -256,7 +258,7 @@ python -m unittest tests.test_analysis_threats tests.test_alphazero_web_agent \
 `scripts/build_vct_probes.py`(VCT 깊이 1, 노드 한도 100,000, 후보 상한 40). 결과 fixture는 `tests/fixtures/vct_probes_v1.json`이고,
 기본 probe 11개를 D4로 8배 늘려 88개다. 노드 한도에 걸린 탐색은 0회였다(VCF 호출 27,375회).
 
-| 판 | 분기 착수(경로) | VCF-safe 후보 | VCT1 결과 | v7 착수 | 증명된 대안 | 사람 실제 다음 수 |
+| 판 | 분기 착수(경로) | VCF-safe 후보 | VCT1 결과 | v7 착수 | 대안(가지치기 판정) | 사람 실제 다음 수 |
 |---|---|---|---|---|---|---|
 | `163810` | 15(stage 4) | 4 | SAFE 2 / UNSAFE 2 | (12,7) **UNSAFE** | (5,8), (8,11) | (11,10) = 유일한 승리 위협 |
 | `163903` | 13(stage 4) | 4 | SAFE 2 / UNSAFE 2 | (7,9) **UNSAFE** | (7,5), (12,9) | (9,6) = 유일한 승리 위협 |
@@ -267,8 +269,9 @@ python -m unittest tests.test_analysis_threats tests.test_alphazero_web_agent \
 
 - **§1.4의 VCT 가설은 깊이 1에서 확인됐다.** 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고,
   사람이 실제로 둔 다음 수가 증명된 승리 위협이었다.
-- **stage 4 3판에서는 VCT1로도 지지 않는 대안이 있었다.** 그러니 "stage 4가 VCT를 못 보고 틀린 방어를 골랐다"는
-  깊이 1 기준에서 증명된 사실이다. 다만 대안이 더 깊은 VCT(위협 2수 이상)로 질 수 있는지는 확인하지 않았다.
+- **stage 4 3판에서 VCT1로도 지지 않는 대안이 나왔다.** 이 SAFE 판정과 "승리 위협 전부" 집합은 가지치기 solver로 만든 것이라
+  재검증이 필요하다(§8의 재생성 명령). v7 착수가 진다는 판정(UNSAFE)과 사람 수가 이기는 위협이라는 판정은 실제 수순을 찾은
+  증명이라 그대로 유효하다. 대안이 더 깊은 VCT(위협 2수 이상)로 질 수 있는지는 확인하지 않았다.
 - `164723`은 MCTS 100회로 둔 수도 같은 종류의 실수였다. 탐색만 늘리는 방식으로는 해결되지 않는다는 §1.4 판단과 맞는다.
 - 후보가 40개를 넘는 국면(`164723` 20수)은 정답 집합을 완전하게 만들 수 없어서 `must_defend_vct`를 만들지 않았다.
   top-k만 검사한 정답 집합으로는 검사하지 않은 안전한 수를 오답으로 채점하게 된다.
@@ -395,8 +398,16 @@ python scripts/build_tactical_dataset.py --benchmark "docs/mcts-v7-results/*.jso
     --self-play-run runs/stage8_g3_b --generations 160 400 --vct-depth 1 --workers 6 \
     --output runs/teacher/tactical_t2.json
 python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400 \
-    --dataset runs/teacher/tactical_t2.json --dest runs/stage8_b400_t2 --balance-kinds
-# 이후 3)~5)와 같다 (run-dir runs/stage8_b400_t2, label T2_480 ..., 직접 대국은 control·T1·T2 세 checkpoint)
+    --dataset runs/teacher/tactical_t2.json --dest runs/stage8_b400_t2 \
+    --balance-kinds --kind-weights vct_attack=0.4,must_defend_vct=0.4,vct_loss=0.2
+# 이후 3)~5)와 같다. run-dir runs/stage8_b400_t2, label T2_480 .... 직접 대국은 arm마다 control과 1:1 파일로 따로 만든다
+python scripts/run_stage8_head_to_head.py \
+    --checkpoint control480=runs/stage8_b400_long/checkpoints/checkpoint_gen480.pt \
+    --checkpoint T2_480=runs/stage8_b400_t2/checkpoints/checkpoint_gen480.pt \
+    --pairs 50 --output runs/teacher_h2h/t2_gen480.json
+python scripts/compare_teacher_arms.py --control runs/stage8_b400_long --teacher runs/stage8_b400_t2 \
+    --direct "runs/teacher_h2h/t2_*.json" --teacher-label-prefix T2 --control-label-prefix control \
+    --output runs/teacher_h2h/t2_verdict.json
 ```
 
 - 0)의 run이 이미 다른 옵션으로 돌고 있다면, 3)을 **그 옵션에 맞춘다**. 모든 arm의 평가 설정이 같아야 한다.
@@ -428,9 +439,13 @@ python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400
    - T3(개수 확대)는 T2가 T1보다 나을 때만 한다. 소스는 더 많은 self-play 세대나 새 benchmark 기보다. 같은 국면 복제는 의미가 없다.
 4. **투입량(dose)을 고정해야 데이터 효과만 본다.** fine-tune이 보는 teacher 행 수는 dataset 크기가 아니라
    `steps × batch × teacher_fraction`(기본 1,000 × 64 × 0.5 = 32,000행, `TEACHER.json`의 `teacher_rows_drawn`)이다.
-   T1·T2·T3는 같은 step·lr·비율로 돌린다. 그러면 3천 개 set은 행마다 약 10번, 3만 개 set은 약 1번 본다. 두 arm의 차이는
-   "같은 양의 학습에서 **내용**의 차이"가 된다. 두 arm 모두 `--balance-kinds`(kind를 균등하게 뽑은 뒤 국면을 뽑음)를 써서,
-   must_block이 많다고 VCT kind가 묻히지 않게 한다.
+   T1·T2·T3는 같은 step·lr·비율로 돌린다. 그러면 3천 개 set은 행마다 약 10번, 3만 개 set은 약 1번 본다.
+   **다만 이것은 "레시피 비교"이지 "VCT 내용만의 효과"가 아니다.** 총 행 수가 같으니 VCT kind를 넣으면 기존 kind의 몫이
+   줄어든다. 예를 들어 `--balance-kinds`에서 kind가 5종 → 9종이 되면 기존 kind는 각 20% → 약 11%가 된다. 그래서 T2의 좋고
+   나쁨을 VCT 데이터만의 효과로 돌리지 않는다. 희석을 줄이려면 `--kind-weights`로 VCT kind 묶음의 합을 기존 kind 하나 정도로
+   둔다. 예: `--balance-kinds --kind-weights vct_attack=0.4,must_defend_vct=0.4,vct_loss=0.2` → 기존 5종이 각 약 16.7%.
+   실제 비중은 `TEACHER.json`의 `settings.kind_shares`에 기록된다. VCT의 순수 효과를 따로 보고 싶으면, 투입량을 고정하지
+   않고 T1 행 수를 그대로 둔 채 VCT 행만 더하는 arm을 추가해야 한다. 이때는 총 학습량이 달라지는 것이 교란 요인이 된다.
 5. **통계 해상도.** anchor h2h 100판의 표준오차는 약 5%p다. 그래서 "+2% 대 +3%" 같은 차이는 구분할 수 없고,
    약 10~14%p 이상 차이가 나야 유의하다. 판정은 arm끼리 **직접 대국**(heavy 지점마다 100판)으로 한다.
    세 지점을 모두 보면 흔들림이 줄어든다.
@@ -447,3 +462,23 @@ python scripts/make_teacher_branch.py --source runs/stage8_g3_b --generation 400
 | T1 ≈ 대조군, T2 ≫ 대조군 | VCF 수준 지식은 이미 있다. 부족했던 건 VCT 계열이다 |
 | T1 ≈ T2 ≈ 대조군, probe도 포화 | 데이터보다 64×4 용량이나 탐색 구조를 의심한다. Stage 9로 간다 |
 | T1·T2 초반 이득 → 640에서 소멸 | fine-tune이 씻겨 나간다. T4(지속 혼합)를 검토한다 |
+
+## 8. 외부 검토 반영 (`4f620b3` 이후)
+
+| 지적 | 판단 | 조치 |
+|---|---|---|
+| `defense_label`이 흑 공격자에서 비-exact | **맞음, 범위는 더 넓음.** null-move 가지치기는 백 공격자에서도 건전하지 않다(흑 방어자가 자기 돌로 막을 자리를 금수로 만들 수 있음). UNSAFE 증명은 실제 수순이라 영향이 없고, SAFE 쪽(방어 정답 집합, 승리 위협 집합의 완전성)이 영향을 받는다 | 가지치기를 없앴다. 모든 조용한 수를 두고 첫 SAFE 응수에서 멈춘다. 같은 국면(`164445` 14수)에서 비용 48.0 s 대 46.6 s, 결과 동일. `prune_quiet`는 분석용 옵션으로만 남김. 색을 제한할 필요가 없어졌다 |
+| probe 게임 검사에서 마지막 국면 누락 | **맞음** | 최종 국면(`len(moves)` ply)까지 검사한다. 라벨은 여전히 비종료 국면에만 붙인다. 테스트 추가 |
+| `--balance-kinds`로 T1→T2가 "내용만의 차이"가 아님 | **맞음** | §7-4 문구를 "레시피 비교"로 고쳤다. `--kind-weights`를 추가했고, `TEACHER.json`에 `kind_shares`를 기록한다 |
+| round robin 파일을 넣으면 comparator가 T1 vs T2를 teacher 결과로 읽음 | **맞음(코드 버그)** | `direct_result`가 teacher 접두사 대 control 접두사(`--control-label-prefix`, 기본 `control`) 경기만 쓴다. 테스트 추가. 그래도 절차는 arm별 1:1 파일로 적었다 |
+| GitHub에 CI 기록이 없음 | 사실 | `.github/workflows/ci.yml`은 `pull_request`와 `main` push에서만 돈다. 이 브랜치의 결과는 로컬 실행(`ci_run_tests.py --skip-policy none`, torch 차단 `--skip-policy torch-only`, `check_frozen_baseline.py`)이다. PR을 열면 CI가 돈다 |
+
+**재검증이 필요한 산출물:** `tests/fixtures/vct_probes_v1.json`은 가지치기 solver로 만들었다. UNSAFE(v7 착수 패배, 사람 수 승리)는
+유효하지만, `must_defend_vct` 정답 집합과 `vct_attack` 정답 집합의 완전성은 새 solver로 다시 확인해야 한다. 데스크톱에서 실행한다:
+
+```bash
+python scripts/build_vct_probes.py --output runs/vct_probes_v1_recheck.json
+python -c "import json;a=json.load(open('tests/fixtures/vct_probes_v1.json'));b=json.load(open('runs/vct_probes_v1_recheck.json'));print('same' if [(p['id'],p['correct_moves'],p['avoid_moves']) for p in a['probes']]==[(p['id'],p['correct_moves'],p['avoid_moves']) for p in b['probes']] else 'DIFFERENT')"
+```
+
+`same`이면 그대로 두고, `DIFFERENT`면 새 파일을 fixture로 교체해 커밋한다(§6.1 표도 갱신).

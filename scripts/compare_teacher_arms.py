@@ -7,7 +7,9 @@ Reads what ``run_stage8_training.py`` already writes in each run directory:
 - ``probes/genNNN{,_defense,_vct}.json``: raw-network probes;
 
 plus optional direct teacher-vs-control matches (``run_stage8_head_to_head.py
---output``, given with ``--direct``).
+--output``, given with ``--direct``). Only matches between a ``--teacher-label-prefix``
+label and a ``--control-label-prefix`` label are used, so a round robin that also
+contains another teacher arm is safe to pass.
 
 Rules (a heavy point "improves" when its anchor score > 55 % and p < 0.05):
 
@@ -109,16 +111,23 @@ def probes_rising(run: Path, rows: dict) -> bool | None:
     return False
 
 
-def direct_result(paths: list[Path], teacher_label: str) -> dict | None:
+def direct_result(paths: list[Path], teacher_prefix: str, control_prefix: str) -> dict | None:
+    """Latest-generation match between a teacher label and a control label.
+
+    Only teacher-vs-control matches count: a round robin that also contains e.g.
+    T1_480 vs T2_480 must not be read as the teacher's result against the control.
+    """
     best = None
     for path in paths:
         data = _load(path)
         for match in data.get('matches', []):
             s = match['summary']
-            if teacher_label not in (s['a'], s['b']):
+            if s['a'].startswith(teacher_prefix) and s['b'].startswith(control_prefix):
+                score = s['a_score']
+            elif s['b'].startswith(teacher_prefix) and s['a'].startswith(control_prefix):
+                score = 1 - s['a_score']
+            else:
                 continue
-            teacher_is_a = s['a'] == teacher_label
-            score = s['a_score'] if teacher_is_a else 1 - s['a_score']
             generation = max((int(m) for m in re.findall(r'(\d{3,})', s['a'] + s['b'])),
                              default=-1)
             record = {'file': str(path), 'match': f"{s['a']} vs {s['b']}", 'generation': generation,
@@ -166,16 +175,14 @@ def main() -> int:
                         help='run_stage8_head_to_head.py outputs (globs allowed)')
     parser.add_argument('--teacher-label-prefix', default='teacher',
                         help='label prefix of the teacher checkpoint in direct matches')
+    parser.add_argument('--control-label-prefix', default='control',
+                        help='label prefix of the control checkpoint in direct matches')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     control, teacher = arm_table(args.control), arm_table(args.teacher)
     paths = [Path(p) for pattern in args.direct for p in sorted(glob.glob(pattern))]
-    direct = None
-    if paths:
-        labels = {m['summary'][side] for p in paths for m in _load(p).get('matches', [])
-                  for side in ('a', 'b')}
-        teacher_labels = sorted(l for l in labels if l.startswith(args.teacher_label_prefix))
-        direct = direct_result(paths, teacher_labels[-1]) if teacher_labels else None
+    direct = (direct_result(paths, args.teacher_label_prefix, args.control_label_prefix)
+              if paths else None)
     result = verdict(control, teacher, args.control, args.teacher, direct)
     print(f"{'gen':>5} {'control vs B400':>18} {'teacher vs B400':>18}")
     for g in sorted(set(control) | set(teacher)):

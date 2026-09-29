@@ -61,9 +61,26 @@ class CompareTeacherArmsTest(unittest.TestCase):
             path.write_text(json.dumps({'matches': [{'summary': {
                 'a': 'control640', 'b': 'teacher640', 'a_score': 0.3, 'p_two_sided': 0.001,
                 'games': 100}}]}))
-            result = direct_result([path], 'teacher640')
+            result = direct_result([path], 'teacher', 'control')
             self.assertAlmostEqual(result['teacher_score'], 0.7)
             self.assertEqual(result['generation'], 640)
+
+    def test_round_robin_uses_only_teacher_vs_control(self):
+        def summary(a, b, score):
+            return {'summary': {'a': a, 'b': b, 'a_score': score, 'p_two_sided': 0.01,
+                                'games': 100}}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'rr.json'
+            path.write_text(json.dumps({'matches': [
+                summary('control480', 'T1_480', 0.40), summary('control480', 'T2_480', 0.45),
+                summary('T1_480', 'T2_480', 0.90)]}))
+            t1 = direct_result([path], 'T1', 'control')
+            t2 = direct_result([path], 'T2', 'control')
+            self.assertEqual(t1['match'], 'control480 vs T1_480')
+            self.assertAlmostEqual(t1['teacher_score'], 0.60)
+            self.assertEqual(t2['match'], 'control480 vs T2_480')
+            self.assertAlmostEqual(t2['teacher_score'], 0.55)
 
 
 if __name__ == '__main__':

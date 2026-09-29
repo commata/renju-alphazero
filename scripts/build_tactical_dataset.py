@@ -113,12 +113,14 @@ def unique_positions(games, exclude: set, stats: Counter) -> tuple[list[dict], l
     tasks = []
     kept = []
     for record in games:
-        keys = [canonical_key(record['moves'][:ply]) for ply in range(len(record['moves']))]
+        # Every position the game reaches, including the final one (len(moves) plies),
+        # takes part in the probe check; only non-final positions are labelled.
+        keys = [canonical_key(record['moves'][:ply]) for ply in range(len(record['moves']) + 1)]
         if exclude and any(key in exclude for key in keys):
             stats['excluded_probe_games'] += 1
             continue
         kept.append({**record, 'keys': keys})
-        for ply, key in enumerate(keys):
+        for ply, key in enumerate(keys[:-1]):
             stats['positions'] += 1
             if key in seen:
                 stats['duplicates'] += 1

@@ -15,12 +15,19 @@ above what the empty board can hold, so its only cut is the node budget it
 reports. That solver skips lines where the defender's forced block itself makes a
 four, so SAFE means "no VCF of that class".
 
-``vct_depth = d > 0`` also lets the opponent play up to ``d`` quiet threat moves
-(open threes, broken threes, anything) before the VCF. A move ``h`` is a threat
-only if the opponent would have a VCF after ``h`` if we passed; other moves are
-skipped (null-move pruning). This is exact when WHITE attacks. For a BLACK
-attacker one of our stones can in principle remove a black forbidden point and so
-help black; that case is not modelled.
+``vct_depth = d > 0`` also lets the opponent play up to ``d`` quiet moves (open
+threes, broken threes, anything) before the VCF. Every legal quiet move ``h`` is
+tried and every reply of ours is actually played, so forbidden-point effects are
+handled by the engine for both colours: a black defender's own stone can turn its
+needed block into a forbidden point, and a white defender's stone can remove a
+black forbidden point. A move ``h`` is refuted as soon as one reply is SAFE at
+depth ``d - 1`` (replies nearest the stones first), which keeps the cost close to
+one VCF probe per quiet move.
+
+``prune_quiet=True`` restores the older null-move pruning (skip ``h`` when the
+opponent has no VCF after ``h`` if we passed). It is faster but NOT sound for SAFE
+because of the forbidden-point effects above; use it only for rough analysis,
+never for labels or probes.
 
 Our own fours are handled everywhere: after our four the opponent must block
 (unless the only block is a black forbidden point), and the position after the
@@ -85,6 +92,7 @@ def ordered_moves(game: Game) -> list[Move]:
 class ThreatSolver:
     node_limit: int = 100_000
     four_chain: int = 6
+    prune_quiet: bool = False
     vcf_calls: int = 0
     vcf_exhausted: int = 0
     _vcf_cache: dict = field(default_factory=dict, repr=False)
@@ -157,8 +165,8 @@ class ThreatSolver:
             try:
                 if game.done:
                     continue  # an immediate five was already excluded above
-                if self.vcf(game, opponent)[0] == VCF_NONE:
-                    continue  # not a threat: no VCF even if we passed
+                if self.prune_quiet and self.vcf(game, opponent)[0] == VCF_NONE:
+                    continue  # unsound shortcut, see module docstring
                 counts, _ = self.decision(game, vct_depth - 1, 0, stop_at_safe=True)
             finally:
                 game.undo()
