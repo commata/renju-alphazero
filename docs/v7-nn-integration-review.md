@@ -17,7 +17,7 @@
 |---|---|---|
 | 29수 패배는 24·26·28수 stage 2(탐색 0회) 때문이다 | **틀림** | §1.3. 22수 시점에 모든 합법수가 VCF로 패배함이 증명된다(safe 0, unknown 0) |
 | 강제 규칙이 MCTS를 우회해 약점이 생긴다 | **부분적으로 맞음** | 대상은 stage 4/5다. 패배 4판 중 3판에서 마지막으로 safe 수가 남아 있던 착수가 stage 4였다 |
-| 근본 원인은 VCT | **깊이 1에서 확인** | §6.1: 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고, 사람의 실제 다음 수가 증명된 승리 위협이었다. stage 4 3판의 "VCT1로도 지지 않는 대안"은 가지치기 solver 판정이라 재검증 대기(§8) |
+| 근본 원인은 VCT | **깊이 1에서 확인** | §6.1: 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고, 사람의 실제 다음 수가 증명된 승리 위협이었다. stage 4 3판에는 VCT1로도 지지 않는 대안이 있었다(가지치기 없는 solver로 재검증 완료, §8) |
 | 이제 정책·가치망을 도입해야 한다 | **이미 되어 있음** | Stage 4~8(정책·가치망, 독립 PUCT, self-play, 학습, 외부 평가) 운영 중, 현재 B400 |
 | 즉승·즉방 hard rule + 그래도 탐색 | **이미 되어 있음** | PUCT v2 `tactical_filter`가 모든 노드에 적용되고, root는 정확히 N회 탐색한다 |
 | v7에 NN을 연결 | **하지 않음** | `tests/frozen_baseline.sha256`에 `mcts_v7.py`·`mcts_v7_agent.py`가 잠겨 있는 동결 benchmark다 |
@@ -97,8 +97,7 @@ v7 VCF solver는 `max_fours` 한도에 걸려도 "소진"으로 보고하지 않
 - **VCT 가설:** "VCF 없음 → 사람 한 수 → 모든 후보 VCF 패배"라는 흐름은 삼을 섞은 forcing 공격과 맞는다.
   이후 VCT solver certificate로 깊이 1에서 확인했다(§6.1).
 - **stage 4:** 마지막 SAFE 착수에서 SAFE 후보가 2~4개뿐이었다(`164723` 20수 제외). 이 표만으로는 판단할 수 없었지만,
-  §6.1에서 stage 4 3판 모두 VCT1로도 지지 않는 대안이 있다는 결과가 나왔지만, 그 SAFE 판정은 가지치기 solver 기준이라
-  재검증이 필요하다(§8). v7의 착수가 진다는 UNSAFE 증명은 가지치기와 무관하게 성립한다.
+  §6.1에서 stage 4 3판 모두 VCT1로도 지지 않는 대안이 있음을 확인했다(가지치기 없는 solver로 재검증, §8).
 - **`164723` 20수는 MCTS 100회로 둔 수다.** 탐색을 거쳐도 같은 종류의 실수가 나왔다. stage 4를 MCTS로 바꾸는 것만으로
   해결된다는 근거는 없다.
 - 6판, 사람 한 명, 비슷한 수법이다. 일반화하지 않는다.
@@ -269,9 +268,9 @@ python -m unittest tests.test_analysis_threats tests.test_alphazero_web_agent \
 
 - **§1.4의 VCT 가설은 깊이 1에서 확인됐다.** 네 판 모두 v7의 분기 착수가 "위협 1수 + VCF"로 지는 수로 증명됐고,
   사람이 실제로 둔 다음 수가 증명된 승리 위협이었다.
-- **stage 4 3판에서 VCT1로도 지지 않는 대안이 나왔다.** 이 SAFE 판정과 "승리 위협 전부" 집합은 가지치기 solver로 만든 것이라
-  재검증이 필요하다(§8의 재생성 명령). v7 착수가 진다는 판정(UNSAFE)과 사람 수가 이기는 위협이라는 판정은 실제 수순을 찾은
-  증명이라 그대로 유효하다. 대안이 더 깊은 VCT(위협 2수 이상)로 질 수 있는지는 확인하지 않았다.
+- **stage 4 3판에서는 VCT1로도 지지 않는 대안이 있었다.** 그러니 "stage 4가 VCT를 못 보고 틀린 방어를 골랐다"는 깊이 1 기준에서
+  증명된 사실이다. 이 SAFE 판정과 "승리 위협 전부" 집합은 처음에 가지치기 solver로 만들었지만, 가지치기 없는 solver로 다시 만든
+  결과가 fixture와 완전히 같았다(§8). 대안이 더 깊은 VCT(위협 2수 이상)로 질 수 있는지는 확인하지 않았다.
 - `164723`은 MCTS 100회로 둔 수도 같은 종류의 실수였다. 탐색만 늘리는 방식으로는 해결되지 않는다는 §1.4 판단과 맞는다.
 - 후보가 40개를 넘는 국면(`164723` 20수)은 정답 집합을 완전하게 만들 수 없어서 `must_defend_vct`를 만들지 않았다.
   top-k만 검사한 정답 집합으로는 검사하지 않은 안전한 수를 오답으로 채점하게 된다.
@@ -473,9 +472,9 @@ python scripts/compare_teacher_arms.py --control runs/stage8_b400_long --teacher
 | round robin 파일을 넣으면 comparator가 T1 vs T2를 teacher 결과로 읽음 | **맞음(코드 버그)** | `direct_result`가 teacher 접두사 대 control 접두사(`--control-label-prefix`, 기본 `control`) 경기만 쓴다. 테스트 추가. 그래도 절차는 arm별 1:1 파일로 적었다 |
 | GitHub에 CI 기록이 없음 | 사실 | `.github/workflows/ci.yml`은 `pull_request`와 `main` push에서만 돈다. 이 브랜치의 결과는 로컬 실행(`ci_run_tests.py --skip-policy none`, torch 차단 `--skip-policy torch-only`, `check_frozen_baseline.py`)이다. PR을 열면 CI가 돈다 |
 
-**재검증이 필요한 산출물:** `tests/fixtures/vct_probes_v1.json`은 가지치기 solver로 만들었다. UNSAFE(v7 착수 패배, 사람 수 승리)는
-유효하지만, `must_defend_vct` 정답 집합과 `vct_attack` 정답 집합의 완전성은 새 solver로 다시 확인해야 한다. 명령은 §10의 0단계에 있다.
-`check: SAME`이면 그대로 두고, `DIFFERENT`면 새 파일을 fixture로 교체해 커밋한다(§6.1 표도 갱신).
+**fixture 재검증 완료:** `tests/fixtures/vct_probes_v1.json`은 처음에 가지치기 solver로 만들었다. 데스크톱에서 가지치기 없는 solver로
+다시 만든 결과가 `check: SAME`(모든 probe의 id, 정답 수, 피할 수, value 부호가 동일)이었다. 그래서 fixture를 그대로 쓴다. §10의 0단계는
+이제 선택 사항이다.
 
 ## 9. B400 장기 학습 결과 반영 (gen 400 → 880)
 
@@ -515,7 +514,7 @@ CPU 코어: S4·T1 학습은 각 1코어(`torch_threads 1`)이므로 동시에 �
 
 ```powershell
 # ---------------------------------------------------------------------------
-# 0. 최신 코드 + VCT probe fixture 재검증 (약 30~60분). 결과가 SAME이면 끝, DIFFERENT면 알려 주기
+# 0. 최신 코드 + 로컬 테스트 (VCT probe fixture 재검증은 SAME으로 완료, 마지막 두 줄은 생략 가능)
 # ---------------------------------------------------------------------------
 git fetch origin feat/stage8-plan
 git checkout feat/stage8-plan
