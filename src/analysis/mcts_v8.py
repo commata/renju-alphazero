@@ -9,11 +9,19 @@ Implemented modules (the rest of the design is not yet here):
 - V8-1 skeleton: with every module off, ``mcts_search_v8`` makes exactly the
   moves of ``search.mcts_v7.mcts_search_v7`` (same random stream), and records
   the root visits of tree-searched moves (V8-F root record).
+- V8-B (``own_vct_attack``): after V7's own VCF (M1) finds nothing, moves that
+  make a four or an open three are tried as depth-1 VCT attacks. A move is
+  played only when every opponent reply is proven lost to our VCF (WIN); an
+  unfinished proof (UNKNOWN) is never played. The candidate list is a speed
+  heuristic and is incomplete: "no WIN found" does not mean "no VCT1 win".
 - V8-A (``stage_vct_safety``): Stage 4 and single-point Stage 5 forced defenses
   are checked with a depth-1 VCT proof in V7 order and the first proven SAFE one
   is played. If every forced defense is proven UNSAFE the check widens to the
   V6 root candidates. A per-move budget on VCF calls and total VCF nodes bounds
   the cost; an unfinished proof is UNKNOWN and is never treated as SAFE.
+
+V8-A and V8-B each have their own solver, cache and budget, and share one fair
+budget scheduler (``_first_proven``).
 
 SAFE here means "no VCF and no quiet-move + VCF win for the opponent" within the
 frozen VCF solver's class (see ``analysis.threats``), not "no forced win".
@@ -29,7 +37,9 @@ from time import perf_counter
 from renju import EMPTY, Game
 from search.mcts import MCTSNode, _backpropagate, _select_child
 from search.mcts_v3 import _can_expand, _pop_ranked_untried
-from search.mcts_v321 import _rollout_v321, _search_candidates_v321
+from search.mcts_v321 import (
+    _fast_pattern_features_for_move, _rollout_v321, _search_candidates_v321, _v321_priority_score,
+)
 from search.mcts_v5 import (
     _RootContext, _double_threat_moves, _forced_v5_move, _threat_windows,
     _unstoppable_four_moves, _validate_v5_config, _winning_moves,
@@ -43,10 +53,13 @@ from search.threat_patterns import placed
 
 from .threats import (
     SAFE, UNKNOWN, UNSAFE, VCF_NONE, VCF_UNKNOWN, VCF_WIN, ThreatSolver, _board_key,
-    _unbounded_max_fours,
+    _unbounded_max_fours, decision_status,
 )
 
 Move = tuple[int, int]
+
+# V8-B attack statuses (the side to move attacks; kept apart from V8-A's SAFE/UNSAFE).
+WIN, REFUTED = 'WIN', 'REFUTED'
 
 # Development defaults. V8_PLAY / V8_TEACHER budgets are fixed at V8-5 (design §4.5)
 # and the whole dict is frozen at V8-6; until then these values may change.
@@ -56,6 +69,10 @@ V8_DEFAULTS = {
     "vct_vcf_node_limit": 20_000,
     "vct_call_limit": 3_000,
     "vct_node_budget": 200_000,
+    "own_vct_attack": True,
+    "attack_vcf_node_limit": 20_000,
+    "attack_call_limit": 10_000,  # 3,000 ran out on 164445 ply 15 (§4.2.9); nodes bound the time
+    "attack_node_budget": 200_000,
 }
 _V8_KEYS = tuple(key for key in V8_DEFAULTS if key not in V7_FINAL)
 
@@ -72,6 +89,15 @@ class SearchDiagnostics(V7Diagnostics):
     v8_vct_budget_exhausted: bool = False
     v8_vct_seconds: float = 0.0
     v8_root_visits: tuple[tuple[Move, int, float], ...] = ()
+    v8_attack_status: str = ""
+    v8_attack_move: Move | None = None
+    v8_attack_rank: int = 0
+    v8_attack_candidates: int = 0
+    v8_attack_checked: tuple[tuple[Move, str], ...] = ()
+    v8_attack_calls: int = 0
+    v8_attack_nodes: int = 0
+    v8_attack_budget_exhausted: bool = False
+    v8_attack_seconds: float = 0.0
 
 
 class _BudgetExhausted(Exception):
@@ -125,14 +151,13 @@ class _BudgetedSolver(ThreatSolver):
             self.exhausted = True
         raise _BudgetExhausted
 
-    def status_after(self, game: Game, move: Move, share: int | None = None,
-                     call_share: int | None = None) -> str:
-        """VCT1 status of ``move`` for ``game.to_play``.
+    def _bounded(self, game: Game, move: Move, share, call_share, check) -> str:
+        """Play ``move``, run ``check(game)`` under the shares, undo.
 
         ``share`` / ``call_share`` cap the VCF nodes / uncached VCF calls this
-        call may add (default: the rest of the budget). A cut returns UNKNOWN;
-        finished sub-results stay cached, so a later call on the same move
-        resumes cheaply.
+        call may add (default: the rest of the budget). A cut returns UNKNOWN
+        with ``last_cut`` set; finished sub-results stay cached, so a later call
+        on the same move resumes cheaply.
         """
         self.last_cut = True
         if self.exhausted:
@@ -141,7 +166,7 @@ class _BudgetedSolver(ThreatSolver):
         self._call_cap = self.call_limit if call_share is None else self.vcf_calls + call_share
         game.play(*move)
         try:
-            status = self.after_move(game, 1)[0]
+            status = check(game)
             self.last_cut = False
             return status
         except _BudgetExhausted:
@@ -149,13 +174,41 @@ class _BudgetedSolver(ThreatSolver):
         finally:
             game.undo()
 
+    def status_after(self, game: Game, move: Move, share: int | None = None,
+                     call_share: int | None = None) -> str:
+        """V8-A: VCT1 status (SAFE/UNSAFE/UNKNOWN) of ``move`` for ``game.to_play``."""
+        return self._bounded(game, move, share, call_share, lambda g: self.after_move(g, 1)[0])
 
-def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit, vct_node_budget):
-    if not isinstance(stage_vct_safety, bool):
-        raise ValueError("stage_vct_safety must be a bool")
+    def attack_status(self, game: Game, move: Move, share: int | None = None,
+                      call_share: int | None = None) -> str:
+        """V8-B: WIN if every reply to ``move`` loses to our five/VCF, REFUTED if one survives.
+
+        Same meaning as ``tactical_labels.proves_threat``, but stops at the first
+        surviving reply (``stop_at_safe``), which does not change the status.
+        """
+        return self._bounded(game, move, share, call_share, self._attack_check)
+
+    def _attack_check(self, game: Game) -> str:
+        if game.done:
+            return WIN if game.winner == -game.to_play else REFUTED
+        if not game.legal_moves():
+            return REFUTED  # no reply to refute, but no win either (full board)
+        counts, _ = self.decision(game, 0, stop_at_safe=True)
+        return {UNSAFE: WIN, SAFE: REFUTED, UNKNOWN: UNKNOWN}[decision_status(counts)]
+
+
+def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit, vct_node_budget,
+                        own_vct_attack, attack_vcf_node_limit, attack_call_limit,
+                        attack_node_budget):
+    for name, value in (("stage_vct_safety", stage_vct_safety), ("own_vct_attack", own_vct_attack)):
+        if not isinstance(value, bool):
+            raise ValueError(f"{name} must be a bool")
     for name, value in (("vct_vcf_node_limit", vct_vcf_node_limit),
                         ("vct_call_limit", vct_call_limit),
-                        ("vct_node_budget", vct_node_budget)):
+                        ("vct_node_budget", vct_node_budget),
+                        ("attack_vcf_node_limit", attack_vcf_node_limit),
+                        ("attack_call_limit", attack_call_limit),
+                        ("attack_node_budget", attack_node_budget)):
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError(f"{name} must be a positive integer")
 
@@ -187,7 +240,17 @@ def _not_immediately_lost(game: Game, move: Move) -> bool:
 
 
 def _first_safe(game, moves, statuses, solver) -> Move | None:
-    """Check ``moves`` in order and return the first proven VCT1-SAFE one.
+    """V8-A: the first proven VCT1-SAFE move (see ``_first_proven``)."""
+    return _first_proven(game, moves, statuses, solver, solver.status_after, SAFE)
+
+
+def _first_proven(game, moves, statuses, solver, evaluate, target) -> Move | None:
+    """Check ``moves`` in order and return the first one proven ``target``.
+
+    ``evaluate(game, move, node_share, call_share)`` is the solver's bounded
+    status function (V8-A ``status_after`` -> SAFE, V8-B ``attack_status`` ->
+    WIN). "First" means first proven: within a round moves are checked in the
+    given order, but a later move proven in an earlier round wins.
 
     Both budgets (VCF nodes and uncached VCF calls) are spent in fair rounds.
     The first target share is half of an equal split and doubles each round,
@@ -200,10 +263,13 @@ def _first_safe(game, moves, statuses, solver) -> Move | None:
     candidate gets the leftover exclusively. Instead every pending move gets
     one final zero-budget structural pass; only checks that finish without a
     new VCF node/call can resolve. The budget is then reported as exhausted
-    and the caller falls back among unrefuted moves. Finished sub-results remain cached across rounds, and an UNKNOWN
-    that finished at the per-VCF node limit is not retried.
+    and the caller falls back among unrefuted moves. Finished sub-results
+    remain cached across rounds, and an UNKNOWN that finished at the per-VCF
+    node limit is not retried.
     """
     pending = [m for m in moves if statuses.get(m, UNKNOWN) == UNKNOWN]
+    if not pending:
+        return None
     share = (solver.node_budget - solver.nodes_used) // (2 * len(pending)) if pending else 0
     call_share = (solver.call_limit - solver.vcf_calls) // (2 * len(pending)) if pending else 0
     while pending and not solver.exhausted:
@@ -214,8 +280,8 @@ def _first_safe(game, moves, statuses, solver) -> Move | None:
             for move in pending:
                 if solver.exhausted:
                     break
-                statuses[move] = solver.status_after(game, move, 0, 0)
-                if statuses[move] == SAFE:
+                statuses[move] = evaluate(game, move, 0, 0)
+                if statuses[move] == target:
                     return move
             # The remainder cannot be shared fairly, so it is never spent: report the
             # budget as exhausted (diagnostics, gate statistics, later calls).
@@ -228,8 +294,8 @@ def _first_safe(game, moves, statuses, solver) -> Move | None:
         for move in pending:
             if solver.exhausted:
                 break
-            statuses[move] = solver.status_after(game, move, share, call_share)
-            if statuses[move] == SAFE:
+            statuses[move] = evaluate(game, move, share, call_share)
+            if statuses[move] == target:
                 return move
             if solver.last_cut:
                 cut.append(move)
@@ -267,6 +333,41 @@ def _stage_vct_move(game, context, v7_move, defenses, diag, solver, *,
             fallback += [m for m in root if statuses.get(m, UNKNOWN) == UNKNOWN]
             chosen = next((m for m in fallback if _not_immediately_lost(game, m)), v7_move)
     diag.v8_vct_checked = tuple(statuses.items())
+    return chosen
+
+
+def _attack_candidates(game: Game, context: _RootContext) -> list[Move]:
+    """V8-B candidates: legal moves making a four or an open three (speed heuristic, incomplete).
+
+    Ordered by the V3.2.1 priority score (highest first), then the V5 root key.
+    ``context.legal`` excludes black forbidden points.
+    """
+    player = game.to_play
+    moves = []
+    for move in context.legal:
+        features = _fast_pattern_features_for_move(game, player, move, assume_legal=True)
+        if features.four_directions > 0 or features.open_three_directions > 0:
+            moves.append(move)
+    return sorted(moves, key=lambda m: (-_v321_priority_score(game, m), context.key(game, m)))
+
+
+def _own_vct_attack(game, context, diag, *, node_limit, call_limit, node_budget) -> Move | None:
+    """V8-B: the first proven depth-1 VCT attack, or None (never an unproven one)."""
+    started = perf_counter()
+    candidates = _attack_candidates(game, context)
+    diag.v8_attack_candidates = len(candidates)
+    solver = _BudgetedSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget)
+    statuses: dict[Move, str] = {}
+    chosen = _first_proven(game, candidates, statuses, solver, solver.attack_status, WIN)
+    diag.v8_attack_checked = tuple(statuses.items())
+    diag.v8_attack_calls = solver.vcf_calls
+    diag.v8_attack_nodes = solver.nodes_used
+    diag.v8_attack_budget_exhausted = solver.exhausted
+    diag.v8_attack_seconds = perf_counter() - started
+    if chosen is not None:
+        diag.v8_attack_status = WIN
+        diag.v8_attack_move = chosen
+        diag.v8_attack_rank = candidates.index(chosen) + 1
     return chosen
 
 
@@ -320,6 +421,8 @@ def mcts_search_v8(
     self_forbidden_min_white=3,
     stage_vct_safety=True, vct_vcf_node_limit=20_000, vct_call_limit=3_000,
     vct_node_budget=200_000,
+    own_vct_attack=True, attack_vcf_node_limit=20_000, attack_call_limit=10_000,
+    attack_node_budget=200_000,
     random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
 ) -> Move:
     """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules."""
@@ -337,7 +440,9 @@ def mcts_search_v8(
         self_forbidden_min_white=self_forbidden_min_white,
     )
     _validate_v8_config(stage_vct_safety=stage_vct_safety, vct_vcf_node_limit=vct_vcf_node_limit,
-                        vct_call_limit=vct_call_limit, vct_node_budget=vct_node_budget)
+                        vct_call_limit=vct_call_limit, vct_node_budget=vct_node_budget,
+                        own_vct_attack=own_vct_attack, attack_vcf_node_limit=attack_vcf_node_limit,
+                        attack_call_limit=attack_call_limit, attack_node_budget=attack_node_budget)
     diag = diagnostics if diagnostics is not None else SearchDiagnostics()
     diag.__dict__.update(vars(SearchDiagnostics()))
     context = _RootContext(game.legal_moves(), diag)
@@ -362,6 +467,18 @@ def mcts_search_v8(
         diag.v8_route = "own_vcf"
         diag.v8_v7_move = own_vcf.first_move
         return own_vcf.first_move
+
+    if own_vct_attack:
+        attack = _own_vct_attack(game, context, diag, node_limit=attack_vcf_node_limit,
+                                 call_limit=attack_call_limit, node_budget=attack_node_budget)
+        if attack is not None:
+            # V7's own move is not computed here (it would need the full V7 search);
+            # v8_v7_move stays None and the move counts as changed.
+            diag.forced_policy_stage = None
+            diag.v7_module_seconds = perf_counter() - module_started
+            diag.v8_route = "own_vct"
+            diag.v8_changed = True
+            return attack
 
     if forced is not None:
         if forced_stage == 4:

@@ -5,21 +5,23 @@ import unittest
 
 from agents import MCTSV7Agent
 from analysis.mcts_v8 import (
-    V8_DEFAULTS, SearchDiagnostics, _BudgetedSolver, _board_key, _first_safe,
-    _not_immediately_lost, _stage_vct_move, mcts_search_v8,
+    REFUTED, V8_DEFAULTS, WIN, SearchDiagnostics, _attack_candidates, _BudgetedSolver, _board_key,
+    _first_proven, _first_safe, _not_immediately_lost, _own_vct_attack, _stage_vct_move,
+    mcts_search_v8,
 )
-from renju import BLACK, WHITE
+from analysis.tactical_labels import proves_threat
 from search.mcts_v5 import _RootContext
 from search.mcts_v6 import _root_candidates_v6
 from analysis.mcts_v8_agent import MCTSV8Agent
-from analysis.threats import SAFE, UNKNOWN, UNSAFE
+from analysis.threats import SAFE, UNKNOWN, UNSAFE, ThreatSolver
 from renju import Game
 from search.mcts_v7 import V7_FINAL, mcts_search_v7
 
 ROOT = Path(__file__).resolve().parents[1]
 GAMES = json.loads((ROOT / 'tests/fixtures/web_play_v7_human_games_v1.json').read_text(encoding='utf-8'))['games']
 PROBES = json.loads((ROOT / 'tests/fixtures/vct_probes_v1.json').read_text(encoding='utf-8'))['probes']
-OFF = {**V8_DEFAULTS, 'stage_vct_safety': False}
+OFF = {**V8_DEFAULTS, 'stage_vct_safety': False, 'own_vct_attack': False}  # V7 exactly
+A_ONLY = {**V8_DEFAULTS, 'own_vct_attack': False}  # V8-A regression config
 
 
 def _game(moves):
@@ -29,9 +31,9 @@ def _game(moves):
     return game
 
 
-def _probe(game_prefix):
-    # 163903 ply 13 (v7 black, Stage 4): the cheapest of the three Stage 4 branch points.
-    return next(p for p in PROBES if p['kind'] == 'must_defend_vct' and p['symmetry'] == 0
+def _probe(game_prefix, kind='must_defend_vct'):
+    # 163903 is the cheapest game: Stage 4 branch at ply 13, VCT1 attack (8, 5) at ply 14.
+    return next(p for p in PROBES if p['kind'] == kind and p['symmetry'] == 0
                 and p['source']['game'].startswith(game_prefix))
 
 
@@ -80,7 +82,7 @@ class StageVCTSafetyTest(unittest.TestCase):
         probe = _probe('20260929-163903')
         game = _game(probe['moves'])
         diag = SearchDiagnostics()
-        move = mcts_search_v8(game, **V8_DEFAULTS, random=Random(1), diagnostics=diag)
+        move = mcts_search_v8(game, **A_ONLY, random=Random(1), diagnostics=diag)
         self.assertEqual(diag.v8_route, 'stage4')
         self.assertEqual(list(diag.v8_v7_move), probe['avoid_moves'][0])  # v7's losing (6, 8)
         self.assertIn(list(move), probe['correct_moves'])
@@ -93,7 +95,7 @@ class StageVCTSafetyTest(unittest.TestCase):
         probe = _probe('20260929-163903')
         game = _game(probe['moves'])
         diag = SearchDiagnostics()
-        move = mcts_search_v8(game, **{**V8_DEFAULTS, 'vct_call_limit': 1},
+        move = mcts_search_v8(game, **{**A_ONLY, 'vct_call_limit': 1},
                               random=Random(1), diagnostics=diag)
         self.assertTrue(diag.v8_vct_budget_exhausted)
         self.assertEqual(move, diag.v8_v7_move)
@@ -134,6 +136,9 @@ class _ScriptedSolver:
         self.exhausted = self.last_cut = False
         self.spent = {}
         self.calls = []
+
+    def attack_status(self, game, move, share=None, call_share=None):
+        return self.status_after(game, move, share, call_share)
 
     def status_after(self, game, move, share=None, call_share=None):
         self.calls.append((move, share, call_share))
@@ -316,18 +321,102 @@ class Stage5EngineTest(unittest.TestCase):
     def test_real_stage5_block_is_proven_safe(self):
         game = _game(GAMES[0]['moves'][:12])
         diag = SearchDiagnostics()
-        move = mcts_search_v8(game, **V8_DEFAULTS, random=Random(12), diagnostics=diag)
+        move = mcts_search_v8(game, **A_ONLY, random=Random(12), diagnostics=diag)
         self.assertEqual(diag.v8_route, 'stage5')
         self.assertEqual(move, (6, 9))
         self.assertEqual(dict(diag.v8_vct_checked), {(6, 9): SAFE})
         self.assertFalse(diag.v8_changed)
         self.assertEqual(game.history, [tuple(m) for m in GAMES[0]['moves'][:12]])
 
+    def test_attack_without_win_leaves_v8a_unchanged(self):
+        # A on + B on with no proven WIN must play exactly what A on + B off plays.
+        moves = GAMES[0]['moves'][:12]
+        a_only, both = SearchDiagnostics(), SearchDiagnostics()
+        expected = mcts_search_v8(_game(moves), **A_ONLY, random=Random(12), diagnostics=a_only)
+        game = _game(moves)
+        self.assertEqual(mcts_search_v8(game, **V8_DEFAULTS, random=Random(12), diagnostics=both), expected)
+        self.assertEqual(both.v8_route, a_only.v8_route)
+        self.assertEqual(both.v8_attack_status, '')
+        self.assertNotIn(WIN, dict(both.v8_attack_checked).values())
+        self.assertEqual(game.history, [tuple(m) for m in moves])
+
+
+class OwnVCTAttackTest(unittest.TestCase):
+    # 163903 ply 14: white's proven VCT1 threat is (8, 5), 6th of 8 candidates (design §4.2.2).
+    def _attack_game(self):
+        probe = _probe('20260929-163903', 'vct_attack')
+        return _game(probe['moves']), probe
+
+    def test_real_attack_is_proven_and_independently_verified(self):
+        game, probe = self._attack_game()
+        diag = SearchDiagnostics()
+        move = mcts_search_v8(game, **V8_DEFAULTS, random=Random(1), diagnostics=diag)
+        self.assertEqual(diag.v8_route, 'own_vct')
+        self.assertIn(list(move), probe['correct_moves'])
+        self.assertEqual(dict(diag.v8_attack_checked)[move], WIN)
+        self.assertEqual(diag.v8_attack_status, WIN)
+        self.assertEqual(diag.v8_attack_move, move)
+        self.assertEqual(diag.v8_attack_rank, 6)
+        self.assertTrue(diag.v8_changed)
+        self.assertIsNone(diag.v8_v7_move)
+        self.assertEqual(game.history, [tuple(m) for m in probe['moves']])
+        self.assertTrue(proves_threat(game, move, ThreatSolver(node_limit=100_000)))
+
+    def test_unproven_attack_is_never_played(self):
+        # A 50-node budget cannot prove (8, 5): V8-B plays nothing and V8 continues as with B off.
+        game, probe = self._attack_game()
+        diag, a_only = SearchDiagnostics(), SearchDiagnostics()
+        move = mcts_search_v8(game, **{**V8_DEFAULTS, 'attack_node_budget': 50},
+                              random=Random(1), diagnostics=diag)
+        expected = mcts_search_v8(_game(probe['moves']), **A_ONLY, random=Random(1), diagnostics=a_only)
+        self.assertEqual(move, expected)
+        self.assertNotEqual(diag.v8_route, 'own_vct')
+        self.assertEqual(diag.v8_attack_status, '')
+        self.assertTrue(diag.v8_attack_budget_exhausted)
+        self.assertNotIn(WIN, dict(diag.v8_attack_checked).values())
+        self.assertEqual(game.history, [tuple(m) for m in probe['moves']])
+
+    def test_budget_cut_then_resume_still_needs_a_full_proof(self):
+        game, _ = self._attack_game()
+        before = _board_key(game)
+        solver = _BudgetedSolver(node_limit=20_000, call_limit=10**6, node_budget=10**6)
+        self.assertEqual(solver.attack_status(game, (8, 5), 100, 10**6), UNKNOWN)
+        self.assertTrue(solver.last_cut)
+        self.assertEqual(_board_key(game), before)
+        self.assertEqual(solver.attack_status(game, (8, 5)), WIN)
+        self.assertFalse(solver.last_cut)
+        self.assertEqual(solver.attack_status(game, (9, 6)), REFUTED)  # refuted in one VCF call
+        self.assertEqual(_board_key(game), before)
+
+    def test_candidates_are_legal_fours_or_open_threes(self):
+        game, probe = self._attack_game()
+        context = _RootContext(game.legal_moves(), SearchDiagnostics())
+        candidates = _attack_candidates(game, context)
+        self.assertEqual(len(candidates), 8)
+        self.assertEqual(candidates.index((8, 5)), 5)
+        self.assertTrue(set(candidates) <= set(context.legal))
+
+    def test_no_candidates_costs_nothing(self):
+        game = _game(GAMES[0]['moves'][:4])  # no four or open three to make yet
+        diag = SearchDiagnostics()
+        context = _RootContext(game.legal_moves(), diag)
+        self.assertIsNone(_own_vct_attack(game, context, diag, node_limit=20_000,
+                                          call_limit=10_000, node_budget=200_000))
+        self.assertEqual((diag.v8_attack_candidates, diag.v8_attack_calls, diag.v8_attack_nodes), (0, 0, 0))
+        self.assertFalse(diag.v8_attack_budget_exhausted)
+
+    def test_attack_uses_the_same_fair_scheduler(self):
+        # A needs 150k nodes to be REFUTED, B 60k to be a WIN: A cannot take B's budget.
+        solver = _ScriptedSolver({'A': (150_000, REFUTED), 'B': (60_000, WIN)}, 200_000)
+        statuses = {}
+        self.assertEqual(_first_proven(None, ['A', 'B'], statuses, solver, solver.attack_status, WIN), 'B')
+        self.assertEqual(statuses, {'A': UNKNOWN, 'B': WIN})
+
 
 class AgentTest(unittest.TestCase):
     def test_agent_matches_v7_agent_with_modules_off(self):
         game = _game(GAMES[0]['moves'][:6])
-        v8 = MCTSV8Agent(seed=5, stage_vct_safety=False)
+        v8 = MCTSV8Agent(seed=5, stage_vct_safety=False, own_vct_attack=False)
         v7 = MCTSV7Agent(seed=5)
         self.assertEqual(v8.select_move(game), v7.select_move(game))
 
@@ -340,6 +429,10 @@ class AgentTest(unittest.TestCase):
             MCTSV8Agent(vct_node_budget=0)
         with self.assertRaises(ValueError):
             MCTSV8Agent(stage_vct_safety=1)
+        with self.assertRaises(ValueError):
+            MCTSV8Agent(own_vct_attack=1)
+        with self.assertRaises(ValueError):
+            MCTSV8Agent(attack_node_budget=0)
 
 
 if __name__ == '__main__':
