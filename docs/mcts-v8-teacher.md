@@ -19,11 +19,11 @@ teacher root record, 3계층 데이터, V8-D/V8-T4 arm), 사람 대 v7 웹 대�
 | AZ는 V8을 기다리지 않고 진행 | **맞음** | arm이 모두 gen 400 상태에서 분기하므로 V8 arm을 늦게 붙여도 짝지은 비교가 유지된다(검토서 §7-7) |
 | V8-M1: V7이 흑이면 백의 미래 공격 분석이 없다 | **코드상 사실, 그러나 사람 패배와 무관** | `mcts_v6.plan_root`는 흑 차례에 흑 setup만 본다. 하지만 백 차례(양쪽을 봄)였던 2판에서도, 흑 차례 2판에 상대 색 planner를 돌려도 사람의 승리 위협을 **0/4** 잡았다(§2) |
 | V8-M2: 좋은 방어수가 후보 20개 밖에 있을 수 있다 | **사람 패배에서는 아님** | stage 4 3판 모두 VCT1-SAFE 수가 stage 4 방어 집합(4개)과 V5/V6 root 20개 **안에 있었다**(§2). 문제는 후보 생성이 아니라 **선택**이다 |
-| V8-M3: VCT safety 추가 | **맞음, 최우선** | stage 4 방어 4개에 VCT1 검사만 붙였어도 3판 모두 SAFE 수를 골랐다(§2). 단 비용이 크다(4후보 10~48초) |
-| VCT depth 2 | **지금은 불가** | depth 1만으로 4후보 10~48초, 20후보는 10분 이상(§2.3). depth 2는 오프라인 분석에서도 아직 돌려 본 적이 없다 |
-| V8-M4: 금수 유도 강화 | **근거 약함, 후순위** | 사람 패배 4판의 분기점은 금수와 무관한 VCT였다. v7 M3는 100판에서 2회 발동. 근거는 V6 fixture 1개뿐 |
+| V8-M3: VCT safety 추가 | **맞음, 최우선** | 100k-node 오프라인 검사에서는 stage 4 방어 4개에 VCT1을 붙였을 때 3판 모두 SAFE 수를 찾았다(§2). 단 실제 V8 예산에서도 같은 결과를 재현하는지는 게이트에서 확인해야 한다 |
+| VCT depth 2 | **온라인/teacher 경로에는 아직 채택 근거 없음** | depth 1만으로 4후보 10~48초, 20후보는 24분이 걸렸다(§2.3). depth 2는 아직 실측하지 않았으므로 “불가능”이 아니라 오프라인 비용 측정 후 판단한다 |
+| V8-M4: 금수 유도 강화 | **근거 약함, 후순위** | 사람 패배 4판의 분기점은 금수와 무관한 VCT였다. v7 M3는 V6/V5 각각 100판에서 2회씩(총 4/200) 발동했고, 설계 근거 fixture는 1개였다 |
 | V8-M5: 위험 국면 400회 탐색 | **stage 4를 못 고친다** | 사람 패배 3판의 분기 착수는 stage 4(탐색 0회)였다. 탐색 횟수는 MCTS 경로에만 영향이 있다. `164723`(MCTS 100회)도 탐색만으로 풀린다는 근거가 없다(검토서 §1.4) |
-| V8-M6 / teacher root record(visits) | **새 코드로는 가능, 해상도 주의** | 동결 v7은 root visit을 내보내지 않는다. V5 트리는 progressive widening(`initial_width 8 + √N`)이라 50회에서는 root 후보 15개까지만 열린다(§5.3) |
+| V8-M6 / teacher root record(visits) | **새 코드로는 가능, 해상도 주의** | 동결 v7은 root visit을 내보내지 않는다. V5 트리는 progressive widening이라 50회에는 최대 15개, 100회에는 최대 17개의 root child만 열 수 있다. 어떤 후보가 안 열리는지는 top-k 가중 무작위 확장에 따라 달라진다(§4.5) |
 | 사람-v7 패배 4판을 regression suite로 | **이미 있음** | `vct_probes_v1.json`(기본 11개, D4 88개)과 가지치기 없는 solver 재검증 `SAME`(검토서 §8). V8 게이트로 그대로 쓴다 |
 | probe 게임 전체 제외, D4 dedup | **이미 있음** | `build_tactical_dataset.py`(검토서 §7-1) |
 | V8 soft policy로 AZ를 증류 | **새 arm으로 가능, 이전 결정의 변경** | 검토서 §3.2는 v7 MCTS 착수를 target에서 뺐다. 지금은 AZ(B400~B880)가 v5/v6/v7에 0~1/20이어서 classical teacher가 훨씬 강하다(§12.10). 그래서 **T1과 별도 arm**으로 검증한다(§6) |
@@ -71,9 +71,14 @@ AZ: 대조군 / S4 / T1                V7 동결 유지  →  V8 teacher 개발 
 | `163810`(흑) | stage 4 | (11,6) | (10,9) | (6,11) (7,10) (11,6) (12,5) | (4,7) (7,10) | (7,10) | 둘 다 | setup 0개 | (7,10)만 SAFE, 36.6초 |
 | `163903`(흑) | stage 4 | (6,8) | (8,5) | (6,3) (6,4) (6,8) (6,9) | (6,4) (11,8) | (6,4) | 둘 다 | setup 0개 | (6,4)만 SAFE, 10.1초 |
 | `164445`(백) | stage 4 | (7,3) | (5,6) | (2,8) (3,7) (7,3) (8,2) | (3,7) | (3,7) | 있음 | setup 0개 | (3,7)만 SAFE, 48.3초 |
-| `164723`(백) | MCTS 100회 | (10,8) | (5,9) | 없음 | 미열거(VCF-safe 206개) | — | V6 root 20개 중 12개 SAFE | setup 0개 | root 20개: SAFE 12 / UNSAFE 8, 1,452초 |
+| `164723`(백) | MCTS 100회 | (10,8) | (5,9) | 없음 | 미열거(VCF-safe 206개) | — | 기존 스크립트 후보 20개 중 12개 SAFE¹ | setup 0개 | 기존 후보 20개: SAFE 12 / UNSAFE 8, 1,452초¹ |
 
 (VCT1 검사: `analysis.threats.ThreatSolver`, 노드 한도 100,000, 이 컨테이너 기준 시간.)
+
+¹ 기존 `check_v8_branch_points.py`는 `_forced_v5_move` 뒤 root 후보를 만들 때 새 `_RootContext`를 생성해
+Stage-5의 `context.injected`를 버리는 재현 오차가 있었다. 실제 V6/V7은 같은 context를 이어 쓴다. 스크립트는 이를 고쳤고
+`--structure-only`로 실제 root 후보 구조를 먼저 재확인한다. 후보 목록이 기존 20개와 같으면 1,452초 분류 결과를 그대로 쓸 수
+있고, 다르면 `--root-vct`를 다시 실행한다. (10,8) 자체의 VCT1-UNSAFE 증명은 probe fixture에 독립적으로 남아 있다.
 
 읽는 법:
 
@@ -85,16 +90,19 @@ AZ: 대조군 / S4 / T1                V7 동결 유지  →  V8 teacher 개발 
 3. **양방향 planner(V8-M1)는 이 위협을 못 본다.** `future_setups`는 "다음 수에 33/43/44 같은 복합 위협을 만드는 한 수"를
    찾는다. 사람의 수는 복합 위협이 아니라 **"위협 1수 뒤 VCF"**였다. 네 판 모두 상대 색으로 planner를 돌려도 setup이 0개였다.
    `164445`·`164723`은 v7이 백이라 원래 흑 planner가 돌던 판인데도 같았다.
-4. **`164723`은 MCTS 경로다.** 이 판만은 stage 4 수정으로 고쳐지지 않는다. V6 root 20개 중 12개가 VCT1-SAFE였고, v7 수 (10,8)은
-   UNSAFE였다. V6 순서 1위 (6,7)이 SAFE이므로 "순서대로 검사하고 SAFE K개에서 멈춤"(§4.3)이면 이 판도 고쳐진다. 문제는 비용이다(§2.3).
+4. **`164723`은 MCTS 경로다.** 이 판만은 stage 4 수정으로 고쳐지지 않는다. v7 수 (10,8)이 VCT1-UNSAFE라는 사실은 독립
+   probe 증명으로 확정이다. 다만 “V6 root 20개 중 12 SAFE / 8 UNSAFE, 순서 1위 (6,7)이 SAFE”는 위 context 재현 버그를
+   고친 뒤 root 구조가 같음을 확인해야 실제 V7 root에 대한 사실로 확정할 수 있다. 따라서 V8-C의 직접 게이트는 우선
+   **(10,8)을 제거하고 VCT1-SAFE 수를 고르는지**로 둔다.
 
 ### 2.3 VCT1 비용
 
 - stage 4 방어 4개: 10~48초(VCF 호출 881~2,012회). 사람 패배 3판 모두 모든 후보를 끝까지 판정했다(UNKNOWN 0).
 - `164723` root 후보 20개 전부: **1,452초(약 24분).** 한 후보 평균 73초다. 검토서 §6.1에서도 "VCT가 없음을 증명"하는 쪽이
   훨씬 비쌌다(승리 위협 전부 찾기 29분).
-- 따라서 V8은 "모든 root 후보에 VCT1"이 불가능하다. **순서대로 검사하고 첫 SAFE에서 멈추는 방식**과 **착수당 노드 예산**,
-  **UNKNOWN tier**(V7 M2와 같은 3단계)가 필수다. depth 2는 V8 범위 밖이다.
+- 따라서 현재 비용으로 "모든 root 후보에 VCT1"을 매 착수 수행하는 것은 teacher 생성 경로에 실용적이지 않다.
+  **우선순위 순 검사 + 조기 종료**, **착수당 노드 예산**, **UNKNOWN tier**가 필요하다. depth 2는 V8 온라인 경로에서는
+  보류하고, 먼저 오프라인에서 비용을 재는 대상으로 둔다.
 
 ### 2.4 한계
 
@@ -148,9 +156,11 @@ stage 1~3과 V7 M1은 증명된 수라서 그대로 둔다. stage 2에서 승리
 
 - V7 M2(VCF 3-tier) 뒤에 붙인다. 입력은 M2의 SAFE tier다.
 - 전 후보 검사는 불가능하다(§2.3). 대신:
-  1. **싼 사전 필터:** 후보를 둔 뒤 상대의 "4 또는 열린 3 생성수" 중 VCF 후속이 있는 수가 있는 후보만 검사 대상.
-     필터에서 빠진 후보는 "VCT1 미검사"로 표시한다(SAFE로 표시하지 않는다).
-  2. 검사 대상을 V6 순서로 검사하고, **SAFE가 K개(기본 3) 나오면 멈춘다.** 트리에는 SAFE K개 + 미검사 후보를 주고,
+  1. **싼 사전 우선순위 필터:** 후보를 둔 뒤 상대의 "4 또는 열린 3 생성수" 중 VCF 후속이 보이는 후보를 먼저 검사한다.
+     이것은 완전한 VCT1 필터가 아니다. `ThreatSolver`는 모든 합법 quiet move와 금수 변화까지 보므로, 필터에서 빠진 후보도
+     예산이 남으면 뒤이어 검사한다. 끝까지 못 본 후보는 "VCT1 미검사"로 표시하고 SAFE로 올리지 않는다.
+  2. 검사 대상을 V6 순서(사전 필터 hit 우선, 각 그룹 안에서 V6 순서)로 검사하고, **SAFE가 K개(기본 3) 나오면 멈춘다.**
+     트리에는 SAFE K개 + 미검사 후보를 주고,
      UNSAFE는 뺀다. UNKNOWN은 V7처럼 뒤로 보낸다.
   3. 착수당 노드 예산을 둔다. 예산 소진 시 남은 후보는 미검사로 남긴다.
 - `164723` 20수에서 v7 수 (10,8)은 VCT1-UNSAFE로 증명되어 있다(검토서 §6.1). V8-C가 이 수를 빼는지가 1차 게이트다.
@@ -167,11 +177,19 @@ stage 1~3과 V7 M1은 증명된 수라서 그대로 둔다. stage 2에서 승리
 
 ### 4.5 V8-E — 탐색 예산과 root 후보 (4순위)
 
-- **후보 확장(제안 V8-M2)은 하지 않는다.** 사람 로그에서 근거가 없고(§2.2), V6은 이미 planner 주입 후보를 20개 제한 없이
-  합친다(`_root_candidates_v6`의 `set(baseline).union(reasons)`). 제한은 V7 M2 보강에만 있다.
-- 대신 **root에서 모든 후보가 한 번은 열리게** 한다. V5 트리는 root 자식 수를 `initial_width 8 + ⌊√visits⌋`로 제한한다.
-  50회면 최대 15개, 100회면 18개, 144회부터 20개다. 즉 현재 50회 normal 착수에서는 V6 순서 16~20위 후보가 **한 번도
-  방문되지 않는다.** V8은 simulations를 후보 수에 맞춰 `(len(root) − 8)²` 이상으로 둔다(20후보면 144회).
+- **후보 확장(제안 V8-M2)은 일단 하지 않는다.** 사람 로그에서 후보 부족 근거가 없고(§2.2), V6은 planner 주입 후보를
+  baseline 20개에 합쳐 root가 20개를 넘을 수도 있다(`_root_candidates_v6`의 `set(baseline).union(reasons)`).
+  따라서 예산은 고정 20이 아니라 **실제 root 길이**를 기준으로 계산한다.
+- 대신 **root에서 모든 후보가 최소 한 번은 열릴 수 있는 simulation 수를 보장**한다. V5의
+  `_allowed_children`는 simulation 시작 시점의 `node.visits`에 대해
+  `initial_width + floor(sqrt(visits))`를 허용하고, visit 증가는 simulation 끝의 backprop에서 일어난다.
+  그래서 width=8일 때 50회는 최대 15개, 100회는 최대 17개, 144회도 최대 19개이며 **20개를 모두 열려면 최소 145회**다.
+  일반적으로 root 후보가 R개이고 R>W(initial_width)이면 최소
+  `max(R, (R-W)^2 + 1)`회를 둔다(R≤W면 R회면 충분).
+- 또 expansion은 V6 순서대로 하나씩 여는 것이 아니다. `_pop_ranked_untried`가 남은 후보의 상위
+  `priority_top_k=8` 안에서 rank-weighted random 선택을 한다. 따라서 “50회면 16~20위가 방문되지 않는다”는 주장은
+  성립하지 않는다. 정확한 표현은 **20후보/50회에서는 적어도 5개, 100회에서는 적어도 3개 후보가 미방문**이고,
+  어느 후보인지는 seed에 따라 달라진다는 것이다.
 - 제안의 100/200/400 단계는 실험 시작점으로 쓴다. 착수 시간과 V8 대 V7 점수로 정한다. `V8_PLAY`(사람 대국·비교)와
   `V8_TEACHER`(데이터 생성)를 같은 알고리즘, 다른 예산으로 둔다.
 
@@ -184,8 +202,8 @@ stage 1~3과 V7 M1은 증명된 수라서 그대로 둔다. stage 2에서 승리
   "ply": 20, "to_play": "WHITE", "route": "stage4|stage6|own_vcf|own_vct|...",
   "chosen": [3, 7],
   "candidates": [
-    {"move": [3, 7], "visits": 0, "vcf": "SAFE", "vct1": "SAFE", "reasons": ["stage4"]},
-    {"move": [7, 3], "visits": 0, "vcf": "SAFE", "vct1": "UNSAFE", "witness": [[5, 6], "..."]}
+    {"move": [3, 7], "visits": null, "vcf": "SAFE", "vct1": "SAFE", "reasons": ["stage4"]},
+    {"move": [7, 3], "visits": null, "vcf": "SAFE", "vct1": "UNSAFE", "witness": [[5, 6], "..."]}
   ],
   "proof": {"kind": "must_defend_vct", "complete": false},
   "nodes": {"own_vcf": 12, "vcf_safety": 3400, "vct1": 41000}, "seconds": 18.2
@@ -205,15 +223,18 @@ stage 1~3과 V7 M1은 증명된 수라서 그대로 둔다. stage 2에서 승리
 ### 4.8 코드 배치와 격리
 
 - `tests/test_analysis_threats.py`는 (1) AZ 경로(`search.alphazero`, `search.tactics`, `training.*`, `model.*`)가 `analysis`를
-  불러오지 않는지, (2) `src` 안의 어떤 파일도 `analysis`를 import하지 않는지를 검사한다. V8은 VCT solver가 필요하다.
-- 선택지: VCT 코드를 `search`로 복사하면 같은 solver가 두 개가 되어 결과가 갈릴 수 있다. 그래서 **V8은 `analysis.threats`를
-  그대로 쓰고, (2)에 V8 파일만 허용 목록으로 추가한다.** (1)은 그대로 유지하고 `search.mcts_v8`이 AZ 경로에서 불리지 않는지도
-  확인하게 늘린다.
-- `agents/__init__.py`는 모든 agent를 즉시 import하고, `training/evaluation.py`가 `agents`를 불러온다. V8 agent를 여기에 넣으면
-  외부 평가 때 `analysis`가 로드된다. **V8 agent는 `agents/__init__`에 넣지 않고** 필요한 스크립트(`run_web_play.py`, benchmark,
-  teacher 생성)에서 직접 import한다. `search/__init__.py`의 lazy export에도 넣지 않는다.
-- 파일: `src/search/mcts_v8.py`, `src/agents/mcts_v8_agent.py`, `scripts/run_mcts_v8_benchmark.py`,
-  `scripts/generate_v8_teacher_games.py`, `tests/test_mcts_v8.py`. 브랜치 `feat/mcts-v8-teacher`.
+  불러오지 않는지, (2) `src`의 **analysis 패키지 밖** 파일이 `analysis`를 import하지 않는지를 검사한다. V8은
+  `analysis.threats`가 필요하므로 `src/search/mcts_v8.py`에 두면 현재 격리 테스트를 깨뜨린다.
+- 이 테스트를 V8 예외 allowlist로 약화시키지 않는다. V8은 학습 탐색이 아니라 **오프라인 teacher/평가 도구**이므로
+  `src/analysis/mcts_v8.py`와 `src/analysis/mcts_v8_agent.py`에 둔다. 그러면 기존 의존 방향
+  `analysis.threats -> search.mcts_v7`을 유지하고, `search.mcts_v8 -> analysis.threats -> search.mcts_v7` 같은 역방향
+  의존도 만들지 않는다.
+- `agents/__init__.py`는 모든 agent를 즉시 import하고, `training/evaluation.py`가 `agents`를 불러온다. 따라서 V8 agent는
+  **`agents/__init__.py`에 넣지 않는다.** `run_web_play.py`, benchmark, teacher 생성 스크립트가 V8을 요청할 때만
+  `analysis.mcts_v8_agent`를 조건부 import한다. `search/__init__.py`에도 export하지 않는다.
+- 파일: `src/analysis/mcts_v8.py`, `src/analysis/mcts_v8_agent.py`, `scripts/run_mcts_v8_benchmark.py`,
+  `scripts/generate_v8_teacher_games.py`, `tests/test_mcts_v8.py`. 기존 analysis 격리 테스트는 **변경 없이 유지**한다.
+  브랜치 `feat/mcts-v8-teacher`.
 
 ## 5. Teacher 데이터
 
@@ -249,8 +270,9 @@ A만 쓰는 arm(T1/T2)과 **별도 arm**으로만 판단한다(§6).
 | V8 대 AZ(B400 계열) | 새로 | AZ가 실제로 가는 국면에서 V8 답을 얻는다. 분포 이동을 줄인다 |
 | 사람 대 V8 / 사람 대 AZ | 새로 | 새 probe 원천(§8). 학습에서 제외 |
 
-dataset `stats`에는 `source|color|phase|kind` 개수를 남긴다(제안과 같다). phase는 ply 기준(≤ 20 opening, ≤ 60 middle, 그 외 late)으로
-고정한다.
+dataset `stats`에는 `source|color|phase|kind` 개수를 남긴다. 기존 `build_tactical_dataset.py::_phase`와 비교 가능하게
+phase는 **ply < 12 opening, ply < 30 middle, 그 외 late**를 그대로 사용한다. 새 경계를 쓰려면 dataset format/version부터
+분리한다.
 
 ### 5.4 누수 방지
 
@@ -291,7 +313,9 @@ dataset `stats`에는 `source|color|phase|kind` 개수를 남긴다(제안과 �
 - 불법 착수 0, 같은 seed 결정성.
 - `vct_probes_v1`: `must_defend_vct` 24개 전부 `correct_moves` 안(V8-A). `vct_attack` 32개에서 첫 수가 증명된 위협 집합 안(V8-B).
 - `mcts_v7_positions.json`, `mcts_v7_vcf_regression.json`(124국면): V7과 같거나 더 나은 결과(V7 M1/M2 동작 유지).
-- 사람 패배 4판 분기 국면: 1~3판은 SAFE 수 선택. `164723` 20수는 VCT1-SAFE 수 선택(root 20개 중 SAFE 12개가 §2.2에 있다).
+- 사람 패배 4판 분기 국면: 1~3판은 SAFE 수 선택. `164723` 20수는 (10,8)을 제거하고 VCT1-SAFE 수를 선택.
+  먼저 수정된 `check_v8_branch_points.py --structure-only`로 실제 V7 context를 보존한 root 후보가 기존 측정 목록과 같은지
+  확인한다. 같으면 기존 12 SAFE / 8 UNSAFE 결과를 재사용하고, 다르면 그 국면만 `--root-vct`를 다시 측정한다.
 
 ### 비용 (사용자 PC에서 V7과 같은 조건으로)
 
@@ -323,7 +347,7 @@ dataset `stats`에는 `source|color|phase|kind` 개수를 남긴다(제안과 �
 | # | 작업 | 산출물 | 선행 |
 |---|---|---|---|
 | V8-0 | V7 동결 유지, 사람 패배 fixture | **완료**(`vct_probes_v1`, `SAME`), 반사실 검사(§2) | — |
-| V8-1 | 격리 규칙 조정, `mcts_v8.py` 골격(V7 위임), root record | V7과 착수 동일한 V8(모듈 모두 끔) | — |
+| V8-1 | 기존 격리 규칙 유지, `analysis/mcts_v8.py` 골격(V7 위임), root record | V7과 착수 동일한 V8(모듈 모두 끔) | — |
 | V8-2 | V8-A stage 4/5 VCT1 | `must_defend_vct` 24/24 | V8-1 |
 | V8-3 | V8-B 자기 VCT1 | `vct_attack` 게이트 | V8-1 |
 | V8-4 | 비용 측정 → V8-C 범위 결정 → V8-C | 착수 시간 표, `164723` 게이트 | V8-2 |
@@ -343,4 +367,5 @@ V8-D(양방향 planner)와 V8-G 강화는 V8-5 패배 분석에서 근거가 나
   빈도와 비용은 V8-4에서 잰다.
 - V8-C의 사전 필터가 `164723` 같은 국면에서 v7 수를 검사 대상에 넣는지(필터가 너무 좁으면 이 판을 놓친다).
 - B 계층 soft target이 V5 트리의 휴리스틱 순서를 그대로 옮기는지: V8-D 대 V8-A1에서만 판단한다.
-- depth 2: V8 범위 밖. 오프라인 분석(`build_vct_probes.py --vct-depth 2`)의 비용부터 재는 것이 먼저다.
+- depth 2: V8 온라인/teacher 경로에서는 보류. 오프라인 분석(`build_vct_probes.py --vct-depth 2`)으로 비용과
+  UNKNOWN 비율을 먼저 재고, 그 결과가 실용적일 때만 범위를 다시 연다.
