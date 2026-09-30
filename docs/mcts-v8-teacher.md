@@ -14,7 +14,7 @@ teacher root record, 3계층 데이터, V8-D/V8-T4 arm), 사람 대 v7 웹 대�
 
 | 제안 | 판정 | 근거 |
 |---|---|---|
-| V7은 benchmark이고, 동결 후 변경은 새 버전으로 | **맞음** | `mcts-v7.md` §1, `tests/frozen_baseline.sha256`에 v7·v6 agent와 V2~V6 search 전부 잠김 |
+| V7은 benchmark이고, 동결 후 변경은 새 버전으로 | **맞음** | `mcts-v7.md` §1. `tests/frozen_baseline.sha256`은 base MCTS와 V3/V3.2/V3.2.1/V4/V5/V6/V7 search, threat planner/patterns, V6/V7 agent를 잠근다 |
 | V7은 VCT 방어를 범위 밖에 뒀다 | **맞음** | `mcts-v7.md` §1·§13.3(패배 21판 모두 VCF 범위 밖) |
 | AZ는 V8을 기다리지 않고 진행 | **맞음** | arm이 모두 gen 400 상태에서 분기하므로 V8 arm을 늦게 붙여도 짝지은 비교가 유지된다(검토서 §7-7) |
 | V8-M1: V7이 흑이면 백의 미래 공격 분석이 없다 | **코드상 사실, 그러나 사람 패배와 무관** | `mcts_v6.plan_root`는 흑 차례에 흑 setup만 본다. 하지만 백 차례(양쪽을 봄)였던 2판에서도, 흑 차례 2판에 상대 색 planner를 돌려도 사람의 승리 위협을 **0/4** 잡았다(§2) |
@@ -147,15 +147,18 @@ stage 1~3과 V7 M1은 증명된 수라서 그대로 둔다. stage 2에서 승리
 
 - 사람 패배 4판에서 사람의 결정타는 모두 VCT1 첫 수였다(`vct_attack` probe). V8이 같은 수를 스스로 찾으면 teacher의
   공격 label(`vct_attack`)을 V8 대국에서 직접 얻을 수 있다.
-- 후보는 "4 또는 열린 3을 만드는 수"만. 각 후보에 대해 상대의 모든 응수가 VCF로 지는지 검사한다(ThreatSolver의 depth 1과 같음).
-  UNKNOWN이면 공격하지 않는다(건전성 우선).
+- 후보 생성은 우선 "4 또는 열린 3을 만드는 수"로 좁히는 **속도 휴리스틱**을 쓴다. 선택된 후보의 증명은 상대의 모든 응수가
+  VCF로 지는지 실제로 검사한다. 이는 `ThreatSolver` depth 1의 **후속 판정 의미**와 같지만, depth 1 solver가 모든 합법
+  quiet move를 열거하는 것과 달리 후보 열거 자체는 불완전할 수 있다. UNKNOWN이면 공격하지 않는다(건전성 우선).
 - 예산은 V8-A/C와 별도로 둔다. 실패하는 후보는 살아남는 응수 하나를 찾으면 끝나지만, 성공 증명은 상대의 모든 응수를 검사해야 한다.
   비용은 V8-4에서 잰다.
 - 게이트: `vct_attack` 32개에서 V8 첫 수가 증명된 승리 위협 집합 안.
 
 ### 4.3 V8-C — root VCT1 safety (3순위, 비용 측정 후 범위 결정)
 
-- V7 M2(VCF 3-tier) 뒤에 붙인다. 입력은 M2의 SAFE tier다.
+- V7 M2 뒤에 붙인다. 먼저 M2의 verified-SAFE tier를 검사한다. 여기서 VCT1-SAFE를 하나도 못 찾고 그 tier를
+  모두 VCT1-UNSAFE로 소진했을 때만 M2 inconclusive tier를 두 번째 pool로 검사한다. 확인된 VCF-UNSAFE 후보를
+  VCT 검사가 되살리지는 않는다.
 - 전 후보를 매 착수 완전 분류하는 것은 현재 비용으로 실용적이지 않다(§2.3). 대신:
   1. **싼 사전 우선순위 필터:** 후보를 둔 뒤 상대의 "4 또는 열린 3 생성수" 중 VCF 후속이 보이는 후보를 먼저 검사한다.
      이것은 완전한 VCT1 필터가 아니다. `ThreatSolver`는 모든 합법 quiet move와 금수 변화까지 보므로, 필터에서 빠진 후보도
