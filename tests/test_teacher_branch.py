@@ -254,3 +254,12 @@ class RecipeConfigTest(unittest.TestCase):
         self.assertEqual(config_differences(critical_config(base), critical_config(temp4)),
                          ['self_play.temperature_moves'])
         self.assertEqual(temp4['self_play']['temperature_moves'], 4)
+
+    def test_temp2_differs_from_temp4_only_in_temperature(self):
+        from training.config import config_differences, critical_config, load_config
+
+        temp4 = load_config(ROOT / 'configs' / 'stage8_b400_temp4.yaml')
+        temp2 = load_config(ROOT / 'configs' / 'stage8_s640_temp2.yaml')
+        self.assertEqual(config_differences(critical_config(temp4), critical_config(temp2)),
+                         ['self_play.temperature_moves'])
+        self.assertEqual(temp2['self_play']['temperature_moves'], 2)

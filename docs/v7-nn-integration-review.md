@@ -606,3 +606,76 @@ python scripts/run_web_play.py --az-checkpoint runs/stage8_g3_b/checkpoints/chec
 
 **공유해 줄 것:** 0단계 `check:` 줄, `runs/stage8_b400_s4`·`runs/stage8_b400_t1`의 `metrics.jsonl`·`external_eval/`·`probes/`·로그,
 `runs/stage8_b400_t1/TEACHER.json`, `runs/stage8_b400_s4/RECIPE.json`, `runs/arm_h2h/` 전체.
+
+## 11. S4 / T1 결과와 다음 실행 (2026-09-30)
+
+결과 표는 [Stage 8 계획 §12.11](stage8-plan.md)에 있다. 요약하면 다음과 같다.
+
+- **S4(temperature 4)가 병목을 풀었다.** gen 640에서 대조군에 93%, B400에 84%를 이겼고, v7에 처음으로 6/20을 거뒀다.
+  raw must_block top-1도 0.72가 됐다.
+- **T1(한 번의 fine-tune)은 씻겨 나갔다.** 직후에는 B400 대비 0.66이었지만 480~640에서 0.47~0.54로 돌아갔다.
+- `compare_teacher_arms.py`는 두 arm 모두 `teacher_better`로 판정했다(대조군과의 직접 대국 기준). 그런데 T1은 B400 기준 향상이
+  남지 않았다. 대조군 자신이 640에서 약해진(B400 대비 0.34) 영향이 섞였기 때문이다. 앞으로는 **직접 대국과 anchor 대국을 함께**
+  보고, 둘이 어긋나면 anchor 쪽을 기준으로 해석한다.
+
+§9의 결과표에서 "S4 ≫ 대조군" 행에 해당한다. 그래서 S4를 기준 레시피로 채택하고 T1/T2는 뒤로 미룬다.
+
+### 11.1 다음 실행 명령 (PowerShell)
+
+S4 continuation과 S2 arm은 각각 1코어라 두 창에서 동시에 돌린다. 각 4~5시간(추정, S4 self-play는 세대당 약 35~45초).
+
+```powershell
+# 0. 최신 코드
+git pull origin feat/stage8-plan
+
+# 1. 새 anchor: S4 gen 640을 run 밖으로 복사 (학습 중 가지치기와 무관하게 고정)
+New-Item -ItemType Directory -Force runs/anchors | Out-Null
+Copy-Item runs/stage8_b400_s4/checkpoints/checkpoint_gen640.pt runs/anchors/S640.pt
+
+# 2. S2 arm: S4 gen 640 상태에서 temperature 4 -> 2로 분기 (가중치/replay/optimizer/RNG 동일)
+python scripts/make_recipe_branch.py --source runs/stage8_b400_s4 --generation 640 `
+    --config configs/stage8_s640_temp2.yaml --dest runs/stage8_s640_s2
+
+# 3. (창 1) S4 continuation: 640 -> 880. 720/800/880 heavy 지점의 anchor는 S640
+python scripts/run_stage8_training.py --run-dir runs/stage8_b400_s4 `
+    --config configs/stage8_b400_temp4.yaml --anchor 400 --target-generation 880 `
+    --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 10 `
+    --h2h-anchor S640=runs/anchors/S640.pt `
+    2>&1 | Tee-Object -FilePath runs/stage8_b400_s4_cont.log
+
+# 4. (창 2) S2 arm: 640 -> 880, 같은 평가 설정과 anchor
+python scripts/run_stage8_training.py --run-dir runs/stage8_s640_s2 `
+    --config configs/stage8_s640_temp2.yaml --anchor 400 --target-generation 880 `
+    --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 10 `
+    --h2h-anchor S640=runs/anchors/S640.pt `
+    2>&1 | Tee-Object -FilePath runs/stage8_s640_s2.log
+
+# 5. 직접 대국: S4 continuation 대 S2, 720 / 800 / 880
+foreach ($g in 720, 800, 880) {
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "S4c$($g)=runs/stage8_b400_s4/checkpoints/checkpoint_gen$($g).pt" `
+      --checkpoint "S2_$($g)=runs/stage8_s640_s2/checkpoints/checkpoint_gen$($g).pt" `
+      --pairs 50 --output "runs/arm_h2h/s2_gen$($g).json"
+}
+
+# 6. 판정: S4 continuation(대조) 대 S2. S4 run의 400~640 anchor 파일은 B400, 720 이후는 S640이다.
+#    정체 판정은 마지막 3지점(720/800/880, 모두 S640 기준)만 쓴다.
+python scripts/compare_teacher_arms.py --control runs/stage8_b400_s4 --teacher runs/stage8_s640_s2 `
+    --direct "runs/arm_h2h/s2_*.json" --teacher-label-prefix S2 --control-label-prefix S4c `
+    --output runs/arm_h2h/s2_verdict.json
+
+# (선택) 사람 대국: S4 gen 640과 직접 두어 보기. 착수마다 root 로그 저장
+python scripts/run_web_play.py --az-checkpoint runs/anchors/S640.pt
+```
+
+**해석 기준:**
+
+- S4 continuation이 S640 anchor를 3지점 연속 못 넘으면 S4 레시피도 정체한 것이다.
+  그때 raw 전술이 기준(must_block 0.6) 이상이면 `capacity`, 즉 Stage 9 후보가 된다.
+- S2 ≫ S4 continuation이면 온도를 더 낮춘 쪽을 채택한다.
+  S2 ≪ S4이면 탐험 부족(비슷한 게임 반복)을 의심한다. 이때 로그의 unique game 수와 흑/백 균형을 본다.
+
+**공유해 줄 것:** 두 run의 `metrics.jsonl`, `external_eval/`, `probes/`, 로그, `runs/stage8_s640_s2/RECIPE.json`, `runs/arm_h2h/s2_*`.
+사람 대국을 했다면 `logs/web_play/` 폴더도 함께 보내 줘.
