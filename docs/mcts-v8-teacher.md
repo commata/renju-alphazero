@@ -142,12 +142,13 @@ stage 1~3과 V7 M1은 증명된 수라서 그대로 둔다. stage 2에서 승리
   VCT1 tier는 **SAFE < UNKNOWN < UNSAFE**다. 남는 4의 수보다 앞에 두는 이유: 사람 패배 3판에서 v7 수와 SAFE 수가 모두
   남는 4 = 0이었다. 남는 4가 1 이상인 수는 VCT1 검사에서 UNSAFE(상대 즉시 4 → VCF)로 먼저 걸러진다.
 - 검사는 V5 key 순이 아니라 **기존 V7 stage 4 정렬 순**(V7이 고른 수 먼저)으로 하고 첫 SAFE에서 멈춘다. 첫 후보가 SAFE면 추가 비용은 한 번뿐이다.
-- **예산은 같은 몫의 라운드로 나눠 쓴다(구현 중 발견, §11.3·§11.5·§11.6).** 예산은 두 가지다: 총 VCF 노드와 캐시되지 않은
-  VCF 호출 수. 첫 라운드에는 각 후보가 두 예산 모두 남은 양의 `1/(2n)`을 쓰고, 둘 중 하나라도 몫에 잘린 후보만 다음
-  라운드로 간다. 몫은 라운드마다 두 배가 되지만 **남은 예산을 미결 후보 수로 똑같이 나눈 값을 넘지 않는다.** 그래서 V7의
-  수(대개 지는 수)를 UNSAFE로 증명하는 비싼 탐색이 다른 후보가 기다리는 동안 노드든 호출이든 남은 예산을 혼자 쓰지 못한다.
-  끝난 하위 결과는 캐시에 남으므로 다음 라운드 재검사는 싸다. per-VCF 노드 한도로 끝난 UNKNOWN은 다시 검사하지 않는다.
-  같은 몫이 0으로 내려가면(남은 예산이 미결 후보 수보다 작으면) 남은 양은 순서대로 준다. 이때 남은 양은 후보당 1단위도 안 된다.
+- **예산은 같은 몫의 라운드로 나눠 쓴다(구현 중 발견, §11.3·§11.5~§11.7).** 예산은 두 가지다: 총 VCF 노드와 캐시되지 않은
+  VCF 호출 수. 첫 목표 몫은 남은 양의 `1/(2n)`이고 라운드마다 두 배가 되지만, 매 라운드의 상한은
+  `남은 예산 // 미결 후보 수`다. 여기서 **공평한 몫이 1 이상이면 `1/(2n)`이 정수 나눗셈으로 0이 되더라도 모든 후보가
+  최소 1노드·1호출씩 받는다.** 반대로 노드나 호출 중 하나라도 모든 미결 후보에게 1단위를 줄 수 없으면 특정 후보에게 잔여를
+  몰아주지 않는다. 모든 미결 후보를 `node_share=0, call_share=0`으로 한 번만 확인해 VCF를 새로 쓰지 않고 끝나는 구조적 판정만
+  허용한 뒤 탐색을 멈추고 fallback한다. 따라서 후보 순서가 작은 잔여 예산을 독점하지 않는다. 끝난 하위 결과는 캐시에 남고,
+  per-VCF 노드 한도로 끝난 UNKNOWN은 다시 검사하지 않는다.
 - stage 4 집합 전체가 UNSAFE이면 **root 후보 전체로 넓혀** VCT1 검사를 계속한다(§2.2에서 `163810`·`163903`은 stage 4 밖에도
   SAFE가 하나씩 있었다: (4,7), (11,8)). **예산이 이미 다 떨어졌어도 root 후보 목록은 만든다**(fallback 후보로 쓰기 위해서다).
 - **SAFE를 하나도 증명하지 못했을 때(fallback):** 증명된 패배수를 미증명 수보다 앞에 두지 않는다.
@@ -163,112 +164,125 @@ stage 1~3과 V7 M1은 증명된 수라서 그대로 둔다. stage 2에서 승리
   **V8 자신이 그 수를 VCT1-SAFE로 증명했을 것**(fallback으로 우연히 맞은 수는 실패). 예산 소진 횟수와 시간 분포(중앙값·p95·최대)는
   따로 기록한다.
 
-### 4.2 V8-B — 자기 VCT1 공격 (2순위, 설계 확정 전 검토 반영)
+### 4.2 V8-B — 자기 VCT1 공격 (2순위, V8-A scheduler 수정 후 재설계)
 
-사람 패배 4판에서 사람의 결정타는 모두 VCT1 첫 수였다(`vct_attack` probe). V8이 같은 수를 스스로 찾으면 teacher의 공격 label을
-V8 대국에서 직접 얻는다. 아래는 외부 검토 제안(§11.6 뒤 V8-B 제안)을 코드와 실측으로 확인한 결과를 반영한 설계다.
-**아직 구현하지 않았다.**
+목표는 V7 M1(VCF)이 찾지 못한 **조용한 한 수 뒤의 VCT1 강제승**만 추가하는 것이다. 사람 패배 4판에서 사람의 결정타가 모두
+이 형태였고, `vct_attack`은 기본 4국면 × D4 8 = 32개다. V8-B는 공격을 **증명했을 때만** 착수하며 UNKNOWN에는 절대
+공격하지 않는다. 아직 구현하지 않는다.
 
-#### 4.2.1 검토 제안의 사실 확인
+#### 4.2.1 사실과 한계
 
-| 제안 | 판정 | 근거 |
-|---|---|---|
-| `vct_attack` = 기본 4개 × D4 8 = 32개, 정답 (10,9) / (8,5) / (5,6)·(5,7) / (5,9)·(3,9) | **맞음** | fixture 직접 확인. 공격측은 WHITE·WHITE·BLACK·BLACK |
-| fixture `correct_moves`는 정답 집합이다 | **맞음(완전 집합)** | `build_vct_probes.py`는 "승리가 증명된 조용한 위협 전부"를 열거하고 UNKNOWN이 하나라도 있으면 probe를 만들지 않는다(노드 한도 100,000 기준). 그래서 "V8 수 ∈ `correct_moves`"를 조건으로 써도 된다 |
-| 결정 순서에서 VCT1 공격(3T)을 stage 4/5 앞에 둬도 된다 | **맞음** | WIN 증명은 상대의 **모든** 합법 응수를 실제로 두고 검사한다. 상대가 막을 수 없는 4를 만드는 응수도 그 안에 있고, `ThreatSolver.after_move`는 상대 4를 막는 강제 수순(chain)까지 처리한다. VCF 탐색은 동결 solver라서 찾은 VCF는 실제 수순이다(증인 있음). 따라서 증명된 WIN은 stage 4/5 상황에서도 건전하다 |
-| 후보 생성(휴리스틱)과 증명을 분리 | **맞음** | 후보: `_fast_pattern_features_for_move`의 `four_directions > 0 or open_three_directions > 0`. 실측 recall 32/32. 단 `164723`의 (3,9)는 증명된 승리 위협인데 4도 열린 3도 아니어서 후보에서 빠진다. 같은 국면의 (5,9)가 후보에 있어 recall은 통과한다. 즉 **후보 생성은 불완전하다는 것이 실제 국면으로 확인됐다** |
-| V8-A의 `status_after(depth=1)`을 그대로 쓰면 안 된다 | **맞음** | V8-A는 "내 수 뒤 **상대**에게 VCT1 승리가 있는가"다. V8-B는 "내 수 뒤 상대의 **모든** 응수가 **나의** VCF 패배인가"다. 이것은 `tactical_labels.proves_threat`의 의미(내 수 → `decision(game, 0)` → 전부 UNSAFE)와 같다 |
-| `stop_at_safe=True`를 쓴다 | **맞음, 기존 함수와 다름** | `proves_threat`는 `stop_at_safe` 없이 모든 응수를 분류한다. 상태 판정(`decision_status`)은 SAFE가 하나라도 있으면 SAFE, 없고 UNKNOWN이 있으면 UNKNOWN, 전부 UNSAFE면 UNSAFE라서 **첫 SAFE 응수에서 멈춰도 결과가 같다.** 반박 후보가 싸진다 |
-| 상태 이름을 WIN / REFUTED / UNKNOWN으로 분리 | **채택** | V8-A의 SAFE/UNSAFE는 "내 수의 안전성"이라 방향이 반대다. 섞으면 게이트·진단에서 오독한다 |
-| 지는 공격은 싸고 이기는 공격은 비싸다 | **대체로 맞음, 예외 있음** | 실측(아래) WIN 증명 606~1,034 VCF 호출(5~72초). 반박은 대부분 1호출(0.0초)이지만 (5,3)은 648호출·28.3초가 걸렸다 |
-| 후보 간 예산 공평 분배(노드 + 호출) | **채택** | V8-A와 같은 이유. WIN 후보가 정렬 순 6·8·10위에 있는 국면이 있다. 한 후보가 예산을 가져가면 뒤의 WIN을 못 본다 |
-| V8-A와 별도 예산, 개발값 20k / 3,000 / 200k에서 시작 | **채택, 단 비용 주의** | V8-A는 stage 4/5에서만 돌지만 V8-B는 **stage 1~3·VCF가 아닌 모든 착수**에서 돈다. 예산 없이 돌린 실측에서 한 국면이 10분 넘게 끝나지 않았다 |
-| 게이트 2단계(candidate recall → proof) | **채택** | recall은 이미 32/32(몇 초). proof 게이트는 "V8이 직접 WIN을 증명했을 것"을 요구한다 |
+- fixture의 `correct_moves`는 100,000-node `ThreatSolver`가 UNKNOWN 없이 전수 확인한 **비종료 quiet VCT1 위협의 완전 집합**이다.
+  `winning_threats()`는 착수 즉시 게임이 끝나는 5목은 제외하지만 V8-B는 Stage 1 뒤에 있으므로 게이트 의미에는 문제가 없다.
+- 빠른 후보는 합법수 중 `_fast_pattern_features_for_move`가 `four_directions > 0` 또는 `open_three_directions > 0`인 수다.
+  현재 32개 probe에서 후보 ∩ 정답 recall은 32/32다. 하지만 `164723`의 정답 (3,9)는 이 특징이 없어 후보 밖이고 (5,9)만 잡힌다.
+  따라서 **후보 생성은 실제로 불완전**하며, V8-B가 못 찾았다고 VCT1 공격이 없다고 결론내리면 안 된다.
+- 공격 증명은 V8-A의 `status_after(depth=1)`와 방향이 반대다. 후보 h를 둔 뒤 상대 차례에서
+  `decision(game, vct_depth=0, stop_at_safe=True)`를 실행한다.
+  - 상대의 모든 확인된 응수가 UNSAFE이고 UNKNOWN이 없음 → **WIN**
+  - SAFE 응수 하나를 찾음 → **REFUTED** (즉시 중단 가능)
+  - SAFE는 없지만 예산/개별 VCF 한도 때문에 UNKNOWN이 남음 → **UNKNOWN**
+- `stop_at_safe=True`는 결과를 바꾸지 않는다. REFUTED에는 살아남는 응수 하나면 충분하고, WIN만 모든 응수의 패배 증명이 필요하다.
+- 동결 VCF solver의 범위 한계(방어자의 강제 방어가 4를 만드는 일부 수순)는 그대로 승계한다. 따라서 V8-B의 WIN은
+  **현재 solver class 안에서의 증명**이다.
 
-#### 4.2.2 실측 (예산 없는 `ThreatSolver(node_limit=20,000)`, `stop_at_safe=True`, 이 컨테이너)
+#### 4.2.2 후보와 결정 순서
 
-`vct_attack` 기본 4국면, 후보를 `_v321_priority_score` 내림차순으로 모두 판정:
-
-| 국면(공격측) | 후보 수 | 정답의 후보 순위 | WIN 증명 비용 | 전체 후보 판정 |
-|---|---|---|---|---|
-| `163810` 16수(백) | 7 | (10,9) 1위 | 621호출, 13.8초 | 14.3초 |
-| `163903` 14수(백) | 8 | (8,5) 6위 | 627호출, 5.0초 | 5.4초 |
-| `164445` 15수(흑) | 13 | (5,6) 6위, (5,7) 10위 | 각 1,034호출, 12.5초·18.6초 | 60.9초(반박 (5,3) 28.3초 포함) |
-| `164723` 21수(흑) | 10 | (5,9) 8위, (3,9) 후보 밖 | 606호출, 72.2초 | 78.3초 |
-
-사람 대국 4판(0~3번)의 3수 간격 29국면(첫 WIN에서 멈춤): 후보 0개 7국면, WIN 5국면. 중앙값 0.1초, 29개 중 26개가 1초 이하,
-최대 5.8초(643호출). **다만 30번째 국면(3번 판 31수)은 10분 넘게 끝나지 않아 중단했다.** 사람 대국 144국면의 후보 수는
-평균 5.7, 중앙값 6, p90 11, 최대 19, 0개 30국면이었다.
-
-읽는 법: 대부분의 국면은 싸지만, 예산이 없으면 꼬리가 무한히 길다. 그래서 **예산과 공평 분배는 선택이 아니라 필수다.**
-WIN 5국면 중 일부(예: 0번 판 19수, 호출 0회)는 이미 5목·VCF라 실제 V8에서는 stage 1·3·M1이 먼저 처리한다. V8-B만의 기여는
-구현 후 "M1이 못 찾고 V8-B가 찾은 수"로 따로 센다.
-
-#### 4.2.3 설계
+1. Stage 1~3과 V7 M1을 먼저 실행한다. 여기서 이미 즉시승/unstoppable four/VCF가 있으면 V8-B는 돌지 않는다.
+2. 남은 합법수에서 위 fast feature 후보를 만든다. 후보 수 상한은 두지 않는다(사람 대국 실측 최대 19, 정답이 6·8·10위에도 있음).
+3. 정렬은 `_v321_priority_score` 내림차순, 동점은 V5 root key로 고정한다.
+4. 후보 밖은 **미검사**로 기록한다. teacher record에서 "후보 없음"과 "VCT1 승리 없음"을 구분한다.
 
 ```text
 Stage 1   즉시 승리
-Stage 2   즉시 패배 차단
-Stage 3   unstoppable four
+Stage 2   상대 즉시 승리 차단
+Stage 3   내 unstoppable four
 Stage 3V  V7 own VCF (M1)
-Stage 3T  V8-B own VCT1 공격        ← 새로
+Stage 3T  V8-B own VCT1 공격
 Stage 4   V8-A
 Stage 5   V8-A
-Stage 6   트리 탐색
+Stage 6   V6/V7 tree
 ```
 
-1. **후보 생성(휴리스틱, 불완전):** 합법수 중 `_fast_pattern_features_for_move(...).four_directions > 0 or open_three_directions > 0`.
-   정렬은 `_v321_priority_score` 내림차순, 같으면 V5 root key. 후보 수 상한은 두지 않는다(실측 최대 19). 정답이 6~10위에 있는 국면이
-   있어서 작은 상한은 recall을 깬다. 후보에 없는 승리 위협은 찾지 못한다((3,9) 사례). 이것은 "V8-B가 없다고 말하는 것"이
-   "VCT1 공격이 없다"는 뜻이 아니라는 뜻이다. 진단과 teacher record에 **"후보 밖은 미검사"**로 남긴다.
-2. **증명:** 후보 h를 두고 상대 차례에서 `decision(game, vct_depth=0, stop_at_safe=True)`.
-   - 상대 응수가 전부 UNSAFE(내가 5목 또는 VCF로 이김) → **WIN**
-   - SAFE 응수가 하나라도 있으면 → **REFUTED**
-   - 둘 다 아니면(한도·예산에 걸림) → **UNKNOWN**
-   - h를 둔 즉시 게임이 끝나면(5목) stage 1이 먼저 처리하므로 여기에 오지 않는다. 방어 코드로 WIN 처리만 둔다.
-3. **선택:** 후보 순서대로 검사하고 **첫 WIN을 둔다.** WIN이 없으면(REFUTED·UNKNOWN만) V8-B는 아무것도 두지 않고 stage 4로 넘어간다.
-   UNKNOWN 공격은 절대 두지 않는다(건전성 우선). V8-A와 달리 fallback이 없다.
-4. **예산:** `_BudgetedSolver`를 V8-B 전용 인스턴스로 새로 만든다(V8-A와 캐시·예산 공유 안 함). 같은 몫 라운드 분배를 노드와 호출
-   모두에 적용한다. V8-A의 `_first_safe`를 "목표 상태(SAFE 또는 WIN)"와 "상태 함수"를 받는 공용 함수로 일반화해 두 모듈이 같은
-   분배 코드를 쓴다(분배 규칙이 둘로 갈라지지 않게). `_BudgetedSolver`에는 `attack_status(game, move, share, call_share)`를 추가한다.
-   예산에 잘린 결과는 캐시하지 않는 규칙은 그대로다.
-5. **설정(개발값, V8-5에서 확정):**
+V8-B가 WIN을 증명하면 첫 WIN을 즉시 둔다. WIN이 없으면 REFUTED·UNKNOWN 여부와 무관하게 아무 수도 강제하지 않고 Stage 4/5 또는
+tree로 내려간다. **공격 쪽에는 fallback이 없다.**
+
+#### 4.2.3 공용 예산 scheduler
+
+V8-B는 V8-A와 **같은 공정 분배 함수**를 재사용한다. 두 모듈이 각자 scheduler를 가지면 이번에 고친 rounding/fairness 버그가
+다시 갈라질 수 있기 때문이다.
+
+- V8-A의 현재 규칙을 일반화해 "상태 함수 + 목표 상태"를 받는 helper로 만든다.
+- 각 모듈은 solver/cache/예산을 별도로 가진다. V8-B가 V8-A 예산을 미리 소모하지 않는다.
+- 첫 목표 몫은 각 예산의 `remaining // (2*n)`, 이후 두 배씩 증가한다.
+- 매 라운드 `fair = remaining // pending`을 계산한다. **fair ≥ 1이면 초기 half-share가 0이어도 최소 1을 모든 pending 후보에 준다.**
+- node 또는 call 중 하나라도 fair가 0이면 어느 후보에도 잔여를 독점시키지 않는다. 모든 pending 후보를 `0/0` share로 한 번만
+  호출해 새 VCF 자원을 쓰지 않고 끝나는 구조적 결과만 회수한 뒤 UNKNOWN으로 남기고 종료한다.
+- share 때문에 잘린 결과는 retryable UNKNOWN이며 완결된 하위 VCF 결과만 cache에 남긴다. 개별 `attack_vcf_node_limit`까지
+  실제로 탐색하고 끝난 UNKNOWN은 final UNKNOWN이라 같은 착수에서 다시 돌리지 않는다.
+
+개발 기본값은 측정용으로 다음에서 시작한다.
 
 | 키 | 개발값 | 의미 |
-|---|---|---|
-| `own_vct_attack` | True | V8-B 켜기(False면 V8-A까지만) |
+|---|---:|---|
+| `own_vct_attack` | True | V8-B on/off |
 | `attack_vcf_node_limit` | 20,000 | VCF 한 번의 노드 한도 |
-| `attack_call_limit` | 3,000 | 착수당 VCF 호출 수 |
-| `attack_node_budget` | 200,000 | 착수당 총 VCF 노드 |
+| `attack_call_limit` | 3,000 | V8-B 한 착수의 uncached VCF 호출 상한 |
+| `attack_node_budget` | 200,000 | V8-B 한 착수의 총 VCF 노드 상한 |
 
-   이 값은 **측정 기준점**일 뿐이다. V8-B는 거의 모든 착수에서 돌므로, 착수당 최악 비용이 V8-A(최대 52.6초)와 비슷한 수준이면
-   teacher 생성 처리량이 크게 떨어진다. V8-4 실측 뒤 줄이는 것을 기본 가정으로 둔다.
-6. **진단(새 필드):** `v8_attack_status`(WIN/없음), `v8_attack_move`, `v8_attack_candidates`(후보 수),
-   `v8_attack_checked`(검사 순서대로 (수, WIN/REFUTED/UNKNOWN)), `v8_attack_calls`, `v8_attack_nodes`,
-   `v8_attack_budget_exhausted`, `v8_attack_seconds`, `v8_route = "own_vct"`. 모듈을 끄면 이 필드는 기본값이고 수는 V8-A까지와 같다.
-7. **판 복원:** V8-A와 같이 `play`/`undo`를 `try/finally`로 감싸고, 예산 중단 예외에서도 판·기록이 원상태인지 테스트한다.
+이 값은 V8-5 전에 고정하지 않는다. 예산 없는 실측에서 WIN 하나의 증명이 606~1,034 VCF 호출, 5~72초였고, 실제 국면 하나는
+10분을 넘겨 중단했으므로 bounded scheduler는 필수다.
 
-#### 4.2.4 게이트와 완료 기준
+#### 4.2.4 구현 인터페이스
 
-| 항목 | 기준 |
-|---|---|
-| candidate recall | `vct_attack` 32개 모두 후보 ∩ `correct_moves` ≠ ∅ (**현재 32/32**) |
-| proof 게이트 | 32개 모두: 선택 수 ∈ `correct_moves`, `v8_route == "own_vct"`, `v8_attack_checked[선택 수] == WIN`(V8이 직접 증명) |
-| 예산 | 소진 횟수와 사용률(노드·호출) 별도 기록. 소진은 실패가 아니지만 소진으로 WIN을 못 찾으면 proof 게이트 실패 |
-| 비용 | 평균·중앙값(`statistics.median`)·p95·최대 시간, 호출·노드, 벽시계 노드/초. V8-A와 같은 형식 |
-| 오답 방지 | `vcf_loss`·`must_defend_vct` probe와 사람 대국 144국면에서 V8-B가 WIN이라고 한 수는 모두 `ThreatSolver`(100,000노드, 모든 응수 분류)로 재검증해 일치 |
-| 불법 착수 / 판 변형 | 0 / 0 |
-| 회귀 | 모듈 끔 = V7(경로별 대표 국면), V8-A 게이트 24/24(증명 SAFE 24), 동결 해시 불변 |
+- `_BudgetedSolver.attack_status(game, move, node_share, call_share)` → `WIN | REFUTED | UNKNOWN`.
+- 새 진단:
+  `v8_attack_status`, `v8_attack_move`, `v8_attack_candidates`, `v8_attack_checked`,
+  `v8_attack_calls`, `v8_attack_nodes`, `v8_attack_budget_exhausted`, `v8_attack_seconds`.
+- V8-B 선택 시 `v8_route = "own_vct"`.
+- budget diagnostics에는 가능하면 `round_count`, `node_share_cuts`, `call_share_cuts`,
+  `per_vcf_limit_unknowns`를 추가한다. 현재 V8-A의 p95 악화는 call-share 재진입과 node-share cut을 구분하지 못해 원인을
+  단정할 수 없기 때문이다.
+- 모든 `play`는 `try/finally`로 복원한다.
 
-단위 테스트(scripted solver 포함): WIN 선택, 전부 REFUTED면 stage 4로 진행, UNKNOWN 공격은 두지 않음, 비싼 첫 후보(REFUTED)가
-뒤 WIN 후보의 노드·호출을 뺏지 못함, 후보 0개면 비용 0, 예산 중단 후 판 복원.
+#### 4.2.5 게이트
 
-#### 4.2.5 열린 질문
+**1단계 — candidate recall**
 
-- V8-B가 V8-A보다 앞이라, stage 4 국면에서 공격 후보 검사 비용이 V8-A 비용에 더해진다. 둘의 합산 착수당 최악값을 V8-4에서 잰다.
-- 후보 밖 승리 위협((3,9) 같은 수)을 얼마나 놓치는지: 사람 대국·V8 대국에서 `build_vct_probes.py`의 전수 열거와 비교해 센다.
-- WIN이 여럿이면 첫 WIN을 둔다. 더 짧은 승리를 고르는 것은 V8-B 범위 밖이다(teacher label에는 WIN 집합 전부를 남기지 않는다.
-  전부 찾는 비용이 크기 때문이다. 필요하면 오프라인 label 단계에서 한다).
+32개 `vct_attack` 각각에서 `candidate_set ∩ correct_moves != ∅`. 현재 측정은 32/32이며 코드화한다.
+
+**2단계 — bounded proof**
+
+32개 모두 다음을 동시에 만족해야 통과한다.
+
+- 선택 수 ∈ `correct_moves`
+- `v8_route == "own_vct"`
+- `v8_attack_checked[선택 수] == WIN`
+- 선택 수는 V8의 bounded solver가 직접 WIN으로 증명
+
+예산 소진 자체는 오류가 아니지만, 그 때문에 WIN을 못 찾으면 해당 probe는 proof gate 실패다.
+
+**3단계 — 독립 재검증**
+
+V8-B가 WIN이라고 한 수는 같은 solver 객체/cache를 재사용하지 않고 **fresh `ThreatSolver(node_limit=100_000)`**로 상대의 모든 응수를
+다시 분류한다. SAFE 또는 UNKNOWN이 하나라도 나오면 실패한다. `vcf_loss`, `must_defend_vct`, 사람 대국 144국면에서도
+V8-B가 새로 WIN을 선언한 수를 같은 방식으로 검사해 false-positive가 없는지 본다.
+
+#### 4.2.6 회귀 조건
+
+- `own_vct_attack=False` + `stage_vct_safety=False` → 경로별 대표 국면에서 V7과 동일.
+- `own_vct_attack=False` + V8-A on → 현재 V8-A 동작과 동일, `must_defend_vct` 24/24 proven SAFE 유지.
+- 기존 테스트의 `OFF` 설정은 V8-B 기본값이 True가 되면 **두 모듈을 모두 False로 명시**한다.
+- 불법 착수 0, board/history mutation 0, 동결 V2~V7 hash 불변.
+- 비용은 평균·median·p95·max, node/call 사용률, budget exhaustion, scheduler cut 종류를 V8-A와 같은 형식으로 남긴다.
+
+#### 4.2.7 현재 실측 해석
+
+- 기본 4국면 후보 수: 7 / 8 / 13 / 10.
+- 정답 후보 순위: 1 / 6 / 6·10 / 8(다른 정답 (3,9)는 후보 밖).
+- WIN 증명: 606~1,034 VCF 호출, 약 5~72초.
+- 반박은 대부분 싸지만 예외적으로 648호출·28초가 걸린 후보가 있었다.
+- 사람 대국 표본에서 후보는 평균 5.7개, 최대 19개였다. 대부분 빠르지만 10분 초과 국면이 있었으므로 **평균보다 tail을 먼저 본다.**
 
 ### 4.3 V8-C — root VCT1 safety (3순위, 비용 측정 후 범위 결정)
 
@@ -468,8 +482,8 @@ phase는 **ply < 12 opening, ply < 30 middle, 그 외 late**를 그대로 사용
 |---|---|---|---|
 | V8-0 | V7 동결 유지, 사람 패배 fixture | **완료**(`vct_probes_v1`, `SAME`), 반사실 검사(§2) | — |
 | V8-1 | 기존 격리 규칙 유지, `analysis/mcts_v8.py` 골격(V7 위임), root record | **완료**(§11.1): 모듈 끔 = V7과 144/144 동일 | — |
-| V8-2 | V8-A stage 4/5 VCT1 | **구현 완료**(§11.2, 경계조건 §11.5·§11.6). stage 4: 실제 probe 24개(§11.3). stage 5: 실제 국면 5개는 모두 SAFE 경로, UNSAFE→확장 경로는 scripted solver 단위 테스트만(§11.4) | V8-1 |
-| V8-3 | V8-B 자기 VCT1 | **설계 확정(§4.2), 미구현.** candidate recall 32/32 확인, proof 게이트 §4.2.4 | V8-2 |
+| V8-2 | V8-A stage 4/5 VCT1 | **구현 완료**(§11.2, 경계조건 §11.5~§11.7). stage 4: 실제 probe 24개(§11.3). stage 5: 실제 국면 5개는 모두 SAFE 경로, UNSAFE→확장 경로는 scripted solver 단위 테스트만(§11.4) | V8-1 |
+| V8-3 | V8-B 자기 VCT1 | **V8-A scheduler 수정 반영해 설계 재확정(§4.2), 미구현.** candidate recall 32/32 확인, proof 게이트 §4.2.4 | V8-2 |
 | V8-4 | 비용 측정 → V8-C 범위 결정 → V8-C | 착수 시간 표, `164723` 게이트 | V8-2 |
 | V8-5 | V8-E 예산(`V8_PLAY`/`V8_TEACHER`) | V8 대 V7 100판 | V8-4 |
 | V8-6 | V8_TEACHER 동결(해시, fingerprint) | 문서 확정 | V8-5 |
@@ -545,8 +559,10 @@ stage 4 경로이고, V7이 뒀을 수(`avoid_moves`)를 버리고 `correct_move
 | 현재 | 노드 + 호출 같은 몫 라운드 | 24/24 | 19.9초 | 13.8초 | 48.6초 | 52.6초 | 58,840 |
 
 - 호출 수 분배로 `003`·`006`은 빨라졌다(호출 870~1,479 → 573~668). 그러나 `000`의 대칭 2개(s2, s6)는 30초 → 49~53초로 느려졌다.
-  첫 라운드 호출 몫(3,000/8 = 375)에 SAFE 수의 증명이 잘려 다음 라운드에서 다시 이어 갔고, 잘린 VCF 호출의 부분 노드는 버려지기
-  때문이다. 평균·중앙값은 좋아졌고 p95·최대는 나빠졌다. 첫 라운드 몫(`1/(2n)`)은 V8-4 실측에서 다시 정한다.
+  첫 라운드 호출 몫(3,000/8 = 375)에 판정이 잘려 다음 라운드에서 상위 VCT 탐색을 다시 진입한 것은 확인됐지만, **call-share cut은
+  새 VCF 호출을 시작하기 전에 발생하므로 그 자체가 진행 중 VCF의 부분 node를 버리는 것은 아니다.** 실제 증가분이 node-share cut,
+  재귀 재진입/순회 비용, 둘의 조합 중 무엇인지는 현재 진단만으로 분리할 수 없다. V8-B 구현 전후로 round/cut 종류를 기록해
+  V8-4에서 원인을 측정한다.
 - 대칭 변형끼리 비용이 5배까지 다르다. 동결 VCF solver와 `ordered_moves`의 후보 순서가 대칭에 대해 불변이 아니기 때문이다.
   결과(고른 수)는 대칭과 맞게 바뀌었다.
 - **1회 예산 방식에서는 21/24였다.** V7의 수부터 끝까지 증명하던 첫 구현은 `006`의 대칭 3개에서 V7 수의 UNSAFE 증명에 20만 노드를
@@ -579,7 +595,7 @@ stage 4 경로이고, V7이 뒀을 수(`avoid_moves`)를 버리고 `correct_move
 
 | 지적 | 사실 확인 | 조치 |
 |---|---|---|
-| root로 넓힌 직후 예산이 거의 없으면 증명된 UNSAFE인 V7 수로 돌아간다 | **맞음, 범위는 더 넓음.** (a) 남은 노드가 root 후보 수의 2배보다 작으면 첫 몫이 0이라 root를 한 수도 검사하지 않았고, fallback은 `statuses`에 있는 UNKNOWN root만 받았다. (b) 마지막 강제 방어를 UNSAFE로 증명하면서 예산이 딱 떨어지면 `not solver.exhausted` 조건 때문에 root 목록 자체를 만들지 않았다 | root 목록은 강제 방어가 모두 UNSAFE이면 예산과 상관없이 만든다. fallback은 미검사 root 후보도 받는다(`_not_immediately_lost` 통과 필요). 몫이 0이 되면 남은 양을 순서대로 준다. 테스트 2개: 몫이 0인 경우, 예산이 딱 떨어진 경우 |
+| root로 넓힌 직후 예산이 거의 없으면 증명된 UNSAFE인 V7 수로 돌아간다 | **맞음, 범위는 더 넓음.** (a) 남은 노드가 root 후보 수의 2배보다 작으면 첫 목표 몫이 0이라 root를 제대로 공평하게 검사하지 못했고, fallback은 `statuses`에 있는 UNKNOWN root만 받았다. (b) 마지막 강제 방어를 UNSAFE로 증명하면서 예산이 딱 떨어지면 `not solver.exhausted` 조건 때문에 root 목록 자체를 만들지 않았다 | root 목록은 강제 방어가 모두 UNSAFE이면 예산과 상관없이 만든다. fallback은 미검사 root 후보도 받는다(`_not_immediately_lost` 통과 필요). §11.7에서 half-share 0과 fair-share 0을 분리해 잔여 독점도 제거했다 |
 | 같은 몫 분배가 노드에만 적용되고 VCF 호출 한도는 전역 공유다 | **맞음** | 호출 수도 노드와 같은 규칙(첫 라운드 `1/(2n)`, 두 배씩, 남은 양의 균등 분할 이하)으로 나눈다. 테스트: 노드는 넉넉하고 A가 호출 2,900개, B가 400개를 써야 할 때 B를 고름 |
 | gate 중앙값이 짝수 표본에서 위쪽 값이다 | **맞음** | `statistics.median` 사용 |
 | §11.3 표의 시간 범위와 전체 요약이 다른 실행에서 나왔다 | **맞음**(표는 `425ce40`, 요약은 `bcafad4` 실행) | 표를 최신 실행 하나로 다시 만들고, 실행별 요약 표를 따로 뒀다 |
@@ -588,7 +604,24 @@ stage 4 경로이고, V7이 뒀을 수(`avoid_moves`)를 버리고 `correct_move
 새 테스트 3개(호출 몫, 몫 0, 예산 딱 떨어짐)는 `bcafad4` 코드에서 실패하고 수정 후 통과하는 것을 확인했다. V8 단위 테스트는
 18개 → 21개다.
 
-### 11.7 다음 작업
+### 11.7 3차 외부 검토 반영 (`cc7ba7f` 이후)
+
+남은 scheduler 경계조건도 사실이었다. 기존 코드는 첫 목표 몫 `remaining // (2*n)`이 0이면 곧바로 마지막 잔여 경로로 들어갔기
+때문에, 실제로는 `remaining // n >= 1`이라 모든 후보에게 1단위씩 줄 수 있는 `n <= remaining < 2n` 구간에서도 첫 후보가
+남은 예산을 독점할 수 있었다. node와 call 양쪽에 같은 문제가 있었다.
+
+수정 규칙:
+
+1. 매 라운드 `fair_node = remaining_nodes // pending`, `fair_call = remaining_calls // pending`을 먼저 계산한다.
+2. 두 fair share가 모두 1 이상이면 초기 half-share가 0이어도 실제 share를 최소 1로 올린다. 어느 후보도 다음 후보의 1단위를 뺏지 못한다.
+3. 둘 중 하나라도 fair share가 0이면 특정 후보에게 leftover를 주지 않는다. 모든 pending 후보를 `0 node / 0 call`로 한 번만
+   실행해 새 VCF 자원 없이 끝나는 구조적 판정만 허용하고 종료한다.
+4. fallback은 기존처럼 UNKNOWN/미검사 수를 proven-UNSAFE보다 앞에 둔다.
+
+회귀 테스트를 두 개 추가했다: 6 calls/4 candidates와 6 nodes/4 candidates에서 첫 후보가 전체 6을 요구하고 두 번째 후보가 1만으로
+SAFE가 되는 경우다. 두 테스트는 `cc7ba7f`의 scheduler라면 첫 후보가 잔여를 독점하는 경계를 직접 겨냥한다.
+
+### 11.8 다음 작업
 
 1. V8-B 구현(§4.2 설계): 공용 예산 분배 함수로 일반화 → `attack_status` → 결정 흐름 3T → recall·proof 게이트(§4.2.4).
 2. V8-4: 실제 대국에서 stage 4/5 빈도와 V8-A 비용 측정(V8 대 V7 소규모 대국) → V8-C 범위 결정.
