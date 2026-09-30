@@ -32,7 +32,7 @@ from search.mcts_v3 import _can_expand, _pop_ranked_untried
 from search.mcts_v321 import _rollout_v321, _search_candidates_v321
 from search.mcts_v5 import (
     _RootContext, _double_threat_moves, _forced_v5_move, _threat_windows,
-    _unstoppable_four_moves, _validate_v5_config,
+    _unstoppable_four_moves, _validate_v5_config, _winning_moves,
 )
 from search.mcts_v6 import PRIORITY, _root_candidates_v6
 from search.mcts_v7 import (
@@ -92,6 +92,7 @@ class _BudgetedSolver(ThreatSolver):
     nodes_used: int = 0
     exhausted: bool = field(default=False, repr=False)
     _cap: int = field(default=0, repr=False)  # absolute node cap for the current status_after
+    last_cut: bool = field(default=False, repr=False)  # last status_after stopped by a budget/share cut
 
     def vcf(self, game: Game, attacker: int):
         key = (_board_key(game), attacker)
@@ -130,12 +131,15 @@ class _BudgetedSolver(ThreatSolver):
         budget). A cut returns UNKNOWN; finished sub-results stay cached, so a
         later call on the same move resumes cheaply.
         """
+        self.last_cut = True
         if self.exhausted:
             return UNKNOWN
         self._cap = self.node_budget if share is None else self.nodes_used + share
         game.play(*move)
         try:
-            return self.after_move(game, 1)[0]
+            status = self.after_move(game, 1)[0]
+            self.last_cut = False
+            return status
         except _BudgetExhausted:
             return UNKNOWN
         finally:
@@ -171,37 +175,69 @@ def _stage4_order(game: Game, context: _RootContext, v7_move: Move) -> list[Move
     return [v7_move] + [move for move in ordered if move != v7_move]
 
 
+def _not_immediately_lost(game: Game, move: Move) -> bool:
+    """Cheap sanity check for an unproven fallback: no opponent five or unstoppable four after it."""
+    player, opponent = game.to_play, -game.to_play
+    with placed(game, player, move):
+        return not _winning_moves(game, opponent) and not _unstoppable_four_moves(game, opponent)
+
+
+def _first_safe(game, moves, statuses, solver) -> Move | None:
+    """Check ``moves`` in order and return the first proven VCT1-SAFE one.
+
+    The node budget is spent in rounds of equal shares: every move still cut
+    short by its share gets the same share next round, the share doubles each
+    round but never exceeds an equal split of what is left. So no single
+    expensive proof (typically V7's own losing move) can take the remainder
+    while other moves are waiting. Finished sub-results stay cached across
+    rounds; a move that finished as UNKNOWN (per-VCF node limit) is not retried.
+    """
+    pending = [m for m in moves if statuses.get(m, UNKNOWN) == UNKNOWN]
+    share = (solver.node_budget - solver.nodes_used) // (2 * len(pending)) if pending else 0
+    while pending and not solver.exhausted:
+        share = min(share, (solver.node_budget - solver.nodes_used) // len(pending))
+        if share < 1:
+            break
+        cut = []
+        for move in pending:
+            if solver.exhausted:
+                break
+            statuses[move] = solver.status_after(game, move, share)
+            if statuses[move] == SAFE:
+                return move
+            if solver.last_cut:
+                cut.append(move)
+        pending = cut
+        share *= 2
+    return None
+
+
 def _stage_vct_move(game, context, v7_move, defenses, diag, solver, *,
                     candidate_limit, neighborhood_radius) -> Move:
     """V8-A: first proven VCT1-SAFE forced defense, widening to the root if all lose.
 
-    Two passes: each move first gets an equal share of the remaining node budget
-    (so one expensive proof, typically V7's own losing move, cannot starve the
-    rest), then the undecided moves get the whole remainder in order.
+    With no proven SAFE move the fallback never prefers a proven loss:
+    V7's move if it is not proven UNSAFE, otherwise the first unrefuted
+    (UNKNOWN or unchecked) forced defense, then the first root candidate whose
+    check was started but not finished, each passing ``_not_immediately_lost``.
+    Only when all of those are proven UNSAFE (or fail the check) does V7's
+    choice stand.
     """
     statuses: dict[Move, str] = {}
-
-    def first_safe(moves):
-        moves = [m for m in moves if m not in statuses or statuses[m] == UNKNOWN]
-        share = (solver.node_budget - solver.nodes_used) // (2 * len(moves)) if len(moves) > 1 else None
-        for pass_share in ((share, None) if share else (None,)):
-            for move in moves:
-                if statuses.get(move) in (SAFE, UNSAFE) or solver.exhausted:
-                    continue
-                statuses[move] = solver.status_after(game, move, pass_share)
-                if statuses[move] == SAFE:
-                    return move
-        return None
-
-    chosen = first_safe(defenses)
+    root: list[Move] = []
+    chosen = _first_safe(game, defenses, statuses, solver)
     if chosen is None and not solver.exhausted and all(statuses.get(m) == UNSAFE for m in defenses):
         diag.v8_vct_widened = True
         root, _, _ = _root_candidates_v6(game, context, candidate_limit, neighborhood_radius)
-        chosen = first_safe(root)
+        root = [m for m in root if m not in statuses]
+        chosen = _first_safe(game, root, statuses, solver)
     if chosen is None:
-        # No proven SAFE move: never trade an unproven forced defense for a proven loss.
-        unknown = [m for m in defenses if statuses.get(m, UNKNOWN) == UNKNOWN]
-        chosen = v7_move if statuses.get(v7_move, UNKNOWN) != UNSAFE or not unknown else unknown[0]
+        if statuses.get(v7_move, UNKNOWN) != UNSAFE:
+            chosen = v7_move
+        else:
+            fallback = [m for m in defenses if statuses.get(m, UNKNOWN) == UNKNOWN]
+            fallback += [m for m in root if statuses.get(m) == UNKNOWN]
+            chosen = next((m for m in fallback if _not_immediately_lost(game, m)), v7_move)
     diag.v8_vct_checked = tuple(statuses.items())
     return chosen
 

@@ -4,9 +4,15 @@ from random import Random
 import unittest
 
 from agents import MCTSV7Agent
-from analysis.mcts_v8 import V8_DEFAULTS, SearchDiagnostics, _BudgetedSolver, _board_key, mcts_search_v8
+from analysis.mcts_v8 import (
+    V8_DEFAULTS, SearchDiagnostics, _BudgetedSolver, _board_key, _first_safe,
+    _not_immediately_lost, _stage_vct_move, mcts_search_v8,
+)
+from renju import BLACK, WHITE
+from search.mcts_v5 import _RootContext
+from search.mcts_v6 import _root_candidates_v6
 from analysis.mcts_v8_agent import MCTSV8Agent
-from analysis.threats import SAFE, UNKNOWN
+from analysis.threats import SAFE, UNKNOWN, UNSAFE
 from renju import Game
 from search.mcts_v7 import V7_FINAL, mcts_search_v7
 
@@ -29,7 +35,27 @@ def _probe(game_prefix):
                 and p['source']['game'].startswith(game_prefix))
 
 
+# One human-game position per V7 route: (game index, ply) -> route/simulation mode with modules off.
+ROUTE_POSITIONS = {
+    (0, 2): 'tree/normal', (2, 17): 'tree/tactical', (0, 19): 'stage1', (0, 11): 'stage2',
+    (0, 17): 'stage3', (1, 15): 'own_vcf', (0, 9): 'stage4', (0, 12): 'stage5',
+}
+
+
+def _route(diag):
+    return diag.v8_route + ('/' + diag.simulation_mode if diag.v8_route == 'tree' else '')
+
+
 class ModulesOffMatchV7Test(unittest.TestCase):
+    def test_every_route_matches_v7(self):
+        for (index, ply), route in ROUTE_POSITIONS.items():
+            game = _game(GAMES[index]['moves'][:ply])
+            with self.subTest(route=route):
+                expected = mcts_search_v7(game, **V7_FINAL, random=Random(ply))
+                diag = SearchDiagnostics()
+                self.assertEqual(mcts_search_v8(game, **OFF, random=Random(ply), diagnostics=diag), expected)
+                self.assertEqual(_route(diag), route)
+
     def test_same_moves_as_v7(self):
         moves = GAMES[1]['moves']
         for ply in range(2, 14):
@@ -91,6 +117,137 @@ class StageVCTSafetyTest(unittest.TestCase):
         self.assertTrue(solver.exhausted)
         self.assertLessEqual(solver.nodes_used, 50)
         self.assertEqual(_board_key(game), before)
+
+
+class _ScriptedSolver:
+    """Stand-in for _BudgetedSolver: move -> (VCF nodes to finish, final status).
+
+    Work on a move accumulates across calls like the real solver's caches, so a
+    cut move resumes where it stopped.
+    """
+
+    def __init__(self, script, node_budget, default=(10**9, UNKNOWN)):
+        self.script, self.default = script, default
+        self.node_budget, self.nodes_used = node_budget, 0
+        self.exhausted = self.last_cut = False
+        self.spent = {}
+        self.calls = []
+
+    def status_after(self, game, move, share=None):
+        self.calls.append((move, share))
+        self.last_cut = True
+        if self.exhausted:
+            return UNKNOWN
+        cost, status = self.script.get(move, self.default)
+        allowed = self.node_budget - self.nodes_used if share is None else share
+        allowed = min(allowed, self.node_budget - self.nodes_used)
+        need = cost - self.spent.get(move, 0)
+        if need <= allowed:
+            self.nodes_used += need
+            self.spent[move] = cost
+            self.last_cut = False
+            return status
+        self.nodes_used += allowed
+        self.spent[move] = self.spent.get(move, 0) + allowed
+        self.exhausted = self.nodes_used >= self.node_budget
+        return UNKNOWN
+
+
+def _stage_position(prefix_index, ply):
+    game = _game(GAMES[prefix_index]['moves'][:ply])
+    context = _RootContext(game.legal_moves(), SearchDiagnostics())
+    return game, context
+
+
+class FirstSafeBudgetTest(unittest.TestCase):
+    def test_expensive_first_move_cannot_starve_the_next(self):
+        # A needs 150k nodes to be proven UNSAFE, B 60k to be proven SAFE, budget 200k.
+        # A single "rest of the budget" pass after one 25k share would give A everything.
+        solver = _ScriptedSolver({'A': (150_000, UNSAFE), 'B': (60_000, SAFE)}, 200_000)
+        statuses = {}
+        self.assertEqual(_first_safe(None, ['A', 'B'], statuses, solver), 'B')
+        self.assertEqual(statuses, {'A': UNKNOWN, 'B': SAFE})
+        self.assertFalse(solver.exhausted)
+
+    def test_final_round_uses_the_whole_remainder(self):
+        solver = _ScriptedSolver({'A': (190_000, SAFE)}, 200_000)
+        self.assertEqual(_first_safe(None, ['A'], {}, solver), 'A')
+        solver = _ScriptedSolver({'A': (150_000, UNSAFE), 'B': (45_000, SAFE)}, 200_000)
+        self.assertEqual(_first_safe(None, ['A', 'B'], {}, solver), 'B')
+
+    def test_finished_unknown_is_not_rechecked_each_round(self):
+        # UNKNOWN from a per-VCF node limit is final; only moves cut by their share go on.
+        solver = _ScriptedSolver({'A': (10, UNKNOWN), 'B': (150_000, SAFE)}, 200_000)
+        self.assertEqual(_first_safe(None, ['A', 'B'], {}, solver), 'B')
+        self.assertEqual(sum(move == 'A' for move, _ in solver.calls), 1)
+
+
+class StageFallbackPolicyTest(unittest.TestCase):
+    def _run(self, game, context, v7_move, defenses, solver):
+        diag = SearchDiagnostics()
+        before = list(game.history)
+        chosen = _stage_vct_move(game, context, v7_move, defenses, diag, solver,
+                                 candidate_limit=20, neighborhood_radius=2)
+        self.assertEqual(game.history, before)
+        return chosen, diag
+
+    def test_stage5_safe_move_is_kept(self):
+        game, context = _stage_position(0, 12)  # real Stage 5: v7 blocks at (6, 9)
+        solver = _ScriptedSolver({(6, 9): (10, SAFE)}, 200_000)
+        chosen, diag = self._run(game, context, (6, 9), [(6, 9)], solver)
+        self.assertEqual(chosen, (6, 9))
+        self.assertFalse(diag.v8_vct_widened)
+
+    def test_stage5_unsafe_move_widens_to_a_safe_root_move(self):
+        game, context = _stage_position(0, 12)
+        root, _, _ = _root_candidates_v6(game, _RootContext(game.legal_moves(), SearchDiagnostics()), 20, 2)
+        root = [m for m in root if m != (6, 9)]
+        script = {(6, 9): (10, UNSAFE), root[0]: (10, UNSAFE), root[1]: (10, UNSAFE), root[2]: (10, SAFE)}
+        chosen, diag = self._run(game, context, (6, 9), [(6, 9)], _ScriptedSolver(script, 200_000))
+        self.assertTrue(diag.v8_vct_widened)
+        self.assertEqual(chosen, root[2])
+        self.assertEqual(dict(diag.v8_vct_checked)[chosen], SAFE)
+
+    def test_widened_unknown_beats_a_proven_loss(self):
+        # Stage 4 (163903 ply 13): every forced defense proven UNSAFE, the root checks run out of
+        # budget. The fallback must be an unrefuted root move, never V7's proven-UNSAFE move.
+        probe = _probe('20260929-163903')
+        game = _game(probe['moves'])
+        context = _RootContext(game.legal_moves(), SearchDiagnostics())
+        defenses = [(6, 8), (6, 3), (6, 4), (6, 9)]
+        script = {move: (10, UNSAFE) for move in defenses}
+        chosen, diag = self._run(game, context, (6, 8), defenses, _ScriptedSolver(script, 50_000))
+        statuses = dict(diag.v8_vct_checked)
+        self.assertTrue(diag.v8_vct_widened)
+        self.assertNotIn(chosen, defenses)
+        self.assertEqual(statuses[chosen], UNKNOWN)
+        self.assertTrue(_not_immediately_lost(game, chosen))
+
+    def test_unrefuted_defense_beats_v7_proven_loss(self):
+        game, context = _stage_position(0, 12)
+        script = {(6, 9): (10, UNSAFE), (5, 5): (10**9, UNKNOWN)}
+        chosen, _ = self._run(game, context, (6, 9), [(6, 9), (5, 5)], _ScriptedSolver(script, 1_000))
+        self.assertEqual(chosen, (5, 5) if _not_immediately_lost(game, (5, 5)) else (6, 9))
+
+    def test_all_proven_unsafe_keeps_v7_move(self):
+        game, context = _stage_position(0, 12)
+        solver = _ScriptedSolver({}, 10**7, default=(10, UNSAFE))
+        chosen, diag = self._run(game, context, (6, 9), [(6, 9)], solver)
+        self.assertTrue(diag.v8_vct_widened)
+        self.assertEqual(chosen, (6, 9))
+        self.assertTrue(all(status == UNSAFE for _, status in diag.v8_vct_checked))
+
+
+class Stage5EngineTest(unittest.TestCase):
+    def test_real_stage5_block_is_proven_safe(self):
+        game = _game(GAMES[0]['moves'][:12])
+        diag = SearchDiagnostics()
+        move = mcts_search_v8(game, **V8_DEFAULTS, random=Random(12), diagnostics=diag)
+        self.assertEqual(diag.v8_route, 'stage5')
+        self.assertEqual(move, (6, 9))
+        self.assertEqual(dict(diag.v8_vct_checked), {(6, 9): SAFE})
+        self.assertFalse(diag.v8_changed)
+        self.assertEqual(game.history, [tuple(m) for m in GAMES[0]['moves'][:12]])
 
 
 class AgentTest(unittest.TestCase):
