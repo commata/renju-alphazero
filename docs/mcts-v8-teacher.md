@@ -733,9 +733,9 @@ SAFE가 되는 경우다. 두 테스트는 `cc7ba7f`의 scheduler라면 첫 후�
 
 ### 11.8 다음 작업
 
-1. V8-4 runner 구현(§11.11.4) → 소규모 pilot(10쌍 20판) → 비용 확인 → 본 측정(50쌍 100판).
+1. V8-4 pilot 실행(§11.11.4.1, 데스크톱) → 비용 확인 → 본 측정(50쌍 100판). runner는 구현 완료.
 2. V8-4 결과로 V8-B D4 기준(§4.2.9의 1~3)과 V8-C 범위를 결정한다.
-3. `run_web_play.py`에 V8 선택지 추가(조건부 import). 사람 대 V8 대국은 V8-4 뒤에 둔다(§8).
+3. 웹 대국 V8 선택지는 추가했다(`python scripts/run_web_play.py` → 상대 "MCTS V8 (개발)"). 사람 대 V8 로그는 §8대로 모은다.
 
 ### 11.9 `6da1435` 검증 (실행)
 
@@ -799,16 +799,51 @@ SAFE가 되는 경우다. 두 테스트는 `cc7ba7f`의 scheduler라면 첫 후�
   pilot으로 확인한다.
 - **최악 착수는 V8-B 200k + V8-A 200k 노드로 약 6분이다.** pilot에서 최악값이 이 근처면 본 측정 전에 예산을 줄이는 것을 먼저 검토한다.
 
-#### 11.11.4 runner 구현 (`scripts/run_mcts_v8_benchmark.py`, 다음 작업)
+#### 11.11.4 runner (`scripts/run_mcts_v8_benchmark.py`, 구현 완료)
 
 - `scripts/run_mcts_v7_benchmark.py`의 구조(오프닝 생성, 색 교환, `derive_seed`, 결과 해시)를 그대로 따른다. V8 agent는
   `analysis.mcts_v8_agent`에서 직접 import한다(`agents`에 넣지 않는다, §4.8).
-- 옵션: `--pairs`, `--seed`, `--random-plies 2`, `--radius 2`, `--workers N`(판 단위 프로세스 병렬), `--v8-config`(ablation: `a_only`,
-  `b_only`, `full`), `--counterfactual`(V8-B 착수마다 V7 수 계산), `--resume`(판마다 JSONL로 쓰고 중단 후 이어서).
-- 판 기록: 오프닝, seed, 색, 결과, 기보, 착수별 `{actor, route, seconds, v8_changed, v8_v7_move, attack_*, vct_*}`.
-  요약: score, 색별 score, route별 발동 수, 모듈별 시간 분포, 예산 소진 수, git 커밋과 `V8_DEFAULTS` 해시.
-- 사후 분석 스크립트(`scripts/analyze_v8_benchmark.py`, 그 다음): 패배 판 분기점(기존 `analyze_web_play_losses.py`와 같은 방식),
-  V8-B 미탐 표본 검사.
+- 옵션(설계와 이름이 다른 것은 괄호): `--arm full|a_only|b_only|off`(설계의 `--v8-config`), `--pairs`, `--seed`(기본 8401),
+  `--opening-random-plies 2`, `--opening-radius 2`, `--workers N`, `--counterfactual`, `--games-jsonl`(설계의 `--resume`:
+  같은 파일로 다시 실행하면 끝난 판을 건너뛴다), `--output`. `--simulations`/`--tactical-simulations`는 smoke 테스트 전용이다
+  (값이 출력에 기록된다).
+- **짝지은 ablation:** 오프닝과 판 seed는 `--seed`와 쌍 번호로만 정해지고 arm과 무관하다. 같은 seed로 arm만 바꿔 돌리면 같은
+  오프닝·같은 색·같은 seed에서 V8 설정만 다르다(테스트로 확인).
+- 판 기록(JSONL 한 줄): 오프닝, seed, 색, 결과, 기보, 판 시간, V7 착수 시간, V8 착수별 `{ply, seconds, route, changed, v7_move,
+  attack{status, rank, candidates, calls, nodes, exhausted, seconds}, vct{checked, widened, calls, nodes, exhausted, seconds}}`.
+  `--counterfactual`이면 `own_vct` 착수에 `{v7_move, v7_move_attack_status, seconds}`(V7이 뒀을 수와 그 수의 VCT1 공격 판정)를
+  더한다. 반사실 계산은 별도 난수열을 써서 대국 자체는 바뀌지 않는다.
+- 요약: score, V8 색별 score, 평균 판 길이, route별 발동 수, route별 `changed` 수, V8/V7 착수 시간 분포(평균·중앙값·p95·최대),
+  V8-B(돈 착수 수, WIN 수, 예산 소진, 시간 분포), V8-A(돈 착수 수, 수 변경, root 확장, 예산 소진, 시간 분포), 반사실 요약,
+  결과 해시, git 커밋, 실제 V8/V7 설정.
+- 확인(이 컨테이너, smoke 설정 simulations 4/8, 1쌍): full arm 2판 약 1분. 같은 JSONL로 다시 실행하면 0판을 두고 같은 결과 해시를
+  낸다. `--workers 2`의 결과 해시가 1 프로세스와 같다. 테스트 3개(`tests/test_mcts_v8_benchmark.py`), 웹 대국 V8 테스트 1개.
+- 사후 분석 스크립트(`scripts/analyze_v8_benchmark.py`: 패배 판 분기점, V8-B 미탐 표본 검사)는 pilot 결과를 본 뒤 만든다.
+
+#### 11.11.4.1 pilot 실행 명령 (데스크톱 PowerShell)
+
+```powershell
+# 0. 최신 코드
+git fetch origin ccr-ba71e723-f37v8m
+git checkout ccr-ba71e723-f37v8m
+git pull origin ccr-ba71e723-f37v8m
+
+# 1. 빠른 동작 확인 (약 1~2분, 실제 설정 아님)
+python scripts/run_mcts_v8_benchmark.py --arm full --pairs 1 --seed 1 --simulations 4 `
+    --tactical-simulations 8 --counterfactual --output runs/v8_4/smoke.json
+
+# 2. pilot: full arm 10쌍 20판, 4 프로세스, 반사실 기록 (추정 30분~1시간)
+python scripts/run_mcts_v8_benchmark.py --arm full --pairs 10 --seed 8401 --workers 4 `
+    --counterfactual --games-jsonl runs/v8_4/pilot_full.jsonl --output runs/v8_4/pilot_full.json `
+    2>&1 | Tee-Object -FilePath runs/v8_4/pilot_full.log
+
+# 3. (선택) 같은 오프닝으로 V8-A만: V8-B 기여를 보는 짝 비교
+python scripts/run_mcts_v8_benchmark.py --arm a_only --pairs 10 --seed 8401 --workers 4 `
+    --games-jsonl runs/v8_4/pilot_a_only.jsonl --output runs/v8_4/pilot_a_only.json `
+    2>&1 | Tee-Object -FilePath runs/v8_4/pilot_a_only.log
+```
+
+중단되면 같은 명령을 다시 실행하면 끝난 판은 건너뛴다(`--games-jsonl`). 공유할 파일: `runs/v8_4/pilot_*.json`과 `.log`.
 
 #### 11.11.5 판정 기준(미리 정해 둠)
 

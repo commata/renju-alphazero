@@ -52,6 +52,32 @@ class WebPlayTest(unittest.TestCase):
         self.assertIn("v7_own_vcf_found", diagnostics)
         self.assertIn("v7_module_seconds", diagnostics)
 
+    def test_v8_opponent_reports_v8_diagnostics_and_csv_columns(self):
+        from analysis.mcts_v8 import V8_DEFAULTS
+
+        agent = create_agent("v8", seed=7)
+        self.assertEqual(agent.name, "MCTS-v8")
+        for key, value in V8_DEFAULTS.items():
+            self.assertEqual(getattr(agent, key), value, key)
+        with TemporaryDirectory() as tmp:
+            session = PlaySession(log_root=Path(tmp))
+            session.reset(agent_key="v8", human_color=WHITE, seed=7)
+            state = session.play_human(7, 8)
+            self.assertEqual(state["move_count"], 3)
+            diagnostics = session.move_records[-1]["diagnostics"]
+            self.assertEqual(session.move_records[-1]["actor"], "MCTS-v8")
+            self.assertIn("v8_route", diagnostics)
+            self.assertIn("v8_attack_candidates", diagnostics)
+            json.dumps(diagnostics)  # the game log must stay JSON-serialisable
+            session.game.winner = WHITE
+            session.game.done = True
+            log_dir = session._save_completed_game_locked()
+            header = (log_dir / "moves.csv").read_text(encoding="utf-8-sig").splitlines()[0]
+            self.assertIn("v8_route", header)
+            self.assertIn("v8_attack_status", header)
+            payload = json.loads((log_dir / "game.json").read_text(encoding="utf-8"))
+            self.assertEqual(payload["agent_info"]["config"]["own_vct_attack"], True)
+
     def test_completed_game_is_saved_once_as_json_and_csv(self):
         with TemporaryDirectory() as tmp:
             session = PlaySession(log_root=Path(tmp))

@@ -5,6 +5,9 @@ No third-party web framework is required.
 Run:
     python scripts/run_web_play.py
 
+MCTS-v8 (development teacher engine, ``analysis.mcts_v8``) is the "v8" opponent. Its
+VCT1 proofs can take tens of seconds to minutes on some moves; the page waits.
+
 With an AlphaZero checkpoint (requires torch; adds the "az" opponent):
     python scripts/run_web_play.py --az-checkpoint runs/<run>/checkpoints/checkpoint_gen400.pt
 
@@ -53,6 +56,7 @@ VERSION_LABELS = {
     "v5": "MCTS V5 FINAL",
     "v6": "MCTS V6",
     "v7": "MCTS V7 FINAL",
+    "v8": "MCTS V8 (개발)",
 }
 
 
@@ -85,6 +89,10 @@ def create_agent(version: str, *, seed: int = 42):
         return MCTSV6Agent(seed=seed)
     if version == "v7":
         return MCTSV7Agent(seed=seed)
+    if version == "v8":
+        # Imported on demand: V8 lives in ``analysis`` and is kept out of ``agents``.
+        from analysis.mcts_v8_agent import MCTSV8Agent
+        return MCTSV8Agent(seed=seed)
     raise ValueError(f"unknown MCTS version: {version}")
 
 
@@ -156,6 +164,25 @@ def _diagnostics(agent) -> dict[str, Any]:
         "v7_stage4_tiebreak_applied",
         "v7_stage4_vcf_nodes",
         "v7_module_seconds",
+        "v8_route",
+        "v8_v7_move",
+        "v8_changed",
+        "v8_vct_checked",
+        "v8_vct_widened",
+        "v8_vct_calls",
+        "v8_vct_nodes",
+        "v8_vct_budget_exhausted",
+        "v8_vct_seconds",
+        "v8_root_visits",
+        "v8_attack_status",
+        "v8_attack_move",
+        "v8_attack_rank",
+        "v8_attack_candidates",
+        "v8_attack_checked",
+        "v8_attack_calls",
+        "v8_attack_nodes",
+        "v8_attack_budget_exhausted",
+        "v8_attack_seconds",
     }
     if is_dataclass(diagnostics):
         available = {field.name for field in fields(diagnostics)}
@@ -167,6 +194,31 @@ def _diagnostics(agent) -> dict[str, Any]:
             if value is not None:
                 result[name] = _json_value(value)
     return result
+
+
+V8_CSV_FIELDS = (
+    "v8_route", "v8_changed", "v8_v7_move", "v8_attack_status", "v8_attack_move",
+    "v8_attack_seconds", "v8_vct_seconds", "v8_vct_budget_exhausted",
+    "v8_attack_budget_exhausted",
+)
+
+
+def _v8_csv(diagnostics: dict[str, Any]) -> dict[str, Any]:
+    """Compact V8 columns; moves are 1-based like the other CSV coordinates."""
+    def one_based(move):
+        return json.dumps([move[0] + 1, move[1] + 1]) if move else None
+
+    return {
+        "v8_route": diagnostics.get("v8_route"),
+        "v8_changed": diagnostics.get("v8_changed"),
+        "v8_v7_move": one_based(diagnostics.get("v8_v7_move")),
+        "v8_attack_status": diagnostics.get("v8_attack_status"),
+        "v8_attack_move": one_based(diagnostics.get("v8_attack_move")),
+        "v8_attack_seconds": diagnostics.get("v8_attack_seconds"),
+        "v8_vct_seconds": diagnostics.get("v8_vct_seconds"),
+        "v8_vct_budget_exhausted": diagnostics.get("v8_vct_budget_exhausted"),
+        "v8_attack_budget_exhausted": diagnostics.get("v8_attack_budget_exhausted"),
+    }
 
 
 ALPHAZERO_CSV_FIELDS = (
@@ -350,6 +402,10 @@ class PlaySession:
             "final_board": self.game.board,
         }
         alphazero = self.agent_key == ALPHAZERO_KEY
+        v8 = self.agent_key == "v8"
+        if v8:
+            from analysis.mcts_v8 import V8_DEFAULTS
+            payload["agent_info"] = {"config": _json_value(V8_DEFAULTS)}
         if alphazero:
             payload["agent_info"] = _json_value(getattr(self.agent, "info", {}))
         (log_dir / "game.json").write_text(
@@ -365,7 +421,8 @@ class PlaySession:
                 "v6_selected_reasons", "v7_own_vcf_found", "v7_safety_removed",
                 "v7_safety_inconclusive", "v7_self_forbidden_penalized",
                 "v7_stage4_tiebreak_applied", "v7_module_seconds",
-            ] + (list(ALPHAZERO_CSV_FIELDS) if alphazero else []))
+            ] + (list(ALPHAZERO_CSV_FIELDS) if alphazero else [])
+              + (list(V8_CSV_FIELDS) if v8 else []))
             writer.writeheader()
             for record in self.move_records:
                 diagnostics = record.get("diagnostics", {})
@@ -398,6 +455,7 @@ class PlaySession:
                     ),
                     "v7_module_seconds": diagnostics.get("v7_module_seconds"),
                     **(_alphazero_csv(diagnostics) if alphazero else {}),
+                    **(_v8_csv(diagnostics) if v8 and diagnostics else {}),
                 })
 
         self.last_log_dir = log_dir
