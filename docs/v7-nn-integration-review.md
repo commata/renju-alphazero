@@ -609,16 +609,16 @@ python scripts/run_web_play.py --az-checkpoint runs/stage8_g3_b/checkpoints/chec
 
 ## 11. S4 / T1 결과와 다음 실행 (2026-09-30)
 
-결과 표는 [Stage 8 계획 §12.11](stage8-plan.md)에 있다. 요약하면 다음과 같다.
+결과 표와 외부 검토를 반영한 해석은 [Stage 8 계획 §12.11](stage8-plan.md)에 있다. 요약:
 
-- **S4(temperature 4)가 병목을 풀었다.** gen 640에서 대조군에 93%, B400에 84%를 이겼고, v7에 처음으로 6/20을 거뒀다.
-  raw must_block top-1도 0.72가 됐다.
-- **T1(한 번의 fine-tune)은 씻겨 나갔다.** 직후에는 B400 대비 0.66이었지만 480~640에서 0.47~0.54로 돌아갔다.
-- `compare_teacher_arms.py`는 두 arm 모두 `teacher_better`로 판정했다(대조군과의 직접 대국 기준). 그런데 T1은 B400 기준 향상이
-  남지 않았다. 대조군 자신이 640에서 약해진(B400 대비 0.34) 영향이 섞였기 때문이다. 앞으로는 **직접 대국과 anchor 대국을 함께**
-  보고, 둘이 어긋나면 anchor 쪽을 기준으로 해석한다.
-
-§9의 결과표에서 "S4 ≫ 대조군" 행에 해당한다. 그래서 S4를 기준 레시피로 채택하고 T1/T2는 뒤로 미룬다.
+- **S4(temperature 4)는 성공으로 판정한다.** 480부터 대조군과 B400을 계속 이겼고, 640에서 다시 크게 올랐다(대조군 93%, B400 84%).
+  v7에 처음으로 의미 있는 승리 신호(6/20)가 나왔다. "온도가 원인"이라는 가설을 강하게 지지하지만 증명은 아니다.
+- **T1(한 번의 fine-tune)은 지속되지 않았다.** 20세대 만에 raw 전술이 원래대로 돌아갔다. 원인 후보(분포, 지속 혼합 부재,
+  optimizer 상태 불일치, lr 5배 상승)는 아직 가르지 못했다.
+- **판정 역할을 나눴다.** 고정 anchor = 각 arm의 절대 진행, 같은 세대 직접 대국 = 레시피 비교다. 직접 대국은 이기는데 anchor
+  진행이 없으면 `relative_only`로 판정한다(T1의 경우). 실제 데이터로 판정하면 S4 `teacher_better`, T1 `relative_only`다.
+- 지금까지 확인된 주요 병목은 네트워크 크기보다 self-play 레시피였다. S4 레시피를 채택하고, S640을 새 anchor로 temperature 2(S2)를
+  비교한다. S2 설정은 S4 설정과 `self_play.temperature_moves`만 다르다(`tests/test_teacher_branch.py`가 검사).
 
 ### 11.1 다음 실행 명령 (PowerShell)
 
@@ -672,6 +672,8 @@ python scripts/run_web_play.py --az-checkpoint runs/anchors/S640.pt
 
 **해석 기준:**
 
+- S640 anchor 대국은 각 run의 **절대 진행**이다(S4 continuation과 S2 모두). 720/800/880 직접 대국은 **temp 4 대 temp 2 비교**다.
+- S2가 직접 대국에서 이기더라도 S640 anchor를 넘지 못하면 `relative_only`다. S4 continuation이 약해진 것일 수 있으니 채택하지 않는다.
 - S4 continuation이 S640 anchor를 3지점 연속 못 넘으면 S4 레시피도 정체한 것이다.
   그때 raw 전술이 기준(must_block 0.6) 이상이면 `capacity`, 즉 Stage 9 후보가 된다.
 - S2 ≫ S4 continuation이면 온도를 더 낮춘 쪽을 채택한다.

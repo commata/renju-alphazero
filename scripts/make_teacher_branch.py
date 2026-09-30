@@ -53,6 +53,7 @@ from model.symmetry import transform_mask, transform_policy, transform_spatial  
 from renju import Game  # noqa: E402
 from training.dataset import build_batch  # noqa: E402
 from training.replay_buffer import ReplayBuffer  # noqa: E402
+from training.trainer import build_optimizer  # noqa: E402
 from training.training_checkpoint import load_checkpoint_payload, save_atomic  # noqa: E402
 
 TEACHER_FORMAT = 'teacher-branch-v1'
@@ -223,7 +224,8 @@ def parse_kind_weights(text: str | None) -> dict | None:
 def make_teacher_branch(source: Path, generation: int, dataset: Path, dest: Path, *,
                         steps: int = 1000, batch_size: int = 64, teacher_fraction: float = 0.5,
                         lr: float = 2e-4, seed: int = 0, balance_kinds: bool = False,
-                        kind_weights: dict | None = None, log=print) -> dict:
+                        kind_weights: dict | None = None, optimizer_state: str = 'keep',
+                        log=print) -> dict:
     record = branch(source, generation, dest)
     removed = []
     for sub in ('external_eval', 'probes'):
@@ -255,6 +257,12 @@ def make_teacher_branch(source: Path, generation: int, dataset: Path, dest: Path
              'replay': replay_losses(model, probe_batch) if probe_batch else None}
 
     payload['model_state_dict'] = model.state_dict()
+    if optimizer_state == 'reset':
+        # The run optimizer's moments belong to the pre-fine-tune weights; a fresh state
+        # removes that mismatch when self-play training resumes (lr stays the run's).
+        payload['optimizer_state_dict'] = build_optimizer(model, config).state_dict()
+    elif optimizer_state != 'keep':
+        raise ValueError("optimizer_state must be 'keep' or 'reset'")
     save_atomic(dest / 'checkpoints' / f'checkpoint_gen{generation:03d}.pt', payload)
     save_atomic(latest, payload)
     result = {
@@ -266,8 +274,9 @@ def make_teacher_branch(source: Path, generation: int, dataset: Path, dest: Path
                      'balance_kinds': balance_kinds, 'kind_weights': kind_weights,
                      'kind_shares': kind_shares(data['kinds'], balance_kinds, kind_weights),
                      'teacher_rows_drawn': steps * max(1, round(batch_size * teacher_fraction)),
-                     'replay_balanced': balanced, 'optimizer': 'fresh Adam (fine-tune only); '
-                     'the run optimizer state is kept unchanged'},
+                     'replay_balanced': balanced,
+                     'optimizer': 'fresh Adam for the fine-tune only',
+                     'run_optimizer_state': optimizer_state},
         'before': before, 'after': after, 'history': history,
         'checkpoint_sha256': hashlib.sha256(latest.read_bytes()).hexdigest(),
     }
@@ -290,6 +299,9 @@ def main() -> int:
     parser.add_argument('--threads', type=int, default=4)
     parser.add_argument('--balance-kinds', action='store_true',
                         help='draw each teacher row from a uniformly chosen kind')
+    parser.add_argument('--optimizer-state', choices=('keep', 'reset'), default='keep',
+                        help="run optimizer state after the fine-tune: 'keep' (T1 used this) "
+                             "or 'reset' to a fresh Adam state for the new weights")
     parser.add_argument('--kind-weights',
                         help='kind=w,... relative kind weights (unlisted kinds weigh 1); '
                              'overrides --balance-kinds')
@@ -299,7 +311,8 @@ def main() -> int:
                                  steps=args.steps, batch_size=args.batch_size,
                                  teacher_fraction=args.teacher_fraction, lr=args.lr,
                                  seed=args.seed, balance_kinds=args.balance_kinds,
-                                 kind_weights=parse_kind_weights(args.kind_weights))
+                                 kind_weights=parse_kind_weights(args.kind_weights),
+                                 optimizer_state=args.optimizer_state)
     print(json.dumps({'dataset_kinds': result['dataset_kinds'],
                       'kind_shares': result['settings']['kind_shares'],
                       'before': result['before'], 'after': result['after']}, indent=1))

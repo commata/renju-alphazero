@@ -21,7 +21,14 @@ Rules (a heavy point "improves" when its anchor score > 55 % and p < 0.05):
 
 Verdict:
 
-- ``teacher_better``   -> learning signal was the bottleneck: keep 64x4, adopt the teacher step;
+Roles: the fixed anchor measures absolute progress of each arm; the same-generation
+direct match compares the two recipes.
+
+- ``teacher_better``   -> the arm beats the control directly AND still improves over the
+                          anchor: adopt the arm's recipe;
+- ``relative_only``    -> the arm beats the control directly but has no anchor progress over
+                          its last three heavy points: the control regressed, the arm did
+                          not improve (do not adopt on this evidence);
 - ``capacity``         -> both plateau, no difference, probes flat AND the raw must_block
                           top-1 of both arms >= MUST_BLOCK_CEILING (the network is near
                           what 64x4 is known to learn): start Stage 9 (bigger net);
@@ -171,7 +178,11 @@ def verdict(control: dict, teacher: dict, control_run: Path, teacher_run: Path,
     reasons.append(f'raw must_block top-1 >= {MUST_BLOCK_CEILING}: {saturated}')
     flat = (plateaus['control'] and plateaus['teacher']
             and rising['control'] is False and rising['teacher'] is False)
-    if stronger:
+    if stronger and plateaus['teacher']:
+        # Beats the same-generation control but made no absolute progress over the
+        # fixed anchor: the control got weaker (the T1 case), not the arm stronger.
+        decision = 'relative_only'
+    elif stronger:
         decision = 'teacher_better'
     elif flat and saturated['control'] and saturated['teacher']:
         decision = 'capacity'

@@ -192,6 +192,17 @@ class TeacherBranchTest(unittest.TestCase):
                 state = run_training(None, resume=dest / 'checkpoints' / 'latest.pt',
                                      log=lambda m: None)
                 self.assertEqual(state.generation, 3)
+                reset_dest = Path(tmp) / 'teacher_reset'
+                result = make_teacher_branch(source, 2, dataset, reset_dest, steps=2,
+                                             batch_size=8, optimizer_state='reset',
+                                             log=lambda m: None)
+                self.assertEqual(result['settings']['run_optimizer_state'], 'reset')
+                reset = load_checkpoint_payload(reset_dest / 'checkpoints' / 'latest.pt')
+                self.assertEqual(reset['optimizer_state_dict']['state'], {})
+                self.assertTrue(original['optimizer_state_dict']['state'])
+                state = run_training(None, resume=reset_dest / 'checkpoints' / 'latest.pt',
+                                     log=lambda m: None)
+                self.assertEqual(state.generation, 3)
         finally:
             torch.set_num_threads(threads)
 

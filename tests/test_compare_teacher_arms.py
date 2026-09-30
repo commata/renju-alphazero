@@ -58,10 +58,19 @@ class CompareTeacherArmsTest(unittest.TestCase):
         self.assertFalse(result['plateau']['teacher'])
         self.assertEqual(result['decision'], 'teacher_better')  # anchor gap 0.08 (weak)
 
-    def test_direct_match_decides(self):
-        direct = {'match': 'teacher640 vs control640', 'teacher_score': 0.64, 'p': 0.01,
+    def test_direct_win_without_anchor_progress_is_relative_only(self):
+        # The T1 case: beats the same-generation control, flat against the anchor.
+        direct = {'match': 'teacher640 vs control640', 'teacher_score': 0.69, 'p': 0.001,
                   'games': 100, 'generation': 640}
         result = self.run_verdict(FLAT, FLAT, {640: 0.3}, {640: 0.3}, direct)
+        self.assertEqual(result['decision'], 'relative_only')
+
+    def test_direct_win_with_anchor_progress_is_teacher_better(self):
+        # The S4 case: beats the control and improves over the anchor.
+        rising = {480: (0.69, 0.001), 560: (0.68, 0.001), 640: (0.84, 1e-9)}
+        direct = {'match': 'control640 vs S4_640', 'teacher_score': 0.93, 'p': 1e-9,
+                  'games': 100, 'generation': 640}
+        result = self.run_verdict(FLAT, rising, {640: 0.3}, {640: 0.3}, direct)
         self.assertEqual(result['decision'], 'teacher_better')
 
     def test_direct_result_reads_either_side(self):
