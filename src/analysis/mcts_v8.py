@@ -199,8 +199,8 @@ def _first_safe(game, moves, statuses, solver) -> Move | None:
     If either budget can no longer give every pending move even one unit, no
     candidate gets the leftover exclusively. Instead every pending move gets
     one final zero-budget structural pass; only checks that finish without a
-    new VCF node/call can resolve. Then the caller falls back among unrefuted
-    moves. Finished sub-results remain cached across rounds, and an UNKNOWN
+    new VCF node/call can resolve. The budget is then reported as exhausted
+    and the caller falls back among unrefuted moves. Finished sub-results remain cached across rounds, and an UNKNOWN
     that finished at the per-VCF node limit is not retried.
     """
     pending = [m for m in moves if statuses.get(m, UNKNOWN) == UNKNOWN]
@@ -217,6 +217,9 @@ def _first_safe(game, moves, statuses, solver) -> Move | None:
                 statuses[move] = solver.status_after(game, move, 0, 0)
                 if statuses[move] == SAFE:
                     return move
+            # The remainder cannot be shared fairly, so it is never spent: report the
+            # budget as exhausted (diagnostics, gate statistics, later calls).
+            solver.exhausted = True
             break
 
         share = min(max(share, 1), fair_share)
@@ -234,6 +237,7 @@ def _first_safe(game, moves, statuses, solver) -> Move | None:
         share *= 2
         call_share *= 2
     return None
+
 
 def _stage_vct_move(game, context, v7_move, defenses, diag, solver, *,
                     candidate_limit, neighborhood_radius) -> Move:

@@ -212,6 +212,15 @@ class FirstSafeBudgetTest(unittest.TestCase):
         self.assertEqual(solver.calls[1][1], 1)
         self.assertFalse(solver.exhausted)
 
+    def test_unshareable_remainder_is_not_given_to_one_move(self):
+        # 3 calls / 4 candidates: no fair share of one call exists. A must not take all 3;
+        # every move gets one zero-budget pass and the budget is reported exhausted.
+        solver = _ScriptedSolver({'A': (1, UNSAFE, 3), 'B': (1, SAFE, 1)}, node_budget=100, call_limit=3)
+        self.assertIsNone(_first_safe(None, ['A', 'B', 'C', 'D'], {}, solver))
+        self.assertEqual([call for _, _, call in solver.calls], [0, 0, 0, 0])
+        self.assertEqual(solver.vcf_calls, 0)
+        self.assertTrue(solver.exhausted)
+
     def test_finished_unknown_is_not_rechecked_each_round(self):
         # UNKNOWN from a per-VCF node limit is final; only moves cut by their share go on.
         solver = _ScriptedSolver({'A': (10, UNKNOWN), 'B': (150_000, SAFE)}, 200_000)
