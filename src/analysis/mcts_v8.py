@@ -189,40 +189,51 @@ def _not_immediately_lost(game: Game, move: Move) -> bool:
 def _first_safe(game, moves, statuses, solver) -> Move | None:
     """Check ``moves`` in order and return the first proven VCT1-SAFE one.
 
-    Both budgets (VCF nodes and uncached VCF calls) are spent in rounds of
-    equal shares: every move still cut short by a share gets the same shares
-    next round, and the shares double each round but never exceed an equal
-    split of what is left. So no single expensive proof (typically V7's own
-    losing move) can take the remainder of either budget while other moves
-    are waiting. Finished sub-results stay cached across rounds; a move that
-    finished as UNKNOWN (per-VCF node limit) is not retried. Once an equal
-    share would round to zero (less than one node or call per waiting move),
-    the leftover goes to the waiting moves in order.
+    Both budgets (VCF nodes and uncached VCF calls) are spent in fair rounds.
+    The first target share is half of an equal split and doubles each round,
+    but whenever a full equal split can still give every pending move at least
+    one node/call, every move gets at least one of each. This avoids the
+    ``n <= remaining < 2n`` rounding hole where a zero half-share used to give
+    the first move the whole remainder.
+
+    If either budget can no longer give every pending move even one unit, no
+    candidate gets the leftover exclusively. Instead every pending move gets
+    one final zero-budget structural pass; only checks that finish without a
+    new VCF node/call can resolve. Then the caller falls back among unrefuted
+    moves. Finished sub-results remain cached across rounds, and an UNKNOWN
+    that finished at the per-VCF node limit is not retried.
     """
     pending = [m for m in moves if statuses.get(m, UNKNOWN) == UNKNOWN]
     share = (solver.node_budget - solver.nodes_used) // (2 * len(pending)) if pending else 0
     call_share = (solver.call_limit - solver.vcf_calls) // (2 * len(pending)) if pending else 0
     while pending and not solver.exhausted:
-        share = min(share, (solver.node_budget - solver.nodes_used) // len(pending))
-        call_share = min(call_share, (solver.call_limit - solver.vcf_calls) // len(pending))
-        last = share < 1 or call_share < 1
+        fair_share = (solver.node_budget - solver.nodes_used) // len(pending)
+        fair_call_share = (solver.call_limit - solver.vcf_calls) // len(pending)
+
+        if fair_share < 1 or fair_call_share < 1:
+            for move in pending:
+                if solver.exhausted:
+                    break
+                statuses[move] = solver.status_after(game, move, 0, 0)
+                if statuses[move] == SAFE:
+                    return move
+            break
+
+        share = min(max(share, 1), fair_share)
+        call_share = min(max(call_share, 1), fair_call_share)
         cut = []
         for move in pending:
             if solver.exhausted:
                 break
-            statuses[move] = (solver.status_after(game, move) if last else
-                              solver.status_after(game, move, share, call_share))
+            statuses[move] = solver.status_after(game, move, share, call_share)
             if statuses[move] == SAFE:
                 return move
             if solver.last_cut:
                 cut.append(move)
-        if last:
-            break
         pending = cut
         share *= 2
         call_share *= 2
     return None
-
 
 def _stage_vct_move(game, context, v7_move, defenses, diag, solver, *,
                     candidate_limit, neighborhood_radius) -> Move:

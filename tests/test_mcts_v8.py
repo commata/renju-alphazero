@@ -189,6 +189,29 @@ class FirstSafeBudgetTest(unittest.TestCase):
         self.assertFalse(solver.exhausted)
         self.assertTrue(all(call_share is not None for _, _, call_share in solver.calls))
 
+    def test_half_share_rounding_still_gives_every_candidate_a_call(self):
+        # 6 calls / 4 candidates: half-share rounds to 0, but a fair share of 1 still exists.
+        # The first candidate must not receive all 6 calls before B gets its one-call SAFE proof.
+        solver = _ScriptedSolver(
+            {'A': (1, UNSAFE, 6), 'B': (1, SAFE, 1)},
+            node_budget=100, call_limit=6,
+        )
+        self.assertEqual(_first_safe(None, ['A', 'B', 'C', 'D'], {}, solver), 'B')
+        self.assertEqual(solver.calls[0][2], 1)
+        self.assertEqual(solver.calls[1][2], 1)
+        self.assertFalse(solver.exhausted)
+
+    def test_half_share_rounding_still_gives_every_candidate_a_node(self):
+        # Same boundary for nodes: 6 nodes / 4 candidates can still give each one node.
+        solver = _ScriptedSolver(
+            {'A': (6, UNSAFE), 'B': (1, SAFE)},
+            node_budget=6, call_limit=100,
+        )
+        self.assertEqual(_first_safe(None, ['A', 'B', 'C', 'D'], {}, solver), 'B')
+        self.assertEqual(solver.calls[0][1], 1)
+        self.assertEqual(solver.calls[1][1], 1)
+        self.assertFalse(solver.exhausted)
+
     def test_finished_unknown_is_not_rechecked_each_round(self):
         # UNKNOWN from a per-VCF node limit is final; only moves cut by their share go on.
         solver = _ScriptedSolver({'A': (10, UNKNOWN), 'B': (150_000, SAFE)}, 200_000)
@@ -251,11 +274,11 @@ class StageFallbackPolicyTest(unittest.TestCase):
         self.assertTrue(_not_immediately_lost(game, chosen))
         return statuses
 
-    def test_unrefuted_root_beats_a_proven_loss_when_shares_round_to_zero(self):
-        # 15 nodes left for ~20 root moves: shares round to 0, the leftover goes to the first
-        # root move, which stays UNKNOWN; the rest are never checked.
+    def test_unrefuted_root_beats_a_proven_loss_when_fair_share_is_zero(self):
+        # 15 nodes left for ~20 root moves: an equal split cannot give every move one node.
+        # V8 makes only a zero-budget structural pass, then falls back to an unrefuted root move.
         statuses = self._unchecked_root_case(40 + 15)
-        self.assertEqual(sum(status == UNKNOWN for status in statuses.values()), 1)
+        self.assertGreater(sum(status == UNKNOWN for status in statuses.values()), 1)
 
     def test_unchecked_root_beats_a_proven_loss_when_budget_ran_out(self):
         # The budget ends exactly with the last defense proven UNSAFE; the root is still built
