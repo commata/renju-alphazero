@@ -1103,6 +1103,9 @@ light 지점 probe에 VCT set(`probes/genNNN_vct.json`)이 추가된다.
 
 실행 명령은 [v7-nn-integration-review.md §10](v7-nn-integration-review.md)에 있다.
 
+V7의 VCT 방어 약점을 고친 별도 teacher 엔진(V8)과 그 데이터로 만드는 arm(V8-A1, V8-D, V8-T4)은
+[mcts-v8-teacher.md](mcts-v8-teacher.md)에 있다. 위 arm들은 V8을 기다리지 않는다.
+
 ## 13. PR 분리
 
 | PR | 내용 |
