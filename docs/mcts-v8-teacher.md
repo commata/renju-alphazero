@@ -828,6 +828,9 @@ git fetch origin ccr-ba71e723-f37v8m
 git checkout ccr-ba71e723-f37v8m
 git pull origin ccr-ba71e723-f37v8m
 
+# 결과 폴더 (Tee-Object는 python보다 먼저 로그 파일을 열므로 폴더가 미리 있어야 한다)
+New-Item -ItemType Directory -Force runs/v8_4 | Out-Null
+
 # 1. 빠른 동작 확인 (약 1~2분, 실제 설정 아님)
 python scripts/run_mcts_v8_benchmark.py --arm full --pairs 1 --seed 1 --simulations 4 `
     --tactical-simulations 8 --counterfactual --output runs/v8_4/smoke.json
