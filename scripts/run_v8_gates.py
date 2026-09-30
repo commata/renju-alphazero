@@ -8,8 +8,10 @@
 1. candidate recall: the V8-B candidate list meets ``correct_moves``;
 2. bounded proof: ``v8_route == 'own_vct'``, the move is in ``correct_moves``
    and V8's own bounded solver marked it WIN;
-3. independent proof: ``tactical_labels.proves_threat`` with a fresh
-   ``ThreatSolver(node_limit=100_000)`` (every reply classified) agrees.
+3. independent proof: every WIN V8 declares (inside the fixture set or not) is
+   re-proved by ``tactical_labels.proves_threat`` with a fresh
+   ``ThreatSolver(node_limit=100_000)`` (every reply classified). A declared WIN
+   outside the complete fixture set or rejected there counts as a false positive.
 
 A fixture-correct move reached without V8's own proof never passes. Budget
 exhaustion and the time distribution are reported separately; exits 1 on any
@@ -113,11 +115,16 @@ def attack_gate(probes, seed):
         move = mcts_search_v8(game, **ATTACK_CONFIG, random=Random(seed), diagnostics=diag)
         seconds = round(perf_counter() - started, 2)
         checked = dict(diag.v8_attack_checked)
-        bounded = diag.v8_route == 'own_vct' and move in correct and checked.get(move) == WIN
-        independent = bounded and proves_threat(game, move, ThreatSolver(node_limit=100_000))
+        declared = diag.v8_route == 'own_vct' and checked.get(move) == WIN
+        bounded = declared and move in correct
+        # Every declared WIN is re-proved, inside the fixture set or not: a WIN outside the
+        # complete fixture set, or one the fresh solver rejects, is a false positive.
+        independent = declared and proves_threat(game, move, ThreatSolver(node_limit=100_000))
+        false_positive = declared and not (independent and move in correct)
         ok = recall and bounded and independent
         row = {'id': probe['id'], 'ok': ok, 'recall': recall, 'bounded_proof': bounded,
-               'independent_proof': independent, 'move': list(move), 'route': diag.v8_route,
+               'independent_proof': independent, 'false_positive': false_positive,
+               'move': list(move), 'route': diag.v8_route,
                'rank': diag.v8_attack_rank, 'candidates': len(candidates),
                'calls': diag.v8_attack_calls, 'nodes': diag.v8_attack_nodes,
                'budget_exhausted': diag.v8_attack_budget_exhausted,
@@ -125,14 +132,16 @@ def attack_gate(probes, seed):
         rows.append(row)
         print(f"{'PASS' if ok else 'FAIL'} {row['id']:<20} v8 {list(move)} {row['route']} "
               f"rank {row['rank']}/{row['candidates']} recall {recall} bounded {bounded} "
-              f"independent {independent} calls {row['calls']} nodes {row['nodes']} "
+              f"independent {independent} {'FALSE-POSITIVE ' if false_positive else ''}"
+              f"calls {row['calls']} nodes {row['nodes']} "
               f"{'EXHAUSTED ' if row['budget_exhausted'] else ''}{seconds}s", flush=True)
     return _summary('vct_attack', rows, ATTACK_CONFIG,
                     ('own_vct_attack', 'attack_vcf_node_limit', 'attack_call_limit',
                      'attack_node_budget'),
                     {'recall': sum(r['recall'] for r in rows),
                      'bounded_proof': sum(r['bounded_proof'] for r in rows),
-                     'independent_proof': sum(r['independent_proof'] for r in rows)})
+                     'independent_proof': sum(r['independent_proof'] for r in rows),
+                     'false_positive': sum(r['false_positive'] for r in rows)})
 
 
 def main() -> int:

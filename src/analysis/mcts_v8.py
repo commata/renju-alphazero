@@ -190,7 +190,9 @@ class _BudgetedSolver(ThreatSolver):
 
     def _attack_check(self, game: Game) -> str:
         if game.done:
-            return WIN if game.winner == -game.to_play else REFUTED
+            # ``Game.play`` keeps ``to_play`` on the mover after a five: a five by the
+            # attacking move is a WIN, a full board is not.
+            return WIN if game.winner is not None else REFUTED
         if not game.legal_moves():
             return REFUTED  # no reply to refute, but no win either (full board)
         counts, _ = self.decision(game, 0, stop_at_safe=True)

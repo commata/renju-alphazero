@@ -77,6 +77,25 @@ class ThreatSolverTest(unittest.TestCase):
         self.assertEqual(witness, ('threat', (3, 5)))
 
 
+class FinishedGameStatusTest(unittest.TestCase):
+    # Black has an open four on row 7: (7, 6) and (7, 11) both make five.
+    FOUR = [(7, 7), (0, 0), (7, 8), (0, 2), (7, 9), (0, 4), (7, 10), (0, 6)]
+
+    def test_own_five_is_safe_for_the_mover(self):
+        # Game.play keeps to_play on the winner, so "opponent = to_play" is the mover here.
+        game = play(self.FOUR + [(7, 11)])
+        self.assertTrue(game.done)
+        self.assertEqual(ThreatSolver(node_limit=1_000).after_move(game, 0), (SAFE, ()))
+
+    def test_decision_counts_winning_moves_as_safe(self):
+        game = play(self.FOUR)
+        counts, per_move = ThreatSolver(node_limit=1_000).decision(game, 0)
+        self.assertEqual(per_move[(7, 11)][0], SAFE)
+        self.assertEqual(per_move[(7, 6)][0], SAFE)
+        self.assertEqual(decision_status(counts), SAFE)
+        self.assertEqual(game.history, self.FOUR)
+
+
 class UnprunedDefaultTest(unittest.TestCase):
     """The default solver tries every quiet move (no null-move pruning).
 

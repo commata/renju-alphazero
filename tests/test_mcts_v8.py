@@ -388,6 +388,13 @@ class OwnVCTAttackTest(unittest.TestCase):
         self.assertEqual(solver.attack_status(game, (9, 6)), REFUTED)  # refuted in one VCF call
         self.assertEqual(_board_key(game), before)
 
+    def test_attack_that_makes_five_is_a_win(self):
+        # Stage 1 normally plays a five first; the check itself must still read it as WIN.
+        game = _game([(7, 7), (0, 0), (7, 8), (0, 2), (7, 9), (0, 4), (7, 10), (0, 6)])
+        solver = _BudgetedSolver(node_limit=1_000, call_limit=10, node_budget=1_000)
+        self.assertEqual(solver.attack_status(game, (7, 11)), WIN)
+        self.assertEqual(len(game.history), 8)
+
     def test_candidates_are_legal_fours_or_open_threes(self):
         game, probe = self._attack_game()
         context = _RootContext(game.legal_moves(), SearchDiagnostics())

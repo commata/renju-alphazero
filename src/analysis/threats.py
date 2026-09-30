@@ -132,7 +132,10 @@ class ThreatSolver:
         opponent = game.to_play
         me = -opponent
         if game.done:
-            return (UNSAFE, ('five', game.history[-1])) if game.winner == opponent else (SAFE, ())
+            # Only the side that just moved can end the game on its own move (a five, or
+            # a full board). ``Game.play`` does not switch ``to_play`` after a five, so
+            # ``opponent`` above is the mover here and must not be compared with the winner.
+            return SAFE, ()
         wins = _winning_moves(game, opponent)
         if wins:
             return UNSAFE, ('five', wins[0])
