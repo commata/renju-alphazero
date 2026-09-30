@@ -14,6 +14,7 @@ import argparse
 import json
 from pathlib import Path
 from random import Random
+from statistics import median
 import sys
 from time import perf_counter
 
@@ -65,7 +66,7 @@ def main() -> int:
                'proven_safe': sum(r['proven_safe'] for r in rows),
                'budget_exhausted': sum(r['budget_exhausted'] for r in rows),
                'mean_seconds': round(sum(seconds) / len(seconds), 2) if seconds else 0.0,
-               'median_seconds': seconds[len(seconds) // 2] if seconds else 0.0,
+               'median_seconds': round(median(seconds), 2) if seconds else 0.0,
                'p95_seconds': seconds[min(len(seconds) - 1, int(0.95 * len(seconds)))] if seconds else 0.0,
                'max_seconds': seconds[-1] if seconds else 0.0,
                'nodes_per_second': round(nodes / sum(seconds)) if seconds and sum(seconds) else 0,

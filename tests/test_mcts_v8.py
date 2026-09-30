@@ -120,36 +120,42 @@ class StageVCTSafetyTest(unittest.TestCase):
 
 
 class _ScriptedSolver:
-    """Stand-in for _BudgetedSolver: move -> (VCF nodes to finish, final status).
+    """Stand-in for _BudgetedSolver: move -> (VCF nodes, final status[, VCF calls]) to finish.
 
     Work on a move accumulates across calls like the real solver's caches, so a
-    cut move resumes where it stopped.
+    cut move resumes where it stopped. A move finishes once both its node and
+    call needs are met.
     """
 
-    def __init__(self, script, node_budget, default=(10**9, UNKNOWN)):
+    def __init__(self, script, node_budget, default=(10**9, UNKNOWN), call_limit=10**9):
         self.script, self.default = script, default
         self.node_budget, self.nodes_used = node_budget, 0
+        self.call_limit, self.vcf_calls = call_limit, 0
         self.exhausted = self.last_cut = False
         self.spent = {}
         self.calls = []
 
-    def status_after(self, game, move, share=None):
-        self.calls.append((move, share))
+    def status_after(self, game, move, share=None, call_share=None):
+        self.calls.append((move, share, call_share))
         self.last_cut = True
         if self.exhausted:
             return UNKNOWN
-        cost, status = self.script.get(move, self.default)
-        allowed = self.node_budget - self.nodes_used if share is None else share
-        allowed = min(allowed, self.node_budget - self.nodes_used)
-        need = cost - self.spent.get(move, 0)
-        if need <= allowed:
-            self.nodes_used += need
-            self.spent[move] = cost
+        entry = self.script.get(move, self.default)
+        cost, status, calls = entry if len(entry) == 3 else (*entry, 0)
+        spent_nodes, spent_calls = self.spent.get(move, (0, 0))
+        node_room = self.node_budget - self.nodes_used
+        call_room = self.call_limit - self.vcf_calls
+        node_room = node_room if share is None else min(share, node_room)
+        call_room = call_room if call_share is None else min(call_share, call_room)
+        add_nodes = min(cost - spent_nodes, node_room)
+        add_calls = min(calls - spent_calls, call_room)
+        self.nodes_used += add_nodes
+        self.vcf_calls += add_calls
+        self.spent[move] = (spent_nodes + add_nodes, spent_calls + add_calls)
+        if self.spent[move] == (cost, calls):
             self.last_cut = False
             return status
-        self.nodes_used += allowed
-        self.spent[move] = self.spent.get(move, 0) + allowed
-        self.exhausted = self.nodes_used >= self.node_budget
+        self.exhausted = self.nodes_used >= self.node_budget or self.vcf_calls >= self.call_limit
         return UNKNOWN
 
 
@@ -175,11 +181,19 @@ class FirstSafeBudgetTest(unittest.TestCase):
         solver = _ScriptedSolver({'A': (150_000, UNSAFE), 'B': (45_000, SAFE)}, 200_000)
         self.assertEqual(_first_safe(None, ['A', 'B'], {}, solver), 'B')
 
+    def test_expensive_first_move_cannot_starve_the_next_of_calls(self):
+        # Nodes are plentiful; A needs 2,900 of the 3,000 VCF calls to be proven UNSAFE,
+        # B needs 400 calls to be proven SAFE. A global call counter would let A take them all.
+        solver = _ScriptedSolver({'A': (50, UNSAFE, 2_900), 'B': (50, SAFE, 400)}, 200_000, call_limit=3_000)
+        self.assertEqual(_first_safe(None, ['A', 'B'], {}, solver), 'B')
+        self.assertFalse(solver.exhausted)
+        self.assertTrue(all(call_share is not None for _, _, call_share in solver.calls))
+
     def test_finished_unknown_is_not_rechecked_each_round(self):
         # UNKNOWN from a per-VCF node limit is final; only moves cut by their share go on.
         solver = _ScriptedSolver({'A': (10, UNKNOWN), 'B': (150_000, SAFE)}, 200_000)
         self.assertEqual(_first_safe(None, ['A', 'B'], {}, solver), 'B')
-        self.assertEqual(sum(move == 'A' for move, _ in solver.calls), 1)
+        self.assertEqual(sum(move == 'A' for move, _, _ in solver.calls), 1)
 
 
 class StageFallbackPolicyTest(unittest.TestCase):
@@ -222,6 +236,34 @@ class StageFallbackPolicyTest(unittest.TestCase):
         self.assertNotIn(chosen, defenses)
         self.assertEqual(statuses[chosen], UNKNOWN)
         self.assertTrue(_not_immediately_lost(game, chosen))
+
+    def _unchecked_root_case(self, budget):
+        probe = _probe('20260929-163903')
+        game = _game(probe['moves'])
+        context = _RootContext(game.legal_moves(), SearchDiagnostics())
+        defenses = [(6, 8), (6, 3), (6, 4), (6, 9)]
+        script = {move: (10, UNSAFE) for move in defenses}
+        chosen, diag = self._run(game, context, (6, 8), defenses, _ScriptedSolver(script, budget))
+        statuses = dict(diag.v8_vct_checked)
+        self.assertTrue(diag.v8_vct_widened)
+        self.assertNotIn(chosen, defenses)
+        self.assertNotEqual(statuses.get(chosen, UNKNOWN), UNSAFE)
+        self.assertTrue(_not_immediately_lost(game, chosen))
+        return statuses
+
+    def test_unrefuted_root_beats_a_proven_loss_when_shares_round_to_zero(self):
+        # 15 nodes left for ~20 root moves: shares round to 0, the leftover goes to the first
+        # root move, which stays UNKNOWN; the rest are never checked.
+        statuses = self._unchecked_root_case(40 + 15)
+        self.assertEqual(sum(status == UNKNOWN for status in statuses.values()), 1)
+
+    def test_unchecked_root_beats_a_proven_loss_when_budget_ran_out(self):
+        # The budget ends exactly with the last defense proven UNSAFE; the root is still built
+        # and a never-checked root move is preferred over V7's proven loss.
+        statuses = self._unchecked_root_case(40)
+        defenses = [(6, 8), (6, 3), (6, 4), (6, 9)]
+        self.assertTrue(all(statuses[m] == UNSAFE for m in defenses))
+        self.assertTrue(all(statuses[m] == UNKNOWN for m in statuses if m not in defenses))
 
     def test_unrefuted_defense_beats_v7_proven_loss(self):
         game, context = _stage_position(0, 12)

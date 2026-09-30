@@ -92,6 +92,7 @@ class _BudgetedSolver(ThreatSolver):
     nodes_used: int = 0
     exhausted: bool = field(default=False, repr=False)
     _cap: int = field(default=0, repr=False)  # absolute node cap for the current status_after
+    _call_cap: int = field(default=0, repr=False)  # absolute VCF call cap for the current status_after
     last_cut: bool = field(default=False, repr=False)  # last status_after stopped by a budget/share cut
 
     def vcf(self, game: Game, attacker: int):
@@ -100,7 +101,7 @@ class _BudgetedSolver(ThreatSolver):
         if cached is not None:
             return cached
         remaining = min(self._cap, self.node_budget) - self.nodes_used
-        if self.vcf_calls >= self.call_limit or remaining < 1:
+        if self.vcf_calls >= min(self._call_cap, self.call_limit) or remaining < 1:
             self._stop()
         limit = min(self.node_limit, remaining)
         self.vcf_calls += 1
@@ -124,17 +125,20 @@ class _BudgetedSolver(ThreatSolver):
             self.exhausted = True
         raise _BudgetExhausted
 
-    def status_after(self, game: Game, move: Move, share: int | None = None) -> str:
+    def status_after(self, game: Game, move: Move, share: int | None = None,
+                     call_share: int | None = None) -> str:
         """VCT1 status of ``move`` for ``game.to_play``.
 
-        ``share`` caps the VCF nodes this call may add (default: the rest of the
-        budget). A cut returns UNKNOWN; finished sub-results stay cached, so a
-        later call on the same move resumes cheaply.
+        ``share`` / ``call_share`` cap the VCF nodes / uncached VCF calls this
+        call may add (default: the rest of the budget). A cut returns UNKNOWN;
+        finished sub-results stay cached, so a later call on the same move
+        resumes cheaply.
         """
         self.last_cut = True
         if self.exhausted:
             return UNKNOWN
         self._cap = self.node_budget if share is None else self.nodes_used + share
+        self._call_cap = self.call_limit if call_share is None else self.vcf_calls + call_share
         game.play(*move)
         try:
             status = self.after_move(game, 1)[0]
@@ -185,30 +189,38 @@ def _not_immediately_lost(game: Game, move: Move) -> bool:
 def _first_safe(game, moves, statuses, solver) -> Move | None:
     """Check ``moves`` in order and return the first proven VCT1-SAFE one.
 
-    The node budget is spent in rounds of equal shares: every move still cut
-    short by its share gets the same share next round, the share doubles each
-    round but never exceeds an equal split of what is left. So no single
-    expensive proof (typically V7's own losing move) can take the remainder
-    while other moves are waiting. Finished sub-results stay cached across
-    rounds; a move that finished as UNKNOWN (per-VCF node limit) is not retried.
+    Both budgets (VCF nodes and uncached VCF calls) are spent in rounds of
+    equal shares: every move still cut short by a share gets the same shares
+    next round, and the shares double each round but never exceed an equal
+    split of what is left. So no single expensive proof (typically V7's own
+    losing move) can take the remainder of either budget while other moves
+    are waiting. Finished sub-results stay cached across rounds; a move that
+    finished as UNKNOWN (per-VCF node limit) is not retried. Once an equal
+    share would round to zero (less than one node or call per waiting move),
+    the leftover goes to the waiting moves in order.
     """
     pending = [m for m in moves if statuses.get(m, UNKNOWN) == UNKNOWN]
     share = (solver.node_budget - solver.nodes_used) // (2 * len(pending)) if pending else 0
+    call_share = (solver.call_limit - solver.vcf_calls) // (2 * len(pending)) if pending else 0
     while pending and not solver.exhausted:
         share = min(share, (solver.node_budget - solver.nodes_used) // len(pending))
-        if share < 1:
-            break
+        call_share = min(call_share, (solver.call_limit - solver.vcf_calls) // len(pending))
+        last = share < 1 or call_share < 1
         cut = []
         for move in pending:
             if solver.exhausted:
                 break
-            statuses[move] = solver.status_after(game, move, share)
+            statuses[move] = (solver.status_after(game, move) if last else
+                              solver.status_after(game, move, share, call_share))
             if statuses[move] == SAFE:
                 return move
             if solver.last_cut:
                 cut.append(move)
+        if last:
+            break
         pending = cut
         share *= 2
+        call_share *= 2
     return None
 
 
@@ -218,15 +230,16 @@ def _stage_vct_move(game, context, v7_move, defenses, diag, solver, *,
 
     With no proven SAFE move the fallback never prefers a proven loss:
     V7's move if it is not proven UNSAFE, otherwise the first unrefuted
-    (UNKNOWN or unchecked) forced defense, then the first root candidate whose
-    check was started but not finished, each passing ``_not_immediately_lost``.
+    (UNKNOWN or unchecked) forced defense, then the first unrefuted (UNKNOWN or
+    never checked) root candidate, each passing ``_not_immediately_lost``.
     Only when all of those are proven UNSAFE (or fail the check) does V7's
-    choice stand.
+    choice stand. The root is built whenever every forced defense is proven
+    UNSAFE, even if the budget ran out, so it can still serve as the fallback.
     """
     statuses: dict[Move, str] = {}
     root: list[Move] = []
     chosen = _first_safe(game, defenses, statuses, solver)
-    if chosen is None and not solver.exhausted and all(statuses.get(m) == UNSAFE for m in defenses):
+    if chosen is None and all(statuses.get(m) == UNSAFE for m in defenses):
         diag.v8_vct_widened = True
         root, _, _ = _root_candidates_v6(game, context, candidate_limit, neighborhood_radius)
         root = [m for m in root if m not in statuses]
@@ -236,7 +249,7 @@ def _stage_vct_move(game, context, v7_move, defenses, diag, solver, *,
             chosen = v7_move
         else:
             fallback = [m for m in defenses if statuses.get(m, UNKNOWN) == UNKNOWN]
-            fallback += [m for m in root if statuses.get(m) == UNKNOWN]
+            fallback += [m for m in root if statuses.get(m, UNKNOWN) == UNKNOWN]
             chosen = next((m for m in fallback if _not_immediately_lost(game, m)), v7_move)
     diag.v8_vct_checked = tuple(statuses.items())
     return chosen
