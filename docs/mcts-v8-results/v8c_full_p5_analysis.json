@@ -1,0 +1,673 @@
+{
+ "format": "mcts-v8-benchmark-analysis-v1",
+ "run": "/tmp/claude-0/-home-user-renju-alphazero/e8ac8a4d-8a03-52bb-b717-44618b3ae1ab/scratchpad/full_p5.json",
+ "run_arm": "full",
+ "run_git_commit": "eb88b46ac43b7e9f36297227d8ad81862d1e4d5f",
+ "seed": 8401,
+ "node_limit": 100000,
+ "node_budget": 2000000,
+ "baseline": "docs/mcts-v8-results/pilot_full.json",
+ "baseline_arm": "full",
+ "matched_counterfactual": {
+  "v8_b_moves": 6,
+  "baseline_same_position": 5,
+  "baseline_same_move": 5,
+  "baseline_move_attack_status": {
+   "WIN": 5,
+   "REFUTED": 0,
+   "UNKNOWN": 0
+  },
+  "rows": [
+   {
+    "pair": 0,
+    "v8_color": "black",
+    "ply": 28,
+    "history_sha16": "bc7b5c38c73c63b6",
+    "v8_move": [
+     7,
+     9
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      7,
+      9
+     ],
+     "same_as_v8": true,
+     "result": "win",
+     "attack": {
+      "status": "WIN",
+      "exhausted": false,
+      "nodes": 11084,
+      "calls": 582,
+      "seconds": 9.56
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      10,
+      8
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 8.8476
+    }
+   },
+   {
+    "pair": 1,
+    "v8_color": "white",
+    "ply": 71,
+    "history_sha16": "9837514c30db27c7",
+    "v8_move": [
+     9,
+     10
+    ],
+    "run_result": "win",
+    "baseline": null,
+    "recorded_counterfactual": {
+     "v7_move": [
+      13,
+      6
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.5877
+    }
+   },
+   {
+    "pair": 2,
+    "v8_color": "black",
+    "ply": 20,
+    "history_sha16": "0672067a5e915963",
+    "v8_move": [
+     7,
+     9
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      7,
+      9
+     ],
+     "same_as_v8": true,
+     "result": "win",
+     "attack": {
+      "status": "WIN",
+      "exhausted": false,
+      "nodes": 4006,
+      "calls": 204,
+      "seconds": 4.12
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      3,
+      6
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 0.8119
+    }
+   },
+   {
+    "pair": 2,
+    "v8_color": "white",
+    "ply": 11,
+    "history_sha16": "c84b7ba48f6bc120",
+    "v8_move": [
+     9,
+     8
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      9,
+      8
+     ],
+     "same_as_v8": true,
+     "result": "win",
+     "attack": {
+      "status": "WIN",
+      "exhausted": false,
+      "nodes": 13422,
+      "calls": 1878,
+      "seconds": 13.57
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      5,
+      8
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.9515
+    }
+   },
+   {
+    "pair": 4,
+    "v8_color": "black",
+    "ply": 40,
+    "history_sha16": "e0ec90eb4e5e43cb",
+    "v8_move": [
+     5,
+     10
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      5,
+      10
+     ],
+     "same_as_v8": true,
+     "result": "win",
+     "attack": {
+      "status": "WIN",
+      "exhausted": false,
+      "nodes": 3401,
+      "calls": 184,
+      "seconds": 3.27
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      3,
+      4
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.7886
+    }
+   },
+   {
+    "pair": 4,
+    "v8_color": "white",
+    "ply": 17,
+    "history_sha16": "44d09d20f2bb5828",
+    "v8_move": [
+     9,
+     6
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      9,
+      6
+     ],
+     "same_as_v8": true,
+     "result": "win",
+     "attack": {
+      "status": "WIN",
+      "exhausted": false,
+      "nodes": 6092,
+      "calls": 1818,
+      "seconds": 6.18
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      9,
+      6
+     ],
+     "v7_move_attack_status": "WIN",
+     "seconds": 3.3496
+    }
+   }
+  ]
+ },
+ "losses": [
+  {
+   "pair": 1,
+   "v8_color": "black",
+   "length": 52,
+   "first_proven_losing_v8_ply": 32,
+   "checked": [
+    {
+     "ply": 50,
+     "history_sha16": "8648555fedf18cdb",
+     "move": [
+      7,
+      13
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 0,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 48,
+     "history_sha16": "ac6ae4aac9ea6a58",
+     "move": [
+      6,
+      13
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 46,
+     "history_sha16": "e11d9e5e2ee5de55",
+     "move": [
+      7,
+      12
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 3,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 44,
+     "history_sha16": "39e4ba22fdf859a3",
+     "move": [
+      7,
+      9
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 4,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 42,
+     "history_sha16": "433e6ffa639d610b",
+     "move": [
+      2,
+      7
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 5,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 40,
+     "history_sha16": "63b496276642ec7b",
+     "move": [
+      2,
+      6
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 9,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 38,
+     "history_sha16": "19d5cef0af4891d4",
+     "move": [
+      6,
+      6
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 10,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 36,
+     "history_sha16": "3dca98f1c47c42d2",
+     "move": [
+      3,
+      10
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 11,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 34,
+     "history_sha16": "a4ed8216e7ce39ca",
+     "move": [
+      7,
+      10
+     ],
+     "route": "stage4",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 12,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 32,
+     "history_sha16": "13772ef56f21f2cd",
+     "move": [
+      5,
+      5
+     ],
+     "route": "stage4",
+     "changed": true,
+     "vct_exhausted": true,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 8964,
+      "calls": 191,
+      "seconds": 7.04
+     },
+     "vct1": null
+    }
+   ]
+  },
+  {
+   "pair": 3,
+   "v8_color": "white",
+   "length": 25,
+   "first_proven_losing_v8_ply": 17,
+   "checked": [
+    {
+     "ply": 23,
+     "history_sha16": "b974925c6b449fea",
+     "move": [
+      10,
+      8
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 0,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 21,
+     "history_sha16": "5442dd0da0bc8df2",
+     "move": [
+      7,
+      8
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 19,
+     "history_sha16": "46b171063ea007c1",
+     "move": [
+      6,
+      11
+     ],
+     "route": "stage4",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 16,
+      "calls": 1,
+      "seconds": 0.02
+     },
+     "vct1": null
+    },
+    {
+     "ply": 17,
+     "history_sha16": "cf160006a0263f6d",
+     "move": [
+      6,
+      8
+     ],
+     "route": "stage4",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 4297,
+      "calls": 223,
+      "seconds": 3.54
+     }
+    },
+    {
+     "ply": 15,
+     "history_sha16": "eb650825a8767b09",
+     "move": [
+      11,
+      9
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 317,
+      "calls": 244,
+      "seconds": 0.78
+     }
+    },
+    {
+     "ply": 13,
+     "history_sha16": "64b32bf6516ea738",
+     "move": [
+      8,
+      8
+     ],
+     "route": "tree",
+     "changed": true,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 2039,
+      "calls": 242,
+      "seconds": 2.25
+     }
+    },
+    {
+     "ply": 11,
+     "history_sha16": "c12df6687932cca6",
+     "move": [
+      5,
+      6
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 2339,
+      "calls": 258,
+      "seconds": 2.42
+     }
+    },
+    {
+     "ply": 9,
+     "history_sha16": "a72474f3fd9ba644",
+     "move": [
+      6,
+      9
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 68,
+      "calls": 228,
+      "seconds": 0.44
+     }
+    },
+    {
+     "ply": 7,
+     "history_sha16": "2f3a31d5277d1a5a",
+     "move": [
+      9,
+      10
+     ],
+     "route": "stage4",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 10,
+      "calls": 218,
+      "seconds": 0.34
+     }
+    },
+    {
+     "ply": 5,
+     "history_sha16": "c7542838ae24e920",
+     "move": [
+      8,
+      6
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 56,
+      "calls": 230,
+      "seconds": 0.5
+     }
+    }
+   ]
+  }
+ ]
+}
