@@ -10,7 +10,9 @@ champion match written by the orchestrator at the segment end
               (score > 0.55 and pair-level p < 0.05): it becomes the new champion;
 - ``HOLD``    otherwise (keep training; the champion stays).
 
-Exit code: 0 PROMOTE, 1 HOLD, 2 STOP, so a PowerShell loop can branch on $LASTEXITCODE.
+Exit code: 10 PROMOTE, 11 HOLD, 12 STOP, so a PowerShell loop can branch on
+$LASTEXITCODE without confusing a decision with a Python failure (1 = exception,
+2 = missing file or bad arguments).
 
     python scripts/segment_gate.py runs/stage8_s2_adaptive --from 1120 --to 1160 \
         --reference-reuse 6.4
@@ -30,7 +32,7 @@ from analyze_self_play_health import analyze  # noqa: E402
 
 PROMOTE_SCORE = 0.55
 PROMOTE_P = 0.05
-EXIT = {'PROMOTE': 0, 'HOLD': 1, 'STOP': 2}
+EXIT = {'PROMOTE': 10, 'HOLD': 11, 'STOP': 12}
 
 
 def decide(health_level: str, h2h: dict | None) -> tuple[str, str]:

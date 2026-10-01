@@ -94,5 +94,5 @@ class SegmentGateTest(unittest.TestCase):
             done = subprocess.run([sys.executable, str(ROOT / 'scripts' / 'segment_gate.py'),
                                    str(run), '--from', '8', '--to', '12'],
                                   capture_output=True, text=True)
-        self.assertEqual(done.returncode, 2, done.stdout + done.stderr)
+        self.assertEqual(done.returncode, 12, done.stdout + done.stderr)
         self.assertIn('decision: STOP', done.stdout)

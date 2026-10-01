@@ -878,9 +878,11 @@ for ($g = $C + 40; $g -le $C + 240; $g += 40) {
       --heavy-every 40 --heavy-opponents mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 25 `
       --h2h-anchor "C$($C)=runs/anchors/C$($C).pt" `
       2>&1 | Tee-Object -Append -FilePath "$run.log"
+  if ($LASTEXITCODE -ne 0) { Write-Host "TRAINING FAILED at $g (exit $LASTEXITCODE)"; break }
   python scripts/segment_gate.py $run --from ($g - 40) --to $g --reference-reuse 6.4 `
       --output "runs/gates/$(Split-Path $run -Leaf)_$($g).json"
-  if ($LASTEXITCODE -eq 2) { Write-Host "STOP at $g"; break }
+  if ($LASTEXITCODE -eq 12) { Write-Host "GATE STOP at $g"; break }
+  if ($LASTEXITCODE -ne 10 -and $LASTEXITCODE -ne 11) { Write-Host "GATE FAILED at $g (exit $LASTEXITCODE)"; break }
 }
 ```
 
@@ -900,6 +902,7 @@ python scripts/compare_teacher_arms.py --control "runs/stage8_ctl_c$C" --teacher
 
 **B단계 해석:**
 
+- 게이트 종료 코드: 10 PROMOTE, 11 HOLD, 12 STOP. 1·2는 python 오류(예외, 파일 없음)라 게이트 판정이 아니다.
 - 게이트 STOP이 난 arm은 그 구간에서 멈춘다. 그 구간에 forensic을 돌린다.
 - adaptive가 직접 대국에서 이기고 C도 넘으면(`teacher_better`) adaptive를 기본 레시피로 채택한다.
 - 둘 다 C를 넘는데 차이가 없으면 단순한 고정 steps를 유지한다. 대신 게이트는 계속 쓴다.
