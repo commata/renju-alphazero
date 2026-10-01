@@ -14,14 +14,21 @@ Implemented modules (the rest of the design is not yet here):
   played only when every opponent reply is proven lost to our VCF (WIN); an
   unfinished proof (UNKNOWN) is never played. The candidate list is a speed
   heuristic and is incomplete: "no WIN found" does not mean "no VCT1 win".
+- V8-C (``root_vct_safety``): on the tree route V7's own tree runs unchanged
+  (same root, same random stream, so the same move as V7), then that move is
+  checked for depth-1 VCT safety. If it is proven SAFE it is played. Otherwise
+  the other root children are checked in tree preference order (visits, then
+  mean value) and the first proven SAFE one is played; with none proven SAFE
+  V7's move stands unless it is proven UNSAFE, in which case the first
+  unrefuted child that does not lose at once is played.
 - V8-A (``stage_vct_safety``): Stage 4 and single-point Stage 5 forced defenses
   are checked with a depth-1 VCT proof in V7 order and the first proven SAFE one
   is played. If every forced defense is proven UNSAFE the check widens to the
   V6 root candidates. A per-move budget on VCF calls and total VCF nodes bounds
   the cost; an unfinished proof is UNKNOWN and is never treated as SAFE.
 
-V8-A and V8-B each have their own solver, cache and budget, and share one fair
-budget scheduler (``_first_proven``).
+V8-A, V8-B and V8-C each have their own solver, cache and budget, and share one
+fair budget scheduler (``_proven``).
 
 SAFE here means "no VCF and no quiet-move + VCF win for the opponent" within the
 frozen VCF solver's class (see ``analysis.threats``), not "no forced win".
@@ -73,6 +80,13 @@ V8_DEFAULTS = {
     "attack_vcf_node_limit": 20_000,
     "attack_call_limit": 10_000,  # 3,000 ran out on 164445 ply 15 (§4.2.9); nodes bound the time
     "attack_node_budget": 200_000,
+    "root_vct_safety": True,
+    "root_vcf_node_limit": 20_000,
+    "root_call_limit": 10_000,
+    # V8-C root gate (§4.3.5): 3/3 needs both the 4-child cap (budget is not spread over ~17
+    # children) and 400k nodes (one V7 move alone needed 128,917 nodes to be proven SAFE).
+    "root_node_budget": 400_000,
+    "root_max_children": 4,  # 0 = every root child; N = the tree's top N first, wider only if all UNSAFE
 }
 _V8_KEYS = tuple(key for key in V8_DEFAULTS if key not in V7_FINAL)
 
@@ -98,6 +112,12 @@ class SearchDiagnostics(V7Diagnostics):
     v8_attack_nodes: int = 0
     v8_attack_budget_exhausted: bool = False
     v8_attack_seconds: float = 0.0
+    v8_root_checked: tuple[tuple[Move, str], ...] = ()
+    v8_root_rank: int = 0  # tree preference rank of the played move (1 = V7's move)
+    v8_root_calls: int = 0
+    v8_root_nodes: int = 0
+    v8_root_budget_exhausted: bool = False
+    v8_root_seconds: float = 0.0
 
 
 class _BudgetExhausted(Exception):
@@ -201,8 +221,10 @@ class _BudgetedSolver(ThreatSolver):
 
 def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit, vct_node_budget,
                         own_vct_attack, attack_vcf_node_limit, attack_call_limit,
-                        attack_node_budget):
-    for name, value in (("stage_vct_safety", stage_vct_safety), ("own_vct_attack", own_vct_attack)):
+                        attack_node_budget, root_vct_safety, root_vcf_node_limit,
+                        root_call_limit, root_node_budget, root_max_children=0):
+    for name, value in (("stage_vct_safety", stage_vct_safety), ("own_vct_attack", own_vct_attack),
+                        ("root_vct_safety", root_vct_safety)):
         if not isinstance(value, bool):
             raise ValueError(f"{name} must be a bool")
     for name, value in (("vct_vcf_node_limit", vct_vcf_node_limit),
@@ -210,9 +232,14 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
                         ("vct_node_budget", vct_node_budget),
                         ("attack_vcf_node_limit", attack_vcf_node_limit),
                         ("attack_call_limit", attack_call_limit),
-                        ("attack_node_budget", attack_node_budget)):
+                        ("attack_node_budget", attack_node_budget),
+                        ("root_vcf_node_limit", root_vcf_node_limit),
+                        ("root_call_limit", root_call_limit),
+                        ("root_node_budget", root_node_budget)):
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError(f"{name} must be a positive integer")
+    if isinstance(root_max_children, bool) or not isinstance(root_max_children, int) or root_max_children < 0:
+        raise ValueError("root_max_children must be a non-negative integer")
 
 
 def _stage4_order(game: Game, context: _RootContext, v7_move: Move) -> list[Move]:
@@ -247,7 +274,16 @@ def _first_safe(game, moves, statuses, solver) -> Move | None:
 
 
 def _first_proven(game, moves, statuses, solver, evaluate, target) -> Move | None:
-    """Check ``moves`` in order and return the first one proven ``target``.
+    """The first move proven ``target`` (see ``_proven``), or None."""
+    found = _proven(game, moves, statuses, solver, evaluate, target, want=1)
+    return found[0] if found else None
+
+
+def _proven(game, moves, statuses, solver, evaluate, target, *, want: int) -> list[Move]:
+    """Check ``moves`` in order until ``want`` of them are proven ``target``.
+
+    Returns the proven moves in the order they were proven (possibly fewer than
+    ``want`` when the budget runs out or the moves run out).
 
     ``evaluate(game, move, node_share, call_share)`` is the solver's bounded
     status function (V8-A ``status_after`` -> SAFE, V8-B ``attack_status`` ->
@@ -269,9 +305,10 @@ def _first_proven(game, moves, statuses, solver, evaluate, target) -> Move | Non
     remain cached across rounds, and an UNKNOWN that finished at the per-VCF
     node limit is not retried.
     """
+    found: list[Move] = []
     pending = [m for m in moves if statuses.get(m, UNKNOWN) == UNKNOWN]
     if not pending:
-        return None
+        return found
     share = (solver.node_budget - solver.nodes_used) // (2 * len(pending)) if pending else 0
     call_share = (solver.call_limit - solver.vcf_calls) // (2 * len(pending)) if pending else 0
     while pending and not solver.exhausted:
@@ -284,7 +321,9 @@ def _first_proven(game, moves, statuses, solver, evaluate, target) -> Move | Non
                     break
                 statuses[move] = evaluate(game, move, 0, 0)
                 if statuses[move] == target:
-                    return move
+                    found.append(move)
+                    if len(found) >= want:
+                        return found
             # The remainder cannot be shared fairly, so it is never spent: report the
             # budget as exhausted (diagnostics, gate statistics, later calls).
             solver.exhausted = True
@@ -298,13 +337,16 @@ def _first_proven(game, moves, statuses, solver, evaluate, target) -> Move | Non
                 break
             statuses[move] = evaluate(game, move, share, call_share)
             if statuses[move] == target:
-                return move
+                found.append(move)
+                if len(found) >= want:
+                    return found
+                continue
             if solver.last_cut:
                 cut.append(move)
         pending = cut
         share *= 2
         call_share *= 2
-    return None
+    return found
 
 
 def _stage_vct_move(game, context, v7_move, defenses, diag, solver, *,
@@ -373,6 +415,45 @@ def _own_vct_attack(game, context, diag, *, node_limit, call_limit, node_budget)
     return chosen
 
 
+def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit, node_budget,
+                        max_children=0) -> Move:
+    """V8-C: keep V7's tree move if it is proven VCT1-SAFE, otherwise the first proven SAFE child.
+
+    Children are tried in the tree's own preference order (visits, mean value).
+    V7's move first gets half of the budget on its own, so in the common case
+    (it is SAFE) nothing else is checked and V8 plays exactly V7's move. Then
+    the top ``max_children`` children (all when 0), V7's move included while
+    still undecided, share the rest fairly (``_first_proven``); if every one of
+    them is proven UNSAFE the check widens to the remaining children. With no
+    proven SAFE child the fallback never prefers a proven loss: V7's move unless
+    it is proven UNSAFE, else the first unrefuted (UNKNOWN or never checked)
+    child that does not lose at once.
+    """
+    started = perf_counter()
+    solver = _BudgetedSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget)
+    order = [chosen] + [c.move for c in sorted(children, key=lambda c: (-c.visits, -c.mean_value, c.move))
+                        if c.move != chosen]
+    head = order[:max_children] if max_children else order
+    statuses = {chosen: solver.status_after(game, chosen, node_budget // 2, call_limit // 2)}
+    final = chosen if statuses[chosen] == SAFE else _first_proven(
+        game, head, statuses, solver, solver.status_after, SAFE)
+    if final is None and len(head) < len(order) and all(statuses.get(m) == UNSAFE for m in head):
+        final = _first_proven(game, order[len(head):], statuses, solver, solver.status_after, SAFE)
+    if final is None:
+        if statuses[chosen] != UNSAFE:
+            final = chosen
+        else:
+            final = next((m for m in order[1:] if statuses.get(m, UNKNOWN) == UNKNOWN
+                          and _not_immediately_lost(game, m)), chosen)
+    diag.v8_root_checked = tuple(statuses.items())
+    diag.v8_root_rank = order.index(final) + 1
+    diag.v8_root_calls = solver.vcf_calls
+    diag.v8_root_nodes = solver.nodes_used
+    diag.v8_root_budget_exhausted = solver.exhausted
+    diag.v8_root_seconds = perf_counter() - started
+    return final
+
+
 def _search_tree_v8(game, root_moves, simulations, exploration, candidate_limit,
                     initial_width, neighborhood_radius, priority_top_k, random):
     """``search.mcts_v5._search_v5_tree`` with the root children returned.
@@ -425,6 +506,8 @@ def mcts_search_v8(
     vct_node_budget=200_000,
     own_vct_attack=True, attack_vcf_node_limit=20_000, attack_call_limit=10_000,
     attack_node_budget=200_000,
+    root_vct_safety=True, root_vcf_node_limit=20_000, root_call_limit=10_000,
+    root_node_budget=400_000, root_max_children=4,
     random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
 ) -> Move:
     """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules."""
@@ -444,7 +527,10 @@ def mcts_search_v8(
     _validate_v8_config(stage_vct_safety=stage_vct_safety, vct_vcf_node_limit=vct_vcf_node_limit,
                         vct_call_limit=vct_call_limit, vct_node_budget=vct_node_budget,
                         own_vct_attack=own_vct_attack, attack_vcf_node_limit=attack_vcf_node_limit,
-                        attack_call_limit=attack_call_limit, attack_node_budget=attack_node_budget)
+                        attack_call_limit=attack_call_limit, attack_node_budget=attack_node_budget,
+                        root_vct_safety=root_vct_safety, root_vcf_node_limit=root_vcf_node_limit,
+                        root_call_limit=root_call_limit, root_node_budget=root_node_budget,
+                        root_max_children=root_max_children)
     diag = diagnostics if diagnostics is not None else SearchDiagnostics()
     diag.__dict__.update(vars(SearchDiagnostics()))
     context = _RootContext(game.legal_moves(), diag)
@@ -528,10 +614,16 @@ def mcts_search_v8(
         game, moves, budget, exploration, candidate_limit,
         initial_width, neighborhood_radius, priority_top_k, random,
     )
+    v7_move = chosen
+    if root_vct_safety:
+        chosen = _verify_root_choice(game, chosen, children, diag, node_limit=root_vcf_node_limit,
+                                     call_limit=root_call_limit, node_budget=root_node_budget,
+                                     max_children=root_max_children)
     selected = sorted(reasons.get(chosen, ()), key=lambda k: (-PRIORITY[k], k))
     diag.v6_selected_reasons = tuple(selected)
     diag.v6_selected_threat_type = selected[0] if selected else None
     diag.v8_route = "tree"
-    diag.v8_v7_move = chosen
+    diag.v8_v7_move = v7_move  # same root and random stream as V7, so this is V7's move
+    diag.v8_changed = chosen != v7_move
     diag.v8_root_visits = tuple((c.move, c.visits, c.mean_value) for c in children)
     return chosen

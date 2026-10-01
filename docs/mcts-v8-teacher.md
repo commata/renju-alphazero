@@ -1,7 +1,8 @@
 # MCTS-v8 Teacher 설계서 (v1 확정, 개발 중)
 
 > 상태: 설계 v1 확정(2026-09-30). **V8-1(골격)과 V8-A(stage 4/5 VCT1 safety) 구현 완료**, 구현·측정 기록은 §11.
-> **V8-B(자기 VCT1 공격) 구현 완료, 조건부 통과**(s0 4/4, false positive 0, D4 26/32는 측정값) — §4.2.9, §11.10. 다음은 V8-4 실전 측정(§11.11).
+> **V8-B(자기 VCT1 공격) 구현 완료, 조건부 통과**(s0 4/4, false positive 0, D4 26/32는 측정값) — §4.2.9, §11.10.
+> V8-4 pilot 완료(§11.12). **V8-C(root VCT1 safety, 트리 후 검증) 구현 완료**, root 게이트 3/3 — §4.3.
 > 개발 브랜치는 `ccr-ba71e723-f37v8m`이다. V8_TEACHER 동결 전까지 `V8_DEFAULTS` 값은 바뀔 수 있다.
 
 작성 2026-09-30. 입력: "AlphaZero 연구 라인과 teacher 제작 라인을 분리하고 V8 teacher를 새로 만든다"는 제안(V8-M1~M6,
@@ -393,23 +394,81 @@ V8-B가 새로 WIN을 선언한 수를 같은 방식으로 검사해 false-posit
 3. **탐색 순서를 대칭에 강하게 만든다:** 동결 VCF solver는 바꿀 수 없으므로 V8 전용 VCF(순서 규칙만 다른 사본)를 만든다.
    큰 작업이고, V8-A의 SAFE 판정도 같은 solver를 쓰므로 V8-A 게이트를 다시 돌려야 한다.
 
-### 4.3 V8-C — root VCT1 safety (3순위, 비용 측정 후 범위 결정)
+### 4.3 V8-C — root VCT1 safety (구현, "트리 후 검증" 방식)
 
-- V7 M2 뒤에 붙인다. 먼저 M2의 verified-SAFE tier를 검사한다. 여기서 VCT1-SAFE를 하나도 못 찾고 그 tier를
-  모두 VCT1-UNSAFE로 소진했을 때만 M2 inconclusive tier를 두 번째 pool로 검사한다. 확인된 VCF-UNSAFE 후보를
-  VCT 검사가 되살리지는 않는다.
-- 전 후보를 매 착수 완전 분류하는 것은 현재 비용으로 실용적이지 않다(§2.3). 대신:
-  1. **싼 사전 우선순위 필터:** 후보를 둔 뒤 상대의 "4 또는 열린 3 생성수" 중 VCF 후속이 보이는 후보를 먼저 검사한다.
-     이것은 완전한 VCT1 필터가 아니다. `ThreatSolver`는 모든 합법 quiet move와 금수 변화까지 보므로, 필터에서 빠진 후보도
-     예산이 남으면 뒤이어 검사한다. 끝까지 못 본 후보는 "VCT1 미검사"로 표시하고 SAFE로 올리지 않는다.
-  2. 검사 대상을 V6 순서(사전 필터 hit 우선, 각 그룹 안에서 V6 순서)로 검사하고, **SAFE가 K개(기본 3) 나오면 멈춘다.**
-     **SAFE가 하나라도 증명되면 tree root는 그 proven-SAFE 후보들로만 제한한다.** SAFE를 찾아 놓고 UNKNOWN/미검사를 같은
-     tree에 남기면 MCTS가 다시 미검사 패착을 선택할 수 있어 safety filter의 의미가 사라진다.
-  3. 착수당 노드 예산을 둔다. 예산 소진까지 SAFE를 하나도 못 찾았을 때만 UNKNOWN + 미검사 후보를 V6 순서로 fallback하고,
-     확인된 UNSAFE는 제외한다. 모든 후보가 UNSAFE로 확인된 경우에만 원래 V7/V6 선택을 최종 fallback으로 허용한다.
-- `164723` 20수에서 v7 수 (10,8)은 VCT1-UNSAFE로 증명되어 있다(검토서 §6.1). V8-C가 이 수를 빼는지가 1차 게이트다.
-- 착수 시간이 한 수 수십 초가 되면 teacher 생성량이 크게 줄어든다. 그래서 V8-C는 **V8-A/B 구현 후 비용을 재고** 범위(K,
-  예산, 필터)를 정한다. 측정 전에는 숫자를 확정하지 않는다.
+#### 4.3.1 근거
+
+V8-4 pilot의 full 패배 3판 중 2판(쌍 6 흑 56수, 쌍 7 백 29수)이 트리 경로에서 VCF-SAFE·VCT1-UNSAFE 수를 둔 것이었다(§11.12).
+사람 패배 `164723` 20수와 같은 종류다. §11.11.5에 **pilot 전에** 적어 둔 기준("V8 패배가 V8-A·V8-B 범위 밖(root 선택)에서 난다
+→ V8-C 시작")에 해당한다.
+
+#### 4.3.2 처음 설계(트리 전 root 필터)를 버린 이유 — 측정
+
+처음 설계는 트리 전에 root 후보를 V7 순서로 VCT1 검사해 SAFE가 K개(기본 3) 나오면 멈추고, SAFE가 하나라도 있으면 **root를 증명된 SAFE로만
+제한**하는 것이었다. 구현해서 pilot full의 트리 착수 무작위 20개(seed 5)와 위 3국면에서 쟀다.
+
+| 방식 | V8-C 시간(20착수) | 꼬리 | 행동 |
+|---|---|---|---|
+| 트리 전 root 필터(K=3) | 평균 약 28초 | 36.9·94.0·186.6(소진)·201.0(소진)초 | **거의 모든 착수에서 root 20개 → 3개.** 조용한 국면에서도 V7 트리의 폭을 "가장 먼저 증명된 3개"로 자른다 |
+| **트리 후 검증(채택)** | 평균 약 19초 | 106.7·225.6(소진)초 | **18/20은 V7의 수가 SAFE로 증명되어 V7과 같은 수.** 1착수는 V7 수 (6,5)가 UNSAFE로 증명되어 방문 5위 (4,10)(SAFE)로 바꿨다 |
+
+트리 전 필터는 비용도 더 크고, V7의 판단을 거의 매 착수 바꾼다. 트리 후 검증은 보통 착수에서 V7과 같은 수를 두고(트리의 root와 난수열이 V7과
+같다), 검증 1회만 한다. 덤으로 V7이 뒀을 수를 정확히 알 수 있어 `v8_changed`가 의미를 가진다.
+
+#### 4.3.3 알고리즘(구현: `_verify_root_choice`)
+
+1. V7의 트리를 그대로 돈다(M2 VCF tier, M3 금수 감점 포함). 고른 수 = V7의 수.
+2. 그 수를 **예산의 절반**으로 혼자 VCT1 검사한다. SAFE면 그대로 둔다(보통의 경우).
+3. 아니면 트리 선호 순서(방문 수 → 평균값)의 상위 `root_max_children`개(0이면 전부)를, V7 수가 아직 미결이면 그것도 포함해 공용 공정 분배
+   (`_first_proven`)로 검사한다. 처음 증명된 SAFE를 둔다.
+4. 상위 K개가 **모두 UNSAFE로 증명되면** 나머지 자식으로 검사를 넓힌다(K개만 보고 "전부 UNSAFE"로 결론 내리지 않는다, §11.13).
+5. SAFE가 없으면: V7 수가 UNSAFE로 증명되지 않았으면 V7 수, 증명됐으면 미판정(UNKNOWN 또는 미검사)이고 즉시 지지 않는(`_not_immediately_lost`)
+   첫 자식. 모두 UNSAFE면 V7 수.
+6. 전용 `_BudgetedSolver`(캐시·예산 분리). 진단: `v8_root_checked`, `v8_root_rank`(1 = V7 수), `v8_root_calls/nodes/budget_exhausted/seconds`.
+
+설정(개발값, V8-5에서 확정): `root_vct_safety` True, `root_vcf_node_limit` 20,000, `root_call_limit` 10,000, `root_node_budget` 200,000,
+`root_max_children` §4.3.5.
+
+#### 4.3.4 게이트 (`python scripts/run_v8_gates.py --gate root`, fixture `tests/fixtures/v8c_root_probes_v1.json`)
+
+fixture는 패배 분기 3국면이다(pilot 쌍 6 흑 56수, 쌍 7 백 29수, 사람 `164723` 20수). 각 국면을 두 가지로 검사한다.
+
+- **엔진 검사:** V8 기본값으로 둔 수가 트리 경로이고, 기록된 패배수가 아니며, V8-C가 SAFE로 증명했고, fresh `ThreatSolver(100k)`도 SAFE.
+- **강제 검사:** 트리 선택은 원래 대국의 난수 상태에 달려 있어 재현되지 않는다(실제로 pilot 국면을 다시 두면 V7이 다른 수를 고르기도 한다).
+  그래서 기록된 패배수를 "V7의 수"로 `_verify_root_choice`에 직접 넣는다(자식은 V6 root 순서). V8-C가 그 수를 UNSAFE로 증명하고,
+  SAFE로 증명한 다른 수로 바꾸고, fresh solver도 SAFE여야 한다.
+
+결과는 §4.3.5.
+
+#### 4.3.5 측정 결과와 남은 문제
+
+같은 3국면(엔진 검사 seed 1, 강제 검사)으로 `root_max_children`(K)와 `root_node_budget`(B)를 바꿔 쟀다(이 컨테이너, 3개 동시 실행이라
+시간은 부풀려져 있다). "통과"는 엔진·강제 검사 모두 통과다.
+
+| K / B | pilot-6 흑 56수 | pilot-7 백 29수 | 164723 20수 | 통과 |
+|---|---|---|---|---|
+| 전부 / 200k | 통과 | 실패(예산 소진, 강제 검사도 SAFE 못 찾음) | 실패(예산 소진, 미판정 fallback (7,11)) | 1/3 |
+| 4 / 200k | 통과 | 실패(엔진: V7 수 (4,9) 미판정) | 실패(엔진: 예산 소진) | 1/3 |
+| 8 / 200k | 통과 | 실패 | 통과 | 2/3 |
+| **4 / 400k (채택)** | **통과** | **통과**(V7 수 (4,9) SAFE 증명에 128,917노드) | **통과**((10,8) UNSAFE 증명 → (5,6) SAFE) | **3/3** |
+
+- **K 제한이 필요하다.** 날카로운 국면에서는 SAFE 증명 하나가 수만~십수만 노드다. 예산을 17~20개 자식에 공평하게 나누면 아무것도 증명되지 않는다.
+- **예산 400k가 필요하다.** pilot-7은 V7 수 자체의 SAFE 증명에 128,917노드가 든다. 처음 단독 검사 몫(예산의 절반)이 이것보다 커야 한다.
+- **K 제한의 함정(구현 중 발견, 고침):** 처음 K 구현은 상위 K개가 모두 UNSAFE로 증명되면 "전부 UNSAFE면 V7 수"로 끝나서, 검사하지 않은
+  5위 이하 자식이 남아 있는데도 **증명된 패배수 (3,4)를 그대로 뒀다**(pilot-6, K=4). 지금은 상위 K개가 모두 UNSAFE면 나머지로 넓히고,
+  fallback도 K 밖의 미검사 자식을 받는다(테스트 2개).
+- **비용:** 채택 설정에서 세 국면의 V8-C 착수 시간은 평균 214초, 최대 350초다(동시 실행). 최대 285,472노드, 예산 소진 0. 조용한 국면에서는
+  보통 V7 수 검증 1회(트리 표본 20착수 중 16착수가 0.0~8.2초, 200k 설정 기준)다. 꼬리는 V8-5에서 다룬다.
+- **예산 부족의 위험(실제 확인):** 200k에서 `164723`은 V7 수 (10,8)을 UNSAFE로 증명해 피했지만, SAFE를 못 찾아 미판정 fallback으로 (7,11)을
+  뒀다. 이 수는 §2.2의 오프라인 전수 분류에서 **VCT1-UNSAFE였다.** "증명된 패배수를 피한다"는 규칙만으로는 예산이 모자랄 때 실제 패배를 막지
+  못한다. 그래서 V8-C는 예산 부족 자체를 줄이는 쪽(K 제한·예산)으로 맞췄다.
+
+#### 4.3.6 착수당 비용 합
+
+pilot의 최악 착수(168.5초)는 같은 착수에서 V8-B와 V8-A가 둘 다 비싼 경우였다. 트리 경로에서는 V8-B와 V8-C가 같은 착수에서 돈다.
+지금은 모듈마다 예산이 따로라 최악값이 더해진다(V8-B 200k + V8-C 200k 노드). 모듈별 진단(calls/nodes/exhausted/seconds)은 따로 남기므로,
+V8-5에서 **착수 전체 공유 상한**(예: 남은 착수 예산을 다음 모듈에 넘기는 방식)을 넣을 수 있다. 구조는 각 모듈이 `_BudgetedSolver`를
+새로 만드는 지점 하나뿐이라, 거기서 남은 착수 예산을 `node_budget`으로 넘기면 된다.
 
 ### 4.4 V8-D — 양방향 future-threat planner (보류)
 
@@ -593,7 +652,7 @@ phase는 **ply < 12 opening, ply < 30 middle, 그 외 late**를 그대로 사용
 | V8-1 | 기존 격리 규칙 유지, `analysis/mcts_v8.py` 골격(V7 위임), root record | **완료**(§11.1): 모듈 끔 = V7과 144/144 동일 | — |
 | V8-2 | V8-A stage 4/5 VCT1 | **구현 완료**(§11.2, 경계조건 §11.5~§11.7). stage 4: 실제 probe 24개(§11.3). stage 5: 실제 국면 5개는 모두 SAFE 경로, UNSAFE→확장 경로는 scripted solver 단위 테스트만(§11.4) | V8-1 |
 | V8-3 | V8-B 자기 VCT1 | **구현 완료, 게이트 미통과**(§4.2.9): recall 32/32, bounded proof 26/32, 독립 재검증 26/26(false positive 0). 실패 6개는 대칭 변형의 증명 비용. 게이트 기준 결정 필요 | V8-2 |
-| V8-4 | V8 대 V7 실전 측정(§11.11) → V8-B D4 기준·V8-C 범위 결정 → V8-C | 착수 시간 분포, 모듈 발동률, 반사실 기록, 승패 | V8-2, V8-3 |
+| V8-4 | V8 대 V7 실전 측정(§11.11) → V8-B D4 기준·V8-C 범위 결정 → V8-C | **pilot 완료**(§11.12, §11.13). **V8-C 구현 완료**(§4.3): root 게이트 3/3(K=4, 400k). 본 측정은 V8-C 포함 후보로 | V8-2, V8-3 |
 | V8-5 | V8-E 예산(`V8_PLAY`/`V8_TEACHER`) | V8 대 V7 100판 | V8-4 |
 | V8-6 | V8_TEACHER 동결(해시, fingerprint) | 문서 확정 | V8-5 |
 | T8-1 | V8 대국 생성 + A/B 계층 dataset | dataset, stats | V8-6 |
@@ -733,8 +792,8 @@ SAFE가 되는 경우다. 두 테스트는 `cc7ba7f`의 scheduler라면 첫 후�
 
 ### 11.8 다음 작업
 
-1. V8-4 pilot 완료(§11.12). 다음은 V8-C(root VCT1 safety) 설계·구현. pilot의 tree 분기 2국면과 `164723`이 회귀 fixture다.
-   본 측정(50쌍)은 V8-C를 넣은 후보로 돌린다.
+1. V8-C 구현 완료(§4.3). 다음은 V8-C를 넣은 V8로 본 측정(50쌍 100판, `--arm full`, 같은 seed로 `--arm ab` 짝 비교).
+   단, 착수당 최악 비용(V8-B 200k + V8-C 400k 노드, 수 분)이 커서 먼저 소규모로 비용을 확인한다.
 2. V8-4 결과로 V8-B D4 기준(§4.2.9의 1~3)과 V8-C 범위를 결정한다.
 3. 웹 대국 V8 선택지는 추가했다(`python scripts/run_web_play.py` → 상대 "MCTS V8 (개발)"). 사람 대 V8 로그는 §8대로 모은다.
 
@@ -849,6 +908,31 @@ python scripts/run_mcts_v8_benchmark.py --arm a_only --pairs 10 --seed 8401 --wo
 
 중단되면 같은 명령을 다시 실행하면 끝난 판은 건너뛴다(`--games-jsonl`). 공유할 파일: `runs/v8_4/pilot_*.json`과 `.log`.
 
+#### 11.11.4.2 V8-C 포함 측정 명령 (§11.13 이후)
+
+arm 이름이 바뀌었다: `full` = A+B+C, `ab` = A+B(pilot의 full), `a_only` = A만(pilot과 같음). 같은 seed면 오프닝·색·seed가 같아 짝 비교가 된다.
+V8-C 때문에 착수당 최악 비용이 커졌으므로(수 분) 먼저 5쌍으로 비용을 본다.
+
+```powershell
+New-Item -ItemType Directory -Force runs/v8_4c | Out-Null
+
+# 1. 비용 확인: V8-C 포함 5쌍 10판
+python scripts/run_mcts_v8_benchmark.py --arm full --pairs 5 --seed 8401 --workers 4 --counterfactual `
+    --games-jsonl runs/v8_4c/full.jsonl --output runs/v8_4c/full_p5.json 2>&1 | Tee-Object -FilePath runs/v8_4c/full_p5.log
+
+# 2. 비용이 감당되면 같은 파일로 50쌍까지 이어서 (앞의 10판은 건너뜀)
+python scripts/run_mcts_v8_benchmark.py --arm full --pairs 50 --seed 8401 --workers 4 --counterfactual `
+    --games-jsonl runs/v8_4c/full.jsonl --output runs/v8_4c/full.json 2>&1 | Tee-Object -FilePath runs/v8_4c/full.log
+
+# 3. 짝 비교: V8-C 없는 V8(A+B), 같은 seed
+python scripts/run_mcts_v8_benchmark.py --arm ab --pairs 50 --seed 8401 --workers 4 `
+    --games-jsonl runs/v8_4c/ab.jsonl --output runs/v8_4c/ab.json 2>&1 | Tee-Object -FilePath runs/v8_4c/ab.log
+
+# 4. 사후 분석 (짝 반사실 + 패배 분기점)
+python scripts/analyze_v8_benchmark.py --run runs/v8_4c/full.json --baseline runs/v8_4c/ab.json `
+    --output runs/v8_4c/analysis.json
+```
+
 #### 11.11.5 판정 기준(미리 정해 둠)
 
 | 관찰 | 결정 |
@@ -877,9 +961,15 @@ python scripts/run_mcts_v8_benchmark.py --arm a_only --pairs 10 --seed 8401 --wo
 
 #### V8-B (full)
 
-- 338착수에서 돌았고 **13번 WIN을 증명해 두었다. 13판 모두 V8이 이겼고**, WIN 착수부터 판 끝까지 5~19수였다.
-- 반사실: 같은 국면에서 V7이 뒀을 수는 11번 REFUTED(이기는 공격 아님), 2번 WIN이었다(그중 1번은 V8과 같은 수).
-  즉 13번 중 11번은 V7이 놓쳤을 강제승을 V8-B가 찾았다.
+- 338착수에서 돌았고 **13번 WIN을 증명해 두었다.** WIN 착수부터 판 끝까지 5~19수였다.
+- **짝 효과(기계적 ablation):** V8-B가 발동한 13판에서 full은 13승, 같은 판의 a_only는 10승 1무 2패다. a_only도 이기던 10판은
+  승리를 유지했고, a_only가 진 2판과 비긴 1판을 full이 이겼다. 13판 중 11판은 **정확히 V8-B가 둔 착수에서 처음** 두 arm의 기보가
+  갈라졌다(나머지 2판은 a_only도 같은 수를 둬 기보가 같다). V8-B가 발동하지 않은 7판 중 두 arm이 갈라진 판은 0이다.
+- **반사실(정정):** runner의 `--counterfactual` 기록(V7 재탐색 수: REFUTED 11, WIN 2)은 **독립 난수열로 V7을 다시 돌린 것**이라
+  실제 a_only 수와 13번 중 2번만 같았다. 그래서 그 기록만으로 "V7이 11번의 강제승을 놓쳤다"고 쓰면 안 된다(처음 기록이 틀렸다).
+  대신 **실제 a_only가 같은 국면에서 둔 수**를 공격 판정했다(`scripts/analyze_v8_benchmark.py`, 결과
+  `docs/mcts-v8-results/pilot_analysis.json`): **WIN 2(V8과 같은 수), REFUTED 11, UNKNOWN 0.** 즉 실제 baseline은 13번 중 11번
+  그 자리에서 VCT1 강제승을 두지 않았고, V8-B가 그것을 찾았다. (그 11판 중 a_only가 결국 이긴 판은 8판이다.)
 - 선택 수의 후보 순위: 1~10위(후보 4~13개). 10위·호출 3,427개인 경우도 있어 호출 한도 10,000의 근거가 실전에서도 확인됐다.
 - 시간: 중앙값 0.08초, 평균 4.6초, p95 24.8초, 최대 135.9초. 예산 소진 9회(2.7%).
 
@@ -893,7 +983,8 @@ python scripts/run_mcts_v8_benchmark.py --arm a_only --pairs 10 --seed 8401 --wo
 - **수 변경의 대부분은 "V7 수가 UNKNOWN인데 다른 수가 먼저 SAFE로 증명된" 경우다**(full 10번 중 8번, a_only 18번 중 14번).
   §4.1에서 예상한 "가장 먼저 증명된 SAFE" 효과다. V7 수가 지는 수라는 증명은 없었다. 나머지(full 2, a_only 4)는 V7 수가 UNSAFE로
   증명되고 SAFE가 없어 미판정 수로 fallback한 경우다(모두 root 확장 + 예산 소진).
-- 예산 소진이 게이트(0/24)보다 훨씬 잦다. 실전의 stage 4 국면이 사람 패배 probe보다 어렵다.
+- 실전의 stage 4/5 국면은 게이트 표본(0/24)보다 예산 소진이 훨씬 잦았다. full은 stage 4에서 7회, stage 5에서 2회, a_only는
+  stage 4에서 15회, stage 5에서 6회다.
 
 #### 비용
 
@@ -903,10 +994,18 @@ python scripts/run_mcts_v8_benchmark.py --arm a_only --pairs 10 --seed 8401 --wo
 | V7 착수 시간 평균 | 0.83초 | 1.08초 |
 | 판당 시간(1 프로세스 기준) | 178초 | 211초 |
 
-- full의 최악 착수(168.5초)는 stage 4 국면에서 V8-B(133.4초, 예산 소진) 뒤에 V8-A(31.3초)가 돈 경우다. §4.2.8의 "두 모듈 합" 우려가 실제로 나왔다.
+- full의 최악 착수(168.5초, 쌍 1 흑 90수)는 stage 4 국면에서 V8-B(133.4초, 199,997노드, 예산 소진) 뒤에 V8-A(31.3초)가 돈 경우다.
+  §4.2.8의 "두 모듈 합" 우려가 실제로 나왔다. 이 국면은 V8-5 예산 조정의 기준 국면으로 `tests/fixtures/v8_budget_probes_v1.json`에 남겼다.
+- **비용의 대부분은 꼬리다.** full의 V8 사고 시간 3,069초 중 V8-B가 1,564초(51%), V8-A가 1,113초(36%), 나머지(V7 탐색·전술)가 약 13%다.
+  V8-B는 중앙값 0.08초지만 평균 4.6초·p95 24.8초·최대 135.9초인 heavy-tail 구조다. "중앙값이 작아서 싸다"고 읽으면 안 된다.
+- 그런데 판당 시간은 full(178초)이 a_only(211초)보다 짧다. V8-B가 강제승을 찾아 판을 평균 95수에서 59수로 줄였기 때문이다. 이 pilot에서는
+  V8-B 때문에 teacher 처리량이 나빠지지 않았다. 다만 한 착수 136~168초는 사람 대국과 대량 생성에서 관리해야 할 꼬리다.
 - 판당 약 3분이다. 4 프로세스면 시간당 약 80판이다.
 
-#### 패배 3판의 분기점 (V8 착수를 `ThreatSolver` 100k 노드로 VCF/VCT1 판정, 마지막 8수)
+#### 패배 3판의 분기점 (V8 착수를 per-VCF 100k·총 2M 노드로 VCF/VCT1 판정, 마지막 8수)
+
+증명 기록(국면 해시, 검사 수, 상태, 노드·호출·시간)은 `docs/mcts-v8-results/pilot_analysis.json`의 `losses`에 있다
+(`python scripts/analyze_v8_benchmark.py --run docs/mcts-v8-results/pilot_full.json --baseline docs/mcts-v8-results/pilot_a_only.json --output ...`로 재현).
 
 | 판 | 처음 지는 V8 수 | 경로 | 그 직전 V8 수 | 해석 |
 |---|---|---|---|---|
@@ -916,9 +1015,28 @@ python scripts/run_mcts_v8_benchmark.py --arm a_only --pairs 10 --seed 8401 --wo
 
 #### 판정 (§11.11.5)
 
-1. **V8-B: 유지.** 실전 효과가 보이고(13번 발동, 결과가 달라진 3쌍 모두 개선, 나빠진 판 0), 틀린 공격 0, 비용은 중앙값 0.08초다.
+1. **V8-B: 유지.** 짝 비교에서 결과가 달라진 3쌍이 모두 개선이고 나빠진 판이 0이며, 실제 baseline 수 기준으로도 11번의 VCT1 강제승을
+   새로 찾았다. 틀린 공격은 0이다. 다만 **유망한 것이지 통계적으로 입증된 것은 아니다**(짝 score 차 +12.5%p, bootstrap 95% 구간이
+   대략 0~+27.5%p라 0을 확실히 배제하지 못한다). 비용은 heavy-tail이다(위).
    D4 26/32 기준은 §4.2.9의 1(방향 한정 게이트)을 유지한다. 패배 3판 중 V8-B 미탐이 원인인 판은 없었다.
 2. **V8-C: 시작 근거가 생겼다.** full 패배 3판 중 2판이 tree 경로에서 VCT1-UNSAFE 수를 둔 것이다. 사람 패배 `164723`과 같은 종류다.
    두 분기 국면(쌍 6 흑 56수, 쌍 7 백 29수)을 V8-C 회귀 fixture로 쓴다.
 3. **예산:** 최악 168초와 V8-A 소진 9~14%는 V8-5에서 다룬다. 같은 착수에서 V8-B와 V8-A가 둘 다 비싼 경우가 최악값을 만든다.
-4. **강도 판단은 보류:** 20판은 작다(표준오차 약 ±9%p). 본 측정 50쌍은 V8-C까지 넣은 후보로 돌리는 것이 데스크톱 시간을 아낀다.
+4. **강도 판단은 보류:** 20판은 작다(score 표준오차 1 SE가 약 8~10%p, 95% 불확실성은 그보다 훨씬 크다). 본 측정 50쌍은 V8-C까지 넣은 후보로 돌리는 것이 데스크톱 시간을 아낀다.
+
+### 11.13 6차 검토 반영 (`facfaa5` 이후, pilot 분석 검토)
+
+| 지적 | 사실 확인 | 조치 |
+|---|---|---|
+| "11/13은 V7이 놓친 강제승" 문장은 근거가 없다 | **맞음.** `--counterfactual`은 독립 난수열로 V7을 다시 돌린 것이고, 실제 a_only 수와 2/13만 같았다 | 문장을 고쳤다. 실제 a_only 수를 같은 국면에서 공격 판정하는 분석을 새로 했다(`scripts/analyze_v8_benchmark.py`): **WIN 2(V8과 같은 수), REFUTED 11.** 실제 baseline 기준으로도 11번은 그 자리에서 VCT1 강제승을 두지 않았다 |
+| V8-B 효과는 "13판 13승"보다 짝 비교로 써야 한다 | **맞음.** 같은 13판에서 a_only는 10승 1무 2패, 11판은 V8-B 착수에서 정확히 갈라졌고, V8-B가 발동하지 않은 판은 갈라진 판이 0 | §11.12에 기계적 ablation으로 다시 썼다 |
+| 비용은 중앙값보다 꼬리 | **맞음.** V8-B 1,564초(51%), V8-A 1,113초(36%) | §11.12 비용 절에 비중과 heavy-tail을 적었다. 판당 시간은 full이 더 짧다는 점(판 길이 95→59수)도 함께 |
+| "실전 stage 4가 더 어렵다"보다 "stage 4/5에서 소진이 잦았다" | **맞음.** full stage 4 7회·stage 5 2회, a_only 15회·6회 | 문장 수정 |
+| 최악 착수(쌍 1 흑 90수)를 예산 회귀 fixture로 | 채택 | `tests/fixtures/v8_budget_probes_v1.json`(통과 기준 없음, V8-5용 기록) |
+| 증명 산출물을 JSON으로 남겨라 | 채택 | `docs/mcts-v8-results/pilot_analysis.json`(국면 해시, 검사 수, 상태, 노드·호출·시간, 예산 소진). pilot 결과 파일 2개도 같은 폴더에 넣었다 |
+| V8-C부터 모듈별 비용 기록과 착수 공유 상한 구조 | 채택 | V8-C 진단 6개(`v8_root_*`), runner `root` 기록과 `v8_c_root` 요약, §4.3.6 |
+| "±9%p" | **맞음** | "1 SE 약 8~10%p"로 고쳤다 |
+| V8-C 시작은 사전 기준에 따른 것 | 확인 | §4.3.1에 명시 |
+
+**V8-C 구현 중 바뀐 것:** 처음 설계(트리 전 root 필터)는 측정 후 버리고 "트리 후 검증"으로 바꿨다(§4.3.2). K 제한의 함정을 고쳤다(§4.3.5).
+runner arm은 `full`(A+B+C), `ab`(pilot의 full), `a_only`, `b_only`, `c_only`, `off`가 됐다. pilot과 비교할 때는 `ab`·`a_only`가 같은 설정이다.

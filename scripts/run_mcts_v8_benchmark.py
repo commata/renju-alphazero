@@ -6,10 +6,12 @@ the pair index, never on ``--arm``, so runs of different arms with the same seed
 are paired (ablation).
 
 Arms (V8 configuration):
-    full    V8-A + V8-B (V8_DEFAULTS)
-    a_only  V8-A only   (own_vct_attack=False)
-    b_only  V8-B only   (stage_vct_safety=False)
-    off     neither     (V8 == V7; sanity check)
+    full    V8-A + V8-B + V8-C (V8_DEFAULTS)
+    ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
+    a_only  V8-A only          (the pilot's "a_only")
+    b_only  V8-B only
+    c_only  V8-C only
+    off     none               (V8 == V7; sanity check)
 
 Every V8 move records its route, time and module diagnostics. With
 ``--counterfactual`` each V8-B move (route ``own_vct``) also records the move V7
@@ -50,9 +52,11 @@ from search.mcts_v7 import V7_FINAL, mcts_search_v7  # noqa: E402
 FORMAT = 'mcts-v8-benchmark-v1'
 ARMS = {
     'full': {},
-    'a_only': {'own_vct_attack': False},
-    'b_only': {'stage_vct_safety': False},
-    'off': {'stage_vct_safety': False, 'own_vct_attack': False},
+    'ab': {'root_vct_safety': False},
+    'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
+    'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
+    'c_only': {'stage_vct_safety': False, 'own_vct_attack': False},
+    'off': {'stage_vct_safety': False, 'own_vct_attack': False, 'root_vct_safety': False},
 }
 SEARCH_KEYS = ('simulations', 'tactical_simulations')  # smoke-test overrides only
 
@@ -96,6 +100,11 @@ def _move_record(ply, seconds, diag) -> dict:
             'widened': diag.v8_vct_widened, 'calls': diag.v8_vct_calls,
             'nodes': diag.v8_vct_nodes, 'exhausted': diag.v8_vct_budget_exhausted,
             'seconds': round(diag.v8_vct_seconds, 4),
+        },
+        'root': {
+            'checked': [[list(m), s] for m, s in diag.v8_root_checked], 'rank': diag.v8_root_rank,
+            'calls': diag.v8_root_calls, 'nodes': diag.v8_root_nodes,
+            'exhausted': diag.v8_root_budget_exhausted, 'seconds': round(diag.v8_root_seconds, 4),
         },
     }
 
@@ -194,6 +203,7 @@ def summarize(games: list[dict]) -> dict:
     ran_attack = [m for m in moves if m['attack']['candidates'] or m['attack']['calls']]
     ran_vct = [m for m in moves if m['route'] in ('stage4', 'stage5') and m['vct']['checked']]
     counterfactual = [m['counterfactual'] for m in moves if 'counterfactual' in m]
+    ran_root = [m for m in moves if m.get('root', {}).get('checked')]
     records = [(g['key'], g['winner'], g['moves']) for g in sorted(games, key=lambda g: g['key'])]
     return {
         'games': len(games),
@@ -219,6 +229,12 @@ def summarize(games: list[dict]) -> dict:
             'widened': sum(m['vct']['widened'] for m in ran_vct),
             'budget_exhausted': sum(m['vct']['exhausted'] for m in ran_vct),
             'seconds': _dist([m['vct']['seconds'] for m in ran_vct]),
+        },
+        'v8_c_root': {
+            'ran': len(ran_root),
+            'changed': sum(m['changed'] for m in ran_root),
+            'budget_exhausted': sum(m['root']['exhausted'] for m in ran_root),
+            'seconds': _dist([m['root']['seconds'] for m in ran_root]),
         },
         'counterfactual': {
             'recorded': len(counterfactual),

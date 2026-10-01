@@ -13,11 +13,19 @@
    ``ThreatSolver(node_limit=100_000)`` (every reply classified). A declared WIN
    outside the complete fixture set or rejected there counts as a false positive.
 
+``--gate root`` (V8-C, ``tests/fixtures/v8c_root_probes_v1.json``, V8 defaults), two checks:
+1. engine: the move is played on the tree route, is not the recorded losing move,
+   V8-C proved it VCT1-SAFE and a fresh ``ThreatSolver(node_limit=100_000)`` agrees;
+2. forced: the tree's choice depends on the random state of the original game,
+   so the recorded losing move is handed to V8-C as "V7's move" directly (root
+   children in V6 root order). V8-C must prove it UNSAFE and replace it with a
+   move it proved SAFE that the fresh solver also confirms SAFE.
+
 A fixture-correct move reached without V8's own proof never passes. Budget
 exhaustion and the time distribution are reported separately; exits 1 on any
 failure.
 
-    python scripts/run_v8_gates.py [--gate defend|attack|all] [--symmetries 0 1 ...]
+    python scripts/run_v8_gates.py [--gate defend|attack|root|all] [--symmetries 0 1 ...]
                                    [--output runs/v8_gates.json]
 """
 from __future__ import annotations
@@ -34,15 +42,23 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 
 from analysis.mcts_v8 import (  # noqa: E402
-    V8_DEFAULTS, WIN, SearchDiagnostics, _attack_candidates, mcts_search_v8,
+    V8_DEFAULTS, WIN, SearchDiagnostics, _attack_candidates, _verify_root_choice, mcts_search_v8,
 )
 from analysis.tactical_labels import proves_threat  # noqa: E402
 from analysis.threats import ThreatSolver  # noqa: E402
 from renju import Game  # noqa: E402
 from search.mcts_v5 import _RootContext  # noqa: E402
+from search.mcts_v6 import _root_candidates_v6  # noqa: E402
+from types import SimpleNamespace  # noqa: E402
 
 PROBES = ROOT / 'tests/fixtures/vct_probes_v1.json'
-DEFEND_CONFIG = {**V8_DEFAULTS, 'own_vct_attack': False}
+ROOT_PROBES = ROOT / 'tests/fixtures/v8c_root_probes_v1.json'
+DEFEND_CONFIG = {**V8_DEFAULTS, 'own_vct_attack': False, 'root_vct_safety': False}
+ROOT_CONFIG = dict(V8_DEFAULTS)
+
+
+def set_root_config(**overrides):
+    ROOT_CONFIG.update(overrides)
 ATTACK_CONFIG = dict(V8_DEFAULTS)
 
 
@@ -144,9 +160,63 @@ def attack_gate(probes, seed):
                      'false_positive': sum(r['false_positive'] for r in rows)})
 
 
+def _forced_root_check(game, losing) -> dict:
+    root, _, _ = _root_candidates_v6(game, _RootContext(game.legal_moves(), SearchDiagnostics()), 20, 2)
+    others = [m for m in root if m != losing]
+    children = [SimpleNamespace(move=losing, visits=len(others) + 1, mean_value=0.0)]
+    children += [SimpleNamespace(move=m, visits=len(others) - i, mean_value=0.0) for i, m in enumerate(others)]
+    diag = SearchDiagnostics()
+    started = perf_counter()
+    final = _verify_root_choice(game, losing, children, diag, node_limit=ROOT_CONFIG['root_vcf_node_limit'],
+                                call_limit=ROOT_CONFIG['root_call_limit'], node_budget=ROOT_CONFIG['root_node_budget'],
+                                max_children=ROOT_CONFIG['root_max_children'])
+    statuses = dict(diag.v8_root_checked)
+    replaced = final != losing and statuses.get(losing) == 'UNSAFE' and statuses.get(final) == 'SAFE'
+    independent = replaced and ThreatSolver(node_limit=100_000).classify(game, [final], vct_depth=1)[final][0] == 'SAFE'
+    return {'ok': replaced and independent, 'final': list(final), 'losing_status': statuses.get(losing),
+            'final_status': statuses.get(final), 'independent_safe': independent, 'rank': diag.v8_root_rank,
+            'calls': diag.v8_root_calls, 'nodes': diag.v8_root_nodes, 'exhausted': diag.v8_root_budget_exhausted,
+            'seconds': round(perf_counter() - started, 2)}
+
+
+def root_gate(probes, seed):
+    rows = []
+    for probe in probes:
+        game = _game(probe['moves'])
+        diag = SearchDiagnostics()
+        started = perf_counter()
+        move = mcts_search_v8(game, **ROOT_CONFIG, random=Random(seed), diagnostics=diag)
+        seconds = round(perf_counter() - started, 2)
+        proven = dict(diag.v8_root_checked).get(move) == 'SAFE'
+        avoided = list(move) not in probe['avoid_moves']
+        independent = proven and ThreatSolver(node_limit=100_000).classify(game, [move], vct_depth=1)[move][0] == 'SAFE'
+        engine_ok = diag.v8_route == 'tree' and avoided and proven and independent
+        forced = _forced_root_check(game, tuple(probe['avoid_moves'][0]))
+        ok = engine_ok and forced['ok']
+        row = {'id': probe['id'], 'ok': ok, 'engine_ok': engine_ok, 'forced': forced,
+               'move': list(move), 'route': diag.v8_route, 'avoided': avoided,
+               'proven_safe': proven, 'independent_safe': independent,
+               'rank': diag.v8_root_rank, 'v7_move': list(diag.v8_v7_move),
+               'calls': diag.v8_root_calls, 'nodes': diag.v8_root_nodes,
+               'budget_exhausted': diag.v8_root_budget_exhausted,
+               'root_seconds': round(diag.v8_root_seconds, 2), 'attack_seconds': round(diag.v8_attack_seconds, 2),
+               'checked': [[list(m), s] for m, s in diag.v8_root_checked], 'seconds': seconds}
+        rows.append(row)
+        print(f"  forced {probe['avoid_moves'][0]}: {forced}", flush=True)
+        print(f"{'PASS' if ok else 'FAIL'} {row['id']:<22} v8 {list(move)} {row['route']} avoided {avoided} "
+              f"proven {proven} independent {independent} rank {row['rank']} v7 {row['v7_move']} "
+              f"calls {row['calls']} nodes {row['nodes']} {'EXHAUSTED ' if row['budget_exhausted'] else ''}"
+              f"root {row['root_seconds']}s total {seconds}s", flush=True)
+    return _summary('v8c_root', rows, ROOT_CONFIG,
+                    ('root_vct_safety', 'root_vcf_node_limit', 'root_call_limit', 'root_node_budget',
+                     'root_max_children'),
+                    {'proven_safe': sum(r['proven_safe'] for r in rows),
+                     'independent_safe': sum(r['independent_safe'] for r in rows)})
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--gate', choices=('defend', 'attack', 'all'), default='all')
+    parser.add_argument('--gate', choices=('defend', 'attack', 'root', 'all'), default='all')
     parser.add_argument('--symmetries', type=int, nargs='*', default=None,
                         help='D4 indices to run (default: all 8)')
     parser.add_argument('--seed', type=int, default=1)
@@ -159,6 +229,8 @@ def main() -> int:
         summaries.append(defend_gate([p for p in probes if p['kind'] == 'must_defend_vct'], args.seed))
     if args.gate in ('attack', 'all'):
         summaries.append(attack_gate([p for p in probes if p['kind'] == 'vct_attack'], args.seed))
+    if args.gate in ('root', 'all'):
+        summaries.append(root_gate(json.loads(ROOT_PROBES.read_text(encoding='utf-8'))['probes'], args.seed))
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(summaries, indent=1), encoding='utf-8')

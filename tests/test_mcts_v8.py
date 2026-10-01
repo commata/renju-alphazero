@@ -6,8 +6,8 @@ import unittest
 from agents import MCTSV7Agent
 from analysis.mcts_v8 import (
     REFUTED, V8_DEFAULTS, WIN, SearchDiagnostics, _attack_candidates, _BudgetedSolver, _board_key,
-    _first_proven, _first_safe, _not_immediately_lost, _own_vct_attack, _stage_vct_move,
-    mcts_search_v8,
+    _first_proven, _first_safe, _not_immediately_lost, _own_vct_attack, _proven, _stage_vct_move,
+    _verify_root_choice, mcts_search_v8,
 )
 from analysis.tactical_labels import proves_threat
 from search.mcts_v5 import _RootContext
@@ -20,8 +20,8 @@ from search.mcts_v7 import V7_FINAL, mcts_search_v7
 ROOT = Path(__file__).resolve().parents[1]
 GAMES = json.loads((ROOT / 'tests/fixtures/web_play_v7_human_games_v1.json').read_text(encoding='utf-8'))['games']
 PROBES = json.loads((ROOT / 'tests/fixtures/vct_probes_v1.json').read_text(encoding='utf-8'))['probes']
-OFF = {**V8_DEFAULTS, 'stage_vct_safety': False, 'own_vct_attack': False}  # V7 exactly
-A_ONLY = {**V8_DEFAULTS, 'own_vct_attack': False}  # V8-A regression config
+OFF = {**V8_DEFAULTS, 'stage_vct_safety': False, 'own_vct_attack': False, 'root_vct_safety': False}  # V7
+A_ONLY = {**V8_DEFAULTS, 'own_vct_attack': False, 'root_vct_safety': False}  # V8-A regression config
 
 
 def _game(moves):
@@ -368,7 +368,8 @@ class OwnVCTAttackTest(unittest.TestCase):
         diag, a_only = SearchDiagnostics(), SearchDiagnostics()
         move = mcts_search_v8(game, **{**V8_DEFAULTS, 'attack_node_budget': 50},
                               random=Random(1), diagnostics=diag)
-        expected = mcts_search_v8(_game(probe['moves']), **A_ONLY, random=Random(1), diagnostics=a_only)
+        expected = mcts_search_v8(_game(probe['moves']), **{**V8_DEFAULTS, 'own_vct_attack': False},
+                                  random=Random(1), diagnostics=a_only)
         self.assertEqual(move, expected)
         self.assertNotEqual(diag.v8_route, 'own_vct')
         self.assertEqual(diag.v8_attack_status, '')
@@ -420,10 +421,102 @@ class OwnVCTAttackTest(unittest.TestCase):
         self.assertEqual(statuses, {'A': UNKNOWN, 'B': WIN})
 
 
+class _Child:
+    def __init__(self, move, visits, mean_value=0.0):
+        self.move, self.visits, self.mean_value = move, visits, mean_value
+
+
+def _scripted_status(script):
+    """Replace _BudgetedSolver.status_after: fixed status per move, no budget use."""
+    def status_after(self, game, move, share=None, call_share=None):
+        self.last_cut = False
+        return script.get(move, UNKNOWN)
+    return status_after
+
+
+class RootVerifyPolicyTest(unittest.TestCase):
+    # A quiet early position: no move loses at once, so the fallback guard never interferes.
+    def _run(self, script, chosen, children):
+        from unittest import mock
+        game = _game(GAMES[1]['moves'][:4])
+        diag = SearchDiagnostics()
+        with mock.patch.object(_BudgetedSolver, 'status_after', _scripted_status(script)):
+            final = _verify_root_choice(game, chosen, children, diag, node_limit=20_000,
+                                        call_limit=10_000, node_budget=200_000)
+        self.assertEqual(len(game.history), 4)
+        return final, diag
+
+    CHILDREN = [_Child((7, 9), 30), _Child((8, 9), 20), _Child((6, 6), 20, 0.5), _Child((9, 9), 5)]
+
+    def test_safe_v7_move_is_kept_and_nothing_else_is_checked(self):
+        final, diag = self._run({(7, 9): SAFE}, (7, 9), self.CHILDREN)
+        self.assertEqual((final, diag.v8_root_rank), ((7, 9), 1))
+        self.assertEqual(dict(diag.v8_root_checked), {(7, 9): SAFE})
+
+    def test_unsafe_v7_move_gives_way_to_the_next_proven_safe_child(self):
+        # Tree order after V7's move: (6, 6) (20 visits, higher mean) before (8, 9).
+        final, diag = self._run({(7, 9): UNSAFE, (6, 6): UNSAFE, (8, 9): SAFE}, (7, 9), self.CHILDREN)
+        self.assertEqual((final, diag.v8_root_rank), ((8, 9), 3))
+
+    def test_unrefuted_v7_move_stands_without_a_proven_safe_child(self):
+        final, _ = self._run({(7, 9): UNKNOWN, (6, 6): UNSAFE}, (7, 9), self.CHILDREN)
+        self.assertEqual(final, (7, 9))
+
+    def test_proven_loss_gives_way_to_an_unrefuted_child(self):
+        final, diag = self._run({(7, 9): UNSAFE, (6, 6): UNSAFE}, (7, 9), self.CHILDREN)
+        self.assertEqual((final, diag.v8_root_rank), ((8, 9), 3))
+
+    def test_all_proven_unsafe_keeps_v7_move(self):
+        script = {c.move: UNSAFE for c in self.CHILDREN}
+        final, _ = self._run(script, (7, 9), self.CHILDREN)
+        self.assertEqual(final, (7, 9))
+
+    def test_capped_children_widen_when_all_are_proven_unsafe(self):
+        # max_children=2: (7, 9) and (6, 6) are both proven UNSAFE, so the check must go on to
+        # the children beyond the cap instead of keeping V7's proven loss.
+        from unittest import mock
+        game = _game(GAMES[1]['moves'][:4])
+        diag = SearchDiagnostics()
+        script = {(7, 9): UNSAFE, (6, 6): UNSAFE, (8, 9): SAFE}
+        with mock.patch.object(_BudgetedSolver, 'status_after', _scripted_status(script)):
+            final = _verify_root_choice(game, (7, 9), self.CHILDREN, diag, node_limit=20_000,
+                                        call_limit=10_000, node_budget=200_000, max_children=2)
+        self.assertEqual((final, diag.v8_root_rank), ((8, 9), 3))
+
+    def test_capped_fallback_considers_unchecked_children(self):
+        from unittest import mock
+        game = _game(GAMES[1]['moves'][:4])
+        diag = SearchDiagnostics()
+        script = {(7, 9): UNSAFE, (6, 6): UNSAFE, (8, 9): UNSAFE, (9, 9): UNSAFE}
+        def status_after(self, game, move, share=None, call_share=None):
+            self.last_cut = False
+            return script[move] if move in ((7, 9), (6, 6)) else UNKNOWN  # beyond the cap: unresolved
+        with mock.patch.object(_BudgetedSolver, 'status_after', status_after):
+            final = _verify_root_choice(game, (7, 9), self.CHILDREN, diag, node_limit=20_000,
+                                        call_limit=10_000, node_budget=200_000, max_children=2)
+        self.assertNotIn(final, ((7, 9), (6, 6)))
+
+    def test_proven_collects_several_in_proof_order(self):
+        solver = _ScriptedSolver({'A': (10, SAFE), 'B': (3_000, SAFE), 'C': (20, SAFE)}, 10_000)  # round-1 share 1,666
+        self.assertEqual(_proven(None, ['A', 'B', 'C'], {}, solver, solver.status_after, SAFE, want=2),
+                         ['A', 'C'])
+
+
+class RootVerifyEngineTest(unittest.TestCase):
+    def test_safe_tree_move_is_v7s_move(self):
+        # Quiet position: V7's tree move is proven VCT1-SAFE, so V8-C changes nothing.
+        game = _game(GAMES[1]['moves'][:4])
+        expected = mcts_search_v7(game, **V7_FINAL, random=Random(4))
+        diag = SearchDiagnostics()
+        move = mcts_search_v8(game, **{**V8_DEFAULTS, 'own_vct_attack': False}, random=Random(4), diagnostics=diag)
+        self.assertEqual((move, diag.v8_v7_move, diag.v8_changed, diag.v8_root_rank), (expected, expected, False, 1))
+        self.assertEqual(dict(diag.v8_root_checked), {expected: SAFE})
+
+
 class AgentTest(unittest.TestCase):
     def test_agent_matches_v7_agent_with_modules_off(self):
         game = _game(GAMES[0]['moves'][:6])
-        v8 = MCTSV8Agent(seed=5, stage_vct_safety=False, own_vct_attack=False)
+        v8 = MCTSV8Agent(seed=5, stage_vct_safety=False, own_vct_attack=False, root_vct_safety=False)
         v7 = MCTSV7Agent(seed=5)
         self.assertEqual(v8.select_move(game), v7.select_move(game))
 
@@ -440,6 +533,10 @@ class AgentTest(unittest.TestCase):
             MCTSV8Agent(own_vct_attack=1)
         with self.assertRaises(ValueError):
             MCTSV8Agent(attack_node_budget=0)
+        with self.assertRaises(ValueError):
+            MCTSV8Agent(root_vct_safety=1)
+        with self.assertRaises(ValueError):
+            MCTSV8Agent(root_node_budget=0)
 
 
 if __name__ == '__main__':

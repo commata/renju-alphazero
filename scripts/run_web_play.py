@@ -183,6 +183,12 @@ def _diagnostics(agent) -> dict[str, Any]:
         "v8_attack_nodes",
         "v8_attack_budget_exhausted",
         "v8_attack_seconds",
+        "v8_root_checked",
+        "v8_root_rank",
+        "v8_root_calls",
+        "v8_root_nodes",
+        "v8_root_budget_exhausted",
+        "v8_root_seconds",
     }
     if is_dataclass(diagnostics):
         available = {field.name for field in fields(diagnostics)}
@@ -199,7 +205,7 @@ def _diagnostics(agent) -> dict[str, Any]:
 V8_CSV_FIELDS = (
     "v8_route", "v8_changed", "v8_v7_move", "v8_attack_status", "v8_attack_move",
     "v8_attack_seconds", "v8_vct_seconds", "v8_vct_budget_exhausted",
-    "v8_attack_budget_exhausted",
+    "v8_attack_budget_exhausted", "v8_root_rank", "v8_root_seconds", "v8_root_budget_exhausted",
 )
 
 
@@ -218,6 +224,9 @@ def _v8_csv(diagnostics: dict[str, Any]) -> dict[str, Any]:
         "v8_vct_seconds": diagnostics.get("v8_vct_seconds"),
         "v8_vct_budget_exhausted": diagnostics.get("v8_vct_budget_exhausted"),
         "v8_attack_budget_exhausted": diagnostics.get("v8_attack_budget_exhausted"),
+        "v8_root_rank": diagnostics.get("v8_root_rank"),
+        "v8_root_seconds": diagnostics.get("v8_root_seconds"),
+        "v8_root_budget_exhausted": diagnostics.get("v8_root_budget_exhausted"),
     }
 
 

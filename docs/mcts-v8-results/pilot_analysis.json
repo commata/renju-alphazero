@@ -1,0 +1,995 @@
+{
+ "format": "mcts-v8-benchmark-analysis-v1",
+ "run": "docs/mcts-v8-results/pilot_full.json",
+ "run_arm": "full",
+ "run_git_commit": "a02c3abfce9c862039a8e4f59ab61e38860974eb",
+ "seed": 8401,
+ "node_limit": 100000,
+ "node_budget": 2000000,
+ "baseline": "docs/mcts-v8-results/pilot_a_only.json",
+ "baseline_arm": "a_only",
+ "matched_counterfactual": {
+  "v8_b_moves": 13,
+  "baseline_same_position": 13,
+  "baseline_same_move": 2,
+  "baseline_move_attack_status": {
+   "WIN": 2,
+   "REFUTED": 11,
+   "UNKNOWN": 0
+  },
+  "rows": [
+   {
+    "pair": 0,
+    "v8_color": "black",
+    "ply": 28,
+    "history_sha16": "bc7b5c38c73c63b6",
+    "v8_move": [
+     7,
+     9
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      7,
+      9
+     ],
+     "same_as_v8": true,
+     "result": "win",
+     "attack": {
+      "status": "WIN",
+      "exhausted": false,
+      "nodes": 11084,
+      "calls": 582,
+      "seconds": 11.31
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      10,
+      8
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 8.7213
+    }
+   },
+   {
+    "pair": 0,
+    "v8_color": "white",
+    "ply": 55,
+    "history_sha16": "f41818f0c924cba0",
+    "v8_move": [
+     9,
+     2
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      11,
+      10
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 632,
+      "calls": 1,
+      "seconds": 0.66
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      7,
+      11
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 2.2161
+    }
+   },
+   {
+    "pair": 2,
+    "v8_color": "black",
+    "ply": 20,
+    "history_sha16": "0672067a5e915963",
+    "v8_move": [
+     7,
+     9
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      3,
+      6
+     ],
+     "same_as_v8": false,
+     "result": "loss",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.01
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      3,
+      6
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 0.7852
+    }
+   },
+   {
+    "pair": 2,
+    "v8_color": "white",
+    "ply": 11,
+    "history_sha16": "c84b7ba48f6bc120",
+    "v8_move": [
+     9,
+     8
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      8,
+      10
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 1,
+      "seconds": 0.0
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      5,
+      8
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.8899
+    }
+   },
+   {
+    "pair": 3,
+    "v8_color": "white",
+    "ply": 43,
+    "history_sha16": "1ab3462cd88a44f0",
+    "v8_move": [
+     6,
+     7
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      10,
+      11
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 10,
+      "calls": 1,
+      "seconds": 0.01
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      8,
+      5
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.4386
+    }
+   },
+   {
+    "pair": 4,
+    "v8_color": "black",
+    "ply": 40,
+    "history_sha16": "e0ec90eb4e5e43cb",
+    "v8_move": [
+     5,
+     10
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      6,
+      2
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 12,
+      "calls": 1,
+      "seconds": 0.01
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      3,
+      4
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.7188
+    }
+   },
+   {
+    "pair": 4,
+    "v8_color": "white",
+    "ply": 17,
+    "history_sha16": "44d09d20f2bb5828",
+    "v8_move": [
+     9,
+     6
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      9,
+      6
+     ],
+     "same_as_v8": true,
+     "result": "win",
+     "attack": {
+      "status": "WIN",
+      "exhausted": false,
+      "nodes": 6092,
+      "calls": 1818,
+      "seconds": 7.74
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      9,
+      6
+     ],
+     "v7_move_attack_status": "WIN",
+     "seconds": 3.2288
+    }
+   },
+   {
+    "pair": 5,
+    "v8_color": "black",
+    "ply": 34,
+    "history_sha16": "42f8ada970de3480",
+    "v8_move": [
+     5,
+     3
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      3,
+      5
+     ],
+     "same_as_v8": false,
+     "result": "draw",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.01
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      9,
+      6
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 0.919
+    }
+   },
+   {
+    "pair": 5,
+    "v8_color": "white",
+    "ply": 31,
+    "history_sha16": "d5cd55b6c1eafc8f",
+    "v8_move": [
+     6,
+     11
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      9,
+      8
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 1,
+      "seconds": 0.0
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      4,
+      11
+     ],
+     "v7_move_attack_status": "WIN",
+     "seconds": 1.5199
+    }
+   },
+   {
+    "pair": 7,
+    "v8_color": "black",
+    "ply": 14,
+    "history_sha16": "55681c934f5db504",
+    "v8_move": [
+     4,
+     6
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      7,
+      5
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 26,
+      "calls": 1,
+      "seconds": 0.03
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      5,
+      7
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 0.924
+    }
+   },
+   {
+    "pair": 8,
+    "v8_color": "black",
+    "ply": 14,
+    "history_sha16": "b6a6234f5e5e2b95",
+    "v8_move": [
+     8,
+     8
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      5,
+      6
+     ],
+     "same_as_v8": false,
+     "result": "loss",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 12,
+      "calls": 1,
+      "seconds": 0.02
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      10,
+      7
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 0.8502
+    }
+   },
+   {
+    "pair": 8,
+    "v8_color": "white",
+    "ply": 39,
+    "history_sha16": "5f4637a2b83908b1",
+    "v8_move": [
+     12,
+     9
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      8,
+      12
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.01
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      10,
+      9
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.9412
+    }
+   },
+   {
+    "pair": 9,
+    "v8_color": "white",
+    "ply": 25,
+    "history_sha16": "51312146f7dab262",
+    "v8_move": [
+     9,
+     7
+    ],
+    "run_result": "win",
+    "baseline": {
+     "move": [
+      3,
+      8
+     ],
+     "same_as_v8": false,
+     "result": "win",
+     "attack": {
+      "status": "REFUTED",
+      "exhausted": false,
+      "nodes": 78,
+      "calls": 1,
+      "seconds": 0.08
+     }
+    },
+    "recorded_counterfactual": {
+     "v7_move": [
+      3,
+      7
+     ],
+     "v7_move_attack_status": "REFUTED",
+     "seconds": 1.8054
+    }
+   }
+  ]
+ },
+ "losses": [
+  {
+   "pair": 1,
+   "v8_color": "white",
+   "length": 73,
+   "first_proven_losing_v8_ply": 59,
+   "checked": [
+    {
+     "ply": 71,
+     "history_sha16": "5673b3dc88ad1739",
+     "move": [
+      7,
+      12
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 0,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 69,
+     "history_sha16": "2e875d143f0f1caa",
+     "move": [
+      12,
+      11
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 12,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 67,
+     "history_sha16": "1e717b147b9f1d6c",
+     "move": [
+      11,
+      9
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 13,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 65,
+     "history_sha16": "804bb343b4355a2c",
+     "move": [
+      11,
+      5
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 19,
+      "calls": 1,
+      "seconds": 0.02
+     },
+     "vct1": null
+    },
+    {
+     "ply": 63,
+     "history_sha16": "0b87c94577cdb381",
+     "move": [
+      10,
+      13
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 23,
+      "calls": 1,
+      "seconds": 0.02
+     },
+     "vct1": null
+    },
+    {
+     "ply": 61,
+     "history_sha16": "17cbe939460f4f4a",
+     "move": [
+      6,
+      1
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 24,
+      "calls": 1,
+      "seconds": 0.02
+     },
+     "vct1": null
+    },
+    {
+     "ply": 59,
+     "history_sha16": "bbf73128f513f7ac",
+     "move": [
+      7,
+      11
+     ],
+     "route": "stage4",
+     "changed": false,
+     "vct_exhausted": true,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 25,
+      "calls": 1,
+      "seconds": 0.02
+     },
+     "vct1": null
+    },
+    {
+     "ply": 57,
+     "history_sha16": "565fb2beed497b94",
+     "move": [
+      12,
+      3
+     ],
+     "route": "stage4",
+     "changed": true,
+     "vct_exhausted": true,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNKNOWN",
+      "exhausted": false,
+      "nodes": 513237,
+      "calls": 166,
+      "seconds": 493.32
+     },
+     "vct1": null
+    }
+   ]
+  },
+  {
+   "pair": 6,
+   "v8_color": "black",
+   "length": 70,
+   "first_proven_losing_v8_ply": 56,
+   "checked": [
+    {
+     "ply": 68,
+     "history_sha16": "1cbc59dae5633213",
+     "move": [
+      0,
+      7
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 0,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 66,
+     "history_sha16": "763d2b49315560ec",
+     "move": [
+      4,
+      12
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 64,
+     "history_sha16": "f897c98953b082ef",
+     "move": [
+      2,
+      10
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 3,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 62,
+     "history_sha16": "15d1bc604a7f1807",
+     "move": [
+      2,
+      7
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 4,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 60,
+     "history_sha16": "8a0516f84f5d1e1b",
+     "move": [
+      1,
+      9
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 5,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 58,
+     "history_sha16": "3fe77c3f14580e12",
+     "move": [
+      7,
+      8
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 6,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 56,
+     "history_sha16": "8885f71f0ed8e4e9",
+     "move": [
+      10,
+      7
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 4,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 6391,
+      "calls": 545,
+      "seconds": 6.66
+     }
+    },
+    {
+     "ply": 54,
+     "history_sha16": "7a4ea997d778f27a",
+     "move": [
+      3,
+      8
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 4,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 3463,
+      "calls": 201,
+      "seconds": 4.14
+     }
+    }
+   ]
+  },
+  {
+   "pair": 7,
+   "v8_color": "white",
+   "length": 43,
+   "first_proven_losing_v8_ply": 29,
+   "checked": [
+    {
+     "ply": 41,
+     "history_sha16": "836bb4da55088a1e",
+     "move": [
+      4,
+      7
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 0,
+      "calls": 0,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 39,
+     "history_sha16": "7092a40af5d451d6",
+     "move": [
+      7,
+      11
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 2,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 37,
+     "history_sha16": "decca61c9fc228ab",
+     "move": [
+      5,
+      2
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 3,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 35,
+     "history_sha16": "2236f387a0d3dd22",
+     "move": [
+      4,
+      9
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 4,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 33,
+     "history_sha16": "8b2f78caaa599f96",
+     "move": [
+      2,
+      4
+     ],
+     "route": "stage2",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 5,
+      "calls": 1,
+      "seconds": 0.0
+     },
+     "vct1": null
+    },
+    {
+     "ply": 31,
+     "history_sha16": "60b358aa532068f6",
+     "move": [
+      8,
+      9
+     ],
+     "route": "stage4",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 6,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": null
+    },
+    {
+     "ply": 29,
+     "history_sha16": "afa868c79e5fb749",
+     "move": [
+      4,
+      5
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 78,
+      "calls": 1,
+      "seconds": 0.08
+     },
+     "vct1": {
+      "status": "UNSAFE",
+      "exhausted": false,
+      "nodes": 35155,
+      "calls": 243,
+      "seconds": 20.45
+     }
+    },
+    {
+     "ply": 27,
+     "history_sha16": "c13f53a4d2933bff",
+     "move": [
+      3,
+      6
+     ],
+     "route": "tree",
+     "changed": false,
+     "vct_exhausted": false,
+     "attack_exhausted": false,
+     "vcf": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 12,
+      "calls": 1,
+      "seconds": 0.01
+     },
+     "vct1": {
+      "status": "SAFE",
+      "exhausted": false,
+      "nodes": 31386,
+      "calls": 369,
+      "seconds": 31.34
+     }
+    }
+   ]
+  }
+ ]
+}

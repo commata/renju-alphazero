@@ -44,6 +44,8 @@ class BenchmarkRunTest(unittest.TestCase):
             self.assertEqual(summary['v8_b_attack']['ran'], 0)  # V8-B off
             self.assertNotIn('own_vct', summary['v8_routes'])
             self.assertEqual(a['v8_config']['own_vct_attack'], False)
+            self.assertEqual(a['v8_config']['root_vct_safety'], False)
+            self.assertEqual(summary['v8_c_root']['ran'], 0)
             self.assertEqual(a['v8_config']['simulations'], 4)
             for game in a['games']:
                 for move in game['v8_moves']:
