@@ -20,7 +20,11 @@ Implemented modules (the rest of the design is not yet here):
   the other root children are checked in tree preference order (visits, then
   mean value) and the first proven SAFE one is played; with none proven SAFE
   V7's move stands unless it is proven UNSAFE, in which case the first
-  unrefuted child that does not lose at once is played.
+  unrefuted child that does not lose at once is played. That is the
+  ``root_vct_mode="aggressive"`` rule (the default): an unfinished check on
+  V7's move (UNKNOWN) is enough to switch to a proven-SAFE lower child. With
+  ``root_vct_mode="veto"`` only a proven loss (UNSAFE) of V7's move switches,
+  to the best-ranked child that is not itself proven UNSAFE (design §12.3).
 - V8-A (``stage_vct_safety``): Stage 4 and single-point Stage 5 forced defenses
   are checked with a depth-1 VCT proof in V7 order and the first proven SAFE one
   is played. If every forced defense is proven UNSAFE the check widens to the
@@ -31,7 +35,9 @@ V8-A, V8-B and V8-C each have their own solver, cache and budget, and share one
 fair budget scheduler (``_proven``).
 
 SAFE here means "no VCF and no quiet-move + VCF win for the opponent" within the
-frozen VCF solver's class (see ``analysis.threats``), not "no forced win".
+frozen VCF solver's class (see ``analysis.threats``), not "no forced win". The
+design doc calls it NOT_REFUTED_VCT1 and UNSAFE PROVEN_LOSS_VCT1 (§12.2); the
+stored strings stay "SAFE"/"UNSAFE" so earlier result files remain comparable.
 """
 from __future__ import annotations
 
@@ -65,6 +71,11 @@ from .threats import (
 
 Move = tuple[int, int]
 
+# Design-doc names of the V8-A/V8-C statuses (§12.2): a SAFE move is only "not refuted
+# by a depth-1 VCT within the budget", an UNSAFE move is a proven loss in that class.
+NOT_REFUTED_VCT1, PROVEN_LOSS_VCT1 = SAFE, UNSAFE
+ROOT_VCT_MODES = ("aggressive", "veto")
+
 # V8-B attack statuses (the side to move attacks; kept apart from V8-A's SAFE/UNSAFE).
 WIN, REFUTED = 'WIN', 'REFUTED'
 
@@ -87,6 +98,9 @@ V8_DEFAULTS = {
     # children) and 400k nodes (one V7 move alone needed 128,917 nodes to be proven SAFE).
     "root_node_budget": 400_000,
     "root_max_children": 4,  # 0 = every root child; N = the tree's top N first, wider only if all UNSAFE
+    # "aggressive": switch unless V7's move is proven SAFE (V8-C as measured in §11.14);
+    # "veto": switch only when V7's move is a proven loss (§12.3).
+    "root_vct_mode": "aggressive",
 }
 _V8_KEYS = tuple(key for key in V8_DEFAULTS if key not in V7_FINAL)
 
@@ -118,6 +132,9 @@ class SearchDiagnostics(V7Diagnostics):
     v8_root_nodes: int = 0
     v8_root_budget_exhausted: bool = False
     v8_root_seconds: float = 0.0
+    # Why V8-C changed V7's move: "proven_loss" (V7's move UNSAFE) or "unknown"
+    # (aggressive mode only: V7's move unresolved, a lower child proven SAFE).
+    v8_root_switch: str = ""
 
 
 class _BudgetExhausted(Exception):
@@ -222,7 +239,8 @@ class _BudgetedSolver(ThreatSolver):
 def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit, vct_node_budget,
                         own_vct_attack, attack_vcf_node_limit, attack_call_limit,
                         attack_node_budget, root_vct_safety, root_vcf_node_limit,
-                        root_call_limit, root_node_budget, root_max_children=0):
+                        root_call_limit, root_node_budget, root_max_children=0,
+                        root_vct_mode="aggressive"):
     for name, value in (("stage_vct_safety", stage_vct_safety), ("own_vct_attack", own_vct_attack),
                         ("root_vct_safety", root_vct_safety)):
         if not isinstance(value, bool):
@@ -240,6 +258,8 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
             raise ValueError(f"{name} must be a positive integer")
     if isinstance(root_max_children, bool) or not isinstance(root_max_children, int) or root_max_children < 0:
         raise ValueError("root_max_children must be a non-negative integer")
+    if root_vct_mode not in ROOT_VCT_MODES:
+        raise ValueError(f"root_vct_mode must be one of {ROOT_VCT_MODES}")
 
 
 def _stage4_order(game: Game, context: _RootContext, v7_move: Move) -> list[Move]:
@@ -416,7 +436,7 @@ def _own_vct_attack(game, context, diag, *, node_limit, call_limit, node_budget)
 
 
 def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit, node_budget,
-                        max_children=0) -> Move:
+                        max_children=0, mode="aggressive") -> Move:
     """V8-C: keep V7's tree move if it is proven VCT1-SAFE, otherwise the first proven SAFE child.
 
     Children are tried in the tree's own preference order (visits, mean value).
@@ -428,11 +448,19 @@ def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit,
     proven SAFE child the fallback never prefers a proven loss: V7's move unless
     it is proven UNSAFE, else the first unrefuted (UNKNOWN or never checked)
     child that does not lose at once.
+
+    ``mode="veto"`` keeps V7's move unless it is proven UNSAFE (an UNKNOWN never
+    switches). Then the children are checked one at a time in tree order, each
+    with half of the remaining budget, and the first one that is not proven
+    UNSAFE and does not lose at once is played; V7's move stands if all are
+    proven UNSAFE. ``max_children`` does not apply (the walk stops early).
     """
+    if mode == "veto":
+        return _veto_root_choice(game, chosen, children, diag, node_limit=node_limit,
+                                 call_limit=call_limit, node_budget=node_budget)
     started = perf_counter()
     solver = _BudgetedSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget)
-    order = [chosen] + [c.move for c in sorted(children, key=lambda c: (-c.visits, -c.mean_value, c.move))
-                        if c.move != chosen]
+    order = _root_order(chosen, children)
     head = order[:max_children] if max_children else order
     statuses = {chosen: solver.status_after(game, chosen, node_budget // 2, call_limit // 2)}
     final = chosen if statuses[chosen] == SAFE else _first_proven(
@@ -445,12 +473,41 @@ def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit,
         else:
             final = next((m for m in order[1:] if statuses.get(m, UNKNOWN) == UNKNOWN
                           and _not_immediately_lost(game, m)), chosen)
+    return _record_root(diag, solver, statuses, order, chosen, final, started)
+
+
+def _veto_root_choice(game, chosen, children, diag, *, node_limit, call_limit, node_budget) -> Move:
+    """V8-C veto mode (see ``_verify_root_choice``)."""
+    started = perf_counter()
+    solver = _BudgetedSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget)
+    order = _root_order(chosen, children)
+    statuses = {chosen: solver.status_after(game, chosen, node_budget // 2, call_limit // 2)}
+    final = chosen
+    if statuses[chosen] == UNSAFE:
+        for move in order[1:]:
+            nodes_left = max(0, node_budget - solver.nodes_used)
+            calls_left = max(0, call_limit - solver.vcf_calls)
+            statuses[move] = solver.status_after(game, move, nodes_left // 2, calls_left // 2)
+            if statuses[move] != UNSAFE and _not_immediately_lost(game, move):
+                final = move
+                break
+    return _record_root(diag, solver, statuses, order, chosen, final, started)
+
+
+def _root_order(chosen, children) -> list[Move]:
+    return [chosen] + [c.move for c in sorted(children, key=lambda c: (-c.visits, -c.mean_value, c.move))
+                       if c.move != chosen]
+
+
+def _record_root(diag, solver, statuses, order, chosen, final, started) -> Move:
     diag.v8_root_checked = tuple(statuses.items())
     diag.v8_root_rank = order.index(final) + 1
     diag.v8_root_calls = solver.vcf_calls
     diag.v8_root_nodes = solver.nodes_used
     diag.v8_root_budget_exhausted = solver.exhausted
     diag.v8_root_seconds = perf_counter() - started
+    if final != chosen:
+        diag.v8_root_switch = "proven_loss" if statuses[chosen] == UNSAFE else "unknown"
     return final
 
 
@@ -507,7 +564,7 @@ def mcts_search_v8(
     own_vct_attack=True, attack_vcf_node_limit=20_000, attack_call_limit=10_000,
     attack_node_budget=200_000,
     root_vct_safety=True, root_vcf_node_limit=20_000, root_call_limit=10_000,
-    root_node_budget=400_000, root_max_children=4,
+    root_node_budget=400_000, root_max_children=4, root_vct_mode="aggressive",
     random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
 ) -> Move:
     """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules."""
@@ -530,7 +587,7 @@ def mcts_search_v8(
                         attack_call_limit=attack_call_limit, attack_node_budget=attack_node_budget,
                         root_vct_safety=root_vct_safety, root_vcf_node_limit=root_vcf_node_limit,
                         root_call_limit=root_call_limit, root_node_budget=root_node_budget,
-                        root_max_children=root_max_children)
+                        root_max_children=root_max_children, root_vct_mode=root_vct_mode)
     diag = diagnostics if diagnostics is not None else SearchDiagnostics()
     diag.__dict__.update(vars(SearchDiagnostics()))
     context = _RootContext(game.legal_moves(), diag)
@@ -618,7 +675,7 @@ def mcts_search_v8(
     if root_vct_safety:
         chosen = _verify_root_choice(game, chosen, children, diag, node_limit=root_vcf_node_limit,
                                      call_limit=root_call_limit, node_budget=root_node_budget,
-                                     max_children=root_max_children)
+                                     max_children=root_max_children, mode=root_vct_mode)
     selected = sorted(reasons.get(chosen, ()), key=lambda k: (-PRIORITY[k], k))
     diag.v6_selected_reasons = tuple(selected)
     diag.v6_selected_threat_type = selected[0] if selected else None

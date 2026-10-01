@@ -502,6 +502,57 @@ class RootVerifyPolicyTest(unittest.TestCase):
                          ['A', 'C'])
 
 
+class RootVetoPolicyTest(unittest.TestCase):
+    # root_vct_mode="veto": only a proven loss of V7's move switches (design §12.3).
+    # (6, 6) is occupied in this position, so the veto tests (which reach the at-once-loss guard) use (6, 8).
+    CHILDREN = [_Child((7, 9), 30), _Child((8, 9), 20), _Child((6, 8), 20, 0.5), _Child((9, 9), 5)]
+
+    def _run(self, script, chosen=(7, 9), mode='veto'):
+        from unittest import mock
+        game = _game(GAMES[1]['moves'][:4])
+        diag = SearchDiagnostics()
+        with mock.patch.object(_BudgetedSolver, 'status_after', _scripted_status(script)):
+            final = _verify_root_choice(game, chosen, self.CHILDREN, diag, node_limit=20_000,
+                                        call_limit=10_000, node_budget=200_000, max_children=4, mode=mode)
+        return final, diag
+
+    def test_unknown_v7_move_is_kept_in_veto_mode_only(self):
+        script = {(7, 9): UNKNOWN, (6, 8): SAFE}
+        final, diag = self._run(script)
+        self.assertEqual((final, diag.v8_root_switch), ((7, 9), ''))
+        self.assertEqual(dict(diag.v8_root_checked), {(7, 9): UNKNOWN})  # nothing else is checked
+        final, diag = self._run(script, mode='aggressive')
+        self.assertEqual((final, diag.v8_root_switch), ((6, 8), 'unknown'))
+
+    def test_proven_loss_switches_to_best_ranked_unrefuted_child(self):
+        # (6, 8) is UNKNOWN: in veto mode it is not vetoed, so it is played (rank 2),
+        # even though (8, 9) further down is proven SAFE.
+        final, diag = self._run({(7, 9): UNSAFE, (6, 8): UNKNOWN, (8, 9): SAFE})
+        self.assertEqual((final, diag.v8_root_rank, diag.v8_root_switch), ((6, 8), 2, 'proven_loss'))
+        self.assertNotIn((8, 9), dict(diag.v8_root_checked))
+
+    def test_vetoed_children_are_skipped(self):
+        final, diag = self._run({(7, 9): UNSAFE, (6, 8): UNSAFE, (8, 9): SAFE})
+        self.assertEqual((final, diag.v8_root_rank), ((8, 9), 3))
+
+    def test_all_proven_losses_keep_v7_move(self):
+        final, diag = self._run({c.move: UNSAFE for c in self.CHILDREN})
+        self.assertEqual((final, diag.v8_root_switch), ((7, 9), ''))
+
+    def test_proven_safe_v7_move_is_kept(self):
+        final, diag = self._run({(7, 9): SAFE})
+        self.assertEqual((final, diag.v8_root_rank), ((7, 9), 1))
+
+    def test_engine_veto_mode_runs_and_is_validated(self):
+        game = _game(GAMES[1]['moves'][:4])
+        expected = mcts_search_v7(game, **V7_FINAL, random=Random(4))
+        diag = SearchDiagnostics()
+        config = {**V8_DEFAULTS, 'own_vct_attack': False, 'root_vct_mode': 'veto'}
+        self.assertEqual(mcts_search_v8(game, **config, random=Random(4), diagnostics=diag), expected)
+        with self.assertRaises(ValueError):
+            MCTSV8Agent(root_vct_mode='bogus')
+
+
 class RootVerifyEngineTest(unittest.TestCase):
     def test_safe_tree_move_is_v7s_move(self):
         # Quiet position: V7's tree move is proven VCT1-SAFE, so V8-C changes nothing.

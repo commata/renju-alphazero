@@ -1,4 +1,4 @@
-"""V8-4: MCTS-v8 against frozen V7 in real games (docs/mcts-v8-teacher.md §11.11).
+"""V8-4: MCTS-v8 against frozen V7 (or a V8 arm) in real games (docs/mcts-v8-teacher.md §11.11, §12.4).
 
 Paired openings as in ``run_mcts_v7_benchmark.py``: each random opening is played
 twice with colours swapped. Openings and game seeds depend only on ``--seed`` and
@@ -6,12 +6,19 @@ the pair index, never on ``--arm``, so runs of different arms with the same seed
 are paired (ablation).
 
 Arms (V8 configuration):
-    full    V8-A + V8-B + V8-C (V8_DEFAULTS)
+    full       V8-A + V8-B + V8-C, V8-C aggressive (V8_DEFAULTS)
+    full_veto  V8-A + V8-B + V8-C, V8-C veto (switch only on a proven loss, §12.3)
     ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
     a_only  V8-A only          (the pilot's "a_only")
     b_only  V8-B only
     c_only  V8-C only
     off     none               (V8 == V7; sanity check)
+
+Opponent (``--opponent``): ``v7`` (frozen V7, default) or ``v8:<arm>`` (V8 with
+that arm's configuration, e.g. ``v8:b_only``, which can play VCT1 attacks that
+V7 does not see). The opponent does not change openings or seeds, so runs of
+different arms against the same opponent are paired. Game keys carry the
+opponent unless it is ``v7`` (old JSONL files resume unchanged).
 
 Every V8 move records its route, time and module diagnostics. With
 ``--counterfactual`` each V8-B move (route ``own_vct``) also records the move V7
@@ -52,6 +59,7 @@ from search.mcts_v7 import V7_FINAL, mcts_search_v7  # noqa: E402
 FORMAT = 'mcts-v8-benchmark-v1'
 ARMS = {
     'full': {},
+    'full_veto': {'root_vct_mode': 'veto'},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -84,6 +92,24 @@ def v8_config(arm: str, overrides: dict | None = None) -> dict:
     return {**V8_DEFAULTS, **ARMS[arm], **(overrides or {})}
 
 
+def parse_opponent(value: str) -> str:
+    """``v7`` or ``v8:<arm>``; raises ValueError otherwise."""
+    if value == 'v7':
+        return value
+    kind, _, arm = value.partition(':')
+    if kind != 'v8' or arm not in ARMS:
+        raise ValueError(f"opponent must be 'v7' or 'v8:<arm>' with arm in {sorted(ARMS)}")
+    return value
+
+
+def make_opponent(opponent: str, seed: int, overrides: dict):
+    """Opponent agent; V8 opponents use the same seed stream V7 would."""
+    if opponent == 'v7':
+        return MCTSV7Agent(seed=seed, **overrides)
+    config = v8_config(opponent.partition(':')[2], overrides)
+    return MCTSV8Agent(seed=seed, **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+
+
 def _move_record(ply, seconds, diag) -> dict:
     return {
         'ply': ply, 'seconds': round(seconds, 4), 'route': diag.v8_route,
@@ -105,6 +131,7 @@ def _move_record(ply, seconds, diag) -> dict:
             'checked': [[list(m), s] for m, s in diag.v8_root_checked], 'rank': diag.v8_root_rank,
             'calls': diag.v8_root_calls, 'nodes': diag.v8_root_nodes,
             'exhausted': diag.v8_root_budget_exhausted, 'seconds': round(diag.v8_root_seconds, 4),
+            'switch': diag.v8_root_switch,
         },
     }
 
@@ -128,15 +155,16 @@ def play_one(task: dict) -> dict:
     search = {k: config[k] for k in SEARCH_KEYS}
     seed, v8_color = task['seed'], task['v8_color']
     v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), **{k: v for k, v in config.items() if k in V8_DEFAULTS})
-    v7 = MCTSV7Agent(seed=derive_seed(seed, 'v7'), **task.get('v7_overrides', {}))
+    opponent = task.get('opponent', 'v7')
+    opp = make_opponent(opponent, derive_seed(seed, 'v7'), task.get('v7_overrides', {}))
     game = Game()
     for move in task['opening']:
         game.play(*move)
-    v8_moves, v7_seconds = [], []
+    v8_moves, opp_seconds, opp_routes = [], [], {}
     started_game = perf_counter()
     while not game.done:
         is_v8 = game.to_play == v8_color
-        agent = v8 if is_v8 else v7
+        agent = v8 if is_v8 else opp
         started = perf_counter()
         move = agent.select_move(game)
         elapsed = perf_counter() - started
@@ -146,18 +174,21 @@ def play_one(task: dict) -> dict:
                 record['counterfactual'] = _counterfactual(game, seed, len(game.history), {**config, **search})
             v8_moves.append(record)
         else:
-            v7_seconds.append(round(elapsed, 4))
+            opp_seconds.append(round(elapsed, 4))
+            route = getattr(opp.diagnostics, 'v8_route', '')
+            if route:
+                opp_routes[route] = opp_routes.get(route, 0) + 1
         try:
             game.play(*move)
         except IllegalMove as exc:
             raise RuntimeError(f'{agent.name} returned illegal move {move}: {exc}') from exc
     result = 'draw' if game.winner is None else 'win' if game.winner == v8_color else 'loss'
     return {
-        'key': task['key'], 'arm': task['arm'], 'pair': task['pair'], 'seed': seed,
+        'key': task['key'], 'arm': task['arm'], 'opponent': opponent, 'pair': task['pair'], 'seed': seed,
         'v8_color': 'black' if v8_color == BLACK else 'white',
         'result': result, 'winner': game.winner, 'length': len(game.history),
         'moves': [list(m) for m in game.history],
-        'v8_moves': v8_moves, 'v7_move_seconds': v7_seconds,
+        'v8_moves': v8_moves, 'opponent_move_seconds': opp_seconds, 'opponent_routes': opp_routes,
         'game_seconds': round(perf_counter() - started_game, 2),
     }
 
@@ -170,9 +201,10 @@ def build_tasks(args) -> tuple[list[dict], list[dict]]:
         openings.append({'pair': pair, 'seed': opening_seed, 'moves': [list(m) for m in opening]})
         for color in (BLACK, WHITE):
             game_seed = derive_seed(args.seed, 'game', pair, color)
+            prefix = args.arm if args.opponent == 'v7' else f'{args.arm}@{args.opponent}'
             tasks.append({
-                'key': f'{args.arm}/{args.seed}/{pair}/{"black" if color == BLACK else "white"}',
-                'arm': args.arm, 'pair': pair, 'seed': game_seed, 'v8_color': color,
+                'key': f'{prefix}/{args.seed}/{pair}/{"black" if color == BLACK else "white"}',
+                'arm': args.arm, 'opponent': args.opponent, 'pair': pair, 'seed': game_seed, 'v8_color': color,
                 'opening': [list(m) for m in opening], 'counterfactual': args.counterfactual,
                 'v8_overrides': args.search_overrides, 'v7_overrides': args.search_overrides,
             })
@@ -204,6 +236,11 @@ def summarize(games: list[dict]) -> dict:
     ran_vct = [m for m in moves if m['route'] in ('stage4', 'stage5') and m['vct']['checked']]
     counterfactual = [m['counterfactual'] for m in moves if 'counterfactual' in m]
     ran_root = [m for m in moves if m.get('root', {}).get('checked')]
+    root_first = [m['root']['checked'][0][1] for m in ran_root]  # V7's move is always checked first
+    opp_routes = {}
+    for g in games:
+        for route, n in g.get('opponent_routes', {}).items():
+            opp_routes[route] = opp_routes.get(route, 0) + n
     records = [(g['key'], g['winner'], g['moves']) for g in sorted(games, key=lambda g: g['key'])]
     return {
         'games': len(games),
@@ -217,7 +254,9 @@ def summarize(games: list[dict]) -> dict:
         'v8_routes': routes,
         'v8_changed_by_route': changed,
         'v8_move_seconds': _dist([m['seconds'] for m in moves]),
-        'v7_move_seconds': _dist([s for g in games for s in g['v7_move_seconds']]),
+        'opponent_move_seconds': _dist([s for g in games
+                                        for s in g.get('opponent_move_seconds', g.get('v7_move_seconds', []))]),
+        'opponent_routes': opp_routes,
         'v8_b_attack': {
             'ran': len(ran_attack), 'wins': routes.get('own_vct', 0),
             'budget_exhausted': sum(m['attack']['exhausted'] for m in ran_attack),
@@ -233,6 +272,10 @@ def summarize(games: list[dict]) -> dict:
         'v8_c_root': {
             'ran': len(ran_root),
             'changed': sum(m['changed'] for m in ran_root),
+            'switched_on_proven_loss': sum(m['root'].get('switch') == 'proven_loss' for m in ran_root),
+            'switched_on_unknown': sum(m['root'].get('switch') == 'unknown' for m in ran_root),
+            'v7_move_status': {s: root_first.count(s) for s in ('SAFE', 'UNSAFE', 'UNKNOWN')},
+            'children_checked': _dist([len(m['root']['checked']) for m in ran_root]),
             'budget_exhausted': sum(m['root']['exhausted'] for m in ran_root),
             'seconds': _dist([m['root']['seconds'] for m in ran_root]),
         },
@@ -282,6 +325,7 @@ def _progress(record: dict) -> str:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--arm', choices=tuple(ARMS), default='full')
+    parser.add_argument('--opponent', default='v7', help="'v7' (default) or 'v8:<arm>', e.g. v8:b_only")
     parser.add_argument('--pairs', type=int, default=10, help='opening pairs; 10 means 20 games')
     parser.add_argument('--seed', type=int, default=8401)
     parser.add_argument('--opening-random-plies', type=int, default=2)
@@ -296,6 +340,10 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.pairs < 1 or args.workers < 1:
         parser.error('--pairs and --workers must be positive')
+    try:
+        parse_opponent(args.opponent)
+    except ValueError as exc:
+        parser.error(str(exc))
     args.search_overrides = {k: v for k, v in (('simulations', args.simulations),
                                                ('tactical_simulations', args.tactical_simulations))
                              if v is not None}
@@ -303,7 +351,7 @@ def main(argv=None) -> int:
     tasks, openings = build_tasks(args)
     finished = load_finished(args.games_jsonl, {t['key'] for t in tasks})
     pending = [t for t in tasks if t['key'] not in finished]
-    print(f'arm={args.arm} games={len(tasks)} finished={len(finished)} pending={len(pending)} '
+    print(f'arm={args.arm} opponent={args.opponent} games={len(tasks)} finished={len(finished)} pending={len(pending)} '
           f'workers={args.workers}', flush=True)
     if args.games_jsonl is not None:
         args.games_jsonl.parent.mkdir(parents=True, exist_ok=True)
@@ -329,14 +377,16 @@ def main(argv=None) -> int:
             m['played'] = game['moves'][m['ply']]
     summary = summarize(games)
     payload = {
-        'format': FORMAT, 'arm': args.arm, 'seed': args.seed, 'pairs': args.pairs,
+        'format': FORMAT, 'arm': args.arm, 'opponent': args.opponent, 'seed': args.seed, 'pairs': args.pairs,
         'opening_random_plies': args.opening_random_plies, 'opening_radius': args.opening_radius,
         'counterfactual': args.counterfactual, 'search_overrides': args.search_overrides,
         'git_commit': _git_commit(), 'v8_config': v8_config(args.arm, args.search_overrides),
         'v7_config': {**V7_FINAL, **args.search_overrides},
+        'opponent_config': (None if args.opponent == 'v7' else
+                            v8_config(args.opponent.partition(':')[2], args.search_overrides)),
         'openings': openings, 'summary': summary, 'games': games,
     }
-    print(json.dumps({'arm': args.arm, **summary}, indent=2), flush=True)
+    print(json.dumps({'arm': args.arm, 'opponent': args.opponent, **summary}, indent=2), flush=True)
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(payload, indent=1), encoding='utf-8')

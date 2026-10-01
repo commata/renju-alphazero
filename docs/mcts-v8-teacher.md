@@ -3,6 +3,7 @@
 > 상태: 설계 v1 확정(2026-09-30). **V8-1(골격)과 V8-A(stage 4/5 VCT1 safety) 구현 완료**, 구현·측정 기록은 §11.
 > **V8-B(자기 VCT1 공격) 구현 완료, 조건부 통과**(s0 4/4, false positive 0, D4 26/32는 측정값) — §4.2.9, §11.10.
 > V8-4 pilot 완료(§11.12). **V8-C(root VCT1 safety, 트리 후 검증) 구현 완료**, root 게이트 3/3 — §4.3.
+> **2026-10-01: 두 트랙 분리(§12).** V8은 Track B(Hybrid)의 전술 모듈이 됐다. V8-C는 `aggressive`(기본)·`veto` 두 모드, runner에 `--opponent`.
 > 개발 브랜치는 `ccr-ba71e723-f37v8m`이다. V8_TEACHER 동결 전까지 `V8_DEFAULTS` 값은 바뀔 수 있다.
 
 작성 2026-09-30. 입력: "AlphaZero 연구 라인과 teacher 제작 라인을 분리하고 V8 teacher를 새로 만든다"는 제안(V8-M1~M6,
@@ -1093,3 +1094,121 @@ V8-C가 고른 수 자체는 VCT1-SAFE였다. 그런데 상대(V7)가 두 수 �
 - **50쌍 본 측정은 보류한다.** V7 상대 점수로는 V8-C의 효과를 제대로 잴 수 없다는 근거가 생겼다(해석 1).
 - 다음 측정에는 **VCT를 찌를 수 있는 상대**가 필요하다. 후보는 V8-B를 켠 V8(`b_only`: V7 + 자기 VCT1 공격)다. runner에 상대 선택
   옵션(`--opponent v7 | v8:<arm>`)을 넣고, 같은 오프닝으로 A+B+C와 A+B를 그 상대와 짝 비교하는 것을 제안한다.
+
+## 12. 두 트랙 분리와 V8-C 모드 (2026-10-01 결정)
+
+입력: RenjuNet 기보 DB(`renjunet_v10_20260930.rif`)와 "Pure AlphaZero / V8 Hybrid 두 트랙" 제안, 그 검토(§12.6), 사용자 결정.
+이 절은 §0·§1의 "V8 = AlphaZero의 teacher"라는 위치를 바꾼다. **V8은 이제 Track B(Hybrid 엔진)의 전술 모듈이다.**
+V8을 교사로 쓰는 AZ arm(§5·§6의 V8-D, V8-T4, V8-A1)은 Track B로 옮긴다.
+
+### 12.1 트랙 정의
+
+| | Track A — Self-play-only AZ (AZ-Tactical baseline) | Track B — Strong Hybrid |
+|---|---|---|
+| 목적 | 자기대국만으로 어디까지 가는지 재는 연구 기준선 | 최강 기력 |
+| 허용 | 게임 규칙, 즉승·즉방 필터(`tactical_rules: true`, PUCT v2), random init NN, PUCT, self-play | RenjuNet 사전학습, V8 VCF/VCT 모듈, solver/V8 증명 라벨, Hybrid self-play·fine-tune |
+| 금지 | 외부 기보(RenjuNet), V8/V7 teacher 라벨·모방, solver supervision(T1 포함), 다른 트랙 checkpoint로 init | — |
+| 계보 | Stage 6 MVP(random init) → 7-A → 7-B arm B → 7-C B → 7-D → Stage 8(B400, S4) | 새로 시작(H 단계) |
+
+- Track A를 **"Pure AlphaZero"라고 부르지 않는다.** `tactical_rules: true`는 사람이 만든 전술 지식(즉승·즉방)이다.
+- **엄격한 AZ(`tactical_rules: false`)는 ablation으로만 보존한다.** 새 설정은 만들지 않는다. 이미
+  `configs/stage7b_a_scale.yaml`·`configs/stage7c_a_scale_long.yaml`(Stage 7-B/7-C arm A)이 그 설정이고, 계보도 Stage 6 MVP부터 규칙 필터 없이 이어진다.
+- **T1(증명 label fine-tune, `stage8-plan.md` §12.10)은 Track B arm이다.** solver supervision이기 때문이다. Track A의 다음 arm은 S4(레시피)다.
+- RenjuNet 국면은 Track A에서 **평가 전용**으로만 쓸 수 있다(학습·init 금지).
+- 데이터·체크포인트 경로: `data/selfplay/pure_az`(Track A), `data/external/renjunet`, `data/tactical/v8_labels`, `checkpoints/pure_az|hybrid`.
+  `data/`·`checkpoints/`는 이미 `.gitignore` 대상이다. **RenjuNet 원본·변환본은 커밋하지 않는다.**
+- RenjuNet 라이선스(파일 안 문구): 비상업·OFFLINE 데이터베이스 형태로만 사용, 웹사이트·ONLINE 시스템에서 내용이나 변형물 사용 금지.
+  그래서 RenjuNet으로 학습한 모델은 `run_web_play`를 **로컬에서만** 쓰고 인터넷에 공개하지 않는다(보수적 운용, 법률 판단 아님).
+
+### 12.2 상태 용어
+
+V8-A·V8-C의 `SAFE`는 안전 증명이 아니다(§11.14: V8-C가 (8,5) UNSAFE → (7,5) SAFE로 바꾼 판도 이후 깊이 2 이상의 공격으로 졌다).
+문서에서는 다음 이름을 쓴다. 코드의 문자열 값은 이전 결과 파일과 비교할 수 있도록 그대로 둔다
+(`analysis.mcts_v8`에 별칭 `NOT_REFUTED_VCT1`, `PROVEN_LOSS_VCT1`).
+
+| 문서 이름 | 저장 문자열 | 뜻 |
+|---|---|---|
+| PROVEN_LOSS_VCT1 | `UNSAFE` | 상대의 VCF 또는 "조용한 수 1개 + VCF" 승리가 증명됨(동결 VCF solver의 범위 안에서) |
+| NOT_REFUTED_VCT1 | `SAFE` | 예산 안에서 깊이 1 VCT 탐색을 끝까지 했고 반박을 못 찾음. 깊이 2 이상 공격은 보지 않음 |
+| UNKNOWN | `UNKNOWN` | 예산·노드 한도로 끝나지 않음 |
+| PROVEN_WIN_VCT1 | `WIN`(V8-B) | 우리 수 뒤 상대의 모든 응수가 우리 VCF로 짐 |
+
+**PROVEN_LOSS는 veto다.** 나중에 NN을 붙여도 NN 점수가 PROVEN_LOSS를 뒤집지 못한다.
+
+### 12.3 V8-C 두 모드
+
+기존 동작을 덮어쓰지 않고 `root_vct_mode`로 나눈다. 기본값은 기존 동작(`aggressive`)이라 §11.12~§11.14 결과와 이어진다.
+
+| 모드 | V7(트리 1위) 수가 NOT_REFUTED | UNKNOWN | PROVEN_LOSS |
+|---|---|---|---|
+| `aggressive` (기본, arm `full`) | 유지 | 트리 상위 K=4개 중 첫 NOT_REFUTED 자식으로 **교체** | 같은 방식으로 교체, 모두 PROVEN_LOSS면 넓혀서 계속 |
+| `veto` (arm `full_veto`) | 유지 | **유지**(다른 수는 검사도 안 함) | 트리 순서로 하나씩 검사해서 처음으로 PROVEN_LOSS가 아니고 즉시 지지도 않는 수로 교체. 모두 PROVEN_LOSS면 V7 수 |
+
+- veto 모드는 V7 수에 예산 절반, 그 뒤 자식에게는 남은 예산의 절반씩을 준다. UNKNOWN 자식도 veto 대상이 아니므로 그 수에서 멈춘다.
+- 진단: `v8_root_switch`가 `proven_loss`(V7 수가 PROVEN_LOSS라 교체) 또는 `unknown`(aggressive에서 UNKNOWN 때문에 교체)을 기록한다.
+  runner 요약 `v8_c_root`에 `switched_on_proven_loss`, `switched_on_unknown`, `v7_move_status`, `children_checked`가 추가됐다.
+- root 게이트(`run_v8_gates.py --gate root`)는 기본 모드(aggressive)를 잰다. 게이트 probe의 V7 수는 PROVEN_LOSS라 두 모드 모두 교체가 일어나지만,
+  veto는 교체 수가 NOT_REFUTED라는 보장이 없다(UNKNOWN 수도 받는다). 게이트의 "교체 수가 독립 검사로 SAFE" 조건은 aggressive용이다.
+
+### 12.4 VCT를 찌를 수 있는 상대 (`--opponent`)
+
+`run_mcts_v8_benchmark.py --opponent v7 | v8:<arm>`. 상대를 바꿔도 오프닝·시드는 그대로다(같은 `--seed`면 arm끼리 짝이 유지된다).
+V8 상대는 V7과 같은 난수 스트림을 쓴다(`v8:off`는 V7과 같은 수를 두는 것을 테스트로 확인). 상대가 `v7`이 아니면 게임 key가 `full_veto@v8:b_only/...`처럼
+바뀌므로 같은 JSONL에 섞여도 충돌하지 않는다. 요약에는 상대의 경로 분포(`opponent_routes`, 특히 `own_vct` = 상대가 VCT1 공격을 둔 횟수)와
+상대 착수 시간(`opponent_move_seconds`)이 들어간다. `analyze_v8_benchmark.py --baseline`은 상대가 다르면 거부한다.
+
+### 12.5 다음 측정: aggressive 대 veto (짧은 짝 비교)
+
+상대 `v8:b_only`(V7 + 자기 VCT1 공격), seed 8401, **5쌍(10판)부터**. 방향이 분명하지 않으면 20~25쌍으로 늘린다. **50쌍은 아직 돌리지 않는다.**
+
+| 비교 | 볼 것 |
+|---|---|
+| 점수 | 짝 비교(같은 오프닝·색), 부호 검정은 참고만(10판은 1 SE ≈ 16%p) |
+| PROVEN_LOSS 회피 | `switched_on_proven_loss` |
+| UNKNOWN 교체 | `switched_on_unknown`(aggressive만, veto는 0이어야 함) |
+| 비용 | `v8_c_root.seconds`(평균·p95·최대), `children_checked`, `v8_move_seconds` |
+| 상대가 실제로 찔렀나 | `opponent_routes.own_vct` |
+
+선택(같은 오프닝): A+B(arm `ab`)도 같은 상대로 돌려 두면 "C가 있어야 하는가"까지 볼 수 있다.
+
+실행(Windows PowerShell, 저장소 루트, `.venv-cpu`):
+
+```powershell
+New-Item -ItemType Directory -Force runs\v8_h1 | Out-Null
+python scripts/run_mcts_v8_benchmark.py --arm full --opponent v8:b_only --pairs 5 --seed 8401 --workers 4 `
+  --games-jsonl runs\v8_h1\full_vs_b.jsonl --output runs\v8_h1\full_vs_b.json 2>&1 | Tee-Object runs\v8_h1\full_vs_b.log
+python scripts/run_mcts_v8_benchmark.py --arm full_veto --opponent v8:b_only --pairs 5 --seed 8401 --workers 4 `
+  --games-jsonl runs\v8_h1\veto_vs_b.jsonl --output runs\v8_h1\veto_vs_b.json 2>&1 | Tee-Object runs\v8_h1\veto_vs_b.log
+# 선택: python scripts/run_mcts_v8_benchmark.py --arm ab --opponent v8:b_only ... (같은 seed)
+# 늘릴 때: --pairs 20 으로 같은 jsonl에 이어서 실행(끝난 판은 건너뜀)
+```
+
+### 12.6 RenjuNet 데이터 사실 확인 (파서 구현 전, 2026-10-01)
+
+RIF XML, 165,115판(평균 27.2수). 검토용 표본 재생은 우리 `Game` 엔진으로 했다.
+
+| 항목 | 값 | 파이프라인 규칙 |
+|---|---|---|
+| 규칙 category | 렌주(category 1) 138,808판, **고모쿠(category 2·3) 26,307판** | category 1만 사용(rule id가 아니라 category로 거름) |
+| 10수 이상 렌주 대국 | 109,264판 | 최소 10수 |
+| 재생(렌주 표본 3,000판) | 98.5% 성공, 흑 금수 착수 1.3%(삼삼 31·사사 7·장목 1), 첫 수가 중앙이 아님 0.2% | 금수가 마지막 기록이면 직전 국면까지 사용, 중간이면 판 전체 제외; 첫 수가 중앙이 아니면 제외 |
+| 종료 방식 | 오목 완성 18%, 기권·시간·합의 81% | 승패 결과는 약한 value 신호(작은 λ 또는 미사용) |
+| 오목 완성 판의 기록 결과 일치 | 543/550 | 불일치 판은 제외 |
+| 개국 | 26개 공식 개국 + swap + 5수째 두 곳 제시 | 1~5수는 국면 복원에만 쓰고 policy loss weight 0 |
+
+분할: 대회 단위 train/val/test → D4 정규형 hash → 세 집합 사이에 같은 정규형 국면이 있으면 val/test에서 제거
+(다른 대회의 같은 공식 개국 국면이 평가에 새지 않게).
+
+### 12.7 Track B 로드맵 (H 단계)
+
+| 단계 | 내용 | 판정 |
+|---|---|---|
+| H0 | §12.1~12.4 (이 커밋) | 문서·코드·테스트 |
+| H1 | §12.5 aggressive 대 veto 짧은 짝 비교 → V8-C 기본 모드 결정 | 사용자 실행 |
+| H2 | RenjuNet 파서 + 검증 리포트(§12.6 규칙) | 개수·제외 사유 표 |
+| H3 | Policy-only 사전학습 | held-out top-1/3/5, legal rate, **must_block 전술 세트가 떨어지면 채택하지 않음** |
+| H4 | V8 후보 순서에 policy 사용, V8 대 V8+Policy를 **같은 wall-clock**(CPU 추론 포함)으로 비교 | 짝 비교 |
+| H5 | Hybrid 구조: legal/terminal → proven tactical win → PROVEN_LOSS veto → AZ PUCT(policy/value). VCF/VCT는 root·전술 trigger에서만 | V5 rollout 트리에 value를 붙이는 방향은 확장하지 않음 |
+| H6 | value: V8 증명 라벨(PROVEN_WIN/LOSS_VCT1) 우선, RenjuNet 결과는 작은 weight, 이후 Hybrid self-play 결과 | 출처별 weight |
+| H7 | Hybrid self-play / fine-tune | |
+| H8 | 최종 비교(Track A 최신, V7, V8, Hybrid) | 고정 예산·양색 균형 |

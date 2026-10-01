@@ -140,12 +140,14 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     run = json.loads(args.run.read_text(encoding='utf-8'))
     payload = {'format': 'mcts-v8-benchmark-analysis-v1', 'run': str(args.run),
-               'run_arm': run['arm'], 'run_git_commit': run.get('git_commit'), 'seed': run['seed'],
+               'run_arm': run['arm'], 'opponent': run.get('opponent', 'v7'), 'run_git_commit': run.get('git_commit'), 'seed': run['seed'],
                'node_limit': args.node_limit, 'node_budget': args.node_budget}
     if args.baseline is not None:
         baseline = json.loads(args.baseline.read_text(encoding='utf-8'))
         if baseline['seed'] != run['seed']:
             parser.error('baseline must use the same --seed (paired openings)')
+        if baseline.get('opponent', 'v7') != run.get('opponent', 'v7'):
+            parser.error('baseline must use the same --opponent')
         payload['baseline'] = str(args.baseline)
         payload['baseline_arm'] = baseline['arm']
         rows = matched_counterfactual(run, baseline, args)

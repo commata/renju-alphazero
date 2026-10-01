@@ -8,6 +8,16 @@
 - 흑의 장목·삼삼·사사와 예외를 독립 테스트로 검증한다. 흑·백의 승리 조건 차이와 판 끝의 우선순위도 선택한 규칙 문서에 맞춘다. 규칙이 불확실한 예시는 기대 결과를 먼저 확인한 뒤 테스트에 넣는다.
 - 목표 수준을 분리한다: **파이프라인 완성**, **기준 상대보다 강해짐**, **사람과 대국 가능한 배포본**. 강한 기력을 달성하는 기간은 사전 보장할 수 없다.
 
+## 두 트랙 (2026-10-01)
+
+실험 결과 해석이 섞이지 않도록 두 트랙을 나눈다. 정의와 근거는 [mcts-v8-teacher.md §12](docs/mcts-v8-teacher.md).
+
+- **Track A — Self-play-only AZ (AZ-Tactical baseline):** 규칙 + 즉승·즉방 필터(`tactical_rules: true`) + random init + PUCT + self-play만.
+  외부 기보(RenjuNet), V7/V8 teacher 라벨, solver supervision(T1 포함), 다른 트랙 checkpoint init은 금지. Stage 6~8 계보가 여기에 속한다.
+  엄격한 AZ(`tactical_rules: false`)는 Stage 7-B/7-C arm A 설정을 ablation으로만 보존한다. "Pure AlphaZero"라고 부르지 않는다.
+- **Track B — Strong Hybrid:** RenjuNet policy 사전학습 → AZ PUCT + V8 VCF/VCT 전술 모듈(PROVEN_LOSS veto) → Hybrid self-play. 단계 H0~H8.
+  RenjuNet 데이터는 비상업·오프라인 전용 라이선스라 저장소에 넣지 않고(`data/external/renjunet/`), 그 데이터로 학습한 모델은 온라인에 공개하지 않는다.
+
 ## 권장 저장소와 Git 운용
 
 ```text

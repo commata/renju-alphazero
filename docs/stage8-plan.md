@@ -1098,7 +1098,7 @@ light 지점 probe에 VCT set(`probes/genNNN_vct.json`)이 추가된다.
 (대조군은 이미 있는 `stage8_b400_long`):
 
 1. **S4(레시피):** `temperature_moves` 10 → 4. 다른 것은 동일(`configs/stage8_b400_temp4.yaml`, `scripts/make_recipe_branch.py`).
-2. **T1(teacher):** 증명 label fine-tune(검토 문서 §6.4).
+2. **T1(teacher):** 증명 label fine-tune(검토 문서 §6.4). **2026-10-01부터 Track B arm**(solver supervision이라 Self-play-only Track A에서 제외, [mcts-v8-teacher.md §12.1](mcts-v8-teacher.md)).
 3. (선택) **S4+T1.**
 
 실행 명령은 [v7-nn-integration-review.md §10](v7-nn-integration-review.md)에 있다.
