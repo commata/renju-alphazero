@@ -56,6 +56,15 @@ PROBE_RISE = 0.05
 # 0.72 (review §6.3). Below this the network is not saturated, so a plateau there is a
 # learning-signal problem, not a capacity limit.
 MUST_BLOCK_CEILING = 0.6
+# Stage 8 §12.14: 'capacity' needs EVERY key tactical probe high, not must_block alone
+# (S1120 had must_block 0.75 but VCT defence top-1 0.25 and forced_loss value 0.53).
+SATURATION_GATES = (
+    ('', 'must_block', 'top1', MUST_BLOCK_CEILING),
+    ('', 'vcf', 'top1', 0.6),
+    ('', 'forced_loss', 'value_sign_accuracy', 0.8),
+    ('_vct', 'must_defend_vct', 'top1', 0.5),
+    ('_vct', 'vct_attack', 'top1', 0.5),
+)
 KEY_PROBES = (
     ('', 'must_block', 'top1'),
     ('', None, 'separation'),
@@ -75,8 +84,13 @@ def _gens(directory: Path, suffix: str) -> list[int]:
                   for p in directory.glob(f'gen*{suffix}.json') if GEN.match(p.name))
 
 
+def _p(summary: dict) -> float:
+    """Pair-level p when recorded (robust to opening correlation), else game-level."""
+    return summary.get('p_pairs_two_sided', summary['p_two_sided'])
+
+
 def improves(summary: dict) -> bool:
-    return summary['a_score'] > IMPROVE_SCORE and summary['p_two_sided'] < IMPROVE_P
+    return summary['a_score'] > IMPROVE_SCORE and _p(summary) < IMPROVE_P
 
 
 def probe_metric(run: Path, generation: int, suffix: str, kind: str | None, metric: str):
@@ -93,7 +107,7 @@ def arm_table(run: Path) -> dict:
     rows = {}
     for generation in _gens(ext, '_h2h'):
         h2h = _load(ext / f'gen{generation:03d}_h2h.json')['summary']
-        row = {'anchor_score': h2h['a_score'], 'anchor_p': h2h['p_two_sided'],
+        row = {'anchor_score': h2h['a_score'], 'anchor_p': _p(h2h),
                'improves': improves(h2h)}
         heavy = _load(ext / f'gen{generation:03d}_heavy.json')
         if heavy:
@@ -147,7 +161,7 @@ def direct_result(paths: list[Path], teacher_prefix: str, control_prefix: str) -
             generation = max((int(m) for m in re.findall(r'(\d{3,})', s['a'] + s['b'])),
                              default=-1)
             record = {'file': str(path), 'match': f"{s['a']} vs {s['b']}", 'generation': generation,
-                      'teacher_score': score, 'p': s['p_two_sided'], 'games': s['games']}
+                      'teacher_score': score, 'p': _p(s), 'games': s['games']}
             if best is None or record['generation'] >= best['generation']:
                 best = record
     return best
@@ -171,11 +185,16 @@ def verdict(control: dict, teacher: dict, control_run: Path, teacher_run: Path,
     rising = {'control': probes_rising(control_run, control),
               'teacher': probes_rising(teacher_run, teacher)}
     reasons.append(f'plateau {plateaus}, probes rising {rising}')
-    saturated = {}
+    saturated, gaps = {}, {}
     for name, rows, run in (('control', control, control_run), ('teacher', teacher, teacher_run)):
-        value = probe_metric(run, max(rows), '', 'must_block', 'top1') if rows else None
-        saturated[name] = None if value is None else value >= MUST_BLOCK_CEILING
-    reasons.append(f'raw must_block top-1 >= {MUST_BLOCK_CEILING}: {saturated}')
+        values = [(f'{kind}.{metric}', probe_metric(run, max(rows), suffix, kind, metric), floor)
+                  for suffix, kind, metric, floor in SATURATION_GATES] if rows else []
+        missing = [label for label, value, _ in values if value is None]
+        below = [f'{label}={value:.2f}<{floor}' for label, value, floor in values
+                 if value is not None and value < floor]
+        saturated[name] = None if (not rows or missing) else not below
+        gaps[name] = below + [f'{label}=missing' for label in missing]
+    reasons.append(f'tactical probes saturated (all gates): {saturated}; below: {gaps}')
     flat = (plateaus['control'] and plateaus['teacher']
             and rising['control'] is False and rising['teacher'] is False)
     if stronger and plateaus['teacher']:

@@ -799,3 +799,112 @@ python scripts/run_web_play.py --az-checkpoint "runs/anchors/S$($best).pt"
 
 **공유해 줄 것:** `runs/arm_h2h/s2_roundrobin_880_1120.json`, 본선의 `metrics.jsonl`·`external_eval/`·`probes/`·로그,
 `s2_main_status_1360.json`, 사람 대국을 했다면 `logs/web_play/`.
+
+## 14. 안정적 지속 향상 루프 (2026-10-01, 외부 검토 반영)
+
+사실 확인과 수정 내용은 [Stage 8 계획 §12.14](stage8-plan.md)에 있다.
+
+- 목표는 "언제 멈출지 판정"이 아니라 **안정적으로 계속 오르는 루프**다.
+- 학습 전에 champion을 확정하고 짧은 게임의 원인을 진단한다(A).
+- 그다음 adaptive steps와 고정 steps를 40세대 구간 + 게이트로 비교한다(B).
+- Stage 9는 §12.14의 네 조건이 모두 성립할 때만 검토한다.
+
+### 14.1 A단계: 진단 (학습 없음)
+
+```powershell
+git pull origin feat/stage8-plan
+
+# A1. 본선 내부 라운드로빈 (pair 단위 통계가 함께 출력됨: "pairs W-L p_pairs=")
+python scripts/run_stage8_head_to_head.py `
+    --checkpoint S880=runs/anchors/S880.pt `
+    --checkpoint S960=runs/stage8_s640_s2/checkpoints/checkpoint_gen960.pt `
+    --checkpoint S1040=runs/stage8_s640_s2/checkpoints/checkpoint_gen1040.pt `
+    --checkpoint S1120=runs/stage8_s640_s2/checkpoints/checkpoint_gen1120.pt `
+    --pairs 50 --output runs/arm_h2h/s2_roundrobin_880_1120.json
+
+# A2. 상위 2개 재확인 (예: S1040과 S1120이 상위면). opening seed를 바꿔 새 100쌍
+python scripts/run_stage8_head_to_head.py `
+    --checkpoint S1040=runs/stage8_s640_s2/checkpoints/checkpoint_gen1040.pt `
+    --checkpoint S1120=runs/stage8_s640_s2/checkpoints/checkpoint_gen1120.pt `
+    --pairs 100 --seed 9009 --output runs/arm_h2h/s2_top2_confirm.json
+#    champion 규칙: 재확인에서 pair p < 0.05로 이긴 쪽. 유의하지 않으면 더 최신 checkpoint를 champion으로 한다.
+
+# A3. self-play 건강 진단 (본선 640~1120, sims100 880~1120), 40세대 구간
+python scripts/analyze_self_play_health.py runs/stage8_s640_s2 --from 640 --window 40 `
+    --reference-from 880 --reference-reuse 6.4 --output runs/health/s2_640_1120.json
+python scripts/analyze_self_play_health.py runs/stage8_s880_sims100 --from 880 --window 40 `
+    --reference-from 880 --reference-reuse 6.4 --output runs/health/n100_880_1120.json
+
+# A4. 짧은 게임 원인 분석 (각 30~60분 추정, 게임당 400-sim 탐색 포함)
+python scripts/forensic_short_games.py runs/stage8_s640_s2 --from 960 --to 1040 `
+    --checkpoint runs/stage8_s640_s2/checkpoints/checkpoint_gen1040.pt --limit 200 `
+    --output runs/forensics/s2_960_1040.json
+python scripts/forensic_short_games.py runs/stage8_s880_sims100 --from 1040 --to 1120 `
+    --checkpoint runs/stage8_s880_sims100/checkpoints/checkpoint_gen1120.pt --limit 200 `
+    --output runs/forensics/n100_1040_1120.json
+```
+
+A3의 엔트로피 열(H4/H6/H8)과 top6, A4의 `categories`와 opening 군집 상위 5개를 보면 원인을 가를 수 있다.
+
+| 관찰 | 해석 | 다음 단일 변수 |
+|---|---|---|
+| 짧은 게임이 몇 개 opening 군집에 몰림 + 엔트로피 급락 | opening 탐험 붕괴 | root prior temperature / opening pool |
+| `noise`가 대부분 | root noise·temperature가 패착을 만듦 | Dirichlet ε를 낮추거나 noise를 초반에만 |
+| `search_budget`가 대부분 | 50 sim target이 부족함 | 어려운 국면만 높은 탐색으로 reanalyse |
+| `prior_blind` / `value_blind`가 대부분 | network가 그 전술을 모름 | 지속 혼합 teacher(T4), 최후에 network 확대 |
+
+### 14.2 B단계: adaptive 대 고정, 40세대 구간 + 게이트 (각 arm 6~7시간 추정, 두 창에서 동시)
+
+```powershell
+# champion 세대와 anchor (A2 결과로 바꾼다)
+$C = 1120
+Copy-Item "runs/stage8_s640_s2/checkpoints/checkpoint_gen$($C).pt" "runs/anchors/C$($C).pt"
+
+# 두 arm 모두 champion 상태에서 분기 (학습도 champion에서 시작한다)
+python scripts/branch_stage8_run.py --source runs/stage8_s640_s2 --generation $C --dest runs/stage8_ctl_c$C
+python scripts/make_recipe_branch.py --source runs/stage8_s640_s2 --generation $C `
+    --config configs/stage8_s2_adaptive.yaml --dest runs/stage8_ada_c$C
+```
+
+```powershell
+# (창 1) 고정 steps 대조군. 창 2는 $run, $cfg만 바꿔 같은 루프를 돌린다:
+#   $run = "runs/stage8_ada_c$C"; $cfg = "configs/stage8_s2_adaptive.yaml"
+$C = 1120
+$run = "runs/stage8_ctl_c$C"; $cfg = "configs/stage8_s640_temp2.yaml"
+New-Item -ItemType Directory -Force runs/gates | Out-Null
+for ($g = $C + 40; $g -le $C + 240; $g += 40) {
+  python scripts/run_stage8_training.py --run-dir $run --config $cfg --anchor 400 `
+      --target-generation $g --light-opponents tactical mcts_v2 `
+      --heavy-every 40 --heavy-opponents mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 25 `
+      --h2h-anchor "C$($C)=runs/anchors/C$($C).pt" `
+      2>&1 | Tee-Object -Append -FilePath "$run.log"
+  python scripts/segment_gate.py $run --from ($g - 40) --to $g --reference-reuse 6.4 `
+      --output "runs/gates/$(Split-Path $run -Leaf)_$($g).json"
+  if ($LASTEXITCODE -eq 2) { Write-Host "STOP at $g"; break }
+}
+```
+
+```powershell
+# B 종료 후: 같은 세대 직접 대국 (C+80, C+160, C+240) → 판정
+$C = 1120
+foreach ($g in ($C + 80), ($C + 160), ($C + 240)) {
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "ctl$($g)=runs/stage8_ctl_c$($C)/checkpoints/checkpoint_gen$($g).pt" `
+      --checkpoint "ADA_$($g)=runs/stage8_ada_c$($C)/checkpoints/checkpoint_gen$($g).pt" `
+      --pairs 50 --output "runs/arm_h2h/ada_gen$($g).json"
+}
+python scripts/compare_teacher_arms.py --control "runs/stage8_ctl_c$C" --teacher "runs/stage8_ada_c$C" `
+    --direct "runs/arm_h2h/ada_*.json" --teacher-label-prefix ADA --control-label-prefix ctl `
+    --output runs/arm_h2h/ada_verdict.json
+```
+
+**B단계 해석:**
+
+- 게이트 STOP이 난 arm은 그 구간에서 멈춘다. 그 구간에 forensic을 돌린다.
+- adaptive가 직접 대국에서 이기고 C도 넘으면(`teacher_better`) adaptive를 기본 레시피로 채택한다.
+- 둘 다 C를 넘는데 차이가 없으면 단순한 고정 steps를 유지한다. 대신 게이트는 계속 쓴다.
+- 이긴 레시피로 다음 단계(C단계)에 들어간다. 40세대마다 `segment_gate.py`가 PROMOTE를 내면 그 checkpoint를 새 champion으로 복사하고,
+  다음 구간의 `--h2h-anchor`로 쓴다.
+
+**공유해 줄 것:** A단계 파일 전부(`runs/arm_h2h/s2_*`, `runs/health/`, `runs/forensics/`), B단계 두 run의 `metrics.jsonl`·`external_eval/`·`probes/`·로그,
+`runs/gates/`, `runs/arm_h2h/ada_*`.

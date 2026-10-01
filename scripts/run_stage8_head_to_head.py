@@ -73,7 +73,18 @@ def play_match(a: dict, b: dict, *, pairs: int, seed: int, opening_plies: int,
                                     if g['model_color'] == color),
                         'games': sum(g['model_color'] == color for g in games)}
                 for color in ('black', 'white')}
+    # Opening pairs (same opening, colours swapped) are correlated; a sign test over
+    # pairs that one side won outright is the robust test (cf. Fishtest pentanomial).
+    pair_points = {}
+    for g in games:
+        pair_points[g['pair']] = pair_points.get(g['pair'], 0.0) + (
+            1.0 if g['result'] == 'win' else 0.5 if g['result'] == 'draw' else 0.0)
+    pair_wins = sum(v > 1 for v in pair_points.values())
+    pair_losses = sum(v < 1 for v in pair_points.values())
     summary = {'a': a['label'], 'b': b['label'], 'games': len(games), 'a_wins': wins,
+               'a_pair_wins': pair_wins, 'a_pair_losses': pair_losses,
+               'pair_splits': len(pair_points) - pair_wins - pair_losses,
+               'p_pairs_two_sided': binomial_two_sided(pair_wins, pair_losses),
                'a_losses': losses, 'draws': draws, 'a_score': score,
                'a_by_color': by_color, 'p_two_sided': binomial_two_sided(wins, losses),
                'elo_a_minus_b': elo(score),
@@ -82,7 +93,8 @@ def play_match(a: dict, b: dict, *, pairs: int, seed: int, opening_plies: int,
     log(f"{a['label']} vs {b['label']}: {wins}-{losses}-{draws} score {score:.3f} "
         f"(A black {by_color['black']['wins']}/{by_color['black']['games']}, "
         f"A white {by_color['white']['wins']}/{by_color['white']['games']}) "
-        f"p={summary['p_two_sided']:.3g} ({summary['seconds']:.0f}s)")
+        f"p={summary['p_two_sided']:.3g} pairs {pair_wins}-{pair_losses} "
+        f"p_pairs={summary['p_pairs_two_sided']:.3g} ({summary['seconds']:.0f}s)")
     return {'summary': summary, 'games': games}
 
 

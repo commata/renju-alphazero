@@ -44,6 +44,11 @@ DEFAULTS: dict = {
         'keep_every': None,        # also keep every K-th generation checkpoint (execution only)
         'grad_clip': None,
         'balanced_sampling': False,  # Stage 8: half black-won / half white-won samples
+        # Stage 8 §12.14: null = fixed steps_per_generation. A dict
+        # {target_reuse, min_steps, max_steps} sets the steps of each generation to
+        # round(target_reuse * new_samples / batch_size), clamped to [min_steps, max_steps],
+        # so short self-play games no longer raise the replay reuse of fresh data.
+        'adaptive_steps': None,
     },
     'self_play': {
         'simulations': 25,
@@ -101,6 +106,7 @@ OPTIONAL_CRITICAL_DEFAULTS = (
     (('self_play', 'tactical_rules'), False),
     (('evaluation', 'tactical_rules'), False),
     (('training', 'balanced_sampling'), False),
+    (('training', 'adaptive_steps'), None),
 )
 
 
@@ -160,6 +166,17 @@ def validate_config(config: dict) -> dict:
         raise ConfigError('training.init_checkpoint must be null or a path')
     if type(t.get('balanced_sampling', False)) is not bool:
         raise ConfigError('training.balanced_sampling must be a bool')
+    adaptive = t.get('adaptive_steps')
+    if adaptive is not None:
+        if not isinstance(adaptive, dict) or set(adaptive) != {'target_reuse', 'min_steps',
+                                                              'max_steps'}:
+            raise ConfigError('training.adaptive_steps must be null or '
+                              '{target_reuse, min_steps, max_steps}')
+        _real(adaptive['target_reuse'], 'training.adaptive_steps.target_reuse', positive=True)
+        _int(adaptive['min_steps'], 'training.adaptive_steps.min_steps')
+        _int(adaptive['max_steps'], 'training.adaptive_steps.max_steps')
+        if adaptive['max_steps'] < adaptive['min_steps']:
+            raise ConfigError('training.adaptive_steps.max_steps must be >= min_steps')
     if t['grad_clip'] is not None:
         _real(t['grad_clip'], 'training.grad_clip', positive=True)
 
@@ -309,3 +326,13 @@ def evaluation_search_config(config: dict) -> SearchConfig:
     return SearchConfig(num_simulations=e['puct_simulations'], c_puct=e['c_puct'],
                         temperature_moves=0, noise_enabled=False,
                         tactical_rules=e.get('tactical_rules', False))
+
+
+def training_steps(config: dict, new_samples: int) -> int:
+    """SGD steps for one generation (fixed, or adaptive to the fresh samples)."""
+    t = config['training']
+    adaptive = t.get('adaptive_steps')
+    if adaptive is None:
+        return t['steps_per_generation']
+    steps = round(adaptive['target_reuse'] * new_samples / t['batch_size'])
+    return max(adaptive['min_steps'], min(adaptive['max_steps'], steps))

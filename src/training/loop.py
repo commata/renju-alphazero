@@ -20,7 +20,7 @@ from model.config import ACTION_INDEX_VERSION, CHECKPOINT_FORMAT_VERSION, ENCODE
 from model.evaluator import PolicyValueEvaluator
 from renju import BLACK, WHITE
 
-from .config import dump_config, self_play_search_config
+from .config import dump_config, self_play_search_config, training_steps
 from .dataset import build_batch, samples_from_record, validate_samples
 from .evaluation import evaluate_generation, should_evaluate
 from .health import detect_color_imbalance
@@ -119,7 +119,8 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
 
     started = perf_counter()
     first = last = None
-    for _ in range(t['steps_per_generation']):
+    steps = training_steps(config, len(samples))
+    for _ in range(steps):
         batch = build_batch(state.buffer, t['batch_size'], sample_rng=state.sample_rng,
                             augment_rng=state.augment_rng,
                             augment=config['augmentation']['enabled'],
@@ -132,7 +133,7 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
         first = first or step
         last = step
     training_seconds = perf_counter() - started
-    drawn = t['steps_per_generation'] * t['batch_size']
+    drawn = steps * t['batch_size']
     lengths = [len(r.moves) for r in records]
     generation_event = {
         'type': 'generation', 'generation': gen, 'self_play_games': len(records),
@@ -146,7 +147,7 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
         'buffer_size': len(state.buffer), 'samples_drawn': drawn,
         'sample_reuse_ratio': drawn / len(samples) if samples else None,
         'illegal_moves': 0,  # every record passed replay_record (engine legality)
-        'global_step': state.global_step,
+        'global_step': state.global_step, 'train_steps': steps,
         'first_step': first, 'last_step': last,
         'self_play_timing': summarize_timing(s for stats in move_stats for s in stats),
     }
@@ -159,7 +160,7 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
             'minority_reuse': (drawn / 2) / minority if minority else None}
     metrics.log(generation_event)
     record_health(state, run_dir, metrics, gen, log)
-    log(f'gen {gen}: trained {t["steps_per_generation"]} steps, total loss '
+    log(f'gen {gen}: trained {steps} steps, total loss '
         f'{first["total_loss"]:.4f} -> {last["total_loss"]:.4f}')
 
     if should_evaluate(config, gen, final_generation):

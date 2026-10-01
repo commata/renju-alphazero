@@ -24,7 +24,12 @@ def write_run(root: Path, scores: dict, vct_top3: dict, must_block: float | None
                                     'value_overall': {}}))
         if must_block is not None:
             (root / 'probes' / f'gen{generation:03d}.json').write_text(json.dumps(
-                {'summary': {'must_block': {'top1': must_block}}, 'value_overall': {}}))
+                {'summary': {'must_block': {'top1': must_block}, 'vcf': {'top1': must_block},
+                             'forced_loss': {'value_sign_accuracy': 0.9}},
+                 'value_overall': {}}))
+            path.write_text(json.dumps(
+                {'summary': {'must_defend_vct': {'top3': top3, 'top1': must_block},
+                             'vct_attack': {'top1': must_block}}, 'value_overall': {}}))
     return root
 
 
@@ -42,6 +47,20 @@ class CompareTeacherArmsTest(unittest.TestCase):
     def test_both_flat_is_capacity(self):
         flat = {560: 0.3, 640: 0.31}
         self.assertEqual(self.run_verdict(FLAT, FLAT, flat, flat)['decision'], 'capacity')
+
+    def test_one_weak_gate_blocks_capacity(self):
+        flat = {560: 0.3, 640: 0.31}
+        with tempfile.TemporaryDirectory() as tmp:
+            c = write_run(Path(tmp) / 'c', FLAT, flat)
+            t = write_run(Path(tmp) / 't', FLAT, flat)
+            for root in (c, t):   # VCT defence top-1 far below its gate
+                path = root / 'probes' / 'gen640_vct.json'
+                data = json.loads(path.read_text())
+                data['summary']['must_defend_vct']['top1'] = 0.25
+                path.write_text(json.dumps(data))
+            result = verdict(arm_table(c), arm_table(t), c, t, None)
+        self.assertNotEqual(result['decision'], 'capacity')
+        self.assertFalse(result['saturated']['control'])
 
     def test_flat_but_unsaturated_is_a_signal_problem(self):
         flat = {560: 0.3, 640: 0.31}

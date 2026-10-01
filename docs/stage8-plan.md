@@ -1248,6 +1248,64 @@ S2 must_block 0.80 · vcf 0.57 · open3 0.97 · VCT 방어 0.83 · VCT 공격 0.
    포화 상태면 판정은 `capacity`다. 이 경우 Stage 9(network 확대)를 준비한다.
 3. 레시피 단일 변수 실험은 쉬어 간다. temperature 4/2는 동률이었고, simulations 100은 손해였다.
 
+### 12.14 외부 검토 반영: "정체 판정"에서 "안정적 지속 향상" 루프로
+
+외부 검토의 수치를 업로드 데이터로 다시 계산했다. 모두 일치했다.
+
+| 항목 | 재계산 |
+|---|---|
+| 본선 대 sims100 직접 대국, opening pair 단위 | 본선 우세(2승) 45쌍, 열세(2패) 24쌍, 1승 1패 81쌍, sign test p = 0.015 |
+| sims100 정확히 9수 / 10수 (구간 끝 960 / 1040 / 1120) | 13.9 / 43.2 / 32.6% · 5.8 / 0.5 / **31.3%** |
+| 본선 정확히 9수 (같은 구간) | 10.0 / **36.4** / 22.3% |
+| 세대당 새 국면 / 재사용 | sims100 322 → 212 → 209 / 5.36 → 8.28 → 8.24 · 본선 270 → 239 → 272 / 6.41 → 7.20 → 6.55 |
+| 10세대 이동 흑 승률(최소 ~ 최대) | 본선 0.03 ~ 0.99, sims100 0.01 ~ 1.00 |
+| 본선 v5~v7 합계 | S960 51/150, S1040 58/150, S1120 58/150 (v5 26→40%, v7 36→22%) |
+| S1120 raw probe | must_block 0.75 · immediate_win 0.45 · vcf 0.50 · VCT 공격 0.41 · **VCT 방어 0.25** · open3 0.80 · **forced_loss value 0.53** |
+
+**§12.13에서 고치는 점:**
+
+1. "S1120 후퇴"는 근거가 없다. S880 대비 점수는 내려갔지만 v5~v7 합계는 S1040과 같고 상대별 구성만 바뀌었다
+   (전략 이동, 비추이적 변화와도 맞는다).
+2. "raw probe 거의 포화"는 틀렸다. 쉬운 지표(must_block, open3 top-3)만 높고 VCT 방어 top-1 0.25, forced_loss value 0.53이다.
+   `compare_teacher_arms.py`의 포화 판정을 **다섯 지표 모두**(must_block, vcf, forced_loss value, VCT 방어, VCT 공격)로 바꿨다.
+3. "1360에서도 정체면 capacity"는 이르다. 데이터·탐색·학습 안정성 문제를 먼저 배제해야 한다.
+4. 진단 오류: §12.13의 명령은 anchor만 바꾸고 학습은 최신 S1120에서 계속했다. champion이 S1120이 아니면 **champion
+   checkpoint에서 branch**해야 한다.
+5. "짧은 self-play가 원인"은 강한 징후일 뿐 인과는 미확정이다. 짧은 게임 → 세대당 새 국면 감소 → **고정 50 step**이라 재사용 증가
+   → 정책 편향 강화 → 더 짧은 게임이라는 **양의 피드백 루프**를 가장 유력한 가설로 둔다. 본선도 960~1040에 한 번 붕괴했다가
+   회복했다(진동형). 흑 승률이 0.03~0.99로 오가는 것도 같은 진동으로 본다.
+
+**현재 상태 해석:** S2는 용량 한계에 닿은 모델이 아니다. S880을 넘은 뒤 self-play 분포가 진동하는 모델이고, S960~S1120에는 실제
+향상과 전략 이동이 섞여 있다. sims100은 그 불안정성을 키웠다.
+
+**새 도구:**
+
+| 도구 | 역할 |
+|---|---|
+| `training.adaptive_steps`(설정) | 세대당 SGD step = round(target_reuse × 새 국면 / batch), [min, max]로 제한. 기본 null(기존 설정 해시 불변) |
+| `configs/stage8_s2_adaptive.yaml` | S2 + `adaptive_steps {target_reuse 6.4, min 20, max 100}` (6.4 = 본선 880~959 재사용) |
+| `analyze_self_play_health.py` | 구간별 게임 길이(≤10, 9, 10수), 흑 승률과 10세대 이동 범위, 새 국면·재사용·step, **opening 다양성**(2~4/6/8수 prefix 수와 엔트로피, 최다 prefix 비율), 게이트 |
+| `forensic_short_games.py` | 9~10수 게임의 opening 군집, 패자의 마지막 VCF-safe 결정, 그 국면의 prior·value·탐색 50/400·noise 반복으로 `noise` / `search_budget` / `prior_blind` / `value_blind` 분류 |
+| `segment_gate.py` | 40세대 구간마다 건강 게이트 + champion 대국 → PROMOTE / HOLD / STOP(종료 코드 0/1/2) |
+| `run_stage8_head_to_head.py` | opening pair 단위 통계(pair 승/패/분할, sign-test p) 추가. 판정 도구는 pair p를 우선한다 |
+
+**게이트 기준(초기값, 데이터가 쌓이면 조정):** ≤10수 비율 30% 이상이면 WARN, 2구간 연속 40% 이상이면 STOP. 재사용이 기준(6.4)의
+1.2배 이상이면 WARN, 2구간 연속 1.3배 이상이면 STOP. 6수 prefix 엔트로피가 기준 구간의 0.8배 미만이면 WARN. 흑 승률은
+절대 50%가 아니라 기준 구간 대비 편차를 본다(현재는 보고만 한다).
+
+**새 루프:** RR → champion 확정(pair 통계 + 상위 2개 재확인) → 9~10수 원인 분석 → (adaptive 대 고정) A/B를 40세대 구간 +
+게이트로 → 이긴 레시피로 champion 승격 루프 → 반복.
+
+**Stage 9 진입 조건(수정):** 다음이 **모두** 성립할 때만 network 확대를 원인 후보로 올린다.
+(1) 건강 게이트가 3구간 이상 연속 OK(재사용 정상, 짧은 게임 30% 미만),
+(2) champion이 3구간(120세대) 연속 승격되지 않음,
+(3) 다섯 probe 게이트가 모두 충족되거나, forensic에서 깊은 탐색(400)으로도 못 고치는 `prior_blind` / `value_blind`가 대부분임,
+(4) adaptive 대 고정 A/B에서 차이가 없음.
+
+**뒤로 미룬 것(근거가 생기면):** 어려운 국면만 높은 탐색으로 다시 target을 만드는 reanalyse, root prior temperature(KataGo식),
+opening prefix pool 혼합. forensic에서 `noise`가 많으면 root noise/temperature를, `search_budget`가 많으면 reanalyse를,
+opening 군집 집중과 엔트로피 하락이 보이면 root prior temperature나 opening pool을 다음 단일 변수로 한다.
+
 ## 13. PR 분리
 
 | PR | 내용 |
