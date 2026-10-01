@@ -681,3 +681,68 @@ python scripts/run_web_play.py --az-checkpoint runs/anchors/S640.pt
 
 **공유해 줄 것:** 두 run의 `metrics.jsonl`, `external_eval/`, `probes/`, 로그, `runs/stage8_s640_s2/RECIPE.json`, `runs/arm_h2h/s2_*`.
 사람 대국을 했다면 `logs/web_play/` 폴더도 함께 보내 줘.
+
+## 12. S2 결과와 다음 실행 (2026-10-01)
+
+결과는 [Stage 8 계획 §12.12](stage8-plan.md)에 있다.
+- S4c와 S2 모두 S640보다 강해졌다(880에서 0.68 / 0.66).
+- temperature 2와 4의 차이는 검출되지 않았다(직접 대국 합계 0.53, p≈0.3).
+- 동률에서의 선택 기준에 따라 본선을 S2로 두고, 다음 단일 변수로 self-play simulations 50 → 100을 비교한다.
+- heavy 평가는 상대당 50판으로 늘린다.
+
+### 12.1 실행 명령 (PowerShell)
+
+S2 continuation과 sims100 arm을 두 창에서 동시에 돌린다. S2 continuation은 4~5시간, sims100은 self-play가 약 2배라 8~10시간으로 추정한다.
+S4c는 더 돌리지 않는다.
+
+```powershell
+# 0. 최신 코드
+git pull origin feat/stage8-plan
+
+# 1. 새 anchor 고정: S2 gen 880
+Copy-Item runs/stage8_s640_s2/checkpoints/checkpoint_gen880.pt runs/anchors/S880.pt
+
+# 2. sims100 arm: S2 gen 880 상태 그대로, self-play simulations 50 -> 100만 변경
+python scripts/make_recipe_branch.py --source runs/stage8_s640_s2 --generation 880 `
+    --config configs/stage8_s880_sims100.yaml --dest runs/stage8_s880_sims100
+
+# 3. (창 1) 본선: S2 continuation 880 -> 1120, heavy 상대당 50판, anchor S880
+python scripts/run_stage8_training.py --run-dir runs/stage8_s640_s2 `
+    --config configs/stage8_s640_temp2.yaml --anchor 400 --target-generation 1120 `
+    --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 25 `
+    --h2h-anchor S880=runs/anchors/S880.pt `
+    2>&1 | Tee-Object -FilePath runs/stage8_s640_s2_cont.log
+
+# 4. (창 2) sims100 arm 880 -> 1120, 같은 평가 설정과 anchor
+python scripts/run_stage8_training.py --run-dir runs/stage8_s880_sims100 `
+    --config configs/stage8_s880_sims100.yaml --anchor 400 --target-generation 1120 `
+    --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 25 `
+    --h2h-anchor S880=runs/anchors/S880.pt `
+    2>&1 | Tee-Object -FilePath runs/stage8_s880_sims100.log
+
+# 5. 둘 다 끝나면: 같은 세대 직접 대국 960 / 1040 / 1120
+foreach ($g in 960, 1040, 1120) {
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "S2c$($g)=runs/stage8_s640_s2/checkpoints/checkpoint_gen$($g).pt" `
+      --checkpoint "N100_$($g)=runs/stage8_s880_sims100/checkpoints/checkpoint_gen$($g).pt" `
+      --pairs 50 --output "runs/arm_h2h/n100_gen$($g).json"
+}
+
+# 6. 판정
+python scripts/compare_teacher_arms.py --control runs/stage8_s640_s2 --teacher runs/stage8_s880_sims100 `
+    --direct "runs/arm_h2h/n100_*.json" --teacher-label-prefix N100 --control-label-prefix S2c `
+    --output runs/arm_h2h/n100_verdict.json
+python scripts/compare_teacher_arms.py --control runs/stage8_s640_s2 --teacher runs/stage8_s640_s2 `
+    --output runs/arm_h2h/s2_main_status.json     # 본선 단독 정체/용량 판정(같은 run을 양쪽에 넣음)
+```
+
+**해석 기준:**
+
+- 본선이 960/1040/1120에서 S880을 한 번도 넘지 못하면 정체다. raw must_block ≥ 0.6이면 판정은 `capacity`가 되고, Stage 9로 간다.
+- sims100이 직접 대국에서 이기고 S880도 넘으면 탐색 예산을 100으로 올린 레시피를 채택한다. 직접 대국만 이기면 `relative_only`다.
+- 둘 다 오르면서 차이가 없으면 시간이 덜 드는 50 simulations를 유지한다.
+
+**공유해 줄 것:** 두 run의 `metrics.jsonl`, `external_eval/`, `probes/`, 로그, `runs/stage8_s880_sims100/RECIPE.json`, `runs/arm_h2h/n100_*`,
+`runs/arm_h2h/s2_main_status.json`.

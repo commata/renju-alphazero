@@ -274,3 +274,12 @@ class RecipeConfigTest(unittest.TestCase):
         self.assertEqual(config_differences(critical_config(temp4), critical_config(temp2)),
                          ['self_play.temperature_moves'])
         self.assertEqual(temp2['self_play']['temperature_moves'], 2)
+
+    def test_sims100_differs_from_temp2_only_in_simulations(self):
+        from training.config import config_differences, critical_config, load_config
+
+        temp2 = load_config(ROOT / 'configs' / 'stage8_s640_temp2.yaml')
+        sims = load_config(ROOT / 'configs' / 'stage8_s880_sims100.yaml')
+        self.assertEqual(config_differences(critical_config(temp2), critical_config(sims)),
+                         ['self_play.simulations'])
+        self.assertEqual(sims['self_play']['simulations'], 100)
