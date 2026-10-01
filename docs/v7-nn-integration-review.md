@@ -746,3 +746,56 @@ python scripts/compare_teacher_arms.py --control runs/stage8_s640_s2 --teacher r
 
 **공유해 줄 것:** 두 run의 `metrics.jsonl`, `external_eval/`, `probes/`, 로그, `runs/stage8_s880_sims100/RECIPE.json`, `runs/arm_h2h/n100_*`,
 `runs/arm_h2h/s2_main_status.json`.
+
+## 13. 본선 1120 / sims100 결과와 다음 실행 (2026-10-01)
+
+결과는 [Stage 8 계획 §12.13](stage8-plan.md)에 있다.
+- sims100은 기각한다. 정체했고, 직접 대국에서 본선에 0.43으로 졌으며, self-play가 다시 짧아졌다.
+- 본선은 960·1040에서 S880을 이겼지만 1120은 유의하지 않다.
+- 960 이후에도 오르는지 라운드로빈으로 가린 뒤, 1위 checkpoint를 anchor로 1360까지 이어 간다.
+
+### 13.1 실행 명령 (PowerShell)
+
+```powershell
+# 0. 최신 코드
+git pull origin feat/stage8-plan
+
+# 1. 본선 내부 라운드로빈: S880 / S960 / S1040 / S1120, 쌍당 100판 (6쌍, 수십 분 추정)
+python scripts/run_stage8_head_to_head.py `
+    --checkpoint S880=runs/anchors/S880.pt `
+    --checkpoint S960=runs/stage8_s640_s2/checkpoints/checkpoint_gen960.pt `
+    --checkpoint S1040=runs/stage8_s640_s2/checkpoints/checkpoint_gen1040.pt `
+    --checkpoint S1120=runs/stage8_s640_s2/checkpoints/checkpoint_gen1120.pt `
+    --pairs 50 --output runs/arm_h2h/s2_roundrobin_880_1120.json
+#    마지막에 출력되는 "Sxxx: 점수/게임 (비율)" 줄이 총점 순위다. 1위의 세대를 아래 $best에 넣는다.
+
+# 2. 1위 checkpoint를 새 anchor로 고정 (예: 1위가 S1040이면 $best = 1040)
+$best = 1040
+Copy-Item "runs/stage8_s640_s2/checkpoints/checkpoint_gen$($best).pt" "runs/anchors/S$($best).pt"
+#    1위가 S880이면 복사하지 말고 아래 anchor를 runs/anchors/S880.pt로 쓴다.
+
+# 3. 본선 continuation 1120 -> 1360 (heavy 1200 / 1280 / 1360)
+python scripts/run_stage8_training.py --run-dir runs/stage8_s640_s2 `
+    --config configs/stage8_s640_temp2.yaml --anchor 400 --target-generation 1360 `
+    --light-opponents tactical mcts_v2 mcts_v321 `
+    --heavy-opponents mcts_v321 mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 25 `
+    --h2h-anchor "S$($best)=runs/anchors/S$($best).pt" `
+    2>&1 | Tee-Object -FilePath runs/stage8_s640_s2_cont2.log
+
+# 4. 정체/용량 판정 (같은 run을 양쪽에 넣으면 본선 단독 상태를 본다)
+python scripts/compare_teacher_arms.py --control runs/stage8_s640_s2 --teacher runs/stage8_s640_s2 `
+    --output runs/arm_h2h/s2_main_status_1360.json
+
+# (선택, 3과 동시에) 사람 대국: 라운드로빈 1위와 직접 두어 보기
+python scripts/run_web_play.py --az-checkpoint "runs/anchors/S$($best).pt"
+```
+
+**해석 기준:**
+
+- 라운드로빈에서 S1040/S1120이 S960을 유의하게 넘지 못하면 960 이후 정체 신호다. 이때 3단계는 정체를 확정하는 용도가 된다.
+- 3단계에서 1200/1280/1360 모두 anchor 대비 향상이 없고(점수 ≤ 0.55 또는 p ≥ 0.05) raw must_block ≥ 0.6이면 `capacity`다.
+  이 경우 다음은 Stage 9 설계(96×6 등 network 확대, 처음부터 학습할지 지식을 옮겨 시작할지, GPU self-play 경로)다.
+- self-play 흑승이 계속 65% 이상이거나 짧은 게임(≤10수)이 40% 이상으로 다시 늘면 그 구간을 알려 줘. 지금까지는 퇴화가 기력 정체보다 먼저 보였다.
+
+**공유해 줄 것:** `runs/arm_h2h/s2_roundrobin_880_1120.json`, 본선의 `metrics.jsonl`·`external_eval/`·`probes/`·로그,
+`s2_main_status_1360.json`, 사람 대국을 했다면 `logs/web_play/`.
