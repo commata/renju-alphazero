@@ -1,0 +1,233 @@
+[
+ {
+  "gate": "v8c_root",
+  "config": {
+   "root_vct_safety": true,
+   "root_vcf_node_limit": 20000,
+   "root_call_limit": 10000,
+   "root_node_budget": 250000,
+   "root_max_children": 4
+  },
+  "passed": 2,
+  "total": 3,
+  "proven_safe": 2,
+  "independent_safe": 2,
+  "budget_exhausted": 1,
+  "mean_seconds": 100.14,
+  "median_seconds": 99.5,
+  "p95_seconds": 175.23,
+  "max_seconds": 175.23,
+  "max_nodes": 249999,
+  "max_calls": 3071,
+  "nodes_per_second": 1355,
+  "rows": [
+   {
+    "id": "pilot-6-black-ply56",
+    "ok": true,
+    "engine_ok": true,
+    "forced": {
+     "ok": true,
+     "final": [
+      4,
+      11
+     ],
+     "losing_status": "UNSAFE",
+     "final_status": "SAFE",
+     "independent_safe": true,
+     "rank": 2,
+     "calls": 725,
+     "nodes": 6609,
+     "exhausted": false,
+     "seconds": 7.25
+    },
+    "move": [
+     2,
+     7
+    ],
+    "route": "tree",
+    "avoided": true,
+    "proven_safe": true,
+    "independent_safe": true,
+    "rank": 7,
+    "v7_move": [
+     3,
+     4
+    ],
+    "calls": 2277,
+    "nodes": 28044,
+    "budget_exhausted": false,
+    "root_seconds": 24.27,
+    "attack_seconds": 0.03,
+    "checked": [
+     [
+      [
+       3,
+       4
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       9,
+       3
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       7,
+       11
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       9,
+       10
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       10,
+       4
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       10,
+       7
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       2,
+       7
+      ],
+      "SAFE"
+     ]
+    ],
+    "seconds": 25.7
+   },
+   {
+    "id": "pilot-7-white-ply29",
+    "ok": true,
+    "engine_ok": true,
+    "forced": {
+     "ok": true,
+     "final": [
+      7,
+      10
+     ],
+     "losing_status": "UNSAFE",
+     "final_status": "SAFE",
+     "independent_safe": true,
+     "rank": 3,
+     "calls": 1185,
+     "nodes": 209228,
+     "exhausted": false,
+     "seconds": 139.91
+    },
+    "move": [
+     4,
+     9
+    ],
+    "route": "tree",
+    "avoided": true,
+    "proven_safe": true,
+    "independent_safe": true,
+    "rank": 1,
+    "v7_move": [
+     4,
+     9
+    ],
+    "calls": 222,
+    "nodes": 128978,
+    "budget_exhausted": false,
+    "root_seconds": 98.34,
+    "attack_seconds": 0.14,
+    "checked": [
+     [
+      [
+       4,
+       9
+      ],
+      "SAFE"
+     ]
+    ],
+    "seconds": 99.5
+   },
+   {
+    "id": "human-164723-ply20",
+    "ok": false,
+    "engine_ok": false,
+    "forced": {
+     "ok": true,
+     "final": [
+      6,
+      7
+     ],
+     "losing_status": "UNSAFE",
+     "final_status": "SAFE",
+     "independent_safe": true,
+     "rank": 2,
+     "calls": 972,
+     "nodes": 112988,
+     "exhausted": false,
+     "seconds": 83.9
+    },
+    "move": [
+     7,
+     11
+    ],
+    "route": "tree",
+    "avoided": true,
+    "proven_safe": false,
+    "independent_safe": false,
+    "rank": 2,
+    "v7_move": [
+     10,
+     8
+    ],
+    "calls": 3071,
+    "nodes": 249999,
+    "budget_exhausted": true,
+    "root_seconds": 172.9,
+    "attack_seconds": 0.23,
+    "checked": [
+     [
+      [
+       10,
+       8
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       7,
+       11
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       5,
+       6
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       6,
+       5
+      ],
+      "UNSAFE"
+     ]
+    ],
+    "seconds": 175.23
+   }
+  ]
+ }
+]

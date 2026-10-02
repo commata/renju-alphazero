@@ -33,6 +33,7 @@ exhaustion and the time distribution are reported separately; exits 1 on any
 failure.
 
     python scripts/run_v8_gates.py [--gate defend|attack|root|divergence|all] [--symmetries 0 1 ...]
+                                   [--root-node-budget 250000]
                                    [--output runs/v8_gates.json]
 """
 from __future__ import annotations
@@ -258,6 +259,8 @@ def main() -> int:
     parser.add_argument('--gate', choices=('defend', 'attack', 'root', 'divergence', 'all'), default='all')
     parser.add_argument('--divergence-budgets', type=int, nargs='+', default=[400_000, 250_000],
                         help='root node budgets for --gate divergence')
+    parser.add_argument('--root-node-budget', type=int, default=None,
+                        help='V8-C root_node_budget for --gate root (default: V8_DEFAULTS)')
     parser.add_argument('--symmetries', type=int, nargs='*', default=None,
                         help='D4 indices to run (default: all 8)')
     parser.add_argument('--seed', type=int, default=1)
@@ -270,6 +273,8 @@ def main() -> int:
         summaries.append(defend_gate([p for p in probes if p['kind'] == 'must_defend_vct'], args.seed))
     if args.gate in ('attack', 'all'):
         summaries.append(attack_gate([p for p in probes if p['kind'] == 'vct_attack'], args.seed))
+    if args.root_node_budget is not None:
+        set_root_config(root_node_budget=args.root_node_budget)
     if args.gate in ('root', 'all'):
         summaries.append(root_gate(json.loads(ROOT_PROBES.read_text(encoding='utf-8'))['probes'], args.seed))
     if args.gate == 'divergence':
