@@ -16,12 +16,17 @@ must not be committed.
 from __future__ import annotations
 
 from concurrent.futures import ProcessPoolExecutor
+import ctypes
 import gzip
 import hashlib
 import json
 from pathlib import Path
 
-import torch
+import warnings
+
+# The CPU desktop venv has no NumPy, which this module never needs; torch warns at import in every worker.
+warnings.filterwarnings('ignore', message='Failed to initialize NumPy')
+import torch  # noqa: E402
 
 from model.config import ACTION_COUNT, ACTION_INDEX_VERSION, BOARD_SIZE, ENCODER_VERSION
 from renju import Game
@@ -115,11 +120,17 @@ def build_split(games: list[dict], workers: int = 1, chunk: int = 500) -> dict[s
             'game_id': torch.tensor([r[6] for r in records], dtype=torch.int32)}
 
 
+def tensor_bytes(tensor: torch.Tensor) -> bytes:
+    """Raw bytes of a CPU tensor without NumPy (the desktop CPU venv has none)."""
+    tensor = tensor.contiguous().cpu()
+    return ctypes.string_at(tensor.data_ptr(), tensor.numel() * tensor.element_size()) if tensor.numel() else b''
+
+
 def tensor_sha256(data: dict[str, torch.Tensor]) -> str:
     digest = hashlib.sha256()
     for key in sorted(data):
         digest.update(key.encode())
-        digest.update(data[key].contiguous().numpy().tobytes())
+        digest.update(tensor_bytes(data[key]))
     return digest.hexdigest()
 
 

@@ -16,7 +16,7 @@ except ModuleNotFoundError as exc:
     torch = None
 
 if torch is not None:
-    from hybrid.h3_cache import (FIELD_BYTES, build_cache, load_cache, pack, planes_from_cache, unpack,
+    from hybrid.h3_cache import (FIELD_BYTES, build_cache, tensor_bytes, load_cache, pack, planes_from_cache, unpack,
                                  verify_d4, verify_encoding)
     from hybrid.h3_train import H3Config, Trainer, augment, d4_tables, evaluate
     from model.symmetry import transform_action, transform_spatial
@@ -66,6 +66,11 @@ class CacheTest(unittest.TestCase):
         actions = [0, 7, 8, 112, 224]
         fields = torch.frombuffer(bytearray(pack(actions)), dtype=torch.uint8).reshape(1, FIELD_BYTES)
         self.assertEqual(unpack(fields)[0].nonzero().flatten().tolist(), actions)
+
+    def test_tensor_bytes_without_numpy(self):
+        # The desktop CPU venv has no NumPy: hashing must not call Tensor.numpy().
+        self.assertEqual(tensor_bytes(torch.tensor([1, 258], dtype=torch.int16)), bytes([1, 0, 2, 1]))
+        self.assertEqual(tensor_bytes(torch.zeros((0, 3), dtype=torch.uint8)), b'')
 
     def test_counts_exclude_opening_and_masked_plies(self):
         expected = {s: 0 for s in ('train', 'val', 'test')}
