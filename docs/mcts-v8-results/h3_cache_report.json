@@ -1,0 +1,45 @@
+{
+ "format": "h3-cache-v1",
+ "h2_output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+ "policy_from_ply": 5,
+ "git_commit": "ec70898fa5e1fbfd85b89d0246018cc424812e4f",
+ "splits": {
+  "train": {
+   "states": 3178091,
+   "games": 97098,
+   "sha256": "b48a8735bc6d1c87d7efaca52e7c8bf2838c3090b7639f5e1db2682a89430277"
+  },
+  "val": {
+   "states": 127316,
+   "games": 5354,
+   "sha256": "96f598810e46e9996317b11e13ff72d1e85a47f46666983cab719eca316bd3e7"
+  },
+  "test": {
+   "states": 125040,
+   "games": 5374,
+   "sha256": "bb2f022b30822202c9a77e42c1d6bf4134aaedb3210847d2615d371d92abc8ae"
+  }
+ },
+ "build_seconds": 329.3,
+ "checks": {
+  "train": {
+   "sampled": 300,
+   "encode_mismatch": 0,
+   "d4_mismatch": 0
+  },
+  "val": {
+   "sampled": 300,
+   "encode_mismatch": 0,
+   "d4_mismatch": 0
+  },
+  "test": {
+   "sampled": 300,
+   "encode_mismatch": 0,
+   "d4_mismatch": 0
+  }
+ },
+ "passed": true
+}

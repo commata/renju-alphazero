@@ -1,0 +1,23 @@
+# H3 policy-only pretraining on RenjuNet (Track B, docs/mcts-v8-teacher.md §12.11).
+# Same architecture as Track A (64x4), random init. Main run: RTX 5070 (device: cuda).
+# Values below are the first run's plan, not tuned; the cache must come from H2 output 228f14b2...
+cache_dir: data/external/renjunet/h3_cache
+out_dir: runs/h3_policy_64x4
+device: cuda
+torch_threads: 0
+seed: 20261003
+channels: 64
+blocks: 4
+batch_size: 1024
+epochs: 10
+max_steps: 0
+learning_rate: 0.002
+weight_decay: 0.0001
+warmup_steps: 1000
+min_lr_ratio: 0.02
+augment_d4: true
+amp_bf16: false
+eval_every: 3000
+eval_max_states: 0
+checkpoint_every: 1000
+log_every: 100

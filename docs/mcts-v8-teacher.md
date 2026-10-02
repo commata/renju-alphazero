@@ -1400,3 +1400,81 @@ H2는 모델 학습을 하지 않는다. RenjuNet RIF를 우리 규칙 엔진 �
 같은 원본과 코드로 빌드하면 이 값이 나와야 한다.
 
 **H2 판정: 완료.** H3(policy-only 사전학습)는 `games.jsonl.gz`를 읽어 ply ≥ 5이고 `masked_plies`가 아닌 국면만 policy target으로 쓴다.
+
+### 12.11 H3: policy-only 사전학습 구현 (2026-10-03, 본 학습은 RTX 5070 설치 후)
+
+구현은 지금 하고, 본 학습은 RTX 5070이 오면 한다. 코드: `src/hybrid/h3_cache.py`, `src/hybrid/h3_train.py`,
+`scripts/build_h3_cache.py`, `scripts/train_h3_policy.py`, `scripts/eval_h3_gate.py`, `configs/hybrid/h3_policy_64x4.yaml`,
+`configs/hybrid/h3_smoke_cpu.yaml`, `tests/test_h3.py`.
+
+#### 설계 검토(2차) 사실 확인
+
+| 주장 | 판정 | 근거 / 반영 |
+|---|---|---|
+| RTX 5070(sm_120)은 CUDA 12.8 이상 PyTorch 2.7 이상이 필요 | 맞음 | — |
+| PyTorch 2.14가 나와 있고 기본 빌드는 CUDA 13.0 | **맞음** | 데스크톱 `.venv-cpu`가 `2.14.0+cpu`(`policy-value-overfit-results.json`). 이 컨테이너에서 PyPI `torch`는 `2.14.1+cu130`이고 `get_arch_list()`에 `sm_120`이 있다 |
+| cu132를 권장 | **고정하지 않음** | PyTorch 공지상 CUDA 13.2는 2.12부터 실험 빌드(nightly)로 들어왔다. 2.14 정식 cu130 빌드에 이미 `sm_120`이 있으므로, 설치 시점의 공식 선택기(Windows, pip, CUDA 13.x)를 따르고 `get_arch_list()`에 `sm_120`이 있는지로 판정한다. Windows의 PyPI 기본 `torch`는 CPU 빌드이므로 반드시 CUDA index URL로 설치한다 |
+| CUDA 13.x는 드라이버 580 이상 | 맞음(NVIDIA 문서) | 설치 시점 최신 드라이버 |
+| "50 step 6.3초"는 6.224 ms를 혼동한 것, 기록은 9.44초 | **둘 다 기록이 있다** | 6.3초는 `stage8-plan.md` 822행(Stage 8 학습, batch 32, 50 step, denormal 수정 후)이다. 9.44초는 Stage 4 과적합 측정(`policy-value-overfit-results.json`, 중간 평가 포함)이다. 결론은 같다: **CPU epoch 시간은 아직 측정되지 않았다.** smoke로 잰다 |
+| `legal_actions` plane 때문에 입력 계산이 병목 | 맞음 | `encode_game`은 mask가 없으면 `game.legal_moves()`를 부른다. cache에서 한 번만 계산한다 |
+| float 텐서가 아니라 bit-packed cache | 맞음 | 국면당 흑·백·합법 각 29바이트 + 메타데이터 약 95바이트 |
+| cache에 provenance, 다르면 로딩 거부 | 맞음 | manifest에 H2 출력 SHA, encoder/action 버전, 규칙 소스(`rules.py`, `game.py`) SHA, policy 시작 ply. 현재 코드와 다르면 `load_cache`가 거부한다 |
+| `value_weight=0`이어도 value head BatchNorm 통계가 바뀐다 | **맞음** | `value_head`에 `BatchNorm2d`가 있고 train 모드 forward는 running 통계를 갱신한다. H3는 `policy_head(trunk(x))`만 부른다. 테스트가 학습 후 value head의 가중치와 BN 버퍼가 그대로인지 확인한다 |
+| must_block 기준은 "최신 Track A"가 아니라 B400 고정 | 맞음 | B400 raw must_block top-1 0.23, `stage7_probes_v1.json`의 must_block 40개 → **9/40**. B880은 0.15라 기준이 낮아진다 |
+| must_block은 체크포인트 선택에 쓰지 않음 | 맞음 | 선택은 val(masked top-1, 같으면 낮은 CE). must_block은 선택된 `best.pt`에 한 번만 `eval_h3_gate.py`로 |
+| mask 후 legal rate는 항상 100% | 맞음 | 지표는 masked top-1/3/5와 CE. raw top-1 합법률과 raw 비합법 확률 질량은 진단값(게이트 아님) |
+| D4 변환과 금수 mask 조합 검증 | 맞음, **추가** | `verify_d4`: 표본 국면마다 8개 대칭 모두에서 "변환한 cache mask == 변환한 판의 `Game` 합법수". `verify_encoding`: cache planes == 실제 대국을 재생한 `encode_game` |
+
+#### 확정 설계
+
+| 항목 | 내용 |
+|---|---|
+| 모델 | `PolicyValueNet` 64×4(Track A와 같음), random init. B400에서 시작하지 않는다 |
+| 입력 | H2 `games.jsonl.gz` → `build_h3_cache.py` → `h3_cache/{train,val,test}.pt` + `manifest.json`(커밋 금지) |
+| 표본 | ply ≥ 5. val/test는 `masked_plies` 제외 |
+| 증강 | 학습 시 표본마다 무작위 D4(`augment`, `model.symmetry`와 같은 변환을 테스트로 확인) |
+| loss | masked cross-entropy(사람 착수 one-hot). value head는 forward하지 않는다 |
+| 최적화 | AdamW, lr 2e-3, weight decay 1e-4, warmup 1,000 step 후 cosine(최저 2%), batch 1,024, 10 epoch(첫 계획값, 미조정) |
+| 재개 | `snapshot.pt`(모델, optimizer, scheduler, step, 난수 상태)를 원자적으로 저장. 데이터 순서는 (seed, epoch)로 정해져 이어서 같다. 학습에 영향을 주는 설정이 바뀌면 재개를 거부한다. 중단 후 재개가 끊김 없이 한 번에 돈 것과 같은 가중치를 내는지 테스트로 확인한다 |
+| 산출물 | `best.pt`/`last.pt`(기존 weights-only 형식, H4에서 그대로 로드) + `best.json`(`policy_trained: true`, `value_trained: false`, H2·cache SHA, val 지표) |
+| 평가 | val/test: masked top-1/3/5, CE, ply 구간별 top-1. 진단: raw top-1 합법률, raw 비합법 질량 |
+| 게이트 | `eval_h3_gate.py`: test 지표 + must_block ≥ B400(9/40, `--anchor`로 B400 체크포인트를 주면 같은 코드로 측정한 값). 증명 라벨 모델 0.72는 참고값 |
+| 격리 | `hybrid → model, training.probes`만 허용. Track A는 `hybrid`를 import하지 않는다(기존 테스트) |
+| H4 주의 | H3 체크포인트의 value 출력은 학습되지 않은 값이므로 쓰지 않는다 |
+
+#### 실행 순서
+
+1. **지금(데스크톱 CPU):** `build_h3_cache.py`(1회) → `train_h3_policy.py --config configs/hybrid/h3_smoke_cpu.yaml`을 batch 32/128/256으로 실행해 samples/s 기록.
+2. **RTX 5070 설치 후:**
+   - 드라이버 설치
+   - 새 venv `.venv-cuda`에 PyTorch CUDA 13.x 빌드 설치
+   - `torch.cuda.get_arch_list()`에 `sm_120`이 있고 실제 행렬곱이 되는지 확인
+   - GPU smoke(`--device cuda --max-steps 300`)
+   - 본 학습(`h3_policy_64x4.yaml`)
+   - `eval_h3_gate.py`
+
+#### 이 컨테이너에서 확인한 것 (2026-10-03, 4코어 CPU, PyTorch 2.14.1)
+
+**cache.** 결과 파일은 `docs/mcts-v8-results/h3_cache_report.json`이다(개수와 hash만 있다).
+
+| split | 국면 | 대국 | 표본 검사(encode / D4 8대칭) |
+|---|---:|---:|---|
+| train | 3,178,091 | 97,098 | 300 / 300 불일치 0 |
+| val | 127,316 | 5,354 | 300 / 300 불일치 0 |
+| test | 125,040 | 5,374 | 300 / 300 불일치 0 |
+
+- 입력은 H2 출력 `228f14b2…`이다. 국면 수는 §12.10의 policy 상태 수에서 가린 국면을 뺀 값과 같다(val 175,180 − 47,864, test 173,564 − 48,524).
+- 크기는 318 MB이고, 4 worker로 329초 걸렸다.
+
+**CPU smoke(100 step, 64×4, D4 증강).**
+
+| batch | samples/s | 100 step 뒤 val top-1(5,000 국면) |
+|---:|---:|---:|
+| 32 | 237 | 0.038 |
+| 128 | 429 | 0.063 |
+| 256 | 499 | 0.082 |
+
+- batch 하나의 입력 준비(cache 풀기 + D4)는 batch 256 기준 2.4 ms다. CPU에서는 모델 계산이 시간의 거의 전부다.
+- 500 samples/s면 1 epoch(318만 국면)에 약 1.8시간이 걸린다. 10 epoch면 이 컨테이너에서 하루 가까이다. 그래서 본 학습은 GPU에서 한다.
+- 데스크톱 CPU 값은 같은 smoke로 따로 잰다.
+- 전체 테스트는 torch를 설치한 이 환경에서 539개 모두 통과했다(skip 0).
