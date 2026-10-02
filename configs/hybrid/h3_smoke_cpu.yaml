@@ -2,7 +2,7 @@
 cache_dir: data/external/renjunet/h3_cache
 out_dir: runs/h3_smoke_cpu
 device: cpu
-torch_threads: 0
+torch_threads: 4  # desktop i5-12600K: 4 threads 612 samples/s vs default (16) ~200 (§12.11)
 seed: 20261003
 channels: 64
 blocks: 4
