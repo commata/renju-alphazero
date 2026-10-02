@@ -911,3 +911,124 @@ python scripts/compare_teacher_arms.py --control "runs/stage8_ctl_c$C" --teacher
 
 **공유해 줄 것:** A단계 파일 전부(`runs/arm_h2h/s2_*`, `runs/health/`, `runs/forensics/`), B단계 두 run의 `metrics.jsonl`·`external_eval/`·`probes/`·로그,
 `runs/gates/`, `runs/arm_h2h/ada_*`.
+
+## 15. B단계 결과와 C단계: champion 선정 → adaptive로 이어서 학습 (2026-10-02)
+
+결과 표와 해석은 `docs/stage8-plan.md` §12.15에 있다. 요약은 다음과 같다.
+
+- ADA(adaptive steps)를 기본 레시피로 채택한다. 계산량은 같다. ADA는 C1120을 두 번 유의하게 넘었고(1240, 1360), CTL은 1320에 게이트 STOP이 났다.
+- 짧은 게임 폭발은 두 arm 모두에서 났다. adaptive가 막은 것은 폭발 자체가 아니라 그 뒤의 고착이다. 폭발의 동반 현상은 색 진동이다.
+- 외부 기준(v5/v6/v7)으로 C1120보다 높은 것은 ADA 1320 한 점뿐이다. probe는 표본이 작아 판정에 쓰지 않는다.
+- 후보 1240/1320/1360은 seed 8008 개국으로 고른 것이다. champion은 **새 seed**로 고른다.
+
+### 15.1 C0: champion 선정 (학습 없음, 미리 정한 규칙)
+
+규칙은 결과를 보기 전에 고정한다.
+
+1. 새 seed 9009, 100쌍(200판) 라운드로빈: C1120, ADA1240, ADA1320, ADA1360.
+2. **자격:** C1120 상대 점수 > 0.55이고 `p_pairs_two_sided` < 0.05.
+3. 자격자 중 라운드로빈 총점 1위가 champion이다. 1·2위의 직접 대결 `p_pairs_two_sided` ≥ 0.05이면 동률로 본다.
+   동률이면 새 seed 7107 heavy(v5+v6+v7, 50쌍) 총승수가 높은 쪽을 고른다. 그래도 차이가 3승 이하이면 늦은 세대를 고른다.
+4. **거부권:** heavy 총승수가 같은 seed의 C1120보다 유의하게 낮으면(두 비율 검정 p < 0.05) 자격을 잃는다.
+5. 자격자가 없으면 champion은 C1120으로 둔다. 이 경우 ADA 1360에서 이어 학습하되 anchor는 C1120을 유지한다.
+
+```powershell
+# 창 1: worktree 최신화 후 라운드로빈 (NN끼리라 빠르다)
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+git fetch origin feat/stage8-plan
+git merge --ff-only origin/feat/stage8-plan
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$A = "$R\stage8_ada_c1120\checkpoints"
+New-Item -ItemType Directory -Force "$R\champion" | Out-Null
+python scripts/run_stage8_head_to_head.py `
+    --checkpoint "C1120=$R\anchors\C1120.pt" `
+    --checkpoint "ADA1240=$A\checkpoint_gen1240.pt" `
+    --checkpoint "ADA1320=$A\checkpoint_gen1320.pt" `
+    --checkpoint "ADA1360=$A\checkpoint_gen1360.pt" `
+    --pairs 100 --seed 9009 --output "$R\champion\rr_seed9009.json"
+```
+
+```powershell
+# 창 2: 새 seed heavy (C1120 기준점도 같은 개국으로 다시 잰다)
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$A = "$R\stage8_ada_c1120\checkpoints"
+New-Item -ItemType Directory -Force "$R\champion" | Out-Null
+$cands = [ordered]@{ "C1120" = "$R\anchors\C1120.pt"; "ADA1240" = "$A\checkpoint_gen1240.pt";
+                     "ADA1320" = "$A\checkpoint_gen1320.pt"; "ADA1360" = "$A\checkpoint_gen1360.pt" }
+foreach ($k in $cands.Keys) {
+  python scripts/run_stage7_checkpoint_eval.py --checkpoint $cands[$k] `
+      --opponents mcts_v5 mcts_v6 mcts_v7 --pairs 50 --seed 7107 --tactical-rules off `
+      --output "$R\champion\heavy_$($k)_seed7107.json"
+  if ($LASTEXITCODE -ne 0) { Write-Host "HEAVY FAILED at $k"; break }
+}
+```
+
+```powershell
+# 창 1, 라운드로빈 뒤: 사전 등록한 arm 직접 대결 (CTL은 1320에서 멈췄으므로 1360 대신 1320)
+foreach ($g in 1200, 1280, 1320) {
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "ctl$($g)=$R\stage8_ctl_c1120\checkpoints\checkpoint_gen$($g).pt" `
+      --checkpoint "ADA_$($g)=$A\checkpoint_gen$($g).pt" `
+      --pairs 50 --output "$R\arm_h2h\ada_gen$($g).json"
+}
+# 짧은 게임 폭발 창 forensic (깊은 탐색 400회라 오래 걸린다; 창 하나에서 순서대로)
+python scripts/forensic_short_games.py "$R\stage8_ada_c1120" --from 1240 --to 1280 `
+    --checkpoint "$A\checkpoint_gen1260.pt" --limit 200 --output "$R\forensics\ada_1240_1280.json"
+python scripts/forensic_short_games.py "$R\stage8_ctl_c1120" --from 1280 --to 1320 `
+    --checkpoint "$R\stage8_ctl_c1120\checkpoints\checkpoint_gen1300.pt" --limit 200 `
+    --output "$R\forensics\ctl_1280_1320.json"
+```
+
+- forensic의 checkpoint는 창 중간 세대다. 그 창의 게임을 실제로 둔 정책에 가깝다.
+- numpy 경고는 무해하다. 정리하려면 `.venv-cpu`를 쓰는 작업이 하나도 없을 때 `pip install numpy`를 실행한다.
+
+### 15.2 C1: champion에서 ADA로 이어 학습, PROMOTE마다 anchor 교체
+
+`$X`는 15.1에서 고른 세대다. 1360이면 기존 run에서 그대로 이어 간다. 다른 세대이면 그 세대에서 새 디렉터리로 분기한다.
+그렇게 해야 이후 세대의 평가 파일이 섞이지 않는다.
+
+```powershell
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+$R   = "C:\오목 강화학습\renju-alphazero\runs"
+$X   = 1360                                   # 15.1에서 고른 champion 세대
+$cfg = "configs/stage8_s2_adaptive.yaml"
+if ($X -eq 1360) { $run = "$R\stage8_ada_c1120" } else {
+  $run = "$R\stage8_ada_c$X"
+  python scripts/branch_stage8_run.py --source "$R\stage8_ada_c1120" --generation $X --dest $run
+}
+$champ = "ADA$X"
+Copy-Item "$R\stage8_ada_c1120\checkpoints\checkpoint_gen$X.pt" "$R\anchors\$champ.pt"
+New-Item -ItemType Directory -Force "$R\gates" | Out-Null
+for ($g = $X + 40; $g -le $X + 240; $g += 40) {
+  python scripts/run_stage8_training.py --run-dir $run --config $cfg --anchor 400 `
+      --target-generation $g --light-opponents tactical mcts_v2 `
+      --heavy-every 40 --heavy-opponents mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 25 `
+      --h2h-anchor "$champ=$R\anchors\$champ.pt" `
+      2>&1 | Tee-Object -Append -FilePath "$run.log"
+  if ($LASTEXITCODE -ne 0) { Write-Host "TRAINING FAILED at $g (exit $LASTEXITCODE)"; break }
+  python scripts/segment_gate.py $run --from ($g - 40) --to $g --reference-reuse 6.4 `
+      --output "$R\gates\$(Split-Path $run -Leaf)_$($g).json"
+  $code = $LASTEXITCODE
+  if ($code -eq 12) { Write-Host "GATE STOP at $g"; break }
+  if ($code -ne 10 -and $code -ne 11) { Write-Host "GATE FAILED at $g (exit $code)"; break }
+  if ($code -eq 10) {
+    $champ = "ADA$g"
+    Copy-Item "$run\checkpoints\checkpoint_gen$g.pt" "$R\anchors\$champ.pt"
+    Write-Host "NEW CHAMPION $champ"
+  }
+}
+```
+
+**C1 해석:**
+
+- 연속 3구간(120세대) 동안 PROMOTE가 없으면 이 레시피는 정체한 것이다. 그때 forensic 결과로 다음 단일 변수를 고른다(§12.14 끝, §12.15 끝).
+- STOP이 나면 그 창을 forensic으로 분류한다. ADA에서 STOP이 나는 경우는 짧은 게임 40% 이상이 두 창 연속일 때뿐이다(reuse는 고정이다).
+- anchor가 바뀌면 이후 h2h 점수는 새 champion 기준이다. 그래서 구간 사이 점수를 그대로 비교하지 않는다.
+  장기 추세는 heavy(v5/v6/v7, seed 7007 고정)로 본다.
+
+**공유해 줄 것:** `runs/champion/`, `runs/arm_h2h/ada_gen*.json`, `runs/forensics/`. C1을 돌렸다면
+run의 `metrics.jsonl`·`external_eval/`·`probes/`·로그와 `runs/gates/`도 함께 보낸다.
