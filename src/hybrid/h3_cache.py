@@ -22,11 +22,7 @@ import hashlib
 import json
 from pathlib import Path
 
-import warnings
-
-# The CPU desktop venv has no NumPy, which this module never needs; torch warns at import in every worker.
-warnings.filterwarnings('ignore', message='Failed to initialize NumPy')
-import torch  # noqa: E402
+import torch
 
 from model.config import ACTION_COUNT, ACTION_INDEX_VERSION, BOARD_SIZE, ENCODER_VERSION
 from renju import Game
