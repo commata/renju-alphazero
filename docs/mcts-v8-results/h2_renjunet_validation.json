@@ -1,0 +1,384 @@
+{
+ "format": "renjunet-h2-v1",
+ "source": "e420e2e8-renjunet_v10_20260930.rif.gz",
+ "source_sha256": "3bbd8d0cda6db4a244688c73e277b6783f402adfe312bd6265b4877f2243a6ba",
+ "output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+ "git_commit": "9e74e7978beef1f405132c129b3e283ed45f31f5",
+ "seconds": 252.9,
+ "gate": {
+  "sum_check": true,
+  "replay_failures": 0,
+  "leakage_after_masking": {
+   "train_val": 0,
+   "train_test": 0,
+   "val_test": 0
+  },
+  "leakage_zero": true,
+  "deterministic": true,
+  "passed": true
+ },
+ "report": {
+  "games_in_file": 165115,
+  "primary_reason": {
+   "non_renju_rule": 26307,
+   "bad_coordinate": 0,
+   "occupied_point": 2,
+   "non_center_first": 291,
+   "midgame_forbidden": 166,
+   "moves_after_five": 14,
+   "too_short": 29537,
+   "result_mismatch": 247,
+   "duplicate_game": 540,
+   "accepted": 108011
+  },
+  "sum_check": true,
+  "accepted_end": {
+   "five": 19806,
+   "forbidden": 1558,
+   "unknown": 86647
+  },
+  "accepted_bresult": {
+   "1": 51997,
+   "0": 47411,
+   "0.5": 8603
+  },
+  "by_rule": {
+   "1": {
+    "category": "1",
+    "games": 54694,
+    "accepted": 33689
+   },
+   "6": {
+    "category": "1",
+    "games": 93,
+    "accepted": 92
+   },
+   "2": {
+    "category": "1",
+    "games": 6887,
+    "accepted": 6544
+   },
+   "3": {
+    "category": "1",
+    "games": 803,
+    "accepted": 792
+   },
+   "4": {
+    "category": "1",
+    "games": 1246,
+    "accepted": 1212
+   },
+   "9": {
+    "category": "1",
+    "games": 91,
+    "accepted": 60
+   },
+   "15": {
+    "category": "2",
+    "games": 378,
+    "accepted": 0
+   },
+   "7": {
+    "category": "2",
+    "games": 679,
+    "accepted": 0
+   },
+   "5": {
+    "category": "1",
+    "games": 26095,
+    "accepted": 20389
+   },
+   "10": {
+    "category": "1",
+    "games": 2409,
+    "accepted": 2283
+   },
+   "8": {
+    "category": "1",
+    "games": 644,
+    "accepted": 517
+   },
+   "11": {
+    "category": "2",
+    "games": 21175,
+    "accepted": 0
+   },
+   "12": {
+    "category": "1",
+    "games": 263,
+    "accepted": 116
+   },
+   "14": {
+    "category": "1",
+    "games": 259,
+    "accepted": 182
+   },
+   "13": {
+    "category": "1",
+    "games": 386,
+    "accepted": 377
+   },
+   "16": {
+    "category": "1",
+    "games": 1330,
+    "accepted": 1234
+   },
+   "17": {
+    "category": "1",
+    "games": 71,
+    "accepted": 69
+   },
+   "18": {
+    "category": "1",
+    "games": 254,
+    "accepted": 247
+   },
+   "19": {
+    "category": "1",
+    "games": 304,
+    "accepted": 295
+   },
+   "21": {
+    "category": "1",
+    "games": 181,
+    "accepted": 170
+   },
+   "22": {
+    "category": "1",
+    "games": 719,
+    "accepted": 696
+   },
+   "20": {
+    "category": "1",
+    "games": 20,
+    "accepted": 20
+   },
+   "23": {
+    "category": "1",
+    "games": 29,
+    "accepted": 29
+   },
+   "24": {
+    "category": "1",
+    "games": 14830,
+    "accepted": 14234
+   },
+   "25": {
+    "category": "1",
+    "games": 27151,
+    "accepted": 24735
+   },
+   "27": {
+    "category": "1",
+    "games": 49,
+    "accepted": 29
+   },
+   "28": {
+    "category": "2",
+    "games": 4075,
+    "accepted": 0
+   }
+  },
+  "examples": {
+   "too_short": [
+    {
+     "id": 263,
+     "detail": ""
+    },
+    {
+     "id": 323,
+     "detail": ""
+    },
+    {
+     "id": 584,
+     "detail": ""
+    },
+    {
+     "id": 1192,
+     "detail": ""
+    },
+    {
+     "id": 1198,
+     "detail": ""
+    }
+   ],
+   "midgame_forbidden": [
+    {
+     "id": 991,
+     "detail": "ply 84: \ud751 \uae08\uc218: \uc0ac\uc0ac"
+    },
+    {
+     "id": 3690,
+     "detail": "ply 16: \ud751 \uae08\uc218: \uc0bc\uc0bc"
+    },
+    {
+     "id": 4686,
+     "detail": "ply 46: \ud751 \uae08\uc218: \uc0bc\uc0bc"
+    },
+    {
+     "id": 4810,
+     "detail": "ply 64: \ud751 \uae08\uc218: \uc0bc\uc0bc"
+    },
+    {
+     "id": 10658,
+     "detail": "ply 46: \ud751 \uae08\uc218: \uc0ac\uc0ac"
+    }
+   ],
+   "duplicate_game": [
+    {
+     "id": 1759,
+     "detail": "same as game 46"
+    },
+    {
+     "id": 3256,
+     "detail": "same as game 334"
+    },
+    {
+     "id": 5226,
+     "detail": "same as game 3673"
+    },
+    {
+     "id": 6212,
+     "detail": "same as game 5069"
+    },
+    {
+     "id": 6416,
+     "detail": "same as game 4299"
+    }
+   ],
+   "result_mismatch": [
+    {
+     "id": 2975,
+     "detail": "board white, bresult 1"
+    },
+    {
+     "id": 6243,
+     "detail": "board white, bresult 1"
+    },
+    {
+     "id": 7040,
+     "detail": "board white, bresult 1"
+    },
+    {
+     "id": 9417,
+     "detail": "board black, bresult 0"
+    },
+    {
+     "id": 15037,
+     "detail": "board white, bresult 1"
+    }
+   ],
+   "moves_after_five": [
+    {
+     "id": 4711,
+     "detail": "ply 65"
+    },
+    {
+     "id": 14305,
+     "detail": "ply 28"
+    },
+    {
+     "id": 14352,
+     "detail": "ply 41"
+    },
+    {
+     "id": 52901,
+     "detail": "ply 51"
+    },
+    {
+     "id": 53110,
+     "detail": "ply 29"
+    }
+   ],
+   "non_renju_rule": [
+    {
+     "id": 8499,
+     "detail": ""
+    },
+    {
+     "id": 8500,
+     "detail": ""
+    },
+    {
+     "id": 8501,
+     "detail": ""
+    },
+    {
+     "id": 8502,
+     "detail": ""
+    },
+    {
+     "id": 8503,
+     "detail": ""
+    }
+   ],
+   "non_center_first": [
+    {
+     "id": 9073,
+     "detail": ""
+    },
+    {
+     "id": 9074,
+     "detail": ""
+    },
+    {
+     "id": 9075,
+     "detail": ""
+    },
+    {
+     "id": 9076,
+     "detail": ""
+    },
+    {
+     "id": 9077,
+     "detail": ""
+    }
+   ],
+   "occupied_point": [
+    {
+     "id": 57241,
+     "detail": "(7, 7)"
+    },
+    {
+     "id": 95626,
+     "detail": "(6, 7)"
+    }
+   ]
+  },
+  "splits": {
+   "train": {
+    "games": 97098,
+    "states": 3663581,
+    "masked_states": 0,
+    "policy_states": 3178091,
+    "masked_policy_states": 0
+   },
+   "val": {
+    "games": 5442,
+    "states": 202390,
+    "masked_states": 75057,
+    "policy_states": 175180,
+    "masked_policy_states": 47864
+   },
+   "test": {
+    "games": 5471,
+    "states": 200919,
+    "masked_states": 75864,
+    "policy_states": 173564,
+    "masked_policy_states": 48524
+   }
+  },
+  "tournaments": {
+   "train": 2195,
+   "val": 137,
+   "test": 105
+  },
+  "leakage_after_masking": {
+   "train_val": 0,
+   "train_test": 0,
+   "val_test": 0
+  },
+  "policy_from_ply": 5,
+  "min_moves": 10
+ }
+}
