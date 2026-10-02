@@ -995,43 +995,52 @@ python scripts/forensic_short_games.py "$R\stage8_ctl_c1120" --from 1280 --to 13
 
 ### 15.2 C1: champion에서 ADA로 이어 학습, PROMOTE마다 anchor 교체
 
-`$X`는 15.1에서 고른 세대다. 1360이면 기존 run에서 그대로 이어 간다. 다른 세대이면 그 세대에서 새 디렉터리로 분기한다.
-그렇게 해야 이후 세대의 평가 파일이 섞이지 않는다.
+`$X = 1360`으로 확정했다(15.1 적용 결과). 기존 run(`stage8_ada_c1120`)에서 분기 없이 이어 간다.
+
+루프는 `scripts/run_champion_loop.py` 하나다. 상태(현재 champion, 연속 HOLD, 다음 구간)를 게이트 파일에서 다시 만들기 때문에,
+**처음 시작과 중단 뒤 재시작이 같은 명령**이다. 40세대 구간마다 다음을 한다.
+
+1. 학습을 구간 끝까지 진행한다. `latest.pt`에서 재개하고, 이미 있는 평가 파일은 건너뛴다.
+2. `segment_gate.py`로 판정한다.
+3. PROMOTE이면 그 checkpoint를 `anchors\ADA<세대>.pt`로 복사하고 다음 구간의 anchor로 쓴다.
+
+멈추는 조건과 종료 코드: 1600 도달(0), STOP(12), 연속 3구간 HOLD = 정체(13), 하위 단계 실패(1).
 
 ```powershell
+# 창 1 (처음 시작과 재시작 모두 이 블록)
 cd "C:\오목 강화학습\renju-stage8"
 & "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
 $R   = "C:\오목 강화학습\renju-alphazero\runs"
-$X   = 1360                                   # 15.1에서 고른 champion 세대
-$cfg = "configs/stage8_s2_adaptive.yaml"
-if ($X -eq 1360) { $run = "$R\stage8_ada_c1120" } else {
-  $run = "$R\stage8_ada_c$X"
-  python scripts/branch_stage8_run.py --source "$R\stage8_ada_c1120" --generation $X --dest $run
+$run = "$R\stage8_ada_c1120"
+if (-not (Test-Path "$R\anchors\ADA1360.pt")) {
+  Copy-Item "$run\checkpoints\checkpoint_gen1360.pt" "$R\anchors\ADA1360.pt"
 }
-$champ = "ADA$X"
-Copy-Item "$R\stage8_ada_c1120\checkpoints\checkpoint_gen$X.pt" "$R\anchors\$champ.pt"
-New-Item -ItemType Directory -Force "$R\gates" | Out-Null
-for ($g = $X + 40; $g -le $X + 240; $g += 40) {
-  python scripts/run_stage8_training.py --run-dir $run --config $cfg --anchor 400 `
-      --target-generation $g --light-opponents tactical mcts_v2 `
-      --heavy-every 40 --heavy-opponents mcts_v5 mcts_v6 mcts_v7 --heavy-pairs 25 `
-      --h2h-anchor "$champ=$R\anchors\$champ.pt" `
-      2>&1 | Tee-Object -Append -FilePath "$run.log"
-  if ($LASTEXITCODE -ne 0) { Write-Host "TRAINING FAILED at $g (exit $LASTEXITCODE)"; break }
-  python scripts/segment_gate.py $run --from ($g - 40) --to $g --reference-reuse 6.4 `
-      --output "$R\gates\$(Split-Path $run -Leaf)_$($g).json"
-  $code = $LASTEXITCODE
-  if ($code -eq 12) { Write-Host "GATE STOP at $g"; break }
-  if ($code -ne 10 -and $code -ne 11) { Write-Host "GATE FAILED at $g (exit $code)"; break }
-  if ($code -eq 10) {
-    $champ = "ADA$g"
-    Copy-Item "$run\checkpoints\checkpoint_gen$g.pt" "$R\anchors\$champ.pt"
-    Write-Host "NEW CHAMPION $champ"
-  }
-}
+python scripts/run_champion_loop.py --run-dir $run --config configs/stage8_s2_adaptive.yaml `
+    --start 1360 --end 1600 --champion "ADA1360=$R\anchors\ADA1360.pt" `
+    --anchors-dir "$R\anchors" --gates-dir "$R\gates" --log "$run.c1.log"
+Write-Host "loop exit $LASTEXITCODE"
 ```
 
-`$X = 1360`으로 확정했다(15.1 적용 결과).
+**중단 뒤 재시작(정전, 재부팅, Ctrl+C, 창 닫힘):** 위 블록을 그대로 다시 실행한다.
+
+- 학습 도중에 꺼졌으면 마지막 `latest.pt`(완료된 세대)부터 이어 간다. 진행 중이던 세대는 버리고 다시 둔다.
+- 구간 끝 평가(heavy, champion 대결, probe) 도중에 꺼졌으면 없는 파일만 다시 만든다. 파일은 원자적으로 쓰므로 반쯤 쓴 파일이 남지 않는다.
+- 게이트 직전에 꺼졌으면 그 구간은 학습 없이 게이트만 돈다.
+- PROMOTE 뒤 anchor 복사 전에 꺼졌으면 복사를 다시 한다.
+- 시작할 때 `champion ADA…, consecutive HOLDs …` 줄로 복원된 상태를 보여 준다.
+
+**재시작 전에 하지 말 것:**
+
+- `latest.pt`, `checkpoints\`, `runs\gates\stage8_ada_c1120_14*.json` 같은 파일을 지우거나 옮기지 않는다. 상태가 이 파일들에 있다.
+- 원본 폴더에서 `git checkout`이나 `git reset`을 하지 않는다. worktree(`renju-stage8`)는 괜찮다.
+
+**확인만 할 때(학습 없음):**
+
+```powershell
+Get-ChildItem "$R\gates\stage8_ada_c1120_1[4-6]*.json" | ForEach-Object {
+  $j = Get-Content $_ -Raw | ConvertFrom-Json; "$($_.Name)  $($j.decision)  $($j.reason)" }
+python -c "import sys; sys.path.insert(0, 'src'); from training.training_checkpoint import load_checkpoint_payload as load; print(load(r'$run\checkpoints\latest.pt')['generation'])"
+```
 
 **C1과 함께 돌릴 수 있는 진단(선택):** forensic의 깊은 탐색을 100/200회로 바꿔 같은 ADA 창을 다시 본다.
 그래서 몇 회부터 막는 수를 고르는지 본다. 이 곡선이 다음 단일 변수(self-play 탐색 50 → 100을 adaptive 아래에서 재시험할지)의 근거다.
