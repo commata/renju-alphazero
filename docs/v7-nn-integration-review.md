@@ -932,6 +932,14 @@ python scripts/compare_teacher_arms.py --control "runs/stage8_ctl_c$C" --teacher
 4. **거부권:** heavy 총승수가 같은 seed의 C1120보다 유의하게 낮으면(두 비율 검정 p < 0.05) 자격을 잃는다.
 5. 자격자가 없으면 champion은 C1120으로 둔다. 이 경우 ADA 1360에서 이어 학습하되 anchor는 C1120을 유지한다.
 
+**적용 결과(2026-10-02, `docs/stage8-plan.md` §12.16):**
+
+- 글자 그대로 적용하면 ADA1240이다. heavy 133 대 129로 4승 차이가 "3승 이하" 문턱을 넘는다.
+- 3단계의 "3승" 문턱은 300판 대응 비교에서 의미가 없는 값이었다. 차이 4승은 p=0.80이다. 그래서 다음과 같이 고친다.
+  **동률 깨기도 heavy 대응 비교 p < 0.05일 때만 적용하고, 아니면 늦은 세대를 고른다.**
+- 이 수정으로 champion은 **ADA1360**이다. 결과를 본 뒤의 수정이라는 점을 기록해 둔다.
+- 앞으로의 선정 규칙에서 모든 동률 깨기는 유의성으로 정의한다.
+
 ```powershell
 # 창 1: worktree 최신화 후 라운드로빈 (NN끼리라 빠르다)
 cd "C:\오목 강화학습\renju-stage8"
@@ -1020,6 +1028,20 @@ for ($g = $X + 40; $g -le $X + 240; $g += 40) {
     Copy-Item "$run\checkpoints\checkpoint_gen$g.pt" "$R\anchors\$champ.pt"
     Write-Host "NEW CHAMPION $champ"
   }
+}
+```
+
+`$X = 1360`으로 확정했다(15.1 적용 결과).
+
+**C1과 함께 돌릴 수 있는 진단(선택):** forensic의 깊은 탐색을 100/200회로 바꿔 같은 ADA 창을 다시 본다.
+그래서 몇 회부터 막는 수를 고르는지 본다. 이 곡선이 다음 단일 변수(self-play 탐색 50 → 100을 adaptive 아래에서 재시험할지)의 근거다.
+C1과 CPU를 나눠 쓰므로 C1이 느려진다.
+
+```powershell
+foreach ($d in 100, 200) {
+  python scripts/forensic_short_games.py "$R\stage8_ada_c1120" --from 1240 --to 1280 `
+      --checkpoint "$R\stage8_ada_c1120\checkpoints\checkpoint_gen1260.pt" --limit 100 `
+      --deep-simulations $d --output "$R\forensics\ada_1240_1280_deep$($d).json"
 }
 ```
 
