@@ -7,7 +7,8 @@ are paired (ablation).
 
 Arms (V8 configuration):
     full       V8-A + V8-B + V8-C, V8-C aggressive (V8_DEFAULTS)
-    full_veto  V8-A + V8-B + V8-C, V8-C veto (switch only on a proven loss, §12.3)
+    full_veto  V8-A + V8-B + V8-C, V8-C veto (switch only on a proven loss, §12.3, §12.8)
+    full_r250  full with root_node_budget 250,000 instead of 400,000 (§12.8)
     ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
     a_only  V8-A only          (the pilot's "a_only")
     b_only  V8-B only
@@ -60,6 +61,7 @@ FORMAT = 'mcts-v8-benchmark-v1'
 ARMS = {
     'full': {},
     'full_veto': {'root_vct_mode': 'veto'},
+    'full_r250': {'root_node_budget': 250_000},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},

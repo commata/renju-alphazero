@@ -21,11 +21,18 @@
    children in V6 root order). V8-C must prove it UNSAFE and replace it with a
    move it proved SAFE that the fresh solver also confirms SAFE.
 
+``--gate divergence`` (V8-C, ``tests/fixtures/v8c_divergence_probes_v1.json``, not part of
+``all``): positions where the aggressive and veto arms played different moves in a
+real benchmark (§12.7). V8-C runs on the recorded child order for each mode and each
+``--divergence-budgets`` root node budget; the played move must not be in
+``avoid_moves`` and must not be proven UNSAFE by V8-C. Nodes and seconds are the
+point: they are compared with the probe's ``observed`` values.
+
 A fixture-correct move reached without V8's own proof never passes. Budget
 exhaustion and the time distribution are reported separately; exits 1 on any
 failure.
 
-    python scripts/run_v8_gates.py [--gate defend|attack|root|all] [--symmetries 0 1 ...]
+    python scripts/run_v8_gates.py [--gate defend|attack|root|divergence|all] [--symmetries 0 1 ...]
                                    [--output runs/v8_gates.json]
 """
 from __future__ import annotations
@@ -53,6 +60,7 @@ from types import SimpleNamespace  # noqa: E402
 
 PROBES = ROOT / 'tests/fixtures/vct_probes_v1.json'
 ROOT_PROBES = ROOT / 'tests/fixtures/v8c_root_probes_v1.json'
+DIVERGENCE_PROBES = ROOT / 'tests/fixtures/v8c_divergence_probes_v1.json'
 DEFEND_CONFIG = {**V8_DEFAULTS, 'own_vct_attack': False, 'root_vct_safety': False}
 ROOT_CONFIG = dict(V8_DEFAULTS)
 
@@ -214,9 +222,42 @@ def root_gate(probes, seed):
                      'independent_safe': sum(r['independent_safe'] for r in rows)})
 
 
+def divergence_gate(probes, budgets):
+    rows = []
+    for probe in probes:
+        game = _game(probe['moves'])
+        order = [tuple(m) for m in probe['child_order']]
+        children = [SimpleNamespace(move=m, visits=len(order) - i, mean_value=0.0) for i, m in enumerate(order)]
+        avoid = [tuple(m) for m in probe['avoid_moves']]
+        for budget in budgets:
+            for mode in ('aggressive', 'veto'):
+                diag = SearchDiagnostics()
+                started = perf_counter()
+                final = _verify_root_choice(game, order[0], children, diag,
+                                            node_limit=ROOT_CONFIG['root_vcf_node_limit'],
+                                            call_limit=ROOT_CONFIG['root_call_limit'], node_budget=budget,
+                                            max_children=ROOT_CONFIG['root_max_children'], mode=mode)
+                statuses = dict(diag.v8_root_checked)
+                ok = final not in avoid and statuses.get(final) != 'UNSAFE'
+                row = {'id': probe['id'], 'mode': mode, 'node_budget': budget, 'ok': ok, 'move': list(final),
+                       'status': statuses.get(final, 'UNCHECKED'), 'rank': diag.v8_root_rank,
+                       'switch': diag.v8_root_switch, 'calls': diag.v8_root_calls, 'nodes': diag.v8_root_nodes,
+                       'budget_exhausted': diag.v8_root_budget_exhausted,
+                       'seconds': round(perf_counter() - started, 2),
+                       'checked': [[list(m), st] for m, st in diag.v8_root_checked]}
+                rows.append(row)
+                print(f"{'PASS' if ok else 'FAIL'} {probe['id']:<24} {mode:<10} budget {budget:>7} -> {row['move']} "
+                      f"{row['status']} rank {row['rank']} nodes {row['nodes']} calls {row['calls']} "
+                      f"{row['seconds']}s (observed: {probe['observed']})", flush=True)
+    return _summary('v8c_divergence', rows, ROOT_CONFIG, ('root_vcf_node_limit', 'root_call_limit', 'root_max_children'),
+                    {'budgets': list(budgets)})
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--gate', choices=('defend', 'attack', 'root', 'all'), default='all')
+    parser.add_argument('--gate', choices=('defend', 'attack', 'root', 'divergence', 'all'), default='all')
+    parser.add_argument('--divergence-budgets', type=int, nargs='+', default=[400_000, 250_000],
+                        help='root node budgets for --gate divergence')
     parser.add_argument('--symmetries', type=int, nargs='*', default=None,
                         help='D4 indices to run (default: all 8)')
     parser.add_argument('--seed', type=int, default=1)
@@ -231,6 +272,9 @@ def main() -> int:
         summaries.append(attack_gate([p for p in probes if p['kind'] == 'vct_attack'], args.seed))
     if args.gate in ('root', 'all'):
         summaries.append(root_gate(json.loads(ROOT_PROBES.read_text(encoding='utf-8'))['probes'], args.seed))
+    if args.gate == 'divergence':
+        summaries.append(divergence_gate(json.loads(DIVERGENCE_PROBES.read_text(encoding='utf-8'))['probes'],
+                                         args.divergence_budgets))
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(summaries, indent=1), encoding='utf-8')

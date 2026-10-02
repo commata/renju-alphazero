@@ -1142,9 +1142,10 @@ V8-A·V8-C의 `SAFE`는 안전 증명이 아니다(§11.14: V8-C가 (8,5) UNSAFE
 | 모드 | V7(트리 1위) 수가 NOT_REFUTED | UNKNOWN | PROVEN_LOSS |
 |---|---|---|---|
 | `aggressive` (기본, arm `full`) | 유지 | 트리 상위 K=4개 중 첫 NOT_REFUTED 자식으로 **교체** | 같은 방식으로 교체, 모두 PROVEN_LOSS면 넓혀서 계속 |
-| `veto` (arm `full_veto`) | 유지 | **유지**(다른 수는 검사도 안 함) | 트리 순서로 하나씩 검사해서 처음으로 PROVEN_LOSS가 아니고 즉시 지지도 않는 수로 교체. 모두 PROVEN_LOSS면 V7 수 |
+| `veto` (arm `full_veto`) | 유지 | **유지**(다른 수는 검사도 안 함) | aggressive와 똑같이 검사한 뒤, 트리 순서로 처음 나오는 PROVEN_LOSS가 아니고 즉시 지지도 않는 수로 교체. 모두 PROVEN_LOSS면 V7 수 |
 
-- veto 모드는 V7 수에 예산 절반, 그 뒤 자식에게는 남은 예산의 절반씩을 준다. UNKNOWN 자식도 veto 대상이 아니므로 그 수에서 멈춘다.
+- 두 모드 모두 V7 수에 예산 절반을 준다. V7 수가 PROVEN_LOSS면 자식 검사(공정 몫, 상위 4개, 넓힘)도 같고, 고르는 규칙만 다르다(§12.8).
+  `5042938`의 첫 veto는 자식마다 남은 예산의 절반을 순서대로 줬다. §12.8에서 바꿨다.
 - 진단: `v8_root_switch`가 `proven_loss`(V7 수가 PROVEN_LOSS라 교체) 또는 `unknown`(aggressive에서 UNKNOWN 때문에 교체)을 기록한다.
   runner 요약 `v8_c_root`에 `switched_on_proven_loss`, `switched_on_unknown`, `v7_move_status`, `children_checked`가 추가됐다.
 - root 게이트(`run_v8_gates.py --gate root`)는 기본 모드(aggressive)를 잰다. 게이트 probe의 V7 수는 PROVEN_LOSS라 두 모드 모두 교체가 일어나지만,
@@ -1212,3 +1213,57 @@ RIF XML, 165,115판(평균 27.2수). 검토용 표본 재생은 우리 `Game` �
 | H6 | value: V8 증명 라벨(PROVEN_WIN/LOSS_VCT1) 우선, RenjuNet 결과는 작은 weight, 이후 Hybrid self-play 결과 | 출처별 weight |
 | H7 | Hybrid self-play / fine-tune | |
 | H8 | 최종 비교(Track A 최신, V7, V8, Hybrid) | 고정 예산·양색 균형 |
+
+### 12.8 H1 1차 결과(5쌍, 상대 `v8:b_only`)와 후속 조치 (2026-10-02)
+
+결과 파일: `docs/mcts-v8-results/h1_full_vs_b.json`, `h1_veto_vs_b.json`(커밋 `5042938`, seed 8401).
+
+| | `full` (aggressive) | `full_veto` (순차 배분, `5042938`) |
+|---|---|---|
+| 승/무/패 | 5 / 1 / 4 (0.55) | 5 / 0 / 5 (0.50) |
+| V8-C 교체 | 7 (PROVEN_LOSS 4, UNKNOWN 3) | 8 (PROVEN_LOSS 8) |
+| 상대 `own_vct` | 3 | 4 |
+
+**10판 중 8판은 착수열이 완전히 같다.** 갈린 곳은 두 국면뿐이고(`scripts/compare_v8_divergence.py`), 둘 다 오프라인 큰 예산
+(VCF당 200k 노드)으로 다시 판정했다.
+
+| 국면 | V7 수 | aggressive | veto | 오프라인 판정 |
+|---|---|---|---|---|
+| 쌍 1 백 41수 | `[10,8]` UNSAFE | `[11,5]`(14위) 승 | `[6,10]`(5위, UNKNOWN) 승 | `[10,8]` UNSAFE(10초), `[11,5]` SAFE(14초), `[6,10]` **SAFE(1,226초)** |
+| 쌍 3 흑 90수 | `[14,12]` UNKNOWN | `[13,5]`(2위) → 225수 무 | `[14,12]` 유지 → 128수 패 | `[14,12]` **SAFE(310초)**, `[13,5]` SAFE(6초) |
+
+해석:
+
+1. **두 국면 모두 양쪽 선택이 NOT_REFUTED_VCT1이다.** 90수에서 veto가 "지는 수를 유지했다"는 근거는 없다. aggressive는 더 안전한 수가 아니라
+   **증명하기 쉬운 수**를 골랐다(트리 1위 대신 2위). veto 쪽 패배는 38수 뒤(124수 stage 4 전부 UNSAFE)라 90수 선택과의 인과는 이 데이터로 세울 수 없다.
+2. **41수에서 veto가 더 비쌌던 이유는 `5042938`의 veto 예산 배분이다.** V7 수 검사는 같고, 그 뒤 veto는 자식마다 "남은 예산의 절반"을 순서대로 줬다.
+   `[6,10]`은 증명이 아주 비싼 수라 여기에 약 10만 노드가 들어갔다가 잘렸다(212k 노드). aggressive의 공정 몫 라운드는 이 수에 작은 몫만 쓰고
+   싼 `[11,5]`를 찾았다(156k).
+3. **착수 시간 분포(p95, 60초 초과 횟수)는 모드 비교로 쓸 수 없다.** veto의 60초 초과 13회 중 12회가 갈린 뒤의 다른 판에서 나왔다. 두 모드 공통의
+   큰 비용은 "V7 수가 UNKNOWN일 때 V7 수 하나에 예산 절반(400k 기준 200k 노드, 데스크톱 65~73초)"이다.
+4. 점수 차이(0.05)는 한 판(무 → 패)이다. 5쌍으로는 모드를 가를 수 없고, 판 결과보다 **갈림 국면 단위 비교**가 효율적이다.
+
+조치(이 커밋):
+
+- **veto는 aggressive와 똑같이 자식을 검사한다**(공정 몫, 상위 4개, 모두 UNSAFE면 넓힘). 다른 것은 고르는 규칙뿐이다:
+  aggressive = 처음 증명된 SAFE, veto = 트리 순서로 처음 나오는 PROVEN_LOSS가 아닌 수. 그래서 두 모드의 비용 차이는 "V7 수가 UNKNOWN이면 veto는
+  거기서 멈춘다"는 것 하나다. `5042938`의 veto 결과(`h1_veto_vs_b.json`)는 **이전 배분 규칙**의 결과이고, 새 veto는 JSONL을 새로 만들어 돌려야 한다.
+- **arm `full_r250`**: `root_node_budget` 400k → 250k(V7 수 몫 200k → 125k).
+- **fixture `tests/fixtures/v8c_divergence_probes_v1.json`** + `run_v8_gates.py --gate divergence`(`all`에는 포함하지 않음, 2국면 × 2모드 × 2예산).
+  41수는 `[10,8]`을 반드시 바꿔야 하고, 90수는 어떤 NOT_REFUTED 수든 정답이며 노드 수를 감시한다.
+- **`scripts/compare_v8_divergence.py`**: 두 결과 파일의 첫 갈림 국면, 양쪽 결정 진단, 양쪽 수의 오프라인 VCT1 판정, 같은 판들의 V8 시간 합.
+
+divergence 게이트(이 컨테이너, 1,444 VCF 노드/초; 노드 수가 비교 기준):
+
+| 국면 | 모드 | 400k | 250k |
+|---|---|---|---|
+| 41수 | aggressive | `[11,5]` SAFE, 165,546 노드 | `[11,5]` SAFE, 201,426 |
+| 41수 | veto(새 배분) | `[6,10]` UNKNOWN, **165,546**(이전 212,231) | `[6,10]` UNKNOWN, 201,426 |
+| 90수 | aggressive | `[13,5]` SAFE, 257,826 | `[13,5]` SAFE, **164,076** |
+| 90수 | veto | `[14,12]` UNKNOWN, 200,000 | `[14,12]` UNKNOWN, **125,000** |
+
+- 250k에서도 aggressive는 두 국면 모두 같은 수를 찾는다. V7 수가 UNKNOWN인 국면의 비용이 줄어든다(90수 258k → 164k).
+- 다만 교체 국면의 비용은 줄지 않을 수 있다(41수 166k → 201k: V7 수 몫이 작아지면 공정 몫 라운드 구성이 바뀐다). 250k의 효과는 실전 측정으로 본다.
+- 예산을 줄이면 V7 수가 UNKNOWN으로 끝나는 일이 늘고, aggressive는 그때 트리 1위 수를 버린다. `switched_on_unknown`을 함께 본다.
+
+다음 측정(같은 seed 8401, 상대 `v8:b_only`, 5쌍): `full_veto`(새 배분, 새 JSONL), `full_r250`. 각각 `full`과 `compare_v8_divergence.py`로 갈림 국면을 비교한다.

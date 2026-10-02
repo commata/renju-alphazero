@@ -526,10 +526,14 @@ class RootVetoPolicyTest(unittest.TestCase):
 
     def test_proven_loss_switches_to_best_ranked_unrefuted_child(self):
         # (6, 8) is UNKNOWN: in veto mode it is not vetoed, so it is played (rank 2),
-        # even though (8, 9) further down is proven SAFE.
-        final, diag = self._run({(7, 9): UNSAFE, (6, 8): UNKNOWN, (8, 9): SAFE})
+        # even though (8, 9) further down is proven SAFE. The children are checked as in
+        # aggressive mode (which plays (8, 9)), so both modes see the same statuses.
+        script = {(7, 9): UNSAFE, (6, 8): UNKNOWN, (8, 9): SAFE}
+        final, diag = self._run(script)
         self.assertEqual((final, diag.v8_root_rank, diag.v8_root_switch), ((6, 8), 2, 'proven_loss'))
-        self.assertNotIn((8, 9), dict(diag.v8_root_checked))
+        aggressive, other = self._run(script, mode='aggressive')
+        self.assertEqual(aggressive, (8, 9))
+        self.assertEqual(dict(diag.v8_root_checked), dict(other.v8_root_checked))
 
     def test_vetoed_children_are_skipped(self):
         final, diag = self._run({(7, 9): UNSAFE, (6, 8): UNSAFE, (8, 9): SAFE})

@@ -24,7 +24,8 @@ Implemented modules (the rest of the design is not yet here):
   ``root_vct_mode="aggressive"`` rule (the default): an unfinished check on
   V7's move (UNKNOWN) is enough to switch to a proven-SAFE lower child. With
   ``root_vct_mode="veto"`` only a proven loss (UNSAFE) of V7's move switches,
-  to the best-ranked child that is not itself proven UNSAFE (design §12.3).
+  to the best-ranked child that is not itself proven UNSAFE, with the children
+  checked exactly as in aggressive mode (design §12.3, §12.8).
 - V8-A (``stage_vct_safety``): Stage 4 and single-point Stage 5 forced defenses
   are checked with a depth-1 VCT proof in V7 order and the first proven SAFE one
   is played. If every forced defense is proven UNSAFE the check widens to the
@@ -450,24 +451,24 @@ def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit,
     child that does not lose at once.
 
     ``mode="veto"`` keeps V7's move unless it is proven UNSAFE (an UNKNOWN never
-    switches). Then the children are checked one at a time in tree order, each
-    with half of the remaining budget, and the first one that is not proven
-    UNSAFE and does not lose at once is played; V7's move stands if all are
-    proven UNSAFE. ``max_children`` does not apply (the walk stops early).
+    switches). When it is proven UNSAFE, the children are checked exactly as in
+    aggressive mode (same fair shares, same widening, same budget), but the
+    played move is the best-ranked child that is not proven UNSAFE (UNKNOWN or
+    never checked included) and does not lose at once, not the proven SAFE one;
+    V7's move stands if every child is proven UNSAFE. The two modes therefore
+    differ only in the selection rule, never in how the budget is spent (§12.8).
     """
-    if mode == "veto":
-        return _veto_root_choice(game, chosen, children, diag, node_limit=node_limit,
-                                 call_limit=call_limit, node_budget=node_budget)
     started = perf_counter()
     solver = _BudgetedSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget)
     order = _root_order(chosen, children)
-    head = order[:max_children] if max_children else order
     statuses = {chosen: solver.status_after(game, chosen, node_budget // 2, call_limit // 2)}
-    final = chosen if statuses[chosen] == SAFE else _first_proven(
-        game, head, statuses, solver, solver.status_after, SAFE)
-    if final is None and len(head) < len(order) and all(statuses.get(m) == UNSAFE for m in head):
-        final = _first_proven(game, order[len(head):], statuses, solver, solver.status_after, SAFE)
-    if final is None:
+    if statuses[chosen] == SAFE or (mode == "veto" and statuses[chosen] != UNSAFE):
+        return _record_root(diag, solver, statuses, order, chosen, chosen, started)
+    final = _search_root_children(game, order, statuses, solver, max_children)
+    if mode == "veto":
+        final = next((m for m in order[1:] if statuses.get(m, UNKNOWN) != UNSAFE
+                      and _not_immediately_lost(game, m)), chosen)
+    elif final is None:
         if statuses[chosen] != UNSAFE:
             final = chosen
         else:
@@ -476,22 +477,13 @@ def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit,
     return _record_root(diag, solver, statuses, order, chosen, final, started)
 
 
-def _veto_root_choice(game, chosen, children, diag, *, node_limit, call_limit, node_budget) -> Move:
-    """V8-C veto mode (see ``_verify_root_choice``)."""
-    started = perf_counter()
-    solver = _BudgetedSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget)
-    order = _root_order(chosen, children)
-    statuses = {chosen: solver.status_after(game, chosen, node_budget // 2, call_limit // 2)}
-    final = chosen
-    if statuses[chosen] == UNSAFE:
-        for move in order[1:]:
-            nodes_left = max(0, node_budget - solver.nodes_used)
-            calls_left = max(0, call_limit - solver.vcf_calls)
-            statuses[move] = solver.status_after(game, move, nodes_left // 2, calls_left // 2)
-            if statuses[move] != UNSAFE and _not_immediately_lost(game, move):
-                final = move
-                break
-    return _record_root(diag, solver, statuses, order, chosen, final, started)
+def _search_root_children(game, order, statuses, solver, max_children) -> Move | None:
+    """First proven SAFE child: the top ``max_children`` share the budget fairly, widening if all are UNSAFE."""
+    head = order[:max_children] if max_children else order
+    final = _first_proven(game, head, statuses, solver, solver.status_after, SAFE)
+    if final is None and len(head) < len(order) and all(statuses.get(m) == UNSAFE for m in head):
+        final = _first_proven(game, order[len(head):], statuses, solver, solver.status_after, SAFE)
+    return final
 
 
 def _root_order(chosen, children) -> list[Move]:
