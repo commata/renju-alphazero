@@ -1,0 +1,612 @@
+[
+ {
+  "gate": "v8c_divergence",
+  "config": {
+   "root_vcf_node_limit": 20000,
+   "root_call_limit": 10000,
+   "root_max_children": 4
+  },
+  "passed": 8,
+  "total": 8,
+  "budgets": [
+   400000,
+   250000
+  ],
+  "budget_exhausted": 0,
+  "mean_seconds": 67.05,
+  "median_seconds": 70.07,
+  "p95_seconds": 88.08,
+  "max_seconds": 88.08,
+  "max_nodes": 257826,
+  "max_calls": 7153,
+  "nodes_per_second": 2761,
+  "rows": [
+   {
+    "id": "h1-pair1-white-ply41",
+    "mode": "aggressive",
+    "node_budget": 400000,
+    "ok": true,
+    "move": [
+     11,
+     5
+    ],
+    "status": "SAFE",
+    "rank": 14,
+    "switch": "proven_loss",
+    "calls": 5990,
+    "nodes": 165546,
+    "budget_exhausted": false,
+    "seconds": 73.03,
+    "checked": [
+     [
+      [
+       10,
+       8
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       12,
+       6
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       1
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       2
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       10
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       9,
+       4
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       12,
+       5
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       5,
+       4
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       11,
+       8
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       4,
+       5
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       1
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       2
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       3
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       11,
+       5
+      ],
+      "SAFE"
+     ]
+    ]
+   },
+   {
+    "id": "h1-pair1-white-ply41",
+    "mode": "veto",
+    "node_budget": 400000,
+    "ok": true,
+    "move": [
+     6,
+     10
+    ],
+    "status": "UNKNOWN",
+    "rank": 5,
+    "switch": "proven_loss",
+    "calls": 5990,
+    "nodes": 165546,
+    "budget_exhausted": false,
+    "seconds": 70.07,
+    "checked": [
+     [
+      [
+       10,
+       8
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       12,
+       6
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       1
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       2
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       10
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       9,
+       4
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       12,
+       5
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       5,
+       4
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       11,
+       8
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       4,
+       5
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       1
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       2
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       3
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       11,
+       5
+      ],
+      "SAFE"
+     ]
+    ]
+   },
+   {
+    "id": "h1-pair1-white-ply41",
+    "mode": "aggressive",
+    "node_budget": 250000,
+    "ok": true,
+    "move": [
+     11,
+     5
+    ],
+    "status": "SAFE",
+    "rank": 14,
+    "switch": "proven_loss",
+    "calls": 7153,
+    "nodes": 201426,
+    "budget_exhausted": false,
+    "seconds": 70.07,
+    "checked": [
+     [
+      [
+       10,
+       8
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       12,
+       6
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       1
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       2
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       10
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       9,
+       4
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       12,
+       5
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       5,
+       4
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       11,
+       8
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       4,
+       5
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       8,
+       1
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       8,
+       2
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       3
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       11,
+       5
+      ],
+      "SAFE"
+     ]
+    ]
+   },
+   {
+    "id": "h1-pair1-white-ply41",
+    "mode": "veto",
+    "node_budget": 250000,
+    "ok": true,
+    "move": [
+     6,
+     10
+    ],
+    "status": "UNKNOWN",
+    "rank": 5,
+    "switch": "proven_loss",
+    "calls": 7153,
+    "nodes": 201426,
+    "budget_exhausted": false,
+    "seconds": 70.61,
+    "checked": [
+     [
+      [
+       10,
+       8
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       12,
+       6
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       1
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       2
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       6,
+       10
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       9,
+       4
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       12,
+       5
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       5,
+       4
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       11,
+       8
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       4,
+       5
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       8,
+       1
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       8,
+       2
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       8,
+       3
+      ],
+      "UNSAFE"
+     ],
+     [
+      [
+       11,
+       5
+      ],
+      "SAFE"
+     ]
+    ]
+   },
+   {
+    "id": "h1-pair3-black-ply90",
+    "mode": "aggressive",
+    "node_budget": 400000,
+    "ok": true,
+    "move": [
+     13,
+     5
+    ],
+    "status": "SAFE",
+    "rank": 2,
+    "switch": "unknown",
+    "calls": 340,
+    "nodes": 257826,
+    "budget_exhausted": false,
+    "seconds": 88.08,
+    "checked": [
+     [
+      [
+       14,
+       12
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       13,
+       5
+      ],
+      "SAFE"
+     ]
+    ]
+   },
+   {
+    "id": "h1-pair3-black-ply90",
+    "mode": "veto",
+    "node_budget": 400000,
+    "ok": true,
+    "move": [
+     14,
+     12
+    ],
+    "status": "UNKNOWN",
+    "rank": 1,
+    "switch": "",
+    "calls": 61,
+    "nodes": 200000,
+    "budget_exhausted": false,
+    "seconds": 68.01,
+    "checked": [
+     [
+      [
+       14,
+       12
+      ],
+      "UNKNOWN"
+     ]
+    ]
+   },
+   {
+    "id": "h1-pair3-black-ply90",
+    "mode": "aggressive",
+    "node_budget": 250000,
+    "ok": true,
+    "move": [
+     13,
+     5
+    ],
+    "status": "SAFE",
+    "rank": 2,
+    "switch": "unknown",
+    "calls": 229,
+    "nodes": 164076,
+    "budget_exhausted": false,
+    "seconds": 54.78,
+    "checked": [
+     [
+      [
+       14,
+       12
+      ],
+      "UNKNOWN"
+     ],
+     [
+      [
+       13,
+       5
+      ],
+      "SAFE"
+     ]
+    ]
+   },
+   {
+    "id": "h1-pair3-black-ply90",
+    "mode": "veto",
+    "node_budget": 250000,
+    "ok": true,
+    "move": [
+     14,
+     12
+    ],
+    "status": "UNKNOWN",
+    "rank": 1,
+    "switch": "",
+    "calls": 35,
+    "nodes": 125000,
+    "budget_exhausted": false,
+    "seconds": 41.71,
+    "checked": [
+     [
+      [
+       14,
+       12
+      ],
+      "UNKNOWN"
+     ]
+    ]
+   }
+  ]
+ }
+]

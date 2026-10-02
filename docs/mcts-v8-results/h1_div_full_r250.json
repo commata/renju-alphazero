@@ -1,0 +1,92 @@
+{
+ "format": "mcts-v8-divergence-v1",
+ "a": "runs\\v8_h1\\full_vs_b.json",
+ "a_arm": "full",
+ "b": "runs\\v8_h1\\r250_vs_b.json",
+ "b_arm": "full_r250",
+ "opponent": "v8:b_only",
+ "seed": 8401,
+ "a_git_commit": "50429386db063aa04339c583e6b9d3b15cfc41bb",
+ "b_git_commit": "66b194dc988d5a9320223ac9e96bba1b9629d06a",
+ "node_limit": 200000,
+ "node_budget": 2000000,
+ "identical_games": 10,
+ "divergent_games": 0,
+ "identical_v8_seconds": {
+  "a": 1674.1,
+  "b": 3416.82
+ },
+ "identical": [
+  {
+   "pair": 0,
+   "v8_color": "black",
+   "result": "win",
+   "a_v8_seconds": 222.18,
+   "b_v8_seconds": 606.2
+  },
+  {
+   "pair": 0,
+   "v8_color": "white",
+   "result": "loss",
+   "a_v8_seconds": 14.15,
+   "b_v8_seconds": 37.04
+  },
+  {
+   "pair": 1,
+   "v8_color": "black",
+   "result": "loss",
+   "a_v8_seconds": 94.43,
+   "b_v8_seconds": 263.56
+  },
+  {
+   "pair": 1,
+   "v8_color": "white",
+   "result": "win",
+   "a_v8_seconds": 539.02,
+   "b_v8_seconds": 1061.21
+  },
+  {
+   "pair": 2,
+   "v8_color": "black",
+   "result": "win",
+   "a_v8_seconds": 12.85,
+   "b_v8_seconds": 36.79
+  },
+  {
+   "pair": 2,
+   "v8_color": "white",
+   "result": "win",
+   "a_v8_seconds": 21.84,
+   "b_v8_seconds": 61.95
+  },
+  {
+   "pair": 3,
+   "v8_color": "black",
+   "result": "draw",
+   "a_v8_seconds": 709.35,
+   "b_v8_seconds": 1175.25
+  },
+  {
+   "pair": 3,
+   "v8_color": "white",
+   "result": "loss",
+   "a_v8_seconds": 13.74,
+   "b_v8_seconds": 40.55
+  },
+  {
+   "pair": 4,
+   "v8_color": "black",
+   "result": "loss",
+   "a_v8_seconds": 35.45,
+   "b_v8_seconds": 102.53
+  },
+  {
+   "pair": 4,
+   "v8_color": "white",
+   "result": "win",
+   "a_v8_seconds": 11.09,
+   "b_v8_seconds": 31.74
+  }
+ ],
+ "divergences": []
+}
