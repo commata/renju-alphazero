@@ -54,6 +54,7 @@ class SelfPlayHealthTest(unittest.TestCase):
         self.assertEqual(last['short_share'], 1.0)
         self.assertEqual(last['ply9_share'], 0.5)
         self.assertEqual(last['one_sided_share'], 0.0)     # one win each per generation
+        self.assertEqual(last['mean_abs_color_margin'], 0.0)
         self.assertEqual(result['gate']['level'], 'STOP')
         self.assertTrue(any('short games' in f for f in result['gate']['flags']))
         self.assertTrue(any('reuse' in f for f in result['gate']['flags']))
@@ -64,6 +65,7 @@ class SelfPlayHealthTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             result = analyze(write_run(Path(tmp), plan), 0, 100, 4, None, 6.0)
         self.assertEqual(result['windows'][0]['one_sided_share'], 1.0)
+        self.assertEqual(result['windows'][0]['mean_abs_color_margin'], 1.0)
         self.assertEqual(result['windows'][0]['black_share'], 0.5)   # balanced on average
 
     def test_collapsed_openings_warn(self):
