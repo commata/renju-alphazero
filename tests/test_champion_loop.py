@@ -88,6 +88,16 @@ class ChampionLoopTest(unittest.TestCase):
             self.assertEqual(loop(args, runner), 12)
             self.assertEqual(runner.trained, [140, 180])
 
+    def test_fixed_anchor_records_promotions_but_keeps_the_anchor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            args = make_args(Path(tmp), '--fixed-anchor', '--prefix', 'LR')
+            runner = FakeRunner(args, {140: 'HOLD', 180: 'HOLD', 220: 'HOLD',
+                                       260: 'PROMOTE', 300: 'HOLD'})
+            self.assertEqual(loop(args, runner), 0)          # no plateau stop
+            self.assertEqual(set(runner.anchors), {'ADA100'})
+            self.assertTrue((Path(tmp) / 'anchors' / 'LR260.pt').is_file())
+            self.assertEqual(replay_state(args)['champion'][0], 'ADA100')
+
     def test_refuses_a_champion_match_against_another_anchor(self):
         with tempfile.TemporaryDirectory() as tmp:
             args = make_args(Path(tmp))

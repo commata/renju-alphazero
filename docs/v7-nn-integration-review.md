@@ -1063,3 +1063,68 @@ foreach ($d in 100, 200) {
 
 **공유해 줄 것:** `runs/champion/`, `runs/arm_h2h/ada_gen*.json`, `runs/forensics/`. C1을 돌렸다면
 run의 `metrics.jsonl`·`external_eval/`·`probes/`·로그와 `runs/gates/`도 함께 보낸다.
+
+## 16. C2: 학습률 A/B (1e-3 대 3e-4), ADA gen 1480에서 (2026-10-03)
+
+배경과 사전 판정 규칙은 `docs/stage8-plan.md` §12.17에 있다. 요약: C1은 3구간 HOLD로 정체했고, 원인은 세대 단위 색 진동이다.
+두 arm 모두 anchor를 ADA1360으로 고정한다(`--fixed-anchor`). 같은 명령으로 시작과 재시작을 모두 한다.
+
+```powershell
+# 공통 준비 (한 번만): 코드 최신화 + LR arm 분기
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+git fetch origin feat/stage8-plan
+git merge --ff-only origin/feat/stage8-plan
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+if (-not (Test-Path "$R\stage8_lr3_c1480")) {
+  python scripts/make_recipe_branch.py --source "$R\stage8_ada_c1120" --generation 1480 `
+      --config configs/stage8_ada_lr3e4.yaml --dest "$R\stage8_lr3_c1480"
+}
+```
+
+```powershell
+# 창 1: CTL (학습률 1e-3, 기존 ADA run을 1493에서 이어 감). 재시작도 이 블록.
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+python scripts/run_champion_loop.py --run-dir "$R\stage8_ada_c1120" `
+    --config configs/stage8_s2_adaptive.yaml --start 1480 --end 1600 --fixed-anchor `
+    --champion "ADA1360=$R\anchors\ADA1360.pt" --anchors-dir "$R\anchors" `
+    --gates-dir "$R\gates" --log "$R\stage8_ada_c1120.c2.log"
+Write-Host "loop exit $LASTEXITCODE"
+```
+
+```powershell
+# 창 2: LR (학습률 3e-4, 1480 분기). 재시작도 이 블록.
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+python scripts/run_champion_loop.py --run-dir "$R\stage8_lr3_c1480" `
+    --config configs/stage8_ada_lr3e4.yaml --start 1480 --end 1600 --fixed-anchor --prefix LR `
+    --champion "ADA1360=$R\anchors\ADA1360.pt" --anchors-dir "$R\anchors" `
+    --gates-dir "$R\gates" --log "$R\stage8_lr3_c1480.c2.log"
+Write-Host "loop exit $LASTEXITCODE"
+```
+
+```powershell
+# 두 창 모두 exit 0 이후: 직접 대결(새 seed 9109) + 건강 비교
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+foreach ($g in 1520, 1560, 1600) {
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "CTL$($g)=$R\stage8_ada_c1120\checkpoints\checkpoint_gen$($g).pt" `
+      --checkpoint "LR$($g)=$R\stage8_lr3_c1480\checkpoints\checkpoint_gen$($g).pt" `
+      --pairs 100 --seed 9109 --output "$R\arm_h2h\lr_gen$($g).json"
+}
+python scripts/analyze_self_play_health.py "$R\stage8_ada_c1120" --from 1440 --to 1600 --window 40 `
+    --reference-from 1440 --reference-reuse 6.4 --output "$R\health\ctl_c2_1440_1600.json"
+python scripts/analyze_self_play_health.py "$R\stage8_lr3_c1480" --from 1440 --to 1600 --window 40 `
+    --reference-from 1440 --reference-reuse 6.4 --output "$R\health\lr_c2_1440_1600.json"
+```
+
+- 창 1의 첫 줄에 `LR arm` 분기 결과로 `"optimizer.lr": {"from": 0.001, "to": 0.0003}`가 출력되는지 확인한다(공통 준비 단계).
+- LR arm 첫 세대 로그에 `lr`이 따로 찍히지는 않는다. 확인하려면 `metrics.jsonl`의 `train` 이벤트에서 `"lr": 0.0003`을 본다.
+- 종료 코드: 0 완료, 12 STOP(그 arm만 멈춘다. 다른 창은 계속), 1 하위 단계 오류(같은 블록을 재실행). `--fixed-anchor`에서는 정체(13)로 멈추지 않는다.
+
+**공유해 줄 것:** `runs/gates/stage8_ada_c1120_15*.json`, `_1600.json`, `runs/gates/stage8_lr3_c1480_*.json`,
+두 run의 `metrics.jsonl`·`external_eval/gen15*·gen1600*`·`probes/gen15*·gen1600*`, `runs/arm_h2h/lr_gen*.json`,
+`runs/health/*_c2_*.json`, 두 `.c2.log`.

@@ -256,6 +256,38 @@ class RecipeBranchTest(unittest.TestCase):
             torch.set_num_threads(threads)
 
 
+    def test_recipe_branch_learning_rate_reaches_the_optimizer(self):
+        import yaml
+        from make_recipe_branch import make_recipe_branch
+        from training.config import load_config
+        from training.loop import run_training
+        from training.training_checkpoint import load_training_state
+
+        threads = torch.get_num_threads()
+        config = load_config(ROOT / 'configs' / 'stage6_test.yaml')
+        config['training'].update(generations=3, keep_every=1)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                source = Path(tmp) / 'source'
+                run_training(config, run_dir=source, stop_after=2, log=lambda m: None)
+                recipe = json.loads(json.dumps(config))
+                recipe['optimizer']['lr'] = config['optimizer']['lr'] * 0.3
+                recipe_path = Path(tmp) / 'recipe.yaml'
+                recipe_path.write_text(yaml.safe_dump(recipe), encoding='utf-8')
+                dest = Path(tmp) / 'recipe'
+                make_recipe_branch(source, 2, recipe_path, dest)
+                # the saved Adam state still carries the old lr; the config must win
+                state = load_training_state(dest / 'checkpoints' / 'latest.pt')
+                self.assertEqual({g['lr'] for g in state.optimizer.param_groups},
+                                 {recipe['optimizer']['lr']})
+                self.assertTrue(state.optimizer.state)          # moments kept
+                plain = load_training_state(source / 'checkpoints' / 'latest.pt')
+                self.assertEqual({g['lr'] for g in plain.optimizer.param_groups},
+                                 {config['optimizer']['lr']})
+        finally:
+            torch.set_num_threads(threads)
+
+
 class RecipeConfigTest(unittest.TestCase):
     def test_temp4_differs_from_g3_b_only_in_temperature(self):
         from training.config import config_differences, critical_config, load_config
@@ -265,6 +297,15 @@ class RecipeConfigTest(unittest.TestCase):
         self.assertEqual(config_differences(critical_config(base), critical_config(temp4)),
                          ['self_play.temperature_moves'])
         self.assertEqual(temp4['self_play']['temperature_moves'], 4)
+
+    def test_lr_arm_differs_from_ada_only_in_learning_rate(self):
+        from training.config import config_differences, critical_config, load_config
+
+        ada = load_config(ROOT / 'configs' / 'stage8_s2_adaptive.yaml')
+        lr3 = load_config(ROOT / 'configs' / 'stage8_ada_lr3e4.yaml')
+        self.assertEqual(config_differences(critical_config(ada), critical_config(lr3)),
+                         ['optimizer.lr'])
+        self.assertEqual(lr3['optimizer']['lr'], 0.0003)
 
     def test_temp2_differs_from_temp4_only_in_temperature(self):
         from training.config import config_differences, critical_config, load_config

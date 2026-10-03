@@ -189,6 +189,14 @@ def restore_training_state(payload: dict, config: dict,
         optimizer.load_state_dict(payload['optimizer_state_dict'])
     except (ValueError, KeyError) as exc:
         raise CheckpointCompatibilityError('incompatible optimizer_state_dict') from exc
+    # load_state_dict also restores the saved hyper-parameters; the config is the source of
+    # truth (identical on a plain resume, the new values after a recipe branch changed them).
+    o = config['optimizer']
+    for group in optimizer.param_groups:
+        group['lr'] = o['lr']
+        group['weight_decay'] = o['weight_decay']
+        if o['name'] == 'sgd':
+            group['momentum'] = o['momentum']
     if payload['scheduler_state_dict'] is not None:
         raise CheckpointCompatibilityError('MVP has no lr scheduler')
     buffer = ReplayBuffer(config['training']['replay_capacity'])

@@ -5,7 +5,8 @@ window of ``--window`` generations:
 
 - game length: mean, share of games <= 10 plies, exact 9 / 10 plies (the shortest
   black / white wins, i.e. games without any defence);
-- colour: black win share, and the min / max of the 10-generation rolling black share;
+- colour: black win share, the min / max of the 10-generation rolling black share, and
+  the share of one-sided generations (one colour won >= 15/16 of the games);
 - data: fresh samples per generation, replay reuse (samples drawn / fresh samples),
   SGD steps per generation;
 - opening diversity: distinct prefixes and Shannon entropy (bits) of plies 2..k
@@ -33,6 +34,7 @@ from math import log2
 from pathlib import Path
 
 SHORT = 10
+ONE_SIDED = 15 / 16
 PREFIXES = (4, 6, 8)
 
 
@@ -80,6 +82,7 @@ def window_stats(generations: list[int], games: dict, events: dict) -> dict:
     for g in generations:
         if games.get(g):
             per_gen_black.append((sum(r['winner'] == 1 for r in games[g]), len(games[g])))
+    one_sided = [max(b, n - b) / n >= ONE_SIDED for b, n in per_gen_black]
     rolling = [sum(b for b, _ in per_gen_black[i:i + 10]) / sum(n for _, n in per_gen_black[i:i + 10])
                for i in range(max(0, len(per_gen_black) - 9))]
     ev = [events[g] for g in generations if g in events]
@@ -98,6 +101,7 @@ def window_stats(generations: list[int], games: dict, events: dict) -> dict:
         'black_share': black / total if total else None,
         'rolling10_black_min': min(rolling) if rolling else None,
         'rolling10_black_max': max(rolling) if rolling else None,
+        'one_sided_share': sum(one_sided) / len(one_sided) if one_sided else None,
         'fresh_per_gen': mean(fresh), 'reuse': mean(reuse),
         'steps_per_gen': mean([s for s in steps if s is not None]),
         **{f'prefix{k}_distinct': len(prefix[k]) for k in PREFIXES},
@@ -177,14 +181,15 @@ def main() -> int:
     result = analyze(args.run, args.start, args.end, args.window, args.reference_from,
                      args.reference_reuse)
     print('window      games  mean  <=10   9ply  10ply black roll10(min-max) fresh reuse steps '
-          'H4   H6   H8   top6')
+          '1side H4   H6   H8   top6')
     for w in result['windows']:
         print(f"{w['from']:>5}-{w['to']:<5} {w['games']:>5} {_fmt(w['mean_length'], '5.1f')} "
               f"{_fmt(w['short_share'], '5.0%')} {_fmt(w['ply9_share'], '5.0%')} "
               f"{_fmt(w['ply10_share'], '5.0%')} {_fmt(w['black_share'], '5.0%')} "
               f"{_fmt(w['rolling10_black_min'], '4.2f')}-{_fmt(w['rolling10_black_max'], '4.2f')} "
               f"{_fmt(w['fresh_per_gen'], '6.0f')} {_fmt(w['reuse'], '5.2f')} "
-              f"{_fmt(w['steps_per_gen'], '5.0f')} {w['prefix4_entropy']:4.1f} "
+              f"{_fmt(w['steps_per_gen'], '5.0f')} {_fmt(w['one_sided_share'], '5.0%')} "
+              f"{w['prefix4_entropy']:4.1f} "
               f"{w['prefix6_entropy']:4.1f} {w['prefix8_entropy']:4.1f} "
               f"{_fmt(w['prefix6_top_share'], '4.0%')}")
     g = result['gate']

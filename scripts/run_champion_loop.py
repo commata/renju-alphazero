@@ -14,6 +14,10 @@ champion follows their PROMOTE decisions, a missing anchor copy is redone) and t
 segment without one is trained / evaluated / gated. Stops on STOP, on ``--max-holds``
 consecutive HOLDs (plateau), or at ``--end``.
 
+``--fixed-anchor`` (recipe A/B arms): a PROMOTE is recorded (gate file, anchor copy) but
+the starting champion stays the anchor of every segment, so both arms are gated against
+the same opponent and the plateau counter is not used.
+
 Exit code: 0 finished (end reached), 12 STOP, 13 plateau, 1 a child step failed.
 
     python scripts/run_champion_loop.py --run-dir runs/stage8_ada_c1120 \\
@@ -54,10 +58,12 @@ def replay_state(args) -> dict:
         if decision == 'STOP':
             return {'champion': champion, 'holds': holds, 'next': None, 'stopped': ('STOP', end)}
         if decision == 'PROMOTE':
-            champion, holds = promote(args, end), 0
+            promoted, holds = promote(args, end), 0
+            if not args.fixed_anchor:
+                champion = promoted
         else:
             holds += 1
-        if holds >= args.max_holds:
+        if holds >= args.max_holds and not args.fixed_anchor:
             return {'champion': champion, 'holds': holds, 'next': None,
                     'stopped': ('PLATEAU', end)}
     return {'champion': champion, 'holds': holds, 'next': None, 'stopped': None}
@@ -148,11 +154,15 @@ def loop(args, run=run_logged) -> int:
             print(f'GATE STOP at {end}: run forensic_short_games.py on this segment', flush=True)
             return 12
         if decision == 'PROMOTE':
-            champion, holds = promote(args, end), 0
-            print(f'NEW CHAMPION {champion[0]} -> {champion[1]}', flush=True)
+            promoted, holds = promote(args, end), 0
+            if args.fixed_anchor:
+                print(f'PROMOTE {promoted[0]} recorded; anchor stays {champion[0]}', flush=True)
+            else:
+                champion = promoted
+                print(f'NEW CHAMPION {champion[0]} -> {champion[1]}', flush=True)
         else:
             holds += 1
-            if holds >= args.max_holds:
+            if holds >= args.max_holds and not args.fixed_anchor:
                 print(f'PLATEAU: {holds} segments without PROMOTE (last {end})', flush=True)
                 return 13
     print(f'finished at {args.end}, champion {champion[0]}', flush=True)
@@ -175,6 +185,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--gates-dir', type=Path, required=True)
     parser.add_argument('--max-holds', type=int, default=3,
                         help='stop after this many consecutive HOLD segments (plateau)')
+    parser.add_argument('--fixed-anchor', action='store_true',
+                        help='keep the starting champion as the anchor of every segment '
+                             '(recipe A/B arms); no plateau stop')
     parser.add_argument('--reference-reuse', type=float, default=6.4)
     parser.add_argument('--anchor', type=int, default=400, help='run_stage8_training --anchor')
     parser.add_argument('--light-opponents', nargs='+', default=['tactical', 'mcts_v2'])
