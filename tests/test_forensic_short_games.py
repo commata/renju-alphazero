@@ -55,7 +55,9 @@ class ForensicTest(unittest.TestCase):
             output = Path(tmp) / 'out.json'
             subprocess.run([sys.executable, str(ROOT / 'scripts' / 'forensic_short_games.py'),
                             str(run), '--checkpoint', str(checkpoint), '--deep-simulations', '8',
-                            '--noise-trials', '2', '--output', str(output)],
+                            '--noise-trials', '2', '--check-vct-depth', '1',
+                            '--fpu-reduction', '0',
+                            '--output', str(output)],
                            check=True, capture_output=True, cwd=ROOT)
             data = json.loads(output.read_text())
             self.assertEqual(data['short_games'], 1)
@@ -70,6 +72,11 @@ class ForensicTest(unittest.TestCase):
             for key in ('base_q_chosen', 'deep_q_chosen'):
                 self.assertTrue(-1.0 <= row[key] <= 1.0)
             self.assertEqual(data['by_loser']['WHITE']['n'], 1)
+            self.assertTrue(row['deep_q_rank_safe'] is None or row['deep_q_rank_safe'] >= 1)
+            self.assertGreaterEqual(row['base_visited_children'], 1)
+            # every VCF-safe move got a VCT status
+            self.assertEqual(row['vct_safe'] + row['vct_unsafe'] + row['vct_unknown'],
+                             row['safe_moves'])
             self.assertNotIn('BLACK', data['by_loser'])
 
 

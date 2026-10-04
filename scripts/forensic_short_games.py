@@ -51,7 +51,7 @@ for path in (ROOT / 'src', ROOT / 'scripts'):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from analysis.threats import SAFE, ThreatSolver  # noqa: E402
+from analysis.threats import SAFE, UNKNOWN, UNSAFE, ThreatSolver  # noqa: E402
 from renju import Game  # noqa: E402
 
 BOARD = 15
@@ -86,6 +86,26 @@ def losing_decision(moves, winner: int, solver: ThreatSolver):
                 found = (ply, safe, move)
         game.play(*move)
     return found
+
+
+def vct_after_safe(moves_before, safe, solver: ThreatSolver, depth: int) -> dict:
+    """Do the VCF-safe moves also survive a depth-limited VCT of the attacker?
+
+    If none does, the position was already lost at this decision (the value near -1 is
+    right) and the real mistake was earlier; if some does, the value is too pessimistic.
+    """
+    game = Game()
+    for m in moves_before:
+        game.play(*m)
+    statuses = Counter()
+    for move in safe:
+        game.play(*move)
+        try:
+            statuses[solver.after_move(game, depth)[0]] += 1
+        finally:
+            game.undo()
+    return {'vct_depth': depth, 'vct_safe': statuses[SAFE], 'vct_unsafe': statuses[UNSAFE],
+            'vct_unknown': statuses[UNKNOWN]}
 
 
 def kl(p: list[float], q: list[float]) -> float:
@@ -128,6 +148,13 @@ def analyze_position(moves_before, safe, played, evaluator, base_config, deep: i
         row[f'{label}_n_safe'] = sum(search.visit_counts[a] for a in safe_actions)
         row[f'{label}_q_safe_best'] = max(safe_q) if safe_q else None
         row[f'{label}_q_chosen'] = children[chosen].q if chosen in children else None
+        # Would a Q-based target pick a safe move? Rank of the best safe child by Q among
+        # the visited children (1 = highest), and the best Q of the unsafe ones.
+        other_q = [c.q for a, c in children.items() if a not in safe_actions and c.visit_count]
+        row[f'{label}_q_best_unsafe'] = max(other_q) if other_q else None
+        row[f'{label}_q_rank_safe'] = (1 + sum(q > max(safe_q) for q in other_q)
+                                       if safe_q else None)
+        row[f'{label}_visited_children'] = sum(1 for c in children.values() if c.visit_count)
     rng = Random(seed)
     safe_picks = 0
     for _ in range(noise_trials):
@@ -153,8 +180,18 @@ def _mean(values):
     return sum(values) / len(values) if values else None
 
 
+def _pct(value) -> str:
+    return '-' if value is None else f'{value:.0%}'
+
+
 def _f(value) -> str:
     return '-' if value is None else f'{value:+.2f}'
+
+
+def _share(rows: list[dict], key: str):
+    """Share of rows where the best safe move has the highest Q of the visited children."""
+    ranked = [r[key] for r in rows if r.get(key) is not None]
+    return sum(rank == 1 for rank in ranked) / len(ranked) if ranked else None
 
 
 def summarize_by_loser(rows: list[dict]) -> dict:
@@ -170,7 +207,15 @@ def summarize_by_loser(rows: list[dict]) -> dict:
                           for key in ('prior_safe', 'prior_safe_max', 'value',
                                       'base_chosen_safe', 'base_visit_safe', 'base_q_safe_best',
                                       'base_q_chosen', 'deep_chosen_safe', 'deep_visit_safe',
-                                      'deep_q_safe_best', 'deep_q_chosen', 'noisy_safe_rate')}}
+                                      'deep_q_safe_best', 'deep_q_chosen', 'noisy_safe_rate',
+                                      'base_visited_children', 'deep_visited_children')},
+                       'base_q_rank1_safe': _share(group, 'base_q_rank_safe'),
+                       'deep_q_rank1_safe': _share(group, 'deep_q_rank_safe'),
+                       **({'vct_any_safe': _mean(float(r['vct_safe'] > 0) for r in group),
+                           'vct_all_unsafe': _mean(float(r['vct_safe'] == 0
+                                                         and r['vct_unknown'] == 0)
+                                                   for r in group)}
+                          if all('vct_safe' in r for r in group) else {})}
     return out
 
 
@@ -186,6 +231,12 @@ def main() -> int:
     parser.add_argument('--noise-trials', type=int, default=8)
     parser.add_argument('--limit', type=int, default=200, help='short games analysed in depth')
     parser.add_argument('--node-limit', type=int, default=20_000)
+    parser.add_argument('--fpu-reduction', type=float,
+                        help='override the search FPU: unvisited Q = parent value - this '
+                             '(default: the run\'s rule, unvisited Q = 0)')
+    parser.add_argument('--check-vct-depth', type=int, default=0,
+                        help='also test the VCF-safe moves against a VCT of this depth '
+                             '(0 = skip; 1-2 is slow but tells whether the loss was earlier)')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
@@ -220,6 +271,9 @@ def main() -> int:
         model, _ = load_model_from_training_checkpoint(args.checkpoint)
         evaluator = PolicyValueEvaluator(model)
         base = self_play_search_config(load_checkpoint_payload(args.checkpoint)['config'])
+        if args.fpu_reduction is not None:
+            from dataclasses import replace
+            base = replace(base, fpu_reduction=args.fpu_reduction)
         solver = ThreatSolver(node_limit=args.node_limit)
         sample = Random(args.seed).sample(short, min(args.limit, len(short)))
         for number, g in enumerate(sample):
@@ -232,6 +286,8 @@ def main() -> int:
             before = [divmod(a, BOARD) for a in g['moves'][:ply]]
             row = analyze_position(before, safe, played, evaluator, base,
                                    args.deep_simulations, args.noise_trials, args.seed + number)
+            if args.check_vct_depth:
+                row.update(vct_after_safe(before, safe, solver, args.check_vct_depth))
             rows.append({'generation': g['generation'], 'index': g['index'], 'ply': ply + 1,
                          'cluster': opening_cluster(g['moves']), **row})
             if (number + 1) % 20 == 0:
@@ -245,6 +301,12 @@ def main() -> int:
                   f"{_f(summary['base_q_safe_best'])} vs chosen {_f(summary['base_q_chosen'])}) "
                   f"deep chosen {summary['deep_chosen_safe']:.0%} visit {summary['deep_visit_safe']:.2f} "
                   f"(q safe {_f(summary['deep_q_safe_best'])} vs chosen {_f(summary['deep_q_chosen'])})")
+            print(f"    visited children base {summary['base_visited_children']:.0f} / deep "
+                  f"{summary['deep_visited_children']:.0f}; safe move has the top Q: base "
+                  f"{_pct(summary['base_q_rank1_safe'])}, deep {_pct(summary['deep_q_rank1_safe'])}"
+                  + (f"; VCT-safe block exists {_pct(summary['vct_any_safe'])}, all blocks "
+                     f"VCT-lost {_pct(summary['vct_all_unsafe'])}" if 'vct_any_safe' in summary
+                     else ''))
         decided = [r for r in rows if 'prior_safe' in r]
         if decided:
             mean = lambda key: sum(r[key] for r in decided) / len(decided)  # noqa: E731
@@ -260,6 +322,7 @@ def main() -> int:
             'short_games': len(short), 'clusters': clusters.most_common(50),
             'distinct_clusters': len(clusters), 'checkpoint': str(args.checkpoint),
             'deep_simulations': args.deep_simulations, 'noise_trials': args.noise_trials,
+            'fpu_reduction': args.fpu_reduction, 'check_vct_depth': args.check_vct_depth,
             'by_loser': summarize_by_loser([r for r in rows if 'prior_safe' in r]),
             'rows': rows}, indent=1), encoding='utf-8')
     return 0

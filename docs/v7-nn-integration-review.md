@@ -1170,3 +1170,46 @@ foreach ($k in $arms.Keys) {
 - 판정 스크립트(`compare_recipe_arms.py`)의 probe 검사에 가치망 분리도를 추가했다. C2를 다시 계산해도 판정은 `keep_control`이다.
 
 **공유해 줄 것:** `runs/forensics/c2_*.json` 6개.
+
+## 18. forensic 2차: VCT 검사, Q 순위, FPU 설정 (학습 없음, 2026-10-04)
+
+배경은 `docs/stage8-plan.md` §12.19에 있다. 같은 표본(checkpoint 1540, 1520-1560, `--limit 100`, 기본 seed)에서 다음 두 가지를 돌린다.
+
+- (a) 지금 설정(FPU 0) + 막는 수의 VCT 1단계 검사 + Q 순위.
+- (b) 부모 기준 FPU(r = 0)로 바꾼 탐색.
+
+```powershell
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+git fetch origin feat/stage8-plan
+git merge --ff-only origin/feat/stage8-plan
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$arms = [ordered]@{ "ctl" = "$R\stage8_ada_c1120"; "lr" = "$R\stage8_lr3_c1480" }
+foreach ($k in $arms.Keys) {
+  $ck = "$($arms[$k])\checkpoints\checkpoint_gen1540.pt"
+  # (a) 지금 FPU, 400회, 막는 수의 VCT(1단계) 검사
+  python scripts/forensic_short_games.py $arms[$k] --from 1520 --to 1560 --checkpoint $ck `
+      --limit 100 --deep-simulations 400 --check-vct-depth 1 `
+      --output "$R\forensics\c2b_$($k)_vct1.json"
+  if ($LASTEXITCODE -ne 0) { Write-Host "FORENSIC FAILED $k a"; break }
+  # (b) 부모 기준 FPU (unvisited Q = parent value), 400회
+  python scripts/forensic_short_games.py $arms[$k] --from 1520 --to 1560 --checkpoint $ck `
+      --limit 100 --deep-simulations 400 --fpu-reduction 0 `
+      --output "$R\forensics\c2b_$($k)_fpu0.json"
+  if ($LASTEXITCODE -ne 0) { Write-Host "FORENSIC FAILED $k b"; break }
+}
+```
+
+- 출력의 `loser WHITE` 아래 줄에서 다음을 본다. `visited children`(방문한 자식 수), `safe move has the top Q`(막는 수가 Q 1등인 비율), (a)에서는 `VCT-safe block exists`(VCT 1단계에도 버티는 막는 수가 있는 비율).
+- (a)의 VCT 검사는 표본당 막는 수 2개만 보지만 오래 걸릴 수 있다. 창 두 개로 나눠 돌려도 된다.
+
+**결과에 따른 다음 단일 변수(사전 판정):**
+
+| 결과 | 다음 실험 |
+|---|---|
+| (b)에서 50회 선택률이 크게 오름(예: 3% → 30% 이상) | self-play 탐색을 부모 기준 FPU로 바꾸는 A/B |
+| (a)에서 막는 수가 Q 1등인 비율이 높음 | Q를 반영한 policy target(completed Q / target pruning) A/B |
+| (a)에서 막아도 VCT로 지는 비율이 높음 | value가 맞다. 더 이른 결정(백의 1~2번째 수)을 진단한다 |
+| 셋 다 아님 | 탐색 안에서 VCF 증명으로 지는 수를 거르는 규칙(root, 위협이 있을 때만) A/B |
+
+**공유해 줄 것:** `runs/forensics/c2b_*.json` 4개.
