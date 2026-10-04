@@ -18,7 +18,9 @@ Pre-registered rule (docs/stage8-plan.md §12.17). Inputs are files the training
      one-sided 95 % lower bound of the treatment-minus-control win rate is above
      ``--non-inferiority`` (default 5 points);
    - no probe regression at the last point: rows paired by id over all probe sets,
-     exact McNemar on top-1, the control is not better with p < 0.05.
+     exact McNemar on policy top-1 (the control is not better with p < 0.05), and the
+     value separation mean(value | win) - mean(value | loss) of each side to move does
+     not drop by 0.2 or more (pooled sign accuracy would hide a colour offset).
 
     python scripts/compare_recipe_arms.py --control runs/stage8_ada_c1120 \\
         --treatment runs/stage8_lr3_c1480 --from 1480 --to 1600 \\
@@ -128,21 +130,68 @@ def heavy_non_inferiority(control: Path, treatment: Path, points: list[int],
             'treatment_only_wins': diffs.count(1), 'control_only_wins': diffs.count(-1)}
 
 
-def probe_regression(control: Path, treatment: Path, generation: int) -> dict:
+def _paired(control_rows: dict, treatment_rows: dict) -> tuple[int, int]:
     control_better = treatment_better = 0
+    for row_id in control_rows.keys() & treatment_rows.keys():
+        c, t = bool(control_rows[row_id]['top1']), bool(treatment_rows[row_id]['top1'])
+        control_better += c and not t
+        treatment_better += t and not c
+    return control_better, treatment_better
+
+
+def _value_profile(rows: list[dict]) -> dict:
+    """Per side to move: mean value on win / loss labels, separation, sign accuracy."""
+    out = {}
+    for colour in ('BLACK', 'WHITE'):
+        wins = [r for r in rows if r['to_play'] == colour and r['value_sign'] == 1]
+        losses = [r for r in rows if r['to_play'] == colour and r['value_sign'] == -1]
+        if not wins or not losses:
+            continue
+        win_mean = sum(r['value'] for r in wins) / len(wins)
+        loss_mean = sum(r['value'] for r in losses) / len(losses)
+        out[colour] = {'wins': len(wins), 'losses': len(losses), 'win_mean': win_mean,
+                       'loss_mean': loss_mean, 'separation': win_mean - loss_mean,
+                       'win_sign_accuracy': sum(r['value_sign_correct'] for r in wins) / len(wins),
+                       'loss_sign_accuracy': sum(r['value_sign_correct'] for r in losses)
+                       / len(losses)}
+    return out
+
+
+def probe_regression(control: Path, treatment: Path, generation: int,
+                     separation_drop: float = 0.2) -> dict:
+    """Probe checks at one generation: paired policy top-1 and the value profile.
+
+    Pooled value-sign accuracy hides an offset: in C2 the treatment's value head put
+    every white-to-move position higher (win mean +0.84, loss mean +0.31), so it gained
+    on win labels what it lost on loss labels (stage8-plan §12.18). The value check is
+    therefore the per-colour separation mean(value | win) - mean(value | loss): a drop of
+    at least ``separation_drop`` for either side to move counts as a regression.
+    """
+    top1 = ({}, {})
+    valued = ([], [])
     for suffix in PROBE_SUFFIXES:
         path = f'gen{generation:03d}{suffix}.json'
         if not (control / 'probes' / path).is_file():
             continue
-        c = {r['id']: r for r in _load(control / 'probes' / path)['rows'] if 'top1' in r}
-        t = {r['id']: r for r in _load(treatment / 'probes' / path)['rows'] if 'top1' in r}
-        for key in c.keys() & t.keys():
-            control_better += c[key]['top1'] and not t[key]['top1']
-            treatment_better += t[key]['top1'] and not c[key]['top1']
-    p = sign_test(control_better, treatment_better)
-    return {'generation': generation, 'control_only_top1': control_better,
-            'treatment_only_top1': treatment_better, 'p_two_sided': p,
-            'regression': control_better > treatment_better and p < P_LEVEL}
+        for side, run in enumerate((control, treatment)):
+            for r in _load(run / 'probes' / path).get('rows', []):
+                if 'top1' in r:
+                    top1[side][(suffix, r['id'])] = r
+                if 'value_sign' in r:
+                    valued[side].append(r)
+    c_better, t_better = _paired(*top1)
+    p = sign_test(c_better, t_better)
+    profiles = [_value_profile(rows) for rows in valued]
+    drops = {colour: profiles[0][colour]['separation'] - profiles[1][colour]['separation']
+             for colour in profiles[0].keys() & profiles[1].keys()}
+    result = {'generation': generation,
+              'top1': {'control_only': c_better, 'treatment_only': t_better, 'p_two_sided': p,
+                       'regression': c_better > t_better and p < P_LEVEL},
+              'value': {'control': profiles[0], 'treatment': profiles[1],
+                        'separation_drop': drops, 'threshold': separation_drop,
+                        'regression': any(d >= separation_drop for d in drops.values())}}
+    result['regression'] = result['top1']['regression'] or result['value']['regression']
+    return result
 
 
 def verdict(direct: dict, stable_c: dict, stable_t: dict, heavy: dict, probes: dict,
@@ -213,8 +262,14 @@ def main() -> int:
     print(f"heavy paired {heavy['paired_games']}: treatment - control "
           f"{heavy['treatment_minus_control']:+.3f}, 95% lower bound "
           f"{heavy['lower_bound_95']:+.3f} (margin -{heavy['margin']:.2f})")
-    print(f"probes gen {probes['generation']}: control-only top1 {probes['control_only_top1']}, "
-          f"treatment-only {probes['treatment_only_top1']}, p={probes['p_two_sided']:.3g}")
+    x = probes['top1']
+    print(f"probes gen {probes['generation']} top1: control-only {x['control_only']}, "
+          f"treatment-only {x['treatment_only']}, p={x['p_two_sided']:.3g}")
+    for arm in ('control', 'treatment'):
+        for colour, v in probes['value'][arm].items():
+            print(f"  value {arm:9s} {colour} to move: win mean {v['win_mean']:+.2f}, loss mean "
+                  f"{v['loss_mean']:+.2f}, separation {v['separation']:.2f}, loss sign accuracy "
+                  f"{v['loss_sign_accuracy']:.0%}")
     print('checks:', checks)
     print('verdict:', decision)
     if args.output:

@@ -11,7 +11,7 @@ if str(ROOT / 'scripts') not in sys.path:
     sys.path.insert(0, str(ROOT / 'scripts'))
 
 from compare_recipe_arms import (direct_result, heavy_non_inferiority,  # noqa: E402
-                                 sign_test, verdict)
+                                 probe_regression, sign_test, verdict)
 
 
 def write_direct(path: Path, seed: int, wins: int, losses: int, splits: int = 10) -> Path:
@@ -68,6 +68,34 @@ class CompareRecipeArmsTest(unittest.TestCase):
             control = write_run(Path(tmp) / 'c', False, [1] * 200, [True] * 10)
             worse = write_run(Path(tmp) / 't', False, [1, 1, 1, 0] * 50, [True] * 10)
             self.assertFalse(heavy_non_inferiority(control, worse, [4], 0.05)['non_inferior'])
+
+    def test_value_offset_is_a_regression_although_sign_accuracy_pools_even(self):
+        def rows(white_offset):
+            out = []
+            for i in range(10):
+                for colour in ('BLACK', 'WHITE'):
+                    for sign in (1, -1):
+                        value = 0.6 * sign + (white_offset if colour == 'WHITE' else 0.0)
+                        out.append({'id': f'{colour}{sign}{i}', 'kind': 'forced_loss',
+                                    'to_play': colour, 'value_sign': sign, 'value': value,
+                                    'value_sign_correct': value * sign > 0, 'top1': False})
+            return out
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, offset in (('c', 0.0), ('t', 0.9)):
+                (Path(tmp) / name / 'probes').mkdir(parents=True)
+                (Path(tmp) / name / 'probes' / 'gen004.json').write_text(
+                    json.dumps({'rows': rows(offset)}))
+            result = probe_regression(Path(tmp) / 'c', Path(tmp) / 't', 4)
+            # same separation (1.2) for both: an offset alone is not a separation drop
+            self.assertAlmostEqual(result['value']['separation_drop']['WHITE'], 0.0)
+            self.assertFalse(result['regression'])
+            self.assertEqual(result['value']['treatment']['WHITE']['loss_sign_accuracy'], 0.0)
+            (Path(tmp) / 't' / 'probes' / 'gen004.json').write_text(json.dumps({'rows': [
+                {**r, 'value': 0.5, 'value_sign_correct': r['value_sign'] > 0}
+                if r['to_play'] == 'WHITE' else r for r in rows(0.0)]}))
+            result = probe_regression(Path(tmp) / 'c', Path(tmp) / 't', 4)
+            self.assertAlmostEqual(result['value']['separation_drop']['WHITE'], 1.2)
+            self.assertTrue(result['regression'])
 
     def test_verdict_rules(self):
         undecided = {'winner': None}

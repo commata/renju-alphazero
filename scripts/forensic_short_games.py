@@ -11,7 +11,10 @@ For each short self-play game (``--max-length``, default 10) of a run:
    - ``value``: network value for the side to move;
    - deterministic search (noise off, temperature 0) at the run's self-play budget
      and at ``--deep-simulations``: share of visits on safe moves, whether the chosen
-     move is safe, ``KL(search || prior)``;
+     move is safe, ``KL(search || prior)``, and the root children of the safe moves:
+     visits N, the best safe Q and the Q of the chosen move (mover's view, so a safe Q
+     above the chosen Q that still gets few visits points at the prior, a safe Q at
+     about -1 at the value head);
    - with self-play noise on, over ``--noise-trials`` seeds: how often the search
      still picks a safe move.
 
@@ -22,6 +25,10 @@ Category of each loss:
 - ``search_budget``: wrong at the self-play budget, right with the deep search;
 - ``prior_blind``: wrong even with the deep search and prior_safe < 0.05;
 - ``value_blind``: wrong with the deep search although the prior saw the safe moves.
+
+Rows record the losing colour (``loser``); ``by_loser`` in the output and the printed
+summary split everything by it (white failing to defend and black failing to defend
+are different problems).
 
 Read-only. The VCF part is cheap for short games; the deep search dominates the time.
 
@@ -90,7 +97,8 @@ def analyze_position(moves_before, safe, played, evaluator, base_config, deep: i
     from dataclasses import replace
 
     from model.config import coordinate_to_action
-    from search.alphazero import argmax_action, run_search, select_action, visit_policy
+    from search.alphazero import (argmax_action, run_search, search_with_tree,
+                                  select_action, visit_policy)
     from search.evaluator import EvaluationSnapshot
 
     game = Game()
@@ -100,17 +108,26 @@ def analyze_position(moves_before, safe, played, evaluator, base_config, deep: i
     result = evaluator.evaluate(EvaluationSnapshot.from_game(game, legal))
     prior = list(result.priors)
     safe_actions = {coordinate_to_action(*m) for m in safe}
-    row = {'prior_safe': sum(prior[a] for a in safe_actions),
+    row = {'loser': 'BLACK' if game.to_play == 1 else 'WHITE',
+           'prior_safe': sum(prior[a] for a in safe_actions),
+           'prior_safe_max': max(prior[a] for a in safe_actions),
            'prior_played': prior[coordinate_to_action(*played)], 'value': result.value,
            'safe_moves': len(safe), 'legal_moves': len(legal)}
     for label, sims in (('base', base_config.num_simulations), ('deep', deep)):
         config = replace(base_config, num_simulations=sims, noise_enabled=False,
                          temperature_moves=0)
-        search = run_search(game, evaluator, config, None)
+        search, root = search_with_tree(game, evaluator, config, None)
         pi = list(visit_policy(search.visit_counts))
+        chosen = argmax_action(search)
         row[f'{label}_visit_safe'] = sum(pi[a] for a in safe_actions)
-        row[f'{label}_chosen_safe'] = argmax_action(search) in safe_actions
+        row[f'{label}_chosen_safe'] = chosen in safe_actions
         row[f'{label}_kl'] = kl(pi, prior)
+        # Root children: N = visits, Q = mean value for the side to move (the mover).
+        children = root.children if root is not None else {}
+        safe_q = [c.q for a, c in children.items() if a in safe_actions and c.visit_count]
+        row[f'{label}_n_safe'] = sum(search.visit_counts[a] for a in safe_actions)
+        row[f'{label}_q_safe_best'] = max(safe_q) if safe_q else None
+        row[f'{label}_q_chosen'] = children[chosen].q if chosen in children else None
     rng = Random(seed)
     safe_picks = 0
     for _ in range(noise_trials):
@@ -129,6 +146,32 @@ def analyze_position(moves_before, safe, played, evaluator, base_config, deep: i
     else:
         row['category'] = 'value_blind'
     return row
+
+
+def _mean(values):
+    values = [v for v in values if v is not None]
+    return sum(values) / len(values) if values else None
+
+
+def _f(value) -> str:
+    return '-' if value is None else f'{value:+.2f}'
+
+
+def summarize_by_loser(rows: list[dict]) -> dict:
+    """Per losing colour: categories and mean prior / value / search diagnostics."""
+    out = {}
+    for colour in ('BLACK', 'WHITE'):
+        group = [r for r in rows if r.get('loser') == colour]
+        if not group:
+            continue
+        out[colour] = {'n': len(group), 'categories': dict(Counter(r['category'] for r in group)),
+                       **{key: _mean(float(r[key]) if isinstance(r[key], bool) else r[key]
+                                     for r in group)
+                          for key in ('prior_safe', 'prior_safe_max', 'value',
+                                      'base_chosen_safe', 'base_visit_safe', 'base_q_safe_best',
+                                      'base_q_chosen', 'deep_chosen_safe', 'deep_visit_safe',
+                                      'deep_q_safe_best', 'deep_q_chosen', 'noisy_safe_rate')}}
+    return out
 
 
 def main() -> int:
@@ -195,6 +238,13 @@ def main() -> int:
                 print(f'  analysed {number + 1}/{len(sample)}', flush=True)
         categories = Counter(r['category'] for r in rows)
         print('categories:', dict(categories))
+        for colour, summary in summarize_by_loser(rows).items():
+            print(f"  loser {colour}: n={summary['n']} categories {summary['categories']} "
+                  f"prior_safe {summary['prior_safe']:.3f} value {summary['value']:+.2f} "
+                  f"base chosen {summary['base_chosen_safe']:.0%} (q safe "
+                  f"{_f(summary['base_q_safe_best'])} vs chosen {_f(summary['base_q_chosen'])}) "
+                  f"deep chosen {summary['deep_chosen_safe']:.0%} visit {summary['deep_visit_safe']:.2f} "
+                  f"(q safe {_f(summary['deep_q_safe_best'])} vs chosen {_f(summary['deep_q_chosen'])})")
         decided = [r for r in rows if 'prior_safe' in r]
         if decided:
             mean = lambda key: sum(r[key] for r in decided) / len(decided)  # noqa: E731
@@ -210,6 +260,7 @@ def main() -> int:
             'short_games': len(short), 'clusters': clusters.most_common(50),
             'distinct_clusters': len(clusters), 'checkpoint': str(args.checkpoint),
             'deep_simulations': args.deep_simulations, 'noise_trials': args.noise_trials,
+            'by_loser': summarize_by_loser([r for r in rows if 'prior_safe' in r]),
             'rows': rows}, indent=1), encoding='utf-8')
     return 0
 

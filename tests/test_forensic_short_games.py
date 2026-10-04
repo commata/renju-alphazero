@@ -65,6 +65,12 @@ class ForensicTest(unittest.TestCase):
                                             'prior_blind', 'value_blind'))
             for key in ('prior_safe', 'base_visit_safe', 'deep_visit_safe', 'noisy_safe_rate'):
                 self.assertGreaterEqual(row[key], 0.0)
+            self.assertEqual(row['loser'], 'WHITE')
+            self.assertGreaterEqual(row['deep_n_safe'], 0)
+            for key in ('base_q_chosen', 'deep_q_chosen'):
+                self.assertTrue(-1.0 <= row[key] <= 1.0)
+            self.assertEqual(data['by_loser']['WHITE']['n'], 1)
+            self.assertNotIn('BLACK', data['by_loser'])
 
 
 if __name__ == '__main__':
