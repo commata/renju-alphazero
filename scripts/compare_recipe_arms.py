@@ -180,6 +180,13 @@ def main() -> int:
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
 
+    missing = [str(run / 'external_eval' / f'gen{g:03d}_heavy.json')
+               for run in (args.control, args.treatment) for g in args.points
+               if not (run / 'external_eval' / f'gen{g:03d}_heavy.json').is_file()]
+    if missing:
+        raise SystemExit('missing heavy evaluations (did an arm stop early, e.g. gate STOP?):\n  '
+                         + '\n  '.join(missing) + '\nuse --points / --to with generations '
+                         'both arms reached')
     paths = sorted({Path(p) for pattern in args.direct for p in glob.glob(pattern)})
     if not paths:
         raise SystemExit(f'no direct-match files match {args.direct}')

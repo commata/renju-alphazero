@@ -1129,6 +1129,8 @@ python scripts/analyze_self_play_health.py "$R\stage8_lr3_c1480" --from 1440 --t
 - 공통 준비의 분기 출력에 `"optimizer.lr": {"from": 0.001, "to": 0.0003}`가 보여야 한다.
   학습 중에는 `stage8_lr3_c1480\metrics.jsonl`의 `train` 줄에서 `"lr": 0.0003`을 확인할 수 있다.
 - 종료 코드: 0 완료, 12 STOP(그 arm만 멈춘다. 다른 창은 계속), 1 하위 단계 오류(같은 블록을 재실행). `--fixed-anchor`에서는 정체(13)로 멈추지 않는다.
+- 한 arm이라도 게이트 STOP(exit 12)으로 1600 전에 멈추면, 직접 대결과 판정은 **두 arm이 모두 도달한 구간 끝**까지만 한다.
+  예: 둘 다 1560에서 STOP이면 `--to 1560 --points 1520 1560`으로 하고 1600 대결은 하지 않는다. 판정 스크립트는 빠진 heavy 파일을 먼저 확인한다.
 - `compare_recipe_arms.py`의 마지막 줄 `verdict:`가 사전 규칙의 판정이다(`adopt_stronger` / `reject` / `adopt_stability` / `keep_control`).
 
 **공유해 줄 것:** `runs/arm_h2h/lr_gen*.json`, `lr_verdict.json`, `runs/health/*_c2_*.json`,

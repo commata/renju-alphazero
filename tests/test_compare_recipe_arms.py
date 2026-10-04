@@ -103,6 +103,13 @@ class CompareRecipeArmsTest(unittest.TestCase):
             self.assertEqual(data['stability']['control']['one_sided_share'], 1.0)
             self.assertEqual(data['stability']['treatment']['mean_abs_color_margin'], 0.0)
             self.assertEqual(data['verdict'], 'adopt_stability')
+            done = subprocess.run(
+                [sys.executable, str(ROOT / 'scripts' / 'compare_recipe_arms.py'),
+                 '--control', str(control), '--treatment', str(treatment), '--from', '0',
+                 '--to', '8', '--points', '4', '8', '--direct', str(Path(tmp) / 'lr_gen*.json')],
+                capture_output=True, text=True)
+            self.assertNotEqual(done.returncode, 0)
+            self.assertIn('missing heavy evaluations', done.stderr)
 
 
 if __name__ == '__main__':
