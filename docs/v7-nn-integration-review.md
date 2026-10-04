@@ -1136,3 +1136,31 @@ python scripts/analyze_self_play_health.py "$R\stage8_lr3_c1480" --from 1440 --t
 **공유해 줄 것:** `runs/arm_h2h/lr_gen*.json`, `lr_verdict.json`, `runs/health/*_c2_*.json`,
 `runs/gates/stage8_ada_c1120_15*.json`·`_1600.json`, `runs/gates/stage8_lr3_c1480_*.json`,
 두 run의 `metrics.jsonl`·`external_eval/gen15*·gen1600*`·`probes/gen15*·gen1600*`, 두 `.c2.log`.
+
+## 17. C2 이후: STOP 창 forensic 탐색 곡선 (학습 없음, 2026-10-04)
+
+결과와 판정(`keep_control`)은 `docs/stage8-plan.md` §12.18에 있다. 다음 단일 변수를 고르기 위해 두 arm의 STOP 창에서 forensic을 반복한다.
+깊은 탐색을 100/200/400회로 바꿔 돌리고, 같은 표본(같은 `--seed`, `--limit`)에서 몇 회부터 막는 수를 고르는지 본다.
+기본 탐색(50회, self-play 설정)과 noise 시행은 매번 같이 계산된다.
+
+```powershell
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+git fetch origin feat/stage8-plan
+git merge --ff-only origin/feat/stage8-plan
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$arms = [ordered]@{ "ctl" = "$R\stage8_ada_c1120"; "lr" = "$R\stage8_lr3_c1480" }
+foreach ($k in $arms.Keys) {
+  foreach ($d in 100, 200, 400) {
+    python scripts/forensic_short_games.py $arms[$k] --from 1520 --to 1560 `
+        --checkpoint "$($arms[$k])\checkpoints\checkpoint_gen1540.pt" --limit 100 `
+        --deep-simulations $d --output "$R\forensics\c2_$($k)_1520_1560_deep$($d).json"
+    if ($LASTEXITCODE -ne 0) { Write-Host "FORENSIC FAILED $k $d"; break }
+  }
+}
+```
+
+- 두 창으로 나눠 돌려도 된다(창 1은 `ctl`, 창 2는 `lr`만 남긴다). 400회가 가장 오래 걸린다.
+- 출력의 `categories:`와 `mean ... deep_visit_safe ...` 줄이 요약이다.
+
+**공유해 줄 것:** `runs/forensics/c2_*.json` 6개.
