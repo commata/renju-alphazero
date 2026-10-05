@@ -319,8 +319,7 @@ def summarize(games: list[dict]) -> dict:
             'added_kept': sum(len(m['policy']['added_kept']) for m in with_policy),
             'added_opened': sum(m['policy']['added_opened'] for m in with_policy),
             'moves_with_added_opened': sum(m['policy']['added_opened'] > 0 for m in with_policy),
-            'tree_chose_added': sum(m['policy']['added_kept'] and m['v7_move'] in m['policy']['added_kept']
-                                    for m in with_policy),
+            'tree_chose_added': sum(m['v7_move'] in m['policy']['added_kept'] for m in with_policy),
             'displaced': _dist([m['policy']['displaced'] for m in with_policy]),
             'policy_rank': _dist([m['policy']['rank'] for m in with_policy]),
             'root_order_rank': _dist([m['policy']['root_order_rank'] for m in with_policy]),

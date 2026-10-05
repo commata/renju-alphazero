@@ -121,6 +121,19 @@ class PolicyArmTest(unittest.TestCase):
                                                          for m in record['v8_moves']]}])
             self.assertEqual(summary['policy']['tree_moves'], len(tree))
 
+    def test_summary_without_added_moves(self):
+        # full_policy (no extra moves): every added_kept is [], which once broke the summary.
+        move = {'ply': 3, 'seconds': 0.1, 'route': 'tree', 'changed': False, 'v7_move': [7, 8], 'played': [7, 8],
+                'attack': {'candidates': 0, 'calls': 0, 'exhausted': False, 'seconds': 0.0},
+                'vct': {'checked': [], 'widened': False, 'exhausted': False, 'seconds': 0.0},
+                'root': {'checked': [], 'exhausted': False, 'seconds': 0.0},
+                'policy': {'seconds': 0.01, 'added': [], 'added_kept': [], 'added_opened': 0, 'displaced': 2,
+                           'rank': 1, 'prob': 0.5, 'root_order_rank': 1}}
+        game = {'key': 'k', 'v8_color': 'black', 'result': 'win', 'winner': 1, 'length': 9, 'moves': [],
+                'v8_moves': [move], 'opponent_move_seconds': [0.1]}
+        policy = summarize([game])['policy']
+        self.assertEqual((policy['tree_moves'], policy['tree_chose_added'], policy['added_kept']), (1, 0, 0))
+
 
 if __name__ == '__main__':
     unittest.main()
