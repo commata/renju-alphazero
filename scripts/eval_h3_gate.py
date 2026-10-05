@@ -36,7 +36,9 @@ B400_MUST_BLOCK = 9  # stage8-plan.md §12.10: B400 raw must_block top-1 0.23 on
 
 
 def must_block_hits(model, probes) -> tuple[int, int, dict]:
-    result = evaluate_probes(model, probes)
+    # training.probes (Track A) builds its inputs on the CPU, so the probes run on a CPU model;
+    # there are only a few dozen probes.
+    result = evaluate_probes(model.to('cpu'), probes)
     rows = [r for r in result['rows'] if r['kind'] == 'must_block']
     return sum(bool(r['top1']) for r in rows), len(rows), result['summary']
 
