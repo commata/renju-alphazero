@@ -26,6 +26,10 @@ DEFAULTS: dict = {
     'seed': 42,
     'device': 'cpu',
     'torch_threads': 1,
+    # Stage 8 G0: self-play games advanced together, one batched evaluator call per round
+    # (search.batched). Same records as 1 (one game at a time) with the same evaluator
+    # outputs, so execution-only.
+    'self_play_parallel_games': 1,
     'model': {
         'channels': _MODEL.channels,
         'blocks': _MODEL.blocks,
@@ -91,7 +95,8 @@ DEFAULTS: dict = {
 # Execution-control keys: may differ between a checkpoint and --config / CLI on resume.
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
-    ('device',), ('torch_threads',), ('output',), ('milestones',), ('health',),
+    ('device',), ('torch_threads',), ('self_play_parallel_games',), ('output',),
+    ('milestones',), ('health',),
     ('flush_denormal',),
     ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
     ('training', 'init_checkpoint'),
@@ -151,6 +156,7 @@ def validate_config(config: dict) -> dict:
     if not isinstance(config['device'], str):
         raise ConfigError('device must be a string')
     _int(config['torch_threads'], 'torch_threads')
+    _int(config['self_play_parallel_games'], 'self_play_parallel_games')
     try:
         model_config(config)
     except ValueError as exc:

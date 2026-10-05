@@ -19,6 +19,8 @@ import torch
 from model.config import ACTION_INDEX_VERSION, CHECKPOINT_FORMAT_VERSION, ENCODER_VERSION
 from model.evaluator import PolicyValueEvaluator
 from model.precision import set_tf32
+from search.alphazero import drive
+from search.batched import LockstepStats, run_lockstep
 from renju import BLACK, WHITE
 
 from .config import dump_config, self_play_search_config, training_steps
@@ -29,7 +31,8 @@ from .metrics import (MetricsLogger, RunMetadata, read_metrics, timestamp, trunc
                       utc_now, write_json)
 from .milestones import detect_milestones
 from .provenance import base_runtime_env, git_provenance
-from .self_play import game_hash, play_self_play_game, record_hash, replay_record, summarize_timing
+from .self_play import (game_hash, play_self_play_game, record_hash, replay_record,
+                        self_play_steps, summarize_timing)
 from .trainer import inference_mode_for, train_step
 from .training_checkpoint import (INIT_NAME, LATEST_NAME, build_checkpoint, copy_atomic,
                                   generation_checkpoint_name, load_training_state,
@@ -78,25 +81,32 @@ def save_generation_checkpoint(state: TrainingState, checkpoint_dir: Path) -> Pa
     return path
 
 
-def generate_self_play(state: TrainingState) -> tuple[list, list, float]:
+def generate_self_play(state: TrainingState) -> tuple[list, list, float, dict | None]:
     """Self-play with eval mode + no_grad; one game seed per game from self_play_rng."""
     config = state.config
     search = self_play_search_config(config)
     env = runtime_env(config)
     games = []
     started = perf_counter()
+    count = config['training']['games_per_generation']
+    parallel = config.get('self_play_parallel_games', 1)
+    lockstep = LockstepStats()
     with inference_mode_for(state.model):
         evaluator = PolicyValueEvaluator(state.model, device=config['device'])
-        for _ in range(config['training']['games_per_generation']):
-            seed = state.self_play_rng.getrandbits(63)
-            games.append(play_self_play_game(evaluator, search, seed,
-                                             checkpoint_hash=state.source_checkpoint_hash,
-                                             runtime_env=env))
+        # Seeds are drawn in the same order either way, so the records do not depend on
+        # how many games run together.
+        seeds = [state.self_play_rng.getrandbits(63) for _ in range(count)]
+        for first in range(0, count, parallel):
+            group = [self_play_steps(search, seed, checkpoint_hash=state.source_checkpoint_hash,
+                                     runtime_env=env) for seed in seeds[first:first + parallel]]
+            games.extend(run_lockstep(group, evaluator, lockstep) if parallel > 1
+                         else [drive(group[0], evaluator)])
     elapsed = perf_counter() - started
     records = [g.record for g in games]
     for game in games:
         replay_record(game.record, game.final_game)  # IllegalMove/contract check
-    return records, [g.move_stats for g in games], elapsed
+    return (records, [g.move_stats for g in games], elapsed,
+            lockstep.to_dict() if parallel > 1 else None)
 
 
 def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
@@ -107,7 +117,7 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
     final_generation = t['generations'] - 1
     previous_model = deepcopy(state.model)  # = the checkpoint this generation starts from
 
-    records, move_stats, self_play_seconds = generate_self_play(state)
+    records, move_stats, self_play_seconds, batching = generate_self_play(state)
     samples = [s for game_id, record in enumerate(records)
                for s in samples_from_record(record, generation=gen, game_id=game_id)]
     validate_samples(samples)
@@ -152,6 +162,8 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
         'first_step': first, 'last_step': last,
         'self_play_timing': summarize_timing(s for stats in move_stats for s in stats),
     }
+    if batching is not None:
+        generation_event['self_play_batching'] = batching
     if t.get('balanced_sampling', False):
         black_won, white_won = state.buffer.winner_groups()
         minority = min(len(black_won), len(white_won))

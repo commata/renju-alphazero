@@ -197,6 +197,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help='run config (execution-control values may differ, e.g. generations)')
     parser.add_argument('--target-generation', type=int,
                         help='override training.generations (gate target: 192 / 288 / 480)')
+    parser.add_argument('--device', help="override config device (execution only), e.g. cuda")
+    parser.add_argument('--parallel-games', type=int,
+                        help='override self_play_parallel_games (lock-step batched self-play, '
+                             'execution only; same games as 1)')
     parser.add_argument('--new-run', action='store_true',
                         help='start a NEW run in --run-dir (must not exist or be empty) from '
                              '--config; later invocations resume it (use --anchor 0)')
@@ -242,7 +246,11 @@ def main() -> int:
         config = load_config(args.config)
         if args.target_generation is not None:
             config['training']['generations'] = args.target_generation
-            validate_config(config)
+        if args.device is not None:
+            config['device'] = args.device
+        if args.parallel_games is not None:
+            config['self_play_parallel_games'] = args.parallel_games
+        validate_config(config)
         keep_every = config['training'].get('keep_every')
         if not keep_every or args.light_every % keep_every or args.anchor % keep_every:
             parser.error('training.keep_every must divide --light-every and --anchor so '

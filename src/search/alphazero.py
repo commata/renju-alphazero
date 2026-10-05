@@ -213,16 +213,17 @@ def apply_root_noise(root: Node, rng: Random, alpha: float, epsilon: float) -> N
         raise ValueError(f'noised root priors must sum to 1 (got {total!r})')
 
 
-def _expand(node: Node, game, legal_moves, evaluator: Evaluator, timing: SearchTiming,
-            allowed=None) -> float:
+def _expand(node: Node, game, legal_moves, timing: SearchTiming, allowed=None):
     """Create children for the legal (or ``allowed``) moves; return node.to_play value.
 
-    The evaluator always sees the full legal list; with a strict ``allowed`` subset the
-    children's priors are renormalized over that subset.
+    A generator: it yields the ``EvaluationSnapshot`` to evaluate and receives the
+    validated ``EvaluationResult`` (see ``search_steps``). The evaluator always sees the
+    full legal list; with a strict ``allowed`` subset the children's priors are
+    renormalized over that subset. Time spent suspended counts as inference time.
     """
     started = perf_counter()
     snapshot = EvaluationSnapshot.from_game(game, legal_moves)
-    result = evaluate_validated(evaluator, [snapshot])[0]
+    result = yield snapshot
     timing.inference_s += perf_counter() - started
     player = game.to_play
     moves = legal_moves if allowed is None else allowed
@@ -258,6 +259,29 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
                      rng: Random | None = None) -> tuple[SearchResult, Node | None]:
     """Search one root and also return the tree (None on the fast path).
 
+    Drives ``search_steps`` with one evaluator call per leaf (batch size 1).
+    """
+    return drive(search_steps(game, config, rng), evaluator)
+
+
+def drive(steps, evaluator: Evaluator):
+    """Run a search/self-play generator to completion, evaluating each request alone."""
+    try:
+        snapshot = next(steps)
+        while True:
+            snapshot = steps.send(evaluate_validated(evaluator, [snapshot])[0])
+    except StopIteration as stop:
+        return stop.value
+
+
+def search_steps(game, config: SearchConfig, rng: Random | None = None):
+    """The search as a generator: yields leaf snapshots, receives their evaluations.
+
+    Returns ``(SearchResult, root)`` (``StopIteration.value``). Exactly one snapshot is
+    outstanding at a time, so the tree, the RNG use and the results are identical to a
+    direct evaluator call however the caller batches the requests of several searches
+    (``search.batched``). The caller must send validated results.
+
     ``game`` is never mutated; a single working copy is used.
 
     Root expansion is not a simulation and its value is not backed up; exactly
@@ -291,7 +315,7 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
     if config.tactical_rules:
         # The root is never marked terminal: it only restricts the children.
         root_allowed, _ = tactical_filter(work, legal_moves)
-    _expand(root, work, legal_moves, evaluator, timing, root_allowed)
+    yield from _expand(root, work, legal_moves, timing, root_allowed)
     if config.noise_enabled:
         apply_root_noise(root, rng, config.dirichlet_alpha, config.dirichlet_epsilon)
 
@@ -326,7 +350,7 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
                 node.terminal_value = proven
                 value = proven
             else:
-                value = _expand(node, work, node_legal, evaluator, timing, allowed)
+                value = yield from _expand(node, work, node_legal, timing, allowed)
                 evaluator_calls += 1
         backup(root, path, value, node.to_play)
         for _ in range(played):

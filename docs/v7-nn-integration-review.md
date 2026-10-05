@@ -1213,3 +1213,35 @@ foreach ($k in $arms.Keys) {
 | 셋 다 아님 | 탐색 안에서 VCF 증명으로 지는 수를 거르는 규칙(root, 위협이 있을 때만) A/B |
 
 **공유해 줄 것:** `runs/forensics/c2b_*.json` 4개.
+
+## 19. G0 벤치마크: CPU 대 GPU, 탐색 50/200/400, 동시 판수 (2026-10-05)
+
+구현 내용은 `docs/stage8-plan.md` §12.21에 있다. 학습 없이 같은 16판을 조합별로 둔다(ADA1360 checkpoint, 고정 seed).
+
+```powershell
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cuda\Scripts\Activate.ps1"
+git fetch origin feat/stage8-plan
+git merge --ff-only origin/feat/stage8-plan
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+# 0) 배치 인코딩 경로로 GPU 점검 재확인 (inference_parity PASS 여야 함)
+python scripts/check_stage8_gpu.py --checkpoint "$R\anchors\ADA1360.pt" --device cuda `
+    --output "$R\gpu\rtx5070_smoke_g0.json"
+# 1) 탐색 50회: CPU 순차(현재 학습 방식) 대 GPU lock-step
+python scripts/benchmark_self_play.py --checkpoint "$R\anchors\ADA1360.pt" `
+    --devices cpu cuda --simulations 50 --parallel 1 4 8 16 `
+    --output "$R\gpu\bench_sims50.json"
+# 2) 탐색 200 / 400회: GPU lock-step (CPU 순차는 비교용 1개만)
+python scripts/benchmark_self_play.py --checkpoint "$R\anchors\ADA1360.pt" `
+    --devices cuda --simulations 200 400 --parallel 1 16 `
+    --output "$R\gpu\bench_sims200_400_cuda.json"
+python scripts/benchmark_self_play.py --checkpoint "$R\anchors\ADA1360.pt" `
+    --devices cpu --simulations 400 --parallel 1 `
+    --output "$R\gpu\bench_sims400_cpu.json"
+```
+
+- 다른 학습이나 forensic이 돌지 않을 때 실행해야 수치가 의미 있다. CPU가 바쁘면 tree 쪽 시간이 늘어난다.
+- 각 줄의 `same records True`는 묶어서 돌려도 같은 16판이 나왔다는 뜻이다.
+- 2)의 마지막 CPU 400회 실행은 오래 걸릴 수 있다(현재 50회 세대 self-play 약 30 s의 수 배).
+
+**공유해 줄 것:** `runs/gpu/rtx5070_smoke_g0.json`, `runs/gpu/bench_*.json`.

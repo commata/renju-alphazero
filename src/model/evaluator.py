@@ -8,7 +8,8 @@ import torch
 from search.evaluator import EvaluationResult, EvaluationSnapshot
 from .checkpoint import load_checkpoint, save_checkpoint
 from .config import ModelConfig
-from .encoding import encode_game
+from .config import ACTION_COUNT
+from .encoding import encode_batch, encode_game
 from .masking import legal_moves_to_mask, masked_softmax
 from .network import PolicyValueNet
 
@@ -51,9 +52,21 @@ class PolicyValueEvaluator:
             return []
         if self.model.training:
             raise RuntimeError('PolicyValueEvaluator requires model.eval()')
-        encoded = [self.encode(snapshot) for snapshot in snapshots]
-        planes = torch.stack([x for x, _ in encoded])
-        masks = torch.stack([m for _, m in encoded])
+        if self.device.type == 'cpu':
+            # The per-state path is the faster one on the CPU (and the reference).
+            encoded = [self.encode(snapshot) for snapshot in snapshots]
+            planes = torch.stack([x for x, _ in encoded])
+            masks = torch.stack([m for _, m in encoded])
+        else:
+            # Accelerator: encode the whole batch on the CPU, then one transfer (encoding
+            # on the device costs dozens of tiny kernels and copies per position).
+            masks = torch.zeros((len(snapshots), ACTION_COUNT), dtype=torch.bool)
+            for index, snapshot in enumerate(snapshots):
+                masks[index, list(snapshot.legal_actions())] = True
+            planes = encode_batch([s.board for s in snapshots], [s.to_play for s in snapshots],
+                                  [s.last_move for s in snapshots], masks)
+            planes = planes.pin_memory().to(self.device, non_blocking=True)
+            masks = masks.pin_memory().to(self.device, non_blocking=True)
         with torch.inference_mode():
             logits, values = self.model(planes)
             priors = masked_softmax(logits, masks)

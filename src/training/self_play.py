@@ -15,7 +15,7 @@ from time import perf_counter
 from model.config import (ACTION_COUNT, ACTION_INDEX_VERSION, ENCODER_VERSION,
                           action_to_coordinate, coordinate_to_action)
 from renju import Game
-from search.alphazero import SearchConfig, run_search, select_action
+from search.alphazero import SearchConfig, drive, search_steps, select_action
 from search.evaluator import Evaluator
 
 from .provenance import base_runtime_env, git_provenance
@@ -144,6 +144,20 @@ def play_self_play_game(evaluator: Evaluator, config: SearchConfig, seed: int, *
     RNG order per searched move: Dirichlet gammas (legal actions ascending), then one
     ``random()`` if ``ply < temperature_moves``. The single-legal fast path uses none.
     """
+    return drive(self_play_steps(config, seed, model_seed=model_seed,
+                                 checkpoint_hash=checkpoint_hash, runtime_env=runtime_env),
+                 evaluator)
+
+
+def self_play_steps(config: SearchConfig, seed: int, *, model_seed: int | None = None,
+                    checkpoint_hash: str | None = None, runtime_env: dict | None = None):
+    """``play_self_play_game`` as a generator of leaf evaluations (``search.batched``).
+
+    Yields snapshots, receives validated results, returns the ``SelfPlayGame``. The game
+    depends only on ``seed`` and the evaluations, so several games interleaved by a
+    batching scheduler produce the same records as one after another. With batching,
+    the per-move timings include the time spent waiting for the other games.
+    """
     rng = Random(seed)
     game = Game()
     pending: list[tuple[int, int, tuple[int, ...], int]] = []
@@ -151,7 +165,7 @@ def play_self_play_game(evaluator: Evaluator, config: SearchConfig, seed: int, *
     while not game.done:
         started = perf_counter()
         ply = len(game.history)
-        result = run_search(game, evaluator, config, rng)
+        result, _ = yield from search_steps(game, config, rng)
         action = select_action(result, ply, config, rng)
         game.play(*action_to_coordinate(action))
         total = perf_counter() - started

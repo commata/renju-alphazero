@@ -114,7 +114,9 @@ def training_command(args, end: int, champion: tuple[str, Path]) -> list[str]:
             '--light-opponents', *args.light_opponents,
             '--heavy-every', str(args.segment), '--heavy-opponents', *args.heavy_opponents,
             '--heavy-pairs', str(args.heavy_pairs),
-            '--h2h-anchor', f'{champion[0]}={champion[1]}']
+            '--h2h-anchor', f'{champion[0]}={champion[1]}',
+            *(['--device', args.device] if args.device else []),
+            *(['--parallel-games', str(args.parallel_games)] if args.parallel_games else [])]
 
 
 def gate_command(args, end: int) -> list[str]:
@@ -195,6 +197,9 @@ def build_parser() -> argparse.ArgumentParser:
                         default=['mcts_v5', 'mcts_v6', 'mcts_v7'])
     parser.add_argument('--heavy-pairs', type=int, default=25)
     parser.add_argument('--log', type=Path, help='append all child output here')
+    parser.add_argument('--device', help='training/self-play device (execution only), e.g. cuda')
+    parser.add_argument('--parallel-games', type=int,
+                        help='lock-step self-play games (execution only; same games)')
     return parser
 
 

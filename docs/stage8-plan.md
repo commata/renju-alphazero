@@ -1665,6 +1665,35 @@ forensic에 다음 세 가지를 추가했다: `--check-vct-depth`, Q 순위(`*_
 
 **동결 원칙:** G0 동안 레시피(네트워크, cpuct, 온도, noise, replay, loss)는 바꾸지 않는다. G1부터는 한 번에 한 변수만 바꾸고, 각 변수에 사전 판정 규칙을 둔다.
 
+### 12.21 G0 구현: lock-step 배치 self-play 엔진 (2026-10-05)
+
+**RTX 5070 점검(`check_stage8_gpu.py`, torch 2.14.1+cu130): PASS.**
+
+- **첫 실행의 추론 일치 실패 원인은 TF32였다.** NVIDIA Ampere 이후 GPU에서 cuDNN 합성곱이 기본으로 TF32라 CPU와 2~3e-3 차이가 났다.
+  학습 루프와 점검은 IEEE float32로 고정했다(`src/model/precision.py`). 고정 후 차이는 5e-6~1e-5다.
+- 학습 100 step은 CPU 대비 약 17~21배 빠르다.
+- 추론(인코딩 포함)은 B1에서 CPU와 같고, B16에서 약 2.2~3.2배 빠르다.
+- 두 번째 실행은 forensic과 동시에 돌아서 절대 시간이 느렸다.
+
+**구현:**
+
+1. **탐색 제너레이터:** `search.alphazero.search_steps`가 leaf snapshot을 내보내고 평가 결과를 받는다. 기존 `search_with_tree` / `run_search`는 이것을 B=1로 구동한다(`drive`).
+2. **self-play 제너레이터:** `training.self_play.self_play_steps`. `play_self_play_game`도 이것을 구동한다.
+3. **lock-step 스케줄러:** `search.batched.run_lockstep`. 매 라운드 미완료 게임마다 leaf 1개를 모아 `evaluate_batch` 1회를 한다. 배치 크기 분포도 기록한다.
+4. **학습 루프:** 실행 전용 설정 `self_play_parallel_games`(기본 1, critical hash에 들어가지 않음)를 추가했다. 시드는 묶음과 무관하게 같은 순서로 뽑는다.
+   세대 이벤트에 `self_play_batching`(라운드, 평균 배치)을 남긴다.
+   `run_stage8_training.py` / `run_champion_loop.py`에 `--device`, `--parallel-games`를 추가했다.
+5. **GPU 배치 인코딩:** GPU일 때 배치 전체를 CPU에서 한 번에 인코딩하고(`model.encoding.encode_batch`), pinned memory로 한 번 전송한다.
+   CPU는 기존 국면별 경로를 유지한다. CPU B=1에서는 새 경로가 느렸다(4.2 → 5.3 ms).
+6. **벤치마크:** `scripts/benchmark_self_play.py`. 장치 × 탐색 횟수 × 동시 판수별로 games/hour, moves/s, evals/s, 평균 배치, 기록 동일 여부를 낸다.
+
+**동일성 검증(테스트):**
+
+- 결정적 평가기에서 5판 lock-step의 기록 해시가 순차 실행과 같다.
+- 실제 신경망(CPU)의 학습 루프에서 `self_play_parallel_games` 4와 1의 self-play 기록 해시가 같다.
+- 배치 인코딩은 국면별 인코딩과 평면 단위로 같다.
+- GPU에서는 부동소수 차이(1e-5)로 동률 처리가 달라질 수 있다. 같은 장치 안에서는 벤치마크가 `same_records`로 확인한다.
+
 ## 13. PR 분리
 
 | PR | 내용 |

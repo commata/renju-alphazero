@@ -9,7 +9,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / 'scripts') not in sys.path:
     sys.path.insert(0, str(ROOT / 'scripts'))
 
-from run_champion_loop import build_parser, gate_path, loop, replay_state  # noqa: E402
+from run_champion_loop import (build_parser, gate_path, loop, replay_state,  # noqa: E402
+                               training_command)
 
 
 class FakeRunner:
@@ -97,6 +98,15 @@ class ChampionLoopTest(unittest.TestCase):
             self.assertEqual(set(runner.anchors), {'ADA100'})
             self.assertTrue((Path(tmp) / 'anchors' / 'LR260.pt').is_file())
             self.assertEqual(replay_state(args)['champion'][0], 'ADA100')
+
+    def test_device_and_parallel_games_reach_the_training_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            args = make_args(Path(tmp), '--device', 'cuda', '--parallel-games', '16')
+            command = training_command(args, 140, ('ADA100', Path('a.pt')))
+            self.assertEqual(command[command.index('--device') + 1], 'cuda')
+            self.assertEqual(command[command.index('--parallel-games') + 1], '16')
+            plain = training_command(make_args(Path(tmp) / 'x'), 140, ('ADA100', Path('a.pt')))
+            self.assertNotIn('--device', plain)
 
     def test_refuses_a_champion_match_against_another_anchor(self):
         with tempfile.TemporaryDirectory() as tmp:
