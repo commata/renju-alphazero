@@ -4,7 +4,8 @@ Runs the checks that must pass before any GPU self-play work, on a real training
 checkpoint (default: the Stage 7 D16 gen 160 copy), comparing ``--device`` with the CPU:
 
 1. backend: torch / HIP versions, device name
-2. inference parity: B=1 and B=16 priors/values vs CPU B=1 (max abs difference)
+2. inference parity: B=1 and B=16 priors/values vs CPU B=1 (max abs difference), in
+   full IEEE float32 (TF32 off); on CUDA the TF32 difference is recorded as info
 3. repeatability: the same device batch evaluated twice
 4. training: ``--steps`` real training steps (replay buffer, augmentation, Adam) from the
    checkpoint's own state on the device, all finite; ms/step vs the CPU
@@ -41,6 +42,7 @@ import torch  # noqa: E402
 
 from benchmark_stage7_batch import benchmark, snapshots_for  # noqa: E402
 from model.evaluator import PolicyValueEvaluator  # noqa: E402
+from model.precision import set_tf32, tf32_state  # noqa: E402
 from training.dataset import build_batch  # noqa: E402
 from training.probes import load_model_from_training_checkpoint  # noqa: E402
 from training.trainer import train_step  # noqa: E402
@@ -168,7 +170,18 @@ def run_checks(checkpoint: Path, device_name: str, *, steps: int, positions: int
             f"{ {k: v for k, v in result.items() if k not in ('traceback', 'rows')} }")
         return result
 
+    # Gate in full IEEE float32 (NVIDIA convolutions default to TF32, error ~1e-3);
+    # TF32 parity and speed are recorded for information only.
+    set_tf32(False)
+    report['precision'] = tf32_state()
     run('inference_parity', lambda: check_inference(model_cpu, device, snapshots))
+    if device.type == 'cuda':
+        set_tf32(True)
+        tf32 = check_inference(model_cpu, device, snapshots)
+        tf32['ok'] = True  # informational
+        report['checks']['inference_parity_tf32_info'] = tf32
+        log(f"INFO inference_parity with TF32: b1 {tf32['b1_vs_cpu']}, b16 {tf32['b16_vs_cpu']}")
+        set_tf32(False)
     holder = {}
 
     def training():
@@ -189,8 +202,16 @@ def run_checks(checkpoint: Path, device_name: str, *, steps: int, positions: int
         return {'ok': True, 'rows': rows}
 
     run('batch_benchmark', bench)
+    if device.type == 'cuda':
+        set_tf32(True)
+        rows = benchmark(deepcopy(model_cpu), snapshots, batch_sizes, repeats, 1,
+                         device=str(device))
+        report['checks']['batch_benchmark_tf32_info'] = {'ok': True, 'rows': rows}
+        log('  device TF32: ' + ', '.join(f"B{r['batch']} {r['full_ms_per_position']:.2f}"
+                                         for r in rows) + ' ms/pos (full)')
+        set_tf32(False)
     report['ok'] = all(c.get('ok') for name, c in report['checks'].items()
-                       if name != 'deterministic_algorithms')
+                       if name != 'deterministic_algorithms' and not name.endswith('_info'))
     return report
 
 

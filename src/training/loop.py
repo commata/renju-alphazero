@@ -18,6 +18,7 @@ import torch
 
 from model.config import ACTION_INDEX_VERSION, CHECKPOINT_FORMAT_VERSION, ENCODER_VERSION
 from model.evaluator import PolicyValueEvaluator
+from model.precision import set_tf32
 from renju import BLACK, WHITE
 
 from .config import dump_config, self_play_search_config, training_steps
@@ -257,6 +258,8 @@ def run_training(config: dict | None, *, run_dir: str | Path | None = None,
         truncation = None
         state = init_training_state(config)
     config = state.config
+    if str(config['device']).startswith('cuda'):
+        set_tf32(False)  # IEEE float32: CPU-parity results (src/model/precision.py)
     torch.set_num_threads(config['torch_threads'])
     flush_denormal = bool(config.get('flush_denormal', False))
     torch.set_flush_denormal(flush_denormal)

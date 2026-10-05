@@ -65,5 +65,21 @@ class SmokeGateDryRunTest(unittest.TestCase):
         self.assertEqual([r['batch'] for r in checks['batch_benchmark']['rows']['device']], [1, 2])
 
 
+
+@unittest.skipIf(torch is None, 'requires torch')
+class PrecisionTest(unittest.TestCase):
+    def test_tf32_switch(self):
+        from model.precision import set_tf32, tf32_state
+
+        before = tf32_state()
+        try:
+            set_tf32(False)
+            self.assertEqual(tf32_state(), {'matmul': 'ieee', 'conv': 'ieee'})
+            set_tf32(True)
+            self.assertEqual(tf32_state(), {'matmul': 'tf32', 'conv': 'tf32'})
+        finally:
+            set_tf32(before['conv'] == 'tf32')
+
+
 if __name__ == '__main__':
     unittest.main()
