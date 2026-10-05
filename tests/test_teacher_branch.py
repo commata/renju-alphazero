@@ -298,6 +298,15 @@ class RecipeConfigTest(unittest.TestCase):
                          ['self_play.temperature_moves'])
         self.assertEqual(temp4['self_play']['temperature_moves'], 4)
 
+    def test_sims400_arm_differs_from_ada_only_in_simulations(self):
+        from training.config import config_differences, critical_config, load_config
+
+        ada = load_config(ROOT / 'configs' / 'stage8_s2_adaptive.yaml')
+        s400 = load_config(ROOT / 'configs' / 'stage8_ada_sims400.yaml')
+        self.assertEqual(config_differences(critical_config(ada), critical_config(s400)),
+                         ['self_play.simulations'])
+        self.assertEqual(s400['self_play']['simulations'], 400)
+
     def test_lr_arm_differs_from_ada_only_in_learning_rate(self):
         from training.config import config_differences, critical_config, load_config
 

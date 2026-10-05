@@ -1245,3 +1245,78 @@ python scripts/benchmark_self_play.py --checkpoint "$R\anchors\ADA1360.pt" `
 - 2)의 마지막 CPU 400회 실행은 오래 걸릴 수 있다(현재 50회 세대 self-play 약 30 s의 수 배).
 
 **공유해 줄 것:** `runs/gpu/rtx5070_smoke_g0.json`, `runs/gpu/bench_*.json`.
+
+## 20. G1: 착수당 탐색 400회 A/B (GPU lock-step, 2026-10-05)
+
+배경과 사전 판정은 `docs/stage8-plan.md` §12.22에 있다. 대조군은 이미 있는 CTL(50회, 1480 → 1560)이다.
+
+```powershell
+# 창 1 (.venv-cuda): 코드 최신화, GPU 점검 재확인, 처리군 분기와 학습 (재시작도 마지막 블록 그대로)
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cuda\Scripts\Activate.ps1"
+git fetch origin feat/stage8-plan
+git merge --ff-only origin/feat/stage8-plan
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+python scripts/check_stage8_gpu.py --checkpoint "$R\anchors\ADA1360.pt" --device cuda `
+    --output "$R\gpu\rtx5070_smoke_g0b.json"
+if (-not (Test-Path "$R\stage8_s400_c1480")) {
+  python scripts/make_recipe_branch.py --source "$R\stage8_ada_c1120" --generation 1480 `
+      --config configs/stage8_ada_sims400.yaml --dest "$R\stage8_s400_c1480"
+}
+python scripts/run_champion_loop.py --run-dir "$R\stage8_s400_c1480" `
+    --config configs/stage8_ada_sims400.yaml --start 1480 --end 1600 --fixed-anchor --prefix S400 `
+    --champion "ADA1360=$R\anchors\ADA1360.pt" --anchors-dir "$R\anchors" `
+    --gates-dir "$R\gates" --log "$R\stage8_s400_c1480.g1.log" `
+    --device cuda --parallel-games 16
+Write-Host "loop exit $LASTEXITCODE"
+```
+
+- 점검의 마지막 줄이 `GPU smoke gate: PASS`가 아니면 학습을 시작하지 말고 출력을 보낸다.
+- 분기 출력에 `"self_play.simulations": {"from": 50, "to": 400}`가 보여야 한다.
+- 로그의 세대 줄에서 self-play 시간이 약 100~200 s이면 정상이다. `metrics.jsonl`의 `self_play_batching.mean_batch`로 배치를 확인한다.
+
+```powershell
+# 창 2 (.venv-cpu, 창 1과 동시에): 2차 forensic (§18) — 아직 안 돌렸다면
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cpu\Scripts\Activate.ps1"
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$arms = [ordered]@{ "ctl" = "$R\stage8_ada_c1120"; "lr" = "$R\stage8_lr3_c1480" }
+foreach ($k in $arms.Keys) {
+  $ck = "$($arms[$k])\checkpoints\checkpoint_gen1540.pt"
+  python scripts/forensic_short_games.py $arms[$k] --from 1520 --to 1560 --checkpoint $ck `
+      --limit 100 --deep-simulations 400 --check-vct-depth 1 `
+      --output "$R\forensics\c2b_$($k)_vct1.json"
+  python scripts/forensic_short_games.py $arms[$k] --from 1520 --to 1560 --checkpoint $ck `
+      --limit 100 --deep-simulations 400 --fpu-reduction 0 `
+      --output "$R\forensics\c2b_$($k)_fpu0.json"
+}
+Get-ChildItem "$R\forensics\c2b_*.json" | Select-Object Name, Length
+```
+
+```powershell
+# 창 1 루프가 1560을 지난 뒤 (또는 STOP으로 끝난 뒤): 판정
+& "C:\오목 강화학습\renju-alphazero\.venv-cuda\Scripts\Activate.ps1"
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$seeds = @{ 1520 = 9201; 1560 = 9202 }
+foreach ($g in 1520, 1560) {
+  python scripts/run_stage8_head_to_head.py `
+      --checkpoint "CTL$($g)=$R\stage8_ada_c1120\checkpoints\checkpoint_gen$($g).pt" `
+      --checkpoint "S400_$($g)=$R\stage8_s400_c1480\checkpoints\checkpoint_gen$($g).pt" `
+      --pairs 100 --seed $seeds[$g] --output "$R\arm_h2h\s400_gen$($g).json"
+}
+python scripts/compare_recipe_arms.py --control "$R\stage8_ada_c1120" --treatment "$R\stage8_s400_c1480" `
+    --from 1480 --to 1560 --points 1520 1560 --direct "$R\arm_h2h\s400_gen*.json" `
+    --control-prefix CTL --treatment-prefix S400 --output "$R\arm_h2h\s400_verdict.json"
+python scripts/analyze_self_play_health.py "$R\stage8_s400_c1480" --from 1440 --to 1600 --window 40 `
+    --reference-from 1440 --reference-reuse 6.4 --output "$R\health\s400_1440_1600.json"
+python scripts/forensic_short_games.py "$R\stage8_s400_c1480" --from 1520 --to 1560 `
+    --checkpoint "$R\stage8_s400_c1480\checkpoints\checkpoint_gen1540.pt" --limit 100 `
+    --deep-simulations 400 --output "$R\forensics\g1_s400_1520_1560.json"
+```
+
+- 처리군이 1520 전에 STOP으로 멈추면 판정은 하지 않는다. 그 STOP 창의 forensic과 health만 보낸다.
+- forensic은 CPU를 쓰므로 `.venv-cpu`에서 돌려도 된다. 결과는 같다.
+
+**공유해 줄 것:** `runs/gpu/rtx5070_smoke_g0b.json`, `runs/arm_h2h/s400_*.json`, `runs/health/s400_*.json`,
+`runs/forensics/g1_*.json`, `runs/forensics/c2b_*.json`, `runs/gates/stage8_s400_c1480_*.json`,
+`stage8_s400_c1480`의 `metrics.jsonl`·`external_eval/`·`probes/`, `stage8_s400_c1480.g1.log`.

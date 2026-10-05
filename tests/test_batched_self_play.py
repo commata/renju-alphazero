@@ -80,6 +80,33 @@ class BatchedTrainingLoopTest(unittest.TestCase):
                   if line.strip()]
         return records, [e for e in events if e.get('type') == 'generation']
 
+    def test_checkpoint_without_the_key_still_resumes(self):
+        """Checkpoints written before the key existed (every Stage 8 run) must resume."""
+        from training.config import load_config
+        from training.loop import run_training
+        from training.training_checkpoint import (load_checkpoint_payload,
+                                                  load_training_state, save_atomic)
+
+        threads = torch.get_num_threads()
+        config = load_config(ROOT / 'configs' / 'stage6_test.yaml')
+        config['training'].update(generations=1, games_per_generation=2)
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                run = Path(tmp) / 'run'
+                run_training(config, run_dir=run, log=lambda m: None)
+                latest = run / 'checkpoints' / 'latest.pt'
+                payload = load_checkpoint_payload(latest)
+                payload['config'].pop('self_play_parallel_games')
+                save_atomic(latest, payload)
+                old_style = {k: v for k, v in payload['config'].items()}
+                load_training_state(latest, {**old_style, 'device': 'cpu'})
+                resumed = dict(config, self_play_parallel_games=2)
+                resumed['training'] = dict(config['training'], generations=2)
+                state = run_training(resumed, resume=latest, log=lambda m: None)
+                self.assertEqual(state.generation, 2)
+        finally:
+            torch.set_num_threads(threads)
+
     def test_parallel_games_change_nothing_but_the_batching(self):
         threads = torch.get_num_threads()
         try:

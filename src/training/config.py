@@ -156,7 +156,8 @@ def validate_config(config: dict) -> dict:
     if not isinstance(config['device'], str):
         raise ConfigError('device must be a string')
     _int(config['torch_threads'], 'torch_threads')
-    _int(config['self_play_parallel_games'], 'self_play_parallel_games')
+    # Absent from configs and checkpoints written before Stage 8 G0: default 1.
+    _int(config.get('self_play_parallel_games', 1), 'self_play_parallel_games')
     try:
         model_config(config)
     except ValueError as exc:
