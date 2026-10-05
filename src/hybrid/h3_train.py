@@ -246,6 +246,7 @@ class Trainer:
         autocast = (torch.autocast('cuda', dtype=torch.bfloat16) if cfg.amp_bf16 and self.device.type == 'cuda'
                     else torch.autocast('cpu', enabled=False))
         started, seen, loss_sum, loss_n = perf_counter(), 0, 0.0, 0
+        window_started, window_seen = started, 0  # samples/s per log window, not since start (CUDA warm-up)
         while self.step < self.total_steps:
             epoch, offset = divmod(self.step, self.steps_per_epoch)
             index = self._order(epoch)[offset * cfg.batch_size:(offset + 1) * cfg.batch_size]
@@ -264,9 +265,12 @@ class Trainer:
             self.scheduler.step()
             self.step += 1
             seen += index.shape[0]
+            window_seen += index.shape[0]
             loss_sum, loss_n = loss_sum + float(loss.detach()), loss_n + 1
             if self.step % cfg.log_every == 0 or self.step == self.total_steps:
-                rate = seen / (perf_counter() - started)
+                now = perf_counter()
+                rate = window_seen / max(1e-9, now - window_started)
+                window_started, window_seen = now, 0
                 record = {'step': self.step, 'epoch': self.step / self.steps_per_epoch, 'loss': loss_sum / loss_n,
                           'lr': self.scheduler.get_last_lr()[0], 'samples_per_second': rate}
                 with (self.out / 'train.jsonl').open('a', encoding='utf-8') as handle:
