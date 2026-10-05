@@ -1,0 +1,94 @@
+{
+ "format": "h3-gate-v1",
+ "checkpoint": "runs\\h3_policy_64x4\\best.pt",
+ "step": 31030,
+ "value_trained": false,
+ "test": {
+  "states": 125040,
+  "ce": 1.5984303428664546,
+  "top1": 0.5204414587332054,
+  "top3": 0.7638355726167626,
+  "top5": 0.8521593090211133,
+  "diagnostic": {
+   "raw_top1_legal_rate": 0.5621001279590531,
+   "raw_illegal_mass": 0.4490943461446829
+  },
+  "top1_by_ply": {
+   "5-9": 0.5054655107425556,
+   "10-14": 0.5170158151858906,
+   "15-19": 0.5263075313807531,
+   "20-29": 0.5314805914449691,
+   "30-49": 0.5206453524389258,
+   "50-1000": 0.497485555317783
+  },
+  "states_by_ply": {
+   "5-9": 2653,
+   "10-14": 12077,
+   "15-19": 19120,
+   "20-29": 35371,
+   "30-49": 37127,
+   "50-1000": 18692
+  }
+ },
+ "probes": {
+  "file": "tests\\fixtures\\stage7_probes_v1.json",
+  "sha256": "865ead9c3ffa5e407765da9b611b57ef95b9eb7a8834e559182ae0faf0815eae",
+  "summary": {
+   "avoid": {
+    "probes": 18,
+    "avoid_mass": 0.03627081012544093,
+    "avoid_uniform_mass": 0.00751065175842754,
+    "avoid_lift": 4.8292493503965535
+   },
+   "forced_loss": {
+    "probes": 40,
+    "value_mean": 0.7509733803453855,
+    "value_sign_accuracy": 0.075
+   },
+   "immediate_win": {
+    "probes": 40,
+    "top1": 0.95,
+    "top3": 1.0,
+    "correct_mass": 0.902036153525114,
+    "uniform_mass": 0.006278363581388101,
+    "mass_lift": 143.67376814543772,
+    "value_mean": 0.5978000885574147,
+    "value_sign_accuracy": 0.8,
+    "top1_black": 0.9,
+    "top1_white": 1.0
+   },
+   "must_block": {
+    "probes": 40,
+    "top1": 1.0,
+    "top3": 1.0,
+    "correct_mass": 0.9701696380972862,
+    "uniform_mass": 0.006030190185493052,
+    "mass_lift": 160.88541293958565,
+    "top1_black": 1.0,
+    "top1_white": 1.0
+   },
+   "vcf": {
+    "probes": 40,
+    "top1": 0.7,
+    "top3": 0.925,
+    "correct_mass": 0.5505539814010263,
+    "uniform_mass": 0.030540910881957827,
+    "mass_lift": 18.026770174895745,
+    "value_mean": 0.7994067069143057,
+    "value_sign_accuracy": 0.925,
+    "top1_black": 0.7,
+    "top1_white": 0.7
+   }
+  }
+ },
+ "must_block": {
+  "hits": 40,
+  "total": 40,
+  "anchor": {
+   "source": "recorded B400 (stage8-plan.md \u00a712.10)",
+   "must_block_hits": 9
+  },
+  "passed": true,
+  "reference_proof_label_model": 0.72
+ }
+}

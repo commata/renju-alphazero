@@ -1,0 +1,64 @@
+{
+ "stage": "H3",
+ "track": "B",
+ "policy_trained": true,
+ "value_trained": false,
+ "source": "RenjuNet (offline, non-commercial; do not publish online)",
+ "h2_output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+ "cache_sha256": {
+  "train": "b48a8735bc6d1c87d7efaca52e7c8bf2838c3090b7639f5e1db2682a89430277",
+  "val": "96f598810e46e9996317b11e13ff72d1e85a47f46666983cab719eca316bd3e7",
+  "test": "bb2f022b30822202c9a77e42c1d6bf4134aaedb3210847d2615d371d92abc8ae"
+ },
+ "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+ "step": 31030,
+ "config": {
+  "cache_dir": "data/external/renjunet/h3_cache",
+  "out_dir": "runs/h3_policy_64x4",
+  "device": "cuda",
+  "torch_threads": 4,
+  "seed": 20261003,
+  "channels": 64,
+  "blocks": 4,
+  "batch_size": 1024,
+  "epochs": 10,
+  "max_steps": 0,
+  "learning_rate": 0.002,
+  "weight_decay": 0.0001,
+  "warmup_steps": 1000,
+  "min_lr_ratio": 0.02,
+  "augment_d4": true,
+  "amp_bf16": false,
+  "eval_every": 3000,
+  "eval_max_states": 0,
+  "checkpoint_every": 1000,
+  "log_every": 100
+ },
+ "val": {
+  "states": 127316,
+  "ce": 1.5916649842000845,
+  "top1": 0.5241132300732037,
+  "top3": 0.762732099657545,
+  "top5": 0.8521631216814854,
+  "diagnostic": {
+   "raw_top1_legal_rate": 0.553504665556568,
+   "raw_illegal_mass": 0.45545746715403873
+  },
+  "top1_by_ply": {
+   "5-9": 0.47913769123783034,
+   "10-14": 0.5211739373155754,
+   "15-19": 0.5336681839585622,
+   "20-29": 0.5317754345967513,
+   "30-49": 0.5271481843907857,
+   "50-1000": 0.5039975863629507
+  },
+  "states_by_ply": {
+   "5-9": 2876,
+   "10-14": 12539,
+   "15-19": 19113,
+   "20-29": 35090,
+   "30-49": 37811,
+   "50-1000": 19887
+  }
+ }
+}

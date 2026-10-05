@@ -1519,3 +1519,88 @@ H2는 모델 학습을 하지 않는다. RenjuNet RIF를 우리 규칙 엔진 �
 - 예상 본 학습 시간: 1 epoch 약 4분(318만 / 13,300), 10 epoch 약 40분에 평가 시간이 더해진다.
 - bf16은 쓰지 않는다. fp32로 충분히 빠르고 비교 기준이 단순하다.
 - 64×4 모델에서는 CPU 쪽 입력 준비가 step 시간의 10% 남짓을 차지한다(batch 1,024 기준 약 10 ms / 77 ms). 지금은 최적화할 필요가 없다.
+
+### 12.12 H3 결과(RTX 5070 본 학습)와 H4 설계 (2026-10-05)
+
+결과 파일: `docs/mcts-v8-results/h3_best.json`, `h3_gate.json`, `h3_metrics.jsonl`, `h3_train.jsonl`(지표만, 착수 없음).
+10 epoch, 31,030 step. 실제 학습 시간은 약 48분이다.
+- 100 step 구간 속도의 중앙값은 13,034 samples/s다.
+- step 3,700~16,700 사이에 9,500 안팎으로 느린 구간이 길게 있었다. 학습 설정과 무관하고, 같은 PC의 다른 부하로 보인다(원인 미확인).
+
+#### 결과와 사실 확인
+
+| 지표 | val(127,316) | test(125,040) |
+|---|---:|---:|
+| top-1 | 52.41% | 52.04%(65,076개) |
+| top-3 | 76.27% | 76.38%(95,510개) |
+| top-5 | 85.22% | 85.22%(106,554개) |
+| CE | 1.592 | 1.598 |
+
+- val top-1은 46.60%(step 3,000)에서 52.41%로 올랐고, 마지막 4,000 step의 증가는 0.06%p다. **수렴했다.**
+- 마지막 train loss(D4 증강 포함)는 약 1.48로 val CE 1.59보다 0.11 낮다. 과적합 신호는 작다.
+  평탄해진 원인은 데이터 과적합보다 64×4 용량일 가능성이 있지만, 아직 검증하지 않은 가설이다.
+- val과 test의 차이는 0.37%p다. 대회 단위 분할과 D4 마스킹을 한 held-out이므로 **일반화가 확인됐다.**
+- ply 구간별 test top-1은 49.7~53.1%로 고르다. 단, 5~9 구간은 2,653개뿐이다(초반 국면은 대부분 train과 겹쳐 가려졌다, §12.10).
+- `best.pt`는 step 31,030이다. step 30,000(52.397%)과 사실상 같다.
+
+**전술 probe(raw policy, mask 적용, 탐색 없음)**
+
+| 종류 | top-1 | top-3 | 정답 확률 질량 |
+|---|---:|---:|---:|
+| must_block | **40/40** | 40/40 | 0.970 |
+| immediate_win | 38/40(흑 0.90, 백 1.00) | 40/40 | 0.902 |
+| vcf | 28/40 | 37/40 | 0.551 |
+| avoid(낮을수록 좋음) | — | — | 0.036(균등 분포 0.0075의 4.8배) |
+
+**H3 게이트: PASS**(must_block 40 ≥ B400 9).
+
+해석에서 바로잡을 점:
+
+1. **B400의 9/40과 직접 비교해 "전술이 4배 강하다"고 읽으면 안 된다.**
+   Track A는 PUCT v2 즉승·즉방 필터(`tactical_rules: true`)가 막기를 대신한다. 그래서 raw policy가 막기를 배울 필요가 적었다.
+   H3는 사람 기보에서 "막는 수"를 직접 모방했다. 게이트는 "H3 policy가 Track A 기준선 아래로 떨어지지 않았다"는 확인이다.
+   증명 라벨 모델의 0.72는 다른 held-out 집합에서 잰 값이라 참고값일 뿐이다.
+2. **VCF는 V8에서 solver가 맡는다**(V7 M1 own VCF, V8-B). policy의 VCF top-1 70%가 V8의 VCF 실력을 정하지 않는다.
+   policy의 쓰임은 solver가 끝내지 못하는 국면의 후보 순서다. "MCTS와 결합하면 VCF가 좋아진다"는 아직 측정하지 않았다.
+3. **value 관련 숫자는 해석하지 않는다**(`value_trained: false`). 학습하지 않은 head의 출력이다.
+4. **raw 비합법 질량 45%는 학습 방식상 정상이다.** masked CE는 비합법 칸(이미 돌이 있는 칸, 흑 금수)의 logit에 학습 신호를 주지 않는다.
+   이 policy는 어디서든 `masked_softmax`(합법수 mask)를 거쳐야 한다. 기존 Track A 평가기와 PUCT도 같은 규칙이다.
+5. avoid 4.8배는 게이트가 아니고 관찰 지표다. H4에서 policy가 지는 수를 위로 올리지 않는지는 V8-A/C의 PROVEN_LOSS veto가 막는다.
+
+#### H4: V8 후보 순서에 H3 policy를 쓴다
+
+목표: policy가 V8의 탐색 대상을 바꿀 때 기력이 오르는지 확인한다. **solver의 판정(WIN / PROVEN_LOSS veto)은 policy가 절대 뒤집지 않는다.**
+
+V8에서 순서가 결과를 바꾸는 곳(코드 기준):
+
+| 위치 | 현재 순서 | policy 적용 |
+|---|---|---|
+| tree root 후보 `root_moves` | V6 root 후보 20개 → V7 VCF 안전 tier → tier 안 흑 자기 금수점 감점 | **H4-a:** tier 구조는 그대로 두고 tier 안에서 policy 확률 순으로 정렬. 순서가 progressive widening(top-k 순위 가중)으로 열리는 자식을 정한다(50 sims에 최대 15개) |
+| root 후보 집합 | V6 root 후보 20개 | **H4-b:** policy top-k(예: 8) 중 V6 후보 밖의 수를 추가한다(recall). 추가 수도 V7 VCF 안전 tier 검사를 똑같이 거친다 |
+| V8-B 공격 후보 | V3.2.1 priority 순 | H4-c(후순위): policy 순. WIN 증명은 그대로라 결과보다 속도에 영향 |
+| V8-A 넓히기, V8-C 자식 순서 | V6 root 순, 방문 수 순 | 바꾸지 않는다(veto 경로는 그대로) |
+| 트리 안쪽 노드, rollout | V3.2.1 휴리스틱 | 바꾸지 않는다(노드마다 NN을 부르면 비용이 커진다. H5에서 PUCT로 다룬다) |
+
+설계 원칙:
+
+- **root에서만 NN을 1번 부른다.** CPU 64×4는 국면당 수 ms 수준이다(Stage 4 측정 B1 추론 6.2 ms). V8 착수 시간(중앙값 1초대)에 비하면 작다.
+  그래서 "같은 wall-clock 비교"는 같은 시뮬레이션 수로 비교하고, 착수 시간을 함께 기록하는 것으로 충분하다. 시간 차이가 크게 나면 그때 시간 예산 모드를 넣는다.
+- V8은 frozen V5/V6/V7 파일을 고치지 않는다. 기존처럼 V8 쪽 복사본(`_search_tree_v8`)과 root 준비 단계에서만 바꾼다.
+  policy를 켜면 tree 결과가 V7과 같아야 한다는 성질이 깨진다. 진단의 `v8_v7_move`는 "policy 정렬 후 tree가 고른 수"로 이름을 분명히 한다.
+- **격리 규칙 변경이 필요하다.** 지금은 `analysis` 밖의 어떤 코드도 `analysis`를 import할 수 없다(`test_no_source_outside_analysis_imports_it`).
+  둘 다 Track B이므로 규칙을 **"Track A(`search`, `training`, `model`, `agents`)는 `analysis`·`hybrid`를 import하지 않는다. `hybrid → analysis`는 허용"**으로 바꾼다.
+  policy 로딩(torch)은 `hybrid` 쪽에 두고, V8에는 "후보 → 점수" 함수만 넘긴다. torch가 없어도 V8은 지금처럼 돈다.
+- H3 체크포인트는 `best.json`의 `value_trained: false`를 확인하고 policy 출력만 쓴다.
+
+측정 순서:
+
+1. **오프라인 recall(학습·대국 없음, 몇 분):** RenjuNet test 국면에서 사람 착수가 (i) V6 root 후보 20개 안, (ii) policy top-8/20 안, (iii) 둘의 합집합 안에 드는 비율.
+   V8 자기 대국 국면에서는 V8이 실제로 둔 수에 대해 같은 비율을 본다. (ii)·(iii)이 (i)보다 크게 높아야 H4-b의 의미가 있다.
+2. **짝 비교 벤치마크**(`run_mcts_v8_benchmark.py`, seed 8401, 5쌍부터):
+   - 기준선: `full`(H1 확정 설정).
+   - 비교 arm: `full_policy`(H4-a), `full_policy_recall`(H4-a + H4-b).
+   - 상대: `v7`과 `v8:b_only` 둘 다.
+   - 판 결과와 함께 `compare_v8_divergence.py`로 갈림 국면을 오프라인 판정한다. policy 때문에 PROVEN_LOSS 수를 둔 일이 0인지가 안전 확인이다.
+3. 1~2에서 이득이 보이면 20~25쌍으로 늘린다. 이득이 없으면 V5 rollout 트리 안에서는 policy의 쓸모가 작다는 결론으로 H5(PUCT + policy + V8 모듈)로 간다.
+
+H3 개선(더 큰 모델, 더 긴 학습)은 H4 결과를 본 뒤 정한다. policy 품질이 아니라 쓰는 방식이 병목일 수 있기 때문이다.
