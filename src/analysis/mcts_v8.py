@@ -102,6 +102,10 @@ V8_DEFAULTS = {
     # "aggressive": switch unless V7's move is proven SAFE (V8-C as measured in §11.14);
     # "veto": switch only when V7's move is a proven loss (§12.3).
     "root_vct_mode": "aggressive",
+    # H4 (§12.13): order the tree's root candidates by a policy (``root_policy`` callable,
+    # supplied by the caller, e.g. hybrid.h4_policy). Off by default: V8 needs no torch.
+    "root_policy_order": False,
+    "root_policy_extra": 0,  # add up to N policy top moves missing from the V6 root candidates
 }
 _V8_KEYS = tuple(key for key in V8_DEFAULTS if key not in V7_FINAL)
 
@@ -136,6 +140,15 @@ class SearchDiagnostics(V7Diagnostics):
     # Why V8-C changed V7's move: "proven_loss" (V7's move UNSAFE) or "unknown"
     # (aggressive mode only: V7's move unresolved, a lower child proven SAFE).
     v8_root_switch: str = ""
+    # H4 policy at the tree root (empty when no policy is used).
+    v8_policy_seconds: float = 0.0
+    v8_policy_added: tuple[Move, ...] = ()       # policy moves added to the V6 candidates (before tiers)
+    v8_policy_added_kept: tuple[Move, ...] = ()  # ... that survived the VCF safety tiers
+    v8_policy_added_opened: int = 0              # ... that the tree opened as root children
+    v8_policy_displaced: int = 0                 # V6 moves pushed from the first-N opening ranks
+    v8_policy_rank: int = 0                      # policy rank of the tree's move among legal moves (1 = top)
+    v8_policy_prob: float = 0.0
+    v8_root_order_rank: int = 0                  # rank of the tree's move in the root order (1 = first)
 
 
 class _BudgetExhausted(Exception):
@@ -241,7 +254,7 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
                         own_vct_attack, attack_vcf_node_limit, attack_call_limit,
                         attack_node_budget, root_vct_safety, root_vcf_node_limit,
                         root_call_limit, root_node_budget, root_max_children=0,
-                        root_vct_mode="aggressive"):
+                        root_vct_mode="aggressive", root_policy_order=False, root_policy_extra=0):
     for name, value in (("stage_vct_safety", stage_vct_safety), ("own_vct_attack", own_vct_attack),
                         ("root_vct_safety", root_vct_safety)):
         if not isinstance(value, bool):
@@ -261,6 +274,10 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
         raise ValueError("root_max_children must be a non-negative integer")
     if root_vct_mode not in ROOT_VCT_MODES:
         raise ValueError(f"root_vct_mode must be one of {ROOT_VCT_MODES}")
+    if not isinstance(root_policy_order, bool):
+        raise ValueError("root_policy_order must be a bool")
+    if isinstance(root_policy_extra, bool) or not isinstance(root_policy_extra, int) or root_policy_extra < 0:
+        raise ValueError("root_policy_extra must be a non-negative integer")
 
 
 def _stage4_order(game: Game, context: _RootContext, v7_move: Move) -> list[Move]:
@@ -503,6 +520,50 @@ def _record_root(diag, solver, statuses, order, chosen, final, started) -> Move:
     return final
 
 
+def root_opening_count(simulations: int, initial_width: int, total: int) -> int:
+    """Root children the V5 tree opens in ``simulations`` (root expansion has priority)."""
+    opened = 0
+    for visits in range(simulations):
+        if opened < min(total, initial_width + int(sqrt(visits))):
+            opened += 1
+    return opened
+
+
+def prepare_root_moves(game, context, diag, *, candidate_limit, neighborhood_radius,
+                       safety_vcf_max_fours, safety_vcf_node_limit, safety_precheck_node_limit,
+                       safety_total_node_limit, self_forbidden_min_white,
+                       policy_scores: dict | None = None, order_by_policy=False, extra=0):
+    """The tree's root move list: V6 candidates -> V7 VCF safety tiers -> M3 penalty.
+
+    H4 (§12.13), only when ``policy_scores`` is given:
+    - ``extra``: up to ``extra`` of the policy's top legal moves that are not V6 candidates
+      are appended BEFORE the safety tiers, so they get exactly the same VCF check
+      (a move the opponent's VCF refutes is dropped like any other);
+    - ``order_by_policy``: inside each safety tier, moves are sorted by policy probability,
+      ties by the V7 order. Tiers are never mixed: the policy cannot lift an unverified move
+      above a verified one.
+    Returns (moves, score, reasons, added) with ``added`` = policy-added moves.
+    """
+    moves, score, reasons = _root_candidates_v6(game, context, candidate_limit, neighborhood_radius)
+    added: list[Move] = []
+    if policy_scores is not None and extra:
+        present, legal = set(moves), set(context.legal)
+        ranked = sorted((m for m in policy_scores if m in legal), key=lambda m: (-policy_scores[m], m))
+        added = [m for m in ranked[:extra] if m not in present]
+        moves = list(moves) + added
+    tiers = _vcf_safety_tiers(
+        game, context, moves, diag,
+        max_fours=safety_vcf_max_fours, node_limit=safety_vcf_node_limit,
+        precheck_node_limit=safety_precheck_node_limit, total_node_limit=safety_total_node_limit,
+    )
+    ordered = _penalize_within_tiers(game, tiers, diag, minimum_white=self_forbidden_min_white)
+    if policy_scores is not None and order_by_policy:
+        tier_of = {m: i for i, tier in enumerate(tiers) for m in tier}
+        position = {m: i for i, m in enumerate(ordered)}
+        ordered = sorted(ordered, key=lambda m: (tier_of[m], -policy_scores.get(m, 0.0), position[m]))
+    return ordered, score, reasons, added
+
+
 def _search_tree_v8(game, root_moves, simulations, exploration, candidate_limit,
                     initial_width, neighborhood_radius, priority_top_k, random):
     """``search.mcts_v5._search_v5_tree`` with the root children returned.
@@ -557,6 +618,7 @@ def mcts_search_v8(
     attack_node_budget=200_000,
     root_vct_safety=True, root_vcf_node_limit=20_000, root_call_limit=10_000,
     root_node_budget=400_000, root_max_children=4, root_vct_mode="aggressive",
+    root_policy_order=False, root_policy_extra=0, root_policy=None,
     random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
 ) -> Move:
     """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules."""
@@ -579,7 +641,12 @@ def mcts_search_v8(
                         attack_call_limit=attack_call_limit, attack_node_budget=attack_node_budget,
                         root_vct_safety=root_vct_safety, root_vcf_node_limit=root_vcf_node_limit,
                         root_call_limit=root_call_limit, root_node_budget=root_node_budget,
-                        root_max_children=root_max_children, root_vct_mode=root_vct_mode)
+                        root_max_children=root_max_children, root_vct_mode=root_vct_mode,
+                        root_policy_order=root_policy_order, root_policy_extra=root_policy_extra)
+    uses_policy = root_policy_order or root_policy_extra > 0
+    if uses_policy and root_policy is None:
+        # Fail fast: a policy arm must never silently run as the baseline.
+        raise ValueError("root_policy_order / root_policy_extra need a root_policy callable")
     diag = diagnostics if diagnostics is not None else SearchDiagnostics()
     diag.__dict__.update(vars(SearchDiagnostics()))
     context = _RootContext(game.legal_moves(), diag)
@@ -643,14 +710,25 @@ def mcts_search_v8(
         diag.v8_changed = chosen != forced
         return chosen
 
-    moves, score, reasons = _root_candidates_v6(game, context, candidate_limit, neighborhood_radius)
-    tiers = _vcf_safety_tiers(
-        game, context, moves, diag,
-        max_fours=safety_vcf_max_fours, node_limit=safety_vcf_node_limit,
-        precheck_node_limit=safety_precheck_node_limit,
-        total_node_limit=safety_total_node_limit,
-    )
-    moves = _penalize_within_tiers(game, tiers, diag, minimum_white=self_forbidden_min_white)
+    policy_scores = None
+    if uses_policy:
+        policy_started = perf_counter()
+        policy_scores = dict(root_policy(game))
+        diag.v8_policy_seconds = perf_counter() - policy_started
+    safety = dict(candidate_limit=candidate_limit, neighborhood_radius=neighborhood_radius,
+                  safety_vcf_max_fours=safety_vcf_max_fours, safety_vcf_node_limit=safety_vcf_node_limit,
+                  safety_precheck_node_limit=safety_precheck_node_limit,
+                  safety_total_node_limit=safety_total_node_limit,
+                  self_forbidden_min_white=self_forbidden_min_white)
+    moves, score, reasons, added = prepare_root_moves(
+        game, context, diag, **safety, policy_scores=policy_scores,
+        order_by_policy=root_policy_order, extra=root_policy_extra)
+    if uses_policy:
+        baseline, _, _, _ = prepare_root_moves(game, context, SearchDiagnostics(), **safety)
+        n_open = root_opening_count(simulations, initial_width, len(baseline))
+        diag.v8_policy_added = tuple(added)
+        diag.v8_policy_added_kept = tuple(m for m in added if m in moves)
+        diag.v8_policy_displaced = len(set(baseline[:n_open]) - set(moves[:n_open]))
     diag.v7_module_seconds = perf_counter() - module_started
 
     tactical = tactical_score_threshold is not None and score >= tactical_score_threshold
@@ -664,6 +742,13 @@ def mcts_search_v8(
         initial_width, neighborhood_radius, priority_top_k, random,
     )
     v7_move = chosen
+    if uses_policy:
+        opened = {c.move for c in children}
+        diag.v8_policy_added_opened = sum(m in opened for m in diag.v8_policy_added_kept)
+        ranked = sorted(policy_scores, key=lambda m: (-policy_scores[m], m))
+        diag.v8_policy_rank = ranked.index(chosen) + 1 if chosen in policy_scores else 0
+        diag.v8_policy_prob = float(policy_scores.get(chosen, 0.0))
+        diag.v8_root_order_rank = moves.index(chosen) + 1
     if root_vct_safety:
         chosen = _verify_root_choice(game, chosen, children, diag, node_limit=root_vcf_node_limit,
                                      call_limit=root_call_limit, node_budget=root_node_budget,
@@ -672,7 +757,9 @@ def mcts_search_v8(
     diag.v6_selected_reasons = tuple(selected)
     diag.v6_selected_threat_type = selected[0] if selected else None
     diag.v8_route = "tree"
-    diag.v8_v7_move = v7_move  # same root and random stream as V7, so this is V7's move
+    # Without a policy: same root and random stream as V7, so this is V7's move.
+    # With a policy (H4): the tree's move on the policy-ordered root (before V8-C).
+    diag.v8_v7_move = v7_move
     diag.v8_changed = chosen != v7_move
     diag.v8_root_visits = tuple((c.move, c.visits, c.mean_value) for c in children)
     return chosen

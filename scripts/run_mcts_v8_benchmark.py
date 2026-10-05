@@ -9,6 +9,11 @@ Arms (V8 configuration):
     full       V8-A + V8-B + V8-C, V8-C aggressive (V8_DEFAULTS)
     full_veto  V8-A + V8-B + V8-C, V8-C veto (switch only on a proven loss, §12.3, §12.8)
     full_r250  full with root_node_budget 250,000 instead of 400,000 (§12.8)
+    full_policy         full + H3 policy order inside the root safety tiers (H4-a, §12.13)
+    full_policy_recall  full_policy + up to 8 policy moves added to the root candidates (H4-a+b)
+
+Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
+fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
     ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
     a_only  V8-A only          (the pilot's "a_only")
     b_only  V8-B only
@@ -62,6 +67,8 @@ ARMS = {
     'full': {},
     'full_veto': {'root_vct_mode': 'veto'},
     'full_r250': {'root_node_budget': 250_000},
+    'full_policy': {'root_policy_order': True},
+    'full_policy_recall': {'root_policy_order': True, 'root_policy_extra': 8},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -104,12 +111,25 @@ def parse_opponent(value: str) -> str:
     return value
 
 
-def make_opponent(opponent: str, seed: int, overrides: dict):
+def needs_policy(config: dict) -> bool:
+    return bool(config.get('root_policy_order') or config.get('root_policy_extra'))
+
+
+def load_policy(checkpoint):
+    """H3 root policy (torch); raises if unavailable, so a policy arm never runs as the baseline."""
+    if not checkpoint:
+        raise ValueError('this arm needs --policy-checkpoint')
+    from hybrid.h4_policy import RootPolicy  # Track B adapter: torch is imported only here
+    return RootPolicy(checkpoint)
+
+
+def make_opponent(opponent: str, seed: int, overrides: dict, policy_checkpoint=None):
     """Opponent agent; V8 opponents use the same seed stream V7 would."""
     if opponent == 'v7':
         return MCTSV7Agent(seed=seed, **overrides)
     config = v8_config(opponent.partition(':')[2], overrides)
-    return MCTSV8Agent(seed=seed, **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    policy = load_policy(policy_checkpoint) if needs_policy(config) else None
+    return MCTSV8Agent(seed=seed, root_policy=policy, **{k: v for k, v in config.items() if k in V8_DEFAULTS})
 
 
 def _move_record(ply, seconds, diag) -> dict:
@@ -135,6 +155,13 @@ def _move_record(ply, seconds, diag) -> dict:
             'exhausted': diag.v8_root_budget_exhausted, 'seconds': round(diag.v8_root_seconds, 4),
             'switch': diag.v8_root_switch,
         },
+        'policy': {
+            'seconds': round(diag.v8_policy_seconds, 4), 'added': [list(m) for m in diag.v8_policy_added],
+            'added_kept': [list(m) for m in diag.v8_policy_added_kept],
+            'added_opened': diag.v8_policy_added_opened, 'displaced': diag.v8_policy_displaced,
+            'rank': diag.v8_policy_rank, 'prob': round(diag.v8_policy_prob, 5),
+            'root_order_rank': diag.v8_root_order_rank,
+        },
     }
 
 
@@ -156,9 +183,12 @@ def play_one(task: dict) -> dict:
     config = v8_config(task['arm'], task.get('v8_overrides'))
     search = {k: config[k] for k in SEARCH_KEYS}
     seed, v8_color = task['seed'], task['v8_color']
-    v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
+    v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy,
+                     **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     opponent = task.get('opponent', 'v7')
-    opp = make_opponent(opponent, derive_seed(seed, 'v7'), task.get('v7_overrides', {}))
+    opp = make_opponent(opponent, derive_seed(seed, 'v7'), task.get('v7_overrides', {}),
+                        task.get('policy_checkpoint'))
     game = Game()
     for move in task['opening']:
         game.play(*move)
@@ -209,6 +239,7 @@ def build_tasks(args) -> tuple[list[dict], list[dict]]:
                 'arm': args.arm, 'opponent': args.opponent, 'pair': pair, 'seed': game_seed, 'v8_color': color,
                 'opening': [list(m) for m in opening], 'counterfactual': args.counterfactual,
                 'v8_overrides': args.search_overrides, 'v7_overrides': args.search_overrides,
+                'policy_checkpoint': args.policy_checkpoint,
             })
     return tasks, openings
 
@@ -238,6 +269,7 @@ def summarize(games: list[dict]) -> dict:
     ran_vct = [m for m in moves if m['route'] in ('stage4', 'stage5') and m['vct']['checked']]
     counterfactual = [m['counterfactual'] for m in moves if 'counterfactual' in m]
     ran_root = [m for m in moves if m.get('root', {}).get('checked')]
+    with_policy = [m for m in moves if m.get('policy', {}).get('root_order_rank')]
     root_first = [m['root']['checked'][0][1] for m in ran_root]  # V7's move is always checked first
     opp_routes = {}
     for g in games:
@@ -280,6 +312,18 @@ def summarize(games: list[dict]) -> dict:
             'children_checked': _dist([len(m['root']['checked']) for m in ran_root]),
             'budget_exhausted': sum(m['root']['exhausted'] for m in ran_root),
             'seconds': _dist([m['root']['seconds'] for m in ran_root]),
+        },
+        'policy': {
+            'tree_moves': len(with_policy),
+            'seconds': _dist([m['policy']['seconds'] for m in with_policy]),
+            'added_kept': sum(len(m['policy']['added_kept']) for m in with_policy),
+            'added_opened': sum(m['policy']['added_opened'] for m in with_policy),
+            'moves_with_added_opened': sum(m['policy']['added_opened'] > 0 for m in with_policy),
+            'tree_chose_added': sum(m['policy']['added_kept'] and m['v7_move'] in m['policy']['added_kept']
+                                    for m in with_policy),
+            'displaced': _dist([m['policy']['displaced'] for m in with_policy]),
+            'policy_rank': _dist([m['policy']['rank'] for m in with_policy]),
+            'root_order_rank': _dist([m['policy']['root_order_rank'] for m in with_policy]),
         },
         'counterfactual': {
             'recorded': len(counterfactual),
@@ -328,6 +372,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--arm', choices=tuple(ARMS), default='full')
     parser.add_argument('--opponent', default='v7', help="'v7' (default) or 'v8:<arm>', e.g. v8:b_only")
+    parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'),
+                        help='H3 best.pt for the policy arms (best.json next to it)')
     parser.add_argument('--pairs', type=int, default=10, help='opening pairs; 10 means 20 games')
     parser.add_argument('--seed', type=int, default=8401)
     parser.add_argument('--opening-random-plies', type=int, default=2)
@@ -346,6 +392,12 @@ def main(argv=None) -> int:
         parse_opponent(args.opponent)
     except ValueError as exc:
         parser.error(str(exc))
+    for name in (args.arm, args.opponent.partition(':')[2]):
+        if name and needs_policy(v8_config(name)):
+            try:
+                load_policy(args.policy_checkpoint)  # fail before any game starts
+            except (OSError, ValueError, ImportError) as exc:
+                parser.error(f'policy arm {name}: {exc}')
     args.search_overrides = {k: v for k, v in (('simulations', args.simulations),
                                                ('tactical_simulations', args.tactical_simulations))
                              if v is not None}
@@ -383,6 +435,8 @@ def main(argv=None) -> int:
         'opening_random_plies': args.opening_random_plies, 'opening_radius': args.opening_radius,
         'counterfactual': args.counterfactual, 'search_overrides': args.search_overrides,
         'git_commit': _git_commit(), 'v8_config': v8_config(args.arm, args.search_overrides),
+        'policy_checkpoint': (args.policy_checkpoint if needs_policy(v8_config(args.arm)) or (
+            args.opponent != 'v7' and needs_policy(v8_config(args.opponent.partition(':')[2]))) else None),
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': (None if args.opponent == 'v7' else
                             v8_config(args.opponent.partition(':')[2], args.search_overrides)),

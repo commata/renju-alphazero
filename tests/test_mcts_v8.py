@@ -596,3 +596,121 @@ class AgentTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class _FakePolicy:
+    """Root policy stub: fixed scores (uniform tiny mass elsewhere), counts calls."""
+
+    def __init__(self, scores=None):
+        self.scores, self.calls = dict(scores or {}), 0
+
+    def __call__(self, game):
+        self.calls += 1
+        legal = game.legal_moves()
+        rest = 1e-6
+        return {m: self.scores.get(m, rest) for m in legal}
+
+
+class RootPolicyTest(unittest.TestCase):
+    """H4 (§12.13): the policy only orders / adds tree root candidates; solver verdicts win."""
+
+    SAFETY = dict(candidate_limit=20, neighborhood_radius=2, safety_vcf_max_fours=10,
+                  safety_vcf_node_limit=4000, safety_precheck_node_limit=8000,
+                  safety_total_node_limit=8000, self_forbidden_min_white=3)
+
+    def test_policy_options_fail_fast_without_a_policy(self):
+        with self.assertRaises(ValueError):
+            MCTSV8Agent(root_policy_order=True)
+        with self.assertRaises(ValueError):
+            MCTSV8Agent(root_policy_extra=8)
+        game = _game(GAMES[1]['moves'][:4])
+        with self.assertRaises(ValueError):
+            mcts_search_v8(game, **{**OFF, 'root_policy_order': True}, random=Random(1))
+
+    def test_analysis_stays_torch_free(self):
+        import subprocess, sys
+        code = ('import analysis.mcts_v8, analysis.mcts_v8_agent, sys\n'
+                'print(any(m == n or m.startswith(n + ".") for m in sys.modules for n in ("torch", "hybrid")))')
+        out = subprocess.run([sys.executable, '-c', code], capture_output=True, text=True, check=True,
+                             cwd=ROOT, env={'PYTHONPATH': str(ROOT / 'src')}).stdout.strip()
+        self.assertEqual(out, 'False')
+
+    def test_order_stays_inside_safety_tiers(self):
+        from analysis.mcts_v8 import prepare_root_moves
+        from search.mcts_v7 import _vcf_safety_tiers
+        game = _game(GAMES[2]['moves'][:17])  # tactical tree position
+        base, _, _, _ = prepare_root_moves(game, _RootContext(game.legal_moves(), SearchDiagnostics()),
+                                           SearchDiagnostics(), **self.SAFETY)
+        # Reverse the baseline preference: the policy loves the baseline's last move most.
+        scores = {m: float(i + 1) for i, m in enumerate(base)}
+        ordered, _, _, added = prepare_root_moves(
+            game, _RootContext(game.legal_moves(), SearchDiagnostics()), SearchDiagnostics(), **self.SAFETY,
+            policy_scores=scores, order_by_policy=True)
+        self.assertEqual((set(ordered), added), (set(base), []))
+        candidates, _, _ = _root_candidates_v6(game, _RootContext(game.legal_moves(), SearchDiagnostics()), 20, 2)
+        tiers = _vcf_safety_tiers(game, _RootContext(game.legal_moves(), SearchDiagnostics()), candidates,
+                                  SearchDiagnostics(), max_fours=10, node_limit=4000, precheck_node_limit=8000,
+                                  total_node_limit=8000)
+        tier_of = {m: i for i, t in enumerate(tiers) for m in t}
+        self.assertEqual([tier_of[m] for m in ordered], sorted(tier_of[m] for m in ordered))
+        for tier in range(len(tiers)):
+            inside = [m for m in ordered if tier_of[m] == tier]
+            self.assertEqual(inside, sorted(inside, key=lambda m: -scores[m]))
+
+    def test_extra_moves_join_and_are_recorded(self):
+        game = _game(GAMES[1]['moves'][:4])
+        far = (0, 0)  # never a V6 candidate in an opening position
+        policy = _FakePolicy({far: 1.0})
+        diag = SearchDiagnostics()
+        mcts_search_v8(game, **{**OFF, 'root_policy_extra': 4}, root_policy=policy, random=Random(3),
+                       diagnostics=diag)
+        self.assertEqual(policy.calls, 1)
+        self.assertIn(far, diag.v8_policy_added)
+        self.assertIn(far, diag.root_candidates)
+        self.assertGreater(diag.v8_policy_seconds, 0)
+
+    def test_forced_wins_ignore_the_policy(self):
+        # Stage 1 (five) and own VCF are decided before the tree: the policy is not even called.
+        for (index, ply), route in (((0, 19), 'stage1'), ((1, 15), 'own_vcf')):
+            game = _game(GAMES[index]['moves'][:ply])
+            expected = mcts_search_v8(game, **OFF, random=Random(ply))
+            decoy = next(m for m in game.legal_moves() if m != expected)
+            policy = _FakePolicy({decoy: 1.0})
+            diag = SearchDiagnostics()
+            config = {**OFF, 'root_policy_order': True, 'root_policy_extra': 8}
+            with self.subTest(route=route):
+                self.assertEqual(mcts_search_v8(game, **config, root_policy=policy, random=Random(ply),
+                                                diagnostics=diag), expected)
+                self.assertEqual((diag.v8_route, policy.calls), (route, 0))
+
+    def test_policy_cannot_force_a_proven_loss(self):
+        # pilot-6-black-ply56: (10, 7) is VCT1-UNSAFE (v8c_root_probes_v1). The policy puts all its
+        # mass on it. Whatever the tree then picks, V8 must not play a move V8-C proved UNSAFE.
+        probe = json.loads((ROOT / 'tests/fixtures/v8c_root_probes_v1.json').read_text(encoding='utf-8'))['probes'][0]
+        game = _game(probe['moves'])
+        losing = tuple(probe['avoid_moves'][0])
+        config = {**V8_DEFAULTS, 'own_vct_attack': False, 'root_policy_order': True, 'root_policy_extra': 8}
+        diag = SearchDiagnostics()
+        move = mcts_search_v8(game, **config, root_policy=_FakePolicy({losing: 1.0}), random=Random(1),
+                              diagnostics=diag)
+        self.assertEqual(diag.v8_route, 'tree')
+        self.assertEqual(diag.root_candidates[0], losing)  # the policy did push it to the front
+        self.assertNotEqual(move, losing)
+        self.assertNotEqual(dict(diag.v8_root_checked).get(move), UNSAFE)
+
+        # Force the worst case: the tree itself returns the losing move. V8-C must veto it.
+        from unittest import mock
+        import analysis.mcts_v8 as v8
+        real_tree = v8._search_tree_v8
+
+        def tree_picks_losing(*args, **kwargs):
+            _, children = real_tree(*args, **kwargs)
+            return losing, children
+        diag = SearchDiagnostics()
+        with mock.patch.object(v8, '_search_tree_v8', tree_picks_losing):
+            move = mcts_search_v8(game, **config, root_policy=_FakePolicy({losing: 1.0}), random=Random(1),
+                                  diagnostics=diag)
+        self.assertEqual(diag.v8_v7_move, losing)
+        self.assertEqual(dict(diag.v8_root_checked)[losing], UNSAFE)
+        self.assertEqual(diag.v8_root_switch, 'proven_loss')
+        self.assertNotEqual(move, losing)

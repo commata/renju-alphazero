@@ -1604,3 +1604,56 @@ V8에서 순서가 결과를 바꾸는 곳(코드 기준):
 3. 1~2에서 이득이 보이면 20~25쌍으로 늘린다. 이득이 없으면 V5 rollout 트리 안에서는 policy의 쓸모가 작다는 결론으로 H5(PUCT + policy + V8 모듈)로 간다.
 
 H3 개선(더 큰 모델, 더 긴 학습)은 H4 결과를 본 뒤 정한다. policy 품질이 아니라 쓰는 방식이 병목일 수 있기 때문이다.
+
+### 12.13 H4 구현 (2026-10-06): 검토 반영
+
+§12.12 설계에 대한 검토의 세 가지 수정을 모두 반영했다.
+
+1. **오프라인 기준을 바꿨다.** "policy top-8이 V6 후보 20개보다 높아야 한다"는 조건은 필요 없다.
+   - H4-b의 가치는 **증분 recall**(합집합 후보 recall − V6 후보 recall)이다.
+   - H4-a의 가치는 **실제로 열리는 자식 안의 recall**이다. V5 tree는 50 sims에 root 자식 15개, 100 sims에 17개를 연다.
+     `root_opening_count`로 계산한 값이 실제 tree와 같다는 것을 확인했다.
+   - 각 자식은 상위 `priority_top_k`(8) 창에서 순위 가중 무작위로 뽑힌다. 그래서 "앞 15개"가 아니라, 이 뽑기를 `--draws`번 모사한 **열릴 확률**로 잰다.
+   - 사람 착수는 최선수가 아니므로 이 지표는 진단용이다. 기력 판정은 짝 비교가 한다.
+   - 매개변수(extra 8)는 미리 고정했다. 조정할 일이 생기면 val로 하고, test는 최종 보고에 한 번만 쓴다.
+2. **solver 불변 조건을 테스트로 고정했다**(`tests/test_mcts_v8.py::RootPolicyTest`).
+   - stage 1(오목)과 own VCF 국면에서 policy가 다른 수에 확률 1을 줘도 결과와 경로가 그대로이고, policy는 호출조차 되지 않는다.
+   - pilot-6 국면에서 policy가 VCT1-UNSAFE 수 `(10,7)`에 확률 1을 주면 그 수가 root 순서 1위가 된다.
+     그래도 V8은 V8-C가 UNSAFE로 증명한 수를 두지 않는다.
+   - tree가 그 수를 고르도록 강제한 경우에도 V8-C가 `proven_loss`로 교체한다.
+   - policy 정렬은 안전 tier를 섞지 않는다(tier 순서 유지, tier 안에서만 확률 순).
+   - H4-b 추가 수는 tier 검사 **전에** 후보에 붙어서 같은 VCF 안전 검사를 받는다.
+3. **V8은 torch를 쓰지 않는다.**
+   - `analysis.mcts_v8`은 `root_policy`(국면 → {수: 확률}을 돌려주는 함수)만 받는다.
+   - torch와 H3 체크포인트는 `hybrid.h4_policy.RootPolicy`가 맡는다. 이 어댑터는 trunk와 policy head만 부르고 value head는 쓰지 않는다.
+   - `analysis`를 import해도 torch와 `hybrid`가 로드되지 않는다는 것을 테스트로 확인한다.
+   - 격리 규칙은 "Track A는 `analysis`·`hybrid`를 import하지 않는다. `hybrid → analysis`는 허용"으로 바꿨다.
+
+그 밖의 반영:
+
+- **fail fast.** `root_policy_order`나 `root_policy_extra`를 켰는데 policy가 없으면 agent와 search 모두 `ValueError`를 낸다.
+  러너는 policy arm일 때 게임을 시작하기 전에 체크포인트를 실제로 로드해 본다.
+  체크포인트의 메타데이터가 `policy_trained: true`, `value_trained: false`가 아니면 로딩을 거부한다.
+- **결정적 tie-break.** 정렬 키는 (safety tier, policy 확률 내림차순, 기존 V7 순서)다.
+- **기록.** 착수마다 다음을 남긴다(러너 `policy` 블록과 요약).
+  - policy 호출 시간
+  - 추가된 수, tier를 통과한 추가 수, 그중 실제로 열린 수
+  - 기존 열릴 순위에서 밀려난 V6 수(`displaced`)
+  - tree가 고른 수의 policy 순위·확률, root 순서 순위
+  - policy를 켜면 `v8_v7_move`는 "policy로 정렬한 root에서 tree가 고른 수(V8-C 전)"다.
+- **H4-b의 부작용(문서화).** 추가 수도 V7 VCF 안전 예산(8,000 노드)을 나눠 쓴다. 추가 수는 V6 후보 뒤에 검사하므로 예산이 모자라면 추가 수가 먼저 inconclusive가 된다.
+- **arm:** `full_policy`(H4-a), `full_policy_recall`(H4-a+b, extra 8).
+- **seed:** 러너의 `--seed 8401 --pairs N`은 쌍마다 오프닝과 시드를 따로 만들고 색을 바꿔 두 판을 둔다. 검토에서 제안한 seed 8401~8405 방식과 같은 설계라서 바꾸지 않는다.
+- **H4-c는 미룬다.** 원인을 하나씩 분리하기 위해서다.
+
+판정 단계:
+
+| 단계 | 질문 |
+|---|---|
+| 오프라인 A | policy 정렬이 열린 자식 안의 recall(opened recall)을 높이나 |
+| 오프라인 B | 추가 수가 V6 누락을 얼마나 보완하나(증분 recall) |
+| 5쌍 smoke | 불변 조건 위반이나 심한 회귀가 없나 |
+| 갈림 국면 | policy가 실제 선택을 어떻게 바꿨나(`compare_v8_divergence.py`) |
+| 20~25쌍 | 이득이 재현되나 |
+
+결과 해석 기준: `full_policy`만 좋아지면 병목은 순서, `full_policy_recall`만 좋아지면 후보 집합이다. 둘 다 무효면 H5(PUCT)로 간다.

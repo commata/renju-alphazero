@@ -126,9 +126,10 @@ class AnalysisIsolationTest(unittest.TestCase):
         self.assertEqual(out, 'False')
 
     def test_no_source_outside_analysis_imports_it(self):
+        # Track B code (``hybrid``) may use V8 (docs/mcts-v8-teacher.md §12.13); Track A may not.
         offenders = []
         for path in (ROOT / 'src').rglob('*.py'):
-            if 'analysis' in path.parts:
+            if 'analysis' in path.parts or 'hybrid' in path.parts:
                 continue
             text = path.read_text(encoding='utf-8')
             if 'import analysis' in text or 'from analysis' in text:

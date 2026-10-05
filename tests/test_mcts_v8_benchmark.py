@@ -4,14 +4,14 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
 
-from scripts.run_mcts_v8_benchmark import ARMS, build_tasks, main, parse_opponent
+from scripts.run_mcts_v8_benchmark import ARMS, build_tasks, main, parse_opponent, play_one, summarize
 
 SMOKE = ['--pairs', '1', '--seed', '3', '--simulations', '4', '--tactical-simulations', '8']
 
 
 def _args(arm, opponent='v7'):
     return SimpleNamespace(arm=arm, opponent=opponent, pairs=2, seed=11, opening_random_plies=2, opening_radius=2,
-                           counterfactual=False, search_overrides={})
+                           counterfactual=False, search_overrides={}, policy_checkpoint=None)
 
 
 class BenchmarkTaskTest(unittest.TestCase):
@@ -80,6 +80,46 @@ class BenchmarkRunTest(unittest.TestCase):
             self.assertEqual(b['opponent_config']['root_vct_safety'], False)
             self.assertTrue(all(g['key'].startswith('off@v8:off/') for g in b['games']))
             self.assertIn('tree', b['summary']['opponent_routes'])
+
+
+try:
+    import torch
+except ModuleNotFoundError as exc:
+    if exc.name != 'torch':
+        raise
+    torch = None
+
+
+class PolicyArmTest(unittest.TestCase):
+    def test_policy_arm_fails_fast_without_checkpoint(self):
+        with TemporaryDirectory() as tmp:
+            with self.assertRaises(SystemExit):
+                main(['--arm', 'full_policy', *SMOKE, '--policy-checkpoint', str(Path(tmp, 'missing.pt'))])
+
+    @unittest.skipIf(torch is None, 'requires torch')
+    def test_policy_arm_game_records_policy_diagnostics(self):
+        from model.checkpoint import save_checkpoint
+        from model.config import ModelConfig
+        from model.network import PolicyValueNet
+        with TemporaryDirectory() as tmp:
+            ckpt = Path(tmp, 'best.pt')
+            torch.manual_seed(0)
+            save_checkpoint(ckpt, PolicyValueNet(ModelConfig(channels=8, blocks=1)))
+            ckpt.with_suffix('.json').write_text(json.dumps({
+                'policy_trained': True, 'value_trained': False, 'step': 0,
+                'config': {'channels': 8, 'blocks': 1}}), encoding='utf-8')
+            tasks, _ = build_tasks(SimpleNamespace(**{**vars(_args('full_policy_recall')), 'pairs': 1,
+                                                       'policy_checkpoint': str(ckpt)}))
+            task = {**tasks[0], 'v8_overrides': {'simulations': 4, 'tactical_simulations': 8,
+                                                 'stage_vct_safety': False, 'own_vct_attack': False,
+                                                 'root_vct_safety': False}}
+            record = play_one(task)
+            tree = [m for m in record['v8_moves'] if m['route'] == 'tree']
+            self.assertTrue(tree)
+            self.assertTrue(all(m['policy']['root_order_rank'] >= 1 and m['policy']['rank'] >= 1 for m in tree))
+            summary = summarize([{**record, 'v8_moves': [{**m, 'played': record['moves'][m['ply']]}
+                                                         for m in record['v8_moves']]}])
+            self.assertEqual(summary['policy']['tree_moves'], len(tree))
 
 
 if __name__ == '__main__':
