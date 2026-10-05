@@ -1,0 +1,44 @@
+{
+ "format": "h4-offline-recall-v1",
+ "split": "val",
+ "population_states": 127316,
+ "sampled": 2000,
+ "routes": {
+  "tree": 1056,
+  "forced": 897,
+  "own_vcf": 47
+ },
+ "tree_positions": 1056,
+ "extra": 8,
+ "draws": 200,
+ "policy": {
+  "checkpoint": "runs\\h3_policy_64x4\\best.pt",
+  "step": 31030,
+  "h2_output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+  "device": "cpu"
+ },
+ "recall": {
+  "baseline": {
+   "candidate": 0.6941287878787878,
+   "window": 0.4990530303030303,
+   "opened": 0.6333664772727307
+  },
+  "order": {
+   "candidate": 0.6941287878787878,
+   "window": 0.6609848484848485,
+   "opened": 0.6786979166666711
+  },
+  "union": {
+   "candidate": 0.8977272727272727,
+   "window": 0.8446969696969697,
+   "opened": 0.8687073863636442
+  }
+ },
+ "incremental_candidate_recall": 0.20359848484848486,
+ "recovered_by_added": 0.20359848484848486,
+ "policy_top8_recall": 0.8598484848484849,
+ "policy_top20_recall": 0.9763257575757576,
+ "added_kept_per_position": 2.2821969696969697,
+ "displaced_from_opening_per_position": 3.9696969696969697,
+ "seconds": 1151.0
+}

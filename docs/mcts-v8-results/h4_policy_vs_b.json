@@ -1,0 +1,10325 @@
+{
+ "format": "mcts-v8-benchmark-v1",
+ "arm": "full_policy",
+ "opponent": "v8:b_only",
+ "seed": 8401,
+ "pairs": 5,
+ "opening_random_plies": 2,
+ "opening_radius": 2,
+ "counterfactual": false,
+ "search_overrides": {},
+ "git_commit": "e053c880272845d48599cacd43671350718e353d",
+ "v8_config": {
+  "simulations": 50,
+  "tactical_simulations": 100,
+  "tactical_score_threshold": 1800,
+  "exploration": 1.4142135623730951,
+  "candidate_limit": 20,
+  "initial_width": 8,
+  "neighborhood_radius": 2,
+  "priority_top_k": 8,
+  "own_vcf_max_fours": 10,
+  "own_vcf_node_limit": 5000,
+  "safety_vcf_max_fours": 10,
+  "safety_vcf_node_limit": 4000,
+  "safety_precheck_node_limit": 8000,
+  "safety_total_node_limit": 8000,
+  "self_forbidden_min_white": 3,
+  "stage_vct_safety": true,
+  "vct_vcf_node_limit": 20000,
+  "vct_call_limit": 3000,
+  "vct_node_budget": 200000,
+  "own_vct_attack": true,
+  "attack_vcf_node_limit": 20000,
+  "attack_call_limit": 10000,
+  "attack_node_budget": 200000,
+  "root_vct_safety": true,
+  "root_vcf_node_limit": 20000,
+  "root_call_limit": 10000,
+  "root_node_budget": 400000,
+  "root_max_children": 4,
+  "root_vct_mode": "aggressive",
+  "root_policy_order": true,
+  "root_policy_extra": 0
+ },
+ "policy_checkpoint": "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-alphazero\\runs\\h3_policy_64x4\\best.pt",
+ "v7_config": {
+  "simulations": 50,
+  "tactical_simulations": 100,
+  "tactical_score_threshold": 1800,
+  "exploration": 1.4142135623730951,
+  "candidate_limit": 20,
+  "initial_width": 8,
+  "neighborhood_radius": 2,
+  "priority_top_k": 8,
+  "own_vcf_max_fours": 10,
+  "own_vcf_node_limit": 5000,
+  "safety_vcf_max_fours": 10,
+  "safety_vcf_node_limit": 4000,
+  "safety_precheck_node_limit": 8000,
+  "safety_total_node_limit": 8000,
+  "self_forbidden_min_white": 3
+ },
+ "opponent_config": {
+  "simulations": 50,
+  "tactical_simulations": 100,
+  "tactical_score_threshold": 1800,
+  "exploration": 1.4142135623730951,
+  "candidate_limit": 20,
+  "initial_width": 8,
+  "neighborhood_radius": 2,
+  "priority_top_k": 8,
+  "own_vcf_max_fours": 10,
+  "own_vcf_node_limit": 5000,
+  "safety_vcf_max_fours": 10,
+  "safety_vcf_node_limit": 4000,
+  "safety_precheck_node_limit": 8000,
+  "safety_total_node_limit": 8000,
+  "self_forbidden_min_white": 3,
+  "stage_vct_safety": false,
+  "vct_vcf_node_limit": 20000,
+  "vct_call_limit": 3000,
+  "vct_node_budget": 200000,
+  "own_vct_attack": true,
+  "attack_vcf_node_limit": 20000,
+  "attack_call_limit": 10000,
+  "attack_node_budget": 200000,
+  "root_vct_safety": false,
+  "root_vcf_node_limit": 20000,
+  "root_call_limit": 10000,
+  "root_node_budget": 400000,
+  "root_max_children": 4,
+  "root_vct_mode": "aggressive",
+  "root_policy_order": false,
+  "root_policy_extra": 0
+ },
+ "openings": [
+  {
+   "pair": 0,
+   "seed": 4646805722153082559,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 1,
+   "seed": 13684918747033909421,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     6
+    ]
+   ]
+  },
+  {
+   "pair": 2,
+   "seed": 17627106589147209825,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     6
+    ]
+   ]
+  },
+  {
+   "pair": 3,
+   "seed": 3151021260995526714,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 4,
+   "seed": 908021563238454821,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     5
+    ]
+   ]
+  }
+ ],
+ "summary": {
+  "games": 10,
+  "wins": 7,
+  "draws": 0,
+  "losses": 3,
+  "score": 0.7,
+  "score_by_v8_color": {
+   "black": 0.6,
+   "white": 0.8
+  },
+  "average_game_length": 31.0,
+  "v8_moves": 141,
+  "v8_routes": {
+   "tree": 58,
+   "stage4": 23,
+   "own_vct": 6,
+   "own_vcf": 13,
+   "stage3": 7,
+   "stage1": 7,
+   "stage2": 22,
+   "stage5": 5
+  },
+  "v8_changed_by_route": {
+   "own_vct": 6,
+   "tree": 1
+  },
+  "v8_move_seconds": {
+   "n": 141,
+   "mean": 7.454,
+   "median": 1.169,
+   "p95": 37.7444,
+   "max": 226.1086
+  },
+  "opponent_move_seconds": {
+   "n": 139,
+   "mean": 2.979,
+   "median": 0.892,
+   "p95": 7.4869,
+   "max": 77.3481
+  },
+  "opponent_routes": {
+   "tree": 66,
+   "stage4": 31,
+   "stage2": 23,
+   "own_vct": 3,
+   "own_vcf": 5,
+   "stage3": 3,
+   "stage1": 3,
+   "stage5": 5
+  },
+  "v8_b_attack": {
+   "ran": 78,
+   "wins": 6,
+   "budget_exhausted": 4,
+   "seconds": {
+    "n": 78,
+    "mean": 4.599,
+    "median": 0.085,
+    "p95": 73.1164,
+    "max": 77.9878
+   }
+  },
+  "v8_a_stage_safety": {
+   "ran": 28,
+   "changed": 0,
+   "widened": 4,
+   "budget_exhausted": 1,
+   "seconds": {
+    "n": 28,
+    "mean": 5.188,
+    "median": 0.77,
+    "p95": 35.3375,
+    "max": 37.8559
+   }
+  },
+  "v8_c_root": {
+   "ran": 58,
+   "changed": 1,
+   "switched_on_proven_loss": 1,
+   "switched_on_unknown": 0,
+   "v7_move_status": {
+    "SAFE": 55,
+    "UNSAFE": 1,
+    "UNKNOWN": 2
+   },
+   "children_checked": {
+    "n": 58,
+    "mean": 1.103,
+    "median": 1.0,
+    "p95": 2,
+    "max": 4
+   },
+   "budget_exhausted": 2,
+   "seconds": {
+    "n": 58,
+    "mean": 8.182,
+    "median": 0.285,
+    "p95": 76.0874,
+    "max": 161.4266
+   }
+  },
+  "policy": {
+   "tree_moves": 58,
+   "seconds": {
+    "n": 58,
+    "mean": 0.003,
+    "median": 0.003,
+    "p95": 0.0035,
+    "max": 0.0036
+   },
+   "added_kept": 0,
+   "added_opened": 0,
+   "moves_with_added_opened": 0,
+   "tree_chose_added": 0,
+   "displaced": {
+    "n": 58,
+    "mean": 2.379,
+    "median": 2.0,
+    "p95": 4,
+    "max": 4
+   },
+   "policy_rank": {
+    "n": 58,
+    "mean": 8.569,
+    "median": 7.5,
+    "p95": 21,
+    "max": 30
+   },
+   "root_order_rank": {
+    "n": 58,
+    "mean": 7.017,
+    "median": 7.5,
+    "p95": 15,
+    "max": 16
+   }
+  },
+  "counterfactual": {
+   "recorded": 0,
+   "v7_same_move": 0,
+   "v7_move_attack_status": {
+    "WIN": 0,
+    "REFUTED": 0,
+    "UNKNOWN": 0
+   }
+  },
+  "outcome_history_sha256": "de7de46a8d8f623af30f08bf52a9474bb5bd72b23984a4bf6f8b1befa365715a"
+ },
+ "games": [
+  {
+   "key": "full_policy@v8:b_only/8401/0/black",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 0,
+   "seed": 5155240814596482937,
+   "v8_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     11,
+     6
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 4,
+     "seconds": 1.1576,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0302
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 232,
+      "nodes": 54,
+      "exhausted": false,
+      "seconds": 0.2401,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0035,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 4,
+      "rank": 4,
+      "prob": 0.02987,
+      "root_order_rank": 4
+     },
+     "played": [
+      5,
+      6
+     ]
+    },
+    {
+     "ply": 6,
+     "seconds": 0.2841,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      6,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0294
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         6,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 219,
+      "nodes": 6,
+      "exhausted": false,
+      "seconds": 0.2489
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      5
+     ]
+    },
+    {
+     "ply": 8,
+     "seconds": 1.3258,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 13,
+      "nodes": 40,
+      "exhausted": false,
+      "seconds": 0.0575
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 217,
+      "nodes": 6,
+      "exhausted": false,
+      "seconds": 0.2377,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 4,
+      "rank": 10,
+      "prob": 0.02968,
+      "root_order_rank": 8
+     },
+     "played": [
+      5,
+      7
+     ]
+    },
+    {
+     "ply": 10,
+     "seconds": 1.2734,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 13,
+      "nodes": 40,
+      "exhausted": false,
+      "seconds": 0.055
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 231,
+      "nodes": 80,
+      "exhausted": false,
+      "seconds": 0.2792,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 7,
+      "prob": 0.0407,
+      "root_order_rank": 5
+     },
+     "played": [
+      7,
+      4
+     ]
+    },
+    {
+     "ply": 12,
+     "seconds": 1.2978,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      8,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 4,
+      "nodes": 4,
+      "exhausted": false,
+      "seconds": 0.0361
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         8,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 227,
+      "nodes": 137,
+      "exhausted": false,
+      "seconds": 0.3255,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 3,
+      "prob": 0.17821,
+      "root_order_rank": 3
+     },
+     "played": [
+      8,
+      5
+     ]
+    },
+    {
+     "ply": 14,
+     "seconds": 2.4966,
+     "route": "own_vct",
+     "changed": true,
+     "v7_move": null,
+     "attack": {
+      "status": "WIN",
+      "rank": 3,
+      "candidates": 9,
+      "calls": 212,
+      "nodes": 5196,
+      "exhausted": false,
+      "seconds": 2.4937
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      5
+     ]
+    },
+    {
+     "ply": 16,
+     "seconds": 0.0107,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      7,
+      3
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      3
+     ]
+    },
+    {
+     "ply": 18,
+     "seconds": 0.0111,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      7,
+      2
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      2
+     ]
+    },
+    {
+     "ply": 20,
+     "seconds": 0.0041,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      8,
+      3
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      3
+     ]
+    },
+    {
+     "ply": 22,
+     "seconds": 0.0035,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      10,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      10,
+      5
+     ]
+    },
+    {
+     "ply": 24,
+     "seconds": 0.0012,
+     "route": "stage3",
+     "changed": false,
+     "v7_move": [
+      9,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      4
+     ]
+    },
+    {
+     "ply": 26,
+     "seconds": 0.0005,
+     "route": "stage1",
+     "changed": false,
+     "v7_move": [
+      11,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      11,
+      6
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.949,
+    0.9791,
+    1.0218,
+    0.9729,
+    0.0737,
+    1.0761,
+    2.1986,
+    0.0004,
+    0.0004,
+    0.0004,
+    0.0004,
+    0.0005
+   ],
+   "opponent_routes": {
+    "tree": 5,
+    "stage4": 2,
+    "stage2": 5
+   },
+   "game_seconds": 15.14
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/0/white",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 0,
+   "seed": 3913715166093101298,
+   "v8_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 20,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     11
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     10,
+     9
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 3,
+     "seconds": 1.1843,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      10,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0219
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         10,
+         10
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 222,
+      "nodes": 4,
+      "exhausted": false,
+      "seconds": 0.1769,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0035,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 15,
+      "prob": 0.00163,
+      "root_order_rank": 13
+     },
+     "played": [
+      10,
+      10
+     ]
+    },
+    {
+     "ply": 5,
+     "seconds": 1.0871,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      11
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0206
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         11
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 220,
+      "nodes": 10,
+      "exhausted": false,
+      "seconds": 0.1871,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 2,
+      "prob": 0.26505,
+      "root_order_rank": 2
+     },
+     "played": [
+      9,
+      11
+     ]
+    },
+    {
+     "ply": 7,
+     "seconds": 1.3062,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      8,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 14,
+      "nodes": 44,
+      "exhausted": false,
+      "seconds": 0.0547
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         8,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 228,
+      "nodes": 64,
+      "exhausted": false,
+      "seconds": 0.23,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.003,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 10,
+      "prob": 0.00136,
+      "root_order_rank": 10
+     },
+     "played": [
+      8,
+      8
+     ]
+    },
+    {
+     "ply": 9,
+     "seconds": 1.1748,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      10,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 14,
+      "nodes": 44,
+      "exhausted": false,
+      "seconds": 0.0521
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         10,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 228,
+      "nodes": 68,
+      "exhausted": false,
+      "seconds": 0.2184,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 3,
+      "prob": 0.11779,
+      "root_order_rank": 3
+     },
+     "played": [
+      10,
+      8
+     ]
+    },
+    {
+     "ply": 11,
+     "seconds": 1.4329,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 7,
+      "calls": 30,
+      "nodes": 104,
+      "exhausted": false,
+      "seconds": 0.0871
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 225,
+      "nodes": 664,
+      "exhausted": false,
+      "seconds": 0.5077,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 1,
+      "rank": 21,
+      "prob": 0.00023,
+      "root_order_rank": 16
+     },
+     "played": [
+      7,
+      6
+     ]
+    },
+    {
+     "ply": 13,
+     "seconds": 0.0005,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      9,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      6
+     ]
+    },
+    {
+     "ply": 15,
+     "seconds": 1.6667,
+     "route": "own_vct",
+     "changed": true,
+     "v7_move": null,
+     "attack": {
+      "status": "WIN",
+      "rank": 2,
+      "candidates": 14,
+      "calls": 1384,
+      "nodes": 2565,
+      "exhausted": false,
+      "seconds": 1.6636
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      10,
+      7
+     ]
+    },
+    {
+     "ply": 17,
+     "seconds": 0.0009,
+     "route": "stage3",
+     "changed": false,
+     "v7_move": [
+      10,
+      11
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      10,
+      11
+     ]
+    },
+    {
+     "ply": 19,
+     "seconds": 0.0002,
+     "route": "stage1",
+     "changed": false,
+     "v7_move": [
+      10,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      10,
+      9
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.9635,
+    1.0633,
+    0.989,
+    0.929,
+    0.8634,
+    0.8811,
+    0.2181,
+    1.5095
+   ],
+   "opponent_routes": {
+    "tree": 6,
+    "stage4": 2
+   },
+   "game_seconds": 15.27
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/1/black",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 1,
+   "seed": 18230629742132777445,
+   "v8_color": "black",
+   "result": "loss",
+   "winner": -1,
+   "length": 26,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     8,
+     11
+    ],
+    [
+     9,
+     12
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     12
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 4,
+     "seconds": 1.2386,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 14,
+      "nodes": 44,
+      "exhausted": false,
+      "seconds": 0.0593
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 219,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.2254,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0036,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 1,
+      "prob": 0.34972,
+      "root_order_rank": 1
+     },
+     "played": [
+      6,
+      8
+     ]
+    },
+    {
+     "ply": 6,
+     "seconds": 1.2004,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 2,
+      "calls": 2,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0334
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 219,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.2689,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 13,
+      "prob": 0.00617,
+      "root_order_rank": 11
+     },
+     "played": [
+      7,
+      8
+     ]
+    },
+    {
+     "ply": 8,
+     "seconds": 1.2959,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 2,
+      "calls": 2,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0327
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         9
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 219,
+      "nodes": 20,
+      "exhausted": false,
+      "seconds": 0.2573,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 9,
+      "prob": 0.00106,
+      "root_order_rank": 8
+     },
+     "played": [
+      7,
+      9
+     ]
+    },
+    {
+     "ply": 10,
+     "seconds": 1.2355,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      11
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 6,
+      "calls": 12,
+      "nodes": 124,
+      "exhausted": false,
+      "seconds": 0.1034
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         11
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 215,
+      "nodes": 30,
+      "exhausted": false,
+      "seconds": 0.2573,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.003,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 8,
+      "prob": 0.01035,
+      "root_order_rank": 8
+     },
+     "played": [
+      7,
+      11
+     ]
+    },
+    {
+     "ply": 12,
+     "seconds": 1.2774,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 8,
+      "nodes": 28,
+      "exhausted": false,
+      "seconds": 0.0527
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 213,
+      "nodes": 16,
+      "exhausted": false,
+      "seconds": 0.2507,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0033,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 11,
+      "prob": 0.00482,
+      "root_order_rank": 10
+     },
+     "played": [
+      9,
+      8
+     ]
+    },
+    {
+     "ply": 14,
+     "seconds": 1.2846,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 8,
+      "nodes": 28,
+      "exhausted": false,
+      "seconds": 0.0489
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 228,
+      "nodes": 93,
+      "exhausted": false,
+      "seconds": 0.2911,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0033,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 10,
+      "prob": 0.03082,
+      "root_order_rank": 9
+     },
+     "played": [
+      6,
+      6
+     ]
+    },
+    {
+     "ply": 16,
+     "seconds": 1.3373,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 2,
+      "calls": 2,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0308
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         10
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 239,
+      "nodes": 171,
+      "exhausted": false,
+      "seconds": 0.3411,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 11,
+      "prob": 0.01096,
+      "root_order_rank": 11
+     },
+     "played": [
+      6,
+      10
+     ]
+    },
+    {
+     "ply": 18,
+     "seconds": 35.4067,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      5,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 4,
+      "nodes": 22,
+      "exhausted": false,
+      "seconds": 0.0455
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         5,
+         7
+        ],
+        "UNKNOWN"
+       ],
+       [
+        [
+         5,
+         5
+        ],
+        "UNKNOWN"
+       ],
+       [
+        [
+         5,
+         10
+        ],
+        "UNSAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 3000,
+      "nodes": 86368,
+      "exhausted": true,
+      "seconds": 35.3375
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      5,
+      7
+     ]
+    },
+    {
+     "ply": 20,
+     "seconds": 0.9,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      4,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 9,
+      "calls": 19,
+      "nodes": 186,
+      "exhausted": false,
+      "seconds": 0.1261
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         4,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         11
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         3,
+         6
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         12
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         6,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         3,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         6,
+         11
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         6
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         10
+        ],
+        "UNSAFE"
+       ]
+      ],
+      "widened": true,
+      "calls": 223,
+      "nodes": 1573,
+      "exhausted": false,
+      "seconds": 0.7578
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      7
+     ]
+    },
+    {
+     "ply": 22,
+     "seconds": 0.0008,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      9,
+      12
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      12
+     ]
+    },
+    {
+     "ply": 24,
+     "seconds": 0.0009,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      8,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      7
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.9909,
+    0.0301,
+    0.8771,
+    0.9189,
+    0.0005,
+    0.9338,
+    1.0783,
+    2.09,
+    4.8377,
+    0.0055,
+    0.0009,
+    0.0002
+   ],
+   "opponent_routes": {
+    "tree": 6,
+    "stage4": 1,
+    "stage2": 1,
+    "own_vct": 1,
+    "own_vcf": 1,
+    "stage3": 1,
+    "stage1": 1
+   },
+   "game_seconds": 56.94
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/1/white",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 1,
+   "seed": 7991016509415316335,
+   "v8_color": "white",
+   "result": "loss",
+   "winner": 1,
+   "length": 43,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     4,
+     12
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     2,
+     11
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     1,
+     10
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 3,
+     "seconds": 1.2279,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0221
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 232,
+      "nodes": 52,
+      "exhausted": false,
+      "seconds": 0.2105,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0032,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 6,
+      "prob": 0.00585,
+      "root_order_rank": 6
+     },
+     "played": [
+      7,
+      8
+     ]
+    },
+    {
+     "ply": 5,
+     "seconds": 1.2125,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 12,
+      "nodes": 38,
+      "exhausted": false,
+      "seconds": 0.0473
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 229,
+      "nodes": 60,
+      "exhausted": false,
+      "seconds": 0.226,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 5,
+      "prob": 0.012,
+      "root_order_rank": 5
+     },
+     "played": [
+      9,
+      6
+     ]
+    },
+    {
+     "ply": 7,
+     "seconds": 0.5506,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      9,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 3,
+      "calls": 8,
+      "nodes": 24,
+      "exhausted": false,
+      "seconds": 0.038
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         9,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 230,
+      "nodes": 622,
+      "exhausted": false,
+      "seconds": 0.5039
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      5
+     ]
+    },
+    {
+     "ply": 9,
+     "seconds": 1.9792,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      6,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 7,
+      "calls": 27,
+      "nodes": 98,
+      "exhausted": false,
+      "seconds": 0.084
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         6,
+         9
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 238,
+      "nodes": 3605,
+      "exhausted": false,
+      "seconds": 1.8809
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      9
+     ]
+    },
+    {
+     "ply": 11,
+     "seconds": 37.948,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      9,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 10,
+      "nodes": 30,
+      "exhausted": false,
+      "seconds": 0.0431
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         9,
+         7
+        ],
+        "SAFE"
+       ],
+       [
+        [
+         5,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         7
+        ],
+        "UNSAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 1376,
+      "nodes": 87005,
+      "exhausted": false,
+      "seconds": 37.8559
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      7
+     ]
+    },
+    {
+     "ply": 13,
+     "seconds": 2.9153,
+     "route": "stage5",
+     "changed": false,
+     "v7_move": [
+      6,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 6,
+      "calls": 16,
+      "nodes": 140,
+      "exhausted": false,
+      "seconds": 0.097
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         6,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 273,
+      "nodes": 5932,
+      "exhausted": false,
+      "seconds": 2.815
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      5
+     ]
+    },
+    {
+     "ply": 15,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      4,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      7
+     ]
+    },
+    {
+     "ply": 17,
+     "seconds": 0.0005,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      5,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      5,
+      9
+     ]
+    },
+    {
+     "ply": 19,
+     "seconds": 0.7633,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      4,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 10,
+      "calls": 26,
+      "nodes": 318,
+      "exhausted": false,
+      "seconds": 0.1758
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         4,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 225,
+      "nodes": 868,
+      "exhausted": false,
+      "seconds": 0.5768
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      6
+     ]
+    },
+    {
+     "ply": 21,
+     "seconds": 2.3826,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      7,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 10,
+      "calls": 28,
+      "nodes": 606,
+      "exhausted": false,
+      "seconds": 0.2766
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         7,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 220,
+      "nodes": 4385,
+      "exhausted": false,
+      "seconds": 2.0915
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      5
+     ]
+    },
+    {
+     "ply": 23,
+     "seconds": 37.7444,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 24,
+      "nodes": 451,
+      "exhausted": false,
+      "seconds": 0.203
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 244,
+      "nodes": 85702,
+      "exhausted": false,
+      "seconds": 35.8338,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 1,
+      "prob": 0.42112,
+      "root_order_rank": 1
+     },
+     "played": [
+      9,
+      4
+     ]
+    },
+    {
+     "ply": 25,
+     "seconds": 78.0412,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 6,
+      "calls": 23,
+      "nodes": 124,
+      "exhausted": false,
+      "seconds": 0.0815
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         10
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 440,
+      "nodes": 191530,
+      "exhausted": false,
+      "seconds": 76.0874,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 19,
+      "prob": 0.00398,
+      "root_order_rank": 14
+     },
+     "played": [
+      7,
+      10
+     ]
+    },
+    {
+     "ply": 27,
+     "seconds": 169.9687,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      3,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 3,
+      "calls": 15,
+      "nodes": 60,
+      "exhausted": false,
+      "seconds": 0.0484
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         3,
+         9
+        ],
+        "UNKNOWN"
+       ],
+       [
+        [
+         3,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         2,
+         10
+        ],
+        "UNKNOWN"
+       ]
+      ],
+      "rank": 1,
+      "calls": 62,
+      "nodes": 399999,
+      "exhausted": true,
+      "seconds": 161.4266,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 2,
+      "prob": 0.26655,
+      "root_order_rank": 2
+     },
+     "played": [
+      3,
+      9
+     ]
+    },
+    {
+     "ply": 29,
+     "seconds": 0.0005,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      2,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      2,
+      8
+     ]
+    },
+    {
+     "ply": 31,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      7,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      6
+     ]
+    },
+    {
+     "ply": 33,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      4,
+      12
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      12
+     ]
+    },
+    {
+     "ply": 35,
+     "seconds": 6.2439,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      6,
+      11
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 3,
+      "calls": 9,
+      "nodes": 92,
+      "exhausted": false,
+      "seconds": 0.0597
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         6,
+         11
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         2,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         12
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         1,
+         6
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         3,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         2,
+         11
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         2,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         6,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         1,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         3
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         3,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         6
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         1,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         11
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         2,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         6
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         3,
+         11
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         5
+        ],
+        "UNSAFE"
+       ]
+      ],
+      "widened": true,
+      "calls": 24,
+      "nodes": 15913,
+      "exhausted": false,
+      "seconds": 5.95
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      11
+     ]
+    },
+    {
+     "ply": 37,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      2,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      2,
+      7
+     ]
+    },
+    {
+     "ply": 39,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      2,
+      11
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      2,
+      11
+     ]
+    },
+    {
+     "ply": 41,
+     "seconds": 0.0005,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      6,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      10
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.9788,
+    0.9961,
+    0.9866,
+    0.1974,
+    0.1138,
+    0.9918,
+    75.2994,
+    0.1151,
+    0.9305,
+    0.0825,
+    0.0008,
+    0.2606,
+    42.3735,
+    24.5107,
+    77.3481,
+    47.5465,
+    0.0091,
+    0.0085,
+    0.0013,
+    0.0005
+   ],
+   "opponent_routes": {
+    "tree": 9,
+    "stage4": 4,
+    "stage5": 1,
+    "stage2": 1,
+    "own_vct": 1,
+    "own_vcf": 2,
+    "stage3": 1,
+    "stage1": 1
+   },
+   "game_seconds": 613.73
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/2/black",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 2,
+   "seed": 13620341628142254064,
+   "v8_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 41,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     1,
+     9
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     3,
+     4
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 4,
+     "seconds": 1.2156,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0311
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 234,
+      "nodes": 62,
+      "exhausted": false,
+      "seconds": 0.2413,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0034,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 1,
+      "rank": 5,
+      "prob": 0.00992,
+      "root_order_rank": 5
+     },
+     "played": [
+      6,
+      7
+     ]
+    },
+    {
+     "ply": 6,
+     "seconds": 1.1695,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 6,
+      "calls": 18,
+      "nodes": 46,
+      "exhausted": false,
+      "seconds": 0.0625
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 231,
+      "nodes": 54,
+      "exhausted": false,
+      "seconds": 0.2468,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 5,
+      "prob": 0.08301,
+      "root_order_rank": 5
+     },
+     "played": [
+      6,
+      8
+     ]
+    },
+    {
+     "ply": 8,
+     "seconds": 1.2689,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 12,
+      "calls": 39,
+      "nodes": 98,
+      "exhausted": false,
+      "seconds": 0.0988
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         9
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 231,
+      "nodes": 86,
+      "exhausted": false,
+      "seconds": 0.2714,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 1,
+      "prob": 0.4478,
+      "root_order_rank": 1
+     },
+     "played": [
+      5,
+      9
+     ]
+    },
+    {
+     "ply": 10,
+     "seconds": 2.9854,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      4,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 10,
+      "calls": 23,
+      "nodes": 126,
+      "exhausted": false,
+      "seconds": 0.102
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         4,
+         9
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 2155,
+      "nodes": 2490,
+      "exhausted": false,
+      "seconds": 1.9987,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 2,
+      "prob": 0.09748,
+      "root_order_rank": 2
+     },
+     "played": [
+      4,
+      9
+     ]
+    },
+    {
+     "ply": 12,
+     "seconds": 4.8675,
+     "route": "tree",
+     "changed": true,
+     "v7_move": [
+      8,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 31,
+      "nodes": 146,
+      "exhausted": false,
+      "seconds": 0.1117
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         8,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 3,
+      "calls": 2431,
+      "nodes": 6272,
+      "exhausted": false,
+      "seconds": 3.7771,
+      "switch": "proven_loss"
+     },
+     "policy": {
+      "seconds": 0.003,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 19,
+      "prob": 0.00142,
+      "root_order_rank": 15
+     },
+     "played": [
+      8,
+      7
+     ]
+    },
+    {
+     "ply": 14,
+     "seconds": 1.5801,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      3,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 29,
+      "nodes": 508,
+      "exhausted": false,
+      "seconds": 0.2718
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         3,
+         9
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 236,
+      "nodes": 276,
+      "exhausted": false,
+      "seconds": 0.3907,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.003,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 3,
+      "prob": 0.16389,
+      "root_order_rank": 3
+     },
+     "played": [
+      3,
+      9
+     ]
+    },
+    {
+     "ply": 16,
+     "seconds": 0.9373,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      7,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 6,
+      "calls": 6,
+      "nodes": 72,
+      "exhausted": false,
+      "seconds": 0.0705
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         7,
+         10
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 230,
+      "nodes": 1372,
+      "exhausted": false,
+      "seconds": 0.8239
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      10
+     ]
+    },
+    {
+     "ply": 18,
+     "seconds": 11.562,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 4,
+      "nodes": 8,
+      "exhausted": false,
+      "seconds": 0.0368
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 4593,
+      "nodes": 20840,
+      "exhausted": false,
+      "seconds": 10.6512,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 14,
+      "prob": 0.00903,
+      "root_order_rank": 9
+     },
+     "played": [
+      9,
+      7
+     ]
+    },
+    {
+     "ply": 20,
+     "seconds": 0.6496,
+     "route": "stage5",
+     "changed": false,
+     "v7_move": [
+      7,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 2,
+      "calls": 2,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.029
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         7,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 216,
+      "nodes": 881,
+      "exhausted": false,
+      "seconds": 0.6175
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      4
+     ]
+    },
+    {
+     "ply": 22,
+     "seconds": 1.6507,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 2,
+      "calls": 2,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0295
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 217,
+      "nodes": 789,
+      "exhausted": false,
+      "seconds": 0.5975,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 4,
+      "rank": 1,
+      "prob": 0.59886,
+      "root_order_rank": 1
+     },
+     "played": [
+      5,
+      5
+     ]
+    },
+    {
+     "ply": 24,
+     "seconds": 1.6774,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 5,
+      "calls": 9,
+      "nodes": 51,
+      "exhausted": false,
+      "seconds": 0.057
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         10
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 216,
+      "nodes": 836,
+      "exhausted": false,
+      "seconds": 0.629,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 4,
+      "rank": 1,
+      "prob": 0.29432,
+      "root_order_rank": 1
+     },
+     "played": [
+      5,
+      10
+     ]
+    },
+    {
+     "ply": 26,
+     "seconds": 0.0009,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      2,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      2,
+      5
+     ]
+    },
+    {
+     "ply": 28,
+     "seconds": 1.4099,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      3,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 9,
+      "calls": 17,
+      "nodes": 277,
+      "exhausted": false,
+      "seconds": 0.1586
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         3,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 212,
+      "nodes": 110,
+      "exhausted": false,
+      "seconds": 0.321,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 17,
+      "prob": 0.01159,
+      "root_order_rank": 9
+     },
+     "played": [
+      3,
+      7
+     ]
+    },
+    {
+     "ply": 30,
+     "seconds": 1.4371,
+     "route": "own_vct",
+     "changed": true,
+     "v7_move": null,
+     "attack": {
+      "status": "WIN",
+      "rank": 11,
+      "candidates": 12,
+      "calls": 227,
+      "nodes": 3096,
+      "exhausted": false,
+      "seconds": 1.4321
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      4
+     ]
+    },
+    {
+     "ply": 32,
+     "seconds": 0.0054,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      1,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      1,
+      9
+     ]
+    },
+    {
+     "ply": 34,
+     "seconds": 0.009,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      4,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      6
+     ]
+    },
+    {
+     "ply": 36,
+     "seconds": 0.0084,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      6,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      4
+     ]
+    },
+    {
+     "ply": 38,
+     "seconds": 0.0012,
+     "route": "stage3",
+     "changed": false,
+     "v7_move": [
+      5,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      5,
+      4
+     ]
+    },
+    {
+     "ply": 40,
+     "seconds": 0.0005,
+     "route": "stage1",
+     "changed": false,
+     "v7_move": [
+      3,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      3,
+      4
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.96,
+    0.8614,
+    0.9528,
+    0.0727,
+    1.6521,
+    1.3901,
+    0.0987,
+    1.061,
+    0.0005,
+    1.8389,
+    2.0243,
+    2.0655,
+    1.9101,
+    1.6307,
+    1.1953,
+    0.0004,
+    0.0004,
+    0.0004,
+    0.0005
+   ],
+   "opponent_routes": {
+    "tree": 9,
+    "stage4": 5,
+    "stage2": 5
+   },
+   "game_seconds": 50.15
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/2/white",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 2,
+   "seed": 3585463375409725558,
+   "v8_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 24,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 3,
+     "seconds": 1.1853,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0217
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 233,
+      "nodes": 54,
+      "exhausted": false,
+      "seconds": 0.2129,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 5,
+      "prob": 0.04243,
+      "root_order_rank": 5
+     },
+     "played": [
+      6,
+      7
+     ]
+    },
+    {
+     "ply": 5,
+     "seconds": 1.1102,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0212
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 229,
+      "nodes": 60,
+      "exhausted": false,
+      "seconds": 0.2006,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 1,
+      "prob": 0.46446,
+      "root_order_rank": 1
+     },
+     "played": [
+      7,
+      8
+     ]
+    },
+    {
+     "ply": 7,
+     "seconds": 2.419,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      6,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 7,
+      "calls": 657,
+      "nodes": 3954,
+      "exhausted": false,
+      "seconds": 1.988
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         6,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 218,
+      "nodes": 488,
+      "exhausted": false,
+      "seconds": 0.4219
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      8
+     ]
+    },
+    {
+     "ply": 9,
+     "seconds": 1.4189,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 21,
+      "nodes": 66,
+      "exhausted": false,
+      "seconds": 0.0672
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 216,
+      "nodes": 484,
+      "exhausted": false,
+      "seconds": 0.4166,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 7,
+      "prob": 0.02686,
+      "root_order_rank": 7
+     },
+     "played": [
+      5,
+      7
+     ]
+    },
+    {
+     "ply": 11,
+     "seconds": 2.9098,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 12,
+      "calls": 29,
+      "nodes": 90,
+      "exhausted": false,
+      "seconds": 0.0863
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 228,
+      "nodes": 3881,
+      "exhausted": false,
+      "seconds": 1.9315,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 4,
+      "rank": 15,
+      "prob": 0.00947,
+      "root_order_rank": 14
+     },
+     "played": [
+      6,
+      4
+     ]
+    },
+    {
+     "ply": 13,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      7,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      4
+     ]
+    },
+    {
+     "ply": 15,
+     "seconds": 5.1857,
+     "route": "own_vct",
+     "changed": true,
+     "v7_move": null,
+     "attack": {
+      "status": "WIN",
+      "rank": 3,
+      "candidates": 17,
+      "calls": 1602,
+      "nodes": 10949,
+      "exhausted": false,
+      "seconds": 5.1809
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      4
+     ]
+    },
+    {
+     "ply": 17,
+     "seconds": 0.0005,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      11,
+      3
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      11,
+      3
+     ]
+    },
+    {
+     "ply": 19,
+     "seconds": 0.003,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      4,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      4
+     ]
+    },
+    {
+     "ply": 21,
+     "seconds": 0.0009,
+     "route": "stage3",
+     "changed": false,
+     "v7_move": [
+      6,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      6
+     ]
+    },
+    {
+     "ply": 23,
+     "seconds": 0.0002,
+     "route": "stage1",
+     "changed": false,
+     "v7_move": [
+      6,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      5
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    1.0016,
+    0.933,
+    0.0348,
+    0.8729,
+    1.9956,
+    1.754,
+    1.0993,
+    1.7654,
+    0.0008,
+    0.6132
+   ],
+   "opponent_routes": {
+    "tree": 5,
+    "stage5": 1,
+    "stage4": 3,
+    "stage2": 1
+   },
+   "game_seconds": 24.3
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/3/black",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 3,
+   "seed": 17796826124164761974,
+   "v8_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 29,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     12,
+     9
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     12,
+     5
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 4,
+     "seconds": 1.2246,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 3,
+      "calls": 14,
+      "nodes": 38,
+      "exhausted": false,
+      "seconds": 0.0568
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 221,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.2181,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.003,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 1,
+      "rank": 7,
+      "prob": 0.02652,
+      "root_order_rank": 7
+     },
+     "played": [
+      6,
+      6
+     ]
+    },
+    {
+     "ply": 6,
+     "seconds": 1.1499,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0292
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 219,
+      "nodes": 6,
+      "exhausted": false,
+      "seconds": 0.2224,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 4,
+      "rank": 1,
+      "prob": 0.46547,
+      "root_order_rank": 1
+     },
+     "played": [
+      9,
+      8
+     ]
+    },
+    {
+     "ply": 8,
+     "seconds": 1.2327,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 15,
+      "nodes": 46,
+      "exhausted": false,
+      "seconds": 0.0596
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         10
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 222,
+      "nodes": 64,
+      "exhausted": false,
+      "seconds": 0.2947,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 5,
+      "prob": 0.00442,
+      "root_order_rank": 4
+     },
+     "played": [
+      9,
+      10
+     ]
+    },
+    {
+     "ply": 10,
+     "seconds": 0.497,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      10,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 2,
+      "calls": 2,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.032
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         10,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 216,
+      "nodes": 477,
+      "exhausted": false,
+      "seconds": 0.4558
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      10,
+      6
+     ]
+    },
+    {
+     "ply": 12,
+     "seconds": 1.5593,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      11,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0275
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         11,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 251,
+      "nodes": 778,
+      "exhausted": false,
+      "seconds": 0.5971,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 21,
+      "prob": 0.00032,
+      "root_order_rank": 14
+     },
+     "played": [
+      11,
+      7
+     ]
+    },
+    {
+     "ply": 14,
+     "seconds": 1.6247,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      8,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 7,
+      "calls": 24,
+      "nodes": 62,
+      "exhausted": false,
+      "seconds": 0.0668
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         8,
+         10
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 239,
+      "nodes": 2950,
+      "exhausted": false,
+      "seconds": 1.546
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      10
+     ]
+    },
+    {
+     "ply": 16,
+     "seconds": 3.7074,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      10,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 20,
+      "nodes": 60,
+      "exhausted": false,
+      "seconds": 0.0691
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         10,
+         9
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 238,
+      "nodes": 3540,
+      "exhausted": false,
+      "seconds": 1.804,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0028,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 10,
+      "prob": 0.00948,
+      "root_order_rank": 9
+     },
+     "played": [
+      10,
+      9
+     ]
+    },
+    {
+     "ply": 18,
+     "seconds": 0.0008,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      4,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      8
+     ]
+    },
+    {
+     "ply": 20,
+     "seconds": 1.0925,
+     "route": "stage5",
+     "changed": false,
+     "v7_move": [
+      11,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 15,
+      "calls": 54,
+      "nodes": 791,
+      "exhausted": false,
+      "seconds": 0.3976
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         11,
+         9
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 230,
+      "nodes": 934,
+      "exhausted": false,
+      "seconds": 0.693
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      11,
+      9
+     ]
+    },
+    {
+     "ply": 22,
+     "seconds": 2.7104,
+     "route": "own_vct",
+     "changed": true,
+     "v7_move": null,
+     "attack": {
+      "status": "WIN",
+      "rank": 5,
+      "candidates": 12,
+      "calls": 677,
+      "nodes": 5722,
+      "exhausted": false,
+      "seconds": 2.7068
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      11,
+      6
+     ]
+    },
+    {
+     "ply": 24,
+     "seconds": 0.0067,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      8,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      9
+     ]
+    },
+    {
+     "ply": 26,
+     "seconds": 0.0013,
+     "route": "stage3",
+     "changed": false,
+     "v7_move": [
+      10,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      10,
+      7
+     ]
+    },
+    {
+     "ply": 28,
+     "seconds": 0.0006,
+     "route": "stage1",
+     "changed": false,
+     "v7_move": [
+      12,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      12,
+      5
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.9805,
+    0.0266,
+    0.9596,
+    0.0823,
+    0.9891,
+    0.9984,
+    0.0439,
+    1.8077,
+    1.9888,
+    0.1732,
+    0.1733,
+    0.0005,
+    0.0005
+   ],
+   "opponent_routes": {
+    "tree": 6,
+    "stage4": 5,
+    "stage2": 2
+   },
+   "game_seconds": 23.03
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/3/white",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 3,
+   "seed": 429601272818363708,
+   "v8_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 48,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     13,
+     8
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 3,
+     "seconds": 1.2713,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      9,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0234
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         9,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 233,
+      "nodes": 42,
+      "exhausted": false,
+      "seconds": 0.2376,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 9,
+      "prob": 0.0042,
+      "root_order_rank": 8
+     },
+     "played": [
+      9,
+      7
+     ]
+    },
+    {
+     "ply": 5,
+     "seconds": 1.1817,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      8,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0215
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         8,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 240,
+      "nodes": 90,
+      "exhausted": false,
+      "seconds": 0.2318,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 7,
+      "prob": 0.00351,
+      "root_order_rank": 6
+     },
+     "played": [
+      8,
+      5
+     ]
+    },
+    {
+     "ply": 7,
+     "seconds": 1.1835,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      10,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 14,
+      "nodes": 44,
+      "exhausted": false,
+      "seconds": 0.0512
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         10,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 237,
+      "nodes": 86,
+      "exhausted": false,
+      "seconds": 0.2355,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 8,
+      "prob": 0.00789,
+      "root_order_rank": 8
+     },
+     "played": [
+      10,
+      6
+     ]
+    },
+    {
+     "ply": 9,
+     "seconds": 2.4433,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      9,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 656,
+      "nodes": 3873,
+      "exhausted": false,
+      "seconds": 1.9754
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         9,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 227,
+      "nodes": 529,
+      "exhausted": false,
+      "seconds": 0.4584
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      5
+     ]
+    },
+    {
+     "ply": 11,
+     "seconds": 1.4283,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      8,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 10,
+      "calls": 27,
+      "nodes": 78,
+      "exhausted": false,
+      "seconds": 0.0809
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         8,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 214,
+      "nodes": 450,
+      "exhausted": false,
+      "seconds": 0.4031,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 8,
+      "prob": 0.0247,
+      "root_order_rank": 8
+     },
+     "played": [
+      8,
+      8
+     ]
+    },
+    {
+     "ply": 13,
+     "seconds": 1.6982,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 12,
+      "calls": 29,
+      "nodes": 272,
+      "exhausted": false,
+      "seconds": 0.1673
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 222,
+      "nodes": 772,
+      "exhausted": false,
+      "seconds": 0.5971,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0025,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 1,
+      "rank": 4,
+      "prob": 0.09256,
+      "root_order_rank": 4
+     },
+     "played": [
+      6,
+      5
+     ]
+    },
+    {
+     "ply": 15,
+     "seconds": 1.3457,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      8,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 16,
+      "calls": 30,
+      "nodes": 1825,
+      "exhausted": false,
+      "seconds": 0.8805
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         8,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 208,
+      "nodes": 530,
+      "exhausted": false,
+      "seconds": 0.4521
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      7
+     ]
+    },
+    {
+     "ply": 17,
+     "seconds": 13.6146,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 14,
+      "calls": 51,
+      "nodes": 27761,
+      "exhausted": false,
+      "seconds": 12.2411
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 206,
+      "nodes": 620,
+      "exhausted": false,
+      "seconds": 0.4784,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 1,
+      "rank": 5,
+      "prob": 0.06748,
+      "root_order_rank": 5
+     },
+     "played": [
+      7,
+      5
+     ]
+    },
+    {
+     "ply": 19,
+     "seconds": 3.2157,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 12,
+      "calls": 34,
+      "nodes": 4259,
+      "exhausted": false,
+      "seconds": 1.84
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 206,
+      "nodes": 608,
+      "exhausted": false,
+      "seconds": 0.4783,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 12,
+      "prob": 0.00907,
+      "root_order_rank": 11
+     },
+     "played": [
+      6,
+      6
+     ]
+    },
+    {
+     "ply": 21,
+     "seconds": 2.012,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      11,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 10,
+      "calls": 24,
+      "nodes": 1412,
+      "exhausted": false,
+      "seconds": 0.6143
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         11,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 208,
+      "nodes": 634,
+      "exhausted": false,
+      "seconds": 0.4939,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 25,
+      "prob": 0.00204,
+      "root_order_rank": 14
+     },
+     "played": [
+      11,
+      7
+     ]
+    },
+    {
+     "ply": 23,
+     "seconds": 11.4104,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 12,
+      "calls": 53,
+      "nodes": 24721,
+      "exhausted": false,
+      "seconds": 9.9484
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 209,
+      "nodes": 639,
+      "exhausted": false,
+      "seconds": 0.4975,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 9,
+      "prob": 0.02354,
+      "root_order_rank": 9
+     },
+     "played": [
+      5,
+      6
+     ]
+    },
+    {
+     "ply": 25,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      4,
+      10
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      10
+     ]
+    },
+    {
+     "ply": 27,
+     "seconds": 82.3381,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      9,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 18,
+      "calls": 752,
+      "nodes": 200000,
+      "exhausted": true,
+      "seconds": 77.3252
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         9,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 248,
+      "nodes": 11320,
+      "exhausted": false,
+      "seconds": 4.7352
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      4
+     ]
+    },
+    {
+     "ply": 29,
+     "seconds": 85.5556,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      10,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 14,
+      "calls": 68,
+      "nodes": 200000,
+      "exhausted": true,
+      "seconds": 77.9878
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         10,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 207,
+      "nodes": 11092,
+      "exhausted": false,
+      "seconds": 4.4837,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.003,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 30,
+      "prob": 0.001,
+      "root_order_rank": 15
+     },
+     "played": [
+      10,
+      7
+     ]
+    },
+    {
+     "ply": 31,
+     "seconds": 226.1086,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 14,
+      "calls": 118,
+      "nodes": 200000,
+      "exhausted": true,
+      "seconds": 73.1164
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         9
+        ],
+        "UNKNOWN"
+       ],
+       [
+        [
+         9,
+         10
+        ],
+        "UNKNOWN"
+       ]
+      ],
+      "rank": 1,
+      "calls": 296,
+      "nodes": 400000,
+      "exhausted": true,
+      "seconds": 149.3011,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 5,
+      "prob": 0.05119,
+      "root_order_rank": 1
+     },
+     "played": [
+      6,
+      9
+     ]
+    },
+    {
+     "ply": 33,
+     "seconds": 89.4145,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      5,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 12,
+      "calls": 3121,
+      "nodes": 200000,
+      "exhausted": true,
+      "seconds": 76.3026
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         5,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 256,
+      "nodes": 32858,
+      "exhausted": false,
+      "seconds": 11.8753,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 16,
+      "prob": 0.00626,
+      "root_order_rank": 9
+     },
+     "played": [
+      5,
+      7
+     ]
+    },
+    {
+     "ply": 35,
+     "seconds": 0.0004,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      14,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      14,
+      9
+     ]
+    },
+    {
+     "ply": 37,
+     "seconds": 0.7,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      4,
+      3
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      3
+     ]
+    },
+    {
+     "ply": 39,
+     "seconds": 0.4321,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      4,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      6
+     ]
+    },
+    {
+     "ply": 41,
+     "seconds": 0.3869,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      4,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      8
+     ]
+    },
+    {
+     "ply": 43,
+     "seconds": 0.3839,
+     "route": "own_vcf",
+     "changed": false,
+     "v7_move": [
+      4,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      4,
+      7
+     ]
+    },
+    {
+     "ply": 45,
+     "seconds": 0.0012,
+     "route": "stage3",
+     "changed": false,
+     "v7_move": [
+      3,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      3,
+      8
+     ]
+    },
+    {
+     "ply": 47,
+     "seconds": 0.0002,
+     "route": "stage1",
+     "changed": false,
+     "v7_move": [
+      7,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      4
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.977,
+    1.0734,
+    0.9508,
+    0.0806,
+    0.8734,
+    0.1268,
+    0.0749,
+    0.0008,
+    0.0317,
+    1.3339,
+    2.3051,
+    2.2193,
+    3.3427,
+    4.2514,
+    4.9184,
+    7.4869,
+    4.6938,
+    0.0009,
+    0.0008,
+    0.0008,
+    0.0008,
+    0.0009
+   ],
+   "opponent_routes": {
+    "tree": 11,
+    "stage5": 2,
+    "stage4": 3,
+    "stage2": 6
+   },
+   "game_seconds": 560.87
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/4/black",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 4,
+   "seed": 9293174789056136858,
+   "v8_color": "black",
+   "result": "loss",
+   "winner": -1,
+   "length": 34,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 4,
+     "seconds": 1.1541,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0305
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 232,
+      "nodes": 54,
+      "exhausted": false,
+      "seconds": 0.2387,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 10,
+      "prob": 0.00074,
+      "root_order_rank": 10
+     },
+     "played": [
+      7,
+      8
+     ]
+    },
+    {
+     "ply": 6,
+     "seconds": 1.2046,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      6,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 12,
+      "nodes": 38,
+      "exhausted": false,
+      "seconds": 0.0565
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         6,
+         8
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 235,
+      "nodes": 68,
+      "exhausted": false,
+      "seconds": 0.2654,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 9,
+      "prob": 0.00371,
+      "root_order_rank": 8
+     },
+     "played": [
+      6,
+      8
+     ]
+    },
+    {
+     "ply": 8,
+     "seconds": 0.5611,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      5,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 11,
+      "nodes": 34,
+      "exhausted": false,
+      "seconds": 0.0528
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         5,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 225,
+      "nodes": 570,
+      "exhausted": false,
+      "seconds": 0.4999
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      5,
+      6
+     ]
+    },
+    {
+     "ply": 10,
+     "seconds": 0.0008,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      9,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      6
+     ]
+    },
+    {
+     "ply": 12,
+     "seconds": 0.7413,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      5,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 9,
+      "calls": 37,
+      "nodes": 130,
+      "exhausted": false,
+      "seconds": 0.1415
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         5,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 228,
+      "nodes": 670,
+      "exhausted": false,
+      "seconds": 0.5911
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      5,
+      4
+     ]
+    },
+    {
+     "ply": 14,
+     "seconds": 0.6566,
+     "route": "stage5",
+     "changed": false,
+     "v7_move": [
+      8,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 9,
+      "calls": 20,
+      "nodes": 194,
+      "exhausted": false,
+      "seconds": 0.1358
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         8,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 232,
+      "nodes": 596,
+      "exhausted": false,
+      "seconds": 0.5177
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      4
+     ]
+    },
+    {
+     "ply": 16,
+     "seconds": 1.983,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 7,
+      "calls": 16,
+      "nodes": 236,
+      "exhausted": false,
+      "seconds": 0.1429
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 246,
+      "nodes": 1916,
+      "exhausted": false,
+      "seconds": 0.9973,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0029,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 3,
+      "rank": 7,
+      "prob": 0.02211,
+      "root_order_rank": 6
+     },
+     "played": [
+      7,
+      4
+     ]
+    },
+    {
+     "ply": 18,
+     "seconds": 1.9315,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      6,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 27,
+      "nodes": 280,
+      "exhausted": false,
+      "seconds": 0.1385
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         6,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 234,
+      "nodes": 3574,
+      "exhausted": false,
+      "seconds": 1.7788
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      7
+     ]
+    },
+    {
+     "ply": 20,
+     "seconds": 6.5442,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      8,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 7,
+      "calls": 50,
+      "nodes": 1214,
+      "exhausted": false,
+      "seconds": 0.5431
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         8,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 287,
+      "nodes": 15496,
+      "exhausted": false,
+      "seconds": 5.963
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      5
+     ]
+    },
+    {
+     "ply": 22,
+     "seconds": 0.0008,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      6,
+      2
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      2
+     ]
+    },
+    {
+     "ply": 24,
+     "seconds": 27.7953,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      5,
+      3
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 11,
+      "nodes": 397,
+      "exhausted": false,
+      "seconds": 0.1404
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         5,
+         3
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         2
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         3
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         1
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         6
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         6,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         3
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         5
+        ],
+        "UNSAFE"
+       ]
+      ],
+      "widened": true,
+      "calls": 2752,
+      "nodes": 65291,
+      "exhausted": false,
+      "seconds": 27.6029
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      5,
+      3
+     ]
+    },
+    {
+     "ply": 26,
+     "seconds": 9.6093,
+     "route": "stage5",
+     "changed": false,
+     "v7_move": [
+      8,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 9,
+      "calls": 20,
+      "nodes": 1000,
+      "exhausted": false,
+      "seconds": 0.4654
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         8,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         3,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         10,
+         8
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         8,
+         10
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         3
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         4
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         5,
+         1
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         1
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         3,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         9,
+         5
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         6
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         6,
+         9
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         3
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         4,
+         7
+        ],
+        "UNSAFE"
+       ],
+       [
+        [
+         7,
+         2
+        ],
+        "UNSAFE"
+       ]
+      ],
+      "widened": true,
+      "calls": 1382,
+      "nodes": 21170,
+      "exhausted": false,
+      "seconds": 9.1342
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      8,
+      8
+     ]
+    },
+    {
+     "ply": 28,
+     "seconds": 0.001,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      7,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      7,
+      5
+     ]
+    },
+    {
+     "ply": 30,
+     "seconds": 0.0008,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      9,
+      8
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      9,
+      8
+     ]
+    },
+    {
+     "ply": 32,
+     "seconds": 0.001,
+     "route": "stage2",
+     "changed": false,
+     "v7_move": [
+      10,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      10,
+      5
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.9086,
+    0.8514,
+    0.905,
+    0.9011,
+    0.9574,
+    0.1172,
+    1.7893,
+    0.5067,
+    0.3217,
+    0.962,
+    32.4807,
+    0.0005,
+    0.0077,
+    0.004,
+    0.0009,
+    0.0002
+   ],
+   "opponent_routes": {
+    "tree": 6,
+    "stage4": 4,
+    "own_vct": 1,
+    "stage2": 1,
+    "own_vcf": 2,
+    "stage3": 1,
+    "stage1": 1
+   },
+   "game_seconds": 92.9
+  },
+  {
+   "key": "full_policy@v8:b_only/8401/4/white",
+   "arm": "full_policy",
+   "opponent": "v8:b_only",
+   "pair": 4,
+   "seed": 10306743547145728297,
+   "v8_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 18,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     9
+    ]
+   ],
+   "v8_moves": [
+    {
+     "ply": 3,
+     "seconds": 1.1452,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      4
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0219
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         4
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 233,
+      "nodes": 42,
+      "exhausted": false,
+      "seconds": 0.2036,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 12,
+      "prob": 0.00091,
+      "root_order_rank": 12
+     },
+     "played": [
+      7,
+      4
+     ]
+    },
+    {
+     "ply": 5,
+     "seconds": 0.2432,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      6,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 14,
+      "nodes": 44,
+      "exhausted": false,
+      "seconds": 0.0519
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         6,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 220,
+      "nodes": 2,
+      "exhausted": false,
+      "seconds": 0.1856
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      6
+     ]
+    },
+    {
+     "ply": 7,
+     "seconds": 1.1362,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      4,
+      6
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 8,
+      "calls": 29,
+      "nodes": 86,
+      "exhausted": false,
+      "seconds": 0.0775
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         4,
+         6
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 224,
+      "nodes": 20,
+      "exhausted": false,
+      "seconds": 0.1994,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0026,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 2,
+      "prob": 0.09228,
+      "root_order_rank": 2
+     },
+     "played": [
+      4,
+      6
+     ]
+    },
+    {
+     "ply": 9,
+     "seconds": 1.1165,
+     "route": "tree",
+     "changed": false,
+     "v7_move": [
+      7,
+      5
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 4,
+      "calls": 14,
+      "nodes": 42,
+      "exhausted": false,
+      "seconds": 0.0497
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [
+       [
+        [
+         7,
+         5
+        ],
+        "SAFE"
+       ]
+      ],
+      "rank": 1,
+      "calls": 229,
+      "nodes": 60,
+      "exhausted": false,
+      "seconds": 0.2295,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0027,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 2,
+      "rank": 8,
+      "prob": 0.00619,
+      "root_order_rank": 8
+     },
+     "played": [
+      7,
+      5
+     ]
+    },
+    {
+     "ply": 11,
+     "seconds": 0.8628,
+     "route": "stage4",
+     "changed": false,
+     "v7_move": [
+      5,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 10,
+      "calls": 28,
+      "nodes": 65,
+      "exhausted": false,
+      "seconds": 0.0737
+     },
+     "vct": {
+      "checked": [
+       [
+        [
+         5,
+         7
+        ],
+        "SAFE"
+       ]
+      ],
+      "widened": false,
+      "calls": 257,
+      "nodes": 1208,
+      "exhausted": false,
+      "seconds": 0.7822
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      5,
+      7
+     ]
+    },
+    {
+     "ply": 13,
+     "seconds": 4.8048,
+     "route": "own_vct",
+     "changed": true,
+     "v7_move": null,
+     "attack": {
+      "status": "WIN",
+      "rank": 1,
+      "candidates": 11,
+      "calls": 919,
+      "nodes": 11441,
+      "exhausted": false,
+      "seconds": 4.8011
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      8
+     ]
+    },
+    {
+     "ply": 15,
+     "seconds": 0.0012,
+     "route": "stage3",
+     "changed": false,
+     "v7_move": [
+      6,
+      7
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      7
+     ]
+    },
+    {
+     "ply": 17,
+     "seconds": 0.0002,
+     "route": "stage1",
+     "changed": false,
+     "v7_move": [
+      6,
+      9
+     ],
+     "attack": {
+      "status": "",
+      "rank": 0,
+      "candidates": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "vct": {
+      "checked": [],
+      "widened": false,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0
+     },
+     "root": {
+      "checked": [],
+      "rank": 0,
+      "calls": 0,
+      "nodes": 0,
+      "exhausted": false,
+      "seconds": 0.0,
+      "switch": ""
+     },
+     "policy": {
+      "seconds": 0.0,
+      "added": [],
+      "added_kept": [],
+      "added_opened": 0,
+      "displaced": 0,
+      "rank": 0,
+      "prob": 0.0,
+      "root_order_rank": 0
+     },
+     "played": [
+      6,
+      9
+     ]
+    }
+   ],
+   "opponent_move_seconds": [
+    0.9604,
+    0.8275,
+    0.0415,
+    0.8923,
+    0.2735,
+    0.4104,
+    0.0009
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage5": 1,
+    "stage4": 2,
+    "stage2": 1
+   },
+   "game_seconds": 12.72
+  }
+ ]
+}

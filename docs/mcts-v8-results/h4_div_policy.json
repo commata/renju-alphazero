@@ -1,0 +1,822 @@
+{
+ "format": "mcts-v8-divergence-v1",
+ "a": "runs\\v8_h1\\full_vs_b.json",
+ "a_arm": "full",
+ "b": "runs\\h4\\policy_vs_b.json",
+ "b_arm": "full_policy",
+ "opponent": "v8:b_only",
+ "seed": 8401,
+ "a_git_commit": "50429386db063aa04339c583e6b9d3b15cfc41bb",
+ "b_git_commit": "e053c880272845d48599cacd43671350718e353d",
+ "node_limit": 200000,
+ "node_budget": 2000000,
+ "identical_games": 0,
+ "divergent_games": 10,
+ "identical_v8_seconds": {
+  "a": 0,
+  "b": 0
+ },
+ "identical": [],
+ "divergences": [
+  {
+   "pair": 0,
+   "v8_color": "black",
+   "ply": 4,
+   "by": "v8",
+   "a": {
+    "move": [
+     9,
+     8
+    ],
+    "result": "win",
+    "length": 37,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      9,
+      8
+     ],
+     "changed": false,
+     "seconds": 1.2042,
+     "checked": [
+      [
+       [
+        9,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 58,
+     "calls": 233,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 58,
+     "seconds": 0.23
+    }
+   },
+   "b": {
+    "move": [
+     5,
+     6
+    ],
+    "result": "win",
+    "length": 27,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      5,
+      6
+     ],
+     "changed": false,
+     "seconds": 1.1576,
+     "checked": [
+      [
+       [
+        5,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 54,
+     "calls": 232,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 54,
+     "seconds": 0.22
+    }
+   }
+  },
+  {
+   "pair": 0,
+   "v8_color": "white",
+   "ply": 3,
+   "by": "v8",
+   "a": {
+    "move": [
+     8,
+     7
+    ],
+    "result": "loss",
+    "length": 21,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      8,
+      7
+     ],
+     "changed": false,
+     "seconds": 1.2118,
+     "checked": [
+      [
+       [
+        8,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 42,
+     "calls": 233,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 42,
+     "seconds": 0.19
+    }
+   },
+   "b": {
+    "move": [
+     10,
+     10
+    ],
+    "result": "win",
+    "length": 20,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      10,
+      10
+     ],
+     "changed": false,
+     "seconds": 1.1843,
+     "checked": [
+      [
+       [
+        10,
+        10
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 4,
+     "calls": 222,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 4,
+     "seconds": 0.17
+    }
+   }
+  },
+  {
+   "pair": 1,
+   "v8_color": "black",
+   "ply": 4,
+   "by": "v8",
+   "a": {
+    "move": [
+     7,
+     4
+    ],
+    "result": "loss",
+    "length": 52,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      7,
+      4
+     ],
+     "changed": false,
+     "seconds": 1.2323,
+     "checked": [
+      [
+       [
+        7,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 0,
+     "calls": 221,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 0,
+     "seconds": 0.21
+    }
+   },
+   "b": {
+    "move": [
+     6,
+     8
+    ],
+    "result": "loss",
+    "length": 26,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      6,
+      8
+     ],
+     "changed": false,
+     "seconds": 1.2386,
+     "checked": [
+      [
+       [
+        6,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 0,
+     "calls": 219,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 0,
+     "seconds": 0.22
+    }
+   }
+  },
+  {
+   "pair": 1,
+   "v8_color": "white",
+   "ply": 3,
+   "by": "v8",
+   "a": {
+    "move": [
+     7,
+     6
+    ],
+    "result": "win",
+    "length": 90,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      7,
+      6
+     ],
+     "changed": false,
+     "seconds": 1.1966,
+     "checked": [
+      [
+       [
+        7,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 52,
+     "calls": 232,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 52,
+     "seconds": 0.19
+    }
+   },
+   "b": {
+    "move": [
+     7,
+     8
+    ],
+    "result": "loss",
+    "length": 43,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      7,
+      8
+     ],
+     "changed": false,
+     "seconds": 1.2279,
+     "checked": [
+      [
+       [
+        7,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 52,
+     "calls": 232,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 52,
+     "seconds": 0.2
+    }
+   }
+  },
+  {
+   "pair": 2,
+   "v8_color": "black",
+   "ply": 4,
+   "by": "v8",
+   "a": {
+    "move": [
+     8,
+     5
+    ],
+    "result": "win",
+    "length": 27,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      8,
+      5
+     ],
+     "changed": false,
+     "seconds": 1.2227,
+     "checked": [
+      [
+       [
+        8,
+        5
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 66,
+     "calls": 235,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 66,
+     "seconds": 0.23
+    }
+   },
+   "b": {
+    "move": [
+     6,
+     7
+    ],
+    "result": "win",
+    "length": 41,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      6,
+      7
+     ],
+     "changed": false,
+     "seconds": 1.2156,
+     "checked": [
+      [
+       [
+        6,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 62,
+     "calls": 234,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 62,
+     "seconds": 0.23
+    }
+   }
+  },
+  {
+   "pair": 2,
+   "v8_color": "white",
+   "ply": 3,
+   "by": "v8",
+   "a": {
+    "move": [
+     9,
+     7
+    ],
+    "result": "win",
+    "length": 20,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      9,
+      7
+     ],
+     "changed": false,
+     "seconds": 1.1492,
+     "checked": [
+      [
+       [
+        9,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 58,
+     "calls": 234,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 58,
+     "seconds": 0.2
+    }
+   },
+   "b": {
+    "move": [
+     6,
+     7
+    ],
+    "result": "win",
+    "length": 24,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      6,
+      7
+     ],
+     "changed": false,
+     "seconds": 1.1853,
+     "checked": [
+      [
+       [
+        6,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 54,
+     "calls": 233,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 54,
+     "seconds": 0.2
+    }
+   }
+  },
+  {
+   "pair": 3,
+   "v8_color": "black",
+   "ply": 4,
+   "by": "v8",
+   "a": {
+    "move": [
+     8,
+     6
+    ],
+    "result": "draw",
+    "length": 225,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      8,
+      6
+     ],
+     "changed": false,
+     "seconds": 1.167,
+     "checked": [
+      [
+       [
+        8,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 0,
+     "calls": 221,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 0,
+     "seconds": 0.21
+    }
+   },
+   "b": {
+    "move": [
+     6,
+     6
+    ],
+    "result": "win",
+    "length": 29,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      6,
+      6
+     ],
+     "changed": false,
+     "seconds": 1.2246,
+     "checked": [
+      [
+       [
+        6,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 0,
+     "calls": 221,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 0,
+     "seconds": 0.22
+    }
+   }
+  },
+  {
+   "pair": 3,
+   "v8_color": "white",
+   "ply": 3,
+   "by": "v8",
+   "a": {
+    "move": [
+     10,
+     10
+    ],
+    "result": "loss",
+    "length": 25,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      10,
+      10
+     ],
+     "changed": false,
+     "seconds": 1.1986,
+     "checked": [
+      [
+       [
+        10,
+        10
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 4,
+     "calls": 222,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 4,
+     "seconds": 0.17
+    }
+   },
+   "b": {
+    "move": [
+     9,
+     7
+    ],
+    "result": "win",
+    "length": 48,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      9,
+      7
+     ],
+     "changed": false,
+     "seconds": 1.2713,
+     "checked": [
+      [
+       [
+        9,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 42,
+     "calls": 233,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 42,
+     "seconds": 0.19
+    }
+   }
+  },
+  {
+   "pair": 4,
+   "v8_color": "black",
+   "ply": 4,
+   "by": "v8",
+   "a": {
+    "move": [
+     8,
+     6
+    ],
+    "result": "loss",
+    "length": 24,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      8,
+      6
+     ],
+     "changed": false,
+     "seconds": 1.1225,
+     "checked": [
+      [
+       [
+        8,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 54,
+     "calls": 232,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 54,
+     "seconds": 0.23
+    }
+   },
+   "b": {
+    "move": [
+     7,
+     8
+    ],
+    "result": "loss",
+    "length": 34,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      7,
+      8
+     ],
+     "changed": false,
+     "seconds": 1.1541,
+     "checked": [
+      [
+       [
+        7,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 54,
+     "calls": 232,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 54,
+     "seconds": 0.22
+    }
+   }
+  },
+  {
+   "pair": 4,
+   "v8_color": "white",
+   "ply": 3,
+   "by": "v8",
+   "a": {
+    "move": [
+     6,
+     6
+    ],
+    "result": "win",
+    "length": 22,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      6,
+      6
+     ],
+     "changed": false,
+     "seconds": 1.057,
+     "checked": [
+      [
+       [
+        6,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 0,
+     "calls": 222,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 0,
+     "seconds": 0.16
+    }
+   },
+   "b": {
+    "move": [
+     7,
+     4
+    ],
+    "result": "win",
+    "length": 18,
+    "decision": {
+     "route": "tree",
+     "v7_move": [
+      7,
+      4
+     ],
+     "changed": false,
+     "seconds": 1.1452,
+     "checked": [
+      [
+       [
+        7,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "rank": 1,
+     "switch": "",
+     "nodes": 42,
+     "calls": 233,
+     "exhausted": false
+    },
+    "vct1_offline": {
+     "status": "SAFE",
+     "exhausted": false,
+     "nodes": 42,
+     "seconds": 0.18
+    }
+   }
+  }
+ ]
+}
