@@ -9,8 +9,10 @@ invariant, losses in games where the opponent played a VCT1 attack, policy diagn
 and thinking time. All runs must share --seed and --opponent.
 
 Safety invariant (must be 0): a move V8 played that its own check proved UNSAFE while
-some other checked move was not UNSAFE. A proven loss played when every checked move was
-proven UNSAFE (a lost position) is counted separately.
+some other checked move was not UNSAFE and does not lose at once. V8's fallbacks skip an
+unrefuted move that loses at once (``_not_immediately_lost``: the opponent then has a five
+or an unstoppable four), so such a move is not an alternative. A proven loss played when
+no alternative is left (a lost position) is counted separately.
 """
 from __future__ import annotations
 
@@ -18,6 +20,14 @@ import argparse
 import json
 import math
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT / 'src') not in sys.path:
+    sys.path.insert(0, str(ROOT / 'src'))
+
+from analysis.mcts_v8 import _not_immediately_lost  # noqa: E402
+from renju import Game  # noqa: E402
 
 SCORE = {'win': 1.0, 'draw': 0.5, 'loss': 0.0}
 
@@ -43,7 +53,13 @@ def safety(run) -> dict:
             statuses = {tuple(m): s for m, s in checked}
             if statuses.get(tuple(move['played'])) != 'UNSAFE':
                 continue
-            if all(s == 'UNSAFE' for s in statuses.values()):
+            others = [m for m, s in statuses.items() if s != 'UNSAFE']
+            if others:
+                position = Game()
+                for played in game['moves'][:move['ply']]:
+                    position.play(*played)
+                others = [m for m in others if _not_immediately_lost(position, m)]
+            if not others:
                 lost_positions += 1
             else:
                 violations.append({'key': game['key'], 'ply': move['ply'], 'route': move['route']})
