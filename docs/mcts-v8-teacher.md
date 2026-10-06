@@ -1783,3 +1783,92 @@ H4의 교훈은 두 가지다. 첫째, policy 순서를 V5 rollout 트리의 roo
    - `puct_policy` 대 `v8:full` ≥ 0.60, 그리고 `puct_policy − puct_heur` ≥ +0.10이면 policy prior 채택.
    - `puct_heur`만 좋으면 이득은 트리 구조에서 나온 것이다.
    - 둘 다 0.5 미만이면 H6(value)을 먼저 하고 H5를 다시 측정한다.
+
+### 12.16 H5 구현: PUCT 트리와 prior 분리 (2026-10-08, 검토 반영)
+
+§12.15의 H5 조정안에 대한 검토 6가지를 반영했다.
+
+**구조.**
+- V8의 tree 경로에서 트리만 바꾼다(`tree_mode="puct"`). Stage 1–5, own VCF, V8-B, V8-A, V8-C(aggressive, 400k, K=4)는 그대로다.
+- PUCT 트리는 `src/analysis/puct_v8.py`(torch 없음)에 있다.
+  - §12.15에서는 `src/hybrid/`라고 했지만, V8이 이 트리를 직접 부르고 `analysis`는 `hybrid`를 import하지 않는다.
+  - 그래서 트리는 `analysis`에 두고, NN prior는 H4와 같은 callable(`hybrid.h4_policy.RootPolicy`)로 주입한다.
+
+**arm.** 세 arm 모두 같은 c_puct를 쓴다.
+
+| arm | 트리 | prior | 보는 것 |
+|---|---|---|---|
+| `full` | V5 widening | (rank 가중 열기) | 기준선(상대 `v8:full`) |
+| `puct_uniform` | PUCT | 1/n | PUCT 선택 규칙 자체 |
+| `puct_heur` | PUCT | 1/순위(V8 후보 순서) | heuristic prior |
+| `puct_policy` | PUCT | H3 policy(후보로 제한 후 재정규화) | NN prior |
+
+**같은 행동 집합(검토 2).**
+- root 자식은 V8이 준비한 root 목록이다: V6 → VCF 안전 tier → M3, H4 옵션 없음.
+- 내부 노드 자식은 `_search_candidates_v321`이다. V5 트리가 widening하는 목록과 같다.
+- PUCT는 모든 자식을 처음부터 두고, 방문 배분은 prior와 Q가 정한다.
+- `tree_mode="puct"`와 H4 옵션(`root_policy_order` / `root_policy_extra`)을 함께 쓰면 오류가 난다.
+- 테스트는 세 prior에서 root와 내부 자식 목록이 똑같은지 확인한다.
+
+**값과 선택(검토의 Track A 재사용 확인 4가지).**
+1. 값 관점.
+   - 노드 값은 그 노드로 들어온 수를 둔 쪽 관점이다(`search.mcts._backpropagate` 재사용). 부모는 자식의 평균값을 최대화한다.
+   - Track A의 `search.alphazero`와 같은 규약이다(`player_who_moved` 관점).
+   - 부호 테스트:
+     - 5목 수의 평균값은 흑 관점 +1이다.
+     - 백의 5목을 허용하는 수의 평균값은 −1이다(prior 0.99여도 그렇다).
+     - uniform prior는 값만으로 이기는 수와 막는 수를 고른다.
+2. 금수 마스크.
+   - policy는 `RootPolicy`가 합법 수(흑 금수 제외)에 대해 masked softmax로 계산한다.
+   - 그다음 자식 목록으로 제한하고 재정규화한다.
+   - 자식에 질량이 없으면 uniform으로 대체하고 그 횟수를 센다(`prior_fallbacks`).
+3. 같은 후보 집합: 위와 같다.
+4. leaf.
+   - `_rollout_v321`로 끝까지 둔 결과(+1/−1/0)다. value net은 H6에서 이 자리를 바꾼다.
+   - 선택식은 Track A의 `puct_score`와 같다: `Q + c·P·sqrt(max(1,N))/(1+n)`, FPU 0.
+   - 최종 수는 방문 수, 평균값, prior, 좌표 순으로 고른다.
+
+**c_puct 보정(검토 6).** `scripts/h5_calibrate_puct.py`가 맡는다.
+- RenjuNet val의 tree 경로 국면 120개에서 PUCT 트리만 돌린다. 대국도 승률도 보지 않는다.
+- 후보 c ∈ {0.5, 1.0, 1.5, 2.0}. 미리 정한 통과 조건:
+
+| 조건 | 기준 |
+|---|---|
+| 붕괴 없음 | 모든 prior에서 방문된 root 자식 ≥ 3, 최다 방문 비율 ≤ 0.75 |
+| prior가 혼자 결정하지 않음 | policy prior에서 policy 1순위를 고르는 비율 ≤ 0.80 |
+| prior가 무시되지 않음 | 그 비율이 uniform prior보다 +0.05 이상 |
+
+- 통과한 c 중 1.5(Track A 기본값)에 가장 가까운 값을 쓴다. 통과하는 값이 없으면 벤치마크를 하지 않는다.
+- 벤치마크는 `--puct-c`가 없으면 PUCT arm을 실행하지 않는다. c는 게임 키에도 들어가서, 다른 c로 이어 돌리면 섞이지 않는다.
+
+**측정(검토 3, 4, 5).**
+- 상대는 `v8:full`, 25쌍이다. 0.5가 기준선과 동등이다.
+- 연구용 비교는 같은 시뮬레이션 수(50/100)다.
+- 실사용 판단은 시간 비율(같은 대국 안에서 V8 초 / 상대 초)로 한다. 1.5를 넘으면 `--arm-simulations 25 --arm-tactical-simulations 50`으로 시간을 맞춘 재측정을 하고, 그 결과로 판정한다.
+- 수마다 기록하는 것(`tree` 블록): 트리 모드, 시간, 시뮬레이션 수, NN 호출, prior fallback, root prior 엔트로피, prior 1순위 수와 확률.
+- `scripts/summarize_h5.py`가 보고하는 것:
+  - score: Wilson 구간과 opening 쌍 bootstrap 구간
+  - 흑/백 score
+  - 안전 위반
+  - 상대 VCT가 있던 패배
+  - 이미 진 국면의 패배수 비율
+  - tree 수의 SAFE/UNKNOWN/UNSAFE와 not-SAFE 비율
+  - V8-C 교체 수, root 검사 시간
+  - 시뮬레이션/초
+  - prior 엔트로피, prior 1순위 선택 비율
+  - 시간 비율
+  - arm 간 쌍 차이(bootstrap)
+
+**판정(미리 고정).**
+
+| 결과 | 판정 |
+|---|---|
+| 안전 위반 > 0 | 중단 |
+| 8401: policy ≥ 0.60, policy − heur ≥ +0.10, 흑·백 ≥ 0.50, tree not-SAFE ≤ heur + 0.03, 시간 비율 ≤ 1.5 | **8402 재검증 후보** (채택 아님) |
+| 8401+8402(arm당 100판): policy ≥ 0.58, (policy − 0.5)의 쌍 bootstrap 하한 > 0, policy − heur ≥ +0.05, 같은 guard | policy prior 채택 |
+| heur > uniform, policy ≤ heur | "PUCT + heuristic prior가 유효". 트리 구조 효과라고 단정하지 않는다 |
+| uniform > 0.5, 나머지 이득 없음 | PUCT 선택 규칙 자체의 효과일 가능성 |
+| 셋 다 < 0.5 | H6(value) 후 다시 측정 |
+| policy가 VCT 패배·tree not-SAFE·V8-C 교체를 악화 | 승률과 무관하게 기각 또는 c 재보정 |
+
+`puct_uniform`은 원인 분석용이다. 8402에서는 `puct_heur`와 `puct_policy`만 돌려도 된다.

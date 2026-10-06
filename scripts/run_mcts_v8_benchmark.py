@@ -12,6 +12,13 @@ Arms (V8 configuration):
     full_policy         full + H3 policy order inside the root safety tiers (H4-a, §12.13)
     full_policy_recall  full_policy + up to 8 policy moves added to the root candidates (H4-a+b)
 
+H5 PUCT arms (§12.16): the tree route runs ``analysis.puct_v8`` instead of the V5 tree, on the
+same action sets and rollouts; only the prior differs. They need ``--puct-c`` (the value fixed
+by ``scripts/h5_calibrate_puct.py``), which applies to the tested arm only.
+    puct_uniform  PUCT, uniform prior (the tree-rule control)
+    puct_heur     PUCT, 1/rank prior over V8's own candidate order
+    puct_policy   PUCT, H3 policy prior (one NN call per expanded node)
+
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
     ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
@@ -69,6 +76,9 @@ ARMS = {
     'full_r250': {'root_node_budget': 250_000},
     'full_policy': {'root_policy_order': True},
     'full_policy_recall': {'root_policy_order': True, 'root_policy_extra': 8},
+    'puct_uniform': {'tree_mode': 'puct', 'puct_prior': 'uniform'},
+    'puct_heur': {'tree_mode': 'puct', 'puct_prior': 'heuristic'},
+    'puct_policy': {'tree_mode': 'puct', 'puct_prior': 'policy'},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -112,7 +122,8 @@ def parse_opponent(value: str) -> str:
 
 
 def needs_policy(config: dict) -> bool:
-    return bool(config.get('root_policy_order') or config.get('root_policy_extra'))
+    return bool(config.get('root_policy_order') or config.get('root_policy_extra')
+                or (config.get('tree_mode') == 'puct' and config.get('puct_prior') == 'policy'))
 
 
 def load_policy(checkpoint):
@@ -161,6 +172,14 @@ def _move_record(ply, seconds, diag) -> dict:
             'added_opened': diag.v8_policy_added_opened, 'displaced': diag.v8_policy_displaced,
             'rank': diag.v8_policy_rank, 'prob': round(diag.v8_policy_prob, 5),
             'root_order_rank': diag.v8_root_order_rank,
+        },
+        'tree': {
+            'mode': diag.v8_tree_mode, 'seconds': round(diag.v8_tree_seconds, 4),
+            'simulations': diag.v8_tree_simulations, 'prior': diag.v8_puct_prior,
+            'nn_calls': diag.v8_puct_nn_calls, 'prior_fallbacks': diag.v8_puct_prior_fallbacks,
+            'prior_entropy': round(diag.v8_puct_prior_entropy, 4),
+            'prior_top': list(diag.v8_puct_prior_top) if diag.v8_puct_prior_top is not None else None,
+            'prior_top_prob': round(diag.v8_puct_prior_top_prob, 5),
         },
     }
 
@@ -227,18 +246,22 @@ def play_one(task: dict) -> dict:
 
 def build_tasks(args) -> tuple[list[dict], list[dict]]:
     tasks, openings = [], []
+    arm_overrides = getattr(args, 'arm_overrides', {})
     for pair in range(args.pairs):
         opening_seed = derive_seed(args.seed, 'opening', pair)
         opening = make_opening(opening_seed, args.opening_random_plies, args.opening_radius)
         openings.append({'pair': pair, 'seed': opening_seed, 'moves': [list(m) for m in opening]})
         for color in (BLACK, WHITE):
             game_seed = derive_seed(args.seed, 'game', pair, color)
-            prefix = args.arm if args.opponent == 'v7' else f'{args.arm}@{args.opponent}'
+            arm = args.arm + (''.join(f'[{k}={v}]' for k, v in sorted(arm_overrides.items()))
+                              if arm_overrides else '')  # a resumed JSONL never mixes settings
+            prefix = arm if args.opponent == 'v7' else f'{arm}@{args.opponent}'
             tasks.append({
                 'key': f'{prefix}/{args.seed}/{pair}/{"black" if color == BLACK else "white"}',
                 'arm': args.arm, 'opponent': args.opponent, 'pair': pair, 'seed': game_seed, 'v8_color': color,
                 'opening': [list(m) for m in opening], 'counterfactual': args.counterfactual,
-                'v8_overrides': args.search_overrides, 'v7_overrides': args.search_overrides,
+                'v8_overrides': {**args.search_overrides, **arm_overrides},
+                'v7_overrides': args.search_overrides,
                 'policy_checkpoint': args.policy_checkpoint,
             })
     return tasks, openings
@@ -270,6 +293,8 @@ def summarize(games: list[dict]) -> dict:
     counterfactual = [m['counterfactual'] for m in moves if 'counterfactual' in m]
     ran_root = [m for m in moves if m.get('root', {}).get('checked')]
     with_policy = [m for m in moves if m.get('policy', {}).get('root_order_rank')]
+    with_tree = [m for m in moves if m.get('tree', {}).get('mode')]
+    with_puct = [m for m in with_tree if m['tree']['mode'] == 'puct']
     root_first = [m['root']['checked'][0][1] for m in ran_root]  # V7's move is always checked first
     opp_routes = {}
     for g in games:
@@ -323,6 +348,18 @@ def summarize(games: list[dict]) -> dict:
             'displaced': _dist([m['policy']['displaced'] for m in with_policy]),
             'policy_rank': _dist([m['policy']['rank'] for m in with_policy]),
             'root_order_rank': _dist([m['policy']['root_order_rank'] for m in with_policy]),
+        },
+        'tree': {
+            'moves': len(with_tree),
+            'seconds': _dist([m['tree']['seconds'] for m in with_tree]),
+            'simulations_per_second': round(sum(m['tree']['simulations'] for m in with_tree)
+                                            / max(1e-9, sum(m['tree']['seconds'] for m in with_tree)), 1)
+            if with_tree else None,
+            'puct_moves': len(with_puct),
+            'nn_calls': sum(m['tree']['nn_calls'] for m in with_puct),
+            'prior_fallbacks': sum(m['tree']['prior_fallbacks'] for m in with_puct),
+            'prior_entropy': _dist([m['tree']['prior_entropy'] for m in with_puct]),
+            'tree_chose_prior_top': sum(m['v7_move'] == m['tree']['prior_top'] for m in with_puct),
         },
         'counterfactual': {
             'recorded': len(counterfactual),
@@ -382,6 +419,11 @@ def main(argv=None) -> int:
                         help="record V7's move at every V8-B move (adds one V7 search there)")
     parser.add_argument('--games-jsonl', type=Path, help='per-game lines, appended as games finish (resume)')
     parser.add_argument('--output', type=Path, help='summary + all games as one JSON file')
+    parser.add_argument('--puct-c', type=float, help='c_puct for a PUCT arm (required there; tested arm only)')
+    parser.add_argument('--arm-simulations', type=int,
+                        help='tested arm only: simulations (time-matched check, §12.16)')
+    parser.add_argument('--arm-tactical-simulations', type=int,
+                        help='tested arm only: tactical simulations (time-matched check, §12.16)')
     parser.add_argument('--simulations', type=int, help='smoke tests only: both engines')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only: both engines')
     args = parser.parse_args(argv)
@@ -400,6 +442,16 @@ def main(argv=None) -> int:
     args.search_overrides = {k: v for k, v in (('simulations', args.simulations),
                                                ('tactical_simulations', args.tactical_simulations))
                              if v is not None}
+    is_puct = v8_config(args.arm).get('tree_mode') == 'puct'
+    if is_puct and args.puct_c is None:
+        parser.error(f'{args.arm} needs --puct-c (the calibrated value, §12.16)')
+    if not is_puct and args.puct_c is not None:
+        parser.error('--puct-c only applies to the puct_* arms')
+    if args.opponent != 'v7' and v8_config(args.opponent.partition(':')[2]).get('tree_mode') == 'puct':
+        parser.error('a PUCT arm cannot be the opponent (its c_puct would be unset)')
+    args.arm_overrides = {k: v for k, v in (('puct_c', args.puct_c), ('simulations', args.arm_simulations),
+                                            ('tactical_simulations', args.arm_tactical_simulations))
+                          if v is not None}
 
     tasks, openings = build_tasks(args)
     finished = load_finished(args.games_jsonl, {t['key'] for t in tasks})
@@ -433,7 +485,9 @@ def main(argv=None) -> int:
         'format': FORMAT, 'arm': args.arm, 'opponent': args.opponent, 'seed': args.seed, 'pairs': args.pairs,
         'opening_random_plies': args.opening_random_plies, 'opening_radius': args.opening_radius,
         'counterfactual': args.counterfactual, 'search_overrides': args.search_overrides,
-        'git_commit': _git_commit(), 'v8_config': v8_config(args.arm, args.search_overrides),
+        'arm_overrides': args.arm_overrides,
+        'git_commit': _git_commit(), 'v8_config': v8_config(args.arm, {**args.search_overrides,
+                                                                        **args.arm_overrides}),
         'policy_checkpoint': (args.policy_checkpoint if needs_policy(v8_config(args.arm)) or (
             args.opponent != 'v7' and needs_policy(v8_config(args.opponent.partition(':')[2]))) else None),
         'v7_config': {**V7_FINAL, **args.search_overrides},

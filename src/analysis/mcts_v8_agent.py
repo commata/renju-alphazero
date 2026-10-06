@@ -14,15 +14,17 @@ _EXTRA_KEYS = tuple(key for key in V8_DEFAULTS if key not in V5_FINAL)
 class MCTSV8Agent(MCTSV6Agent):
     def __init__(self, seed: int = 42, root_policy=None, **overrides):
         """``root_policy``: callable ``game -> {move: probability}`` for the H4 options
-        (``root_policy_order`` / ``root_policy_extra``); required when either is on."""
+        (``root_policy_order`` / ``root_policy_extra``) and the H5 PUCT policy prior
+        (``tree_mode="puct"``, ``puct_prior="policy"``); required when any of them is on."""
         unknown = set(overrides) - set(V8_DEFAULTS)
         if unknown:
             raise TypeError(f"unknown V8 option(s): {', '.join(sorted(unknown))}")
         config = {**V8_DEFAULTS, **overrides}
         _validate_v7_config(**{key: config[key] for key in _EXTRA_KEYS if key not in _V8_KEYS})
         _validate_v8_config(**{key: config[key] for key in _V8_KEYS})
-        if (config["root_policy_order"] or config["root_policy_extra"]) and root_policy is None:
-            raise ValueError("root_policy_order / root_policy_extra need a root_policy callable")
+        policy_prior = config["tree_mode"] == "puct" and config["puct_prior"] == "policy"
+        if (config["root_policy_order"] or config["root_policy_extra"] or policy_prior) and root_policy is None:
+            raise ValueError("root_policy_order / root_policy_extra / puct_prior='policy' need a root_policy callable")
         self.root_policy = root_policy
         super().__init__(seed=seed, **{key: config[key] for key in V5_FINAL})
         for key in _EXTRA_KEYS:
