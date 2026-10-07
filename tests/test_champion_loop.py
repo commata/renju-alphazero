@@ -120,5 +120,39 @@ class ChampionLoopTest(unittest.TestCase):
                              'stage8_ada_c1120_140.json')
 
 
+
+try:
+    import torch
+except ModuleNotFoundError as exc:
+    if exc.name != 'torch':
+        raise
+    torch = None
+
+
+@unittest.skipIf(torch is None, 'requires torch')
+class FreezeChampionTest(unittest.TestCase):
+    def test_freeze_copies_and_records_provenance(self):
+        from freeze_champion import freeze
+        from training.config import load_config
+        from training.training_checkpoint import build_checkpoint, save_atomic
+        from training.training_state import init_training_state
+
+        config = load_config(ROOT / 'configs' / 'stage6_test.yaml')
+        with tempfile.TemporaryDirectory() as tmp:
+            checkpoint = Path(tmp) / 'c.pt'
+            save_atomic(checkpoint, build_checkpoint(init_training_state(config)))
+            evidence = Path(tmp) / 'rr.json'
+            evidence.write_text('{}')
+            record = freeze(checkpoint, 'X1', Path(tmp) / 'anchors', [evidence])
+            self.assertEqual((Path(tmp) / 'anchors' / 'X1.pt').read_bytes(), checkpoint.read_bytes())
+            self.assertEqual(record['generation'], 0)
+            self.assertEqual(len(record['evidence']), 1)
+            freeze(checkpoint, 'X1', Path(tmp) / 'anchors', [])        # same bytes: allowed
+            other = Path(tmp) / 'd.pt'
+            other.write_bytes(checkpoint.read_bytes() + b'x')
+            with self.assertRaises(SystemExit):
+                freeze(other, 'X1', Path(tmp) / 'anchors', [])
+
+
 if __name__ == '__main__':
     unittest.main()

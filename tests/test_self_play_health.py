@@ -66,6 +66,8 @@ class SelfPlayHealthTest(unittest.TestCase):
             result = analyze(write_run(Path(tmp), plan), 0, 100, 4, None, 6.0)
         self.assertEqual(result['windows'][0]['one_sided_share'], 1.0)
         self.assertEqual(result['windows'][0]['mean_abs_color_margin'], 1.0)
+        self.assertEqual(result['gate']['level'], 'WARN')
+        self.assertTrue(any('one-sided' in f for f in result['gate']['flags']))
         self.assertEqual(result['windows'][0]['black_share'], 0.5)   # balanced on average
 
     def test_collapsed_openings_warn(self):

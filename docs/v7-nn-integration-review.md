@@ -1321,17 +1321,22 @@ python scripts/forensic_short_games.py "$R\stage8_s400_c1480" --from 1520 --to 1
 `runs/forensics/g1_*.json`, `runs/forensics/c2b_*.json`, `runs/gates/stage8_s400_c1480_*.json`,
 `stage8_s400_c1480`의 `metrics.jsonl`·`external_eval/`·`probes/`, `stage8_s400_c1480.g1.log`.
 
-## 21. C3: S400 champion 선정 (학습 없음, 2026-10-07)
+## 21. C3 → 동결 → G2 (2026-10-07, 외부 검토 반영)
 
-G1 결과는 `docs/stage8-plan.md` §12.23에 있다. 규칙은 C0(§15.1)과 같다. 동률 깨기는 유의성으로 판정한다(§15.1 적용 결과의 수정본).
+설계는 `docs/stage8-plan.md` §12.23(G1 결과)과 §12.24(다음 설계)에 있다.
+
+### 21.1 C3: S400 champion 선정 (학습 없음)
+
+규칙은 C0(§15.1)과 같고, 동률 깨기는 유의성으로 판정한다.
 
 1. 새 seed 9301, 100쌍 라운드로빈: ADA1360, S400 1520, 1560, 1600.
 2. **자격:** ADA1360 상대 점수 > 0.55이고 pair p < 0.05.
 3. 자격자 중 라운드로빈 총점 1위가 champion이다.
-   1·2위 직접 대결 p ≥ 0.05이면, 새 seed 7107 heavy 300판 대응 비교(p < 0.05)로 고른다. 그래도 아니면 늦은 세대를 고른다.
-4. heavy가 같은 seed의 ADA1360보다 유의하게 낮으면 자격을 잃는다.
+   1·2위의 직접 대결 p ≥ 0.05이면, 새 seed 7107 heavy 300판 대응 비교(p < 0.05)로 고른다. 그래도 결정되지 않으면 늦은 세대를 고른다.
+4. heavy가 같은 seed의 ADA1360(C0 기록 129/300)보다 유의하게 낮으면 자격을 잃는다.
 
 ```powershell
+# 창 1 (.venv-cuda): 라운드로빈
 cd "C:\오목 강화학습\renju-stage8"
 & "C:\오목 강화학습\renju-alphazero\.venv-cuda\Scripts\Activate.ps1"
 git fetch origin feat/stage8-plan
@@ -1345,6 +1350,14 @@ python scripts/run_stage8_head_to_head.py `
     --checkpoint "S400_1560=$S\checkpoint_gen1560.pt" `
     --checkpoint "S400_1600=$S\checkpoint_gen1600.pt" `
     --pairs 100 --seed 9301 --output "$R\champion\rr_s400_seed9301.json"
+```
+
+```powershell
+# 창 2 (.venv-cuda, 동시에): 새 seed heavy
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cuda\Scripts\Activate.ps1"
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$S = "$R\stage8_s400_c1480\checkpoints"
 $cands = [ordered]@{ "S400_1520" = "$S\checkpoint_gen1520.pt"; "S400_1560" = "$S\checkpoint_gen1560.pt";
                      "S400_1600" = "$S\checkpoint_gen1600.pt" }
 foreach ($k in $cands.Keys) {
@@ -1354,7 +1367,55 @@ foreach ($k in $cands.Keys) {
 }
 ```
 
-- ADA1360의 seed 7107 heavy는 C0에서 이미 있다(`runs/champion/heavy_ADA1360_seed7107.json`, 129/300). 다시 돌리지 않는다.
-- 라운드로빈은 몇십 분, heavy는 후보당 30분~1시간 정도다. 두 블록을 창 두 개로 나눠 동시에 돌려도 된다.
-
 **공유해 줄 것:** `runs/champion/rr_s400_seed9301.json`, `runs/champion/heavy_S400_*_seed7107.json`.
+그리고 결과 패키지 보관용으로 `stage8_ada_c1120/external_eval/gen1520_heavy.json`, `gen1560_heavy.json`(CTL heavy 원본)도 함께 보낸다.
+
+### 21.2 동결 (C3 판정 후)
+
+`$X`는 C3에서 고른 세대다.
+
+```powershell
+$X = 1560      # C3 결과로 바꾼다
+python scripts/freeze_champion.py --checkpoint "$S\checkpoint_gen$X.pt" --label S400C `
+    --anchors-dir "$R\anchors" `
+    --evidence "$R\champion\rr_s400_seed9301.json" "$R\champion\heavy_S400_*_seed7107.json" `
+               "$R\arm_h2h\s400_verdict.json" `
+    --note "C3 champion of the S400 recipe (G1)"
+```
+
+### 21.3 G2: S400 레시피로 규모 확대 (champion에서 이어서)
+
+- 판수는 champion 이후 **누적**이다. G2a 120세대(1,920판) → G2b 320세대(5,120판) → G2c 640세대(10,240판).
+- 루프는 하나다. G2a·G2b는 그 루프 안의 기록 지점이다.
+- anchor는 S400C에서 시작해 PROMOTE마다 교체한다.
+- 120세대 연속 PROMOTE가 없으면(정체) 또는 STOP이면 루프가 멈춘다.
+- MP(멀티프로세스)는 구현 중이다. 지금 바로 시작해도 되고(1프로세스 lock-step, G2a 약 12시간), MP를 기다려도 된다.
+  루프는 재개 가능하므로, 중간에 끊고 MP 옵션을 붙여 같은 명령으로 이어갈 수 있다.
+
+```powershell
+# 창 1 (.venv-cuda). 시작과 재시작 모두 이 블록. $X는 21.2와 같은 값.
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cuda\Scripts\Activate.ps1"
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$X = 1560
+if ($X -eq 1600) { $run = "$R\stage8_s400_c1480" } else {
+  $run = "$R\stage8_s400_g2"
+  if (-not (Test-Path $run)) {
+    python scripts/branch_stage8_run.py --source "$R\stage8_s400_c1480" --generation $X --dest $run
+  }
+}
+python scripts/run_champion_loop.py --run-dir $run --config configs/stage8_ada_sims400.yaml `
+    --start $X --end ($X + 640) --prefix G2_ `
+    --champion "S400C=$R\anchors\S400C.pt" --anchors-dir "$R\anchors" `
+    --gates-dir "$R\gates" --log "$run.g2.log" --device cuda --parallel-games 16
+Write-Host "loop exit $LASTEXITCODE"
+```
+
+- `$X`가 1600이면 기존 G1 run에서 그대로 이어 간다. 그 외에는 `stage8_s400_g2`로 분기한다. 이렇게 해야 이후 세대 평가 파일이 섞이지 않는다.
+- 종료 코드: 0 완료(+640), 12 STOP, 13 정체(120세대 무PROMOTE), 1 오류(같은 블록 재실행).
+- **G2a 점검(+120세대 후):** 아래 명령의 출력과 `runs/gates/<run 이름>_*.json`, run의 `metrics.jsonl`·`external_eval/`·`probes/`를 보낸다.
+
+```powershell
+python scripts/analyze_self_play_health.py $run --from ($X - 40) --to ($X + 120) --window 40 `
+    --reference-from ($X - 40) --reference-reuse 6.4 --output "$R\health\g2a.json"
+```

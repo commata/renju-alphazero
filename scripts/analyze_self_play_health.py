@@ -19,8 +19,8 @@ Gate on the last window (thresholds are flags; see docs/stage8-plan.md §12.14):
 
 - STOP: <= 10-ply share >= 40 % in the last two windows, or reuse >= 1.3 x reference
   in the last two windows;
-- WARN: <= 10-ply share >= 30 %, reuse >= 1.2 x reference, or 6-ply prefix entropy
-  below 0.8 x the reference window's;
+- WARN: <= 10-ply share >= 30 %, reuse >= 1.2 x reference, one-sided generations
+  >= 30 %, or 6-ply prefix entropy below 0.8 x the reference window's;
 - OK otherwise.
 
 The reference window is ``--reference-from``..+window (default: the first window).
@@ -37,6 +37,7 @@ from pathlib import Path
 
 SHORT = 10
 ONE_SIDED = 15 / 16
+ONE_SIDED_WARN = 0.30   # Stage 8 §12.24: colour-mode switching watch (WARN only, never STOP)
 PREFIXES = (4, 6, 8)
 
 
@@ -138,6 +139,10 @@ def gate(windows: list[dict], reference: dict, reference_reuse: float | None) ->
             level = 'WARN'
         if high_reuse(last, 1.2):
             flags.append(f"reuse {last['reuse']:.2f} >= 1.2 x {ref_reuse:.2f}")
+            level = 'WARN'
+        if last.get('one_sided_share') is not None and last['one_sided_share'] >= ONE_SIDED_WARN:
+            flags.append(f"one-sided generations {last['one_sided_share']:.0%} >= "
+                         f"{ONE_SIDED_WARN:.0%}")
             level = 'WARN'
         if reference['prefix6_entropy'] and last['prefix6_entropy'] < 0.8 * reference['prefix6_entropy']:
             flags.append(f"6-ply prefix entropy {last['prefix6_entropy']:.2f} < 0.8 x "
