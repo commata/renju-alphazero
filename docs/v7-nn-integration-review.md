@@ -1320,3 +1320,41 @@ python scripts/forensic_short_games.py "$R\stage8_s400_c1480" --from 1520 --to 1
 **공유해 줄 것:** `runs/gpu/rtx5070_smoke_g0b.json`, `runs/arm_h2h/s400_*.json`, `runs/health/s400_*.json`,
 `runs/forensics/g1_*.json`, `runs/forensics/c2b_*.json`, `runs/gates/stage8_s400_c1480_*.json`,
 `stage8_s400_c1480`의 `metrics.jsonl`·`external_eval/`·`probes/`, `stage8_s400_c1480.g1.log`.
+
+## 21. C3: S400 champion 선정 (학습 없음, 2026-10-07)
+
+G1 결과는 `docs/stage8-plan.md` §12.23에 있다. 규칙은 C0(§15.1)과 같다. 동률 깨기는 유의성으로 판정한다(§15.1 적용 결과의 수정본).
+
+1. 새 seed 9301, 100쌍 라운드로빈: ADA1360, S400 1520, 1560, 1600.
+2. **자격:** ADA1360 상대 점수 > 0.55이고 pair p < 0.05.
+3. 자격자 중 라운드로빈 총점 1위가 champion이다.
+   1·2위 직접 대결 p ≥ 0.05이면, 새 seed 7107 heavy 300판 대응 비교(p < 0.05)로 고른다. 그래도 아니면 늦은 세대를 고른다.
+4. heavy가 같은 seed의 ADA1360보다 유의하게 낮으면 자격을 잃는다.
+
+```powershell
+cd "C:\오목 강화학습\renju-stage8"
+& "C:\오목 강화학습\renju-alphazero\.venv-cuda\Scripts\Activate.ps1"
+git fetch origin feat/stage8-plan
+git merge --ff-only origin/feat/stage8-plan
+$R = "C:\오목 강화학습\renju-alphazero\runs"
+$S = "$R\stage8_s400_c1480\checkpoints"
+New-Item -ItemType Directory -Force "$R\champion" | Out-Null
+python scripts/run_stage8_head_to_head.py `
+    --checkpoint "ADA1360=$R\anchors\ADA1360.pt" `
+    --checkpoint "S400_1520=$S\checkpoint_gen1520.pt" `
+    --checkpoint "S400_1560=$S\checkpoint_gen1560.pt" `
+    --checkpoint "S400_1600=$S\checkpoint_gen1600.pt" `
+    --pairs 100 --seed 9301 --output "$R\champion\rr_s400_seed9301.json"
+$cands = [ordered]@{ "S400_1520" = "$S\checkpoint_gen1520.pt"; "S400_1560" = "$S\checkpoint_gen1560.pt";
+                     "S400_1600" = "$S\checkpoint_gen1600.pt" }
+foreach ($k in $cands.Keys) {
+  python scripts/run_stage7_checkpoint_eval.py --checkpoint $cands[$k] `
+      --opponents mcts_v5 mcts_v6 mcts_v7 --pairs 50 --seed 7107 --tactical-rules off `
+      --output "$R\champion\heavy_$($k)_seed7107.json"
+}
+```
+
+- ADA1360의 seed 7107 heavy는 C0에서 이미 있다(`runs/champion/heavy_ADA1360_seed7107.json`, 129/300). 다시 돌리지 않는다.
+- 라운드로빈은 몇십 분, heavy는 후보당 30분~1시간 정도다. 두 블록을 창 두 개로 나눠 동시에 돌려도 된다.
+
+**공유해 줄 것:** `runs/champion/rr_s400_seed9301.json`, `runs/champion/heavy_S400_*_seed7107.json`.
