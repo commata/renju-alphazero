@@ -1931,3 +1931,110 @@ H4의 교훈은 두 가지다. 첫째, policy 순서를 V5 rollout 트리의 roo
 - 상대가 `v8:full` 하나뿐이다(같은 엔진 계열).
 - opening은 무작위 2수 25개다. H4의 교훈(5쌍 → 25쌍에서 역전)이 있으므로 8402 재현이 필요하다.
 - 8402가 통과하면 다른 상대(`v8:b_only`, H4와 같은 조건)에서도 방향을 확인한다. 이것은 판정 기준이 아니라 보조 확인이다.
+
+### 12.18 웹 대국 패배 분석과 VCT2·H6 안전 설계 (2026-10-07)
+
+입력: `run_web_play` 대국 1판(사람 백 승, 100수, 상대는 웹 기본 `v8` = V5 트리 `full`). 기보와 probe 정의는
+`docs/mcts-v8-results/probe_web_v8_loss_20261007.json`. 좌표는 이 절에서 1-indexed(row0+1, col0+1)다.
+처음 분석안("조용한 장기 포석에 졌다")을 로그·코드·solver 재실행으로 검토하고, 그 검토를 한 번 더 교차 검토한 최종본이다.
+
+#### 사실 (로그와 solver 재실행으로 확인)
+
+| 항목 | 값 |
+|---|---|
+| V8 착수 경로 | 49수: tree 46, stage4 2(ply 95, 97), stage2 1(ply 99). own VCF 0, V8-B WIN 0 |
+| 시뮬레이션 | tree 46수는 50회, 강제수(95/97/99)는 0회 |
+| V8-B | 27개 후보 전부 REFUTED, **모두 ply 5–33**. ply 35부터 공격 후보(4·열린 3을 만드는 수) 0개 |
+| root 평균값 | ply 41 무렵부터 음수. ply 57, 61, 63, 69, 75–83, 87–93에서 15개 자식 모두 −1.0(ply 85는 최고 −0.67). 자식당 방문 3–4회 |
+| ply 89–93 root 후보 | 15개 전부 흑 진영. (11,13), (12,12), (14,14) 등 우하단 대응점은 없음 |
+| 승부 수순 | 백 92 (13,13) → 흑 93 (3,4) → 백 94 (12,13) 13열 위협(10·12·13·15) → 흑 95 (11,13) → **백 96 (12,12) 삼삼**(12행 12–14 + 대각 11,11–13,13) → 흑 97 (10,10) → 백 98 (12,11) 열린 4 → 흑 99 (12,10) → 백 100 (12,15) |
+| ply 95 V8-A | 강제방어 3개((11,13), (14,13), (9,13)) + 넓힘 20개, 모두 UNSAFE. 19,583 nodes, VCF 443회 |
+| ply 97 V8-A | 강제방어 6개 + 넓힘 18개, 모두 UNSAFE |
+| 백 94 직후 | 흑 합법수 131개 전부 `ThreatSolver` depth 1에서 UNSAFE(14초) |
+| 백 96 직후 | 흑 합법수 129개 전부 depth 0(VCF)에서 UNSAFE |
+| 흑 85·87·89·91 직후 | depth 1·2 모두 SAFE(= depth-2 VCT 클래스 안에서 반박 없음. 전체 게임 안전이 아님) |
+
+**결론.** 흑 93 (3,4)는 **PROVEN_LOSS_VCT2**다(witness: 백 94, 그 뒤 모든 응수가 PROVEN_LOSS_VCT1).
+V8-C의 `SAFE`(NOT_REFUTED_VCT1)는 정의대로 맞았고, 패배는 그 탐색 깊이에서 정확히 준비수 1개 바깥에 있었다.
+"30수 뒤 장기 판세" 문제가 아니라 VCT1 지평선 바로 밖의 짧은 전술이다.
+
+**미확인.** 흑 93에서 버티는 수가 있었는지(P92의 참값). depth-2 전체 검사는 후보 하나에 30분을 넘겨 끝내지 못했다.
+
+#### 원인 정리
+
+| # | 원인 | 근거 |
+|---|---|---|
+| C1 | 안전 검사가 VCT1까지 | (3,4)가 SAFE 통과 후 VCT2로 짐 |
+| C2 | 상대 준비수 감지 없음, 방어는 Stage 4부터 | Stage 4 첫 발동(95)은 이미 진 뒤 |
+| C3 | root 후보가 핵심 방어점을 놓침 | 후보 pool은 모든 돌 주변(`search/mcts_v3._neighborhood_pool`)이지만, 점수가 자기 돌을 약간 우대하고(`search/mcts._move_score`: 거리 1에서 자기 +6 / 상대 +5) shortlist가 제한돼 우하단 점이 올라오지 못함 |
+| C4 | rollout 값 포화 | 50회를 15개에 나눠 모두 −1이면 비교 정보가 없고, 최종 선택은 방문 수 → 평균값 → **무작위**(`search/mcts.py`) |
+| C5 | 공격을 쌓지 못함 | V8-B 후보는 즉시 4·열린 3을 만드는 수뿐 |
+| C6 | V8-C는 트리 1위가 SAFE면 다른 수를 보지 않음 | ply 93에서 (3,4) 하나만 검사 |
+
+−1.0은 "그 자식의 rollout 표본이 모두 흑 패배"라는 나쁜 신호이지만, 방문 3–4회라 value로 해석할 수 없다.
+
+#### 설계 원칙 (H5 이후 단계 전체에 적용)
+
+1. **기준선은 움직이지 않는다.** `V8_DEFAULTS`와 `v8:full`의 정의는 바꾸지 않는다. 새 기능은 기본값 off 옵션과 새 arm으로만 넣고,
+   off 상태에서 기존 결과와 착수가 같은지 회귀 테스트한다(H4 방식). 채택되면 새 이름의 config로 고정한다.
+2. **증명만 라벨이 된다.** UNSAFE/WIN witness가 있는 결과만 value 타깃이다. SAFE, NOT_FOUND, UNKNOWN, 라벨 없는 국면은 value loss를 mask한다(0으로 채우지 않는다).
+3. **가지치기는 공격자 쪽만.** selective VCT2는 공격자 준비수만 위협 수(4, 3, 끊긴 3)로 제한하고, 방어자 응수는 항상 전체 합법수(흑 금수 반영)를 검사한다.
+   이렇게 하면 찾은 witness는 증명이고, "못 찾음"은 불완전할 뿐이다. 방어자 응수를 줄이면 거짓 PROVEN_LOSS가 생기므로 금지한다.
+4. **한 번에 하나만 바꾼다.** VCT2 veto, root 후보 주입, value leaf는 각각 별도 arm으로 측정한다.
+5. **결과를 본 뒤 판정 기준을 바꾸지 않는다.** seed를 추가해 기준을 맞추지 않는다.
+6. **예산은 노드·호출 수로만.** 시간 cut은 쓰지 않는다(재현성). 후보 순서도 결정적이어야 한다.
+
+#### 상태 이름
+
+| 이름 | 뜻 | value 라벨 |
+|---|---|---|
+| `PROVEN_LOSS_VCT2` | 상대의 "준비수 ≤ 2 + VCF" 승리가 witness로 증명됨 | 둘 차례 관점 −1 |
+| `NO_VCT2_FOUND_WITHIN_HORIZON` | depth-2 전체 검사를 끝냈고 반박 없음. **방어가 있다는 뜻이 아님** | 없음 |
+| `NO_TARGETED_VCT2_FOUND` | selective 검사에서 못 찾음 | 없음 |
+| `UNKNOWN` | 예산 소진 | 없음 |
+
+"HAS_DEFENSE" 같은 이름은 쓰지 않는다.
+
+#### 라벨 계약 (H6)
+
+- **value는 항상 둘 차례(side to move) 관점.** 행마다 `side_to_move`, `value_target`, `value_perspective="side_to_move"`를 저장한다.
+  - 둘 차례의 증명된 승리 +1, 증명된 패배 −1, 실제로 끝난 무승부만 0.
+  - self-play 결과는 각 국면의 둘 차례로 변환(흑 승 → 흑 차례 국면 +1, 백 차례 국면 −1).
+- 행마다 출처 정보: `game_id`, `ply`, `canonical_hash`(D4), `source`, `solver_class`, `solver_depth`, `solver_budget`, `engine_config_hash`, `model_hash`, `git_commit`.
+- **분할과 누출 방지.** probe 국면(D4 정규형)이 하나라도 들어 있는 **게임 전체**를 학습에서 뺀다(앞뒤 수로 결과가 새지 않게).
+  그다음 `game_id` 단위로 train/val/test를 나누고, 같은 정규형 국면이 집합 사이에 걸치지 않게 검사한다. 위반이 있으면 학습을 거부한다.
+- **H7 provenance.** 한 게임 안에서는 model·config가 고정이어야 한다(위반 시 거부). 서로 다른 게임 사이의 세대 혼합은 replay buffer에서 허용하되,
+  게임마다 생성 model·config를 기록하고 buffer가 허용하는 세대 범위를 명시한다. 벤치마크 데이터처럼 프로토콜이 동질성을 요구할 때만 혼합을 금지한다.
+
+#### 탐색 부호 계약 (H6 value leaf)
+
+- `analysis/puct_v8.py`와 `search/mcts._backpropagate`의 노드 값은 **그 노드로 들어온 수를 둔 쪽(player_just_moved)** 관점이다.
+  value net이 leaf 국면의 둘 차례 관점 값 `v`를 주면 leaf 노드 값은 `−v`이고, 위로 갈수록 부호가 번갈아 바뀐다.
+- `_backpropagate`는 승자(+1/−1/0 결과)를 받는다. H6에서는 실수 값을 받는 backup을 새로 두되 변환은 한 함수에서만 한다.
+- 필수 테스트: 즉시 5목 승리, 상대 5목 허용, 1수·2수 강제승, 부모·자식 부호 반전, 실제 무승부(0). H5의 부호 테스트를 value-leaf 버전으로 확장한다.
+- PROVEN_LOSS veto는 value보다 위에 둔다(§12.2 유지).
+
+#### Probe
+
+| probe | 국면 | 둘 차례 | 성격 | 기대 |
+|---|---|---|---|---|
+| P92 | 백 92 직후 | 흑 | 순위 probe, 참값 UNRESOLVED | (3,4)가 우하단 대응수보다 아래, root 후보·visit이 우하단으로. **value 부호는 기준으로 쓰지 않는다** |
+| P93 | 흑 93 (3,4) 직후 | 백 | 증명 국면(백 VCT2 승리) | **둘 차례(백) 관점 value > 0**, 흑 관점 < 0 |
+| P94 | 백 94 직후 | 흑 | 회귀 fixture | 흑 합법수 131개 전부 PROVEN_LOSS_VCT1, 둘 차례 관점 value < 0 |
+
+P93은 백이 이기는 국면이다. 검토 과정에서 "둘 차례(백) 관점 < 0"이라는 제안이 있었지만 반대다. 백 94가 witness이므로 백(둘 차례)이 +1이다.
+P92 참값은 데스크톱에서 depth-2 전체 계산으로 확정을 시도한다. 결과는 위 상태 이름으로만 기록한다.
+
+#### 단계
+
+| 단계 | 내용 | 통과/진행 조건 |
+|---|---|---|
+| A0 | 8402 실행 환경 확인. `56cd9c0..8dd3a8c`는 문서·결과 파일만 바꿨다(`src` `scripts` `configs` `tests` 변경 없음, 확인함). policy checkpoint SHA-256 기록(8401 결과에는 경로만 있다) | 차이 없음, 같은 checkpoint, `--puct-c 1.5`, 상대 `v8:full`, 25쌍 |
+| B | seed 8402: `puct_heur` → 끝난 뒤 `puct_policy`(동시에 돌리지 않는다. 시간 비율 오염 방지). 이 동안 V8·H6 코드를 바꾸지 않는다 | — |
+| C | 8401+8402 요약, §12.16 판정표 그대로 | PASS → `puct_policy` 채택, 커밋·checkpoint hash·c·`v8:full`·프로토콜 고정. FAIL → 실패 원인 분석(seed·opening 민감도, prior fallback, not-SAFE, V8-C 교체, 결정적 패착) |
+| S1 | probe 등록·측정 + 빈도 조사. 기존 V8 JSONL 전체에서 "tree 수 SAFE → 상대 수 뒤 Stage 4 → 강제방어 전부 UNSAFE" 패턴을 `game_id`, opening, seed, ply, 승패와 함께 센다(같은 opening의 반복은 하나로) | `full`, `puct_heur`, `puct_policy`를 P92·P93·P94에서 측정 |
+| 결정 | `puct_policy`가 P92를 해결하고 패턴이 드물면 S2·S3 생략 → H6. 문제가 남고 반복되면 S2 | 미리 고정 |
+| S2 | selective VCT2를 `analysis/`의 분석 전용 함수로(착수 경로에서 호출 안 함). 원칙 3, 상태 이름 표 적용 | P93 UNSAFE, witness를 전체 `ThreatSolver` depth 2로 재검증해 일치, 응수 누락 없음, 노드 예산만 사용. S1 패배 국면으로 재현율·비용 측정 |
+| S3 | 엔진 arm 두 개를 따로: (a) V8-C 상위 K 자식에 VCT2 veto(PROVEN_LOSS일 때만), (b) 상대 위협 지역 방어점을 root 후보에 주입. 기본값 off | off에서 기존 결과와 같은 착수(10/10) + 고정 fixture(종국, quiet, VCF, VCT, 금수, P92·P93 인접). H5 프로토콜(25쌍, `v8:full`, bootstrap, 시간 비율 ≤ 1.5, 안전 위반 0, 다른 seed 재확인) |
+| H6 | 라벨 파이프라인(위 계약) → value 학습 → value leaf 통합 + 부호 테스트 → 벤치마크. S3 채택 시 VCT2 on/off × value on/off | P93·P94 value 부호, 증명 held-out 부호 정확도, RenjuNet 결과 calibration, P92 순위 |
+| H7 | Hybrid self-play | provenance 규칙 |
