@@ -25,6 +25,14 @@ primary (one per loss):
 flags (any number): ENGINE_SAID_SAFE, ENGINE_UNKNOWN, BOUNDARY_UNKNOWN, ROOT_UNKNOWN,
     ROOT_BUDGET_EXHAUSTED, STAGE_BUDGET_EXHAUSTED, OPP_OWN_VCT, V8C_SWITCHED, LONG_GAME,
     SIGNATURE
+causal_status (§12.21): CONFIRMED when the V8 move before the lost run is SAFE (or the run
+    reaches V8's first move), so the decisive move is the first losing transition;
+    TENTATIVE when that move is UNKNOWN (the first losing move may be earlier);
+    NOT_APPLICABLE for DEEPER_OR_POSITIONAL / UNRESOLVED.
+
+``--reuse-classification`` rebuilds the derived fields and totals from an earlier output
+(its walks) without re-running the solver; ``--witness-output`` writes the VCT2 positions
+(the position before each decisive move) as the S2 test set.
 
     python scripts/s1_loss_analysis.py docs/mcts-v8-results/h5_*_8401.json runs/h5/*_8402.json \\
         --classify puct_policy --workers 4 --output runs/s1/losses.json
@@ -45,9 +53,9 @@ for extra in (ROOT, ROOT / 'src'):
 from analysis.mcts_v8 import _BudgetedSolver  # noqa: E402
 from analysis.threats import SAFE, UNKNOWN, UNSAFE  # noqa: E402
 from renju import Game  # noqa: E402
-from scripts.run_mcts_v8_benchmark import _git_commit  # noqa: E402
+from scripts.run_mcts_v8_benchmark import _git_commit, file_sha256  # noqa: E402
 
-FORMAT = 's1-loss-analysis-v1'
+FORMAT = 's1-loss-analysis-v2'  # v2: causal_status, boundary_status, input_sha256
 LONG_GAME = 150
 
 
@@ -153,6 +161,16 @@ def _lost_depth(moves, ply, budget) -> tuple[int | None, str]:
     return None, worst
 
 
+def causal_fields(primary: str, walk: list[dict]) -> dict:
+    """Whether the decisive move is the first losing transition (from the walk alone)."""
+    boundary = walk[-1]['status'] if walk and walk[-1]['depth'] is None else 'START'
+    if primary not in ('VCT2_HORIZON', 'VCT1_LOSS'):
+        causal = 'NOT_APPLICABLE'
+    else:
+        causal = 'TENTATIVE' if boundary == UNKNOWN else 'CONFIRMED'
+    return {'boundary_status': boundary, 'causal_status': causal}
+
+
 def classify_game(args) -> dict:
     game, budget, seed, arm = args
     walk = []
@@ -195,6 +213,7 @@ def classify_game(args) -> dict:
         'decisive_depth': None if decisive is None else decisive['depth'],
         'decisive_route': None if decisive is None else decisive['record']['route'],
         'walk': [{'ply': e['ply'], 'depth': e['depth'], 'status': e['status']} for e in walk],
+        **causal_fields(cause, walk),
     }
 
 
@@ -206,6 +225,10 @@ def classify(results: list[dict], arms: set[str], budget: dict, workers: int) ->
     else:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             rows = list(pool.map(classify_game, jobs))
+    return aggregate(rows)
+
+
+def aggregate(rows: list[dict]) -> dict:
     out = {}
     for row in rows:
         entry = out.setdefault(row['arm'], {'losses': 0, 'primary': {}, 'flags': {}, 'games': [],
@@ -219,8 +242,29 @@ def classify(results: list[dict], arms: set[str], budget: dict, workers: int) ->
         entry['games'].append(row)
     for entry in out.values():
         entry['vct2_horizon_losses'] = entry['primary'].get('VCT2_HORIZON', 0)
+        vct2 = [g for g in entry['games'] if g['primary'] == 'VCT2_HORIZON']
+        entry['vct2_confirmed'] = sum(g['causal_status'] == 'CONFIRMED' for g in vct2)
+        entry['vct2_tentative'] = sum(g['causal_status'] == 'TENTATIVE' for g in vct2)
         entry['vct2_repeated_opening'] = entry['vct2_horizon_losses'] > len(entry['vct2_openings'])
         entry['vct2_openings'] = sorted(entry['vct2_openings'])
+    return out
+
+
+def witness_set(results: list[dict], classification: dict) -> list[dict]:
+    """Positions before each VCT2_HORIZON decisive move: V8 to move, the decisive move lost at depth 2."""
+    games = {(r['arm'], r['seed'], g['pair'], g['v8_color']): g for r in results for g in with_played(r)}
+    out = []
+    for arm, entry in sorted(classification.items()):
+        for row in entry['games']:
+            if row['primary'] != 'VCT2_HORIZON':
+                continue
+            game = games[(arm, row['seed'], row['pair'], row['v8_color'])]
+            record = next(m for m in game['v8_moves'] if m['ply'] == row['decisive_ply'])
+            out.append({'arm': arm, 'seed': row['seed'], 'pair': row['pair'], 'v8_color': row['v8_color'],
+                        'ply': row['decisive_ply'], 'moves': game['moves'][:row['decisive_ply']],
+                        'decisive_move_1idx': row['decisive_move'], 'decisive_route': row['decisive_route'],
+                        'engine_status': engine_status(record), 'causal_status': row['causal_status'],
+                        'boundary_status': row['boundary_status']})
     return out
 
 
@@ -228,17 +272,29 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('results', type=Path, nargs='+')
     parser.add_argument('--classify', nargs='*', default=[], help='arms whose losses are classified')
+    parser.add_argument('--reuse-classification', type=Path,
+                        help='take the walks from an earlier output instead of re-running the solver')
     parser.add_argument('--node-limit', type=int, default=20_000, help='per VCF call')
     parser.add_argument('--call-limit', type=int, default=50_000, help='VCF calls per checked move')
     parser.add_argument('--node-budget', type=int, default=3_000_000, help='VCF nodes per checked move')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--witness-output', type=Path, help='S2 test set: positions of the VCT2 losses')
     args = parser.parse_args(argv)
     results = [json.loads(p.read_text(encoding='utf-8')) for p in args.results]
     budget = {'node_limit': args.node_limit, 'call_limit': args.call_limit, 'node_budget': args.node_budget}
     payload = {'format': FORMAT, 'git_commit': _git_commit(), 'inputs': [str(p) for p in args.results],
+               'input_sha256': {str(p): file_sha256(p) for p in args.results},
                'budget': budget, 'signature': signature_table(results)}
-    if args.classify:
+    if args.reuse_classification is not None:
+        earlier = json.loads(args.reuse_classification.read_text(encoding='utf-8'))
+        payload['budget'] = earlier['budget']  # the walks were computed with that budget
+        payload['reused_from'] = {'path': str(args.reuse_classification), 'git_commit': earlier.get('git_commit'),
+                                  'sha256': file_sha256(args.reuse_classification)}
+        rows = [{**row, **causal_fields(row['primary'], row['walk'])}
+                for entry in earlier.get('classification', {}).values() for row in entry['games']]
+        payload['classification'] = aggregate(rows)
+    elif args.classify:
         payload['classification'] = classify(results, set(args.classify), budget, args.workers)
     print(json.dumps({'signature': {a: {k: v for k, v in r.items() if k != 'hits'}
                                     for a, r in payload['signature'].items()},
@@ -248,6 +304,11 @@ def main(argv=None) -> int:
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(payload, indent=1), encoding='utf-8')
+    if args.witness_output is not None:
+        witnesses = witness_set(results, payload.get('classification', {}))
+        args.witness_output.parent.mkdir(parents=True, exist_ok=True)
+        args.witness_output.write_text(json.dumps({'format': 's2-witness-set-v1', 'source': payload['inputs'],
+                                                   'positions': witnesses}, indent=1), encoding='utf-8')
     return 0
 
 

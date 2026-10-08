@@ -1,0 +1,696 @@
+{
+ "format": "s1-loss-analysis-v2",
+ "git_commit": "786144921eb763414e74b641a5fee757e0fd8144",
+ "inputs": [
+  "docs/mcts-v8-results/h5_policy_8401.json",
+  "docs/mcts-v8-results/h5_policy_8402.json"
+ ],
+ "input_sha256": {
+  "docs/mcts-v8-results/h5_policy_8401.json": "00b83b631549538f0d4640a7dbae587736b06615d03d094c8862ed14863d9fc4",
+  "docs/mcts-v8-results/h5_policy_8402.json": "1abbb6c73b9e02f4196a2f85026c51505f365f1d3dc5e2457293d3abd40b01c9"
+ },
+ "budget": {
+  "node_limit": 20000,
+  "call_limit": 50000,
+  "node_budget": 3000000
+ },
+ "signature": {
+  "puct_policy": {
+   "games": 100,
+   "affected_games": 1,
+   "game_rate": 0.01,
+   "unique_openings": 50,
+   "affected_openings": 1,
+   "opening_rate": 0.02,
+   "hits": [
+    {
+     "seed": 8401,
+     "pair": 16,
+     "v8_color": "white",
+     "ply": 13,
+     "result": "loss"
+    }
+   ]
+  }
+ },
+ "reused_from": {
+  "path": "docs/mcts-v8-results/s1_losses_policy_v1.json",
+  "git_commit": "b6484898dd73a84c641b1c81efae4d72883e2a95",
+  "sha256": "6b2c6ae7e89851d8e47351bec7ec81bee9edeef2b6fb34ae0b86fe759fdb29f6"
+ },
+ "classification": {
+  "puct_policy": {
+   "losses": 10,
+   "primary": {
+    "VCT2_HORIZON": 5,
+    "VCT1_LOSS": 3,
+    "DEEPER_OR_POSITIONAL": 2
+   },
+   "flags": {
+    "ENGINE_SAID_SAFE": 5,
+    "OPP_OWN_VCT": 5,
+    "SIGNATURE": 1,
+    "V8C_SWITCHED": 4,
+    "BOUNDARY_UNKNOWN": 8,
+    "STAGE_BUDGET_EXHAUSTED": 7,
+    "ENGINE_UNKNOWN": 2,
+    "ROOT_BUDGET_EXHAUSTED": 2,
+    "ROOT_UNKNOWN": 2
+   },
+   "games": [
+    {
+     "arm": "puct_policy",
+     "seed": 8401,
+     "pair": 4,
+     "v8_color": "white",
+     "length": 21,
+     "primary": "VCT2_HORIZON",
+     "flags": [
+      "ENGINE_SAID_SAFE",
+      "OPP_OWN_VCT"
+     ],
+     "decisive_ply": 11,
+     "decisive_move": [
+      9,
+      8
+     ],
+     "decisive_depth": 2,
+     "decisive_route": "tree",
+     "walk": [
+      {
+       "ply": 19,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 17,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 15,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 13,
+       "depth": 1,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 11,
+       "depth": 2,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 9,
+       "depth": null,
+       "status": "SAFE"
+      }
+     ],
+     "boundary_status": "SAFE",
+     "causal_status": "CONFIRMED"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8401,
+     "pair": 16,
+     "v8_color": "white",
+     "length": 23,
+     "primary": "VCT2_HORIZON",
+     "flags": [
+      "ENGINE_SAID_SAFE",
+      "OPP_OWN_VCT",
+      "SIGNATURE",
+      "V8C_SWITCHED"
+     ],
+     "decisive_ply": 11,
+     "decisive_move": [
+      8,
+      9
+     ],
+     "decisive_depth": 2,
+     "decisive_route": "tree",
+     "walk": [
+      {
+       "ply": 21,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 19,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 17,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 15,
+       "depth": 1,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 13,
+       "depth": 2,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 11,
+       "depth": 2,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 9,
+       "depth": null,
+       "status": "SAFE"
+      }
+     ],
+     "boundary_status": "SAFE",
+     "causal_status": "CONFIRMED"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8401,
+     "pair": 17,
+     "v8_color": "white",
+     "length": 23,
+     "primary": "VCT2_HORIZON",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "ENGINE_SAID_SAFE",
+      "OPP_OWN_VCT",
+      "STAGE_BUDGET_EXHAUSTED"
+     ],
+     "decisive_ply": 11,
+     "decisive_move": [
+      9,
+      6
+     ],
+     "decisive_depth": 2,
+     "decisive_route": "tree",
+     "walk": [
+      {
+       "ply": 21,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 19,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 17,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 15,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 13,
+       "depth": 1,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 11,
+       "depth": 2,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 9,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "TENTATIVE"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8402,
+     "pair": 3,
+     "v8_color": "black",
+     "length": 38,
+     "primary": "VCT1_LOSS",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "ENGINE_UNKNOWN",
+      "STAGE_BUDGET_EXHAUSTED"
+     ],
+     "decisive_ply": 24,
+     "decisive_move": [
+      6,
+      7
+     ],
+     "decisive_depth": 1,
+     "decisive_route": "stage5",
+     "walk": [
+      {
+       "ply": 36,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 34,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 32,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 30,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 28,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 26,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 24,
+       "depth": 1,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 22,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "TENTATIVE"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8402,
+     "pair": 7,
+     "v8_color": "black",
+     "length": 34,
+     "primary": "VCT2_HORIZON",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "ENGINE_SAID_SAFE",
+      "OPP_OWN_VCT"
+     ],
+     "decisive_ply": 22,
+     "decisive_move": [
+      7,
+      5
+     ],
+     "decisive_depth": 2,
+     "decisive_route": "stage4",
+     "walk": [
+      {
+       "ply": 32,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 30,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 28,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 26,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 24,
+       "depth": 1,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 22,
+       "depth": 2,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 20,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "TENTATIVE"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8402,
+     "pair": 7,
+     "v8_color": "white",
+     "length": 41,
+     "primary": "VCT1_LOSS",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "STAGE_BUDGET_EXHAUSTED"
+     ],
+     "decisive_ply": 33,
+     "decisive_move": [
+      4,
+      8
+     ],
+     "decisive_depth": 0,
+     "decisive_route": "stage4",
+     "walk": [
+      {
+       "ply": 39,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 37,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 35,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 33,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 31,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "TENTATIVE"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8402,
+     "pair": 11,
+     "v8_color": "white",
+     "length": 33,
+     "primary": "DEEPER_OR_POSITIONAL",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "STAGE_BUDGET_EXHAUSTED"
+     ],
+     "decisive_ply": 21,
+     "decisive_move": [
+      10,
+      11
+     ],
+     "decisive_depth": 0,
+     "decisive_route": "stage4",
+     "walk": [
+      {
+       "ply": 31,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 29,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 27,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 25,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 23,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 21,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 19,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "NOT_APPLICABLE"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8402,
+     "pair": 14,
+     "v8_color": "black",
+     "length": 86,
+     "primary": "DEEPER_OR_POSITIONAL",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "ROOT_BUDGET_EXHAUSTED",
+      "ROOT_UNKNOWN",
+      "STAGE_BUDGET_EXHAUSTED",
+      "V8C_SWITCHED"
+     ],
+     "decisive_ply": 78,
+     "decisive_move": [
+      10,
+      12
+     ],
+     "decisive_depth": 0,
+     "decisive_route": "stage4",
+     "walk": [
+      {
+       "ply": 84,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 82,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 80,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 78,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 76,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "NOT_APPLICABLE"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8402,
+     "pair": 17,
+     "v8_color": "black",
+     "length": 64,
+     "primary": "VCT2_HORIZON",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "ENGINE_SAID_SAFE",
+      "OPP_OWN_VCT",
+      "STAGE_BUDGET_EXHAUSTED",
+      "V8C_SWITCHED"
+     ],
+     "decisive_ply": 46,
+     "decisive_move": [
+      6,
+      5
+     ],
+     "decisive_depth": 2,
+     "decisive_route": "tree",
+     "walk": [
+      {
+       "ply": 62,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 60,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 58,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 56,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 54,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 52,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 50,
+       "depth": 1,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 48,
+       "depth": 2,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 46,
+       "depth": 2,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 44,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "TENTATIVE"
+    },
+    {
+     "arm": "puct_policy",
+     "seed": 8402,
+     "pair": 22,
+     "v8_color": "black",
+     "length": 82,
+     "primary": "VCT1_LOSS",
+     "flags": [
+      "BOUNDARY_UNKNOWN",
+      "ENGINE_UNKNOWN",
+      "ROOT_BUDGET_EXHAUSTED",
+      "ROOT_UNKNOWN",
+      "STAGE_BUDGET_EXHAUSTED",
+      "V8C_SWITCHED"
+     ],
+     "decisive_ply": 64,
+     "decisive_move": [
+      10,
+      5
+     ],
+     "decisive_depth": 0,
+     "decisive_route": "stage4",
+     "walk": [
+      {
+       "ply": 80,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 78,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 76,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 74,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 72,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 70,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 68,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 66,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 64,
+       "depth": 0,
+       "status": "UNSAFE"
+      },
+      {
+       "ply": 62,
+       "depth": null,
+       "status": "UNKNOWN"
+      }
+     ],
+     "boundary_status": "UNKNOWN",
+     "causal_status": "TENTATIVE"
+    }
+   ],
+   "vct2_openings": [
+    [
+     8401,
+     4
+    ],
+    [
+     8401,
+     16
+    ],
+    [
+     8401,
+     17
+    ],
+    [
+     8402,
+     7
+    ],
+    [
+     8402,
+     17
+    ]
+   ],
+   "vct2_horizon_losses": 5,
+   "vct2_confirmed": 2,
+   "vct2_tentative": 3,
+   "vct2_repeated_opening": false
+  }
+ }
+}

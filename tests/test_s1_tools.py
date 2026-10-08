@@ -6,7 +6,9 @@ import unittest
 
 from scripts.run_mcts_v8_benchmark import file_sha256, main as benchmark_main, provenance
 from scripts.run_s1_probes import FAR_MOVE, main as probes_main, p92_metrics, root_value_spread
-from scripts.s1_loss_analysis import primary_cause, signature_ply, signature_table
+from scripts.s1_loss_analysis import causal_fields, primary_cause, signature_ply, signature_table
+from scripts.s2_position_truth import main as truth_main, summarize as truth_summary
+from scripts.s2_policy_diag import describe
 
 SMOKE = ['--pairs', '1', '--seed', '3', '--simulations', '4', '--tactical-simulations', '8']
 
@@ -110,6 +112,48 @@ class LossAnalysisTest(unittest.TestCase):
         self.assertEqual(primary_cause([entry(last, 0), entry(tree, 1), entry(block, None)])[0], 'VCT1_LOSS')
         self.assertEqual(primary_cause([entry(last, 0), entry(block, 0), entry(tree, None)])[0], 'DEEPER_OR_POSITIONAL')
         self.assertEqual(primary_cause([entry(last, None)])[0], 'UNRESOLVED')
+
+    def test_causal_fields(self):
+        lost = {'depth': 2, 'status': 'UNSAFE'}
+        self.assertEqual(causal_fields('VCT2_HORIZON', [lost, {'depth': None, 'status': 'SAFE'}]),
+                         {'boundary_status': 'SAFE', 'causal_status': 'CONFIRMED'})
+        self.assertEqual(causal_fields('VCT2_HORIZON', [lost, {'depth': None, 'status': 'UNKNOWN'}])['causal_status'],
+                         'TENTATIVE')
+        self.assertEqual(causal_fields('VCT1_LOSS', [lost]),  # the lost run reaches V8's first move
+                         {'boundary_status': 'START', 'causal_status': 'CONFIRMED'})
+        self.assertEqual(causal_fields('DEEPER_OR_POSITIONAL', [lost])['causal_status'], 'NOT_APPLICABLE')
+
+
+class PositionTruthTest(unittest.TestCase):
+    def test_verdicts_and_recall(self):
+        rows = [{'move': [1, 1], 'lost_depth': 0, 'status': 'PROVEN_LOSS'},
+                {'move': [2, 2], 'lost_depth': None, 'status': 'SAFE'}]
+        summary = truth_summary(rows, 2, {'arm': {(2, 2), (3, 3)}})
+        self.assertEqual(summary['verdict'], 'SAVING_MOVES_FOUND')
+        self.assertEqual(summary['root_candidate_recall']['arm']['recall'], 1.0)
+        lost = truth_summary(rows[:1], 1, {})
+        self.assertEqual(lost['verdict'], 'PROVEN_LOSS')
+        self.assertEqual(truth_summary(rows[:1], 1, {}, restricted=True)['verdict'], 'RESTRICTED_PROVEN_LOSS')
+        self.assertEqual(truth_summary(rows[:1], 2, {})['verdict'], 'UNRESOLVED')  # one move not classified
+
+    def test_p94_moves_are_lost_and_resume(self):
+        with TemporaryDirectory() as tmp:
+            jsonl, out = Path(tmp, 't.jsonl'), Path(tmp, 't.json')
+            truth_main(['--name', 'P94', '--moves', '11,13', '11,12', '--jsonl', str(jsonl), '--output', str(out)])
+            truth_main(['--name', 'P94', '--moves', '11,13', '11,12', '--jsonl', str(jsonl), '--output', str(out)])
+            self.assertEqual(len(jsonl.read_text(encoding='utf-8').splitlines()), 2)  # resumed, not redone
+            payload = json.loads(out.read_text(encoding='utf-8'))
+            self.assertTrue(payload['restricted'])
+            self.assertEqual(payload['summary']['verdict'], 'RESTRICTED_PROVEN_LOSS')
+            self.assertTrue(all(r['status'] == 'PROVEN_LOSS' for r in payload['moves']))
+
+
+class PolicyDiagTest(unittest.TestCase):
+    def test_ranks_are_one_indexed_over_all_moves(self):
+        info = describe({(0, 0): 0.1, (2, 3): 0.6, (5, 5): 0.3}, [(3, 4), (9, 9)], top=2)
+        self.assertEqual(info['top'], [[[3, 4], 0.6], [[6, 6], 0.3]])
+        self.assertEqual(info['moves']['3,4'], {'rank': 1, 'prob': 0.6})
+        self.assertEqual(info['moves']['9,9'], {'rank': None, 'prob': 0.0})  # not legal / no mass
 
 
 if __name__ == '__main__':

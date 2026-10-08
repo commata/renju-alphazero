@@ -2212,3 +2212,63 @@ H6-5 판정:
    | saving-defence가 있지만 policy가 낮게 봄 | 위협 영역 또는 solver 기반 후보 주입 |
 
 5. S1-3 패배 분류(조건 4)의 결과도 S2 보고에 합친다.
+
+### 12.21 S1 패배 분류 결과와 S2 진행 (2026-10-08)
+
+결과 파일:
+- `docs/mcts-v8-results/s1_losses_policy_v1.json`: 데스크톱 원본 출력(커밋 `b648489`, 예산 node_limit 20,000 / call_limit 50,000 / node_budget 3,000,000)
+- `s1_losses_policy.json`: v1의 walk를 그대로 쓰고 `--reuse-classification`으로 다시 집계한 v2. `causal_status`, `boundary_status`, 입력 파일 SHA-256이 추가됐다
+- `s2_witness_positions.json`: VCT2 다섯 판의 결정적 수 직전 국면(S2 시험 세트)
+
+재현성: 확정 2판(8401 pair 4, 16)을 클라우드에서 다시 계산했고 walk가 데스크톱 결과와 완전히 같았다.
+
+#### 결과 (puct_policy, 패배 10판)
+
+| primary | 판 수 | causal_status |
+|---|---:|---|
+| `VCT2_HORIZON` | 5 | **CONFIRMED 2**(8401 p4, p16), TENTATIVE 3(8401 p17, 8402 p7 흑, 8402 p17) |
+| `VCT1_LOSS` | 3 | 3판 모두 직전 수가 UNKNOWN, 3판 모두 stage 예산 소진 |
+| `DEEPER_OR_POSITIONAL` | 2 | 강제 방어에서 검사한 수가 모두 UNSAFE(8402 p11: 23/23, p14: 21/21) |
+
+- **CONFIRMED**: 패배 구간 직전의 V8 수가 SAFE다. 그래서 결정적 수가 처음 패배로 넘어간 수라는 것이 확인된다.
+- **TENTATIVE**: 직전 수가 UNKNOWN(예산 소진)이다. 실제 첫 패착은 더 앞에 있을 수 있다.
+
+**S1 판정: 조건 4 실패.** VCT2_HORIZON ≤ 1이 기준인데, 확정된 2판만으로도 기준을 넘는다. 5판 모두 opening이 다르다(반복 없음). S1의 조건 2와 4가 실패했으므로 **S2 진행이 확정**됐다.
+
+#### 해석
+
+1. **VCT2 지평선 불일치가 가장 큰 국소 실패 유형이다.**
+   - 10판 중 5판에서 엔진이 SAFE로 판정한 수(V8-C 4판, V8-A 1판)가 depth 2에서 UNSAFE였다.
+   - 최초 패배 전이가 확정된 것은 2판이고, 나머지 3판은 원인 귀속이 잠정적이다.
+2. **빈도는 두 층으로 적는다.**
+   - 국소 VCT2 witness: 게임 5/100, opening 5/50
+   - 원인이 확정된 하한: 게임 2/100, opening 2/50
+   - signature(§12.19)는 이 유형 중 1건만 잡았다. 국소 witness 기준 recall 1/5, 확정 기준 1/2다. 바로 다음 수가 Stage 4인 좁은 패턴이라 일반적인 VCT2 지표가 아니고, S1 판정 근거로는 패배 분류를 우선한다.
+3. **예산 소진은 가장 흔하게 함께 나타나는 운영 요인이다.**
+   - `STAGE_BUDGET_EXHAUSTED`가 10판 중 7판에 있지만, 7판 모두에서 원인이라는 증거는 없다(VCT2·DEEPER 판에도 섞여 있다).
+   - VCT1_LOSS 3판에서는 직접적인 실패 메커니즘으로 의심된다.
+   - 대표 사례는 **8402 p3(흑, ply 24, stage5)**다. V8-A가 첫 후보 하나를 검사하다 예산이 바닥났고(검사 1개, UNKNOWN), 증명되지 않은 수를 뒀는데 그 수는 depth 1에서 지는 수였다.
+   - 8402 p7 백(UNSAFE 19 + UNKNOWN 2)과 p22 흑(UNSAFE 19 + UNKNOWN 1)은 거의 진 국면에서 예산 때문에 증명을 끝내지 못한 경우다.
+4. **초반 백의 패턴.**
+   - 8401의 VCT2 3판은 모두 V8이 백이고, 결정적 수가 ply 11(V8의 다섯 번째 수)이다.
+   - VCT2 5판 모두 `ENGINE_SAID_SAFE`와 `OPP_OWN_VCT`가 함께 붙어 있다.
+   - 상대의 V8-B가 원인이라고 단정하지 않는다. "depth 1에서 SAFE로 통과한 국면이 이후 상대의 강제 공격으로 이어지는 패턴이 반복됐다"까지만 말할 수 있다.
+
+#### S2 (분석 전용, 엔진 변경 없음)
+
+| 항목 | 내용 | 스크립트 |
+|---|---|---|
+| S2-1 P92 참값 | 흑의 모든 합법수를 depth 2까지 분류(수마다 node·call 예산, 시간 cut 없음, 끝난 수는 바로 저장해서 이어서 실행 가능). 판정: `PROVEN_LOSS` / `SAVING_MOVES_FOUND`(depth-2 클래스) / `UNRESOLVED`. saving 수가 각 arm의 root 후보에 들어 있던 비율도 낸다 | `s2_position_truth.py` |
+| S2-2 raw policy | P92의 전체 합법수 분포(나중에 S2-1과 결합), witness 다섯 국면에서 V8이 실제로 둔 결정적 수의 policy 순위와 확률, top 10 | `s2_policy_diag.py`(torch 필요) |
+| S2-3 selective VCT2 탐지기 | §12.18 원칙(공격자 쪽만 가지치기, 방어자는 전체 합법수, 시간 cut 없음)으로 구현한다. 측정은 두 층으로 나눈다: **탐지 recall은 witness 5국면 전체**(국소 witness가 있는 양성 표본), **S3 효과의 근거는 확정 2국면**(잠정 3국면은 보조). S2-3이 5/5를 잡아도 "실제 패배 5판을 막는다"고 말하지 않는다 | S2-1·S2-2 결과를 본 뒤 구현 |
+| S2-4 S3-B 방식 | §12.20 표대로 S2-1·S2-2 결과로 정한다 | — |
+
+#### S3 arm 분리 (미리 고정)
+
+- **S3-VCT2:** selective depth-2 탐지와 방어(veto 또는 후보 주입).
+- **S3-Budget:** stage safety 예산 배분 변경(예산 확대, 또는 후보별 공정 배분으로 첫 후보 독점 방지).
+- 두 arm은 따로 측정한다. 이 데이터에는 VCT2와 예산 소진이 같은 판에 함께 나타나는 경우가 있으므로, 같이 바꾸면 원인을 나눌 수 없다.
+
+#### 데이터 규칙
+
+- witness 국면과 8401·8402의 모든 국면은 **학습에 쓰지 않는다.** probe와 평가에만 쓴다(§12.19 H6-0).
