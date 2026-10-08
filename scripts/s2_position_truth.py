@@ -9,6 +9,12 @@ with a node/call budget per move (``analysis.mcts_v8._BudgetedSolver``, no time 
     UNKNOWN          the budget ran out
 
 Every finished move is appended to ``--jsonl`` at once, so a rerun resumes where it stopped.
+Moves are independent, so ``--workers N`` runs N of them at a time (the parent process alone
+writes the file). Changing ``--workers`` between runs is safe: only moves without a line are
+computed. Each line records its budget; a rerun with a different budget is refused, so one
+file never mixes budgets (lines written before the budget was recorded count as the default
+budget, the one that run used). A torn last line from an interrupted write is skipped and
+that move is computed again.
 The verdict is PROVEN_LOSS when every legal move is lost within depth 2, otherwise the SAFE
 moves form the saving-defence set (depth-2 class). With ``--root-candidates`` (outputs of
 ``run_s1_probes.py``) it also reports how many saving moves each arm had as root children.
@@ -37,7 +43,8 @@ from scripts.run_mcts_v8_benchmark import _git_commit, file_sha256  # noqa: E402
 from scripts.run_s1_probes import DEFAULT_PROBES, replay  # noqa: E402
 from scripts.s1_loss_analysis import _lost_depth  # noqa: E402
 
-FORMAT = 's2-position-truth-v1'
+FORMAT = 's2-position-truth-v2'  # v2: budget per line, ETA, torn-line tolerant resume
+DEFAULT_BUDGET = {'node_limit': 20_000, 'call_limit': 100_000, 'node_budget': 10_000_000}
 
 
 def classify_move(task) -> dict:
@@ -46,17 +53,31 @@ def classify_move(task) -> dict:
     depth, status = _lost_depth([*history, move], len(history), budget)
     return {'move': [move[0] + 1, move[1] + 1], 'lost_depth': depth,
             'status': 'PROVEN_LOSS' if depth is not None else status,
-            'seconds': round(perf_counter() - started, 2)}
+            'seconds': round(perf_counter() - started, 2), 'budget': budget}
 
 
-def load_done(path: Path | None) -> dict:
-    done = {}
-    if path is not None and path.exists():
-        for line in path.read_text(encoding='utf-8').splitlines():
-            if line.strip():
-                row = json.loads(line)
-                done[tuple(row['move'])] = row
-    return done
+def load_done(path: Path | None, budget: dict) -> tuple[dict, dict]:
+    """Finished moves from ``path``; raises ValueError if a line used another budget."""
+    done, info = {}, {'legacy_rows': 0, 'torn_lines': 0}
+    if path is None or not path.exists():
+        return done, info
+    for line in path.read_text(encoding='utf-8').splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            info['torn_lines'] += 1  # an interrupted write: the move is simply computed again
+            continue
+        row_budget = row.get('budget')
+        if row_budget is None:
+            info['legacy_rows'] += 1
+            row_budget = DEFAULT_BUDGET
+        if row_budget != budget:
+            raise ValueError(f'{path} has a line for {row["move"]} with budget {row_budget}, '
+                             f'this run uses {budget}; use another --jsonl file')
+        done[tuple(row['move'])] = row
+    return done, info
 
 
 def root_candidates(paths, name: str) -> dict[str, set]:
@@ -99,9 +120,9 @@ def main(argv=None) -> int:
     parser.add_argument('--name', default='P92', help='probe name in the probe file')
     parser.add_argument('--moves', nargs='*', default=None, help="only these moves, 1-indexed 'r,c'")
     parser.add_argument('--limit', type=int, help='smoke tests: first N moves only')
-    parser.add_argument('--node-limit', type=int, default=20_000, help='per VCF call')
-    parser.add_argument('--call-limit', type=int, default=100_000, help='VCF calls per move')
-    parser.add_argument('--node-budget', type=int, default=10_000_000, help='VCF nodes per move')
+    parser.add_argument('--node-limit', type=int, default=DEFAULT_BUDGET['node_limit'], help='per VCF call')
+    parser.add_argument('--call-limit', type=int, default=DEFAULT_BUDGET['call_limit'], help='VCF calls per move')
+    parser.add_argument('--node-budget', type=int, default=DEFAULT_BUDGET['node_budget'], help='VCF nodes per move')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--jsonl', type=Path, help='one line per finished move (resume)')
     parser.add_argument('--root-candidates', type=Path, nargs='*', default=[])
@@ -117,17 +138,26 @@ def main(argv=None) -> int:
     if args.limit:
         legal = legal[:args.limit]
     budget = {'node_limit': args.node_limit, 'call_limit': args.call_limit, 'node_budget': args.node_budget}
-    done = load_done(args.jsonl)
+    try:
+        done, resume = load_done(args.jsonl, budget)
+    except ValueError as exc:
+        parser.error(str(exc))
     pending = [m for m in legal if (m[0] + 1, m[1] + 1) not in done]
     print(f'{args.name}: legal={len(legal)} done={len(legal) - len(pending)} pending={len(pending)} '
-          f'workers={args.workers}', flush=True)
+          f'workers={args.workers} resume={resume}', flush=True)
+    started, finished_now = perf_counter(), 0
     if args.jsonl is not None:
         args.jsonl.parent.mkdir(parents=True, exist_ok=True)
 
     def keep(row):
+        nonlocal finished_now
         done[tuple(row['move'])] = row
-        print(f"{len(done)}/{len(legal)} {row['move']} {row['status']} depth={row['lost_depth']} "
-              f"{row['seconds']:.1f}s", flush=True)
+        finished_now += 1
+        elapsed = perf_counter() - started
+        eta = elapsed / finished_now * (len(pending) - finished_now)  # wall-clock rate incl. parallelism
+        print(f"{len(legal) - len(pending) + finished_now}/{len(legal)} {row['move']} {row['status']} "
+              f"depth={row['lost_depth']} {row['seconds']:.1f}s | elapsed {elapsed / 60:.1f}m eta {eta / 60:.1f}m",
+              flush=True)
         if args.jsonl is not None:
             with args.jsonl.open('a', encoding='utf-8') as handle:
                 handle.write(json.dumps(row) + '\n')
@@ -144,7 +174,7 @@ def main(argv=None) -> int:
     summary = summarize(rows, len(legal), root_candidates(args.root_candidates, args.name),
                         restricted=bool(args.moves or args.limit))
     payload = {'format': FORMAT, 'git_commit': _git_commit(), 'probe': args.name,
-               'probes_sha256': file_sha256(args.probes), 'budget': budget,
+               'probes_sha256': file_sha256(args.probes), 'budget': budget, 'resume': resume,
                'restricted': bool(args.moves or args.limit), 'summary': summary, 'moves': rows}
     print(json.dumps(summary, indent=1), flush=True)
     if args.output is not None:

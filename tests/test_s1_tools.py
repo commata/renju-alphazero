@@ -7,7 +7,7 @@ import unittest
 from scripts.run_mcts_v8_benchmark import file_sha256, main as benchmark_main, provenance
 from scripts.run_s1_probes import FAR_MOVE, main as probes_main, p92_metrics, root_value_spread
 from scripts.s1_loss_analysis import causal_fields, primary_cause, signature_ply, signature_table
-from scripts.s2_position_truth import main as truth_main, summarize as truth_summary
+from scripts.s2_position_truth import DEFAULT_BUDGET, load_done, main as truth_main, summarize as truth_summary
 from scripts.s2_policy_diag import describe
 
 SMOKE = ['--pairs', '1', '--seed', '3', '--simulations', '4', '--tactical-simulations', '8']
@@ -146,6 +146,30 @@ class PositionTruthTest(unittest.TestCase):
             self.assertTrue(payload['restricted'])
             self.assertEqual(payload['summary']['verdict'], 'RESTRICTED_PROVEN_LOSS')
             self.assertTrue(all(r['status'] == 'PROVEN_LOSS' for r in payload['moves']))
+
+
+class TruthResumeTest(unittest.TestCase):
+    def test_legacy_torn_and_budget_mismatch(self):
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp, 't.jsonl')
+            path.write_text(json.dumps({'move': [1, 1], 'lost_depth': 0, 'status': 'PROVEN_LOSS'}) + '\n'
+                            + json.dumps({'move': [2, 2], 'lost_depth': None, 'status': 'SAFE',
+                                          'budget': DEFAULT_BUDGET}) + '\n'
+                            + '{"move": [3, 3], "lost_d', encoding='utf-8')  # torn by an interrupted write
+            done, info = load_done(path, dict(DEFAULT_BUDGET))
+            self.assertEqual(set(done), {(1, 1), (2, 2)})
+            self.assertEqual(info, {'legacy_rows': 1, 'torn_lines': 1})
+            with self.assertRaises(ValueError):  # one file never mixes budgets
+                load_done(path, {**DEFAULT_BUDGET, 'node_budget': 1})
+
+    def test_rerun_with_more_workers_only_computes_missing_moves(self):
+        with TemporaryDirectory() as tmp:
+            jsonl = Path(tmp, 't.jsonl')
+            truth_main(['--name', 'P94', '--moves', '11,13', '--jsonl', str(jsonl)])
+            truth_main(['--name', 'P94', '--moves', '11,13', '11,12', '11,14', '--workers', '2', '--jsonl', str(jsonl)])
+            rows = [json.loads(line) for line in jsonl.read_text(encoding='utf-8').splitlines()]
+            self.assertEqual(sorted(tuple(r['move']) for r in rows), [(11, 12), (11, 13), (11, 14)])
+            self.assertTrue(all(r['budget'] == DEFAULT_BUDGET for r in rows))
 
 
 class PolicyDiagTest(unittest.TestCase):

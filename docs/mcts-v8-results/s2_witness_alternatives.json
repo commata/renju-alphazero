@@ -1,0 +1,115 @@
+{
+ "format": "s2-witness-alternatives-v1",
+ "git_commit": "69a32498aa4d7cc707a55d736161c44759594b23",
+ "budget": {
+  "node_limit": 20000,
+  "call_limit": 50000,
+  "node_budget": 3000000
+ },
+ "inputs": {
+  "/home/user/renju-alphazero/docs/mcts-v8-results/s2_witness_positions.json": "f91b8d5b07c7d5717fe887ccc48799ee69e34747c819763b64ac570c30b23ec6",
+  "docs/mcts-v8-results/s2_policy_diag.json": "c48c5db781ad7a77f331e809041c76f1e306c4b12f288fbdd10065af2af6e8e1"
+ },
+ "positions": [
+  {
+   "seed": 8401,
+   "pair": 4,
+   "v8_color": "white",
+   "ply": 11,
+   "decisive_move_1idx": [
+    9,
+    8
+   ],
+   "causal_status": "CONFIRMED",
+   "engine_status": "SAFE",
+   "checks": [
+    {
+     "policy_rank": 1,
+     "prob": 0.579063,
+     "played": false,
+     "move": [
+      8,
+      7
+     ],
+     "lost_depth": null,
+     "status": "SAFE",
+     "seconds": 106.78
+    },
+    {
+     "policy_rank": 2,
+     "prob": 0.19409,
+     "played": false,
+     "move": [
+      6,
+      7
+     ],
+     "lost_depth": 2,
+     "status": "PROVEN_LOSS",
+     "seconds": 108.93
+    },
+    {
+     "policy_rank": 7,
+     "prob": 0.011395,
+     "played": true,
+     "move": [
+      9,
+      8
+     ],
+     "lost_depth": 2,
+     "status": "PROVEN_LOSS",
+     "seconds": 15.13
+    }
+   ]
+  },
+  {
+   "seed": 8401,
+   "pair": 16,
+   "v8_color": "white",
+   "ply": 11,
+   "decisive_move_1idx": [
+    8,
+    9
+   ],
+   "causal_status": "CONFIRMED",
+   "engine_status": "SAFE",
+   "checks": [
+    {
+     "policy_rank": 1,
+     "prob": 0.731345,
+     "played": false,
+     "move": [
+      10,
+      8
+     ],
+     "lost_depth": null,
+     "status": "SAFE",
+     "seconds": 163.73
+    },
+    {
+     "policy_rank": 2,
+     "prob": 0.135842,
+     "played": false,
+     "move": [
+      8,
+      7
+     ],
+     "lost_depth": 2,
+     "status": "PROVEN_LOSS",
+     "seconds": 11.18
+    },
+    {
+     "policy_rank": 4,
+     "prob": 0.014276,
+     "played": true,
+     "move": [
+      8,
+      9
+     ],
+     "lost_depth": 2,
+     "status": "PROVEN_LOSS",
+     "seconds": 4.09
+    }
+   ]
+  }
+ ]
+}
