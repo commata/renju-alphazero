@@ -381,6 +381,37 @@ def _git_commit() -> str | None:
         return None
 
 
+def _git_dirty() -> bool | None:
+    """True when tracked files differ from HEAD (results then do not match ``git_commit``)."""
+    try:
+        out = subprocess.run(['git', 'status', '--porcelain', '--untracked-files=no'], cwd=ROOT,
+                             capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return bool(out.strip())
+
+
+def file_sha256(path) -> str | None:
+    path = Path(path)
+    if not path.is_file():
+        return None
+    digest = hashlib.sha256()
+    with path.open('rb') as handle:
+        for block in iter(lambda: handle.read(1 << 20), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def provenance(policy_checkpoint) -> dict:
+    """What a result depends on besides the code: tree state and the exact policy bytes (§12.19)."""
+    checkpoint = Path(policy_checkpoint) if policy_checkpoint else None
+    return {
+        'git_dirty': _git_dirty(),
+        'policy_checkpoint_sha256': file_sha256(checkpoint) if checkpoint else None,
+        'policy_metadata_sha256': file_sha256(checkpoint.with_suffix('.json')) if checkpoint else None,
+    }
+
+
 def load_finished(path: Path | None, keys: set[str]) -> dict[str, dict]:
     finished = {}
     if path is None or not path.exists():
@@ -481,6 +512,8 @@ def main(argv=None) -> int:
         for m in game['v8_moves']:
             m['played'] = game['moves'][m['ply']]
     summary = summarize(games)
+    payload_checkpoint = (args.policy_checkpoint if needs_policy(v8_config(args.arm)) or (
+        args.opponent != 'v7' and needs_policy(v8_config(args.opponent.partition(':')[2]))) else None)
     payload = {
         'format': FORMAT, 'arm': args.arm, 'opponent': args.opponent, 'seed': args.seed, 'pairs': args.pairs,
         'opening_random_plies': args.opening_random_plies, 'opening_radius': args.opening_radius,
@@ -488,8 +521,8 @@ def main(argv=None) -> int:
         'arm_overrides': args.arm_overrides,
         'git_commit': _git_commit(), 'v8_config': v8_config(args.arm, {**args.search_overrides,
                                                                         **args.arm_overrides}),
-        'policy_checkpoint': (args.policy_checkpoint if needs_policy(v8_config(args.arm)) or (
-            args.opponent != 'v7' and needs_policy(v8_config(args.opponent.partition(':')[2]))) else None),
+        'policy_checkpoint': payload_checkpoint,
+        'provenance': provenance(payload_checkpoint),
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': (None if args.opponent == 'v7' else
                             v8_config(args.opponent.partition(':')[2], args.search_overrides)),

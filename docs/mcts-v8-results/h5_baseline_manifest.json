@@ -1,0 +1,107 @@
+{
+ "format": "h5-baseline-manifest-v1",
+ "stage": "H5",
+ "verdict": "PASS: adopt policy prior (8401+8402, 100 games per arm)",
+ "arm": "puct_policy",
+ "engine_commit": "660b78f148b8c267884886797ed5fbbaa076b943",
+ "engine_code_same_as": "56cd9c087742c8f3c58a5d725c2aafb149387586 (no src/scripts/configs/tests change between them)",
+ "policy_checkpoint": {
+  "path": "runs/h3_policy_64x4/best.pt",
+  "sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "sha256_recorded": "before seed 8402 (8401 recorded the path only)",
+  "metadata_path": "runs/h3_policy_64x4/best.json",
+  "metadata_sha256": null,
+  "metadata_sha256_note": "not recorded yet; the next run_mcts_v8_benchmark / run_s1_probes output records it under provenance"
+ },
+ "puct_c": 1.5,
+ "v8_config": {
+  "simulations": 50,
+  "tactical_simulations": 100,
+  "tactical_score_threshold": 1800,
+  "exploration": 1.4142135623730951,
+  "candidate_limit": 20,
+  "initial_width": 8,
+  "neighborhood_radius": 2,
+  "priority_top_k": 8,
+  "own_vcf_max_fours": 10,
+  "own_vcf_node_limit": 5000,
+  "safety_vcf_max_fours": 10,
+  "safety_vcf_node_limit": 4000,
+  "safety_precheck_node_limit": 8000,
+  "safety_total_node_limit": 8000,
+  "self_forbidden_min_white": 3,
+  "stage_vct_safety": true,
+  "vct_vcf_node_limit": 20000,
+  "vct_call_limit": 3000,
+  "vct_node_budget": 200000,
+  "own_vct_attack": true,
+  "attack_vcf_node_limit": 20000,
+  "attack_call_limit": 10000,
+  "attack_node_budget": 200000,
+  "root_vct_safety": true,
+  "root_vcf_node_limit": 20000,
+  "root_call_limit": 10000,
+  "root_node_budget": 400000,
+  "root_max_children": 4,
+  "root_vct_mode": "aggressive",
+  "root_policy_order": false,
+  "root_policy_extra": 0,
+  "tree_mode": "puct",
+  "puct_prior": "policy",
+  "puct_c": 1.5
+ },
+ "evidence": [
+  "docs/mcts-v8-results/h5_heur_8401.json",
+  "docs/mcts-v8-results/h5_policy_8401.json",
+  "docs/mcts-v8-results/h5_heur_8402.json",
+  "docs/mcts-v8-results/h5_policy_8402.json",
+  "docs/mcts-v8-results/h5_summary_all.json"
+ ],
+ "combined": {
+  "puct_policy": {
+   "games": 100,
+   "wld": [
+    78,
+    12,
+    10
+   ],
+   "score": 0.84,
+   "ci95_pairs": [
+    0.77,
+    0.905
+   ],
+   "black": 0.81,
+   "white": 0.87,
+   "tree_not_safe_rate": 0.0575,
+   "time_ratio": 0.757,
+   "safety_violations": 0
+  },
+  "puct_heur": {
+   "games": 100,
+   "wld": [
+    46,
+    15,
+    39
+   ],
+   "score": 0.535,
+   "ci95_pairs": [
+    0.435,
+    0.63
+   ],
+   "tree_not_safe_rate": 0.0648,
+   "time_ratio": 1.159
+  },
+  "policy_minus_heur": {
+   "pairs": 50,
+   "diff": 0.305,
+   "ci95": [
+    0.18,
+    0.425
+   ]
+  }
+ },
+ "baseline_definitions": {
+  "v8:full": "unchanged (V8_DEFAULTS, V5 tree)",
+  "H5": "puct_policy with the checkpoint above and puct_c 1.5"
+ }
+}

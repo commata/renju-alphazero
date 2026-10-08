@@ -2038,3 +2038,112 @@ P92 참값은 데스크톱에서 depth-2 전체 계산으로 확정을 시도한
 | S3 | 엔진 arm 두 개를 따로: (a) V8-C 상위 K 자식에 VCT2 veto(PROVEN_LOSS일 때만), (b) 상대 위협 지역 방어점을 root 후보에 주입. 기본값 off | off에서 기존 결과와 같은 착수(10/10) + 고정 fixture(종국, quiet, VCF, VCT, 금수, P92·P93 인접). H5 프로토콜(25쌍, `v8:full`, bootstrap, 시간 비율 ≤ 1.5, 안전 위반 0, 다른 seed 재확인) |
 | H6 | 라벨 파이프라인(위 계약) → value 학습 → value leaf 통합 + 부호 테스트 → 벤치마크. S3 채택 시 VCT2 on/off × value on/off | P93·P94 value 부호, 증명 held-out 부호 정확도, RenjuNet 결과 calibration, P92 순위 |
 | H7 | Hybrid self-play | provenance 규칙 |
+
+### 12.19 H5 판정(PASS)과 S1·H6 설계 (2026-10-08)
+
+결과 파일:
+- `docs/mcts-v8-results/h5_heur_8402.json`, `h5_policy_8402.json`(커밋 `660b78f`, 실행 코드는 `56cd9c0`과 같음)
+- 통합 요약 `h5_summary_all.json`(8401+8402, arm당 100판)
+- 기준선 고정 `h5_baseline_manifest.json`
+
+#### H5 판정
+
+| arm | W/D/L | score (쌍 bootstrap) | 흑 | 백 | tree not-SAFE | 시간 비율 | 안전 위반 |
+|---|---|---|---:|---:|---:|---:|---:|
+| puct_heur | 46/15/39 | 0.535 [0.435, 0.63] | 0.48 | 0.59 | 6.48% | 1.159 | 0 |
+| **puct_policy** | **78/12/10** | **0.84 [0.77, 0.905]** | 0.81 | 0.87 | 5.75% | 0.757 | 0 |
+
+- policy − heur(50 opening 쌍): **+0.305 [+0.18, +0.425]**. seed별로는 8401 +0.31, 8402 +0.30이다.
+- §12.16의 채택 조건(policy ≥ 0.58, (policy − 0.5) 하한 > 0, policy − heur ≥ +0.05)과 guard(흑·백 ≥ 0.50, not-SAFE ≤ heur + 0.03, 시간 비율 ≤ 1.5, 안전 위반 0)를 모두 통과했다. **H5 = `puct_policy` 채택.**
+- 기준선 고정(`h5_baseline_manifest.json`): 커밋 `660b78f`, H3 checkpoint SHA-256 `efee4832…0ce61`, c_puct 1.5, V8 config. `v8:full`의 정의는 그대로다.
+
+**결과를 읽을 때 주의할 점.**
+- **시간.** 통합 대국 시간 합은 policy 1,649.6분, heur 1,345.5분이다. 하지만 늘어난 시간은 상대(`v8:full`)가 쓴 것이다. policy에 밀린 상대가 Stage 4 방어 solver를 많이 돌렸다(8401 policy 판에서 상대 586분, heur 판에서 312분).
+  V8 자신의 시간은 policy 710.8분, heur 722.4분으로 비슷하다. 시간 판단은 같은 대국 안의 시간 비율로만 한다. 실행이 다르면 부하 차이가 있어서 wall-clock(tree 중앙값 등)을 비교하지 않는다.
+- **넓히기.** heur에서 root 검사가 최대 20개까지 간 것은 설계대로다. 상위 4개가 모두 UNSAFE면 나머지 자식으로 넓힌다(`_search_root_children`).
+- **policy와 UNKNOWN.** policy는 증명된 위험 후보(V7 수 UNSAFE)를 덜 낸다(8402: 0.81% 대 2.15%). 대신 UNKNOWN은 조금 더 많다(5.85% 대 4.05%). 실제로 둔 수가 UNSAFE인데 검사된 SAFE 대안이 있었던 경우는 두 arm 모두 0이다.
+- **checkpoint 동일성.** 8401 결과에는 checkpoint 경로만 있다. 그래서 8401과 8402가 같은 바이트를 썼다는 것은 끝까지 증명할 수 없다. 앞으로는 결과 JSON의 `provenance`(아래)가 기록한다.
+
+#### 기록 인프라 (이 커밋)
+
+- `run_mcts_v8_benchmark.py` 결과에 `provenance`를 추가했다: `git_dirty`, `policy_checkpoint_sha256`, `policy_metadata_sha256`. 착수에는 영향이 없다.
+- `scripts/run_s1_probes.py`, `scripts/s1_loss_analysis.py`를 추가했다(분석 전용). 테스트는 `tests/test_s1_tools.py`.
+- **H6-0에서 할 일:** 지금 runner는 PUCT arm을 상대로 쓰는 것을 거부한다("its c_puct would be unset"). `v8:puct_policy`를 상대로 쓰려면 상대용 c_puct 인자(`--opponent-puct-c`)와 `--value-checkpoint`(후보에만 적용)가 필요하다.
+
+#### S1-1 VCT2-like horizon signature
+
+정의: V8-C가 SAFE로 본 tree 수 바로 다음 V8 수가 Stage 4이고, 검사한 방어가 모두 UNSAFE인 경우.
+**바로 다음 수에 드러나는 경우만 잡으므로 하한이다. "VCT2 발생률"이라고 부르지 않는다.** 한 opening은 두 색으로 두 판이므로, opening 단위는 한 번만 센다(seed가 다르면 다른 opening).
+
+| arm | 게임 | opening |
+|---|---|---|
+| puct_uniform (8401) | 5/50 (10%) | 5/25 (20%) |
+| puct_heur (8401+8402) | 13/100 (13%) | 13/50 (26%) |
+| **puct_policy (8401+8402)** | **1/100 (1%)** | **1/50 (2%)** |
+
+#### S1-2 Probe (P92/P93/P94)
+
+- **대상:** `full`, `puct_heur`, `puct_policy`를 seed 10개씩(`--base-seed 9201`). 결과는 `run_s1_probes.py`가 기록한다.
+- **영역 R:** 9–15행 × 9–15열(1-indexed). 백 92·94의 위협이 모두 이 안에 있다.
+- **P92 지표:**
+  - (3,4)를 최종 선택한 횟수
+  - R의 수가 root 후보에 들어간 비율
+  - R 최상위 수가 (3,4)보다 순위(방문 수 → 평균값 순)와 방문 수에서 앞서는지
+  - 두 수의 평균 visit share와 raw policy 확률
+- **P93·P94:** 정상동작 확인용으로 경로와 V8-A/B/C 상태만 기록한다. value 부호(P93 백 차례 > 0, P94 흑 차례 < 0)는 H6에서 확인한다.
+- **C4 기준값:** root 자식 평균값의 range, std, `saturated`(range ≤ 0.05)를 기록한다.
+
+#### S1-3 패배 원인 분류
+
+방법:
+- 패배한 판의 V8 수를 끝에서부터 거꾸로 본다.
+- 각 수 직후 국면을 node 예산이 있는 solver로 depth 0 → 1 → 2 순서로 검사하고, 처음 증명되는 깊이를 기록한다.
+- depth 2 안에서 증명되지 않는 수를 만나면 멈춘다. 증명된 패배가 이어진 구간에서 가장 이른 수가 결정적 수다.
+- 예산은 node·호출 수로만 정한다(재현 가능).
+
+| primary (판마다 하나) | 뜻 |
+|---|---|
+| `VCT2_HORIZON` | 결정적 수가 depth 2에서만 증명된 패배 |
+| `VCT1_LOSS` | 결정적 수가 depth ≤ 1에서 증명된 패배 |
+| `DEEPER_OR_POSITIONAL` | 결정적 수가 강제된 수였다(5목 차단 Stage 2, 또는 검사한 대안이 모두 UNSAFE). 그 전에 depth 2보다 깊게 이미 졌다 |
+| `UNRESOLVED` | 마지막 V8 수조차 예산 안에서 증명되지 않음 |
+
+flags(여러 개 가능): `ENGINE_SAID_SAFE`, `ENGINE_UNKNOWN`, `BOUNDARY_UNKNOWN`(패배 구간 직전 수가 UNKNOWN이라 결정적 수가 더 이를 수 있음), `ROOT_UNKNOWN`, `ROOT_BUDGET_EXHAUSTED`, `STAGE_BUDGET_EXHAUSTED`, `OPP_OWN_VCT`, `V8C_SWITCHED`, `LONG_GAME`(≥ 150수), `SIGNATURE`.
+
+#### S1 결정 (미리 고정)
+
+아래 네 조건을 **모두** 만족하면 S2·S3를 건너뛰고 H6로 간다.
+1. P92에서 `puct_policy`가 (3,4)를 고른 seed ≤ 2/10
+2. P92에서 R 최상위 수가 (3,4)보다 순위와 방문 모두 앞선 seed ≥ 8/10
+3. signature opening rate ≤ 2/50(현재 1/50)
+4. policy 패배 중 primary `VCT2_HORIZON` ≤ 1판, 그리고 같은 opening에서 반복되지 않음
+
+하나라도 실패하면 S2(§12.18)로 간다. S3는 S2가 놓친 패배를 잡는 재현율과 감당할 만한 비용을 보여줄 때만 진행한다.
+
+#### H6 설계 (S1 통과 후)
+
+| 단계 | 내용 | 통과 조건 |
+|---|---|---|
+| H6-0 | §12.18 라벨 계약 구현(행 스키마, probe가 든 게임 전체 제외, `game_id` 분할, D4 교차 검사). runner에 `--value-checkpoint`(후보에만)와 `--opponent-puct-c` 추가. 평가 seed는 **8403, 8404, 예비 8405**. 8401·8402 대국은 학습에 쓰지 않는다 | 스키마·누출 테스트. 옵션을 끄면 기존과 같은 착수 |
+| H6-1 | RenjuNet **train split**의 증명 라벨(VCF, 옵션으로 VCT1. 둘 차례 관점 ±1) + RenjuNet 승패(작은 weight). 라벨이 없는 국면은 mask | 출처·깊이별 개수와 ±1 비율 보고 |
+| H6-2a | **trunk를 고정하고 value head만 학습.** policy 출력은 H3와 비트 단위로 같아야 한다 | 샘플 국면에서 logits가 같다는 테스트 |
+| H6-2b | (조건부) 2a가 학습 부족일 때만: trunk 미세조정(낮은 LR + H3 policy 증류). **별도 arm(H6-joint)이고, isolation arm이 채택된 뒤에만 평가** | H3 gate(top-1, must_block 40/40) 유지 |
+| H6-3 | 오프라인 gate: 증명 held-out 부호 정확도, RenjuNet 결과 calibration(ECE), D4 일관성, **P93 > 0(백 차례), P94 < 0(흑 차례)**. P92는 순위만 본다 | 미리 고정. 실패하면 대국 평가 없이 H6-1/2로 돌아간다 |
+| λ 고정 | gate 통과이고 ECE ≤ 0.10이면 λ = 1.0(value만), ECE > 0.10이면 λ = 0.5(value와 rollout 반씩). **대국 후보는 하나만** | 대국 전에 결정 |
+| H6-4 | arm `puct_policy_value`: policy는 H3 그대로, leaf만 value. 부호는 §12.18 계약(leaf 노드 값 = −v)을 한 함수에서 처리. PROVEN_LOSS veto 유지. 수마다 C4 지표(range, std, saturated) 기록 | 부호 테스트(즉시 5목, 상대 5목 허용, 1·2수 강제승, 부모·자식 부호, 무승부) |
+| H6-5 | 주 상대는 고정된 `v8:puct_policy`(0.5 = 동등), 보조 상대는 `v8:full`. 각 25쌍 | 아래 표 |
+
+H6-5 판정:
+
+| 단계 | 조건 | 판정 |
+|---|---|---|
+| 8403 | guard 실패 또는 score < 0.50 | REJECT |
+| 8403 | score ≥ 0.50 | 8404 진행 |
+| 8403+8404 | score ≥ 0.55, 쌍 bootstrap 하한 > 0.5 | **ADOPT** |
+| 8403+8404 | score ≥ 0.55, 하한 ≤ 0.5 | **INCONCLUSIVE** → 8405를 한 번만 추가하고 3 seed에 같은 기준을 적용. 그래도 안 되면 REJECT |
+| 8403+8404 | 0.50 ≤ score < 0.55 | REJECT(이득이 작음) |
+
+- guard: 안전 위반 0, tree not-SAFE ≤ 기준선 + 0.03, 시간 비율 ≤ 1.5, 흑·백 각 ≥ 0.45, P93·P94 부호 유지.
+- 보고에 넣을 것: saturated root 비율이 rollout 기준선보다 줄었는지, P92 순위 변화.
+
+순서: H5-F(이 커밋) → S1 실행 → 결정 → (S2 → 조건부 S3) → H6-0 → H6-1 → H6-2a → H6-3(λ 고정) → H6-4 → H6-5 → (ADOPT 뒤에만 H6-2b) → H7.

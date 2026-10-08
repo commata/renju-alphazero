@@ -1,0 +1,114 @@
+{
+ "runs": [
+  "docs\\mcts-v8-results\\h5_heur_8401.json",
+  "docs\\mcts-v8-results\\h5_policy_8401.json",
+  "runs\\h5\\heur_8402.json",
+  "runs\\h5\\policy_8402.json"
+ ],
+ "rows": {
+  "puct_heur": {
+   "arm": "puct_heur",
+   "seeds": [
+    8401,
+    8402
+   ],
+   "games": 100,
+   "wins": 46,
+   "draws": 15,
+   "losses": 39,
+   "score": 0.535,
+   "ci95_wilson": [
+    0.438,
+    0.63
+   ],
+   "ci95_pairs": [
+    0.435,
+    0.63
+   ],
+   "by_colour": {
+    "black": 0.48,
+    "white": 0.59
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0189,
+   "losses_with_opponent_vct": 38,
+   "tree_moves": 2375,
+   "tree_status": {
+    "SAFE": 2221,
+    "UNKNOWN": 99,
+    "UNSAFE": 55,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0648,
+   "v8c_changed": 102,
+   "root_check_minutes": 441.0,
+   "tree_seconds_median": 1.155,
+   "tree_simulations_per_second": 43.7,
+   "nn_calls_per_tree_move": 0,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.842,
+   "tree_chose_prior_top_rate": 0.461,
+   "time_ratio": 1.159,
+   "total_game_minutes": 1345.5
+  },
+  "puct_policy": {
+   "arm": "puct_policy",
+   "seeds": [
+    8401,
+    8402
+   ],
+   "games": 100,
+   "wins": 78,
+   "draws": 12,
+   "losses": 10,
+   "score": 0.84,
+   "ci95_wilson": [
+    0.756,
+    0.899
+   ],
+   "ci95_pairs": [
+    0.77,
+    0.905
+   ],
+   "by_colour": {
+    "black": 0.81,
+    "white": 0.87
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0043,
+   "losses_with_opponent_vct": 5,
+   "tree_moves": 2071,
+   "tree_status": {
+    "SAFE": 1952,
+    "UNKNOWN": 106,
+    "UNSAFE": 13,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0575,
+   "v8c_changed": 72,
+   "root_check_minutes": 389.6,
+   "tree_seconds_median": 1.327,
+   "tree_simulations_per_second": 38.4,
+   "nn_calls_per_tree_move": 62.0,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.52,
+   "tree_chose_prior_top_rate": 0.626,
+   "time_ratio": 0.757,
+   "total_game_minutes": 1649.6
+  }
+ },
+ "diffs": {
+  "puct_policy - puct_heur": {
+   "pairs": 50,
+   "diff": 0.305,
+   "ci95": [
+    0.18,
+    0.425
+   ]
+  }
+ },
+ "decision": {
+  "decision": "adopt policy prior",
+  "reasons": []
+ }
+}
