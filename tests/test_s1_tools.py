@@ -9,6 +9,8 @@ from scripts.run_s1_probes import FAR_MOVE, main as probes_main, p92_metrics, ro
 from scripts.s1_loss_analysis import causal_fields, primary_cause, signature_ply, signature_table
 from scripts.s2_position_truth import DEFAULT_BUDGET, load_done, main as truth_main, summarize as truth_summary
 from scripts.s2_policy_diag import describe
+from scripts.s2_vct2_detector_eval import summarize as detector_summary
+from scripts.s2_join_p92 import join as join_p92
 
 SMOKE = ['--pairs', '1', '--seed', '3', '--simulations', '4', '--tactical-simulations', '8']
 
@@ -170,6 +172,40 @@ class TruthResumeTest(unittest.TestCase):
             rows = [json.loads(line) for line in jsonl.read_text(encoding='utf-8').splitlines()]
             self.assertEqual(sorted(tuple(r['move']) for r in rows), [(11, 12), (11, 13), (11, 14)])
             self.assertTrue(all(r['budget'] == DEFAULT_BUDGET for r in rows))
+
+
+class DetectorEvalSummaryTest(unittest.TestCase):
+    def _row(self, name, expect, status, verified=None, seconds=1.0, added=0.5, played=None):
+        return {'key': f'{name}/{expect}/{status}/{seconds}', 'set': name, 'expect': expect, 'verified': verified,
+                'meta': {'played': played},
+                'result': {'status': status, 'seconds': seconds, 'stage_seconds': {'selective': added}}}
+
+    def test_gate(self):
+        rows = [self._row('A', 'PROVEN_LOSS', 'PROVEN_LOSS', True, played=True),
+                self._row('A', 'PROVEN_LOSS', 'UNKNOWN', seconds=2.0),  # a missed alternative does not fail the gate
+                self._row('A', 'NOT_PROVEN_LOSS', 'NO_TARGETED_VCT2_FOUND'),
+                self._row('D', None, 'NO_TARGETED_VCT2_FOUND', seconds=30.0, added=1.0)]
+        gate = detector_summary(rows)['gate']
+        self.assertTrue(gate['A_all_detected'])
+        self.assertEqual(gate['soundness_violations'], [])
+        self.assertFalse(gate['D_cost_ok_total'])   # one 30 s check: p95 > 10 s
+        self.assertTrue(gate['D_cost_ok_added'])     # its selective stage took 1 s
+        self.assertTrue(gate['pass_added'] and not gate['pass_total'])
+
+    def test_flagging_a_move_without_a_loss_is_a_violation(self):
+        rows = [self._row('A', 'NOT_PROVEN_LOSS', 'PROVEN_LOSS', True)]
+        self.assertEqual(len(detector_summary(rows)['gate']['soundness_violations']), 1)
+
+
+class JoinP92Test(unittest.TestCase):
+    def test_committed_inputs(self):
+        load = lambda name: json.loads(Path('docs/mcts-v8-results', name).read_text(encoding='utf-8'))
+        joined = join_p92(load('s2_p92_truth.json'), load('s2_policy_diag.json'),
+                          [load(f's1_probes_{a}.json') for a in ('full', 'puct_heur', 'puct_policy')])
+        totals = joined['totals']
+        self.assertEqual((totals['proven_loss'], totals['unknown']), (129, 4))
+        self.assertEqual(totals['best_policy_rank_not_proven_loss'], 45)
+        self.assertEqual(joined['provenance']['truth_legacy_rows'], 41)
 
 
 class PolicyDiagTest(unittest.TestCase):

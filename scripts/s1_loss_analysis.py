@@ -142,23 +142,36 @@ def primary_cause(walk: list[dict]) -> tuple[str, dict | None]:
     return ('VCT2_HORIZON' if decisive['depth'] == 2 else 'VCT1_LOSS'), decisive
 
 
-def _lost_depth(moves, ply, budget) -> tuple[int | None, str]:
-    """Smallest depth <= 2 at which the side that played ``moves[ply]`` is proven lost after it."""
+def lost_depth_info(moves, ply, budget) -> tuple[int | None, str, dict]:
+    """Smallest depth <= 2 at which the side that played ``moves[ply]`` is proven lost after it.
+
+    ``info`` says why a result is UNKNOWN: ``budget_exhausted`` (the move's node or call
+    budget ran out) and/or ``vcf_cut_calls`` (single VCF calls cut at ``node_limit``; such a
+    call is UNKNOWN even when the total budget is not used up).
+    """
     game = Game()
     for move in moves[:ply]:
         game.play(*move)
     solver = _BudgetedSolver(node_limit=budget['node_limit'], call_limit=budget['call_limit'],
                              node_budget=budget['node_budget'])
-    worst = SAFE
+    depth_found, worst = None, SAFE
     for depth in (0, 1, 2):
         status = solver._bounded(game, tuple(moves[ply]), None, None,
                                  lambda g, d=depth: solver.after_move(g, d)[0])
         if status == UNSAFE:
-            return depth, UNSAFE
+            depth_found, worst = depth, UNSAFE
+            break
         if status == UNKNOWN:
             worst = UNKNOWN
             break  # a deeper search cannot finish inside a budget the shallower one ran out of
-    return None, worst
+    info = {'budget_exhausted': solver.exhausted, 'vcf_cut_calls': solver.vcf_exhausted,
+            'vcf_calls': solver.vcf_calls, 'nodes_used': solver.nodes_used}
+    return depth_found, worst, info
+
+
+def _lost_depth(moves, ply, budget) -> tuple[int | None, str]:
+    depth, status, _ = lost_depth_info(moves, ply, budget)
+    return depth, status
 
 
 def causal_fields(primary: str, walk: list[dict]) -> dict:

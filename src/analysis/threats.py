@@ -163,7 +163,7 @@ class ThreatSolver:
         if vct_depth == 0:
             return worst, ()
 
-        for threat in ordered_moves(game):
+        for threat in self.quiet_moves(game):
             game.play(*threat)
             try:
                 if game.done:
@@ -179,6 +179,15 @@ class ThreatSolver:
             if status == UNKNOWN:
                 worst = UNKNOWN
         return worst, ()
+
+    def quiet_moves(self, game: Game) -> list[Move]:
+        """Quiet moves the attacker (``game.to_play``) tries before its VCF: every legal move.
+
+        Subclasses may return a subset (``analysis.selective_vct``). That only makes the search
+        incomplete: an UNSAFE result still needs every reply of the defender, which
+        ``decision`` always enumerates in full.
+        """
+        return ordered_moves(game)
 
     def decision(self, game: Game, vct_depth: int = 0, chain: int = 0, *,
                  stop_at_safe: bool = False) -> tuple[Counter, dict[Move, tuple[str, tuple]]]:

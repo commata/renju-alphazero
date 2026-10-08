@@ -1,0 +1,1721 @@
+{
+ "format": "s2-position-truth-v2",
+ "git_commit": "6a75c12739f1d6f58e262f3624b5ed38934c6fb7",
+ "probe": "P92",
+ "probes_sha256": "87a2b1d7acfff018dbbe6aef1f659d774a0e0a8c82fac49a12a07c9a106110b5",
+ "budget": {
+  "node_limit": 20000,
+  "call_limit": 100000,
+  "node_budget": 10000000
+ },
+ "resume": {
+  "legacy_rows": 41,
+  "torn_lines": 0
+ },
+ "restricted": false,
+ "summary": {
+  "legal_moves": 133,
+  "classified": 133,
+  "complete": true,
+  "counts": {
+   "PROVEN_LOSS_VCT2": 129,
+   "UNKNOWN": 4
+  },
+  "verdict": "UNRESOLVED",
+  "saving_moves": [],
+  "unknown_moves": [
+   [
+    10,
+    9
+   ],
+   [
+    11,
+    7
+   ],
+   [
+    14,
+    6
+   ],
+   [
+    15,
+    4
+   ]
+  ],
+  "root_candidate_recall": {
+   "full": {
+    "saving_in_root": [],
+    "root_children": 20,
+    "recall": null
+   },
+   "puct_heur": {
+    "saving_in_root": [],
+    "root_children": 20,
+    "recall": null
+   },
+   "puct_policy": {
+    "saving_in_root": [],
+    "root_children": 20,
+    "recall": null
+   }
+  }
+ },
+ "moves": [
+  {
+   "move": [
+    12,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1555.72
+  },
+  {
+   "move": [
+    12,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1176.82
+  },
+  {
+   "move": [
+    13,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 7.54
+  },
+  {
+   "move": [
+    14,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 4.21
+  },
+  {
+   "move": [
+    14,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 18.07
+  },
+  {
+   "move": [
+    14,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 720.08
+  },
+  {
+   "move": [
+    11,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 85.56
+  },
+  {
+   "move": [
+    11,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1492.44
+  },
+  {
+   "move": [
+    11,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 75.44
+  },
+  {
+   "move": [
+    11,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 703.78
+  },
+  {
+   "move": [
+    12,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1668.5
+  },
+  {
+   "move": [
+    12,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 315.74
+  },
+  {
+   "move": [
+    13,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 19.42
+  },
+  {
+   "move": [
+    13,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 592.79
+  },
+  {
+   "move": [
+    14,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 10.27
+  },
+  {
+   "move": [
+    15,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 65.04
+  },
+  {
+   "move": [
+    15,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 907.33
+  },
+  {
+   "move": [
+    15,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1029.77
+  },
+  {
+   "move": [
+    15,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 985.9
+  },
+  {
+   "move": [
+    10,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 564.84
+  },
+  {
+   "move": [
+    10,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 906.73
+  },
+  {
+   "move": [
+    10,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 564.46
+  },
+  {
+   "move": [
+    10,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 149.07
+  },
+  {
+   "move": [
+    10,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 832.36
+  },
+  {
+   "move": [
+    11,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 532.33
+  },
+  {
+   "move": [
+    12,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1226.93
+  },
+  {
+   "move": [
+    13,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 707.06
+  },
+  {
+   "move": [
+    15,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1890.34
+  },
+  {
+   "move": [
+    9,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1461.45
+  },
+  {
+   "move": [
+    9,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1591.76
+  },
+  {
+   "move": [
+    9,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2801.34
+  },
+  {
+   "move": [
+    9,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 451.86
+  },
+  {
+   "move": [
+    10,
+    9
+   ],
+   "lost_depth": null,
+   "status": "UNKNOWN",
+   "seconds": 11101.09,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    11,
+    9
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2396.68
+  },
+  {
+   "move": [
+    13,
+    9
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 544.47
+  },
+  {
+   "move": [
+    14,
+    9
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1353.69
+  },
+  {
+   "move": [
+    15,
+    9
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 42.39
+  },
+  {
+   "move": [
+    8,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1114.88
+  },
+  {
+   "move": [
+    8,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 769.38
+  },
+  {
+   "move": [
+    8,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 323.18
+  },
+  {
+   "move": [
+    8,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 553.04
+  },
+  {
+   "move": [
+    8,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 679.87
+  },
+  {
+   "move": [
+    11,
+    8
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2920.1,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    12,
+    8
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 9109.38,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    13,
+    8
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 861.0,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    14,
+    8
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 5501.77,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    7,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1491.93,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    7,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2194.02,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    7,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1239.98,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    7,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2224.2,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    9,
+    7
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 3361.45,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    11,
+    7
+   ],
+   "lost_depth": null,
+   "status": "UNKNOWN",
+   "seconds": 10046.53,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    12,
+    7
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 3639.06,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    14,
+    7
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 7466.06,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    15,
+    7
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 4131.57,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    6,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2069.47,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    6,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 3634.45,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    6,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2044.3,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    6,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 3402.0,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    12,
+    6
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 3546.29,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    13,
+    6
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 3305.4,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    14,
+    6
+   ],
+   "lost_depth": null,
+   "status": "UNKNOWN",
+   "seconds": 4894.29,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    15,
+    6
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2837.01,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    5,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1445.15,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    5,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1311.1,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    5,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1030.21,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    5,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 429.76,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    11,
+    5
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2309.11,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    12,
+    5
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1322.7,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    13,
+    5
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2048.1,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    15,
+    5
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2675.57,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    4
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1932.54,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1054.97,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1073.43,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1178.39,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 621.28,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    10,
+    4
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 3150.04,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    11,
+    4
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2374.32,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    13,
+    4
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2361.37,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    14,
+    4
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1663.94,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    15,
+    4
+   ],
+   "lost_depth": null,
+   "status": "UNKNOWN",
+   "seconds": 4361.37,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2016.97,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    4
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1042.97,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1136.16,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1399.48,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 737.04,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1242.87,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 647.43,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1266.1,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    8,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1347.53,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    11,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1283.49,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    12,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1355.92,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    13,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1292.64,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    14,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1368.12,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 2046.9,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1038.21,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1266.72,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    11
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 666.61,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 612.98,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 708.9,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 435.04,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1314.63,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    5,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1382.81,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    9,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1402.99,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    10,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1985.44,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    11,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1741.98,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    12,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1457.44,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    14,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1458.38,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    15,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1517.83,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    2
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1243.85,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    3
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1252.86,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    4
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1286.26,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    5
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1255.04,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    7
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1223.59,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    8
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1243.63,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    9
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1254.13,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    10
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1301.32,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    12
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1095.18,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    13
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1239.54,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    14
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1164.08,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    1,
+    15
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 762.88,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    2,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1347.7,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    3,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1343.0,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    4,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1414.06,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    5,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1354.88,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    7,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1381.97,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    8,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1333.34,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    9,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1326.68,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    10,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1373.01,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    12,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1271.67,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    13,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1288.57,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    14,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1334.84,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  },
+  {
+   "move": [
+    15,
+    1
+   ],
+   "lost_depth": 2,
+   "status": "PROVEN_LOSS",
+   "seconds": 1335.27,
+   "budget": {
+    "node_limit": 20000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   }
+  }
+ ]
+}

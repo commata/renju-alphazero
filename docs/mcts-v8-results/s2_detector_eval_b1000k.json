@@ -1,0 +1,1982 @@
+{
+ "format": "s2-vct2-detector-eval-v1",
+ "git_commit": "6a75c12739f1d6f58e262f3624b5ed38934c6fb7",
+ "budget": {
+  "full": {
+   "node_limit": 20000,
+   "call_limit": 10000,
+   "node_budget": 400000
+  },
+  "selective": {
+   "node_limit": 20000,
+   "call_limit": 20000,
+   "node_budget": 1000000
+  }
+ },
+ "sets": [
+  "A",
+  "D"
+ ],
+ "control": 40,
+ "control_seed": 2301,
+ "restricted": false,
+ "inputs": {
+  "s2_witness_positions.json": "f91b8d5b07c7d5717fe887ccc48799ee69e34747c819763b64ac570c30b23ec6",
+  "s2_witness_alternatives.json": "886221a220a0e27a129b6e75faace2c058623a515ec2b5e02072d3debc1f0791",
+  "s2_p92_joined.json": "d9b8af91a58ca4434ca6253fb75a6d0965fc545543dc57e9a0730b99da365c9e",
+  "probe_web_v8_loss_20261007.json": "87a2b1d7acfff018dbbe6aef1f659d774a0e0a8c82fac49a12a07c9a106110b5",
+  "h5_policy_8401.json": "00b83b631549538f0d4640a7dbae587736b06615d03d094c8862ed14863d9fc4",
+  "h5_policy_8402.json": "1abbb6c73b9e02f4196a2f85026c51505f365f1d3dc5e2457293d3abd40b01c9"
+ },
+ "summary": {
+  "sets": {
+   "A": {
+    "items": 6,
+    "status": {
+     "NO_TARGETED_VCT2_FOUND": 2,
+     "PROVEN_LOSS": 4
+    },
+    "recall": "4/4",
+    "flagged_expected_not_lost": 0,
+    "flagged": 4,
+    "verify": {
+     "True": 4,
+     "False": 0,
+     "None": 0
+    },
+    "seconds": {
+     "n": 6,
+     "median": 3.1,
+     "p95": 36.864,
+     "max": 36.864
+    },
+    "selective_seconds": {
+     "n": 6,
+     "median": 2.453,
+     "p95": 28.023,
+     "max": 28.023
+    },
+    "decisive_recall": "2/2"
+   },
+   "D": {
+    "items": 40,
+    "status": {
+     "NO_TARGETED_VCT2_FOUND": 38,
+     "UNKNOWN:budget": 2
+    },
+    "recall": null,
+    "flagged_expected_not_lost": 0,
+    "flagged": 0,
+    "verify": {
+     "True": 0,
+     "False": 0,
+     "None": 0
+    },
+    "seconds": {
+     "n": 40,
+     "median": 1.289,
+     "p95": 292.107,
+     "max": 493.471
+    },
+    "selective_seconds": {
+     "n": 40,
+     "median": 0.322,
+     "p95": 291.54,
+     "max": 492.931
+    }
+   }
+  },
+  "gate": {
+   "A_all_detected": true,
+   "soundness_violations": [],
+   "D_cost_ok_total": false,
+   "D_cost_ok_added": false,
+   "pass_total": false,
+   "pass_added": false
+  }
+ },
+ "items": [
+  {
+   "key": "A/8401-p4-white/8,7",
+   "set": "A",
+   "move": [
+    8,
+    7
+   ],
+   "expect": "NOT_PROVEN_LOSS",
+   "meta": {
+    "played": false,
+    "policy_rank": 1
+   },
+   "result": {
+    "seconds": 1.093,
+    "stage_nodes": {
+     "full": 63,
+     "selective": 366
+    },
+    "vcf_calls": 279,
+    "nodes_used": 429,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.496,
+     "selective": 0.597
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "A/8401-p4-white/6,7",
+   "set": "A",
+   "move": [
+    6,
+    7
+   ],
+   "expect": "PROVEN_LOSS",
+   "meta": {
+    "played": false,
+    "policy_rank": 2
+   },
+   "result": {
+    "seconds": 36.864,
+    "stage_nodes": {
+     "full": 9640,
+     "selective": 25191
+    },
+    "vcf_calls": 2634,
+    "nodes_used": 34831,
+    "status": "PROVEN_LOSS",
+    "depth": 2,
+    "witness": [
+     "threat",
+     [
+      7,
+      6
+     ]
+    ],
+    "stage_seconds": {
+     "full": 8.841,
+     "selective": 28.023
+    },
+    "verify_seconds": 36.376
+   },
+   "verified": true,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "A/8401-p4-white/9,8",
+   "set": "A",
+   "move": [
+    9,
+    8
+   ],
+   "expect": "PROVEN_LOSS",
+   "meta": {
+    "played": true,
+    "policy_rank": 7
+   },
+   "result": {
+    "seconds": 12.364,
+    "stage_nodes": {
+     "full": 5375,
+     "selective": 7710
+    },
+    "vcf_calls": 980,
+    "nodes_used": 13085,
+    "status": "PROVEN_LOSS",
+    "depth": 2,
+    "witness": [
+     "threat",
+     [
+      7,
+      6
+     ]
+    ],
+    "stage_seconds": {
+     "full": 5.381,
+     "selective": 6.982
+    },
+    "verify_seconds": 10.258
+   },
+   "verified": true,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "A/8401-p16-white/10,8",
+   "set": "A",
+   "move": [
+    10,
+    8
+   ],
+   "expect": "NOT_PROVEN_LOSS",
+   "meta": {
+    "played": false,
+    "policy_rank": 1
+   },
+   "result": {
+    "seconds": 0.831,
+    "stage_nodes": {
+     "full": 171,
+     "selective": 88
+    },
+    "vcf_calls": 243,
+    "nodes_used": 259,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.511,
+     "selective": 0.32
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "A/8401-p16-white/8,7",
+   "set": "A",
+   "move": [
+    8,
+    7
+   ],
+   "expect": "PROVEN_LOSS",
+   "meta": {
+    "played": false,
+    "policy_rank": 2
+   },
+   "result": {
+    "seconds": 2.928,
+    "stage_nodes": {
+     "full": 416,
+     "selective": 2356
+    },
+    "vcf_calls": 691,
+    "nodes_used": 2772,
+    "status": "PROVEN_LOSS",
+    "depth": 2,
+    "witness": [
+     "threat",
+     [
+      6,
+      7
+     ]
+    ],
+    "stage_seconds": {
+     "full": 0.6,
+     "selective": 2.329
+    },
+    "verify_seconds": 2.241
+   },
+   "verified": true,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "A/8401-p16-white/8,9",
+   "set": "A",
+   "move": [
+    8,
+    9
+   ],
+   "expect": "PROVEN_LOSS",
+   "meta": {
+    "played": true,
+    "policy_rank": 4
+   },
+   "result": {
+    "seconds": 3.272,
+    "stage_nodes": {
+     "full": 338,
+     "selective": 2584
+    },
+    "vcf_calls": 701,
+    "nodes_used": 2922,
+    "status": "PROVEN_LOSS",
+    "depth": 2,
+    "witness": [
+     "threat",
+     [
+      6,
+      7
+     ]
+    ],
+    "stage_seconds": {
+     "full": 0.694,
+     "selective": 2.577
+    },
+    "verify_seconds": 2.813
+   },
+   "verified": true,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p23-white/3",
+   "set": "D",
+   "move": [
+    7,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 3
+   },
+   "result": {
+    "seconds": 0.319,
+    "stage_nodes": {
+     "full": 0,
+     "selective": 0
+    },
+    "vcf_calls": 223,
+    "nodes_used": 0,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.274,
+     "selective": 0.046
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p18-black/6",
+   "set": "D",
+   "move": [
+    10,
+    10
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 6
+   },
+   "result": {
+    "seconds": 0.39,
+    "stage_nodes": {
+     "full": 0,
+     "selective": 0
+    },
+    "vcf_calls": 220,
+    "nodes_used": 0,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.358,
+     "selective": 0.032
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p4-white/5",
+   "set": "D",
+   "move": [
+    6,
+    6
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 5
+   },
+   "result": {
+    "seconds": 0.656,
+    "stage_nodes": {
+     "full": 48,
+     "selective": 80
+    },
+    "vcf_calls": 261,
+    "nodes_used": 128,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.342,
+     "selective": 0.314
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p15-black/12",
+   "set": "D",
+   "move": [
+    5,
+    8
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 12
+   },
+   "result": {
+    "seconds": 184.895,
+    "stage_nodes": {
+     "full": 3206,
+     "selective": 201538
+    },
+    "vcf_calls": 6565,
+    "nodes_used": 204744,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 3.066,
+     "selective": 181.83
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p14-white/9",
+   "set": "D",
+   "move": [
+    9,
+    7
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 9
+   },
+   "result": {
+    "seconds": 0.58,
+    "stage_nodes": {
+     "full": 52,
+     "selective": 34
+    },
+    "vcf_calls": 238,
+    "nodes_used": 86,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.323,
+     "selective": 0.257
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p17-white/7",
+   "set": "D",
+   "move": [
+    7,
+    6
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 7
+   },
+   "result": {
+    "seconds": 1.018,
+    "stage_nodes": {
+     "full": 60,
+     "selective": 530
+    },
+    "vcf_calls": 324,
+    "nodes_used": 590,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.322,
+     "selective": 0.696
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p5-white/71",
+   "set": "D",
+   "move": [
+    12,
+    5
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 71
+   },
+   "result": {
+    "seconds": 125.836,
+    "stage_nodes": {
+     "full": 145794,
+     "selective": 1522
+    },
+    "vcf_calls": 192,
+    "nodes_used": 147316,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 124.078,
+     "selective": 1.758
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p2-white/61",
+   "set": "D",
+   "move": [
+    7,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 61
+   },
+   "result": {
+    "seconds": 25.041,
+    "stage_nodes": {
+     "full": 21874,
+     "selective": 578
+    },
+    "vcf_calls": 207,
+    "nodes_used": 22452,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 23.913,
+     "selective": 1.128
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p15-black/114",
+   "set": "D",
+   "move": [
+    12,
+    4
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 114
+   },
+   "result": {
+    "seconds": 4.274,
+    "stage_nodes": {
+     "full": 2949,
+     "selective": 689
+    },
+    "vcf_calls": 211,
+    "nodes_used": 3638,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 3.198,
+     "selective": 1.077
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p13-white/11",
+   "set": "D",
+   "move": [
+    5,
+    5
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 11
+   },
+   "result": {
+    "seconds": 1.781,
+    "stage_nodes": {
+     "full": 148,
+     "selective": 378
+    },
+    "vcf_calls": 322,
+    "nodes_used": 526,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.732,
+     "selective": 1.049
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p5-white/99",
+   "set": "D",
+   "move": [
+    4,
+    14
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 99
+   },
+   "result": {
+    "seconds": 25.157,
+    "stage_nodes": {
+     "full": 25046,
+     "selective": 672
+    },
+    "vcf_calls": 177,
+    "nodes_used": 25718,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 24.309,
+     "selective": 0.848
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p8-black/4",
+   "set": "D",
+   "move": [
+    9,
+    10
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 4
+   },
+   "result": {
+    "seconds": 0.596,
+    "stage_nodes": {
+     "full": 10,
+     "selective": 0
+    },
+    "vcf_calls": 222,
+    "nodes_used": 10,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.551,
+     "selective": 0.046
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p2-white/67",
+   "set": "D",
+   "move": [
+    4,
+    5
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 67
+   },
+   "result": {
+    "seconds": 3.36,
+    "stage_nodes": {
+     "full": 1822,
+     "selective": 430
+    },
+    "vcf_calls": 217,
+    "nodes_used": 2252,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 2.632,
+     "selective": 0.728
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p8-black/16",
+   "set": "D",
+   "move": [
+    10,
+    5
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 16
+   },
+   "result": {
+    "seconds": 1.316,
+    "stage_nodes": {
+     "full": 124,
+     "selective": 683
+    },
+    "vcf_calls": 352,
+    "nodes_used": 807,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.496,
+     "selective": 0.82
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p22-white/21",
+   "set": "D",
+   "move": [
+    4,
+    8
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 21
+   },
+   "result": {
+    "seconds": 1.888,
+    "stage_nodes": {
+     "full": 800,
+     "selective": 788
+    },
+    "vcf_calls": 319,
+    "nodes_used": 1588,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.813,
+     "selective": 1.075
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p19-black/12",
+   "set": "D",
+   "move": [
+    12,
+    8
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 12
+   },
+   "result": {
+    "seconds": 0.522,
+    "stage_nodes": {
+     "full": 46,
+     "selective": 24
+    },
+    "vcf_calls": 224,
+    "nodes_used": 70,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.43,
+     "selective": 0.093
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p0-black/12",
+   "set": "D",
+   "move": [
+    10,
+    8
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 12
+   },
+   "result": {
+    "seconds": 14.372,
+    "stage_nodes": {
+     "full": 1009,
+     "selective": 15310
+    },
+    "vcf_calls": 1222,
+    "nodes_used": 16319,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 1.361,
+     "selective": 13.01
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p5-black/4",
+   "set": "D",
+   "move": [
+    10,
+    6
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 4
+   },
+   "result": {
+    "seconds": 0.362,
+    "stage_nodes": {
+     "full": 10,
+     "selective": 0
+    },
+    "vcf_calls": 222,
+    "nodes_used": 10,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.33,
+     "selective": 0.032
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p0-white/11",
+   "set": "D",
+   "move": [
+    11,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 11
+   },
+   "result": {
+    "seconds": 493.471,
+    "stage_nodes": {
+     "full": 228,
+     "selective": 622834
+    },
+    "vcf_calls": 20239,
+    "nodes_used": 623062,
+    "status": "UNKNOWN",
+    "depth": null,
+    "cause": "budget",
+    "stage": "selective_depth2",
+    "stage_seconds": {
+     "full": 0.54,
+     "selective": 492.931
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p12-white/7",
+   "set": "D",
+   "move": [
+    9,
+    8
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 7
+   },
+   "result": {
+    "seconds": 1.65,
+    "stage_nodes": {
+     "full": 88,
+     "selective": 879
+    },
+    "vcf_calls": 339,
+    "nodes_used": 967,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.407,
+     "selective": 1.243
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p23-white/61",
+   "set": "D",
+   "move": [
+    11,
+    11
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 61
+   },
+   "result": {
+    "seconds": 1.086,
+    "stage_nodes": {
+     "full": 618,
+     "selective": 0
+    },
+    "vcf_calls": 168,
+    "nodes_used": 618,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 1.041,
+     "selective": 0.044
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p20-white/9",
+   "set": "D",
+   "move": [
+    9,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 9
+   },
+   "result": {
+    "seconds": 0.933,
+    "stage_nodes": {
+     "full": 54,
+     "selective": 224
+    },
+    "vcf_calls": 272,
+    "nodes_used": 278,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.418,
+     "selective": 0.515
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p8-black/8",
+   "set": "D",
+   "move": [
+    9,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 8
+   },
+   "result": {
+    "seconds": 0.469,
+    "stage_nodes": {
+     "full": 6,
+     "selective": 0
+    },
+    "vcf_calls": 218,
+    "nodes_used": 6,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.435,
+     "selective": 0.034
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p23-black/14",
+   "set": "D",
+   "move": [
+    5,
+    6
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 14
+   },
+   "result": {
+    "seconds": 0.583,
+    "stage_nodes": {
+     "full": 36,
+     "selective": 0
+    },
+    "vcf_calls": 212,
+    "nodes_used": 36,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.554,
+     "selective": 0.03
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p8-black/26",
+   "set": "D",
+   "move": [
+    9,
+    2
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 26
+   },
+   "result": {
+    "seconds": 1.262,
+    "stage_nodes": {
+     "full": 867,
+     "selective": 40
+    },
+    "vcf_calls": 223,
+    "nodes_used": 907,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 1.145,
+     "selective": 0.117
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p8-white/19",
+   "set": "D",
+   "move": [
+    9,
+    8
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 19
+   },
+   "result": {
+    "seconds": 2.817,
+    "stage_nodes": {
+     "full": 2224,
+     "selective": 571
+    },
+    "vcf_calls": 293,
+    "nodes_used": 2795,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 2.068,
+     "selective": 0.749
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p2-black/12",
+   "set": "D",
+   "move": [
+    6,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 12
+   },
+   "result": {
+    "seconds": 0.525,
+    "stage_nodes": {
+     "full": 16,
+     "selective": 0
+    },
+    "vcf_calls": 213,
+    "nodes_used": 16,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.482,
+     "selective": 0.043
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p23-black/8",
+   "set": "D",
+   "move": [
+    5,
+    10
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 8
+   },
+   "result": {
+    "seconds": 0.435,
+    "stage_nodes": {
+     "full": 6,
+     "selective": 0
+    },
+    "vcf_calls": 218,
+    "nodes_used": 6,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.399,
+     "selective": 0.036
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p14-white/33",
+   "set": "D",
+   "move": [
+    4,
+    7
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 33
+   },
+   "result": {
+    "seconds": 4.655,
+    "stage_nodes": {
+     "full": 4924,
+     "selective": 156
+    },
+    "vcf_calls": 226,
+    "nodes_used": 5080,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 4.268,
+     "selective": 0.387
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p14-black/26",
+   "set": "D",
+   "move": [
+    6,
+    7
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 26
+   },
+   "result": {
+    "seconds": 9.981,
+    "stage_nodes": {
+     "full": 10795,
+     "selective": 96
+    },
+    "vcf_calls": 1970,
+    "nodes_used": 10891,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 9.739,
+     "selective": 0.242
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p1-black/8",
+   "set": "D",
+   "move": [
+    8,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 8
+   },
+   "result": {
+    "seconds": 0.57,
+    "stage_nodes": {
+     "full": 0,
+     "selective": 0
+    },
+    "vcf_calls": 216,
+    "nodes_used": 0,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.535,
+     "selective": 0.035
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p5-white/3",
+   "set": "D",
+   "move": [
+    7,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 3
+   },
+   "result": {
+    "seconds": 0.62,
+    "stage_nodes": {
+     "full": 46,
+     "selective": 42
+    },
+    "vcf_calls": 255,
+    "nodes_used": 88,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.324,
+     "selective": 0.295
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p20-white/83",
+   "set": "D",
+   "move": [
+    9,
+    12
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 83
+   },
+   "result": {
+    "seconds": 0.893,
+    "stage_nodes": {
+     "full": 540,
+     "selective": 2
+    },
+    "vcf_calls": 143,
+    "nodes_used": 542,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.802,
+     "selective": 0.091
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p23-black/4",
+   "set": "D",
+   "move": [
+    7,
+    9
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 4
+   },
+   "result": {
+    "seconds": 0.681,
+    "stage_nodes": {
+     "full": 48,
+     "selective": 46
+    },
+    "vcf_calls": 250,
+    "nodes_used": 94,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.432,
+     "selective": 0.249
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p10-black/50",
+   "set": "D",
+   "move": [
+    5,
+    7
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 50
+   },
+   "result": {
+    "seconds": 13.107,
+    "stage_nodes": {
+     "full": 4247,
+     "selective": 11371
+    },
+    "vcf_calls": 338,
+    "nodes_used": 15618,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 3.845,
+     "selective": 9.262
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p20-black/12",
+   "set": "D",
+   "move": [
+    10,
+    8
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 12
+   },
+   "result": {
+    "seconds": 1.116,
+    "stage_nodes": {
+     "full": 112,
+     "selective": 50
+    },
+    "vcf_calls": 244,
+    "nodes_used": 162,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.787,
+     "selective": 0.329
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8402-p2-white/83",
+   "set": "D",
+   "move": [
+    7,
+    7
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 83
+   },
+   "result": {
+    "seconds": 13.108,
+    "stage_nodes": {
+     "full": 15006,
+     "selective": 56
+    },
+    "vcf_calls": 153,
+    "nodes_used": 15062,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 12.885,
+     "selective": 0.223
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p8-white/51",
+   "set": "D",
+   "move": [
+    5,
+    14
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 51
+   },
+   "result": {
+    "status": "UNKNOWN",
+    "depth": null,
+    "cause": "budget",
+    "stage": "full_depth1",
+    "seconds": 269.821,
+    "stage_seconds": {
+     "full": 269.821,
+     "selective": 0.0
+    },
+    "stage_nodes": {
+     "full": 400000,
+     "selective": 0
+    },
+    "vcf_calls": 42,
+    "nodes_used": 400000
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p21-white/11",
+   "set": "D",
+   "move": [
+    9,
+    12
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 11
+   },
+   "result": {
+    "seconds": 292.107,
+    "stage_nodes": {
+     "full": 314,
+     "selective": 394627
+    },
+    "vcf_calls": 3628,
+    "nodes_used": 394941,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 0.567,
+     "selective": 291.54
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "D/8401-p23-white/41",
+   "set": "D",
+   "move": [
+    3,
+    11
+   ],
+   "expect": null,
+   "meta": {
+    "ply": 41
+   },
+   "result": {
+    "seconds": 168.358,
+    "stage_nodes": {
+     "full": 3169,
+     "selective": 308329
+    },
+    "vcf_calls": 1330,
+    "nodes_used": 311498,
+    "status": "NO_TARGETED_VCT2_FOUND",
+    "depth": null,
+    "stage_seconds": {
+     "full": 2.548,
+     "selective": 165.809
+    }
+   },
+   "verified": null,
+   "budget": {
+    "full": {
+     "node_limit": 20000,
+     "call_limit": 10000,
+     "node_budget": 400000
+    },
+    "selective": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 1000000
+    }
+   }
+  }
+ ]
+}

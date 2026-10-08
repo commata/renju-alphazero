@@ -41,19 +41,19 @@ for extra in (ROOT, ROOT / 'src'):
 from analysis.threats import ordered_moves  # noqa: E402
 from scripts.run_mcts_v8_benchmark import _git_commit, file_sha256  # noqa: E402
 from scripts.run_s1_probes import DEFAULT_PROBES, replay  # noqa: E402
-from scripts.s1_loss_analysis import _lost_depth  # noqa: E402
+from scripts.s1_loss_analysis import lost_depth_info  # noqa: E402
 
-FORMAT = 's2-position-truth-v2'  # v2: budget per line, ETA, torn-line tolerant resume
+FORMAT = 's2-position-truth-v3'  # v2: budget per line, ETA, torn-line tolerant resume; v3: UNKNOWN cause
 DEFAULT_BUDGET = {'node_limit': 20_000, 'call_limit': 100_000, 'node_budget': 10_000_000}
 
 
 def classify_move(task) -> dict:
     history, move, budget = task
     started = perf_counter()
-    depth, status = _lost_depth([*history, move], len(history), budget)
+    depth, status, info = lost_depth_info([*history, move], len(history), budget)
     return {'move': [move[0] + 1, move[1] + 1], 'lost_depth': depth,
             'status': 'PROVEN_LOSS' if depth is not None else status,
-            'seconds': round(perf_counter() - started, 2), 'budget': budget}
+            'seconds': round(perf_counter() - started, 2), 'budget': budget, 'search': info}
 
 
 def load_done(path: Path | None, budget: dict) -> tuple[dict, dict]:
