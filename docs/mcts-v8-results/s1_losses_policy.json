@@ -1,6 +1,6 @@
 {
  "format": "s1-loss-analysis-v2",
- "git_commit": "786144921eb763414e74b641a5fee757e0fd8144",
+ "git_commit": "07e1812393509d6c09b42b82d3182aaaed2efae1",
  "inputs": [
   "docs/mcts-v8-results/h5_policy_8401.json",
   "docs/mcts-v8-results/h5_policy_8402.json"
@@ -36,7 +36,7 @@
  "reused_from": {
   "path": "docs/mcts-v8-results/s1_losses_policy_v1.json",
   "git_commit": "b6484898dd73a84c641b1c81efae4d72883e2a95",
-  "sha256": "6b2c6ae7e89851d8e47351bec7ec81bee9edeef2b6fb34ae0b86fe759fdb29f6"
+  "sha256": "ef6f6ffda15180e32737e964d5c859ba1e30be72a11f38e816d437c497ca4229"
  },
  "classification": {
   "puct_policy": {
