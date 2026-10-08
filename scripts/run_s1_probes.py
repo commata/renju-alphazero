@@ -35,7 +35,7 @@ from scripts.run_mcts_v8_benchmark import (  # noqa: E402
 )
 
 DEFAULT_PROBES = ROOT / 'docs' / 'mcts-v8-results' / 'probe_web_v8_loss_20261007.json'
-FORMAT = 's1-probes-v1'
+FORMAT = 's1-probes-v2'  # v2: visited-only saturation, strict P92 comparison
 FAR_MOVE = (2, 3)  # (3,4) 1-indexed: black's losing move at ply 93
 REGION = frozenset((r, c) for r in range(8, 15) for c in range(8, 15))  # rows/cols 9-15, 1-indexed
 SATURATION_EPS = 0.05
@@ -65,6 +65,7 @@ def p92_metrics(children, played, priors=None) -> dict:
     region = [m for m, _, _ in order if m in REGION]
     best_r = region[0] if region else None
     far_rank = rank.get(FAR_MOVE)
+    both = best_r is not None and far_rank is not None
     total = sum(visits.values()) or 1
     return {
         'chose_far': tuple(played) == FAR_MOVE,
@@ -73,8 +74,13 @@ def p92_metrics(children, played, priors=None) -> dict:
         'region_best': one(best_r),
         'region_best_rank': rank.get(best_r),
         'far_rank': far_rank,  # None: (3,4) is not a root child
+        # The §12.19 gate counts a region child against an absent (3,4) as ahead; the strict
+        # fields below separate that case from a real comparison.
         'region_beats_far_rank': best_r is not None and (far_rank is None or rank[best_r] < far_rank),
         'region_beats_far_visits': best_r is not None and visits[best_r] > visits.get(FAR_MOVE, 0),
+        'both_present': both,
+        'far_absent': far_rank is None,
+        'region_strictly_beats_far': both and rank[best_r] < far_rank and visits[best_r] > visits[FAR_MOVE],
         'region_visit_share': round(sum(visits[m] for m in region) / total, 4),
         'far_visit_share': round(visits.get(FAR_MOVE, 0) / total, 4),
         'region_best_prior': None if priors is None or best_r is None else round(priors.get(best_r, 0.0), 5),
@@ -82,15 +88,25 @@ def p92_metrics(children, played, priors=None) -> dict:
     }
 
 
-def root_value_spread(children) -> dict:
-    """C4 baseline: spread of the root children's mean values (rollout leaves now, value net in H6)."""
-    values = [q for _, _, q in children]
+def _spread(values) -> tuple:
     if not values:
-        return {'range': None, 'std': None, 'saturated': None}
+        return None, None
     mean = sum(values) / len(values)
-    spread = max(values) - min(values)
-    return {'range': round(spread, 4), 'std': round((sum((v - mean) ** 2 for v in values) / len(values)) ** 0.5, 4),
-            'saturated': spread <= SATURATION_EPS}
+    return (round(max(values) - min(values), 4),
+            round((sum((v - mean) ** 2 for v in values) / len(values)) ** 0.5, 4))
+
+
+def root_value_spread(children) -> dict:
+    """C4: spread of the root children's mean values (rollout leaves now, value net in H6).
+
+    Judged on visited children only: an unvisited PUCT child keeps its initial Q of 0, which
+    is not a search result and would make an all-(+1) or all-(-1) root look unsaturated.
+    """
+    range_all, _ = _spread([q for _, _, q in children])
+    range_visited, std_visited = _spread([q for _, v, q in children if v > 0])
+    return {'children': len(children), 'visited': sum(v > 0 for _, v, _ in children),
+            'range_all': range_all, 'range_visited': range_visited, 'std_visited': std_visited,
+            'saturated_visited': None if range_visited is None else range_visited <= SATURATION_EPS}
 
 
 def run_probe(name: str, spec: dict, moves, arm: str, seed: int, config: dict, policy) -> dict:
@@ -133,8 +149,10 @@ def summarize(records: list[dict]) -> dict:
                 row['routes'][r['route']] = row['routes'].get(r['route'], 0) + 1
                 key = f"{r['played'][0]},{r['played'][1]}"
                 row['played'][key] = row['played'].get(key, 0) + 1
-            spreads = [r['root_value_spread']['saturated'] for r in runs if r['root_value_spread']['saturated'] is not None]
-            row['saturated_root_runs'] = sum(spreads)
+            spreads = [r['root_value_spread'] for r in runs if r['root_value_spread']['saturated_visited'] is not None]
+            row['saturated_visited_runs'] = sum(x['saturated_visited'] for x in spreads)
+            row['visited_children_mean'] = (round(sum(x['visited'] for x in spreads) / len(spreads), 2)
+                                            if spreads else None)
             if name == 'P92':
                 m = [r['p92'] for r in runs]
                 row.update({
@@ -143,6 +161,9 @@ def summarize(records: list[dict]) -> dict:
                     'root_has_region': sum(x['root_has_region'] for x in m),
                     'region_beats_far_rank': sum(x['region_beats_far_rank'] for x in m),
                     'region_beats_far_visits': sum(x['region_beats_far_visits'] for x in m),
+                    'both_present': sum(x['both_present'] for x in m),
+                    'far_absent_region_present': sum(x['root_has_region'] and x['far_absent'] for x in m),
+                    'region_strictly_beats_far': sum(x['region_strictly_beats_far'] for x in m),
                     'region_visit_share_mean': round(sum(x['region_visit_share'] for x in m) / len(m), 4),
                     'far_visit_share_mean': round(sum(x['far_visit_share'] for x in m) / len(m), 4),
                 })

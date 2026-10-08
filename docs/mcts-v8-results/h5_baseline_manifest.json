@@ -10,8 +10,8 @@
   "sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
   "sha256_recorded": "before seed 8402 (8401 recorded the path only)",
   "metadata_path": "runs/h3_policy_64x4/best.json",
-  "metadata_sha256": null,
-  "metadata_sha256_note": "not recorded yet; the next run_mcts_v8_benchmark / run_s1_probes output records it under provenance"
+  "metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "metadata_sha256_note": "recorded by run_s1_probes.py provenance (s1_probes_puct_policy.json, commit b648489, clean tree)"
  },
  "puct_c": 1.5,
  "v8_config": {

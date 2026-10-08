@@ -1,0 +1,144 @@
+{
+ "format": "s1-p93-verification-v1",
+ "git_commit": "b6484898dd73a84c641b1c81efae4d72883e2a95",
+ "node_limit": 20000,
+ "inputs": [
+  "docs/mcts-v8-results/s1_probes_full.json",
+  "docs/mcts-v8-results/s1_probes_puct_heur.json",
+  "docs/mcts-v8-results/s1_probes_puct_policy.json"
+ ],
+ "arms": {
+  "full": {
+   "runs": 10,
+   "kept_proven_win": 3,
+   "played": {
+    "4,3": 1,
+    "4,4": 2,
+    "8,3": 2,
+    "8,10": 1,
+    "9,7": 1,
+    "12,12": 2,
+    "12,13": 1
+   }
+  },
+  "puct_heur": {
+   "runs": 10,
+   "kept_proven_win": 10,
+   "played": {
+    "12,13": 10
+   }
+  },
+  "puct_policy": {
+   "runs": 10,
+   "kept_proven_win": 10,
+   "played": {
+    "13,11": 10
+   }
+  }
+ },
+ "moves": [
+  {
+   "move": [
+    4,
+    3
+   ],
+   "black_best_status": "SAFE",
+   "keeps_proven_win": false,
+   "refutation": [
+    3,
+    3
+   ],
+   "replies_checked": 1,
+   "seconds": 0.72
+  },
+  {
+   "move": [
+    4,
+    4
+   ],
+   "black_best_status": "SAFE",
+   "keeps_proven_win": false,
+   "refutation": [
+    3,
+    3
+   ],
+   "replies_checked": 1,
+   "seconds": 0.66
+  },
+  {
+   "move": [
+    8,
+    3
+   ],
+   "black_best_status": "SAFE",
+   "keeps_proven_win": false,
+   "refutation": [
+    9,
+    2
+   ],
+   "replies_checked": 1,
+   "seconds": 0.71
+  },
+  {
+   "move": [
+    8,
+    10
+   ],
+   "black_best_status": "SAFE",
+   "keeps_proven_win": false,
+   "refutation": [
+    7,
+    11
+   ],
+   "replies_checked": 1,
+   "seconds": 1.07
+  },
+  {
+   "move": [
+    9,
+    7
+   ],
+   "black_best_status": "SAFE",
+   "keeps_proven_win": false,
+   "refutation": [
+    10,
+    9
+   ],
+   "replies_checked": 1,
+   "seconds": 0.82
+  },
+  {
+   "move": [
+    12,
+    12
+   ],
+   "black_best_status": "UNSAFE",
+   "keeps_proven_win": true,
+   "refutation": null,
+   "replies_checked": 131,
+   "seconds": 27.42
+  },
+  {
+   "move": [
+    12,
+    13
+   ],
+   "black_best_status": "UNSAFE",
+   "keeps_proven_win": true,
+   "refutation": null,
+   "replies_checked": 131,
+   "seconds": 14.15
+  },
+  {
+   "move": [
+    13,
+    11
+   ],
+   "black_best_status": "UNSAFE",
+   "keeps_proven_win": true,
+   "refutation": null,
+   "replies_checked": 131,
+   "seconds": 4.21
+  }
+ ]
+}

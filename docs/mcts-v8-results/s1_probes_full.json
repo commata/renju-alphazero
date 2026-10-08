@@ -1,0 +1,5335 @@
+{
+ "format": "s1-probes-v1",
+ "git_commit": "b6484898dd73a84c641b1c81efae4d72883e2a95",
+ "provenance": {
+  "git_dirty": false,
+  "policy_checkpoint_sha256": null,
+  "policy_metadata_sha256": null
+ },
+ "probes": "C:\\오목 강화학습\\renju-alphazero\\docs\\mcts-v8-results\\probe_web_v8_loss_20261007.json",
+ "arms": [
+  "full"
+ ],
+ "seeds": 10,
+ "base_seed": 9201,
+ "puct_c": 1.5,
+ "overrides": {},
+ "summary": {
+  "full": {
+   "P92": {
+    "runs": 10,
+    "routes": {
+     "tree": 10
+    },
+    "played": {
+     "9,7": 2,
+     "4,4": 1,
+     "3,4": 2,
+     "8,3": 2,
+     "3,10": 1,
+     "8,10": 1,
+     "1,7": 1
+    },
+    "saturated_root_runs": 10,
+    "chose_far": 2,
+    "chose_region": 0,
+    "root_has_region": 6,
+    "region_beats_far_rank": 2,
+    "region_beats_far_visits": 2,
+    "region_visit_share_mean": 0.032,
+    "far_visit_share_mean": 0.06,
+    "gate": {
+     "chose_far_le_2_of_10": true,
+     "region_beats_far_both_ge_8_of_10": false
+    }
+   },
+   "P93": {
+    "runs": 10,
+    "routes": {
+     "tree": 10
+    },
+    "played": {
+     "4,3": 1,
+     "12,12": 2,
+     "12,13": 1,
+     "4,4": 2,
+     "8,3": 2,
+     "8,10": 1,
+     "9,7": 1
+    },
+    "saturated_root_runs": 10
+   },
+   "P94": {
+    "runs": 10,
+    "routes": {
+     "stage4": 10
+    },
+    "played": {
+     "11,13": 10
+    },
+    "saturated_root_runs": 0,
+    "all_checked_unsafe": 10
+   }
+  }
+ },
+ "runs": [
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 9407447277779714573,
+   "seconds": 1.758,
+   "route": "tree",
+   "played": [
+    9,
+    7
+   ],
+   "tree_move": [
+    9,
+    7
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      3,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      9,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": false,
+    "region_best": null,
+    "region_best_rank": null,
+    "far_rank": 1,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.0,
+    "far_visit_share": 0.08,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 7010196234006653798,
+   "seconds": 2.115,
+   "route": "tree",
+   "played": [
+    4,
+    4
+   ],
+   "tree_move": [
+    4,
+    4
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      3,
+      4
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      4,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": true,
+    "region_best": [
+     10,
+     9
+    ],
+    "region_best_rank": 13,
+    "far_rank": 9,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.06,
+    "far_visit_share": 0.06,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 9546706197737087036,
+   "seconds": 3.341,
+   "route": "tree",
+   "played": [
+    9,
+    7
+   ],
+   "tree_move": [
+    9,
+    7
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      9,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": true,
+    "region_best": [
+     10,
+     9
+    ],
+    "region_best_rank": 14,
+    "far_rank": 2,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.06,
+    "far_visit_share": 0.08,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 468702587745854748,
+   "seconds": 3.26,
+   "route": "tree",
+   "played": [
+    3,
+    4
+   ],
+   "tree_move": [
+    3,
+    4
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      3,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": true,
+    "chose_region": false,
+    "root_has_region": true,
+    "region_best": [
+     10,
+     9
+    ],
+    "region_best_rank": 14,
+    "far_rank": 2,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.06,
+    "far_visit_share": 0.08,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 9961729496914894023,
+   "seconds": 3.174,
+   "route": "tree",
+   "played": [
+    3,
+    4
+   ],
+   "tree_move": [
+    3,
+    4
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      3,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": true,
+    "chose_region": false,
+    "root_has_region": true,
+    "region_best": [
+     10,
+     9
+    ],
+    "region_best_rank": 13,
+    "far_rank": 2,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.06,
+    "far_visit_share": 0.08,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 8963575524269766135,
+   "seconds": 3.246,
+   "route": "tree",
+   "played": [
+    8,
+    3
+   ],
+   "tree_move": [
+    8,
+    3
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      8,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": true,
+    "region_best": [
+     10,
+     9
+    ],
+    "region_best_rank": 15,
+    "far_rank": null,
+    "region_beats_far_rank": true,
+    "region_beats_far_visits": true,
+    "region_visit_share": 0.02,
+    "far_visit_share": 0.0,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 9945266846188951776,
+   "seconds": 3.272,
+   "route": "tree",
+   "played": [
+    8,
+    3
+   ],
+   "tree_move": [
+    8,
+    3
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      8,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": false,
+    "region_best": null,
+    "region_best_rank": null,
+    "far_rank": 2,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.0,
+    "far_visit_share": 0.08,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 12642450741119662406,
+   "seconds": 3.147,
+   "route": "tree",
+   "played": [
+    3,
+    10
+   ],
+   "tree_move": [
+    3,
+    10
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      3,
+      10
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": false,
+    "region_best": null,
+    "region_best_rank": null,
+    "far_rank": 2,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.0,
+    "far_visit_share": 0.08,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 16680960238229109702,
+   "seconds": 3.171,
+   "route": "tree",
+   "played": [
+    8,
+    10
+   ],
+   "tree_move": [
+    8,
+    10
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      8,
+      10
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": true,
+    "region_best": [
+     10,
+     9
+    ],
+    "region_best_rank": 13,
+    "far_rank": null,
+    "region_beats_far_rank": true,
+    "region_beats_far_visits": true,
+    "region_visit_share": 0.06,
+    "far_visit_share": 0.0,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P92",
+   "arm": "full",
+   "seed": 12437270980259355816,
+   "seconds": 3.382,
+   "route": "tree",
+   "played": [
+    1,
+    7
+   ],
+   "tree_move": [
+    1,
+    7
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      1,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     4,
+     -1.0
+    ],
+    [
+     [
+      3,
+      4
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     -1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      1,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": "v5",
+   "p92": {
+    "chose_far": false,
+    "chose_region": false,
+    "root_has_region": false,
+    "region_best": null,
+    "region_best_rank": null,
+    "far_rank": 8,
+    "region_beats_far_rank": false,
+    "region_beats_far_visits": false,
+    "region_visit_share": 0.0,
+    "far_visit_share": 0.06,
+    "region_best_prior": null,
+    "far_prior": null
+   }
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 9407447277779714573,
+   "seconds": 2.481,
+   "route": "tree",
+   "played": [
+    4,
+    3
+   ],
+   "tree_move": [
+    4,
+    3
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      4,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      4,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 7010196234006653798,
+   "seconds": 3.337,
+   "route": "tree",
+   "played": [
+    12,
+    12
+   ],
+   "tree_move": [
+    12,
+    12
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      12,
+      12
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 9546706197737087036,
+   "seconds": 3.364,
+   "route": "tree",
+   "played": [
+    12,
+    13
+   ],
+   "tree_move": [
+    12,
+    13
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      12,
+      13
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 468702587745854748,
+   "seconds": 3.061,
+   "route": "tree",
+   "played": [
+    4,
+    4
+   ],
+   "tree_move": [
+    4,
+    4
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      4,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 9961729496914894023,
+   "seconds": 2.962,
+   "route": "tree",
+   "played": [
+    8,
+    3
+   ],
+   "tree_move": [
+    8,
+    3
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      8,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 8963575524269766135,
+   "seconds": 3.075,
+   "route": "tree",
+   "played": [
+    4,
+    4
+   ],
+   "tree_move": [
+    4,
+    4
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      4,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 9945266846188951776,
+   "seconds": 3.212,
+   "route": "tree",
+   "played": [
+    8,
+    10
+   ],
+   "tree_move": [
+    8,
+    10
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      8,
+      10
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 12642450741119662406,
+   "seconds": 2.73,
+   "route": "tree",
+   "played": [
+    8,
+    3
+   ],
+   "tree_move": [
+    8,
+    3
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      8,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 16680960238229109702,
+   "seconds": 3.18,
+   "route": "tree",
+   "played": [
+    12,
+    12
+   ],
+   "tree_move": [
+    12,
+    12
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      4,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      12,
+      13
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      12,
+      12
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P93",
+   "arm": "full",
+   "seed": 12437270980259355816,
+   "seconds": 3.122,
+   "route": "tree",
+   "played": [
+    9,
+    7
+   ],
+   "tree_move": [
+    9,
+    7
+   ],
+   "changed": false,
+   "root_children": [
+    [
+     [
+      8,
+      3
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      11,
+      13
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      12,
+      12
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      11
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      13,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      14,
+      14
+     ],
+     4,
+     1.0
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     3,
+     1.0
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     1,
+     1.0
+    ]
+   ],
+   "root_value_spread": {
+    "range": 0.0,
+    "std": 0.0,
+    "saturated": true
+   },
+   "root_checked": [
+    [
+     [
+      9,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "root_exhausted": false,
+   "vct_checked": [],
+   "vct_widened": false,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 7,
+   "tree_mode": "v5"
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 9407447277779714573,
+   "seconds": 12.351,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 7010196234006653798,
+   "seconds": 12.351,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 9546706197737087036,
+   "seconds": 12.284,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 468702587745854748,
+   "seconds": 12.092,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 9961729496914894023,
+   "seconds": 12.337,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 8963575524269766135,
+   "seconds": 12.36,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 9945266846188951776,
+   "seconds": 12.395,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 12642450741119662406,
+   "seconds": 12.266,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 16680960238229109702,
+   "seconds": 11.325,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  },
+  {
+   "probe": "P94",
+   "arm": "full",
+   "seed": 12437270980259355816,
+   "seconds": 12.429,
+   "route": "stage4",
+   "played": [
+    11,
+    13
+   ],
+   "tree_move": [
+    11,
+    13
+   ],
+   "changed": false,
+   "root_children": [],
+   "root_value_spread": {
+    "range": null,
+    "std": null,
+    "saturated": null
+   },
+   "root_checked": [],
+   "root_exhausted": false,
+   "vct_checked": [
+    [
+     [
+      11,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      14,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      3
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      3,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      5,
+      2
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      1
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      1,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      8
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "vct_widened": true,
+   "vct_exhausted": false,
+   "attack_status": "",
+   "attack_candidates": 0,
+   "tree_mode": ""
+  }
+ ]
+}

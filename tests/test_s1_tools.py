@@ -43,6 +43,7 @@ class ProbeMetricsTest(unittest.TestCase):
         children = [((10, 12), 6, -0.5), (FAR_MOVE, 4, -1.0), ((3, 3), 2, -1.0)]
         m = p92_metrics(children, (10, 12), priors={(10, 12): 0.3, FAR_MOVE: 0.01})
         self.assertTrue(m['root_has_region'] and m['region_beats_far_rank'] and m['region_beats_far_visits'])
+        self.assertTrue(m['both_present'] and m['region_strictly_beats_far'])
         self.assertEqual(m['region_best'], [11, 13])
         self.assertEqual((m['region_best_rank'], m['far_rank']), (1, 2))
         self.assertFalse(m['chose_far'])
@@ -55,8 +56,20 @@ class ProbeMetricsTest(unittest.TestCase):
         self.assertIsNone(m['far_prior'])
 
     def test_value_spread(self):
-        self.assertTrue(root_value_spread([((0, 0), 4, -1.0), ((0, 1), 3, -1.0)])['saturated'])
-        self.assertFalse(root_value_spread([((0, 0), 4, -1.0), ((0, 1), 3, 0.2)])['saturated'])
+        self.assertTrue(root_value_spread([((0, 0), 4, -1.0), ((0, 1), 3, -1.0)])['saturated_visited'])
+        self.assertFalse(root_value_spread([((0, 0), 4, -1.0), ((0, 1), 3, 0.2)])['saturated_visited'])
+
+    def test_unvisited_children_do_not_hide_saturation(self):
+        # PUCT keeps unvisited children at Q = 0; P93 looked unsaturated because of them.
+        spread = root_value_spread([((0, 0), 22, 1.0), ((0, 1), 13, 1.0), ((0, 2), 0, 0.0)])
+        self.assertEqual((spread['range_all'], spread['range_visited']), (1.0, 0.0))
+        self.assertTrue(spread['saturated_visited'])
+        self.assertEqual((spread['visited'], spread['children']), (2, 3))
+
+    def test_far_absent_is_not_a_strict_win(self):
+        m = p92_metrics([((3, 3), 4, -1.0), ((9, 8), 3, -1.0)], (3, 3))
+        self.assertTrue(m['region_beats_far_rank'] and m['far_absent'])  # the §12.19 gate's reading
+        self.assertFalse(m['both_present'] or m['region_strictly_beats_far'])
 
     def test_probe_runner_smoke(self):
         with TemporaryDirectory() as tmp:
