@@ -18,6 +18,7 @@ by ``scripts/h5_calibrate_puct.py``), which applies to the tested arm only.
     puct_uniform  PUCT, uniform prior (the tree-rule control)
     puct_heur     PUCT, 1/rank prior over V8's own candidate order
     puct_policy   PUCT, H3 policy prior (one NN call per expanded node)
+    puct_policy_vct2  puct_policy + S3-VCT2 (selective depth-2 veto after V8-C, §12.24)
 
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
@@ -79,6 +80,7 @@ ARMS = {
     'puct_uniform': {'tree_mode': 'puct', 'puct_prior': 'uniform'},
     'puct_heur': {'tree_mode': 'puct', 'puct_prior': 'heuristic'},
     'puct_policy': {'tree_mode': 'puct', 'puct_prior': 'policy'},
+    'puct_policy_vct2': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -180,6 +182,10 @@ def _move_record(ply, seconds, diag) -> dict:
             'prior_entropy': round(diag.v8_puct_prior_entropy, 4),
             'prior_top': list(diag.v8_puct_prior_top) if diag.v8_puct_prior_top is not None else None,
             'prior_top_prob': round(diag.v8_puct_prior_top_prob, 5),
+        },
+        'vct2': {
+            'checked': [[list(m), s] for m, s in diag.v8_vct2_checked], 'switched': diag.v8_vct2_switched,
+            'nodes': diag.v8_vct2_nodes, 'seconds': round(diag.v8_vct2_seconds, 4),
         },
     }
 
@@ -360,6 +366,13 @@ def summarize(games: list[dict]) -> dict:
             'prior_fallbacks': sum(m['tree']['prior_fallbacks'] for m in with_puct),
             'prior_entropy': _dist([m['tree']['prior_entropy'] for m in with_puct]),
             'tree_chose_prior_top': sum(m['v7_move'] == m['tree']['prior_top'] for m in with_puct),
+        },
+        'vct2': {
+            'moves_checked': sum(bool(m.get('vct2', {}).get('checked')) for m in moves),
+            'played_move_proven_lost': sum(bool(m.get('vct2', {}).get('checked'))
+                                           and m['vct2']['checked'][0][1] == 'UNSAFE' for m in moves),
+            'switched': sum(m.get('vct2', {}).get('switched', False) for m in moves),
+            'seconds': _dist([m['vct2']['seconds'] for m in moves if m.get('vct2', {}).get('checked')]),
         },
         'counterfactual': {
             'recorded': len(counterfactual),

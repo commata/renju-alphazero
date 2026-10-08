@@ -114,6 +114,14 @@ V8_DEFAULTS = {
     "tree_mode": "v5",
     "puct_prior": "uniform",
     "puct_c": 1.5,
+    # S3-VCT2 (§12.24): after V8-C on the tree route, a selective depth-2 check
+    # (analysis.selective_vct) of the played move; a proven loss switches to the next
+    # tree-ranked child that is not proven lost (UNKNOWN allowed). Off by default.
+    "root_vct2_check": False,
+    "vct2_node_limit": 20_000,
+    "vct2_call_limit": 20_000,
+    "vct2_node_budget": 10_000,
+    "vct2_max_children": 4,
 }
 _V8_KEYS = tuple(key for key in V8_DEFAULTS if key not in V7_FINAL)
 
@@ -168,6 +176,10 @@ class SearchDiagnostics(V7Diagnostics):
     v8_puct_prior_entropy: float = 0.0           # root prior, normalized (1 = uniform)
     v8_puct_prior_top: Move | None = None        # root child with the highest prior
     v8_puct_prior_top_prob: float = 0.0
+    v8_vct2_checked: tuple[tuple[Move, str], ...] = ()  # S3-VCT2: selective depth-2 status per checked move
+    v8_vct2_switched: bool = False
+    v8_vct2_nodes: int = 0
+    v8_vct2_seconds: float = 0.0
 
 
 class _BudgetExhausted(Exception):
@@ -274,7 +286,9 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
                         attack_node_budget, root_vct_safety, root_vcf_node_limit,
                         root_call_limit, root_node_budget, root_max_children=0,
                         root_vct_mode="aggressive", root_policy_order=False, root_policy_extra=0,
-                        tree_mode="v5", puct_prior="uniform", puct_c=1.5):
+                        tree_mode="v5", puct_prior="uniform", puct_c=1.5, root_vct2_check=False,
+                        vct2_node_limit=20_000, vct2_call_limit=20_000, vct2_node_budget=10_000,
+                        vct2_max_children=4):
     for name, value in (("stage_vct_safety", stage_vct_safety), ("own_vct_attack", own_vct_attack),
                         ("root_vct_safety", root_vct_safety)):
         if not isinstance(value, bool):
@@ -304,6 +318,12 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
         raise ValueError(f"puct_prior must be one of {PUCT_PRIORS}")
     if isinstance(puct_c, bool) or not isinstance(puct_c, (int, float)) or not puct_c > 0:
         raise ValueError("puct_c must be a positive number")
+    if not isinstance(root_vct2_check, bool):
+        raise ValueError("root_vct2_check must be a bool")
+    for name, value in (("vct2_node_limit", vct2_node_limit), ("vct2_call_limit", vct2_call_limit),
+                        ("vct2_node_budget", vct2_node_budget), ("vct2_max_children", vct2_max_children)):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError(f"{name} must be a positive integer")
     if tree_mode == "puct" and (root_policy_order or root_policy_extra):
         # H5 keeps the action set fixed across priors (§12.16): no H4 options on PUCT.
         raise ValueError("tree_mode='puct' cannot be combined with root_policy_order / root_policy_extra")
@@ -549,6 +569,46 @@ def _record_root(diag, solver, statuses, order, chosen, final, started) -> Move:
     return final
 
 
+def _vct2_veto(game, chosen, children, diag, *, budget, max_children) -> Move:
+    """S3-VCT2: keep ``chosen`` unless a selective depth-2 search proves it lost.
+
+    Each check is a fresh ``SelectiveSolver`` with ``budget`` (attacker: threat moves only,
+    defender: every reply), so a PROVEN loss is a proof and anything else (no win found,
+    budget cut) is not. On a proven loss the next children in tree order (visits, mean
+    value), up to ``max_children`` in all, are checked; the first one that is not proven
+    lost, not refuted by V8-C (UNSAFE in ``v8_root_checked``) and not lost at once is
+    played. If none qualifies, ``chosen`` stands (as V8-C does when every child is lost).
+    """
+    from .selective_vct import SelectiveSolver  # selective_vct imports this module
+
+    started = perf_counter()
+    root_status = dict(diag.v8_root_checked)
+    statuses, nodes = {}, 0
+
+    def proven_lost(move) -> bool:
+        nonlocal nodes
+        solver = SelectiveSolver(node_limit=budget['node_limit'], call_limit=budget['call_limit'],
+                                 node_budget=budget['node_budget'])
+        status = solver._bounded(game, move, None, None, lambda g: solver.after_move(g, 2)[0])
+        nodes += solver.nodes_used
+        statuses[move] = status
+        return status == UNSAFE
+
+    final = chosen
+    if proven_lost(chosen):
+        for move in _root_order(chosen, children)[1:max_children]:
+            if root_status.get(move) == UNSAFE or not _not_immediately_lost(game, move):
+                continue
+            if not proven_lost(move):
+                final = move
+                break
+    diag.v8_vct2_checked = tuple(statuses.items())
+    diag.v8_vct2_switched = final != chosen
+    diag.v8_vct2_nodes = nodes
+    diag.v8_vct2_seconds = perf_counter() - started
+    return final
+
+
 def root_opening_count(simulations: int, initial_width: int, total: int) -> int:
     """Root children the V5 tree opens in ``simulations`` (root expansion has priority)."""
     opened = 0
@@ -648,6 +708,8 @@ def mcts_search_v8(
     root_vct_safety=True, root_vcf_node_limit=20_000, root_call_limit=10_000,
     root_node_budget=400_000, root_max_children=4, root_vct_mode="aggressive",
     root_policy_order=False, root_policy_extra=0, tree_mode="v5", puct_prior="uniform", puct_c=1.5,
+    root_vct2_check=False, vct2_node_limit=20_000, vct2_call_limit=20_000, vct2_node_budget=10_000,
+    vct2_max_children=4,
     root_policy=None, random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
 ) -> Move:
     """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules."""
@@ -672,7 +734,10 @@ def mcts_search_v8(
                         root_call_limit=root_call_limit, root_node_budget=root_node_budget,
                         root_max_children=root_max_children, root_vct_mode=root_vct_mode,
                         root_policy_order=root_policy_order, root_policy_extra=root_policy_extra,
-                        tree_mode=tree_mode, puct_prior=puct_prior, puct_c=puct_c)
+                        tree_mode=tree_mode, puct_prior=puct_prior, puct_c=puct_c,
+                        root_vct2_check=root_vct2_check, vct2_node_limit=vct2_node_limit,
+                        vct2_call_limit=vct2_call_limit, vct2_node_budget=vct2_node_budget,
+                        vct2_max_children=vct2_max_children)
     uses_policy = root_policy_order or root_policy_extra > 0
     if (uses_policy or (tree_mode == "puct" and puct_prior == "policy")) and root_policy is None:
         # Fail fast: a policy arm must never silently run as the baseline.
@@ -803,6 +868,11 @@ def mcts_search_v8(
         chosen = _verify_root_choice(game, chosen, children, diag, node_limit=root_vcf_node_limit,
                                      call_limit=root_call_limit, node_budget=root_node_budget,
                                      max_children=root_max_children, mode=root_vct_mode)
+    if root_vct2_check:
+        chosen = _vct2_veto(game, chosen, children, diag,
+                            budget={'node_limit': vct2_node_limit, 'call_limit': vct2_call_limit,
+                                    'node_budget': vct2_node_budget},
+                            max_children=vct2_max_children)
     selected = sorted(reasons.get(chosen, ()), key=lambda k: (-PRIORITY[k], k))
     diag.v6_selected_reasons = tuple(selected)
     diag.v6_selected_threat_type = selected[0] if selected else None

@@ -218,3 +218,36 @@ class PolicyDiagTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class S3CompareTest(unittest.TestCase):
+    def _runs(self, arm, slow=1.0, result=None):
+        from copy import deepcopy
+        runs = []
+        for seed in (8401, 8402):
+            run = deepcopy(json.loads((Path(__file__).resolve().parents[1] / 'docs' / 'mcts-v8-results'
+                                       / f'h5_policy_{seed}.json').read_text(encoding='utf-8')))
+            run['arm'] = arm
+            for game in run['games']:
+                game['game_seconds'] *= slow
+                for m in game['v8_moves']:
+                    m['seconds'] *= slow
+                if result is not None:
+                    game['result'] = result
+            runs.append(run)
+        return runs
+
+    def test_decisions(self):
+        from scripts.s3_compare import compare
+        base = self._runs('puct_policy')
+        self.assertEqual(compare(base, self._runs('puct_policy_vct2'))['decision']['decision'], 'ADOPT')
+        slow = compare(base, self._runs('puct_policy_vct2', slow=1.6))
+        self.assertEqual(slow['decision']['decision'], 'OPTIMIZE')
+        self.assertEqual(slow['cost']['end_to_end_ratio'], 1.6)
+        worse = compare(base, self._runs('puct_policy_vct2', result='loss'))
+        self.assertEqual(worse['decision']['decision'], 'REJECT')
+
+    def test_arm_names_are_checked(self):
+        from scripts.s3_compare import compare
+        with self.assertRaises(ValueError):
+            compare(self._runs('puct_policy'), self._runs('puct_policy'))
