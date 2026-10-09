@@ -159,6 +159,9 @@ H6 이후 웹 패배 → §2.4 순서. 대부분 ④(사례·평가 세트)로 �
 - "FREEZE"를 영구 동결이 아니라 `TB-Engine-v1`(주기 1 동결)로 바꿨다.
 - selective VCT2 공격을 H7 엔진 후보로 명시했다.
 
+**2026-10-09 후속.** 이 로드맵의 B 계열은 B1-Champion이다. H8 이후 B1-Matched·B2 비교 실험과 봉인 holdout(Final-1/Final-2)은
+[track-b-b1-b2.md](track-b-b1-b2.md)에서 정한다. 그 문서의 계획에 맞춰 H8 직전에 Final-1을 연다.
+
 ## 8. 사용자 결정이 필요한 것
 
 | # | 질문 | 제안 |

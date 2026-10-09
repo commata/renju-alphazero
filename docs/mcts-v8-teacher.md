@@ -1214,6 +1214,9 @@ RIF XML, 165,115판(평균 27.2수). 검토용 표본 재생은 우리 `Game` �
 | H7 | Hybrid self-play / fine-tune | |
 | H8 | 최종 비교(Track A 최신, V7, V8, Hybrid) | 고정 예산·양색 균형 |
 
+**2026-10-09 갱신.** H7은 반복 학습 주기(H7-c1, c2, …), H8은 봉인 holdout에서의 최종 평가로 쓴다.
+Track B는 B1-Champion / B1-Matched / B2로 나눈다. 정의와 순서는 [track-b-b1-b2.md](track-b-b1-b2.md).
+
 ### 12.8 H1 1차 결과(5쌍, 상대 `v8:b_only`)와 후속 조치 (2026-10-02)
 
 결과 파일: `docs/mcts-v8-results/h1_full_vs_b.json`, `h1_veto_vs_b.json`(커밋 `5042938`, seed 8401).
@@ -2725,3 +2728,4 @@ S3-VCT2-v1 ADOPT + FREEZE → E0 재검증 ✅ → [웹 실전 stress] → E1-de
 **순서:** (7,11) 10M 판정 → E1-dev(tree 주 지표, 지금 실행분) → E1-S(stage 층, 승인 후 구현) → E2 → 필요하면 E3(S3-stage 포함) → E1-holdout → H6.
 
 **E1 이후 Track B 방향**(주기 단위 엔진 동결, 채택 gate, 새 패배 처리 순서, H6 라벨 보완)은 [track-b-post-e1.md](track-b-post-e1.md)에 정리했다.
+Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계는 [track-b-b1-b2.md](track-b-b1-b2.md)다.

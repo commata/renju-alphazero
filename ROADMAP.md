@@ -17,6 +17,11 @@
   엄격한 AZ(`tactical_rules: false`)는 Stage 7-B/7-C arm A 설정을 ablation으로만 보존한다. "Pure AlphaZero"라고 부르지 않는다.
 - **Track B — Strong Hybrid:** RenjuNet policy 사전학습 → AZ PUCT + V8 VCF/VCT 전술 모듈(PROVEN_LOSS veto) → Hybrid self-play. 단계 H0~H8.
   RenjuNet 데이터는 비상업·오프라인 전용 라이선스라 저장소에 넣지 않고(`data/external/renjunet/`), 그 데이터로 학습한 모델은 온라인에 공개하지 않는다.
+  **2026-10-09: Track B를 세 계열로 나눈다**([track-b-b1-b2.md](docs/track-b-b1-b2.md)).
+  - **B1-Champion** — RenjuNet-assisted 최강 모델. 엔진은 H7 주기 경계에서만 바뀐다.
+  - **B1-Matched** — B1-Champion의 최종 엔진을 고정한 통제군(RenjuNet H3에서 시작).
+  - **B2** — RenjuNet-free 실험군·공개 배포 후보. 같은 엔진·구조·solver, 독립 초기화. RenjuNet 파생 국면·라벨·가중치와 B1 계열 대국 국면 금지.
+  - 순서: B1-Champion H8 완료 → B1-Matched → B2. H7 = 반복 학습 주기, H8 = 최종 평가(봉인 holdout).
 
 ## 권장 저장소와 Git 운용
 
