@@ -36,11 +36,11 @@ OPPONENT = 'v8:full'
 BOOTSTRAP = 10_000
 
 
-def merge(runs: list[dict]) -> dict[str, dict]:
+def merge(runs: list[dict], opponent: str = OPPONENT) -> dict[str, dict]:
     arms: dict[str, dict] = {}
     for run in runs:
-        if run.get('opponent') != OPPONENT:
-            raise ValueError(f"{run['arm']}: opponent {run.get('opponent')} != {OPPONENT}")
+        if run.get('opponent') != opponent:
+            raise ValueError(f"{run['arm']}: opponent {run.get('opponent')} != {opponent}")
         arm = arms.setdefault(run['arm'], {'arm': run['arm'], 'seeds': [], 'games': [], 'config': run['v8_config']})
         if run['seed'] in arm['seeds']:
             raise ValueError(f"{run['arm']}: seed {run['seed']} given twice")

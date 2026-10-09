@@ -30,7 +30,10 @@ fail if it cannot be loaded; they never fall back to the baseline. One NN call p
 
 Opponent (``--opponent``): ``v7`` (frozen V7, default) or ``v8:<arm>`` (V8 with
 that arm's configuration, e.g. ``v8:b_only``, which can play VCT1 attacks that
-V7 does not see). The opponent does not change openings or seeds, so runs of
+V7 does not see). ``v8:<arm>+vct2atk`` (E2, §12.25) wraps that V8 opponent with
+``analysis.vct2_attack``: on its Stage 4/5 and tree moves it also plays a proven
+selective depth-2 attack (route ``own_vct2``); each such check is recorded per game
+(``opponent_vct2_attack``). The opponent does not change openings or seeds, so runs of
 different arms against the same opponent are paired. Game keys carry the
 opponent unless it is ``v7`` (old JSONL files resume unchanged).
 
@@ -113,14 +116,34 @@ def v8_config(arm: str, overrides: dict | None = None) -> dict:
     return {**V8_DEFAULTS, **ARMS[arm], **(overrides or {})}
 
 
+VCT2_ATTACK_SUFFIX = '+vct2atk'
+
+
 def parse_opponent(value: str) -> str:
-    """``v7`` or ``v8:<arm>``; raises ValueError otherwise."""
+    """``v7``, ``v8:<arm>`` or ``v8:<arm>+vct2atk``; raises ValueError otherwise."""
     if value == 'v7':
         return value
     kind, _, arm = value.partition(':')
+    arm = arm.removesuffix(VCT2_ATTACK_SUFFIX)
     if kind != 'v8' or arm not in ARMS:
-        raise ValueError(f"opponent must be 'v7' or 'v8:<arm>' with arm in {sorted(ARMS)}")
+        raise ValueError(f"opponent must be 'v7', 'v8:<arm>' or 'v8:<arm>{VCT2_ATTACK_SUFFIX}' "
+                         f"with arm in {sorted(ARMS)}")
     return value
+
+
+def opponent_arm(opponent: str) -> str:
+    """The V8 arm of a ``v8:...`` opponent ('' for ``v7``)."""
+    return opponent.partition(':')[2].removesuffix(VCT2_ATTACK_SUFFIX)
+
+
+def opponent_config(opponent: str, overrides: dict | None = None) -> dict | None:
+    if opponent == 'v7':
+        return None
+    config = v8_config(opponent_arm(opponent), overrides)
+    if opponent.endswith(VCT2_ATTACK_SUFFIX):
+        from analysis.vct2_attack import ATTACK_ROUTES, VCT2_ATTACK_BUDGET
+        config = {**config, 'vct2_attack': {'budget': VCT2_ATTACK_BUDGET, 'routes': list(ATTACK_ROUTES)}}
+    return config
 
 
 def needs_policy(config: dict) -> bool:
@@ -140,9 +163,13 @@ def make_opponent(opponent: str, seed: int, overrides: dict, policy_checkpoint=N
     """Opponent agent; V8 opponents use the same seed stream V7 would."""
     if opponent == 'v7':
         return MCTSV7Agent(seed=seed, **overrides)
-    config = v8_config(opponent.partition(':')[2], overrides)
+    config = v8_config(opponent_arm(opponent), overrides)
     policy = load_policy(policy_checkpoint) if needs_policy(config) else None
-    return MCTSV8Agent(seed=seed, root_policy=policy, **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    agent = MCTSV8Agent(seed=seed, root_policy=policy, **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    if opponent.endswith(VCT2_ATTACK_SUFFIX):
+        from analysis.vct2_attack import VCT2AttackAgent
+        agent = VCT2AttackAgent(agent)
+    return agent
 
 
 def _move_record(ply, seconds, diag) -> dict:
@@ -217,7 +244,7 @@ def play_one(task: dict) -> dict:
     game = Game()
     for move in task['opening']:
         game.play(*move)
-    v8_moves, opp_seconds, opp_routes = [], [], {}
+    v8_moves, opp_seconds, opp_routes, opp_attack2 = [], [], {}, []
     started_game = perf_counter()
     while not game.done:
         is_v8 = game.to_play == v8_color
@@ -235,6 +262,10 @@ def play_one(task: dict) -> dict:
             route = getattr(opp.diagnostics, 'v8_route', '')
             if route:
                 opp_routes[route] = opp_routes.get(route, 0) + 1
+            attack2 = getattr(opp, 'attack_info', None)
+            if attack2:
+                opp_attack2.append({'ply': len(game.history), 'route': route, 'move_seconds': round(elapsed, 4),
+                                    **{k: v for k, v in attack2.items() if k != 'checked'}})
         try:
             game.play(*move)
         except IllegalMove as exc:
@@ -246,6 +277,7 @@ def play_one(task: dict) -> dict:
         'result': result, 'winner': game.winner, 'length': len(game.history),
         'moves': [list(m) for m in game.history],
         'v8_moves': v8_moves, 'opponent_move_seconds': opp_seconds, 'opponent_routes': opp_routes,
+        **({'opponent_vct2_attack': opp_attack2} if opponent.endswith(VCT2_ATTACK_SUFFIX) else {}),
         'game_seconds': round(perf_counter() - started_game, 2),
     }
 
@@ -307,6 +339,20 @@ def summarize(games: list[dict]) -> dict:
         for route, n in g.get('opponent_routes', {}).items():
             opp_routes[route] = opp_routes.get(route, 0) + n
     records = [(g['key'], g['winner'], g['moves']) for g in sorted(games, key=lambda g: g['key'])]
+    attack2 = [a for g in games for a in g.get('opponent_vct2_attack', [])]
+    # E2: V8 moves whose played move the VCT2 check itself proved lost (no escape found), and
+    # what the opponent did next. Were such moves punished?
+    lost_next = {}
+    for g in games:
+        attack_plies = {a['ply'] for a in g.get('opponent_vct2_attack', []) if a['status'] == 'WIN'}
+        for m in g['v8_moves']:
+            checked = dict((tuple(mv), st) for mv, st in m.get('vct2', {}).get('checked', []))
+            if not checked or checked.get(tuple(m.get('played') or g['moves'][m['ply']])) != 'UNSAFE':
+                continue
+            nxt = m['ply'] + 1
+            kind = ('game_over' if nxt >= len(g['moves']) else
+                    'own_vct2' if nxt in attack_plies else 'other')
+            lost_next[kind] = lost_next.get(kind, 0) + 1
     return {
         'games': len(games),
         'wins': sum(g['result'] == 'win' for g in games),
@@ -374,6 +420,15 @@ def summarize(games: list[dict]) -> dict:
             'switched': sum(m.get('vct2', {}).get('switched', False) for m in moves),
             'seconds': _dist([m['vct2']['seconds'] for m in moves if m.get('vct2', {}).get('checked')]),
         },
+        'opponent_vct2_attack': {
+            'ran': len(attack2), 'wins': sum(a['status'] == 'WIN' for a in attack2),
+            'wins_by_base_route': {r: sum(a['status'] == 'WIN' and a['base_route'] == r for a in attack2)
+                                   for r in sorted({a['base_route'] for a in attack2})},
+            'budget_exhausted': sum(a['exhausted'] for a in attack2),
+            'attack_seconds': _dist([a['seconds'] for a in attack2]),
+            'move_seconds': _dist([a['move_seconds'] for a in attack2]),
+        } if attack2 else None,
+        'v8_played_vct2_lost': {'moves': sum(lost_next.values()), 'opponent_next': lost_next},
         'counterfactual': {
             'recorded': len(counterfactual),
             'v7_same_move': sum(1 for m in moves if 'counterfactual' in m
@@ -451,7 +506,8 @@ def _progress(record: dict) -> str:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--arm', choices=tuple(ARMS), default='full')
-    parser.add_argument('--opponent', default='v7', help="'v7' (default) or 'v8:<arm>', e.g. v8:b_only")
+    parser.add_argument('--opponent', default='v7',
+                        help="'v7' (default), 'v8:<arm>' (e.g. v8:b_only) or 'v8:<arm>+vct2atk' (E2, e.g. v8:full+vct2atk)")
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'),
                         help='H3 best.pt for the policy arms (best.json next to it)')
     parser.add_argument('--pairs', type=int, default=10, help='opening pairs; 10 means 20 games')
@@ -477,7 +533,7 @@ def main(argv=None) -> int:
         parse_opponent(args.opponent)
     except ValueError as exc:
         parser.error(str(exc))
-    for name in (args.arm, args.opponent.partition(':')[2]):
+    for name in (args.arm, opponent_arm(args.opponent)):
         if name and needs_policy(v8_config(name)):
             try:
                 load_policy(args.policy_checkpoint)  # fail before any game starts
@@ -491,7 +547,7 @@ def main(argv=None) -> int:
         parser.error(f'{args.arm} needs --puct-c (the calibrated value, §12.16)')
     if not is_puct and args.puct_c is not None:
         parser.error('--puct-c only applies to the puct_* arms')
-    if args.opponent != 'v7' and v8_config(args.opponent.partition(':')[2]).get('tree_mode') == 'puct':
+    if args.opponent != 'v7' and v8_config(opponent_arm(args.opponent)).get('tree_mode') == 'puct':
         parser.error('a PUCT arm cannot be the opponent (its c_puct would be unset)')
     args.arm_overrides = {k: v for k, v in (('puct_c', args.puct_c), ('simulations', args.arm_simulations),
                                             ('tactical_simulations', args.arm_tactical_simulations))
@@ -526,7 +582,7 @@ def main(argv=None) -> int:
             m['played'] = game['moves'][m['ply']]
     summary = summarize(games)
     payload_checkpoint = (args.policy_checkpoint if needs_policy(v8_config(args.arm)) or (
-        args.opponent != 'v7' and needs_policy(v8_config(args.opponent.partition(':')[2]))) else None)
+        args.opponent != 'v7' and needs_policy(v8_config(opponent_arm(args.opponent)))) else None)
     payload = {
         'format': FORMAT, 'arm': args.arm, 'opponent': args.opponent, 'seed': args.seed, 'pairs': args.pairs,
         'opening_random_plies': args.opening_random_plies, 'opening_radius': args.opening_radius,
@@ -537,8 +593,7 @@ def main(argv=None) -> int:
         'policy_checkpoint': payload_checkpoint,
         'provenance': provenance(payload_checkpoint),
         'v7_config': {**V7_FINAL, **args.search_overrides},
-        'opponent_config': (None if args.opponent == 'v7' else
-                            v8_config(args.opponent.partition(':')[2], args.search_overrides)),
+        'opponent_config': opponent_config(args.opponent, args.search_overrides),
         'openings': openings, 'summary': summary, 'games': games,
     }
     print(json.dumps({'arm': args.arm, 'opponent': args.opponent, **summary}, indent=2), flush=True)

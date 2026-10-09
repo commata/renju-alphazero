@@ -2729,3 +2729,74 @@ S3-VCT2-v1 ADOPT + FREEZE → E0 재검증 ✅ → [웹 실전 stress] → E1-de
 
 **E1 이후 Track B 방향**(주기 단위 엔진 동결, 채택 gate, 새 패배 처리 순서, H6 라벨 보완)은 [track-b-post-e1.md](track-b-post-e1.md)에 정리했다.
 Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계는 [track-b-b1-b2.md](track-b-b1-b2.md)다.
+
+### 12.28 E1-S와 E2 상대 구현 (2026-10-09)
+
+**동결 유지.** `analysis/mcts_v8.py`, `V8_DEFAULTS`, `S3_VCT2_V1`은 한 줄도 바꾸지 않았다. 새 파일과 runner·비교 도구의 옵션만 추가했다.
+그래서 진행 중인 E1-dev 실행과 그 파일(`runs/e1/`)에는 영향이 없다. 좌표는 0-indexed다.
+
+#### E1-S: stage 경로 층 (`scripts/e1s_build_suite.py`, §12.27 설계 1)
+
+- **입력과 예산.** E1-dev와 같은 로그 네 개(`h5_policy_8401/8402`, `s3_base_8411/8412`)와 같은 예산(`SCREEN_BUDGET` 50k, `TRUTH_BUDGET` 10M)을 쓴다. 출력은 `runs/e1s/`로 분리한다.
+  policy는 필요 없다(stage 경로는 tree를 쓰지 않는다). 두 baseline arm에서 stage 경로의 동작은 S3-VCT2-v1과 같다(VCT2 검사는 tree에만 있다).
+- **screen.** stage4/stage5 V8 착수 566개 중 V8-A가 이미 VCT1 패배로 증명한 26개를 뺀 540개가 대상이다. 둔 수를 전체 깊이 0–2 클래스로 판정한다.
+- **defense.** PROVEN_LOSS 행만 쓴다. 한 전술 에피소드에서는 첫 수만 남기고, D4 중복을 없앤다(E1-dev의 `select`와 같은 규칙). 각 국면에서 V8-A가 둘 수 있었던 방어 집합을 다시 만든다.
+  - `forced`: Stage 4 순서(`_stage4_order`, V7 수가 처음) 또는 Stage 5의 한 점
+  - `widened`: V8-A가 넓힐 때 쓰는 V6 root 후보(`_root_candidates_v6`)
+  - 국면을 재생한 결과가 로그의 stage와 다르거나, 둔 수가 방어 집합에 없으면 오류로 멈춘다.
+  - 방어 집합의 모든 수를 `TRUTH_BUDGET`으로 판정한다.
+- **클래스.**
+
+| 클래스 | 뜻 |
+|---|---|
+| `ROUTE_COVERAGE_MISS` | 방어 집합에 VCT2_CLEAR 수가 있다. stage 경로에서 검사했다면 rescue할 수 있었다 |
+| `ROUTE_COVERAGE_UNRESOLVED` | CLEAR는 없고 UNKNOWN(미반박) 수가 있다 |
+| `ROUTE_NO_RESCUE` | 방어 집합 전부 PROVEN_LOSS다. 원인은 그 앞 수에 있다 |
+
+- **반사실(S3 규칙을 stage 경로에 적용).**
+  - 예산은 S3-VCT2-v1의 selective 10k다. 순서는 forced → widened이고, V8-A가 UNSAFE로 본 수와 즉시 지는 수는 건너뛴다.
+  - `k4`는 둔 수를 포함해 최대 4개를 검사하고(tree 경로와 같음), `all`은 집합 전체를 검사한다.
+  - 결과: `DETECT_MISS`, `RESCUED`, `KEPT`, `SWITCH_TO_LOSS`, `SWITCH_TO_UNRESOLVED`.
+  - 이것은 §12.27 E3 후보(S3-stage)의 사전 측정이다. 엔진에는 넣지 않는다.
+- **route 축.** manifest 행마다 `source_route`, `vct2_eligible = false`, `vct2_checked = false`를 기록한다.
+  E1-dev manifest(실행 중)는 바꾸지 않는다. 그 행은 모두 tree 경로이므로 `vct2_eligible = true`, `vct2_checked = true`로 읽는다.
+- **확인.** 웹 대국 `155734` P14에서 방어 집합의 forced 층은 (6,10), (9,7), (11,5)다.
+  반사실(k4)은 (9,7)을 PROVEN_LOSS, (6,10)을 UNKNOWN으로 판정해 (6,10)으로 바꾼다. §12.27의 기록과 같다(`tests/test_e1s_suite.py`).
+
+#### E2 상대: selective VCT2 공격 (`analysis/vct2_attack.py`, `--opponent v8:full+vct2atk`)
+
+- **정의.** 둘 차례의 수 m 뒤에 상대의 **모든 합법 응수**가 깊이 1 안에서 지면(VCF, 또는 조용한 수 1개 + VCF) WIN이다.
+  - 후보는 V8-B와 같다(4나 열린 3을 만드는 수).
+  - 깊이 1의 공격 쪽 조용한 수는 위협 수로만 제한한다(`SelectiveSolver`). 방어 쪽 응수는 줄이지 않는다(§12.18 원칙 3). 그래서 WIN은 증명이고, "못 찾음"은 불완전할 뿐이다.
+  - **증명된 WIN만 둔다.**
+  - 예산은 노드 200k, VCF 호출 20k, VCF 1회 20k 노드다. V8-B처럼 후보 사이에 공정하게 나눈다(`_first_proven`).
+- **연결.** `VCT2AttackAgent`는 V8 agent를 감싸기만 하고 바꾸지 않는다.
+  - base(`v8:full`)가 먼저 수를 고른다.
+  - 경로가 stage4·stage5·tree일 때만 깊이 2 공격을 찾고, WIN이면 그 수로 바꾼다(경로 `own_vct2`).
+  - Stage 1–3, 자기 VCF, V8-B(깊이 1 공격)는 base가 고른 그대로 둔다. 그래서 base보다 약해지지 않는다.
+- **확인.**
+  - P93(백 차례, 증명된 백 VCT2 승리)에서 witness인 (11,12)를 찾는다(13.6초, 16k 노드). V8-B(깊이 1)는 아무 수도 찾지 못한다.
+  - 찾은 수는 전체 `ThreatSolver` 깊이 1로도 UNSAFE다(`tests/test_vct2_attack.py`).
+- **기록.**
+  - 게임마다 `opponent_vct2_attack`: 상대 수마다 base 경로, 결과, 노드, 시간
+  - 요약 `opponent_vct2_attack`: 실행 수, WIN 수, base 경로별 WIN 수, 예산 소진, 시간
+  - 요약 `v8_played_vct2_lost`: 우리 VCT2 검사가 패배를 증명했는데도 둔 수(탈출 수 없음) 다음에 상대가 `own_vct2`로 응징했는지
+  - 상대 key가 `...@v8:full+vct2atk/...`라 기존 JSONL과 섞이지 않는다.
+- **비교.** `scripts/s3_compare.py --opponent v8:full+vct2atk`. E2에는 채택 gate가 없다(S3-VCT2-v1은 이미 채택). 실행 전에 해석을 고정한다.
+
+| reading | 조건 |
+|---|---|
+| `EFFICACY` | 안전 위반 0, 쌍 점수 차(vct2 − baseline) 95% 하한 > 0 |
+| `NOT_ESTABLISHED` | 안전 위반 0, 구간이 0을 포함하고 차 ≥ −0.05 |
+| `HARM` | 차 < −0.05 또는 상한 < 0 |
+| `SAFETY_VIOLATION` | 어느 arm이든 안전 위반 |
+
+  - 비용 비율(end-to-end, 상대 대비 시간 비율)과 `punishment`(상대 `own_vct2` 횟수, 그 판의 패배 수)를 함께 보고한다.
+  - 상대가 깊이 2 공격을 계산하므로 상대 착수 시간이 늘어난다. 그래서 "상대 대비 시간 비율"은 S3 결과와 비교하지 않고, 두 arm 사이에서만 비교한다.
+
+#### E2 실행 프로토콜 (실행 전 고정)
+
+- arm: `puct_policy`, `puct_policy_vct2`. `--puct-c 1.5`, H3 checkpoint(SHA-256이 S3와 같아야 함)
+- 상대: `v8:full+vct2atk`. seed 8413, 8414, 각 25쌍(arm당 100판)
+- 실행은 한 번에 하나씩 순서대로 한다(시간 비율 오염 방지): 8413 baseline → 8413 vct2 → 8414 baseline → 8414 vct2
+- 해석은 위 표대로 한다. E1-dev·E1-S 결과와 함께 E3 필요 여부를 정한다(§12.26 표, §12.27 표).
