@@ -11,6 +11,14 @@ VCT1 proofs can take tens of seconds to minutes on some moves; the page waits.
 With an AlphaZero checkpoint (requires torch; adds the "az" opponent):
     python scripts/run_web_play.py --az-checkpoint runs/<run>/checkpoints/checkpoint_gen400.pt
 
+The frozen S3-VCT2-v1 engine (docs/mcts-v8-teacher.md §12.25; requires torch and the H3
+policy checkpoint whose bytes the S3 runs used) is the "s3" opponent. It is registered when
+``--policy-checkpoint`` (default ``runs/h3_policy_64x4/best.pt``) exists and matches:
+    python scripts/run_web_play.py --policy-checkpoint runs/h3_policy_64x4/best.pt
+Its game logs also record the engine commit and checkpoint hashes, and every move where the
+VCT2 check proved the move lost is saved at once under ``logs/web_play/veto_positions``.
+"Undo" takes back the last human move (and the AI reply) for relaying games from elsewhere.
+
 Then open:
     http://127.0.0.1:8000
 """
@@ -18,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from http import HTTPStatus
@@ -33,8 +42,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 WEB = ROOT / "web"
 LOG_ROOT = ROOT / "logs" / "web_play"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+for extra in (SRC, ROOT):
+    if str(extra) not in sys.path:
+        sys.path.insert(0, str(extra))
 
 from agents import (  # noqa: E402
     MCTSV321Agent,
@@ -62,6 +72,9 @@ VERSION_LABELS = {
 
 ALPHAZERO_KEY = "az"
 _ALPHAZERO_FACTORY = None
+S3_KEY = "s3"
+_S3_FACTORY = None
+_S3_INFO: dict[str, Any] = {}
 
 
 def register_alphazero(factory, label: str) -> None:
@@ -71,10 +84,21 @@ def register_alphazero(factory, label: str) -> None:
     VERSION_LABELS[ALPHAZERO_KEY] = label
 
 
+def register_s3(factory, info: dict[str, Any]) -> None:
+    """Add the "s3" opponent; ``factory(seed)`` returns a fresh S3-VCT2-v1 agent."""
+    global _S3_FACTORY, _S3_INFO
+    from analysis.s3_vct2_v1 import NAME
+
+    _S3_FACTORY, _S3_INFO = factory, info
+    VERSION_LABELS[S3_KEY] = f"{NAME} (동결)"
+
+
 def create_agent(version: str, *, seed: int = 42):
     """Build one of the frozen/versioned agents used by the benchmark scripts."""
     if version == ALPHAZERO_KEY and _ALPHAZERO_FACTORY is not None:
         return _ALPHAZERO_FACTORY()  # deterministic search: the seed is unused
+    if version == S3_KEY and _S3_FACTORY is not None:
+        return _S3_FACTORY(seed)
     if version == "v321":
         return MCTSV321Agent(seed=seed)
     if version == "v41":
@@ -189,6 +213,13 @@ def _diagnostics(agent) -> dict[str, Any]:
         "v8_root_nodes",
         "v8_root_budget_exhausted",
         "v8_root_seconds",
+        "v8_tree_seconds",
+        "v8_puct_prior_top",
+        "v8_puct_prior_top_prob",
+        "v8_vct2_checked",
+        "v8_vct2_switched",
+        "v8_vct2_nodes",
+        "v8_vct2_seconds",
     }
     if is_dataclass(diagnostics):
         available = {field.name for field in fields(diagnostics)}
@@ -228,6 +259,27 @@ def _v8_csv(diagnostics: dict[str, Any]) -> dict[str, Any]:
         "v8_root_seconds": diagnostics.get("v8_root_seconds"),
         "v8_root_budget_exhausted": diagnostics.get("v8_root_budget_exhausted"),
     }
+
+
+S3_CSV_FIELDS = ("vct2_checked", "vct2_switched", "vct2_nodes", "vct2_seconds", "board_hash")
+
+
+def _s3_csv(record: dict[str, Any]) -> dict[str, Any]:
+    diagnostics = record.get("diagnostics", {})
+    checked = diagnostics.get("v8_vct2_checked") or []
+    return {
+        "vct2_checked": json.dumps([[m[0] + 1, m[1] + 1, status] for m, status in checked]) if checked else None,
+        "vct2_switched": diagnostics.get("v8_vct2_switched"),
+        "vct2_nodes": diagnostics.get("v8_vct2_nodes"),
+        "vct2_seconds": diagnostics.get("v8_vct2_seconds"),
+        "board_hash": record.get("board_hash"),
+    }
+
+
+def board_hash(board, to_play: int) -> str:
+    """Stones and the side to move (not D4-canonical)."""
+    raw = json.dumps([[list(line) for line in board], to_play], separators=(",", ":"))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
 ALPHAZERO_CSV_FIELDS = (
@@ -278,6 +330,8 @@ class PlaySession:
         self.move_records: list[dict[str, Any]] = []
         self.last_log_dir: Path | None = None
         self.saved_game = False
+        self.undo_count = 0
+        self.veto_files: list[str] = []
 
     def reset(self, *, agent_key: str, human_color: int, seed: int = 42) -> dict[str, Any]:
         if agent_key not in VERSION_LABELS:
@@ -285,6 +339,9 @@ class PlaySession:
         if human_color not in (BLACK, WHITE):
             raise ValueError("human_color는 BLACK 또는 WHITE여야 합니다.")
         with self.lock:
+            if (self.agent_key == S3_KEY and not self.saved_game
+                    and any(r["actor"] not in ("HUMAN", "OPENING_RULE") for r in self.move_records)):
+                self._save_completed_game_locked(unfinished=True)  # relayed games: keep the record
             self.game = Game()
             self.agent_key = agent_key
             self.agent = create_agent(agent_key, seed=seed)
@@ -297,6 +354,8 @@ class PlaySession:
             self.move_records = []
             self.last_log_dir = None
             self.saved_game = False
+            self.undo_count = 0
+            self.veto_files = []
 
             # Project opening rule: BLACK always starts at board center.
             opening_player = self.game.to_play
@@ -330,6 +389,25 @@ class PlaySession:
                 self._play_ai_locked()
             return self._state_locked()
 
+    def undo(self) -> dict[str, Any]:
+        """Take back moves until the last human move is gone (the AI reply first)."""
+        with self.lock:
+            if self.game.done:
+                raise IllegalMove("종료된 대국은 되돌릴 수 없습니다.")
+            if not any(r["actor"] == "HUMAN" for r in self.move_records):
+                raise IllegalMove("되돌릴 사람 착수가 없습니다.")
+            while self.move_records:
+                record = self.move_records.pop()
+                self.game.undo()
+                if record["actor"] == "HUMAN":
+                    break
+            self.undo_count += 1
+            ai = [r for r in self.move_records if r["actor"] not in ("HUMAN", "OPENING_RULE")]
+            self.last_ai_move = (ai[-1]["row0"], ai[-1]["col0"]) if ai else None
+            self.last_ai_seconds = ai[-1]["seconds"] if ai else None
+            self.message = "마지막 사람 착수를 되돌렸습니다."
+            return self._state_locked()
+
     def state(self) -> dict[str, Any]:
         with self.lock:
             return self._state_locked()
@@ -342,6 +420,10 @@ class PlaySession:
         move = self.agent.select_move(self.game)
         elapsed = perf_counter() - started
         diagnostics = _diagnostics(self.agent)
+        if self.agent_key == S3_KEY:
+            checked = diagnostics.get("v8_vct2_checked") or []
+            if checked and checked[0][1] == "UNSAFE":
+                self._save_veto_position_locked(move, elapsed, diagnostics)
         self.game.play(*move)
         self._record_move_locked(player, self.agent.name, move, seconds=elapsed, diagnostics=diagnostics)
         self.last_ai_move = move
@@ -360,8 +442,11 @@ class PlaySession:
         diagnostics: dict[str, Any],
     ) -> None:
         row, col = move
+        before = [list(line) for line in self.game.board]
+        before[row][col] = 0  # the record keeps the position before the move
         self.move_records.append({
             "ply": len(self.game.history),
+            "board_hash": board_hash(before, player),
             "player": "BLACK" if player == BLACK else "WHITE",
             "actor": actor,
             "row0": row,
@@ -372,9 +457,37 @@ class PlaySession:
             "diagnostics": diagnostics,
         })
 
-    def _save_completed_game_locked(self) -> Path | None:
-        """Persist one finished human-vs-MCTS game exactly once."""
-        if not self.game.done or self.saved_game:
+    def _s3_info(self) -> dict[str, Any]:
+        from analysis.s3_vct2_v1 import NAME, RESULTS_COMMIT, S3_VCT2_V1
+        from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty
+
+        return {"engine": NAME, "frozen_results_commit": RESULTS_COMMIT, "engine_commit": _git_commit(),
+                "git_dirty": _git_dirty(), "config": dict(S3_VCT2_V1), **_S3_INFO}
+
+    def _save_veto_position_locked(self, move, seconds, diagnostics) -> None:
+        """S3-VCT2 proved the move it checked first lost: keep the position at once (§12.25)."""
+        folder = self.log_root / "veto_positions"
+        folder.mkdir(parents=True, exist_ok=True)
+        ply = len(self.game.history)
+        stamp = self.started_at.strftime("%Y%m%d-%H%M%S")
+        path = folder / f"{stamp}_ply{ply}.json"
+        payload = {
+            "game_started_at": self.started_at.isoformat(), "ply": ply, "board_hash": board_hash(self.game.board, self.game.to_play),
+            "history": [list(m) for m in self.game.history],
+            "to_play": "BLACK" if self.game.to_play == BLACK else "WHITE",
+            "human_color": "BLACK" if self.human_color == BLACK else "WHITE",
+            "tree_move": diagnostics.get("v8_v7_move"), "played": list(move),
+            "vct2_checked": diagnostics.get("v8_vct2_checked"), "switched": diagnostics.get("v8_vct2_switched"),
+            "seconds": seconds, "diagnostics": diagnostics, "engine": self._s3_info(),
+            "note": "coordinates are 0-indexed (row0, col0)",
+        }
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        self.veto_files.append(_display_path(path))
+        print(f"[web] VCT2 veto position saved: {_display_path(path)}")
+
+    def _save_completed_game_locked(self, unfinished: bool = False) -> Path | None:
+        """Persist one finished human-vs-MCTS game exactly once (``unfinished``: an S3 game left early)."""
+        if (not self.game.done and not unfinished) or self.saved_game:
             return self.last_log_dir
 
         finished_at = datetime.now().astimezone()
@@ -390,6 +503,8 @@ class PlaySession:
         result = "DRAW"
         if self.game.winner is not None:
             result = "HUMAN_WIN" if self.game.winner == self.human_color else "AI_WIN"
+        if unfinished:
+            result = "UNFINISHED"
 
         ai_total_seconds = sum(
             float(record["seconds"]) for record in self.move_records
@@ -417,6 +532,11 @@ class PlaySession:
             payload["agent_info"] = {"config": _json_value(V8_DEFAULTS)}
         if alphazero:
             payload["agent_info"] = _json_value(getattr(self.agent, "info", {}))
+        s3 = self.agent_key == S3_KEY
+        if s3:
+            payload["agent_info"] = _json_value(self._s3_info())
+            payload["undo_count"] = self.undo_count
+            payload["veto_positions"] = self.veto_files
         (log_dir / "game.json").write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -431,7 +551,8 @@ class PlaySession:
                 "v7_safety_inconclusive", "v7_self_forbidden_penalized",
                 "v7_stage4_tiebreak_applied", "v7_module_seconds",
             ] + (list(ALPHAZERO_CSV_FIELDS) if alphazero else [])
-              + (list(V8_CSV_FIELDS) if v8 else []))
+              + (list(V8_CSV_FIELDS) if v8 or s3 else [])
+              + (list(S3_CSV_FIELDS) if s3 else []))
             writer.writeheader()
             for record in self.move_records:
                 diagnostics = record.get("diagnostics", {})
@@ -464,7 +585,8 @@ class PlaySession:
                     ),
                     "v7_module_seconds": diagnostics.get("v7_module_seconds"),
                     **(_alphazero_csv(diagnostics) if alphazero else {}),
-                    **(_v8_csv(diagnostics) if v8 and diagnostics else {}),
+                    **(_v8_csv(diagnostics) if (v8 or s3) and diagnostics else {}),
+                    **(_s3_csv(record) if s3 else {}),
                 })
 
         self.last_log_dir = log_dir
@@ -497,6 +619,8 @@ class PlaySession:
                 if self.last_log_dir is not None else None
             ),
             "versions": VERSION_LABELS,
+            "undo_count": self.undo_count,
+            "veto_positions": self.veto_files,
         }
 
 
@@ -540,6 +664,9 @@ class Handler(BaseHTTPRequestHandler):
                 )
                 self._send_json(state)
                 return
+            if self.path == "/api/undo":
+                self._send_json(SESSION.undo())
+                return
             if self.path == "/api/move":
                 state = SESSION.play_human(int(payload["row"]), int(payload["col"]))
                 self._send_json(state)
@@ -581,7 +708,20 @@ def main() -> None:
                         help="PUCT simulations per move (default: the checkpoint's evaluation setting)")
     parser.add_argument("--az-tactical-rules", choices=("auto", "on", "off"), default="auto",
                         help="PUCT v2 rules (auto = the checkpoint's evaluation setting)")
+    parser.add_argument("--policy-checkpoint", type=Path, default=ROOT / "runs/h3_policy_64x4/best.pt",
+                        help="H3 policy checkpoint of the frozen S3-VCT2-v1 opponent (needs torch)")
     args = parser.parse_args()
+    if args.policy_checkpoint.exists():
+        from analysis.s3_vct2_v1 import check_checkpoint, make_agent
+        from hybrid.h4_policy import RootPolicy
+
+        hashes = check_checkpoint(args.policy_checkpoint)  # refuses any other checkpoint
+        policy = RootPolicy(args.policy_checkpoint, threads=None)
+        register_s3(lambda seed: make_agent(policy, seed=seed),
+                    {"policy_checkpoint": str(args.policy_checkpoint), **hashes})
+        print(f"S3-VCT2-v1 opponent: {args.policy_checkpoint} (hash OK)")
+    else:
+        print(f"S3-VCT2-v1 opponent off: {args.policy_checkpoint} not found")
     if args.az_checkpoint is not None:
         from agents.alphazero_agent import AlphaZeroAgent
 

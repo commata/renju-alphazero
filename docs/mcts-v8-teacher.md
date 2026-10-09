@@ -2536,3 +2536,117 @@ veto 국면(좌표는 1-indexed, ply는 0부터 센다):
 
 - E1 국면을 캐는 데 쓴 대국은 학습에 쓰지 않는다(§12.19의 8401/8402 규칙과 같음). H6용 seed 8403–8405는 계속 예약해 둔다.
 - 순서: E1 → E2 → (E3). H6에서 S3 채택에 따른 VCT2 on/off 요인(§12.18)은 S3-VCT2-v1 설정으로 넣는다.
+
+### 12.26 E1 rescue suite 설계와 웹 실전 stress test (2026-10-09, 검토 반영)
+
+**S3-VCT2-v1은 E1 동안 한 줄도 바꾸지 않는다.**
+- 설정은 `src/analysis/s3_vct2_v1.py`에 전부 적어 두었다(`V8_DEFAULTS`에서 파생하지 않음). 테스트가 S3 결과 파일의 `v8_config`와 같은지 확인한다.
+- policy checkpoint도 S3가 쓴 바이트(SHA-256)와 다르면 거부한다.
+- 10k → 20k나 K4 → K6 같은 변경은 모두 E3에서 한다.
+- **E1은 개발 실험이 아니라 진단 실험이다.**
+
+#### E1의 목적
+
+baseline이 고른 수가 `PROVEN_LOSS_VCT2`이고, 현재 엔진이 접근할 수 있는 대안 중 적어도 하나가 전체 깊이 2 탐색에서 VCT2 패배가 배제된 국면을 모은다. 그런 국면에서 동결된 S3-VCT2-v1이 실제로 패배를 피하는 수를 고르는지 측정한다.
+
+- "안전한 수"라고 부르지 않는다. 이 라벨은 **`VCT2_CLEAR`**(깊이 2 안에 패배 없음)다. 게임 전체에서 안전하다는 뜻이 아니다.
+- `VCT2_CLEAR`는 E1 평가용으로만 쓴다. **H6 value 라벨로 쓰지 않는다**(§12.18: 증명된 WIN/LOSS만 라벨).
+- 성공률 하나를 재는 것이 목적이 아니다. **실패하면 아래 파이프라인의 어느 단계가 병목인지 찾는 것**이 목적이다.
+
+```
+baseline 수가 실제 VCT2 패배
+ → ① 10k 탐지기가 패배를 찾았나          (DETECT_MISS)
+ → ② 살 수 있는 대안이 candidate pool에 있나 (POOL_MISS)
+ → ③ 그 대안이 veto 순서 상위 4개 안에 있나  (K4_MISS)
+ → ④ 10k에서 그 대안을 UNKNOWN이 아닌 것으로 판별했나 (BUDGET_AMBIGUITY)
+ → ⑤ 최종 선택 규칙이 그 대안을 골랐나       (SELECTION_ERROR)
+ → ⑥ 최종 수가 실제로 VCT2를 피했나          (RESCUED)
+```
+
+#### Suite 구축 (`scripts/e1_build_suite.py`, builder와 evaluator 분리)
+
+- **출처(고정).** baseline `puct_policy` 대국 로그 네 개: `h5_policy_8401/8402.json`, `s3_base_8411/8412.json`.
+  - 대상은 tree 경로 수 중 V8-C가 이미 패배로 증명하지 않은 수 전부(약 3,980개)다. 손으로 고르지 않는다.
+  - **E2 seed 8413/8414는 쓰지 않는다.** 웹 대국 probe(P92/P93/P94)는 주 성적에 넣지 않는다(필요하면 sanity로 따로 본다).
+- **screen.** 둔 수를 전체 깊이 0–2 클래스(공격자의 모든 조용한 수)로 판정한다. 예산은 노드 50k다.
+  - 결과는 PROVEN_LOSS / VCT2_CLEAR / UNKNOWN 중 하나다.
+  - 표본 16개로 잰 비용은 수당 약 45초였고 절반은 UNKNOWN이었다. 전체 약 50 CPU시간이라 데스크톱 14 workers로 3~4시간이다.
+  - **한계:** 50k 안에 증명되지 않는 패배는 suite에 들어오지 않는다. screen UNKNOWN 수를 보고한다.
+- **선택.**
+  - PROVEN_LOSS 행만 쓴다.
+  - 같은 대국에서 연속된 V8 수(ply 차이 2)는 한 전술 에피소드로 보고 첫 수만 남긴다.
+  - D4 정규화 board hash로 회전·반사 중복을 없앤다.
+  - control: VCT2_CLEAR 행에서 seed 2611로 40개를 뽑는다. 대국당 1개, hash 중복은 뺀다.
+- **pool (policy 필요, 데스크톱).**
+  - 각 국면에서 동결 설정으로, VCT2 검사만 끄고 엔진을 seed 3개로 돌린다(seed는 국면 key에서 결정적으로 만든다).
+  - root 자식(방문 수, 평균값)을 기록한다. 이것이 candidate pool이고, veto 순서도 여기서 나온다.
+  - 패배 국면은 pool의 모든 수를 전체 클래스(P92 참값 예산 10M)로 판정한다.
+  - 선택 행과 판정 결과를 manifest(`e1_manifest.json`)에 고정한다.
+- **분류.**
+  - **E1-P:** pool에 VCT2_CLEAR가 있음. run마다 P-K4(상위 4개 안에 있음) / P-POOL(pool에만 있음)으로 다시 나눈다.
+  - **E1-N:** pool 전부 PROVEN_LOSS.
+  - **E1-UNRESOLVED:** CLEAR 없음, UNKNOWN 있음. 주 지표에서 제외한다.
+  - **E1-C:** control.
+
+#### 평가 (`scripts/e1_evaluate.py`)
+
+- manifest의 같은 seed로 S3-VCT2-v1을 실행한다. 같은 seed면 tree가 같으므로, VCT2 검사가 처음 본 수는 builder의 수와 같아야 한다(`inconsistent_runs`로 보고).
+- run마다 결과 하나:
+
+| 클래스 | 결과 |
+|---|---|
+| E1-P | RESCUED, TREE_AVOIDED, DETECT_MISS, POOL_MISS, K4_MISS, BUDGET_AMBIGUITY, SELECTION_ERROR, TRUTH_UNRESOLVED, ROUTE_OTHER |
+| E1-N | KEPT, LOSS_TO_LOSS_SWITCH, TRUTH_UNRESOLVED |
+| E1-C | NO_VETO, VETO_ON_LOSS, FALSE_VETO |
+
+- **주 지표:** `rescue_rate` = 최종 수가 VCT2_CLEAR인 E1-P run의 비율.
+- **함께 보는 지표:** veto_recall, rescue_pool_coverage, rescue_k4_coverage, conditional_escape_rate, unknown_replacement_rate, false_veto, unsound_witness(0이어야 함), 비용(VCT2 검사 시간과 착수 시간의 p50/p95/max).
+- 단위는 run이다(국면 × seed 3개). 국면별 결과 목록도 같이 낸다.
+- **규모:** E1-P 국면이 최소 20개, 가능하면 30개 이상이면 비율로 해석한다. 그보다 적으면 퍼센트가 아니라 개별 실패 유형으로 해석한다. 숫자를 억지로 채우지 않는다.
+- **dev / holdout.**
+  - 지금 네 출처에서 나온 국면은 모두 **E1-dev**다.
+  - E1-holdout은 앞으로 쌓이는 로그(8413/8414 제외)에서 같은 규칙으로 캔다.
+  - E3에서 바꾼 정책은 holdout에서 판정한다. dev에서 원인을 보고 고친 뒤 dev로 다시 재서 성능을 주장하지 않는다.
+
+#### E3 방향 (E1 결과를 보기 전에 고정)
+
+| E1에서 많이 나온 실패 | E3 후보 |
+|---|---|
+| DETECT_MISS | selective 탐지 범위·패턴 |
+| POOL_MISS / K4_MISS | K 확대 또는 후보 순서 |
+| BUDGET_AMBIGUITY | 대안에만 추가 예산, 2-pass 확인 |
+| SELECTION_ERROR | replacement 순위·fallback |
+| E1-N 비중이 큼 | veto만으로는 해결 불가(더 앞 수의 문제) |
+| unsound_witness > 0 | **E3 전에 solver 버그 수정** |
+
+BUDGET_AMBIGUITY와 K4_MISS를 반드시 나눠 본다. p8 하나만 보면 "예산을 늘리면 된다"고 보이지만, K4 밖의 rescue가 많다면 예산 증가는 엉뚱한 해결책이다.
+
+#### 로드맵 (수정)
+
+```
+S3-VCT2-v1 ADOPT + FREEZE → E0 재검증 ✅ → [웹 실전 stress] → E1-dev → E2(새 seed 8413/8414, VCT2를 응징하는 상대)
+  → E1 + E2 종합: E3 필요? ─ 예 → E3 → E1-holdout 재검증 → H6
+                           └ 아니오 ──────────────────────→ H6
+```
+
+#### 웹 실전 stress test (External Web Stress Cases)
+
+- `scripts/run_web_play.py`에 상대 **"S3-VCT2-v1 (동결)"**(`s3`)을 넣었다.
+  - `--policy-checkpoint`(기본 `runs/h3_policy_64x4/best.pt`)가 있고 SHA-256이 S3와 같을 때만 등록된다.
+  - 엔진은 `analysis.s3_vct2_v1.make_agent`다(설정 변경 없음).
+- **사람 중계 방식.**
+  - 외부 사이트 상대의 수를 로컬 보드에 클릭하면, 엔진이 다음 수를 계산해 "AI 착수"에 표시한다. 이 수를 사람이 외부 사이트에 직접 둔다.
+  - 외부 사이트를 자동으로 조작하지 않는다(사이트 규칙 보호).
+  - 보드에 좌표(열 A–O, 행 1–15 아래부터, 중앙 H8)를 표시한다.
+  - "무르기"는 잘못 입력한 상대 수를 되돌린다(횟수를 기록).
+  - 로컬 규칙상 흑의 첫 수는 중앙(H8)으로 고정이다.
+- **기록.**
+  - `game.json`의 `agent_info`: 엔진 이름, 동결 커밋, 실행 커밋, git_dirty, 전체 설정, checkpoint와 metadata 해시
+  - 착수마다: board hash(착수 전), 경로, tree 선택(`v8_v7_move`), V8-C 상태, VCT2 검사 목록과 상태, 교체 여부, 노드, 시간. `moves.csv`에도 `vct2_*` 열이 들어간다.
+  - **VCT2 veto가 일어난 국면**은 그 자리에서 `logs/web_play/veto_positions/<시작시각>_ply<N>.json`으로 저장한다.
+  - 끝나지 않은 채 새 게임을 시작해도 `result = UNFINISHED`로 기록을 남긴다.
+- **해석 규칙.**
+  - 이 결과는 E1/E2 성적과 섞지 않는다. 볼 것은 정상 착수, 렌주 금수 오류 여부, veto 발동, UNKNOWN replacement 발생, 실전 시간이다.
+  - 흑 3판 + 백 3판 정도면 충분하다.
+  - 웹에서 발견한 국면은 offline으로 참값을 확정한 뒤 **E1-dev 후보로만** 등록한다.
+  - 웹 결과를 보고 설정을 바꾸거나, 그 사례로 성능을 주장하지 않는다.
