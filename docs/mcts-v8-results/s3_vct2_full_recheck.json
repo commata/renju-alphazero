@@ -1,0 +1,470 @@
+{
+ "format": "s3-vct2-full-recheck-v1",
+ "git_commit": "b25aa3e39936419ccf46cb5d49b14a82484e6010",
+ "budgets": {
+  "engine_selective": {
+   "node_limit": 20000,
+   "call_limit": 20000,
+   "node_budget": 10000
+  },
+  "selective": {
+   "full": {
+    "node_limit": 20000,
+    "call_limit": 10000,
+    "node_budget": 400000
+   },
+   "selective": {
+    "node_limit": 20000,
+    "call_limit": 20000,
+    "node_budget": 1000000
+   }
+  },
+  "full": {
+   "node_limit": 20000,
+   "call_limit": 100000,
+   "node_budget": 10000000
+  }
+ },
+ "inputs": {
+  "s3_vct2_8411.json": "0da545b7e2f82fc2d1e2bde78ecc7fb741bf542790df1bd0a545a91331a178f7",
+  "s3_vct2_8412.json": "541d7903f55f3107b7ce81e78c959efeab90a81ca5c290dfe6666f1d91f88eee"
+ },
+ "run_git_commits": [
+  "b25aa3e39936419ccf46cb5d49b14a82484e6010"
+ ],
+ "summary": {
+  "veto_events": 5,
+  "switches": 2,
+  "veto_precision": "5/5",
+  "engine_unsafe_moves": 7,
+  "engine_unsafe_confirmed_by_full": 7,
+  "unsound_witness": 0,
+  "replacement_engine_status": {
+   "SAFE": 1,
+   "UNKNOWN": 1
+  },
+  "replacement_full_status": {
+   "PROVEN_LOSS": 1,
+   "SAFE": 1,
+   "UNKNOWN": 0
+  },
+  "replacement_escape_rate": "1/2"
+ },
+ "events": [
+  {
+   "seed": 8411,
+   "pair": 8,
+   "v8_color": "white",
+   "ply": 11,
+   "result": "loss",
+   "game_length": 23,
+   "switched": true,
+   "played": [
+    7,
+    7
+   ],
+   "engine_seconds": 9.3684,
+   "engine_nodes": 15491,
+   "played_0idx": [
+    6,
+    6
+   ],
+   "moves": [
+    {
+     "move": [
+      5,
+      9
+     ],
+     "move_0idx": [
+      4,
+      8
+     ],
+     "engine": "UNSAFE",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 2,
+      "cause": null,
+      "witness": [
+       "threat",
+       [
+        4,
+        7
+       ]
+      ],
+      "nodes": 5627,
+      "witness_verified": true,
+      "seconds": 9.63
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 2,
+      "nodes": 21619,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 19.14
+     }
+    },
+    {
+     "move": [
+      7,
+      7
+     ],
+     "move_0idx": [
+      6,
+      6
+     ],
+     "engine": "UNKNOWN",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 2,
+      "cause": null,
+      "witness": [
+       "threat",
+       [
+        4,
+        8
+       ]
+      ],
+      "nodes": 152004,
+      "witness_verified": true,
+      "seconds": 102.3
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 2,
+      "nodes": 314755,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 205.75
+     }
+    }
+   ]
+  },
+  {
+   "seed": 8411,
+   "pair": 19,
+   "v8_color": "black",
+   "ply": 156,
+   "result": "loss",
+   "game_length": 158,
+   "switched": false,
+   "played": [
+    7,
+    14
+   ],
+   "engine_seconds": 0.0002,
+   "engine_nodes": 0,
+   "played_0idx": [
+    6,
+    13
+   ],
+   "moves": [
+    {
+     "move": [
+      7,
+      14
+     ],
+     "move_0idx": [
+      6,
+      13
+     ],
+     "engine": "UNSAFE",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 0,
+      "cause": null,
+      "witness": [
+       "five",
+       [
+        9,
+        13
+       ]
+      ],
+      "nodes": 0,
+      "witness_verified": true,
+      "seconds": 0.0
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 0,
+      "nodes": 0,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 0.0
+     }
+    }
+   ]
+  },
+  {
+   "seed": 8411,
+   "pair": 22,
+   "v8_color": "white",
+   "ply": 13,
+   "result": "win",
+   "game_length": 48,
+   "switched": false,
+   "played": [
+    5,
+    8
+   ],
+   "engine_seconds": 4.3406,
+   "engine_nodes": 6768,
+   "played_0idx": [
+    4,
+    7
+   ],
+   "moves": [
+    {
+     "move": [
+      5,
+      8
+     ],
+     "move_0idx": [
+      4,
+      7
+     ],
+     "engine": "UNSAFE",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 2,
+      "cause": null,
+      "witness": [
+       "threat",
+       [
+        7,
+        5
+       ]
+      ],
+      "nodes": 3453,
+      "witness_verified": true,
+      "seconds": 5.36
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 2,
+      "nodes": 34461,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 31.14
+     }
+    },
+    {
+     "move": [
+      8,
+      11
+     ],
+     "move_0idx": [
+      7,
+      10
+     ],
+     "engine": "UNSAFE",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 1,
+      "cause": null,
+      "witness": [
+       "threat",
+       [
+        4,
+        6
+       ]
+      ],
+      "nodes": 8126,
+      "witness_verified": true,
+      "seconds": 5.72
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 1,
+      "nodes": 8126,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 5.72
+     }
+    },
+    {
+     "move": [
+      10,
+      8
+     ],
+     "move_0idx": [
+      9,
+      7
+     ],
+     "engine": "UNSAFE",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 1,
+      "cause": null,
+      "witness": [
+       "threat",
+       [
+        4,
+        6
+       ]
+      ],
+      "nodes": 9934,
+      "witness_verified": true,
+      "seconds": 6.73
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 1,
+      "nodes": 9934,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 6.76
+     }
+    }
+   ]
+  },
+  {
+   "seed": 8412,
+   "pair": 4,
+   "v8_color": "white",
+   "ply": 11,
+   "result": "win",
+   "game_length": 64,
+   "switched": true,
+   "played": [
+    9,
+    7
+   ],
+   "engine_seconds": 4.6107,
+   "engine_nodes": 6780,
+   "played_0idx": [
+    8,
+    6
+   ],
+   "moves": [
+    {
+     "move": [
+      5,
+      9
+     ],
+     "move_0idx": [
+      4,
+      8
+     ],
+     "engine": "UNSAFE",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 2,
+      "cause": null,
+      "witness": [
+       "threat",
+       [
+        9,
+        5
+       ]
+      ],
+      "nodes": 4692,
+      "witness_verified": true,
+      "seconds": 7.45
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 2,
+      "nodes": 20551,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 23.98
+     }
+    },
+    {
+     "move": [
+      9,
+      7
+     ],
+     "move_0idx": [
+      8,
+      6
+     ],
+     "engine": "SAFE",
+     "selective": {
+      "status": "NO_TARGETED_VCT2_FOUND",
+      "depth": null,
+      "cause": null,
+      "witness": null,
+      "nodes": 2671,
+      "witness_verified": null,
+      "seconds": 2.94
+     },
+     "full": {
+      "status": "SAFE",
+      "lost_depth": null,
+      "nodes": 100370,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 132.71
+     }
+    }
+   ]
+  },
+  {
+   "seed": 8412,
+   "pair": 5,
+   "v8_color": "white",
+   "ply": 23,
+   "result": "loss",
+   "game_length": 31,
+   "switched": false,
+   "played": [
+    4,
+    7
+   ],
+   "engine_seconds": 0.0951,
+   "engine_nodes": 217,
+   "played_0idx": [
+    3,
+    6
+   ],
+   "moves": [
+    {
+     "move": [
+      4,
+      7
+     ],
+     "move_0idx": [
+      3,
+      6
+     ],
+     "engine": "UNSAFE",
+     "selective": {
+      "status": "PROVEN_LOSS",
+      "depth": 0,
+      "cause": null,
+      "witness": [
+       "vcf",
+       [
+        [
+         8,
+         7
+        ],
+        [
+         9,
+         5
+        ],
+        [
+         6,
+         5
+        ]
+       ]
+      ],
+      "nodes": 217,
+      "witness_verified": true,
+      "seconds": 0.14
+     },
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 0,
+      "nodes": 217,
+      "budget_exhausted": false,
+      "vcf_cut_calls": 0,
+      "seconds": 0.14
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -251,3 +251,23 @@ class S3CompareTest(unittest.TestCase):
         from scripts.s3_compare import compare
         with self.assertRaises(ValueError):
             compare(self._runs('puct_policy'), self._runs('puct_policy'))
+
+
+class S3RecheckSummaryTest(unittest.TestCase):
+    def test_precision_and_escape(self):
+        from scripts.s3_vct2_recheck import summarize as recheck_summary
+        def move(m, engine, full):
+            return {'move_0idx': m, 'engine': engine, 'full': {'status': full},
+                    'selective': {'witness_verified': True if full == 'PROVEN_LOSS' else None}}
+        events = [
+            {'switched': True, 'played_0idx': [6, 6],
+             'moves': [move([4, 8], 'UNSAFE', 'PROVEN_LOSS'), move([6, 6], 'UNKNOWN', 'PROVEN_LOSS')]},
+            {'switched': True, 'played_0idx': [8, 6],
+             'moves': [move([4, 8], 'UNSAFE', 'PROVEN_LOSS'), move([8, 6], 'SAFE', 'SAFE')]},
+            {'switched': False, 'played_0idx': [3, 6], 'moves': [move([3, 6], 'UNSAFE', 'PROVEN_LOSS')]},
+        ]
+        s = recheck_summary(events)
+        self.assertEqual(s['veto_precision'], '3/3')
+        self.assertEqual(s['replacement_escape_rate'], '1/2')
+        self.assertEqual(s['replacement_engine_status'], {'SAFE': 1, 'UNKNOWN': 1})
+        self.assertEqual(s['unsound_witness'], 0)

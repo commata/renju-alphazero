@@ -2442,3 +2442,97 @@ C(P92 129개 recall)와 D 100개 전체 측정은 선택한 예산으로 데스�
 - ADOPT는 "비용 안에서 해가 없다"는 뜻이다. 점수 향상은 요구하지 않는다(교체가 드문 장치라 50판×2로는 검정력이 낮다). 교체 사례는 메커니즘 기록으로 따로 본다.
 - C(P92 129개 recall)와 D 100개 전체 측정은 선택 사항이다. 판정에는 쓰지 않는다.
 - 실행: `scripts/run_s3.ps1`(데스크톱). seed마다 두 arm을 동시에 workers 4로 돌리고, 1분마다 python 프로세스 우선순위를 높음으로 올린다. 다시 실행하면 `--games-jsonl`에서 이어 간다. 끝나면 `s3_compare.py`를 실행해 `runs/s3/s3_compare.json`을 만든다.
+
+### 12.25 S3-VCT2 결과: ADOPT(안전·비용), 효능은 미입증 (2026-10-09)
+
+결과 파일(데스크톱, 커밋 `b25aa3e`, git_dirty = False):
+- 원본: `docs/mcts-v8-results/s3_base_8411.json`, `s3_base_8412.json`, `s3_vct2_8411.json`, `s3_vct2_8412.json`
+- 비교: `s3_compare.json`(클라우드에서 같은 결과로 다시 계산해 확인함)
+- veto 재검증: `s3_vct2_full_recheck.json`(`scripts/s3_vct2_recheck.py`). veto가 일어난 국면에서 검사한 수마다 다음을 기록한다.
+  - 엔진 판정(10k)
+  - selective 기본 예산(1M) 판정과 `verify_witness` 결과
+  - 전체 클래스(공격자의 모든 조용한 수, P92 참값 예산 10M) 판정
+  - 노드 수, 시간, 입력 파일 SHA-256, git commit
+
+#### 판정
+
+**ADOPT (safety / non-inferiority / cost 통과; efficacy not established).**
+- 미리 정한 세 gate를 모두 통과했으므로 통합 대상으로 채택한다.
+  - 안전 불변식 위반 0
+  - 점수 차 −0.01(95% 구간 [−0.03, 0.0]) ≥ −0.05
+  - end-to-end 시간 비율 1.054 ≤ 1.5. 상대 대비 시간 비율은 기준 0.896, vct2 0.941이다.
+- **ADOPT는 S3-VCT2가 기존 엔진보다 강하다는 뜻이 아니다.**
+  - 점수는 기준 0.825(77승 11무 12패), S3-VCT2 0.815(76승 11무 13패)이고 향상은 관측되지 않았다.
+  - 통과한 것은 우월성(superiority)이 아니라 비열등성(non-inferiority) 기준이다.
+- 비용: 검사 1회는 중앙값 0.13초, p95 5.2초, 최대 9.4초이고 노드 중앙값은 46이다. §12.23의 탐지기 단독 측정(추가 비용 p95 11.3초, 전체 115초)보다 훨씬 작다. 깊이 0–1을 V8-C가 먼저 거르기 때문이다. (c) 속도 개선은 지금 필요 없다.
+
+#### 개입 빈도와 재검증
+
+| 항목 | 값 |
+|---|---|
+| 검사한 tree 수 | 1,910 (vct2 arm의 tree 수 전부) |
+| veto 발생(둔 수가 PROVEN_LOSS) | 5 (0.262%) |
+| 실제 교체 | 2 (0.105%) |
+| 수순이 달라진 대국 | 2 / 100 (나머지 98판은 수순이 완전히 같다) |
+| 결과가 달라진 대국 | 1 / 100 (8411 p8, 승 → 패) |
+| veto precision(전체 클래스로 확인) | **5/5**. 엔진이 UNSAFE로 본 수 7개 모두 전체 클래스에서 PROVEN_LOSS |
+| 불건전 증거(`verify_witness` False) | 0 |
+| 교체 수의 엔진 판정 | SAFE 1, UNKNOWN 1 |
+| 교체 수의 전체 클래스 판정 | SAFE 1(깊이 2 안 패배 없음), PROVEN_LOSS 1 |
+| replacement VCT2 escape rate | **1/2** |
+| false switch(전체 클래스 SAFE인 수를 바꿈) | 0/2 |
+
+veto 국면(좌표는 1-indexed, ply는 0부터 센다):
+
+| 대국 | ply | 둔 수(엔진 → 전체 클래스) | 대안 | 결과(기준 → vct2) |
+|---|---|---|---|---|
+| 8411 p8 백 | 11 | (5,9) UNSAFE → 깊이 2 패배 | (7,7) 엔진 UNKNOWN → **전체 클래스 깊이 2 패배**(1M selective 102초, 전체 206초) | 승 → **패** |
+| 8412 p4 백 | 11 | (5,9) UNSAFE → 깊이 2 패배 | (9,7) 엔진 SAFE → 전체 클래스 SAFE(133초) | 승 → 승 |
+| 8411 p22 백 | 13 | (5,8) UNSAFE → 깊이 2 패배 | (8,11), (10,8) 모두 깊이 1 패배 → 교체 없음 | 승 → 승 |
+| 8411 p19 흑 | 156 | (7,14) 깊이 0 패배 | 나머지는 V8-C UNSAFE → 검사 대상 없음 | 패 → 패 |
+| 8412 p5 백 | 23 | (4,7) 깊이 0 패배 | 위와 같음 | 패 → 패 |
+
+- 앞의 두 국면이 실제로 개입한 경우다. p22, p19, p5는 이미 진 국면이거나 검사한 후보가 모두 진 국면이다.
+- 8411 p22와 두 교체 국면의 기준 arm에서는 VCT2 패배가 증명된 수를 두고도 이겼다. 상대가 그 강제승을 쓰지 못했다.
+
+#### 8411 p8 해석
+
+- **empirical regression은 있다.** S3-VCT2의 교체가 실제 대국 수순의 분기점이었고, 결과는 승에서 패로 나빠졌다. 그러니 관측된 회귀를 장치와 무관하다고 볼 수 없다.
+- **proof unsoundness는 없다.** 전체 클래스 재검증에서 원래 수와 교체 수가 모두 VCT2 패배였다. 그러니 이것은 "VCT2-safe한 수를 잘못 veto해서 패배를 만든 오류"가 아니다.
+- **핵심 원인:** 10k selective 예산으로는 교체 후보의 패배를 증명하지 못했다(UNKNOWN). 검사한 대안 중 NO_TARGETED_VCT2_FOUND가 없었고, 규칙대로 UNKNOWN 수를 골랐다.
+- **"UNKNOWN보다 NO_TARGETED 우선" 규칙은 이 사례를 고치지 못한다.** 8412 p4가 보여 주듯, NO_TARGETED 대안이 있으면 이미 그쪽으로 교체한다. p8에서는 검사한 대안이 UNKNOWN 하나뿐이었다. 그래서 정책 문제는 상태 우선순위가 아니라 다음 둘이다.
+  - 대안 탐색 폭이나 대안 확인 예산을 늘릴 것인가
+  - 검사한 대안이 모두 UNKNOWN일 때 어떤 fallback을 쓸 것인가
+
+#### 두 가지를 나눠서 해석한다
+
+- **Detection correctness:** 재검증한 PROVEN_LOSS 7개 중 잘못된 증명은 없다(false positive 0, 재현 파일 `s3_vct2_full_recheck.json`).
+- **Replacement effectiveness:** PROVEN_LOSS를 찾은 뒤 고른 대안이 실제로 패배를 피하는지는 충분히 검증되지 않았다(1/2, 표본 2개).
+
+**효능을 측정하지 못한 이유.**
+- 100판 벤치마크에서는 S3-VCT2의 개입 빈도(veto 0.26%, 교체 0.1%, 결과가 달라진 대국 1판)가 너무 낮다. 효능을 판별할 통계적 검출력이 부족하다.
+- `v8:full` 상대의 공격 horizon 제한(자기 공격은 VCT1까지)도 VCT2 회피의 이득 신호를 약하게 하는 추가 요인이다.
+- 그러니 상대만 강하게 바꿔서는 해결되지 않는다. 개입 국면을 직접 겨냥한 평가가 필요하다.
+
+**새 연구 질문.** 탐지 정확도가 아니라 **"VCT2 패배를 정확히 찾은 뒤, 제한된 계산량으로 더 나은 대안을 어떻게 고를 것인가"**다. 탐지기가 실패한 것이 아니라, replacement / adjudication 단계가 다음 병목으로 드러났다.
+
+#### 동결
+
+- **S3-VCT2-v1**을 다음 설정으로 동결한다. 아래 평가가 끝날 때까지 바꾸지 않는다.
+  - `root_vct2_check = True`
+  - `vct2_node_budget = 10,000`, `vct2_node_limit = 20,000`, `vct2_call_limit = 20,000`
+  - `vct2_max_children = 4`
+  - V8-C 뒤에 실행, UNKNOWN 대안 허용
+- replacement 정책 변경은 아래 E1·E2가 끝난 뒤에, 새 seed로 검증한다. 원래 수가 PROVEN_LOSS이고 검사한 대안이 모두 UNKNOWN인 경우는 별도 정책 문제로 다룬다.
+
+#### 다음 단계 (targeted efficacy 평가, 지표는 실행 전 고정)
+
+| 단계 | 내용 | 지표 |
+|---|---|---|
+| E0 | 벤치마크 veto 국면 재검증 | **완료**(위 표, `s3_vct2_full_recheck.json`) |
+| E1 | **rescue suite.** 원래 수(기준 엔진이 둔 수)는 전체 클래스 VCT2 패배이고, 전체 클래스 SAFE 대안이 하나 이상 있는 확정 국면 세트. 출처: §12.22 확정 2국면(대안의 참값 있음), 8412 p4 ply 11, 그리고 H5·S3 대국(8401/8402/8411/8412, 평가 전용)에서 캐낸 국면. 각 국면에서 `puct_policy`와 `puct_policy_vct2`의 착수를 여러 random seed로 기록한다 | PROVEN_LOSS precision, detection rate(원래 수를 veto한 비율), **replacement VCT2 escape rate**, UNKNOWN replacement rate, false switch rate, intervention cost |
+| E2 | **VCT2를 응징할 수 있는 상대.** selective VCT2 공격(증명된 WIN만)을 켠 V8을 상대로, 새 seed 8413/8414에서 `puct_policy` 대 `puct_policy_vct2`를 각 25쌍 | 일반 승률, paired diff, 시간 비율, 개입 빈도 |
+| E3 | E1·E2 결과를 보고 replacement 정책 후보(대안 폭, 대안 예산, 모두 UNKNOWN일 때의 fallback)를 정하고, 새 seed로 검증 | 미리 고정 |
+
+- E1 국면을 캐는 데 쓴 대국은 학습에 쓰지 않는다(§12.19의 8401/8402 규칙과 같음). H6용 seed 8403–8405는 계속 예약해 둔다.
+- 순서: E1 → E2 → (E3). H6에서 S3 채택에 따른 VCT2 on/off 요인(§12.18)은 S3-VCT2-v1 설정으로 넣는다.

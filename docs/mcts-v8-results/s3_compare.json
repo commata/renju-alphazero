@@ -1,0 +1,136 @@
+{
+ "rows": {
+  "baseline": {
+   "arm": "puct_policy",
+   "seeds": [
+    8411,
+    8412
+   ],
+   "games": 100,
+   "wins": 77,
+   "draws": 11,
+   "losses": 12,
+   "score": 0.825,
+   "ci95_wilson": [
+    0.739,
+    0.887
+   ],
+   "ci95_pairs": [
+    0.755,
+    0.89
+   ],
+   "by_colour": {
+    "black": 0.77,
+    "white": 0.88
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0052,
+   "losses_with_opponent_vct": 10,
+   "tree_moves": 1922,
+   "tree_status": {
+    "SAFE": 1820,
+    "UNKNOWN": 89,
+    "UNSAFE": 13,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0531,
+   "v8c_changed": 59,
+   "root_check_minutes": 316.7,
+   "tree_seconds_median": 1.273,
+   "tree_simulations_per_second": 43.8,
+   "nn_calls_per_tree_move": 61.2,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.531,
+   "tree_chose_prior_top_rate": 0.609,
+   "time_ratio": 0.896,
+   "total_game_minutes": 1285.8
+  },
+  "vct2": {
+   "arm": "puct_policy_vct2",
+   "seeds": [
+    8411,
+    8412
+   ],
+   "games": 100,
+   "wins": 76,
+   "draws": 11,
+   "losses": 13,
+   "score": 0.815,
+   "ci95_wilson": [
+    0.728,
+    0.879
+   ],
+   "ci95_pairs": [
+    0.745,
+    0.88
+   ],
+   "by_colour": {
+    "black": 0.77,
+    "white": 0.86
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0059,
+   "losses_with_opponent_vct": 11,
+   "tree_moves": 1910,
+   "tree_status": {
+    "SAFE": 1809,
+    "UNKNOWN": 88,
+    "UNSAFE": 13,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0529,
+   "v8c_changed": 60,
+   "root_check_minutes": 311.4,
+   "tree_seconds_median": 1.264,
+   "tree_simulations_per_second": 43.9,
+   "nn_calls_per_tree_move": 61.1,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.531,
+   "tree_chose_prior_top_rate": 0.608,
+   "time_ratio": 0.941,
+   "total_game_minutes": 1320.7
+  }
+ },
+ "paired_diff_vct2_minus_baseline": {
+  "pairs": 50,
+  "diff": -0.01,
+  "ci95": [
+   -0.03,
+   0.0
+  ]
+ },
+ "cost": {
+  "end_to_end_ratio": 1.054,
+  "game_time_ratio": 1.027,
+  "move_seconds": {
+   "baseline": {
+    "n": 2868,
+    "median": 1.702,
+    "p95": 89.024,
+    "max": 263.988
+   },
+   "vct2": {
+    "n": 2861,
+    "median": 1.847,
+    "p95": 90.326,
+    "max": 273.219
+   }
+  }
+ },
+ "mechanism": {
+  "moves_checked": 1910,
+  "played_move_proven_lost": 5,
+  "switched": 2,
+  "seconds": {
+   "n": 1910,
+   "median": 0.13,
+   "p95": 5.229,
+   "max": 9.368
+  },
+  "nodes_median": 46.0
+ },
+ "decision": {
+  "decision": "ADOPT",
+  "reasons": []
+ }
+}
