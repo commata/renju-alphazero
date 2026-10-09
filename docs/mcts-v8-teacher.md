@@ -2723,3 +2723,5 @@ S3-VCT2-v1 ADOPT + FREEZE → E0 재검증 ✅ → [웹 실전 stress] → E1-de
 4. **지연(L 트랙)은 분리한다.** 제한시간이 있는 웹 대국이 목표가 될 때 V8-C, V8-A, V8-B의 solver 꼬리를 다룬다. E1/E2와 섞지 않는다.
 
 **순서:** (7,11) 10M 판정 → E1-dev(tree 주 지표, 지금 실행분) → E1-S(stage 층, 승인 후 구현) → E2 → 필요하면 E3(S3-stage 포함) → E1-holdout → H6.
+
+**E1 이후 Track B 방향**(주기 단위 엔진 동결, 채택 gate, 새 패배 처리 순서, H6 라벨 보완)은 [track-b-post-e1.md](track-b-post-e1.md)에 정리했다.
