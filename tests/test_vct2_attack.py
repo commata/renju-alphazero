@@ -83,6 +83,13 @@ class BenchmarkWiringTest(unittest.TestCase):
                 parse_opponent(bad)
         config = opponent_config('v8:full+vct2atk')
         self.assertEqual(config['vct2_attack']['budget'], VCT2_ATTACK_BUDGET)
+        self.assertEqual(VCT2_ATTACK_BUDGET['node_budget'], 200_000)  # E2, fixed in §12.28
+        e2b = opponent_config('v8:full+vct2atk400k')['vct2_attack']['budget']
+        self.assertEqual(e2b, {**VCT2_ATTACK_BUDGET, 'node_budget': 400_000})
+        self.assertEqual(opponent_arm('v8:full+vct2atk400k'), 'full')
+        for bad in ('v8:full+vct2atk0k', 'v8:full+vct2atk400', 'v8:full+vct2atkk'):
+            with self.assertRaises(ValueError):
+                parse_opponent(bad)
         self.assertNotIn('vct2_attack', opponent_config('v8:full'))
         self.assertIsNone(opponent_config('v7'))
 
@@ -93,6 +100,8 @@ class BenchmarkWiringTest(unittest.TestCase):
                                    policy_checkpoint=None)
         base, base_openings = build_tasks(args('v8:full'))
         tasks, openings = build_tasks(args('v8:full+vct2atk'))
+        e2b, _ = build_tasks(args('v8:full+vct2atk400k'))
+        self.assertEqual(e2b[0]['key'], 'full@v8:full+vct2atk400k/8413/0/black')  # E2b never resumes E2 lines
         self.assertEqual(openings, base_openings)
         self.assertEqual([t['seed'] for t in tasks], [t['seed'] for t in base])
         self.assertEqual(tasks[0]['key'], 'full@v8:full+vct2atk/8413/0/black')
@@ -142,6 +151,8 @@ class E2CompareTest(unittest.TestCase):
         same = compare(base, self._runs('puct_policy_vct2'), opponent='v8:full+vct2atk')
         self.assertNotIn('decision', same)
         self.assertEqual(same['e2']['reading'], 'NOT_ESTABLISHED')
+        self.assertEqual(same['e2']['exposure'], {'opponent_vct2_wins': 0, 'minimum': 10, 'low_power': True})
+        self.assertIn('move_seconds_total', same['e2']['opponent_time']['vct2'])
         self.assertEqual(same['e2']['punishment']['vct2']['opponent_vct2_wins'], 0)
         better = compare(base, self._runs('puct_policy_vct2', result='win'), opponent='v8:full+vct2atk')
         self.assertEqual(better['e2']['reading'], 'EFFICACY')

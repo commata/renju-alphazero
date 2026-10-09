@@ -25,6 +25,14 @@ ADOPT gate; it reads the efficacy (fixed before the runs):
     HARM              diff < -0.05 or the upper bound < 0
     SAFETY_VIOLATION  a safety violation in either arm
 plus the cost ratios and how often each arm lost after an opponent depth-2 attack (``punishment``).
+
+Mechanism exposure (fixed before the runs, §12.29): the number of proven depth-2 attacks the
+opponent played (route ``own_vct2``) over both arms. Below ``MIN_EXPOSURE`` (10) the reading is
+flagged ``low_power`` (an absent effect then says little); a separate E2b with a larger attack
+budget may follow, and E2 and E2b are never pooled. Time is reported per side: the tested
+engine's move time (``cost``) and the opponent's move and attack time (``opponent_time``). The
+game-time ratio is diluted by the slow opponent and is not read as the S3 overhead (the S3 cost
+gate stands on the S3 benchmark).
 """
 from __future__ import annotations
 
@@ -42,6 +50,7 @@ for extra in (ROOT / 'scripts', ROOT):
 from summarize_h5 import OPPONENT, merge, paired, summarize  # noqa: E402
 
 MAX_RATIO = 1.5
+MIN_EXPOSURE = 10
 MIN_DIFF = -0.05
 ARMS = ('puct_policy', 'puct_policy_vct2')
 
@@ -72,6 +81,16 @@ def punishment(arm: dict) -> dict:
     return {'opponent_vct2_wins': sum(g.get('opponent_routes', {}).get('own_vct2', 0) for g in games),
             'games_with_opponent_vct2': len(hit),
             'losses_with_opponent_vct2': sum(g['result'] == 'loss' for g in hit)}
+
+
+def opponent_time(arm: dict) -> dict:
+    attacks = [a for g in arm['games'] for a in g.get('opponent_vct2_attack', [])]
+    moves = [s for g in arm['games'] for s in g['opponent_move_seconds']]
+    return {'move_seconds': _dist(moves) if moves else None,
+            'move_seconds_total': round(sum(s for g in arm['games'] for s in g['opponent_move_seconds']), 1),
+            'attack_seconds': _dist([a['seconds'] for a in attacks]) if attacks else None,
+            'attack_seconds_total': round(sum(a['seconds'] for a in attacks), 1),
+            'attack_budget_exhausted': sum(a['exhausted'] for a in attacks)}
 
 
 def e2_reading(rows: dict, diff: dict) -> dict:
@@ -114,7 +133,12 @@ def compare(base_runs: list[dict], arm_runs: list[dict], arms=ARMS, opponent: st
     if opponent == OPPONENT:
         out['decision'] = {'decision': decision, 'reasons': reasons}
     else:  # E2: no adoption gate (S3-VCT2-v1 is adopted), only the pre-fixed efficacy reading
-        out['e2'] = {**e2_reading(rows, diff), 'punishment': {'baseline': punishment(base), 'vct2': punishment(arm)}}
+        hits = {'baseline': punishment(base), 'vct2': punishment(arm)}
+        exposure = sum(h['opponent_vct2_wins'] for h in hits.values())
+        out['e2'] = {**e2_reading(rows, diff), 'punishment': hits,
+                     'exposure': {'opponent_vct2_wins': exposure, 'minimum': MIN_EXPOSURE,
+                                  'low_power': exposure < MIN_EXPOSURE},
+                     'opponent_time': {'baseline': opponent_time(base), 'vct2': opponent_time(arm)}}
     return out
 
 

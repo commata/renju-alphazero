@@ -114,15 +114,19 @@
     "budget_exhausted": false,
     "seconds": 8.22
    }
-  }
- ],
- "pending": [
+  },
   {
    "position": "LOSS-P14",
    "move": [
     7,
     11
    ],
+   "selective_1M": {
+    "selective_1M": "NO_TARGETED_VCT2_FOUND",
+    "sel_depth": null,
+    "verified": null,
+    "seconds": 653.104
+   },
    "full_1M": {
     "status": "UNKNOWN",
     "lost_depth": null,
@@ -130,9 +134,20 @@
     "budget_exhausted": true,
     "seconds": 796.88
    },
-   "full_10M": "not finished in the cloud (2 h limit): run on the desktop"
+   "full_10M": {
+    "status": "UNKNOWN",
+    "lost_depth": null,
+    "nodes": 10000000,
+    "budget_exhausted": true,
+    "seconds": 7218.57
+   },
+   "full_10M_provenance": {
+    "run": "desktop (user), scripts/web_recheck.py --plies 13 --move 7,11",
+    "git_commit": "a85e311cb76a7776eb64f5025c3badb0eec33601"
+   }
   }
  ],
+ "pending": [],
  "engine_10k_check_if_run": [
   {
    "position": "LOSS-P14",
@@ -176,5 +191,17 @@
     11
    ]
   ]
+ },
+ "p14_root_truth": {
+  "status": "UNRESOLVED",
+  "legal_moves": 212,
+  "proven_loss": 211,
+  "unknown": [
+   [
+    7,
+    11
+   ]
+  ],
+  "note": "211 moves proven lost (depth 0-2); (7,11) UNKNOWN at 1M and 10M. Not extended further (§12.29)."
  }
 }

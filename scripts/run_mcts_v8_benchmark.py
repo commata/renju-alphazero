@@ -33,7 +33,8 @@ that arm's configuration, e.g. ``v8:b_only``, which can play VCT1 attacks that
 V7 does not see). ``v8:<arm>+vct2atk`` (E2, §12.25) wraps that V8 opponent with
 ``analysis.vct2_attack``: on its Stage 4/5 and tree moves it also plays a proven
 selective depth-2 attack (route ``own_vct2``); each such check is recorded per game
-(``opponent_vct2_attack``). The opponent does not change openings or seeds, so runs of
+(``opponent_vct2_attack``). The attack budget is 200k nodes (E2); ``+vct2atk<N>k`` sets
+another node budget (E2b: ``v8:full+vct2atk400k``), a separate opponent with its own keys. The opponent does not change openings or seeds, so runs of
 different arms against the same opponent are paired. Game keys carry the
 opponent unless it is ``v7`` (old JSONL files resume unchanged).
 
@@ -57,6 +58,7 @@ import hashlib
 import json
 from pathlib import Path
 from random import Random
+import re
 from statistics import median
 import subprocess
 import sys
@@ -117,32 +119,51 @@ def v8_config(arm: str, overrides: dict | None = None) -> dict:
 
 
 VCT2_ATTACK_SUFFIX = '+vct2atk'
+_ATTACK = re.compile(r'^(?P<arm>[a-z0-9_]+)\+vct2atk(?:(?P<kilo>[1-9][0-9]*)k)?$')
+
+
+def _split_opponent(value: str) -> tuple[str, str, dict | None]:
+    """(kind, arm, attack budget or None) of an opponent name."""
+    kind, _, rest = value.partition(':')
+    match = _ATTACK.match(rest)
+    if match is None:
+        return kind, rest, None
+    from analysis.vct2_attack import VCT2_ATTACK_BUDGET
+    budget = dict(VCT2_ATTACK_BUDGET)
+    if match['kilo']:
+        budget['node_budget'] = int(match['kilo']) * 1000
+    return kind, match['arm'], budget
 
 
 def parse_opponent(value: str) -> str:
-    """``v7``, ``v8:<arm>`` or ``v8:<arm>+vct2atk``; raises ValueError otherwise."""
+    """``v7``, ``v8:<arm>`` or ``v8:<arm>+vct2atk[<N>k]``; raises ValueError otherwise."""
     if value == 'v7':
         return value
-    kind, _, arm = value.partition(':')
-    arm = arm.removesuffix(VCT2_ATTACK_SUFFIX)
+    kind, arm, _ = _split_opponent(value)
     if kind != 'v8' or arm not in ARMS:
-        raise ValueError(f"opponent must be 'v7', 'v8:<arm>' or 'v8:<arm>{VCT2_ATTACK_SUFFIX}' "
+        raise ValueError(f"opponent must be 'v7', 'v8:<arm>' or 'v8:<arm>{VCT2_ATTACK_SUFFIX}[<N>k]' "
                          f"with arm in {sorted(ARMS)}")
     return value
 
 
 def opponent_arm(opponent: str) -> str:
     """The V8 arm of a ``v8:...`` opponent ('' for ``v7``)."""
-    return opponent.partition(':')[2].removesuffix(VCT2_ATTACK_SUFFIX)
+    return _split_opponent(opponent)[1] if opponent != 'v7' else ''
+
+
+def opponent_attack_budget(opponent: str) -> dict | None:
+    """The depth-2 attack budget of a ``+vct2atk`` opponent, else None."""
+    return _split_opponent(opponent)[2] if opponent != 'v7' else None
 
 
 def opponent_config(opponent: str, overrides: dict | None = None) -> dict | None:
     if opponent == 'v7':
         return None
     config = v8_config(opponent_arm(opponent), overrides)
-    if opponent.endswith(VCT2_ATTACK_SUFFIX):
-        from analysis.vct2_attack import ATTACK_ROUTES, VCT2_ATTACK_BUDGET
-        config = {**config, 'vct2_attack': {'budget': VCT2_ATTACK_BUDGET, 'routes': list(ATTACK_ROUTES)}}
+    budget = opponent_attack_budget(opponent)
+    if budget is not None:
+        from analysis.vct2_attack import ATTACK_ROUTES
+        config = {**config, 'vct2_attack': {'budget': budget, 'routes': list(ATTACK_ROUTES)}}
     return config
 
 
@@ -166,9 +187,10 @@ def make_opponent(opponent: str, seed: int, overrides: dict, policy_checkpoint=N
     config = v8_config(opponent_arm(opponent), overrides)
     policy = load_policy(policy_checkpoint) if needs_policy(config) else None
     agent = MCTSV8Agent(seed=seed, root_policy=policy, **{k: v for k, v in config.items() if k in V8_DEFAULTS})
-    if opponent.endswith(VCT2_ATTACK_SUFFIX):
+    budget = opponent_attack_budget(opponent)
+    if budget is not None:
         from analysis.vct2_attack import VCT2AttackAgent
-        agent = VCT2AttackAgent(agent)
+        agent = VCT2AttackAgent(agent, budget)
     return agent
 
 
@@ -277,7 +299,7 @@ def play_one(task: dict) -> dict:
         'result': result, 'winner': game.winner, 'length': len(game.history),
         'moves': [list(m) for m in game.history],
         'v8_moves': v8_moves, 'opponent_move_seconds': opp_seconds, 'opponent_routes': opp_routes,
-        **({'opponent_vct2_attack': opp_attack2} if opponent.endswith(VCT2_ATTACK_SUFFIX) else {}),
+        **({'opponent_vct2_attack': opp_attack2} if opponent_attack_budget(opponent) is not None else {}),
         'game_seconds': round(perf_counter() - started_game, 2),
     }
 
