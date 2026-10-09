@@ -1,6 +1,6 @@
 # Track B 최종 설계: B1-Champion / B1-Matched / B2
 
-작성 2026-10-09. 상태: **확정**(사용자 승인). 엔진 쪽 운영 규칙(주기 단위 동결, 채택 gate, 새 패배 처리)은
+작성 2026-10-09. 상태: **확정**(사용자 승인). 수치는 §13에서 고정했다(2026-10-09, B1 학습 시작 전). 엔진 쪽 운영 규칙(주기 단위 동결, 채택 gate, 새 패배 처리)은
 [track-b-post-e1.md](track-b-post-e1.md)를 따른다. §번호는 따로 적지 않으면 [mcts-v8-teacher.md](mcts-v8-teacher.md)의 절이다.
 
 ## 0. 결론
@@ -93,11 +93,16 @@ B2-H6
 | H6 | value 시작 | value 시작 |
 | H7 | 반복 학습 주기 | 반복 학습 주기 |
 
-- B2-H3′의 self-play 판 수, 학습 step, 정지 기준은 시작 전에 고정하고 자원을 B2 고유 비용으로 기록한다.
+- **B2-H3′ 예산(§13 고정).**
+  - self-play 2,000판을 기본으로 하고, D4 정규형 unique position이 100,000개가 될 때까지 계속 생성한다. hard cap은 3,000판이다.
+  - 3,000판에서도 100,000개가 안 되면 그 데이터로 시작한다. 이 부족 자체를 RenjuNet-free bootstrap의 결과로 보고한다.
+  - 학습은 H3와 같은 네트워크 구조·optimizer 계열·batch 1,024로 **10 epoch**. H3의 step 수(31,030)를 맞추지 않는다(작은 데이터의 과반복 방지).
+  - 이 단계의 자원은 모두 B2 고유 비용이다.
 - Track A checkpoint로 초기화하는 안(B2-A)은 RQ4와 섞이므로 별도 arm으로만 둔다. 기본은 off.
 
 ## 6. 학습 프로토콜 동일성 (B1-Matched = B2)
 
+- **H7 주기 크기:** 모든 계열에서 **1주기 = self-play 1,000판**(H7-c1 = 1,000판, c2 = 누적 2,000판, …). 곡선의 x축 해상도가 이 단위다.
 - **같게 유지:** 네트워크 구조, PUCT simulations, optimizer, batch, LR schedule, replay buffer 규칙, 주기당 self-play 양,
   승급 프로토콜, self-play opening 프로토콜, 증명 라벨링 예산, 평가 프로토콜.
 - **다른 것:** 초기화와 데이터 provenance.
@@ -146,8 +151,8 @@ B2-H6
 
 ### 7.4 compute ceiling
 
-- **GPU-hours 상한 = B1-Champion 고유 GPU-hours × k**, 그리고 **CPU-hours 상한 = B1-Champion 고유 CPU-hours × k**. 제안값 k = 5.
-- 둘 중 하나라도 먼저 닿으면 B2를 멈춘다.
+- **soft review = 3×.** B2의 GPU-hours 또는 CPU-hours가 B1-Champion 고유 값의 3배에 닿으면 한 번 진단한다(현재 Elo, 주기별 기울기, GPU·CPU 사용량). 멈추지 않는다. 진단 결과로 프로토콜을 바꾸지 않는다(바꾸려면 §6의 별도 arm).
+- **hard ceiling = 5×.** GPU-hours 또는 CPU-hours 중 하나라도 B1-Champion 고유 값의 5배에 닿으면 B2를 멈춘다.
 - 상한까지 catch-up 기준을 못 넘으면 결과는 "multiplier > k"(censored)로 보고한다. 실패가 아니라 측정 결과다.
 - B1-Matched는 자기 수렴 기준(§9)까지 돌린다. B2와의 RQ2 곡선 비교는 두 계열이 모두 지나간 자원 구간에서만 한다.
 
@@ -157,6 +162,8 @@ B2-H6
 
 - 고정 상대 풀: frozen V8(`v8:full`), H5 `puct_policy`, E2 VCT2 응징 상대, B1-Champion 확정 후에는 B1-Champion-v1.
 - 주기마다 모든 checkpoint(모든 계열)를 고정 착수 시간, 양색 균형, 공개 seed·opening으로 평가해 Elo(Bradley–Terry) 척도를 만든다.
+- **크기(§13 고정):** 고정 상대당 25쌍(50판) × 상대 3종(`v8:full`, H5 `puct_policy`, E2 상대) = 150판, 그리고 직전 checkpoint와 50쌍(100판). 주기당 약 250판.
+  B1-Champion-v1이 확정된 뒤의 B2·B1-Matched 주기에는 B1-Champion-v1과의 25쌍을 기록용으로 더한다.
 - 전술 gate: 금수 오류 0, `unsound_witness` 0, P93·P94 value 부호, must_block probe, E1 suite 지표.
 - 진행 확인과 곡선 그리기에 쓴다. 승급은 계열 안에서 직전 checkpoint를 상대로만 판정한다(§3).
 - 평가 대국은 어느 계열의 학습에도 쓰지 않는다.
@@ -167,23 +174,38 @@ B2-H6
 - probe 국면의 D4 정규형은 모든 계열의 학습 데이터에서 제외한다(§12.18 누출 규칙과 같음).
 - **봉인 세트는 두 개다.**
   - **Final-1:** B1-Champion H8 한 번에만 연다. B1-Champion-v1 확정용.
-  - **Final-2:** B1-Matched와 B2가 모두 끝난 뒤 한 번만 연다. B1-Champion-v1, B1-Matched 최종, B2 최종을 같은 세트에서 함께 평가한다.
+    - 고정 상대 3종(`v8:full`, H5 `puct_policy`, E2 상대) × 100쌍 = **600판**
+    - 봉인 tactical holdout 약 **200국면**: 금수 판정, must_block, VCF/VCT, VCT2, value 부호, stage 경로 안전
+  - **Final-2:** B1-Matched와 B2가 모두 끝난 뒤 한 번만 연다.
+    - 직접: B2 최종 ↔ B1-Champion-v1 **200쌍 = 400판**(RQ3 catch-up 판정)
+    - 공통: B1-Champion-v1, B1-Matched 최종, B2 최종 각각 × 상대 3종 × 50쌍 = 모델당 300판, **합 900판**(B1-Matched를 넣어야 RQ2를 Final-2로 주장할 수 있다)
+    - 합계 **1,300판**. B1-Matched를 지름길(§2)로 생략했다면 1,000판
+- **구성 규칙.** Final-1과 Final-2는 seed·opening·국면을 완전히 분리한다. 규칙 엔진으로 새로 생성한 합법 opening·국면을 쓰고,
+  RenjuNet train, B1 계열 self-play, 웹 대국, E1-dev, E1-S, 기존 probe와 D4 정규형이 겹치면 뺀다. 기존 probe는 safety test로만 계속 쓴다.
+- **재사용 금지.** 연 holdout에서 문제가 보여도 그 모델을 고쳐 같은 holdout으로 다시 재지 않는다. 결과는 그대로 보존하고, 고친 모델은 v2로 등록해 새 봉인 세트로 잰다.
   - Final-1 결과를 본 상태로 B2를 개발하므로, 최종 비교(RQ2, RQ3)는 Final-2로만 주장한다.
 - 열기 전에 판정 기준(§9)과 판 수를 고정한다. 연 뒤에 기준을 바꾸지 않는다.
 
 ## 9. 사전 고정 기준
 
-**B1 수렴 기준** (B1-Champion H7 시작 전 고정, B1-Matched도 같은 기준).
-연속 2개 주기에서 직전 checkpoint 대비 점수 향상의 쌍 bootstrap 하한이 0 이하이면 수렴으로 본다.
+**B1 수렴 기준** (B1-Champion H7 시작 전 고정, B1-Matched도 같은 기준). 아래 세 조건을 모두 만족하면 수렴이다.
+
+1. H7 주기를 **최소 3개** 끝냈다.
+2. **연속 2개 주기**에서 직전 checkpoint와의 50쌍 대국 점수 향상(score − 0.5)의 쌍 bootstrap 95% 하한이 0 이하다.
+3. 그 checkpoint가 §8.1 전술 gate에서 회귀가 없다.
+
+수렴한 주기의 checkpoint 중 마지막 것을 B1 최종 후보로 하고 H8로 간다. 50쌍은 검출력이 낮아 작은 향상을 놓칠 수 있다. 최소 3주기 조건이 그 위험을 줄인다.
 
 **B2 catch-up 기준** (B2 시작 전 고정). 아래 세 조건을 모두 만족하면 목표 수준 도달이다.
 
-1. **직접:** 목표 모델(RQ3는 B1-Champion-v1)과 짝 대국에서 score ≥ 0.45, 쌍 bootstrap 하한 ≥ 0.40. 판 수는 미리 고정한다(예: 200판 이상).
-2. **공통 척도:** Arena Elo 차 ≤ 50, 95% 구간을 함께 보고한다.
+1. **직접:** 목표 모델(RQ3는 B1-Champion-v1)과 **200쌍 = 400판**에서 score ≥ 0.45, 쌍 bootstrap 95% 하한 ≥ 0.40.
+   - 400판인 이유: 관측 score가 정확히 0.45일 때 이항 근사 95% 하한이 200판 ≈ 0.383, 300판 ≈ 0.395, 400판 ≈ 0.402다. 두 조건을 같이 두려면 400판이 필요하다.
+   - score 0.45 ≈ Elo −35다.
+2. **공통 척도:** Arena Elo **점추정** 차 ≤ 50. 95% 구간은 보고만 한다(구간 전체를 ±50 안에 넣는 조건은 두지 않는다. 불확실성 조건은 1번이 맡는다).
 3. **전술:** §8.1 전술 gate를 모두 통과한다.
 
-진행 중에는 Monitoring Arena로 판정하고, 최종 주장은 Final-2에서 같은 기준으로 다시 확인한다.
-수치(0.45 / 0.40 / 50 / 판 수 / k)는 B2를 시작하기 전에 최종 고정한다.
+- 진행 중에는 주기마다 Monitoring Arena로 후보를 고른다. 후보가 생기면 B1-Champion-v1과 200쌍 직접 대국을 돌려 1·2·3을 확인한다(Final-2 seed는 쓰지 않는다).
+- 통과하면 B2를 멈추고 Final-2를 연다. 최종 주장은 Final-2의 같은 기준으로만 한다. Final-2에서 통과하지 못하면 "개발 seed에서는 도달, 봉인 holdout에서는 미도달"로 보고한다.
 
 ## 10. 목표선 버전
 
@@ -201,7 +223,7 @@ B2-H6
   H6 → H7-c1, c2, … (주기 경계에서만 엔진 v2…vK) → 수렴
   → H8: Final-1 개봉 → ★ B1-Champion-v1 확정
 ══════════ 비교 실험 준비 ══════════
-  catch-up 수치, k, B2-H3′ 예산, Monitoring Arena 상대 풀 고정
+  §13 수치 재확인(이미 고정, 변경 시 기록), Monitoring Arena 상대 풀 확인
 ══════════ B1-Matched (vK ≠ v1일 때만) ══════════
   H3 checkpoint + TB-Engine-vK → H6 → H7-c1, c2, … → 수렴
 ══════════ B2 ══════════
@@ -224,14 +246,20 @@ B2-H6
 > B1-Champion은 프로젝트 내 최강 모델이었다. 같은 최종 Hybrid 엔진을 고정한 B1-Matched와 B2를 비교해 RenjuNet 사전학습의 효과를 측정했고,
 > 별도로 B2가 B1-Champion의 기력에 도달하기까지 필요한 GPU-hours, CPU-hours, self-play 양을 측정했다.
 
-## 13. B2 시작 전에 고정할 결정
+## 13. 확정 수치 (2026-10-09 고정)
 
-| # | 항목 | 제안 |
+결과를 본 뒤 바꾸지 않는다. 바꿔야 하면 이유와 날짜를 이 표 아래에 적고, 바꾸기 전 결과와 함께 보고한다.
+
+| 항목 | 값 | 고정 시점(늦어도) |
 |---|---|---|
-| 1 | B1 수렴 기준 | 연속 2주기 향상 하한 ≤ 0 (B1-Champion H7 전에 고정) |
-| 2 | catch-up 수치 | score ≥ 0.45, 하한 ≥ 0.40, Elo 차 ≤ 50, 판 수 고정 |
-| 3 | compute ceiling | GPU·CPU 각각 B1-Champion × 5 |
-| 4 | Monitoring Arena 상대 풀과 seed | §8.1 목록, 계열별 seed 블록 예약 |
-| 5 | Final-1·Final-2 구성 | seed 블록, opening 세트, probe 세트, 판 수. TB-Engine-v1 동결 때 manifest 커밋 |
-| 6 | B2-H3′ 예산 | self-play 판 수, 학습 step, 정지 기준 |
-| 7 | B2-retuned, B2-A arm | 기본 off |
+| H7 주기 크기 | self-play **1,000판** | B1-Champion H6 시작 전 |
+| B1 최소 H7 주기 | **3** | B1-Champion H7 시작 전 |
+| B1 수렴 | 연속 2주기, 직전 checkpoint 50쌍 향상 하한 ≤ 0, 전술 회귀 없음 | B1-Champion H7 시작 전 |
+| Monitoring Arena | 상대 3종 × **25쌍** + 직전 checkpoint 50쌍 | B1-Champion H7 시작 전 |
+| Final-1 | 상대 3종 × **100쌍 = 600판** + tactical **약 200국면** | `TB-Engine-v1` 동결 때 manifest |
+| catch-up 직접 | **200쌍 = 400판**, score **≥ 0.45**, 쌍 bootstrap 하한 **≥ 0.40** | B2-H3′ 시작 전 |
+| catch-up Elo | 점추정 차 **≤ 50**, 95% 구간은 보고 | B2-H3′ 시작 전 |
+| compute | soft review **3×**, hard ceiling GPU **5×** 또는 CPU **5×** | B2-H3′ 시작 전 |
+| B2-H3′ | **2,000판** + unique position **≥ 100,000**, hard cap **3,000판**, 10 epoch, batch 1,024 | B2-H3′ 시작 전 |
+| Final-2 | 직접 **400판** + 공통 모델당 **300판**(3종 × 50쌍) | `TB-Engine-v1` 동결 때 manifest |
+| B2-retuned, B2-A | **off** | — |
