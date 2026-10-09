@@ -1,0 +1,24 @@
+﻿ply,player,actor,row0,col0,row,col,seconds,forced_policy_stage,simulation_mode,selected_simulations,best_root_tactical_score,v6_selected_threat_type,v6_selected_reasons,v7_own_vcf_found,v7_safety_removed,v7_safety_inconclusive,v7_self_forbidden_penalized,v7_stage4_tiebreak_applied,v7_module_seconds,v8_route,v8_changed,v8_v7_move,v8_attack_status,v8_attack_move,v8_attack_seconds,v8_vct_seconds,v8_vct_budget_exhausted,v8_attack_budget_exhausted,v8_root_rank,v8_root_seconds,v8_root_budget_exhausted,vct2_checked,vct2_switched,vct2_nodes,vct2_seconds,board_hash
+1,BLACK,OPENING_RULE,7,7,8,8,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,eb3218584d8405d2
+2,WHITE,HUMAN,8,8,9,9,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,25767e3750c6ba36
+3,BLACK,S3-VCT2-v1,8,7,9,8,1.6955143999657594,,normal,50,138,,[],False,0,0,0,False,0.05704659997718409,tree,False,"[9, 8]",,,0.03305129997897893,0.0,False,False,1,0.29727029998321086,False,"[[9, 8, ""SAFE""]]",False,0,0.02448939997702837,8cfd7b601dca4aa1
+4,WHITE,HUMAN,6,7,7,8,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,a597acd2c8f520a9
+5,BLACK,S3-VCT2-v1,7,8,8,9,1.6469155000522733,,normal,50,276,,[],False,0,0,0,False,0.056557799980510026,tree,False,"[8, 9]",,,0.03143069997895509,0.0,False,False,1,0.27266230003442615,False,"[[8, 9, ""SAFE""]]",False,0,0.023811199993360788,3b55cfd68485a501
+6,WHITE,HUMAN,7,10,8,11,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,49c237221153de36
+7,BLACK,S3-VCT2-v1,7,6,8,7,1.6137213000329211,,normal,50,868,,[],False,0,0,0,False,0.10355619998881593,tree,False,"[8, 7]",,,0.07438089995412156,0.0,False,False,1,0.2863024999969639,False,"[[8, 7, ""SAFE""]]",False,0,0.02242990001104772,252d39548a145d10
+8,WHITE,HUMAN,7,5,8,6,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,76b59c9f159f8e8d
+9,BLACK,S3-VCT2-v1,9,6,10,7,1.6374617000110447,,normal,50,840,,[],False,0,0,0,False,0.11078260000795126,tree,False,"[10, 7]",,,0.08248829998774454,0.0,False,False,1,0.3181197000085376,False,"[[10, 7, ""SAFE""]]",False,0,0.02242560003651306,e806128172a42c3e
+10,WHITE,HUMAN,6,9,7,10,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,7fc285fa2838cf94
+11,BLACK,S3-VCT2-v1,6,5,7,6,2.3492896999814548,,normal,50,1412,,[],False,0,0,0,False,0.20225909998407587,tree,False,"[7, 6]",,,0.17166140000335872,0.0,False,False,1,0.3451737000141293,False,"[[7, 6, ""SAFE""]]",False,760,0.5951426000101492,eb678ec9193e7955
+12,WHITE,HUMAN,5,4,6,5,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,537d139a694dfece
+13,BLACK,S3-VCT2-v1,8,6,9,7,2.7050995999597944,,normal,50,1568,,[],False,0,0,0,False,0.5629274999955669,tree,False,"[9, 7]",,,0.5267606000415981,0.0,False,False,1,0.41725379996933043,False,"[[9, 7, ""SAFE""]]",False,634,0.5593161000288092,25765547f62fd410
+14,WHITE,HUMAN,10,6,11,7,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,d4293eb34c3e5478
+15,BLACK,S3-VCT2-v1,9,5,10,6,1.068708200007677,,,0,,,[],False,0,0,0,False,1.0670140000293031,own_vct,True,,WIN,"[10, 6]",1.0280206999741495,0.0,False,False,0,0.0,False,,False,0,0.0,3609c7b276c4a87a
+16,WHITE,HUMAN,6,8,7,9,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,c2bf19b85bc87aaf
+17,BLACK,S3-VCT2-v1,6,6,7,7,0.01349600002868101,,,0,,,[],True,0,0,0,False,0.00914139999076724,own_vcf,False,"[7, 7]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,a336117686e24f9e
+18,WHITE,HUMAN,5,6,6,7,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,fa14cffc7326b5d0
+19,BLACK,S3-VCT2-v1,9,8,10,9,0.010719900019466877,,,0,,,[],True,0,0,0,False,0.008457099960651249,own_vcf,False,"[10, 9]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,db1b96f2508badd0
+20,WHITE,HUMAN,10,9,11,10,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,8e4f160f88225418
+21,BLACK,S3-VCT2-v1,9,7,10,8,0.0017914000200107694,3,,0,,,[],False,0,0,0,False,0.0,stage3,False,"[10, 8]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,763e56bef2a16c9d
+22,WHITE,HUMAN,9,9,10,10,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,540f52c0c1f252df
+23,BLACK,S3-VCT2-v1,9,4,10,5,0.0019745000172406435,1,,0,,,[],False,0,0,0,False,0.0,stage1,False,"[10, 5]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,9ced8314f2ae3687

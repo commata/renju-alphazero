@@ -1,0 +1,32 @@
+﻿ply,player,actor,row0,col0,row,col,seconds,forced_policy_stage,simulation_mode,selected_simulations,best_root_tactical_score,v6_selected_threat_type,v6_selected_reasons,v7_own_vcf_found,v7_safety_removed,v7_safety_inconclusive,v7_self_forbidden_penalized,v7_stage4_tiebreak_applied,v7_module_seconds,v8_route,v8_changed,v8_v7_move,v8_attack_status,v8_attack_move,v8_attack_seconds,v8_vct_seconds,v8_vct_budget_exhausted,v8_attack_budget_exhausted,v8_root_rank,v8_root_seconds,v8_root_budget_exhausted,vct2_checked,vct2_switched,vct2_nodes,vct2_seconds,board_hash
+1,BLACK,OPENING_RULE,7,7,8,8,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,eb3218584d8405d2
+2,WHITE,HUMAN,8,9,9,10,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,25767e3750c6ba36
+3,BLACK,S3-VCT2-v1,9,7,10,8,1.6733409999869764,,normal,50,138,,[],False,0,0,0,False,0.055497100052889436,tree,False,"[10, 8]",,,0.03229159995680675,0.0,False,False,1,0.2562337000272237,False,"[[10, 8, ""SAFE""]]",False,0,0.022491200012154877,4a7a7ff22810f1cc
+4,WHITE,HUMAN,6,7,7,8,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,37fbe13d25bb2ee9
+5,BLACK,S3-VCT2-v1,7,8,8,9,1.6342255999916233,,normal,50,240,,[],False,0,0,0,False,0.05613679997622967,tree,False,"[8, 9]",,,0.030656599963549525,0.0,False,False,1,0.2784263000357896,False,"[[8, 9, ""SAFE""]]",False,0,0.02296500001102686,d796cfe5d9385800
+6,WHITE,HUMAN,7,6,8,7,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,c0d81323f3f533a6
+7,BLACK,S3-VCT2-v1,8,8,9,9,1.713446700014174,,normal,50,342,,[],False,0,0,0,False,0.05750799999805167,tree,False,"[9, 9]",,,0.0304362999740988,0.0,False,False,1,0.3016273999819532,False,"[[9, 9, ""SAFE""]]",False,50,0.15275750000728294,6a91b0382e40b366
+8,WHITE,HUMAN,9,8,10,9,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,b0326d4b98bf4727
+9,BLACK,S3-VCT2-v1,7,9,8,10,2.6895460999803618,,normal,50,914,,[],False,0,0,0,False,0.13061190000735223,tree,False,"[8, 10]",,,0.10273210000013933,0.0,False,False,1,0.36091300001135096,False,"[[8, 10, ""SAFE""]]",False,1675,1.0852488999953493,8273f2e0f39019fa
+10,WHITE,HUMAN,10,6,11,7,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,00f3e20bfc3d80f7
+11,BLACK,S3-VCT2-v1,7,10,8,11,6.5033381000394,,normal,50,1512,,[],False,1,0,0,False,0.5111483000218868,tree,False,"[8, 11]",,,0.4737301000277512,0.0,False,False,1,0.41354590002447367,False,"[[8, 11, ""UNKNOWN""]]",False,10000,4.561235500033945,d12591a001d76202
+12,WHITE,HUMAN,7,11,8,12,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,f75ca9812c2bf506
+13,BLACK,S3-VCT2-v1,6,10,7,11,6.17455560003873,,normal,50,1596,,[],False,0,0,0,False,0.14265210001030937,tree,False,"[7, 11]",,,0.11444019997725263,0.0,False,False,1,0.4033595999935642,False,"[[7, 11, ""UNKNOWN""]]",False,10000,4.546119300008286,70fbc55ac7d8ef7f
+14,WHITE,HUMAN,5,11,6,12,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,feb1e1685b36f500
+15,BLACK,S3-VCT2-v1,6,8,7,9,7.451842000009492,,normal,50,978,,[],False,0,0,0,False,0.11560939997434616,tree,False,"[7, 9]",,,0.08209929999429733,0.0,False,False,1,1.7620185000123456,False,"[[7, 9, ""UNKNOWN""]]",False,10000,4.3452157999854535,0fcfdf18c32bb958
+16,WHITE,HUMAN,5,8,6,9,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,a1bf999d36c999b1
+17,BLACK,S3-VCT2-v1,8,5,9,6,1.1160915999789722,4,,0,,,[],False,0,0,0,False,0.36521620000712574,stage4,False,"[9, 6]",,,0.36042539996560663,0.7457749999593943,False,False,0,0.0,False,,False,0,0.0,bac967c2b0ffda74
+18,WHITE,HUMAN,5,10,6,11,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,83660a0344b5f5d6
+19,BLACK,S3-VCT2-v1,5,9,6,10,82.90358499996364,4,,0,,,[],False,0,0,0,False,82.07424779998837,stage4,False,"[6, 10]",,,82.06810959998984,0.8255580000113696,False,True,0,0.0,False,,False,0,0.0,e7418a5e76a90840
+20,WHITE,HUMAN,8,6,9,7,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,a014a41bd447b5f1
+21,BLACK,S3-VCT2-v1,6,6,7,7,6.968793699983507,4,,0,,,[],False,0,0,0,False,1.2409068000270054,stage4,False,"[7, 7]",,,1.2226550000486895,5.72325430001365,False,False,0,0.0,False,,False,0,0.0,a4aa1eddd348f6b8
+22,WHITE,HUMAN,5,5,6,6,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,d82c4718467ac767
+23,BLACK,S3-VCT2-v1,3,11,4,12,0.005912400025408715,,,0,,,[],True,0,0,0,False,0.0034989999840036035,own_vcf,False,"[4, 12]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,850b91000ebbbb6f
+24,WHITE,HUMAN,4,10,5,11,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,6e9422e656d618c2
+25,BLACK,S3-VCT2-v1,10,10,11,11,0.005080100032500923,,,0,,,[],True,0,0,0,False,0.0029174000374041498,own_vcf,False,"[11, 11]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,463763ca72c2f3bf
+26,WHITE,HUMAN,9,9,10,10,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,64d74410293594de
+27,BLACK,S3-VCT2-v1,8,10,9,11,0.0055404999875463545,,,0,,,[],True,0,0,0,False,0.002490999992005527,own_vcf,False,"[9, 11]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,526ed3bb1eb3c3ee
+28,WHITE,HUMAN,9,10,10,11,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,761cf793be713916
+29,BLACK,S3-VCT2-v1,9,11,10,12,0.0021714999456889927,3,,0,,,[],False,0,0,0,False,0.0,stage3,False,"[10, 12]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,21a266cac7655fdd
+30,WHITE,HUMAN,10,12,11,13,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,af9db53d8770b158
+31,BLACK,S3-VCT2-v1,5,7,6,8,0.0007102999952621758,1,,0,,,[],False,0,0,0,False,0.0,stage1,False,"[6, 8]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,7e63df01207edbab

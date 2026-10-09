@@ -2650,3 +2650,76 @@ S3-VCT2-v1 ADOPT + FREEZE → E0 재검증 ✅ → [웹 실전 stress] → E1-de
   - 흑 3판 + 백 3판 정도면 충분하다.
   - 웹에서 발견한 국면은 offline으로 참값을 확정한 뒤 **E1-dev 후보로만** 등록한다.
   - 웹 결과를 보고 설정을 바꾸거나, 그 사례로 성능을 주장하지 않는다.
+
+### 12.27 웹 실전 stress test 결과 (8판)와 stage 경로 coverage gap (2026-10-09)
+
+입력: `docs/mcts-v8-results/web_stress_20261009/`(원본 로그 8판과 veto 국면 1개). 재검증 결과는 `web_stress_20261009_recheck.json`, 재검증 도구는 `scripts/web_recheck.py`. 좌표는 1-indexed (행, 열)이다.
+
+**provenance.**
+- 8판 모두 엔진은 S3-VCT2-v1이고 설정과 checkpoint 해시가 동결값과 같다. git_dirty = False.
+- 실행 커밋은 `dde01ea`다. `b06ecd6..dde01ea` 사이 `src/` 변경은 새 파일 `analysis/s3_vct2_v1.py`(설정 상수와 checkpoint 확인)뿐이다. 그래서 탐색과 solver 동작은 같다.
+- `b25aa3e..b06ecd6` 사이에는 `src/` 변경이 없다.
+
+#### 결과 요약 (External Web Stress Cases — E1/E2 성적에 넣지 않음)
+
+- **성적:** AI 7승 1패. AI 백 3승 1패, AI 흑 4승.
+  - 67수 대국은 무르기 2회라 정식 집계에서 빼면 6승 1패다.
+  - 모든 판이 같은 seed와 같은 상대였고, 4판은 18~25수에 끝났다.
+  - **승률로 해석하지 않는다.**
+- **경로:** AI 124수 중 tree 53, stage4 20, stage2 20, own_vcf 11, stage3 7, stage1 7, own_vct 5, stage5 1.
+  - tree 53수는 모두 VCT2 검사를 받았다. 첫 검사 결과는 SAFE 37, UNKNOWN 15, UNSAFE 1이다.
+  - **UNKNOWN 비율은 28%다.** S3 벤치마크에서도 1,910개 중 336개(17.6%)였다. "UNKNOWN이면 그대로 둔다"는 규칙은 드문 경우가 아니라 tree 수의 1/5~1/4에 적용된다.
+- **시간:** AI 착수 중앙값 1.63초, p95 82.9초, 최대 124.4초. VCT2 검사는 중앙값 0.19초, p95 4.9초, 최대 9.5초다.
+  - 긴 수는 모두 S3 밖이다. V8-C root 검사 최대 118초, V8-A stage4 VCT 최대 85초, V8-B 자기 공격 최대 82초.
+  - 지연 문제는 별도 트랙(L)으로 둔다. S3 예산을 줄이는 것은 우선순위가 아니다.
+
+#### veto 사례 (AI 백 20수, 대국 `161802`)
+
+- tree의 root 자식은 **3개뿐**이었다: (9,6) 95회 방문, (8,5) 4회, (9,8) 1회.
+- VCT2 검사 결과: (9,6) UNSAFE, (8,5) UNSAFE, (9,8) UNKNOWN. 그래서 (9,8)로 교체했고, 이 대국은 AI가 38수에 이겼다.
+- **전체 solver 재검증(10M):** 세 수 모두 PROVEN_LOSS다.
+  - (9,6): 깊이 2
+  - (8,5): 깊이 1
+  - (9,8): 깊이 2, 207k 노드, 149초
+- **판정:** 8411 p8과 같은 유형이다. UNKNOWN 대안으로 빠져나왔지만 그 수도 졌고, 상대가 응징하지 못해 이겼다. **rescue가 아니다.**
+- 후보 pool이 3개뿐이었으므로 POOL_MISS 위험도 보여 준다(E1에서 측정).
+
+#### 1패 (대국 `155734`, AI 백, 33수 패배)
+
+| 수 | 경로 | 선택 | 엔진 판정 | 재검증 |
+|---|---|---|---|---|
+| 백 12 | tree | (7,10) | VCT1 SAFE, VCT2 **UNKNOWN**(10k) | selective 1M: 패배 못 찾음. 전체 10M: **UNKNOWN**(예산 소진). 미확정 |
+| 백 14 | **stage4** | (10,8) | V7은 (7,11)을 골랐는데 VCT1 UNKNOWN이었다. V8-A가 VCT1 SAFE인 (10,8)로 교체했다. **VCT2 검사는 실행되지 않았다** | 전체 클래스: **깊이 2 패배**(9.3k 노드) |
+| 백 16, 18, 22 | stage4 | — | 확장 후보 22~24개가 모두 VCT1 UNSAFE | — |
+
+**P14(백 14 차례)의 합법수 212개 전부를 전체 클래스(1M)로 판정했다.**
+- 209개는 깊이 0, 1개는 깊이 1, 실제로 둔 (10,8)은 깊이 2 패배다.
+- **패배가 증명되지 않은 수는 (7,11) 하나뿐**이다(1M에서 UNKNOWN, 797초). 바로 V7이 원래 골랐던 수다.
+- **엔진의 10k VCT2 검사를 stage4에서 돌렸다면:** (10,8)은 UNSAFE(7,779 노드, 7초)로 잡히고, (7,11)은 UNKNOWN이다. 그러면 S3 규칙상 유일한 미반박 수 (7,11)로 교체된다.
+
+**해석.**
+- 이 패배는 S3 탐지기의 오류가 아니다. 잘못된 증명은 0건이다.
+- 이 패배는 **ROUTE_COVERAGE_MISS의 강한 후보**다. stage 경로에는 VCT2 검사가 없다.
+- 같은 사례에서 V8-A의 규칙 문제도 드러났다. V8-A는 "VCT1 SAFE를 VCT1 UNKNOWN보다 우선"하는데, 여기서는 VCT2 패배인 SAFE 수를 미반박 UNKNOWN 수보다 앞에 두었다.
+- **확정 조건:** (7,11)의 10M 판정(데스크톱).
+  - VCT2_CLEAR이면 rescue 가능한 수를 놓친 것으로 확정한다.
+  - PROVEN_LOSS이면 P14는 이미 진 국면이다. 원인은 그 앞(백 12, 10M에서도 UNKNOWN)으로 넘어간다.
+
+#### 설계 방향 (S3-VCT2-v1 동결 유지)
+
+1. **E1에 route 축을 추가한다.**
+   - manifest에 `source_route`, `vct2_eligible`(tree만 true), `vct2_checked`를 기록한다.
+   - 주 지표(E1-P/N/C)는 지금처럼 tree 경로만 쓴다(S3-v1의 적용 범위).
+   - 별도 층 **E1-S(stage 경로)**: 같은 로그의 stage4/5 착수를 screen한다. 둔 수가 VCT2 패배이고 방어 집합(`_stage4_order`과 확장 후보)에 VCT2_CLEAR나 미반박 수가 있으면 `ROUTE_COVERAGE_MISS`로 센다. 그 빈도와 rescue 가능성이 S3를 stage 경로로 넓힐 근거가 된다.
+   - **구현은 사용자 확인 뒤에 한다.** 이미 시작한 E1 실행과 파일이 섞이지 않게 별도 단계와 별도 파일로 만든다.
+2. **E3 후보 표에 추가한다**(E1 결과를 보기 전에 고정):
+
+| E1 결과 | E3 후보 |
+|---|---|
+| ROUTE_COVERAGE_MISS가 많음 | **S3-stage**: stage4/5 최종 수에도 같은 selective VCT2 veto. 대안은 방어 집합 안에서만. V8-A의 "VCT1 SAFE 우선"보다 VCT2 증명 패배 회피를 앞에 둔다 |
+| BUDGET_AMBIGUITY가 많음 (p8, 웹 veto 유형) | 대안에만 추가 예산, 2-pass 확인 |
+
+3. **UNKNOWN 비율(17.6%~28%) 자체를 추적한다.** E1의 DETECT_MISS와 TRUTH_UNRESOLVED가 이 구간에서 나온다. 웹 백 12도 10M에서조차 UNKNOWN이었다. 일부는 depth-2 solver로는 판정이 불가능한 국면으로 남는다.
+4. **지연(L 트랙)은 분리한다.** 제한시간이 있는 웹 대국이 목표가 될 때 V8-C, V8-A, V8-B의 solver 꼬리를 다룬다. E1/E2와 섞지 않는다.
+
+**순서:** (7,11) 10M 판정 → E1-dev(tree 주 지표, 지금 실행분) → E1-S(stage 층, 승인 후 구현) → E2 → 필요하면 E3(S3-stage 포함) → E1-holdout → H6.

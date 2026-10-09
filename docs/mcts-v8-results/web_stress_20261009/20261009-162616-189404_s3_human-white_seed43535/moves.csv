@@ -1,0 +1,26 @@
+﻿ply,player,actor,row0,col0,row,col,seconds,forced_policy_stage,simulation_mode,selected_simulations,best_root_tactical_score,v6_selected_threat_type,v6_selected_reasons,v7_own_vcf_found,v7_safety_removed,v7_safety_inconclusive,v7_self_forbidden_penalized,v7_stage4_tiebreak_applied,v7_module_seconds,v8_route,v8_changed,v8_v7_move,v8_attack_status,v8_attack_move,v8_attack_seconds,v8_vct_seconds,v8_vct_budget_exhausted,v8_attack_budget_exhausted,v8_root_rank,v8_root_seconds,v8_root_budget_exhausted,vct2_checked,vct2_switched,vct2_nodes,vct2_seconds,board_hash
+1,BLACK,OPENING_RULE,7,7,8,8,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,eb3218584d8405d2
+2,WHITE,HUMAN,8,5,9,6,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,25767e3750c6ba36
+3,BLACK,S3-VCT2-v1,6,7,7,8,1.8210521999862976,,normal,50,138,,[],False,0,0,0,False,0.05824919999577105,tree,False,"[7, 8]",,,0.03453000000445172,0.0,False,False,1,0.3051251000142656,False,"[[7, 8, ""SAFE""]]",False,0,0.027145300002302974,57694c416d866997
+4,WHITE,HUMAN,5,7,6,8,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,a0fcdb8021896b7a
+5,BLACK,S3-VCT2-v1,6,8,7,9,1.6645112999831326,,normal,50,240,,[],False,0,0,0,False,0.05936800001654774,tree,False,"[7, 9]",,,0.03272099996684119,0.0,False,False,1,0.27746899996418506,False,"[[7, 9, ""SAFE""]]",False,0,0.024313799978699535,b16ac370555e8997
+6,WHITE,HUMAN,6,9,7,10,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,daa4a0afb0162f13
+7,BLACK,S3-VCT2-v1,7,8,8,9,1.675332199956756,,normal,50,812,,[],False,0,0,0,False,0.08706170000368729,tree,False,"[8, 9]",,,0.05844019999494776,0.0,False,False,1,0.28810850001173094,False,"[[8, 9, ""SAFE""]]",False,0,0.02468680002493784,b648eefe6e715152
+8,WHITE,HUMAN,8,8,9,9,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,49e21f8032a22120
+9,BLACK,S3-VCT2-v1,7,6,8,7,1.6354007000336424,,normal,50,950,,[],False,0,0,0,False,0.13227289996575564,tree,False,"[8, 7]",,,0.10367550002411008,0.0,False,False,1,0.31253249995643273,False,"[[8, 7, ""SAFE""]]",False,0,0.04683470004238188,23c793904384e9bc
+10,WHITE,HUMAN,7,5,8,6,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,562e5c58e69047fa
+11,BLACK,S3-VCT2-v1,5,6,6,7,2.9200854999944568,,normal,50,1650,,[],False,0,0,0,False,0.18274390004808083,tree,False,"[6, 7]",,,0.15006810001796111,0.0,False,False,1,0.4393655000021681,False,"[[6, 7, ""SAFE""]]",False,1614,1.0515083000063896,3088b555a03aa958
+12,WHITE,HUMAN,8,9,9,10,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,797d3766ba5013fb
+13,BLACK,S3-VCT2-v1,8,7,9,8,1.2942998000071384,4,,0,,,[],False,0,0,0,False,0.8449831999605522,stage4,False,"[9, 8]",,,0.8375140000134706,0.4468097999924794,False,False,0,0.0,False,,False,0,0.0,686a40cecb7076b0
+14,WHITE,HUMAN,10,7,11,8,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,9961093c2be9f9aa
+15,BLACK,S3-VCT2-v1,6,6,7,7,2.218839199980721,,,0,,,[],False,0,0,0,False,2.217380599991884,own_vct,True,,WIN,"[7, 7]",2.2102441000170074,0.0,False,False,0,0.0,False,,False,0,0.0,ba0d3fca1fff1435
+16,WHITE,HUMAN,8,6,9,7,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,914597f9ec239db6
+17,BLACK,S3-VCT2-v1,3,4,4,5,0.009741200017742813,,,0,,,[],True,0,0,0,False,0.007906300015747547,own_vcf,False,"[4, 5]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,b2e04a1d00bd4e64
+18,WHITE,HUMAN,4,5,5,6,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,1d1da3b3e7ca8c18
+19,BLACK,S3-VCT2-v1,3,6,4,7,0.009163899987470359,,,0,,,[],True,0,0,0,False,0.007267499982845038,own_vcf,False,"[4, 7]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,0a84535d6ba5c8d6
+20,WHITE,HUMAN,4,6,5,7,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,6ee028e70244abc1
+21,BLACK,S3-VCT2-v1,6,5,7,6,0.009229300019796938,,,0,,,[],True,0,0,0,False,0.006892699981108308,own_vcf,False,"[7, 6]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,4615293edf884c60
+22,WHITE,HUMAN,6,4,7,5,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,8f1df1ea126a8275
+23,BLACK,S3-VCT2-v1,5,4,6,5,0.0019293000223115087,3,,0,,,[],False,0,0,0,False,0.0,stage3,False,"[6, 5]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,b077863556bfcf50
+24,WHITE,HUMAN,4,3,5,4,,,,,,,[],,,,,,,,,,,,,,,,,,,,,,,5a4ff721d018b912
+25,BLACK,S3-VCT2-v1,9,8,10,9,0.0006921999738551676,1,,0,,,[],False,0,0,0,False,0.0,stage1,False,"[10, 9]",,,0.0,0.0,False,False,0,0.0,False,,False,0,0.0,209a434cf108c644

@@ -1,0 +1,180 @@
+{
+ "format": "web-stress-recheck-v1",
+ "engine_commit_of_games": "dde01ea8ab52d44e0bc73d6217c281efda2a2e14",
+ "note": "1-indexed (row, col). full = every legal quiet move of the attacker, depth 0-2.",
+ "budgets": {
+  "full_10M": {
+   "node_limit": 20000,
+   "call_limit": 100000,
+   "node_budget": 10000000
+  },
+  "full_1M_all_moves": {
+   "node_limit": 20000,
+   "call_limit": 100000,
+   "node_budget": 1000000
+  },
+  "engine_10k": {
+   "node_limit": 20000,
+   "call_limit": 20000,
+   "node_budget": 10000
+  }
+ },
+ "key_moves": [
+  {
+   "position": "VETO-P20",
+   "move": [
+    9,
+    6
+   ],
+   "selective_1M": {
+    "selective_1M": "PROVEN_LOSS",
+    "sel_depth": 2,
+    "verified": true
+   },
+   "full_10M": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 7954,
+    "budget_exhausted": false,
+    "seconds": 6.61
+   }
+  },
+  {
+   "position": "VETO-P20",
+   "move": [
+    8,
+    5
+   ],
+   "selective_1M": {
+    "selective_1M": "PROVEN_LOSS",
+    "sel_depth": 1,
+    "verified": true
+   },
+   "full_10M": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 1,
+    "nodes": 4501,
+    "budget_exhausted": false,
+    "seconds": 3.09
+   }
+  },
+  {
+   "position": "VETO-P20",
+   "move": [
+    9,
+    8
+   ],
+   "selective_1M": {
+    "selective_1M": "PROVEN_LOSS",
+    "sel_depth": 2,
+    "verified": true
+   },
+   "full_10M": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 207262,
+    "budget_exhausted": false,
+    "seconds": 148.85
+   }
+  },
+  {
+   "position": "LOSS-P12",
+   "move": [
+    7,
+    10
+   ],
+   "selective_1M": {
+    "selective_1M": "NO_TARGETED_VCT2_FOUND",
+    "sel_depth": null,
+    "verified": null
+   },
+   "full_10M": {
+    "status": "UNKNOWN",
+    "lost_depth": null,
+    "nodes": 4505895,
+    "budget_exhausted": true,
+    "seconds": 3235.05
+   }
+  },
+  {
+   "position": "LOSS-P14",
+   "move": [
+    10,
+    8
+   ],
+   "selective_1M": {
+    "selective_1M": "PROVEN_LOSS",
+    "sel_depth": 2,
+    "verified": true
+   },
+   "full_10M": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 9273,
+    "budget_exhausted": false,
+    "seconds": 8.22
+   }
+  }
+ ],
+ "pending": [
+  {
+   "position": "LOSS-P14",
+   "move": [
+    7,
+    11
+   ],
+   "full_1M": {
+    "status": "UNKNOWN",
+    "lost_depth": null,
+    "nodes": 1000000,
+    "budget_exhausted": true,
+    "seconds": 796.88
+   },
+   "full_10M": "not finished in the cloud (2 h limit): run on the desktop"
+  }
+ ],
+ "engine_10k_check_if_run": [
+  {
+   "position": "LOSS-P14",
+   "move": [
+    10,
+    8
+   ],
+   "status": "UNSAFE",
+   "nodes": 7779
+  },
+  {
+   "position": "LOSS-P14",
+   "move": [
+    7,
+    11
+   ],
+   "status": "UNKNOWN",
+   "nodes": 10000
+  },
+  {
+   "position": "LOSS-P12",
+   "move": [
+    7,
+    10
+   ],
+   "status": "UNKNOWN",
+   "nodes": 10000
+  }
+ ],
+ "p14_all_legal_moves_full_1M": {
+  "legal_moves": 212,
+  "counts": {
+   "PROVEN_LOSS:0": 209,
+   "PROVEN_LOSS:2": 1,
+   "PROVEN_LOSS:1": 1,
+   "UNKNOWN:None": 1
+  },
+  "not_proven_lost": [
+   [
+    7,
+    11
+   ]
+  ]
+ }
+}

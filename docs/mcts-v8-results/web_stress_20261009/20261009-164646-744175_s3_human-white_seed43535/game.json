@@ -1,0 +1,6867 @@
+{
+  "started_at": "2026-10-09T16:26:17.429669+09:00",
+  "finished_at": "2026-10-09T16:46:46.744175+09:00",
+  "agent_key": "s3",
+  "agent_name": "S3-VCT2-v1",
+  "seed": 43535,
+  "human_color": "WHITE",
+  "winner": "BLACK",
+  "winner_actor": "S3-VCT2-v1",
+  "result": "AI_WIN",
+  "number_of_moves": 67,
+  "ai_total_seconds": 587.7655001999228,
+  "moves": [
+    {
+      "ply": 1,
+      "board_hash": "eb3218584d8405d2",
+      "player": "BLACK",
+      "actor": "OPENING_RULE",
+      "row0": 7,
+      "col0": 7,
+      "row": 8,
+      "col": 8,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 2,
+      "board_hash": "25767e3750c6ba36",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 8,
+      "col0": 8,
+      "row": 9,
+      "col": 9,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 3,
+      "board_hash": "8cfd7b601dca4aa1",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 8,
+      "col0": 7,
+      "row": 9,
+      "col": 8,
+      "seconds": 1.6504528999794275,
+      "diagnostics": {
+        "best_root_tactical_score": 138,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.05636200000299141,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.03204610000830144,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          7,
+          8
+        ],
+        "v8_puct_prior_top_prob": 0.24394226650855433,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 223,
+        "v8_root_checked": [
+          [
+            [
+              8,
+              7
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 0.2733567000250332,
+        "v8_root_visits": [
+          [
+            [
+              7,
+              8
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              8,
+              7
+            ],
+            24,
+            0.4166666666666667
+          ],
+          [
+            [
+              6,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            4,
+            0.0
+          ],
+          [
+            [
+              8,
+              6
+            ],
+            14,
+            0.5714285714285714
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            2,
+            0.0
+          ],
+          [
+            [
+              9,
+              7
+            ],
+            5,
+            0.2
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.2941421999712475,
+        "v8_v7_move": [
+          8,
+          7
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              8,
+              7
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.025139300036244094,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 4,
+      "board_hash": "a597acd2c8f520a9",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 6,
+      "col0": 7,
+      "row": 7,
+      "col": 8,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 5,
+      "board_hash": "3b55cfd68485a501",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 7,
+      "col0": 8,
+      "row": 8,
+      "col": 9,
+      "seconds": 1.7135921999579296,
+      "diagnostics": {
+        "best_root_tactical_score": 276,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.057961200014688075,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.03171489998931065,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          7,
+          8
+        ],
+        "v8_puct_prior_top_prob": 0.46983375272272276,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 221,
+        "v8_root_checked": [
+          [
+            [
+              7,
+              8
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 0.2737421999918297,
+        "v8_root_visits": [
+          [
+            [
+              7,
+              8
+            ],
+            23,
+            0.13043478260869565
+          ],
+          [
+            [
+              7,
+              6
+            ],
+            21,
+            0.6190476190476191
+          ],
+          [
+            [
+              8,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            6,
+            -0.3333333333333333
+          ],
+          [
+            [
+              9,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.3575194999575615,
+        "v8_v7_move": [
+          7,
+          8
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              7,
+              8
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.02301949996035546,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 6,
+      "board_hash": "49c237221153de36",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 7,
+      "col0": 10,
+      "row": 8,
+      "col": 11,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 7,
+      "board_hash": "252d39548a145d10",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 7,
+      "col0": 6,
+      "row": 8,
+      "col": 7,
+      "seconds": 1.638288600021042,
+      "diagnostics": {
+        "best_root_tactical_score": 868,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.10462709999410436,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 1,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 21,
+        "v8_attack_candidates": 6,
+        "v8_attack_checked": [
+          [
+            [
+              7,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              7,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 56,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.07480300002498552,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          7,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.510375365367002,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 218,
+        "v8_root_checked": [
+          [
+            [
+              7,
+              6
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 0.2868247999576852,
+        "v8_root_visits": [
+          [
+            [
+              7,
+              6
+            ],
+            47,
+            0.48936170212765956
+          ],
+          [
+            [
+              6,
+              9
+            ],
+            2,
+            0.0
+          ],
+          [
+            [
+              9,
+              6
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              7,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              9
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.2208951000357047,
+        "v8_v7_move": [
+          7,
+          6
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              7,
+              6
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.024470600008498877,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 8,
+      "board_hash": "76b59c9f159f8e8d",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 7,
+      "col0": 5,
+      "row": 8,
+      "col": 6,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 9,
+      "board_hash": "e806128172a42c3e",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 9,
+      "col0": 6,
+      "row": 10,
+      "col": 7,
+      "seconds": 1.6260132999741472,
+      "diagnostics": {
+        "best_root_tactical_score": 840,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.11385309998877347,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 2,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 23,
+        "v8_attack_candidates": 8,
+        "v8_attack_checked": [
+          [
+            [
+              9,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              4
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 72,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.08566340000834316,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          9,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.6610332343684318,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 216,
+        "v8_root_checked": [
+          [
+            [
+              9,
+              6
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 6,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 0.2993502999888733,
+        "v8_root_visits": [
+          [
+            [
+              9,
+              8
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              6,
+              9
+            ],
+            2,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            6,
+            0.3333333333333333
+          ],
+          [
+            [
+              9,
+              6
+            ],
+            41,
+            0.4146341463414634
+          ],
+          [
+            [
+              5,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              5
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.1878738999948837,
+        "v8_v7_move": [
+          9,
+          6
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              9,
+              6
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.023557999986223876,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 10,
+      "board_hash": "7fc285fa2838cf94",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 10,
+      "col0": 5,
+      "row": 11,
+      "col": 6,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 11,
+      "board_hash": "e2202964ef73fe47",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 9,
+      "col0": 5,
+      "row": 10,
+      "col": 6,
+      "seconds": 1.801415800000541,
+      "diagnostics": {
+        "best_root_tactical_score": 1530,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.2247829000116326,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 6,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 24,
+        "v8_attack_candidates": 9,
+        "v8_attack_checked": [
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              4
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 294,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.19405629998072982,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          8,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.4366198909621284,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 215,
+        "v8_root_checked": [
+          [
+            [
+              9,
+              5
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 6,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 0.3298744999920018,
+        "v8_root_visits": [
+          [
+            [
+              6,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              6
+            ],
+            21,
+            0.5238095238095238
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            4,
+            0.5
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              10,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              5
+            ],
+            24,
+            0.8333333333333334
+          ],
+          [
+            [
+              5,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.2232346999808215,
+        "v8_v7_move": [
+          9,
+          5
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              9,
+              5
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.021867599978577346,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 12,
+      "board_hash": "84f718dca32aec74",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 9,
+      "col0": 7,
+      "row": 10,
+      "col": 8,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 13,
+      "board_hash": "f58d90b3ecff30f7",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 10,
+      "col0": 6,
+      "row": 11,
+      "col": 7,
+      "seconds": 1.9461029000231065,
+      "diagnostics": {
+        "best_root_tactical_score": 1530,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 2,
+        "planner_forced_plan_preserved": 3,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.3279417000012472,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 3,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 46,
+        "v8_attack_candidates": 10,
+        "v8_attack_checked": [
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              4
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 450,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.28033089998643845,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          10,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.611671486221132,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 221,
+        "v8_root_checked": [
+          [
+            [
+              10,
+              6
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 54,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 0.35220369999296963,
+        "v8_root_visits": [
+          [
+            [
+              6,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              6
+            ],
+            47,
+            0.6595744680851063
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            3,
+            0.3333333333333333
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              8
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.1341154999681748,
+        "v8_v7_move": [
+          10,
+          6
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              10,
+              6
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 44,
+        "v8_vct2_seconds": 0.13012230000458658,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 14,
+      "board_hash": "53e3e2f0d7ee90ef",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 8,
+      "col0": 6,
+      "row": 9,
+      "col": 7,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 15,
+      "board_hash": "75f4cf795c265604",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 10,
+      "col0": 8,
+      "row": 11,
+      "col": 9,
+      "seconds": 0.7254237000015564,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 4,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.12211160000879318,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 2,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 12,
+        "v8_attack_candidates": 10,
+        "v8_attack_checked": [
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              4
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              11,
+              7
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              7,
+              3
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              4
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              8
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 139,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.11637790000531822,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage4",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          10,
+          8
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 217,
+        "v8_vct_checked": [
+          [
+            [
+              10,
+              8
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct_nodes": 608,
+        "v8_vct_seconds": 0.5987884000060149,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 16,
+      "board_hash": "55eaf88834d1b142",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 9,
+      "col0": 8,
+      "row": 10,
+      "col": 9,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 17,
+      "board_hash": "90813abcbf4c08c6",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 11,
+      "col0": 7,
+      "row": 12,
+      "col": 8,
+      "seconds": 7.1775772999972105,
+      "diagnostics": {
+        "best_root_tactical_score": 1530,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.1125643000123091,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 2,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 6,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 11,
+        "v8_attack_candidates": 6,
+        "v8_attack_checked": [
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              11,
+              7
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              4
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              7,
+              3
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 77,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.07834229996660724,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          11,
+          7
+        ],
+        "v8_puct_prior_top_prob": 0.6482091817509138,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 237,
+        "v8_root_checked": [
+          [
+            [
+              11,
+              7
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 1906,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 1.277564100048039,
+        "v8_root_visits": [
+          [
+            [
+              6,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              7
+            ],
+            48,
+            0.7083333333333334
+          ],
+          [
+            [
+              8,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              3
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            2,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.2322085000341758,
+        "v8_v7_move": [
+          11,
+          7
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              11,
+              7
+            ],
+            "UNKNOWN"
+          ]
+        ],
+        "v8_vct2_nodes": 10000,
+        "v8_vct2_seconds": 4.553224899980705,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 18,
+      "board_hash": "76351ab55836fdd3",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 8,
+      "col0": 4,
+      "row": 9,
+      "col": 5,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 19,
+      "board_hash": "8c7561bc63d704f5",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 12,
+      "col0": 8,
+      "row": 13,
+      "col": 9,
+      "seconds": 120.87146080000093,
+      "diagnostics": {
+        "best_root_tactical_score": 1530,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 1.4216209999867715,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 12,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 2,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 6,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 16,
+        "v8_attack_candidates": 8,
+        "v8_attack_checked": [
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 2778,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 1.3805147999664769,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          12,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.5395066781563104,
+        "v8_root_budget_exhausted": true,
+        "v8_root_calls": 9999,
+        "v8_root_checked": [
+          [
+            [
+              12,
+              8
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            "UNKNOWN"
+          ]
+        ],
+        "v8_root_nodes": 232163,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 113.41642279998632,
+        "v8_root_visits": [
+          [
+            [
+              6,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              8
+            ],
+            30,
+            0.6666666666666666
+          ],
+          [
+            [
+              6,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            5,
+            -0.2
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            13,
+            0.23076923076923078
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              4
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.161095799994655,
+        "v8_v7_move": [
+          12,
+          8
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              12,
+              8
+            ],
+            "UNKNOWN"
+          ]
+        ],
+        "v8_vct2_nodes": 10000,
+        "v8_vct2_seconds": 4.854175500047859,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 20,
+      "board_hash": "e37b7806f5d41898",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 13,
+      "col0": 9,
+      "row": 14,
+      "col": 10,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 21,
+      "board_hash": "41719ad85df6dadb",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 6,
+      "col0": 4,
+      "row": 7,
+      "col": 5,
+      "seconds": 124.3971166999545,
+      "diagnostics": {
+        "best_root_tactical_score": 1530,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.21988140000030398,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 2,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 6,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 14,
+        "v8_attack_candidates": 6,
+        "v8_attack_checked": [
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 288,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.18478670000331476,
+        "v8_attack_status": "",
+        "v8_changed": true,
+        "v8_puct_prior_top": [
+          12,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.6985239972334554,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 1717,
+        "v8_root_checked": [
+          [
+            [
+              12,
+              6
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              6,
+              4
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 252755,
+        "v8_root_rank": 3,
+        "v8_root_seconds": 118.1666225999943,
+        "v8_root_visits": [
+          [
+            [
+              6,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            3,
+            0.3333333333333333
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            47,
+            0.7021276595744681
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.167485099984333,
+        "v8_v7_move": [
+          12,
+          6
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              6,
+              4
+            ],
+            "UNKNOWN"
+          ]
+        ],
+        "v8_vct2_nodes": 10000,
+        "v8_vct2_seconds": 4.839051399962045,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 22,
+      "board_hash": "3da02720745bb26c",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 6,
+      "col0": 6,
+      "row": 7,
+      "col": 7,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 23,
+      "board_hash": "1332686f012af72c",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 5,
+      "col0": 7,
+      "row": 6,
+      "col": 8,
+      "seconds": 3.448229400033597,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 4,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.18343309999909252,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 2,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 14,
+        "v8_attack_candidates": 6,
+        "v8_attack_checked": [
+          [
+            [
+              6,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 288,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.17687730002216995,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage4",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          5,
+          7
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 796,
+        "v8_vct_checked": [
+          [
+            [
+              5,
+              7
+            ],
+            "SAFE"
+          ],
+          [
+            [
+              9,
+              3
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              4,
+              8
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              10,
+              2
+            ],
+            "UNSAFE"
+          ]
+        ],
+        "v8_vct_nodes": 5501,
+        "v8_vct_seconds": 3.25810909998836,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 24,
+      "board_hash": "8fed09caad5ac3c0",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 6,
+      "col0": 9,
+      "row": 7,
+      "col": 10,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 25,
+      "board_hash": "5b2231942f7334d5",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 6,
+      "col0": 8,
+      "row": 7,
+      "col": 9,
+      "seconds": 0.7498677999828942,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 4,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.08090620004804805,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 2,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 12,
+        "v8_attack_candidates": 4,
+        "v8_attack_checked": [
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 92,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.07703810004750267,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage4",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          6,
+          8
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 212,
+        "v8_vct_checked": [
+          [
+            [
+              6,
+              8
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct_nodes": 792,
+        "v8_vct_seconds": 0.66486800002167,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 26,
+      "board_hash": "caa1327ceb576e8b",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 9,
+      "col0": 3,
+      "row": 10,
+      "col": 4,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 27,
+      "board_hash": "6e7e53e1ef2b4069",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 10,
+      "col0": 2,
+      "row": 11,
+      "col": 3,
+      "seconds": 0.0009175000013783574,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 2,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage2",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          10,
+          2
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 28,
+      "board_hash": "1fe6a5299f132e99",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 8,
+      "col0": 11,
+      "row": 9,
+      "col": 12,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 29,
+      "board_hash": "b0ac3d38995e3c58",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 5,
+      "col0": 8,
+      "row": 6,
+      "col": 9,
+      "seconds": 6.401182400004473,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 4,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 2,
+        "planner_forced_plan_preserved": 2,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.5129839000292122,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 2,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 45,
+        "v8_attack_candidates": 6,
+        "v8_attack_checked": [
+          [
+            [
+              7,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              4,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              3,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 1056,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.5086165000102483,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage4",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          5,
+          8
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 840,
+        "v8_vct_checked": [
+          [
+            [
+              5,
+              8
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              9,
+              12
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              4,
+              7
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              10,
+              13
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              7,
+              9
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              4,
+              6
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              8,
+              9
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              7,
+              4
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              12,
+              7
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              5,
+              5
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              5,
+              9
+            ],
+            "UNSAFE"
+          ]
+        ],
+        "v8_vct_nodes": 12214,
+        "v8_vct_seconds": 5.882555399963167,
+        "v8_vct_widened": true,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 30,
+      "board_hash": "a26f4141bebb2138",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 7,
+      "col0": 9,
+      "row": 8,
+      "col": 10,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 31,
+      "board_hash": "edbc9ffb55206471",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 8,
+      "col0": 9,
+      "row": 9,
+      "col": 10,
+      "seconds": 2.5706304000341333,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 5,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.29770639998605475,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 29,
+        "v8_attack_candidates": 10,
+        "v8_attack_checked": [
+          [
+            [
+              4,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              3,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 574,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.2963306999881752,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage5",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          8,
+          9
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 203,
+        "v8_vct_checked": [
+          [
+            [
+              8,
+              9
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct_nodes": 4623,
+        "v8_vct_seconds": 2.2706454999861307,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 32,
+      "board_hash": "722f43df48bfc6e4",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 5,
+      "col0": 9,
+      "row": 6,
+      "col": 10,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 33,
+      "board_hash": "50edc669860c0ae5",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 4,
+      "col0": 8,
+      "row": 5,
+      "col": 9,
+      "seconds": 95.42307299998356,
+      "diagnostics": {
+        "best_root_tactical_score": 1604,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.32269699999596924,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 2,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 2,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 234,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 12,
+        "v8_attack_candidates": 6,
+        "v8_attack_checked": [
+          [
+            [
+              4,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              3,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 278,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.18012929998803884,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          6,
+          10
+        ],
+        "v8_puct_prior_top_prob": 0.3135321669394924,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 1086,
+        "v8_root_checked": [
+          [
+            [
+              4,
+              8
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 223401,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 89.62566449999576,
+        "v8_root_visits": [
+          [
+            [
+              4,
+              8
+            ],
+            22,
+            0.2727272727272727
+          ],
+          [
+            [
+              6,
+              10
+            ],
+            7,
+            -0.14285714285714285
+          ],
+          [
+            [
+              4,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            20,
+            0.4
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              7,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              4,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              5
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.3076180000207387,
+        "v8_v7_move": [
+          4,
+          8
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              4,
+              8
+            ],
+            "UNKNOWN"
+          ]
+        ],
+        "v8_vct2_nodes": 10000,
+        "v8_vct2_seconds": 4.163514400017448,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 34,
+      "board_hash": "878c90a37340a9a4",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 3,
+      "col0": 8,
+      "row": 4,
+      "col": 9,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 35,
+      "board_hash": "cc39cdbd725b2d3e",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 6,
+      "col0": 10,
+      "row": 7,
+      "col": 11,
+      "seconds": 3.8852115999907255,
+      "diagnostics": {
+        "best_root_tactical_score": 1492,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.17876139999134466,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 1,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 156,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 10,
+        "v8_attack_candidates": 4,
+        "v8_attack_checked": [
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 84,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.06972590001532808,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          12,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.42031336369985894,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 203,
+        "v8_root_checked": [
+          [
+            [
+              6,
+              10
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 3434,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 1.9487289999960922,
+        "v8_root_visits": [
+          [
+            [
+              6,
+              10
+            ],
+            23,
+            0.30434782608695654
+          ],
+          [
+            [
+              4,
+              9
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              3,
+              9
+            ],
+            2,
+            0.0
+          ],
+          [
+            [
+              9,
+              9
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              8,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            10,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              4,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            13,
+            0.6923076923076923
+          ],
+          [
+            [
+              7,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              7
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.4567321999929845,
+        "v8_v7_move": [
+          6,
+          10
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              6,
+              10
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 352,
+        "v8_vct2_seconds": 0.29910830000881106,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 36,
+      "board_hash": "bb3ba6677557d160",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 7,
+      "col0": 11,
+      "row": 8,
+      "col": 12,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 37,
+      "board_hash": "258d6716ef97389b",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 7,
+      "col0": 12,
+      "row": 8,
+      "col": 13,
+      "seconds": 18.626491000002716,
+      "diagnostics": {
+        "best_root_tactical_score": 1496,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.5809195999754593,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 20,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 1118,
+        "v7_safety_removed": 15,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 9,
+        "v8_attack_candidates": 3,
+        "v8_attack_checked": [
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 66,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.06138019997160882,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          7,
+          12
+        ],
+        "v8_puct_prior_top_prob": 0.7859655048487176,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 222,
+        "v8_root_checked": [
+          [
+            [
+              7,
+              12
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 27400,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 11.975690399995074,
+        "v8_root_visits": [
+          [
+            [
+              4,
+              9
+            ],
+            3,
+            -0.3333333333333333
+          ],
+          [
+            [
+              3,
+              9
+            ],
+            2,
+            1.0
+          ],
+          [
+            [
+              7,
+              12
+            ],
+            36,
+            -0.16666666666666666
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              11
+            ],
+            9,
+            -0.1111111111111111
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.5263459000270814,
+        "v8_v7_move": [
+          7,
+          12
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              7,
+              12
+            ],
+            "UNKNOWN"
+          ]
+        ],
+        "v8_vct2_nodes": 10000,
+        "v8_vct2_seconds": 4.541037399962079,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 38,
+      "board_hash": "470d914e08abd009",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 6,
+      "col0": 11,
+      "row": 7,
+      "col": 12,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 39,
+      "board_hash": "3702369d107ea5b7",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 5,
+      "col0": 11,
+      "row": 6,
+      "col": 12,
+      "seconds": 85.07111110002734,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 4,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.7800016999826767,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 1688,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 9,
+        "v8_attack_candidates": 3,
+        "v8_attack_checked": [
+          [
+            [
+              9,
+              9
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 66,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.06195200001820922,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage4",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          5,
+          11
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": true,
+        "v8_vct_calls": 119,
+        "v8_vct_checked": [
+          [
+            [
+              5,
+              11
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              9,
+              11
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              4,
+              11
+            ],
+            "UNSAFE"
+          ],
+          [
+            [
+              10,
+              11
+            ],
+            "UNSAFE"
+          ]
+        ],
+        "v8_vct_nodes": 200000,
+        "v8_vct_seconds": 84.28581510001095,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 40,
+      "board_hash": "1c7655ae38910135",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 9,
+      "col0": 11,
+      "row": 10,
+      "col": 12,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 41,
+      "board_hash": "34321cfe1892cdd8",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 10,
+      "col0": 11,
+      "row": 11,
+      "col": 12,
+      "seconds": 0.0011054999777115881,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 2,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage2",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          10,
+          11
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 42,
+      "board_hash": "2c1571593b0374ea",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 9,
+      "col0": 10,
+      "row": 10,
+      "col": 11,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 43,
+      "board_hash": "69f5574b66980c29",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 9,
+      "col0": 9,
+      "row": 10,
+      "col": 10,
+      "seconds": 0.0009133000276051462,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 2,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage2",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          9,
+          9
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 44,
+      "board_hash": "a2547c92eee43ae7",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 9,
+      "col0": 12,
+      "row": 10,
+      "col": 13,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 45,
+      "board_hash": "f95f34a960c12497",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 10,
+      "col0": 13,
+      "row": 11,
+      "col": 14,
+      "seconds": 0.0010038000182248652,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 2,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage2",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          10,
+          13
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 46,
+      "board_hash": "a8e6f4bf5a47bf7f",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 9,
+      "col0": 13,
+      "row": 10,
+      "col": 14,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 47,
+      "board_hash": "cad980db77d0add7",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 9,
+      "col0": 14,
+      "row": 10,
+      "col": 15,
+      "seconds": 0.0009277999633923173,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 2,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage2",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          9,
+          14
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 48,
+      "board_hash": "58f035146c033ad3",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 8,
+      "col0": 10,
+      "row": 9,
+      "col": 11,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 49,
+      "board_hash": "a12ffca391c00ebd",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 10,
+      "col0": 12,
+      "row": 11,
+      "col": 13,
+      "seconds": 84.94827630004147,
+      "diagnostics": {
+        "best_root_tactical_score": 1550,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 1.5766791999922134,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 4,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 2,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 3780,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 2,
+        "v8_attack_candidates": 2,
+        "v8_attack_checked": [
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 2,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0266818999662064,
+        "v8_attack_status": "",
+        "v8_changed": true,
+        "v8_puct_prior_top": [
+          12,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.34832060410949944,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 739,
+        "v8_root_checked": [
+          [
+            [
+              12,
+              6
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              10,
+              12
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 236366,
+        "v8_root_rank": 2,
+        "v8_root_seconds": 81.61748359998455,
+        "v8_root_visits": [
+          [
+            [
+              10,
+              10
+            ],
+            4,
+            0.0
+          ],
+          [
+            [
+              4,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              12
+            ],
+            21,
+            0.3333333333333333
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            24,
+            0.25
+          ],
+          [
+            [
+              11,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              3,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              12
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              10,
+              9
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              4,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              13
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              12
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              9
+            ],
+            0,
+            0.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.3411110999877565,
+        "v8_v7_move": [
+          12,
+          6
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              10,
+              12
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 780,
+        "v8_vct2_seconds": 0.4099573999992572,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 50,
+      "board_hash": "b17d614642b78797",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 10,
+      "col0": 14,
+      "row": 11,
+      "col": 15,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 51,
+      "board_hash": "6c38fccffdb5f6e8",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 11,
+      "col0": 8,
+      "row": 12,
+      "col": 9,
+      "seconds": 7.489778799994383,
+      "diagnostics": {
+        "best_root_tactical_score": 1578,
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 50,
+        "simulation_mode": "normal",
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.11558959999820217,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 14,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 4,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 141,
+        "v7_safety_removed": 1,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 2,
+        "v8_attack_candidates": 2,
+        "v8_attack_checked": [
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ]
+        ],
+        "v8_attack_nodes": 10,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.026931400003377348,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top": [
+          12,
+          6
+        ],
+        "v8_puct_prior_top_prob": 0.4047205881837709,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 203,
+        "v8_root_checked": [
+          [
+            [
+              11,
+              8
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_root_nodes": 13804,
+        "v8_root_rank": 1,
+        "v8_root_seconds": 5.877016899990849,
+        "v8_root_visits": [
+          [
+            [
+              10,
+              10
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              4,
+              9
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              12,
+              6
+            ],
+            3,
+            -1.0
+          ],
+          [
+            [
+              11,
+              10
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              3,
+              9
+            ],
+            2,
+            0.0
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              12
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              10
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              8,
+              13
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              5,
+              6
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              5
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              8
+            ],
+            41,
+            0.36585365853658536
+          ],
+          [
+            [
+              4,
+              7
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              9,
+              4
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              6
+            ],
+            1,
+            -1.0
+          ],
+          [
+            [
+              11,
+              12
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              6,
+              12
+            ],
+            0,
+            0.0
+          ],
+          [
+            [
+              11,
+              9
+            ],
+            1,
+            -1.0
+          ]
+        ],
+        "v8_route": "tree",
+        "v8_tree_seconds": 1.226636499981396,
+        "v8_v7_move": [
+          11,
+          8
+        ],
+        "v8_vct2_checked": [
+          [
+            [
+              11,
+              8
+            ],
+            "SAFE"
+          ]
+        ],
+        "v8_vct2_nodes": 378,
+        "v8_vct2_seconds": 0.26832880004076287,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 52,
+      "board_hash": "c3fc4cba1c3d357f",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 4,
+      "col0": 9,
+      "row": 5,
+      "col": 10,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 53,
+      "board_hash": "e0f8c56d67203499",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 3,
+      "col0": 9,
+      "row": 4,
+      "col": 10,
+      "seconds": 0.001046299992594868,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 2,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage2",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          3,
+          9
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 54,
+      "board_hash": "2e2bf53079ec03a2",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 5,
+      "col0": 10,
+      "row": 6,
+      "col": 11,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 55,
+      "board_hash": "57497f6ce8cb6363",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 2,
+      "col0": 7,
+      "row": 3,
+      "col": 8,
+      "seconds": 0.0011069999891333282,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 2,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage2",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          2,
+          7
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 56,
+      "board_hash": "9095ec32a898fc8e",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 11,
+      "col0": 6,
+      "row": 12,
+      "col": 7,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 57,
+      "board_hash": "c856bc9ad159013c",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 12,
+      "col0": 9,
+      "row": 13,
+      "col": 10,
+      "seconds": 15.578509099956136,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 15.576386300032027,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 236,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 530,
+        "v8_attack_candidates": 12,
+        "v8_attack_checked": [
+          [
+            [
+              12,
+              6
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              13,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              2,
+              10
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              14,
+              8
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              10,
+              7
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              13,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              1,
+              11
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              8,
+              5
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              4,
+              10
+            ],
+            "UNKNOWN"
+          ],
+          [
+            [
+              6,
+              12
+            ],
+            "REFUTED"
+          ],
+          [
+            [
+              12,
+              9
+            ],
+            "WIN"
+          ],
+          [
+            [
+              2,
+              8
+            ],
+            "UNKNOWN"
+          ]
+        ],
+        "v8_attack_move": [
+          12,
+          9
+        ],
+        "v8_attack_nodes": 73849,
+        "v8_attack_rank": 11,
+        "v8_attack_seconds": 15.534595900040586,
+        "v8_attack_status": "WIN",
+        "v8_changed": true,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "own_vct",
+        "v8_tree_seconds": 0.0,
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 58,
+      "board_hash": "a80004cdbd8086dc",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 10,
+      "col0": 7,
+      "row": 11,
+      "col": 8,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 59,
+      "board_hash": "5c2818cec0983451",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 1,
+      "col0": 11,
+      "row": 2,
+      "col": 12,
+      "seconds": 0.006087000016123056,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0038326000212691724,
+        "v7_own_vcf_found": true,
+        "v7_own_vcf_length": 4,
+        "v7_own_vcf_nodes": 14,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "own_vcf",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          1,
+          11
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 60,
+      "board_hash": "05ba3a259312b11f",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 2,
+      "col0": 10,
+      "row": 3,
+      "col": 11,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 61,
+      "board_hash": "265b797765e5df30",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 10,
+      "col0": 9,
+      "row": 11,
+      "col": 10,
+      "seconds": 0.00534109998261556,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0031190000008791685,
+        "v7_own_vcf_found": true,
+        "v7_own_vcf_length": 3,
+        "v7_own_vcf_nodes": 13,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "own_vcf",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          10,
+          9
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 62,
+      "board_hash": "fe4739f5b63dddc0",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 11,
+      "col0": 9,
+      "row": 12,
+      "col": 10,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 63,
+      "board_hash": "4041c32821a53849",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 12,
+      "col0": 6,
+      "row": 13,
+      "col": 7,
+      "seconds": 0.004974699986632913,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0025922999484464526,
+        "v7_own_vcf_found": true,
+        "v7_own_vcf_length": 2,
+        "v7_own_vcf_nodes": 12,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "own_vcf",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          12,
+          6
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 64,
+      "board_hash": "633a5286e0bb64f3",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 13,
+      "col0": 5,
+      "row": 14,
+      "col": 6,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 65,
+      "board_hash": "73e0a5a8ab95c1c8",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 12,
+      "col0": 7,
+      "row": 13,
+      "col": 8,
+      "seconds": 0.0015361999976448715,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 3,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage3",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          12,
+          7
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    },
+    {
+      "ply": 66,
+      "board_hash": "b5d0529fc8b30599",
+      "player": "WHITE",
+      "actor": "HUMAN",
+      "row0": 12,
+      "col0": 5,
+      "row": 13,
+      "col": 6,
+      "seconds": null,
+      "diagnostics": {}
+    },
+    {
+      "ply": 67,
+      "board_hash": "495651c3489705a2",
+      "player": "BLACK",
+      "actor": "S3-VCT2-v1",
+      "row0": 12,
+      "col0": 10,
+      "row": 13,
+      "col": 11,
+      "seconds": 0.00073490000795573,
+      "diagnostics": {
+        "black_43_candidates": 0,
+        "black_43_defense_candidates": 0,
+        "black_43_defense_complete_candidates": 0,
+        "forced_policy_stage": 1,
+        "future_black_43_defense_candidates": 0,
+        "future_black_43_setups": 0,
+        "future_white_33_setups": 0,
+        "future_white_43_setups": 0,
+        "future_white_44_setups": 0,
+        "planner_forced_plan_conflicts": 0,
+        "planner_forced_plan_preserved": 0,
+        "selected_simulations": 0,
+        "stage5_multi_root_injection": false,
+        "v6_root_injection_count": 0,
+        "v6_selected_reasons": [],
+        "v7_module_seconds": 0.0,
+        "v7_own_vcf_found": false,
+        "v7_own_vcf_length": 0,
+        "v7_own_vcf_nodes": 0,
+        "v7_safety_augmented": false,
+        "v7_safety_budget_exhausted": false,
+        "v7_safety_checked": 0,
+        "v7_safety_fallback": false,
+        "v7_safety_inconclusive": 0,
+        "v7_safety_nodes": 0,
+        "v7_safety_removed": 0,
+        "v7_self_forbidden_penalized": 0,
+        "v7_stage4_tiebreak_applied": false,
+        "v7_stage4_vcf_nodes": 0,
+        "v8_attack_budget_exhausted": false,
+        "v8_attack_calls": 0,
+        "v8_attack_candidates": 0,
+        "v8_attack_checked": [],
+        "v8_attack_nodes": 0,
+        "v8_attack_rank": 0,
+        "v8_attack_seconds": 0.0,
+        "v8_attack_status": "",
+        "v8_changed": false,
+        "v8_puct_prior_top_prob": 0.0,
+        "v8_root_budget_exhausted": false,
+        "v8_root_calls": 0,
+        "v8_root_checked": [],
+        "v8_root_nodes": 0,
+        "v8_root_rank": 0,
+        "v8_root_seconds": 0.0,
+        "v8_root_visits": [],
+        "v8_route": "stage1",
+        "v8_tree_seconds": 0.0,
+        "v8_v7_move": [
+          12,
+          10
+        ],
+        "v8_vct2_checked": [],
+        "v8_vct2_nodes": 0,
+        "v8_vct2_seconds": 0.0,
+        "v8_vct2_switched": false,
+        "v8_vct_budget_exhausted": false,
+        "v8_vct_calls": 0,
+        "v8_vct_checked": [],
+        "v8_vct_nodes": 0,
+        "v8_vct_seconds": 0.0,
+        "v8_vct_widened": false,
+        "white_33_candidates": 0,
+        "white_43_candidates": 0,
+        "white_44_candidates": 0
+      }
+    }
+  ],
+  "final_board": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      -1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      -1,
+      -1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      -1,
+      -1,
+      1,
+      -1,
+      1,
+      -1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1,
+      1,
+      1,
+      1,
+      -1,
+      -1,
+      -1,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      -1,
+      1,
+      -1,
+      1,
+      -1,
+      -1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      -1,
+      0,
+      1,
+      1,
+      -1,
+      -1,
+      1,
+      -1,
+      -1,
+      -1,
+      -1,
+      1
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      1,
+      -1,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1,
+      -1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1,
+      1,
+      1,
+      -1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      0,
+      -1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "agent_info": {
+    "engine": "S3-VCT2-v1",
+    "frozen_results_commit": "b06ecd6",
+    "engine_commit": "dde01ea8ab52d44e0bc73d6217c281efda2a2e14",
+    "git_dirty": false,
+    "config": {
+      "simulations": 50,
+      "tactical_simulations": 100,
+      "tactical_score_threshold": 1800,
+      "exploration": 1.4142135623730951,
+      "candidate_limit": 20,
+      "initial_width": 8,
+      "neighborhood_radius": 2,
+      "priority_top_k": 8,
+      "own_vcf_max_fours": 10,
+      "own_vcf_node_limit": 5000,
+      "safety_vcf_max_fours": 10,
+      "safety_vcf_node_limit": 4000,
+      "safety_precheck_node_limit": 8000,
+      "safety_total_node_limit": 8000,
+      "self_forbidden_min_white": 3,
+      "stage_vct_safety": true,
+      "vct_vcf_node_limit": 20000,
+      "vct_call_limit": 3000,
+      "vct_node_budget": 200000,
+      "own_vct_attack": true,
+      "attack_vcf_node_limit": 20000,
+      "attack_call_limit": 10000,
+      "attack_node_budget": 200000,
+      "root_vct_safety": true,
+      "root_vcf_node_limit": 20000,
+      "root_call_limit": 10000,
+      "root_node_budget": 400000,
+      "root_max_children": 4,
+      "root_vct_mode": "aggressive",
+      "root_policy_order": false,
+      "root_policy_extra": 0,
+      "tree_mode": "puct",
+      "puct_prior": "policy",
+      "puct_c": 1.5,
+      "root_vct2_check": true,
+      "vct2_node_limit": 20000,
+      "vct2_call_limit": 20000,
+      "vct2_node_budget": 10000,
+      "vct2_max_children": 4
+    },
+    "policy_checkpoint": "C:\\오목 강화학습\\renju-alphazero\\runs\\h3_policy_64x4\\best.pt",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+  },
+  "undo_count": 2,
+  "veto_positions": []
+}
