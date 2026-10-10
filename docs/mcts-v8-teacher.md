@@ -2853,6 +2853,7 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
 - `e1_manifest.json`, `e1_eval.json`: 데스크톱, `a85e311`, git_dirty = False, H3 checkpoint SHA-256이 S3와 같다.
 - `screen_summary.json`: 11.4 MB인 screen 원본의 요약과 SHA-256이다. manifest에 기록된 screen 해시와 일치한다.
 - `e1_dev_budget_diagnostic.json`: 아래 dev 진단 결과다.
+- 해시 주의: 데스크톱 원본은 CRLF였고 저장소는 LF로 정규화한다(`.gitattributes`). 그래서 `e1_eval.json`의 `manifest_sha256`(b4e76393…)은 데스크톱 원본 바이트의 해시이고, 커밋된 manifest 바이트의 해시(da6c9dbe…)와 다르다. 내용은 같다.
 
 #### 결과 (run = 국면 × seed 3)
 
