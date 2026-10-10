@@ -1,0 +1,723 @@
+{
+ "format": "e2-detection-diagnostic-v1",
+ "engine_commit": "0d27814",
+ "split": "diagnostic (E2 seeds 8413/8414 become dev for E3)",
+ "note": "For each E2 game lost after an opponent own_vct2 WIN (puct_policy_vct2 arm; both arms played identical games), our move just before that WIN (stage2 forced blocks excluded) is checked with the S3 selective depth-2 detector (SelectiveSolver, node_limit 20k, call_limit 20k) at several node budgets. The opponent proved each of these moves lost (its WIN is a selective depth-2 proof with every reply checked), so UNKNOWN here is a detection miss. Detection does not imply that a saving alternative existed.",
+ "rows": [
+  {
+   "key": "v8:full+vct2atk/8413/8/white",
+   "route": "tree",
+   "move": [
+    7,
+    2
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 7.1
+  },
+  {
+   "key": "v8:full+vct2atk/8413/8/white",
+   "route": "tree",
+   "move": [
+    7,
+    2
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 14.3
+  },
+  {
+   "key": "v8:full+vct2atk/8413/8/white",
+   "route": "tree",
+   "move": [
+    7,
+    2
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 41804,
+   "exhausted": false,
+   "s": 28.3
+  },
+  {
+   "key": "v8:full+vct2atk/8413/8/white",
+   "route": "tree",
+   "move": [
+    7,
+    2
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 41804,
+   "exhausted": false,
+   "s": 29.3
+  },
+  {
+   "key": "v8:full+vct2atk/8413/8/white",
+   "route": "tree",
+   "move": [
+    7,
+    2
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 41804,
+   "exhausted": false,
+   "s": 28.6
+  },
+  {
+   "key": "v8:full+vct2atk/8413/10/black",
+   "route": "stage4",
+   "move": [
+    7,
+    9
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 7.1
+  },
+  {
+   "key": "v8:full+vct2atk/8413/10/black",
+   "route": "stage4",
+   "move": [
+    7,
+    9
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 14.4
+  },
+  {
+   "key": "v8:full+vct2atk/8413/10/black",
+   "route": "stage4",
+   "move": [
+    7,
+    9
+   ],
+   "budget": 50000,
+   "status": "UNKNOWN",
+   "nodes": 50000,
+   "exhausted": true,
+   "s": 33.2
+  },
+  {
+   "key": "v8:full+vct2atk/8413/10/black",
+   "route": "stage4",
+   "move": [
+    7,
+    9
+   ],
+   "budget": 100000,
+   "status": "UNKNOWN",
+   "nodes": 100000,
+   "exhausted": true,
+   "s": 65.0
+  },
+  {
+   "key": "v8:full+vct2atk/8413/10/black",
+   "route": "stage4",
+   "move": [
+    7,
+    9
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 110254,
+   "exhausted": false,
+   "s": 72.7
+  },
+  {
+   "key": "v8:full+vct2atk/8413/12/black",
+   "route": "stage4",
+   "move": [
+    6,
+    3
+   ],
+   "budget": 10000,
+   "status": "UNSAFE",
+   "nodes": 3266,
+   "exhausted": false,
+   "s": 2.5
+  },
+  {
+   "key": "v8:full+vct2atk/8413/12/black",
+   "route": "stage4",
+   "move": [
+    6,
+    3
+   ],
+   "budget": 20000,
+   "status": "UNSAFE",
+   "nodes": 3266,
+   "exhausted": false,
+   "s": 2.3
+  },
+  {
+   "key": "v8:full+vct2atk/8413/12/black",
+   "route": "stage4",
+   "move": [
+    6,
+    3
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 3266,
+   "exhausted": false,
+   "s": 2.5
+  },
+  {
+   "key": "v8:full+vct2atk/8413/12/black",
+   "route": "stage4",
+   "move": [
+    6,
+    3
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 3266,
+   "exhausted": false,
+   "s": 2.2
+  },
+  {
+   "key": "v8:full+vct2atk/8413/12/black",
+   "route": "stage4",
+   "move": [
+    6,
+    3
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 3266,
+   "exhausted": false,
+   "s": 2.3
+  },
+  {
+   "key": "v8:full+vct2atk/8413/14/white",
+   "route": "stage4",
+   "move": [
+    8,
+    5
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 7.8
+  },
+  {
+   "key": "v8:full+vct2atk/8413/14/white",
+   "route": "stage4",
+   "move": [
+    8,
+    5
+   ],
+   "budget": 20000,
+   "status": "UNSAFE",
+   "nodes": 12043,
+   "exhausted": false,
+   "s": 9.3
+  },
+  {
+   "key": "v8:full+vct2atk/8413/14/white",
+   "route": "stage4",
+   "move": [
+    8,
+    5
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 12043,
+   "exhausted": false,
+   "s": 8.9
+  },
+  {
+   "key": "v8:full+vct2atk/8413/14/white",
+   "route": "stage4",
+   "move": [
+    8,
+    5
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 12043,
+   "exhausted": false,
+   "s": 9.1
+  },
+  {
+   "key": "v8:full+vct2atk/8413/14/white",
+   "route": "stage4",
+   "move": [
+    8,
+    5
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 12043,
+   "exhausted": false,
+   "s": 9.1
+  },
+  {
+   "key": "v8:full+vct2atk/8413/17/black",
+   "route": "stage5",
+   "move": [
+    7,
+    13
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 7.2
+  },
+  {
+   "key": "v8:full+vct2atk/8413/17/black",
+   "route": "stage5",
+   "move": [
+    7,
+    13
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 13.9
+  },
+  {
+   "key": "v8:full+vct2atk/8413/17/black",
+   "route": "stage5",
+   "move": [
+    7,
+    13
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 35024,
+   "exhausted": false,
+   "s": 26.2
+  },
+  {
+   "key": "v8:full+vct2atk/8413/17/black",
+   "route": "stage5",
+   "move": [
+    7,
+    13
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 35024,
+   "exhausted": false,
+   "s": 26.9
+  },
+  {
+   "key": "v8:full+vct2atk/8413/17/black",
+   "route": "stage5",
+   "move": [
+    7,
+    13
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 35024,
+   "exhausted": false,
+   "s": 27.1
+  },
+  {
+   "key": "v8:full+vct2atk/8413/19/black",
+   "route": "tree",
+   "move": [
+    3,
+    4
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 6.8
+  },
+  {
+   "key": "v8:full+vct2atk/8413/19/black",
+   "route": "tree",
+   "move": [
+    3,
+    4
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 14.7
+  },
+  {
+   "key": "v8:full+vct2atk/8413/19/black",
+   "route": "tree",
+   "move": [
+    3,
+    4
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 43316,
+   "exhausted": false,
+   "s": 30.0
+  },
+  {
+   "key": "v8:full+vct2atk/8413/19/black",
+   "route": "tree",
+   "move": [
+    3,
+    4
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 43316,
+   "exhausted": false,
+   "s": 29.2
+  },
+  {
+   "key": "v8:full+vct2atk/8413/19/black",
+   "route": "tree",
+   "move": [
+    3,
+    4
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 43316,
+   "exhausted": false,
+   "s": 29.6
+  },
+  {
+   "key": "v8:full+vct2atk/8414/2/black",
+   "route": "tree",
+   "move": [
+    9,
+    8
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 8.1
+  },
+  {
+   "key": "v8:full+vct2atk/8414/2/black",
+   "route": "tree",
+   "move": [
+    9,
+    8
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 17.1
+  },
+  {
+   "key": "v8:full+vct2atk/8414/2/black",
+   "route": "tree",
+   "move": [
+    9,
+    8
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 27053,
+   "exhausted": false,
+   "s": 23.0
+  },
+  {
+   "key": "v8:full+vct2atk/8414/2/black",
+   "route": "tree",
+   "move": [
+    9,
+    8
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 27053,
+   "exhausted": false,
+   "s": 24.0
+  },
+  {
+   "key": "v8:full+vct2atk/8414/2/black",
+   "route": "tree",
+   "move": [
+    9,
+    8
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 27053,
+   "exhausted": false,
+   "s": 23.3
+  },
+  {
+   "key": "v8:full+vct2atk/8414/9/white",
+   "route": "tree",
+   "move": [
+    9,
+    9
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 7.7
+  },
+  {
+   "key": "v8:full+vct2atk/8414/9/white",
+   "route": "tree",
+   "move": [
+    9,
+    9
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 14.5
+  },
+  {
+   "key": "v8:full+vct2atk/8414/9/white",
+   "route": "tree",
+   "move": [
+    9,
+    9
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 38416,
+   "exhausted": false,
+   "s": 28.0
+  },
+  {
+   "key": "v8:full+vct2atk/8414/9/white",
+   "route": "tree",
+   "move": [
+    9,
+    9
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 38416,
+   "exhausted": false,
+   "s": 28.1
+  },
+  {
+   "key": "v8:full+vct2atk/8414/9/white",
+   "route": "tree",
+   "move": [
+    9,
+    9
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 38416,
+   "exhausted": false,
+   "s": 28.2
+  },
+  {
+   "key": "v8:full+vct2atk/8414/10/white",
+   "route": "stage4",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 10000,
+   "status": "UNSAFE",
+   "nodes": 9199,
+   "exhausted": false,
+   "s": 7.5
+  },
+  {
+   "key": "v8:full+vct2atk/8414/10/white",
+   "route": "stage4",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 20000,
+   "status": "UNSAFE",
+   "nodes": 9199,
+   "exhausted": false,
+   "s": 7.8
+  },
+  {
+   "key": "v8:full+vct2atk/8414/10/white",
+   "route": "stage4",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 9199,
+   "exhausted": false,
+   "s": 7.6
+  },
+  {
+   "key": "v8:full+vct2atk/8414/10/white",
+   "route": "stage4",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 9199,
+   "exhausted": false,
+   "s": 8.0
+  },
+  {
+   "key": "v8:full+vct2atk/8414/10/white",
+   "route": "stage4",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 9199,
+   "exhausted": false,
+   "s": 7.9
+  },
+  {
+   "key": "v8:full+vct2atk/8414/13/white",
+   "route": "tree",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 7.0
+  },
+  {
+   "key": "v8:full+vct2atk/8414/13/white",
+   "route": "tree",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 13.5
+  },
+  {
+   "key": "v8:full+vct2atk/8414/13/white",
+   "route": "tree",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 50000,
+   "status": "UNKNOWN",
+   "nodes": 50000,
+   "exhausted": true,
+   "s": 32.5
+  },
+  {
+   "key": "v8:full+vct2atk/8414/13/white",
+   "route": "tree",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 74026,
+   "exhausted": false,
+   "s": 52.6
+  },
+  {
+   "key": "v8:full+vct2atk/8414/13/white",
+   "route": "tree",
+   "move": [
+    6,
+    8
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 74026,
+   "exhausted": false,
+   "s": 51.1
+  },
+  {
+   "key": "v8:full+vct2atk/8414/24/black",
+   "route": "tree",
+   "move": [
+    12,
+    8
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "exhausted": true,
+   "s": 6.5
+  },
+  {
+   "key": "v8:full+vct2atk/8414/24/black",
+   "route": "tree",
+   "move": [
+    12,
+    8
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "exhausted": true,
+   "s": 13.5
+  },
+  {
+   "key": "v8:full+vct2atk/8414/24/black",
+   "route": "tree",
+   "move": [
+    12,
+    8
+   ],
+   "budget": 50000,
+   "status": "UNKNOWN",
+   "nodes": 50000,
+   "exhausted": true,
+   "s": 32.9
+  },
+  {
+   "key": "v8:full+vct2atk/8414/24/black",
+   "route": "tree",
+   "move": [
+    12,
+    8
+   ],
+   "budget": 100000,
+   "status": "UNKNOWN",
+   "nodes": 100000,
+   "exhausted": true,
+   "s": 67.8
+  },
+  {
+   "key": "v8:full+vct2atk/8414/24/black",
+   "route": "tree",
+   "move": [
+    12,
+    8
+   ],
+   "budget": 200000,
+   "status": "UNKNOWN",
+   "nodes": 200000,
+   "exhausted": true,
+   "s": 138.2
+  }
+ ]
+}
