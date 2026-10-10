@@ -1,0 +1,130 @@
+{
+ "format": "e1-screen-summary-v1",
+ "note": "summary of runs/e1/screen.json (11.4 MB, not committed); full file sha256 below",
+ "screen_sha256": "c617b8296399edf953b0c8145bdae6060ccbeb6b4e5d36feb6e12c3c59241686",
+ "git_commit": "a85e311cb76a7776eb64f5025c3badb0eec33601",
+ "git_dirty": false,
+ "budget": {
+  "node_limit": 20000,
+  "call_limit": 100000,
+  "node_budget": 50000
+ },
+ "inputs": {
+  "h5_policy_8401.json": "00b83b631549538f0d4640a7dbae587736b06615d03d094c8862ed14863d9fc4",
+  "h5_policy_8402.json": "1abbb6c73b9e02f4196a2f85026c51505f365f1d3dc5e2457293d3abd40b01c9",
+  "s3_base_8411.json": "19c65d4b62bcb0b2901ff456d901aebbf8731d0d525aa4e2892a34dcf34829b6",
+  "s3_base_8412.json": "65b83b9523ddf16dfa7a47a4d733b9b2e11a98b8e1d71b9cca839875123acc87"
+ },
+ "summary": {
+  "items": 3991,
+  "status": {
+   "VCT2_CLEAR": 1763,
+   "UNKNOWN": 2222,
+   "PROVEN_LOSS": 6
+  }
+ },
+ "proven_loss_rows": [
+  {
+   "key": "8401-p4-white/11",
+   "source": "h5_policy_8401.json",
+   "ply": 11,
+   "result": "loss",
+   "played": [
+    8,
+    7
+   ],
+   "screen": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 14485,
+    "budget_exhausted": false,
+    "seconds": 12.51
+   }
+  },
+  {
+   "key": "8401-p16-white/11",
+   "source": "h5_policy_8401.json",
+   "ply": 11,
+   "result": "loss",
+   "played": [
+    7,
+    8
+   ],
+   "screen": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 2947,
+    "budget_exhausted": false,
+    "seconds": 3.05
+   }
+  },
+  {
+   "key": "8411-p8-white/11",
+   "source": "s3_base_8411.json",
+   "ply": 11,
+   "result": "win",
+   "played": [
+    4,
+    8
+   ],
+   "screen": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 21619,
+    "budget_exhausted": false,
+    "seconds": 19.1
+   }
+  },
+  {
+   "key": "8411-p8-white/13",
+   "source": "s3_base_8411.json",
+   "ply": 13,
+   "result": "win",
+   "played": [
+    3,
+    9
+   ],
+   "screen": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 25852,
+    "budget_exhausted": false,
+    "seconds": 21.17
+   }
+  },
+  {
+   "key": "8411-p22-white/13",
+   "source": "s3_base_8411.json",
+   "ply": 13,
+   "result": "win",
+   "played": [
+    4,
+    7
+   ],
+   "screen": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 34461,
+    "budget_exhausted": false,
+    "seconds": 31.39
+   }
+  },
+  {
+   "key": "8412-p4-white/11",
+   "source": "s3_base_8412.json",
+   "ply": 11,
+   "result": "win",
+   "played": [
+    4,
+    8
+   ],
+   "screen": {
+    "status": "PROVEN_LOSS",
+    "lost_depth": 2,
+    "nodes": 20551,
+    "budget_exhausted": false,
+    "seconds": 24.51
+   }
+  }
+ ]
+}

@@ -2846,3 +2846,87 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
   - S3의 비용 gate는 기존 S3 벤치마크 결과(§12.25)를 유지한다. E2에서 주로 보는 것은 효능과 응징 여부다.
 
 **순서:** P14 봉인(완료) → E1-dev(실행 중) → E1-S → E2(200k, 200판) → exposure 확인(10회 이상이면 그대로 해석, 미만이면 low_power 표시 후 필요할 때 E2b 400k) → E1 + E1-S + E2 종합 → E3 여부.
+
+### 12.30 E1-dev 결과와 dev 진단 (2026-10-10)
+
+결과 파일은 `docs/mcts-v8-results/e1/`에 있다.
+- `e1_manifest.json`, `e1_eval.json`: 데스크톱, `a85e311`, git_dirty = False, H3 checkpoint SHA-256이 S3와 같다.
+- `screen_summary.json`: 11.4 MB인 screen 원본의 요약과 SHA-256이다. manifest에 기록된 screen 해시와 일치한다.
+- `e1_dev_budget_diagnostic.json`: 아래 dev 진단 결과다.
+
+#### 결과 (run = 국면 × seed 3)
+
+| 항목 | 값 |
+|---|---|
+| screen 3,991개 | VCT2_CLEAR 1,763 / UNKNOWN 2,222(55.7%) / PROVEN_LOSS 6 |
+| suite | E1-P 5개(같은 에피소드 1개 제외), E1-N 0, E1-UNRESOLVED 0, E1-C 40 |
+| E1-P 15 run | TREE_AVOIDED 9, RESCUED 2, DETECT_MISS 3, TRUTH_UNRESOLVED 1 |
+| E1-C 120 run | NO_VETO 120 |
+| 지표 | rescue_rate 11/15, veto_recall 2/5, pool coverage 15/15, K4 coverage 14/15, conditional escape 2/2, unknown replacement 0/2, false veto 0, unsound witness 0, inconsistent 0 |
+| 비용 | VCT2 검사 p50 0.04초 / p95 6.2초 / 최대 9.7초. 착수 p50 2.2초 / p95 8.4초 / 최대 16.5초 |
+
+#### 읽는 법
+
+- **rescue_rate 11/15는 탐지기의 성과가 아니다.**
+  - 9 run은 tree가 처음부터 CLEAR 수를 골랐다(TREE_AVOIDED).
+  - 1 run은 tree가 참값이 UNKNOWN인 수를 골랐다(TRUTH_UNRESOLVED, 8401-p4 (3,5)).
+  - VCT2 검사가 실제로 패배수를 바꾼 것은 2 run이다.
+- **run은 독립이 아니다.**
+  - tree가 증명된 패배수를 고른 5 run은 국면 3개에서 나왔다.
+  - 국면 단위로 보면 탐지 성공 1개(8412-p4, 2 run), 실패 2개(8401-p16 1 run, 8411-p8 2 run)다.
+  - veto_recall 2/5의 Wilson 구간 [0.12, 0.77]도 run을 독립으로 본 값이라 실제보다 좁다.
+- **E1-C는 판별력 시험이 아니라 구현 건전성 확인이다.**
+  - control 120 run의 첫 검사는 모두 `SAFE`(NO_TARGETED)로 바로 끝났다. 50k screen에서 CLEAR로 끝난 쉬운 국면들이기 때문이다.
+  - selective PROVEN_LOSS는 구성상 증명이다(§12.18 원칙 3). 그래서 false veto 0은 "구현에 버그가 없다"는 확인이다. 어려운 국면에서의 오탐률 추정이 아니다.
+  - 국면 단위로 0/40이면 95% 상한은 8.8%다. run 단위 0/120이면 3.1%다.
+- **K4 coverage 14/15에서 빠진 1 run이 바로 패배수를 고른 run이다**(8411-p8 run 1). 패배수를 고른 5 run만 보면 K4 coverage는 4/5다.
+- **suite가 한쪽에 몰려 있다.**
+  - screen의 PROVEN_LOSS 6개와 E1-P 5개는 **모두 백 11–13수 개국 국면**이다.
+  - 그중 3개(8411-p8, 8411-p22, 8412-p4)는 이미 §12.25에서 본 S3 veto 국면이다.
+  - 50k screen이 중후반 패배를 거의 증명하지 못하기 때문이다(UNKNOWN 55.7%).
+  - 그래서 E1-dev 결과는 개국 직후 백의 방어 문제에 대한 메커니즘 진단이다. 실전 VCT2 실패율 추정으로 쓰지 않는다.
+
+#### dev 진단: DETECT_MISS는 예산 문제인가 (`e1_dev_budget_diagnostic.json`)
+
+**selective 검사 하나의 예산을 바꿔 가며 판정한 결과**(node_limit 20k, call_limit 20k)
+
+| run | 10k | 20k | 50k 이상 | 증명에 든 selective 노드 |
+|---|---|---|---|---:|
+| 8401-p16 (8,11) | UNKNOWN | UNKNOWN | PROVEN_LOSS | 39,378 |
+| 8411-p8 (7,8) | UNKNOWN | PROVEN_LOSS | PROVEN_LOSS | 11,320 |
+| 8411-p8 (5,7) | UNKNOWN | PROVEN_LOSS | PROVEN_LOSS | 10,057 |
+| 8412-p4 (5,7) / (5,6) | PROVEN_LOSS | 같음 | 같음 | 7,770 / 5,574 |
+
+- 세 DETECT_MISS는 모두 **selective 클래스 안의 패배**다. 공격 쪽 가지치기 때문에 원리적으로 못 찾는 경우가 아니라, 10k 안에 끝나지 않은 예산 문제다. 두 건은 10k를 아주 조금 넘었다.
+- 전체 클래스 참값의 노드 수(11,606 / 24,258 / 188,881)는 selective 노드 수와 다르다. 비교 기준으로 쓰지 않는다.
+
+**S3 교체 규칙을 패배수 5 run에 다시 적용한 결과**(기록된 root 자식 순서 사용. V8-C UNSAFE 건너뛰기는 eval 로그에 없어서 생략했다)
+
+| 예산 | RESCUED | 패배→패배 교체 | DETECT_MISS |
+|---|---|---|---|
+| 10k(실제) | 2 | 0 | 3 |
+| 20k | 3 | 1 | 1 |
+| 50k | 4 | 1 | 0 |
+
+- 20k와 50k 모두에서 8411-p8 run 1은 (7,8)을 잡은 뒤 다음 자식 (6,6)을 판정하지 못해(UNKNOWN) 그 수로 바꾼다. (6,6)은 참값이 PROVEN_LOSS다.
+  - 이 run에서 유일한 CLEAR 수 (8,8)은 K4 밖이다.
+  - 그래서 §12.25 8411 p8과 같은 유형(UNKNOWN 대안으로 교체했는데 그 수도 진다)이 다시 나온다.
+- 20k에서 8411-p8 run 2의 rescue는 UNKNOWN으로 판정된 대안 (8,8)이 우연히 CLEAR였기 때문이다. 50k에서는 (8,8)이 SAFE(NO_TARGETED)로 판정된다.
+- **해석.**
+  - 탐지 예산을 늘리면 detection recall은 오른다.
+  - 그러면 그다음 병목인 교체 단계(UNKNOWN 대안 허용, K4)가 드러난다.
+  - 예산을 늘리는 arm은 recall만으로 판정하지 않는다. `unknown_replacement_rate`, 패배→패배 교체, 비용을 함께 판정해야 한다.
+
+#### E3에 주는 근거 (결정은 E1-S·E2 뒤에 한다)
+
+- **1순위 후보는 E3-A: 탐지 예산 증가, K4 유지.**
+  - 20k는 dev의 놓친 3건 중 2건, 50k는 3건을 잡는다.
+  - 예산 값은 E1-S·E2를 본 뒤 holdout 판정 **전에** 고정한다. dev에서 3/3을 맞춘 50k를 골라 dev 성능으로 주장하지 않는다(§12.26 dev/holdout 규칙).
+- **비용.**
+  - UNKNOWN으로 끝나는 검사는 예산을 전부 쓴다. tree 수의 17.6–28%가 10k에서 UNKNOWN이었다(§12.27).
+  - 그래서 예산을 늘리면 그만큼의 착수에서 VCT2 비용이 거의 비례해서 는다. dev 재적용에서도 20k는 교체 포함 최대 28초, 50k는 51초였다.
+  - E3-A는 S3와 같은 end-to-end 비용 gate(시간 비율 ≤ 1.5)를 다시 통과해야 한다.
+- **E3-B(K6)와 교체 규칙**(검사한 대안이 모두 UNKNOWN일 때 무엇을 둘지)은 E3-A와 따로 측정한다. dev 재적용상 E3-A 다음 병목은 이쪽이다.
+- E1-holdout은 같은 규칙으로 캐면 다시 개국 국면에 몰린다. 그래서 holdout 보고에는 국면의 수순 위치 분포를 같이 낸다.
+
+**순서:** E1-dev(완료) → E1-S → E2(200k) → 종합 → E3(필요하면 E3-A부터) → E1-holdout.

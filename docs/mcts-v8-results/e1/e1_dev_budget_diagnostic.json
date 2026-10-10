@@ -1,0 +1,818 @@
+{
+ "format": "e1-dev-budget-diagnostic-v1",
+ "split": "dev",
+ "engine_commit": "7b82b1e",
+ "note": "Diagnostic on E1-dev only (not an E3 result). selective = SelectiveSolver depth 2, node_limit 20k, call_limit 20k, node_budget varied. rule = the S3 veto rule replayed offline on the logged root children of the five runs whose tree move was a proven loss; V8-C UNSAFE children are not skipped here (the eval log does not keep them), otherwise as _vct2_veto.",
+ "selective_sweep": [
+  {
+   "key": "8401-p16-white/11",
+   "move": [
+    8,
+    11
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "calls": 1696,
+   "exhausted": true,
+   "vcf_cut": 0,
+   "s": 11.8
+  },
+  {
+   "key": "8401-p16-white/11",
+   "move": [
+    8,
+    11
+   ],
+   "budget": 20000,
+   "status": "UNKNOWN",
+   "nodes": 20000,
+   "calls": 2622,
+   "exhausted": true,
+   "vcf_cut": 0,
+   "s": 21.1
+  },
+  {
+   "key": "8401-p16-white/11",
+   "move": [
+    8,
+    11
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 39378,
+   "calls": 3474,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 40.6
+  },
+  {
+   "key": "8401-p16-white/11",
+   "move": [
+    8,
+    11
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 39378,
+   "calls": 3474,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 40.4
+  },
+  {
+   "key": "8401-p16-white/11",
+   "move": [
+    8,
+    11
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 39378,
+   "calls": 3474,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 40.6
+  },
+  {
+   "key": "8401-p16-white/11",
+   "move": [
+    8,
+    11
+   ],
+   "budget": 1000000,
+   "status": "UNSAFE",
+   "nodes": 39378,
+   "calls": 3474,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 38.8
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    7,
+    8
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "calls": 463,
+   "exhausted": true,
+   "vcf_cut": 0,
+   "s": 8.8
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    7,
+    8
+   ],
+   "budget": 20000,
+   "status": "UNSAFE",
+   "nodes": 11320,
+   "calls": 674,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 10.1
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    7,
+    8
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 11320,
+   "calls": 674,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 10.4
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    7,
+    8
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 11320,
+   "calls": 674,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 10.2
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    7,
+    8
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 11320,
+   "calls": 674,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 10.4
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    7,
+    8
+   ],
+   "budget": 1000000,
+   "status": "UNSAFE",
+   "nodes": 11320,
+   "calls": 674,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 9.9
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 10000,
+   "status": "UNKNOWN",
+   "nodes": 10000,
+   "calls": 967,
+   "exhausted": true,
+   "vcf_cut": 0,
+   "s": 9.3
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 20000,
+   "status": "UNSAFE",
+   "nodes": 10057,
+   "calls": 981,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 9.3
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 10057,
+   "calls": 981,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 9.4
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 10057,
+   "calls": 981,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 9.1
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 10057,
+   "calls": 981,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 9.3
+  },
+  {
+   "key": "8411-p8-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 1000000,
+   "status": "UNSAFE",
+   "nodes": 10057,
+   "calls": 981,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 9.2
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 10000,
+   "status": "UNSAFE",
+   "nodes": 7770,
+   "calls": 728,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 7.9
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 20000,
+   "status": "UNSAFE",
+   "nodes": 7770,
+   "calls": 728,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 8.3
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 7770,
+   "calls": 728,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 7.5
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 7770,
+   "calls": 728,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 7.9
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 7770,
+   "calls": 728,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 8.1
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    7
+   ],
+   "budget": 1000000,
+   "status": "UNSAFE",
+   "nodes": 7770,
+   "calls": 728,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 7.5
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    6
+   ],
+   "budget": 10000,
+   "status": "UNSAFE",
+   "nodes": 5574,
+   "calls": 651,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 6.0
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    6
+   ],
+   "budget": 20000,
+   "status": "UNSAFE",
+   "nodes": 5574,
+   "calls": 651,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 6.0
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    6
+   ],
+   "budget": 50000,
+   "status": "UNSAFE",
+   "nodes": 5574,
+   "calls": 651,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 5.8
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    6
+   ],
+   "budget": 100000,
+   "status": "UNSAFE",
+   "nodes": 5574,
+   "calls": 651,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 5.8
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    6
+   ],
+   "budget": 200000,
+   "status": "UNSAFE",
+   "nodes": 5574,
+   "calls": 651,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 5.7
+  },
+  {
+   "key": "8412-p4-white/11",
+   "move": [
+    5,
+    6
+   ],
+   "budget": 1000000,
+   "status": "UNSAFE",
+   "nodes": 5574,
+   "calls": 651,
+   "exhausted": false,
+   "vcf_cut": 0,
+   "s": 5.7
+  }
+ ],
+ "s3_rule_replay": [
+  {
+   "key": "8401-p16-white/11",
+   "budget": 10000,
+   "checked": [
+    [
+     [
+      8,
+      11
+     ],
+     "UNKNOWN",
+     10000
+    ]
+   ],
+   "final": [
+    8,
+    11
+   ],
+   "final_truth": "PROVEN_LOSS",
+   "seconds": 10.8
+  },
+  {
+   "key": "8401-p16-white/11",
+   "budget": 20000,
+   "checked": [
+    [
+     [
+      8,
+      11
+     ],
+     "UNKNOWN",
+     20000
+    ]
+   ],
+   "final": [
+    8,
+    11
+   ],
+   "final_truth": "PROVEN_LOSS",
+   "seconds": 21.1
+  },
+  {
+   "key": "8401-p16-white/11",
+   "budget": 50000,
+   "checked": [
+    [
+     [
+      8,
+      11
+     ],
+     "UNSAFE",
+     39378
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     "SAFE",
+     88
+    ]
+   ],
+   "final": [
+    9,
+    7
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 39.0
+  },
+  {
+   "key": "8411-p8-white/11",
+   "budget": 10000,
+   "checked": [
+    [
+     [
+      7,
+      8
+     ],
+     "UNKNOWN",
+     10000
+    ]
+   ],
+   "final": [
+    7,
+    8
+   ],
+   "final_truth": "PROVEN_LOSS",
+   "seconds": 9.1
+  },
+  {
+   "key": "8411-p8-white/11",
+   "budget": 20000,
+   "checked": [
+    [
+     [
+      7,
+      8
+     ],
+     "UNSAFE",
+     11320
+    ],
+    [
+     [
+      6,
+      6
+     ],
+     "UNKNOWN",
+     20000
+    ]
+   ],
+   "final": [
+    6,
+    6
+   ],
+   "final_truth": "PROVEN_LOSS",
+   "seconds": 27.9
+  },
+  {
+   "key": "8411-p8-white/11",
+   "budget": 50000,
+   "checked": [
+    [
+     [
+      7,
+      8
+     ],
+     "UNSAFE",
+     11320
+    ],
+    [
+     [
+      6,
+      6
+     ],
+     "UNKNOWN",
+     50000
+    ]
+   ],
+   "final": [
+    6,
+    6
+   ],
+   "final_truth": "PROVEN_LOSS",
+   "seconds": 50.9
+  },
+  {
+   "key": "8411-p8-white/11",
+   "budget": 10000,
+   "checked": [
+    [
+     [
+      5,
+      7
+     ],
+     "UNKNOWN",
+     10000
+    ]
+   ],
+   "final": [
+    5,
+    7
+   ],
+   "final_truth": "PROVEN_LOSS",
+   "seconds": 9.1
+  },
+  {
+   "key": "8411-p8-white/11",
+   "budget": 20000,
+   "checked": [
+    [
+     [
+      5,
+      7
+     ],
+     "UNSAFE",
+     10057
+    ],
+    [
+     [
+      8,
+      8
+     ],
+     "UNKNOWN",
+     20000
+    ]
+   ],
+   "final": [
+    8,
+    8
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 25.3
+  },
+  {
+   "key": "8411-p8-white/11",
+   "budget": 50000,
+   "checked": [
+    [
+     [
+      5,
+      7
+     ],
+     "UNSAFE",
+     10057
+    ],
+    [
+     [
+      8,
+      8
+     ],
+     "SAFE",
+     38049
+    ]
+   ],
+   "final": [
+    8,
+    8
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 40.1
+  },
+  {
+   "key": "8412-p4-white/11",
+   "budget": 10000,
+   "checked": [
+    [
+     [
+      5,
+      7
+     ],
+     "UNSAFE",
+     7770
+    ],
+    [
+     [
+      5,
+      4
+     ],
+     "SAFE",
+     1278
+    ]
+   ],
+   "final": [
+    5,
+    4
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 9.4
+  },
+  {
+   "key": "8412-p4-white/11",
+   "budget": 20000,
+   "checked": [
+    [
+     [
+      5,
+      7
+     ],
+     "UNSAFE",
+     7770
+    ],
+    [
+     [
+      5,
+      4
+     ],
+     "SAFE",
+     1278
+    ]
+   ],
+   "final": [
+    5,
+    4
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 9.4
+  },
+  {
+   "key": "8412-p4-white/11",
+   "budget": 50000,
+   "checked": [
+    [
+     [
+      5,
+      7
+     ],
+     "UNSAFE",
+     7770
+    ],
+    [
+     [
+      5,
+      4
+     ],
+     "SAFE",
+     1278
+    ]
+   ],
+   "final": [
+    5,
+    4
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 9.8
+  },
+  {
+   "key": "8412-p4-white/11",
+   "budget": 10000,
+   "checked": [
+    [
+     [
+      5,
+      6
+     ],
+     "UNSAFE",
+     5574
+    ],
+    [
+     [
+      7,
+      8
+     ],
+     "SAFE",
+     2502
+    ]
+   ],
+   "final": [
+    7,
+    8
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 9.0
+  },
+  {
+   "key": "8412-p4-white/11",
+   "budget": 20000,
+   "checked": [
+    [
+     [
+      5,
+      6
+     ],
+     "UNSAFE",
+     5574
+    ],
+    [
+     [
+      7,
+      8
+     ],
+     "SAFE",
+     2502
+    ]
+   ],
+   "final": [
+    7,
+    8
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 8.7
+  },
+  {
+   "key": "8412-p4-white/11",
+   "budget": 50000,
+   "checked": [
+    [
+     [
+      5,
+      6
+     ],
+     "UNSAFE",
+     5574
+    ],
+    [
+     [
+      7,
+      8
+     ],
+     "SAFE",
+     2502
+    ]
+   ],
+   "final": [
+    7,
+    8
+   ],
+   "final_truth": "VCT2_CLEAR",
+   "seconds": 8.6
+  }
+ ]
+}
