@@ -19,6 +19,9 @@ by ``scripts/h5_calibrate_puct.py``), which applies to the tested arm only.
     puct_heur     PUCT, 1/rank prior over V8's own candidate order
     puct_policy   PUCT, H3 policy prior (one NN call per expanded node)
     puct_policy_vct2  puct_policy + S3-VCT2 (selective depth-2 veto after V8-C, §12.24)
+    puct_policy_vct2_50k    E3-A (§12.32): puct_policy_vct2 with a 50k node budget per VCT2 check
+    puct_policy_vct2_stage  E3-S (§12.32): puct_policy_vct2 + the same 10k check on Stage 4/5 moves
+                            (``analysis.e3_arms.StageVCT2Agent``; recorded per move as ``stage_vct2``)
 
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
@@ -86,6 +89,11 @@ ARMS = {
     'puct_heur': {'tree_mode': 'puct', 'puct_prior': 'heuristic'},
     'puct_policy': {'tree_mode': 'puct', 'puct_prior': 'policy'},
     'puct_policy_vct2': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True},
+    'puct_policy_vct2_50k': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True,
+                             'vct2_node_budget': 50_000},
+    # 'stage_vct2' is not a V8 option: it selects the E3-S wrapper and records its budget.
+    'puct_policy_vct2_stage': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True,
+                               'stage_vct2': {'node_limit': 20_000, 'call_limit': 20_000, 'node_budget': 10_000}},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -235,6 +243,7 @@ def _move_record(ply, seconds, diag) -> dict:
         'vct2': {
             'checked': [[list(m), s] for m, s in diag.v8_vct2_checked], 'switched': diag.v8_vct2_switched,
             'nodes': diag.v8_vct2_nodes, 'seconds': round(diag.v8_vct2_seconds, 4),
+            'check_nodes': list(getattr(diag, 'v8_vct2_check_nodes', ())),
         },
     }
 
@@ -260,6 +269,9 @@ def play_one(task: dict) -> dict:
     policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
     v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy,
                      **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    if config.get('stage_vct2'):
+        from analysis.e3_arms import StageVCT2Agent
+        v8 = StageVCT2Agent(v8, config['stage_vct2'])
     opponent = task.get('opponent', 'v7')
     opp = make_opponent(opponent, derive_seed(seed, 'v7'), task.get('v7_overrides', {}),
                         task.get('policy_checkpoint'))
@@ -276,6 +288,8 @@ def play_one(task: dict) -> dict:
         elapsed = perf_counter() - started
         if is_v8:
             record = _move_record(len(game.history), elapsed, v8.diagnostics)
+            if getattr(v8, 'stage_info', None):
+                record['stage_vct2'] = v8.stage_info
             if task.get('counterfactual') and v8.diagnostics.v8_route == 'own_vct':
                 record['counterfactual'] = _counterfactual(game, seed, len(game.history), {**config, **search})
             v8_moves.append(record)
@@ -334,6 +348,39 @@ def _dist(values) -> dict:
     return {'n': len(values), 'mean': round(sum(values) / len(values), 3),
             'median': round(median(values), 3),
             'p95': values[min(len(values) - 1, int(0.95 * len(values)))], 'max': values[-1]}
+
+
+def _vct2_cost(moves) -> dict:
+    """Tree-route VCT2 checks split into the played move's check and the replacement checks (§12.32)."""
+    checked = [m for m in moves if m.get('vct2', {}).get('checked')]
+    split = [m for m in checked if m['vct2'].get('check_nodes')]
+    return {
+        'moves_checked': len(checked),
+        'checks_per_move': _dist([len(m['vct2']['checked']) for m in checked]),
+        'nodes_selected': _dist([m['vct2']['check_nodes'][0] for m in split]),
+        'nodes_replacements': _dist([sum(m['vct2']['check_nodes'][1:]) for m in split if len(m['vct2']['check_nodes']) > 1]),
+        'nodes_total': _dist([m['vct2']['nodes'] for m in checked]),
+        'replacement_checks': sum(len(m['vct2']['checked']) - 1 for m in checked),
+        'replacements': sum(m['vct2'].get('switched', False) for m in checked),
+    }
+
+
+def _stage_vct2_summary(moves) -> dict | None:
+    """E3-S checks on Stage 4/5 moves (None when the arm has none)."""
+    rows = [m['stage_vct2'] for m in moves if m.get('stage_vct2')]
+    if not rows:
+        return None
+    return {
+        'moves_checked': len(rows),
+        'played_move_proven_lost': sum(r['checked'][0][1] == 'UNSAFE' for r in rows),
+        'switched': sum(r['switched'] for r in rows),
+        'switched_by_tier': {t: sum(r['switched'] and r['final_tier'] == t for r in rows) for t in ('forced', 'widened')},
+        'checks_per_move': _dist([len(r['checked']) for r in rows]),
+        'nodes_selected': _dist([r['checked'][0][2] for r in rows]),
+        'nodes_replacements': _dist([sum(c[2] for c in r['checked'][1:]) for r in rows if len(r['checked']) > 1]),
+        'nodes_total': _dist([r['nodes'] for r in rows]),
+        'seconds': _dist([r['seconds'] for r in rows]),
+    }
 
 
 def summarize(games: list[dict]) -> dict:
@@ -442,6 +489,8 @@ def summarize(games: list[dict]) -> dict:
             'switched': sum(m.get('vct2', {}).get('switched', False) for m in moves),
             'seconds': _dist([m['vct2']['seconds'] for m in moves if m.get('vct2', {}).get('checked')]),
         },
+        'vct2_cost': _vct2_cost(moves),
+        'stage_vct2': _stage_vct2_summary(moves),
         'opponent_vct2_attack': {
             'ran': len(attack2), 'wins': sum(a['status'] == 'WIN' for a in attack2),
             'wins_by_base_route': {r: sum(a['status'] == 'WIN' and a['base_route'] == r for a in attack2)

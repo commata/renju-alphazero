@@ -177,6 +177,7 @@ class SearchDiagnostics(V7Diagnostics):
     v8_puct_prior_top: Move | None = None        # root child with the highest prior
     v8_puct_prior_top_prob: float = 0.0
     v8_vct2_checked: tuple[tuple[Move, str], ...] = ()  # S3-VCT2: selective depth-2 status per checked move
+    v8_vct2_check_nodes: tuple[int, ...] = ()  # nodes of each check above, same order (diagnostics only)
     v8_vct2_switched: bool = False
     v8_vct2_nodes: int = 0
     v8_vct2_seconds: float = 0.0
@@ -583,7 +584,7 @@ def _vct2_veto(game, chosen, children, diag, *, budget, max_children) -> Move:
 
     started = perf_counter()
     root_status = dict(diag.v8_root_checked)
-    statuses, nodes = {}, 0
+    statuses, nodes, per_check = {}, 0, []
 
     def proven_lost(move) -> bool:
         nonlocal nodes
@@ -591,6 +592,7 @@ def _vct2_veto(game, chosen, children, diag, *, budget, max_children) -> Move:
                                  node_budget=budget['node_budget'])
         status = solver._bounded(game, move, None, None, lambda g: solver.after_move(g, 2)[0])
         nodes += solver.nodes_used
+        per_check.append(solver.nodes_used)
         statuses[move] = status
         return status == UNSAFE
 
@@ -603,6 +605,7 @@ def _vct2_veto(game, chosen, children, diag, *, budget, max_children) -> Move:
                 final = move
                 break
     diag.v8_vct2_checked = tuple(statuses.items())
+    diag.v8_vct2_check_nodes = tuple(per_check)
     diag.v8_vct2_switched = final != chosen
     diag.v8_vct2_nodes = nodes
     diag.v8_vct2_seconds = perf_counter() - started
