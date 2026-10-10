@@ -1,0 +1,189 @@
+{
+ "opponent": "v8:full+vct2atk",
+ "rows": {
+  "baseline": {
+   "arm": "puct_policy",
+   "seeds": [
+    8413,
+    8414
+   ],
+   "games": 100,
+   "wins": 77,
+   "draws": 5,
+   "losses": 18,
+   "score": 0.795,
+   "ci95_wilson": [
+    0.706,
+    0.862
+   ],
+   "ci95_pairs": [
+    0.72,
+    0.865
+   ],
+   "by_colour": {
+    "black": 0.8,
+    "white": 0.79
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0142,
+   "losses_with_opponent_vct": 17,
+   "tree_moves": 1276,
+   "tree_status": {
+    "SAFE": 1205,
+    "UNKNOWN": 66,
+    "UNSAFE": 5,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0556,
+   "v8c_changed": 39,
+   "root_check_minutes": 234.4,
+   "tree_seconds_median": 1.559,
+   "tree_simulations_per_second": 37.2,
+   "nn_calls_per_tree_move": 60.4,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.53,
+   "tree_chose_prior_top_rate": 0.573,
+   "time_ratio": 0.485,
+   "total_game_minutes": 1519.7
+  },
+  "vct2": {
+   "arm": "puct_policy_vct2",
+   "seeds": [
+    8413,
+    8414
+   ],
+   "games": 100,
+   "wins": 77,
+   "draws": 5,
+   "losses": 18,
+   "score": 0.795,
+   "ci95_wilson": [
+    0.706,
+    0.862
+   ],
+   "ci95_pairs": [
+    0.72,
+    0.865
+   ],
+   "by_colour": {
+    "black": 0.8,
+    "white": 0.79
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0142,
+   "losses_with_opponent_vct": 17,
+   "tree_moves": 1276,
+   "tree_status": {
+    "SAFE": 1205,
+    "UNKNOWN": 66,
+    "UNSAFE": 5,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0556,
+   "v8c_changed": 39,
+   "root_check_minutes": 235.0,
+   "tree_seconds_median": 1.561,
+   "tree_simulations_per_second": 37.2,
+   "nn_calls_per_tree_move": 60.4,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.53,
+   "tree_chose_prior_top_rate": 0.573,
+   "time_ratio": 0.522,
+   "total_game_minutes": 1565.4
+  }
+ },
+ "paired_diff_vct2_minus_baseline": {
+  "pairs": 50,
+  "diff": 0.0,
+  "ci95": [
+   0.0,
+   0.0
+  ]
+ },
+ "cost": {
+  "end_to_end_ratio": 1.082,
+  "game_time_ratio": 1.03,
+  "move_seconds": {
+   "baseline": {
+    "n": 2118,
+    "median": 2.119,
+    "p95": 104.92,
+    "max": 415.515
+   },
+   "vct2": {
+    "n": 2118,
+    "median": 2.303,
+    "p95": 107.384,
+    "max": 421.61
+   }
+  }
+ },
+ "mechanism": {
+  "moves_checked": 1276,
+  "played_move_proven_lost": 0,
+  "switched": 0,
+  "seconds": {
+   "n": 1276,
+   "median": 0.289,
+   "p95": 7.438,
+   "max": 9.66
+  },
+  "nodes_median": 166.5
+ },
+ "e2": {
+  "reading": "NOT_ESTABLISHED",
+  "punishment": {
+   "baseline": {
+    "opponent_vct2_wins": 13,
+    "games_with_opponent_vct2": 13,
+    "losses_with_opponent_vct2": 13
+   },
+   "vct2": {
+    "opponent_vct2_wins": 13,
+    "games_with_opponent_vct2": 13,
+    "losses_with_opponent_vct2": 13
+   }
+  },
+  "exposure": {
+   "opponent_vct2_wins": 26,
+   "minimum": 10,
+   "low_power": false
+  },
+  "opponent_time": {
+   "baseline": {
+    "move_seconds": {
+     "n": 2087,
+     "median": 1.939,
+     "p95": 174.977,
+     "max": 386.173
+    },
+    "move_seconds_total": 61413.7,
+    "attack_seconds": {
+     "n": 1423,
+     "median": 0.315,
+     "p95": 116.667,
+     "max": 157.281
+    },
+    "attack_seconds_total": 22003.7,
+    "attack_budget_exhausted": 142
+   },
+   "vct2": {
+    "move_seconds": {
+     "n": 2087,
+     "median": 1.934,
+     "p95": 175.59,
+     "max": 383.899
+    },
+    "move_seconds_total": 61707.3,
+    "attack_seconds": {
+     "n": 1423,
+     "median": 0.307,
+     "p95": 117.049,
+     "max": 150.496
+    },
+    "attack_seconds_total": 22101.1,
+    "attack_budget_exhausted": 142
+   }
+  }
+ }
+}
