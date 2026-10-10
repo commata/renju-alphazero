@@ -40,14 +40,15 @@ for extra in (ROOT, ROOT / 'src'):
         sys.path.insert(0, str(extra))
 
 from renju import Game  # noqa: E402
-from scripts.e1_build_suite import CLEAR, PROVEN_LOSS, _run_jobs, truth  # noqa: E402
+from scripts.e1_build_suite import CLEAR, PROVEN_LOSS, TRUTH_BUDGET, _run_jobs, truth  # noqa: E402
 from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty, derive_seed, file_sha256  # noqa: E402
 
 RESULTS = ROOT / 'docs' / 'mcts-v8-results'
 E2_SOURCES = ('e2/puct_policy_vct2_8413.json', 'e2/puct_policy_vct2_8414.json')
 E1_MANIFEST, E1_EVAL, E1S_MANIFEST = 'e1/e1_manifest.json', 'e1/e1_eval.json', 'e1s/e1s_manifest.json'
 VERIFY_BUDGET = {'node_limit': 20_000, 'call_limit': 20_000, 'node_budget': 200_000}
-DEFAULT_TRUTH_BUDGET = {'node_limit': 20_000, 'call_limit': 100_000, 'node_budget': 1_000_000}
+# The E1 truth budget: a VCT2_CLEAR proof can need millions of nodes (E1-S (11,9): 6.9M, §12.32).
+DEFAULT_TRUTH_BUDGET = dict(TRUTH_BUDGET)
 CASES = ('e2-tree', 'e2-stage', 'e1-tree', 'e1s-miss')
 OUTCOMES = ('NOT_DETECTED', 'RESCUED', 'LOSS_TO_LOSS', 'SWITCH_UNRESOLVED', 'KEPT')
 
@@ -188,7 +189,7 @@ def main(argv=None) -> int:
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     parser.add_argument('--uniform-policy', action='store_true', help='smoke tests only: no H3 checkpoint')
     parser.add_argument('--truth-budget', type=int, default=DEFAULT_TRUTH_BUDGET['node_budget'],
-                        help='full-class node budget for verifying the played move (default 1M)')
+                        help='full-class node budget for verifying the played move (default 10M, the E1 truth budget)')
     parser.add_argument('--limit', type=int)
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--jsonl', type=Path)

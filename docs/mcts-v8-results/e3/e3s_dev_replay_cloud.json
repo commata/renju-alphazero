@@ -1,0 +1,545 @@
+{
+ "format": "e3-dev-replay-v1",
+ "git_commit": "325119c6490e92d1dfa96968c41eed8c786e327c",
+ "git_dirty": false,
+ "restricted": true,
+ "policy": null,
+ "inputs": {
+  "e2/puct_policy_vct2_8413.json": "d2e47fc56e5cdb94222f25fc907754becea3ddc4ba00076b9497d920b253a09c",
+  "e2/puct_policy_vct2_8414.json": "345f9cae8a379b2bd3b5d56ffb9c14883a21d2f19ab1a8846cae1ee9535c2d72",
+  "e1/e1_manifest.json": "b4e763937d34d1b3f755f0d1088002e7bf632405b387e379b30c6c1cb1374fef",
+  "e1/e1_eval.json": "9ee66a759bd1fb9c45aaefc9395b0d8e465aeaecb7b5a9bf533088539138f6cb",
+  "e1s/e1s_manifest.json": "bb4666dfb39bf8a1444a26474688c465c06f87eb20fcada4cf27adf0d31a8fca"
+ },
+ "summary": {
+  "cases": 6,
+  "outcomes": {
+   "NOT_DETECTED": 3,
+   "RESCUED": 0,
+   "LOSS_TO_LOSS": 0,
+   "SWITCH_UNRESOLVED": 1,
+   "KEPT": 2
+  },
+  "by_kind": {
+   "e2-stage": {
+    "NOT_DETECTED": 3,
+    "RESCUED": 0,
+    "LOSS_TO_LOSS": 0,
+    "SWITCH_UNRESOLVED": 0,
+    "KEPT": 2
+   },
+   "e1s-miss": {
+    "NOT_DETECTED": 0,
+    "RESCUED": 0,
+    "LOSS_TO_LOSS": 0,
+    "SWITCH_UNRESOLVED": 1,
+    "KEPT": 0
+   }
+  },
+  "inconsistent": [],
+  "unknown_replacements": 0
+ },
+ "rows": [
+  {
+   "key": "e2-stage/8413/10/black/22",
+   "case": {
+    "key": "e2-stage/8413/10/black/22",
+    "kind": "e2-stage",
+    "arm": "e3s",
+    "source": "e2/puct_policy_vct2_8413.json",
+    "logged_move": [
+     7,
+     9
+    ],
+    "opening_plies": 3,
+    "engine_seed": 7993404150439438067,
+    "replay": false,
+    "original_known_lost": true
+   },
+   "decision": {
+    "route": "stage4",
+    "pre": [
+     7,
+     9
+    ],
+    "checked": [
+     [
+      [
+       7,
+       9
+      ],
+      "UNKNOWN",
+      10000,
+      "played"
+     ]
+    ],
+    "detected": false,
+    "switched": false,
+    "final_tier": "played",
+    "seconds": 6.3184,
+    "played": [
+     7,
+     9
+    ],
+    "consistent": true
+   },
+   "checks": {
+    "final": {
+     "selective_200k": "UNSAFE",
+     "selective_nodes": 110254,
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 2,
+      "nodes": 247081,
+      "budget_exhausted": false,
+      "seconds": 162.5
+     },
+     "seconds": 232.48
+    }
+   },
+   "outcome": "NOT_DETECTED",
+   "earlier_divergence": [],
+   "seconds": 247.3,
+   "budget": {
+    "verify": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 200000
+    },
+    "truth": {
+     "node_limit": 20000,
+     "call_limit": 100000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "e2-stage/8413/12/black/38",
+   "case": {
+    "key": "e2-stage/8413/12/black/38",
+    "kind": "e2-stage",
+    "arm": "e3s",
+    "source": "e2/puct_policy_vct2_8413.json",
+    "logged_move": [
+     6,
+     3
+    ],
+    "opening_plies": 3,
+    "engine_seed": 17849699499481832171,
+    "replay": false,
+    "original_known_lost": true
+   },
+   "decision": {
+    "route": "stage4",
+    "pre": [
+     6,
+     3
+    ],
+    "checked": [
+     [
+      [
+       6,
+       3
+      ],
+      "UNSAFE",
+      3266,
+      "played"
+     ],
+     [
+      [
+       6,
+       7
+      ],
+      "UNSAFE",
+      11,
+      "forced"
+     ],
+     [
+      [
+       6,
+       2
+      ],
+      "UNSAFE",
+      6,
+      "forced"
+     ],
+     [
+      [
+       8,
+       4
+      ],
+      "UNSAFE",
+      6957,
+      "widened"
+     ],
+     [
+      [
+       5,
+       4
+      ],
+      "UNSAFE",
+      3210,
+      "widened"
+     ],
+     [
+      [
+       5,
+       6
+      ],
+      "UNSAFE",
+      6,
+      "widened"
+     ],
+     [
+      [
+       7,
+       3
+      ],
+      "UNSAFE",
+      3,
+      "widened"
+     ]
+    ],
+    "detected": true,
+    "switched": false,
+    "final_tier": "played",
+    "seconds": 9.6982,
+    "played": [
+     6,
+     3
+    ],
+    "consistent": true
+   },
+   "checks": {
+    "final": {
+     "selective_200k": "UNSAFE",
+     "selective_nodes": 3266,
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 2,
+      "nodes": 221168,
+      "budget_exhausted": false,
+      "seconds": 137.7
+     },
+     "seconds": 140.08
+    }
+   },
+   "outcome": "KEPT",
+   "earlier_divergence": [],
+   "seconds": 155.2,
+   "budget": {
+    "verify": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 200000
+    },
+    "truth": {
+     "node_limit": 20000,
+     "call_limit": 100000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "e2-stage/8413/14/white/11",
+   "case": {
+    "key": "e2-stage/8413/14/white/11",
+    "kind": "e2-stage",
+    "arm": "e3s",
+    "source": "e2/puct_policy_vct2_8413.json",
+    "logged_move": [
+     8,
+     5
+    ],
+    "opening_plies": 3,
+    "engine_seed": 15302729644642740278,
+    "replay": false,
+    "original_known_lost": true
+   },
+   "decision": {
+    "route": "stage4",
+    "pre": [
+     8,
+     5
+    ],
+    "checked": [
+     [
+      [
+       8,
+       5
+      ],
+      "UNKNOWN",
+      10000,
+      "played"
+     ]
+    ],
+    "detected": false,
+    "switched": false,
+    "final_tier": "played",
+    "seconds": 7.7523,
+    "played": [
+     8,
+     5
+    ],
+    "consistent": true
+   },
+   "checks": {
+    "final": {
+     "selective_200k": "UNSAFE",
+     "selective_nodes": 12043,
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 2,
+      "nodes": 23675,
+      "budget_exhausted": false,
+      "seconds": 19.34
+     },
+     "seconds": 28.38
+    }
+   },
+   "outcome": "NOT_DETECTED",
+   "earlier_divergence": [],
+   "seconds": 37.2,
+   "budget": {
+    "verify": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 200000
+    },
+    "truth": {
+     "node_limit": 20000,
+     "call_limit": 100000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "e2-stage/8413/17/black/38",
+   "case": {
+    "key": "e2-stage/8413/17/black/38",
+    "kind": "e2-stage",
+    "arm": "e3s",
+    "source": "e2/puct_policy_vct2_8413.json",
+    "logged_move": [
+     7,
+     13
+    ],
+    "opening_plies": 3,
+    "engine_seed": 12099996136751064466,
+    "replay": false,
+    "original_known_lost": true
+   },
+   "decision": {
+    "route": "stage5",
+    "pre": [
+     7,
+     13
+    ],
+    "checked": [
+     [
+      [
+       7,
+       13
+      ],
+      "UNKNOWN",
+      10000,
+      "played"
+     ]
+    ],
+    "detected": false,
+    "switched": false,
+    "final_tier": "played",
+    "seconds": 7.0834,
+    "played": [
+     7,
+     13
+    ],
+    "consistent": true
+   },
+   "checks": {
+    "final": {
+     "selective_200k": "UNSAFE",
+     "selective_nodes": 35024,
+     "full": {
+      "status": "UNKNOWN",
+      "lost_depth": null,
+      "nodes": 1000000,
+      "budget_exhausted": true,
+      "seconds": 600.93
+     },
+     "seconds": 625.69
+    }
+   },
+   "outcome": "NOT_DETECTED",
+   "earlier_divergence": [],
+   "seconds": 634.5,
+   "budget": {
+    "verify": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 200000
+    },
+    "truth": {
+     "node_limit": 20000,
+     "call_limit": 100000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "e2-stage/8414/10/white/15",
+   "case": {
+    "key": "e2-stage/8414/10/white/15",
+    "kind": "e2-stage",
+    "arm": "e3s",
+    "source": "e2/puct_policy_vct2_8414.json",
+    "logged_move": [
+     6,
+     8
+    ],
+    "opening_plies": 3,
+    "engine_seed": 1053793837589758950,
+    "replay": false,
+    "original_known_lost": true
+   },
+   "decision": {
+    "route": "stage4",
+    "pre": [
+     6,
+     8
+    ],
+    "checked": [
+     [
+      [
+       6,
+       8
+      ],
+      "UNSAFE",
+      9199,
+      "played"
+     ]
+    ],
+    "detected": true,
+    "switched": false,
+    "final_tier": "played",
+    "seconds": 7.4303,
+    "played": [
+     6,
+     8
+    ],
+    "consistent": true
+   },
+   "checks": {
+    "final": {
+     "selective_200k": "UNSAFE",
+     "selective_nodes": 9199,
+     "full": {
+      "status": "PROVEN_LOSS",
+      "lost_depth": 1,
+      "nodes": 13120,
+      "budget_exhausted": false,
+      "seconds": 9.99
+     },
+     "seconds": 17.63
+    }
+   },
+   "outcome": "KEPT",
+   "earlier_divergence": [],
+   "seconds": 37.5,
+   "budget": {
+    "verify": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 200000
+    },
+    "truth": {
+     "node_limit": 20000,
+     "call_limit": 100000,
+     "node_budget": 1000000
+    }
+   }
+  },
+  {
+   "key": "e1s-miss/8412-p2-black/12",
+   "case": {
+    "key": "e1s-miss/8412-p2-black/12",
+    "kind": "e1s-miss",
+    "arm": "e3s",
+    "source": "e1s/e1s_manifest.json",
+    "logged_move": [
+     8,
+     6
+    ],
+    "engine_seed": 42,
+    "replay": false,
+    "original_known_lost": true
+   },
+   "decision": {
+    "route": "stage4",
+    "pre": [
+     8,
+     6
+    ],
+    "checked": [
+     [
+      [
+       8,
+       6
+      ],
+      "UNSAFE",
+      692,
+      "played"
+     ],
+     [
+      [
+       11,
+       9
+      ],
+      "SAFE",
+      3048,
+      "forced"
+     ]
+    ],
+    "detected": true,
+    "switched": true,
+    "final_tier": "forced",
+    "seconds": 3.0215,
+    "played": [
+     11,
+     9
+    ],
+    "consistent": true
+   },
+   "checks": {
+    "final": {
+     "selective_200k": "SAFE",
+     "selective_nodes": 3048,
+     "full": {
+      "status": "UNKNOWN",
+      "lost_depth": null,
+      "nodes": 1000000,
+      "budget_exhausted": true,
+      "seconds": 654.93
+     },
+     "seconds": 656.96
+    }
+   },
+   "outcome": "SWITCH_UNRESOLVED",
+   "earlier_divergence": [],
+   "seconds": 661.5,
+   "budget": {
+    "verify": {
+     "node_limit": 20000,
+     "call_limit": 20000,
+     "node_budget": 200000
+    },
+    "truth": {
+     "node_limit": 20000,
+     "call_limit": 100000,
+     "node_budget": 1000000
+    }
+   }
+  }
+ ],
+ "note": "Cloud run (4-core container) of the E3-S dev cases only (e2-stage, e1s-miss) with --uniform-policy: the Stage 4/5 routes return before the tree, so the policy is never called there and the decisions equal the H3 engine (consistent = true for all 6). Verification used a 1M full-class budget, which is too small for some VCT2_CLEAR proofs: e1s-miss (11,9) is UNKNOWN at 1M but VCT2_CLEAR at 10M in e1s/e1s_manifest.json (6,917,489 nodes). The default is now 10M (\u00a712.32)."
+}

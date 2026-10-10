@@ -3016,3 +3016,85 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
 - **교체 규칙과 K6는 E3-A 결과를 본 뒤에 다룬다**(E3-R). E3-A에서 패배→패배 교체가 실제로 나오는지가 먼저다.
 
 **순서:** E3-A, E3-S 구현(기본값 off 옵션, off일 때 착수가 같음을 회귀로 확인) → 8415/8416에서 baseline / E3-A / E3-S 순서로 실행 → 판정 → (필요하면 E3-AS, E3-R) → E1-holdout → TB-Engine-v1 동결 → H6.
+
+### 12.32 E3 구현, 사전 고정 규칙, E3-S dev replay (2026-10-10, 검토 반영)
+
+**구현** (커밋 `325119c`, 이 커밋에서 검증 예산 수정)
+
+- **S3는 그대로다.** `S3_VCT2_V1`과 `V8_DEFAULTS`는 바꾸지 않았다(`test_config_is_the_one_the_s3_runs_used`, `test_every_v8_option_is_pinned` 통과).
+  `mcts_v8._vct2_veto`에는 검사마다 노드 수를 남기는 진단 필드 `v8_vct2_check_nodes`만 추가했다. 착수는 그대로다.
+- `src/analysis/e3_arms.py`:
+
+| arm | 정의 | benchmark arm |
+|---|---|---|
+| E3-A | `{**S3_VCT2_V1, 'vct2_node_budget': 50_000}`. K4와 교체 규칙은 그대로 | `puct_policy_vct2_50k` |
+| E3-S | S3-VCT2-v1 그대로 + `StageVCT2Agent`(stage4/5 최종 수에 selective 10k 검사) | `puct_policy_vct2_stage` |
+
+- **E3-S 규칙**(실행 전 고정, 코드 `stage_vct2_veto`):
+  1. V8-A의 최종 수를 검사한다. 패배가 증명되지 않으면 그대로 둔다.
+  2. 패배가 증명되면 같은 forced 순서(Stage 4: `_stage4_order`, V7 수가 처음 / Stage 5: 그 한 점)에서 다음 수를 검사한다.
+  3. forced에 둘 수 있는 수가 없으면 V6 root 후보(`_root_candidates_v6`)로 넓힌다.
+  4. 2와 3에서 V8-A가 VCT1 UNSAFE로 본 수, 즉시 지는 수, 원래 수는 건너뛴다.
+  5. 패배가 증명되지 않은 첫 수를 둔다(UNKNOWN 허용, S3와 같음).
+  6. 둘 수가 없으면 V8-A의 수를 그대로 둔다.
+  - 검사 횟수에는 상한이 없다. 검사마다 새 10k solver를 쓰고, 비용은 착수마다 기록한다.
+- **비용 진단**(요약 `vct2_cost`, `stage_vct2`): 착수당 검사 수, 처음 수 검사 노드, 대안 검사 노드, 총 노드, 대안 검사 횟수, 교체 수.
+  - E3-A는 검사마다 새 solver라서 한 착수에서 최악 4 × 50k = 200k 노드까지 쓸 수 있다.
+- `scripts/e3_dev_replay.py`: dev 사례만 쓴다. 8415/8416은 읽지 않는다(테스트로 확인).
+  - E2 tree 6건(E3-A): 대국을 처음부터 같은 엔진 seed로 다시 둬서 E2 때의 tree를 재현한다.
+  - E2 stage 5건(E3-S), E1-dev DETECT_MISS 3건(E3-A), E1-S MISS 1건(E3-S): 국면에서 바로 실행한다.
+  - 교체된 수와 둔 수는 selective 200k와 전체 클래스 참값으로 검증한다.
+  - 결과: `NOT_DETECTED` / `KEPT` / `RESCUED` / `LOSS_TO_LOSS` / `SWITCH_UNRESOLVED`.
+- `scripts/e3_compare.py`: 본실험 판정.
+  - 시험 arm의 veto 사건을 대국 뒤에 모두 검증한다(교체 결과, 그리고 veto된 수가 전체 클래스에서 CLEAR이면 unsound).
+- 테스트: `tests/test_e3_arms.py`.
+  - E3-A는 E1-dev 8411-p8 (7,8)을 10k에서는 UNKNOWN, 50k에서는 11,320 노드로 PROVEN_LOSS 판정한다.
+  - E3-S 전체 agent는 8412-p2에서 (8,6) 대신 (11,9)를 둔다.
+  - 판정 로직, 비용 요약, dev 사례 수도 확인한다. 관련 회귀 96개 통과(torch 1 skip).
+
+**E3 판정**(`e3_compare.py`, 실행 전 고정, 위에서부터 먼저 맞는 것)
+
+| reading | 조건 |
+|---|---|
+| `SAFETY_VIOLATION` | 어느 arm이든 안전 위반, 또는 unsound veto |
+| `HARM` | 쌍 점수 차 < −0.05 또는 95% 상한 < 0 |
+| `EFFICACY` | 95% 하한 > 0 |
+| `MECHANISM_ESTABLISHED_BUT_MATCH_UNPROVEN` | veto 수 > baseline, RESCUED ≥ 1, LOSS_TO_LOSS = 0, 점수 차 > 0(구간이 0을 포함) |
+| `NOT_ESTABLISHED` | 나머지 |
+
+- 비용은 판정과 따로 본다. 시험 엔진의 end-to-end 시간 비율 ≤ 1.5(`cost_ok`)여야 채택할 수 있다.
+- 결과에 따른 다음 단계(실행 전 고정):
+
+| 결과 | 다음 |
+|---|---|
+| E3-A만 유효 | E3-A 채택 |
+| E3-S만 유효 | E3-S 채택 |
+| 둘 다 유효 | E3-AS를 만들어 같은 방식으로 다시 판정 |
+| 탐지는 늘었지만 LOSS_TO_LOSS 발생 | E3-R(교체 규칙) / K6 |
+| 둘 다 효과 없음 | 단순 예산 확장은 중단하고 detector class 자체를 다시 검토 |
+
+- 여기서 "유효"는 EFFICACY 또는 MECHANISM_ESTABLISHED_BUT_MATCH_UNPROVEN이면서 `cost_ok`인 경우다.
+
+#### E3-S dev replay 결과 (클라우드, `docs/mcts-v8-results/e3/e3s_dev_replay_cloud.json`)
+
+- stage 경로는 tree 전에 return하므로 policy를 쓰지 않는다. 그래서 H3 checkpoint 없이(uniform) 돌려도 결정이 같다. 6건 모두 `consistent`다.
+
+| 사례 | 결과 | 내용 |
+|---|---|---|
+| E2 8413/14 (8,5) | NOT_DETECTED | 10k UNKNOWN. selective 12,043 노드면 증명된다 |
+| E2 8413/10 (7,9) | NOT_DETECTED | 10k UNKNOWN. 110,254 노드 필요 |
+| E2 8413/17 (7,13) | NOT_DETECTED | 10k UNKNOWN. 35,024 노드 필요 |
+| E2 8413/12 (6,3) | KEPT | 3,266 노드로 탐지. 대안 6개(forced 2, widened 4)도 모두 패배로 증명돼 그대로 둔다. 이미 진 국면 |
+| E2 8414/10 (6,8) | KEPT | 9,199 노드로 탐지. 나머지가 모두 V8-A UNSAFE이거나 즉시 지는 수라 검사할 대안이 없다 |
+| E1-S 8412-p2 (8,6) | 교체 → (11,9) | 692 노드로 탐지하고 (11,9)로 바꾼다. 아래 참고 |
+
+- **(11,9)는 rescue다.** 1M 검증에서는 UNKNOWN이라 `SWITCH_UNRESOLVED`로 기록됐다. 하지만 E1-S 10M 참값에서 VCT2_CLEAR(6,917,489 노드)로 이미 증명돼 있다.
+  - **이 결과를 보고 검증 예산 기본값을 1M에서 10M(E1 참값 예산)으로 바꿨다**(`e3_dev_replay.py`, `e3_compare.py`).
+  - CLEAR 증명은 수백만 노드가 필요할 수 있다. E1 참값의 CLEAR 63개 중 4개가 1M을 넘었다. 판정 기준이 아니라 검증 도구의 예산이고, 8415/8416 실행 전 변경이다.
+- **해석.**
+  - E3-S 10k는 E2 stage 5건 중 2건을 탐지하고 2건 모두 살릴 수 없는 국면이라 그대로 둔다. 나머지 3건은 10k로 탐지하지 못한다.
+  - 그래서 E3-S의 E2 효과는 작을 것으로 예상된다. 이 예상으로 규칙이나 예산을 바꾸지 않는다.
+  - stage 경로도 10k가 부족한 경우가 있다(12k, 35k, 110k). E3-S 예산 확대는 E3-A와 E3-S가 각각 판정된 뒤에 별도 arm으로만 다룬다.
+  - LOSS_TO_LOSS 0, UNKNOWN 대안 교체 0이다.
+
+**순서:** 데스크톱 tree dev replay(E2 tree 6, E1-dev 3) → 결과 확인(이 단계로 설정은 바꾸지 않는다) → 8415/8416 본실험(seed마다 baseline → E3-A → E3-S, 상대 `v8:full+vct2atk`, arm당 25쌍) → `e3_compare`(E3-A, E3-S 각각) → 위 표 → E1-holdout → TB-Engine-v1.
