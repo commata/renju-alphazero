@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from copy import deepcopy
 from math import isfinite
 
 import torch
@@ -80,6 +81,23 @@ def train_step(model: nn.Module, optimizer: torch.optim.Optimizer, batch: Batch,
     return {'policy_loss': policy.item(), 'value_loss': value.item(),
             'total_loss': total.item(), 'grad_norm': grad_norm,
             'lr': float(optimizer.param_groups[0]['lr'])}
+
+
+def on_device(model: nn.Module, device: str | torch.device) -> bool:
+    target = torch.device(device)
+    current = next(model.parameters()).device
+    return current.type == target.type and (target.index is None or target.index == current.index)
+
+
+def model_for_device(model: nn.Module, device: str | torch.device) -> nn.Module:
+    """``model`` itself when it already lives on ``device``, else a copy moved there.
+
+    Self-play and evaluation evaluators call ``model.to(device)``; handing them the
+    training model on another device would move the training model itself.
+    """
+    if on_device(model, device):
+        return model
+    return deepcopy(model).to(torch.device(device))
 
 
 @contextmanager

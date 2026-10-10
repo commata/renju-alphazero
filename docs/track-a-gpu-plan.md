@@ -98,6 +98,61 @@ self-play parallel 16에서 평균 batch 5.4–8.2(50–400 sims). 이 측정에
 | 19 | BF16/TF32 추론·학습, fused Adam, 큰 학습 batch | C | 속도 → policy/value parity → probe → 직접 대국 순서로 채택한다. 작은 policy 차이가 MCTS 선택으로 커질 수 있다 |
 | 20 | batch 16 초과 | C | 세대당 게임 수 증가 또는 virtual loss(tree 내 여러 leaf). 학습 데이터 분포가 바뀐다 |
 
+## 2a. 구현 상태 (2026-10-10, 브랜치 `claude/renju-gpu-inference-optimization-vpbl1r`)
+
+데스크톱 GPU에서 아직 재지 않았다. 아래 "검증"은 이 컨테이너(CPU)의 테스트 결과다.
+
+| # | 상태 | 구현 | 검증 |
+|---|---|---|---|
+| 2 | 부분 | `check_stage8_gpu.py`의 batch benchmark에 `device_batched`(BatchedEvaluator) 행 추가 | KeyError는 저장소에 없는 키라 재현 불가(§5-1). 데스크톱에서 재실행 필요 |
+| 3 | 완료 | `devices: {training, self_play, evaluation}`(null = `device`), `training.config.role_device` | NON_CRITICAL: critical hash 불변(`test_track_a_gpu`) |
+| 4 | 완료 | generation 이벤트에 `devices`, `self_play_batching`(batch histogram, p50/p95/max, request 가중 평균, device/wait 시간), 평가 파일에 `seconds`, 평가 summary에 `batching`, run metadata에 `devices`·`parallel` | 테스트 |
+| 5 | 완료 | 모델은 학습 장치에 두고, self-play·평가는 `model_for_device` 복사본(장치가 같으면 같은 객체). checkpoint의 `device`는 학습 장치 | 기존 학습·resume 테스트 전부 통과 |
+| 6 | **보류** | step별 `.item()` 동기화는 그대로다 | 5를 데스크톱에서 잰 뒤 학습 시간이 여전히 의미 있을 때만 |
+| 7 | 완료 | `build_batch(device=...)`: GPU면 먼저 옮기고 `augment_batch_grouped`(symmetry별 묶음, 같은 RNG 소비) | 기존 `augment_batch`와 tensor 동일 |
+| 8 | 완료 | `model/batched_evaluator.py`: CPU 일괄 encode(`encode_snapshots`), CUDA면 재사용 pinned buffer + `non_blocking` H2D/D2H + CUDA event, `submit`/`collect` | encode가 `encode_game`과 동일, CPU 출력이 같은 batch의 `PolicyValueEvaluator`와 비트 동일 |
+| 9, 9a | 완료 | `run_stage8_head_to_head.py --batched --device cuda --max-active 64 [--max-batch N] [--eager]`: 모든 match-up의 게임을 한 queue로, active 게임 수 유지(refill) | Scripted가 아닌 실제 신경망으로도 직렬 기보와 동일(CPU) |
+| 10 | 완료 | `generate_self_play`가 세대의 seed를 먼저 다 뽑는다 | 기존 기록 해시 테스트 통과 |
+| 11 | 완료 | `search.alphazero.search_steps`(generator). `search_with_tree`는 `drive_steps`(batch 1) wrapper | 기존 search 테스트 73개 전부 통과 |
+| 12 | 완료 | `search/scheduler.py`(`run_tasks`), `parallel: {self_play, evaluation: serial/batched, max_batch, eager}` | 직렬과 기록 해시 동일(Scripted, 실제 신경망 CPU), 비동기 evaluator stub에서도 동일, tiny run 2세대의 기보·가중치 동일 |
+| 13 | 미착수 | CPU 병렬 기준선 | 데스크톱 측정 단계 |
+| 14–16 | 일부 | 16(루프 내 평가 batching)은 12와 함께 들어갔다(상대별로 묶음). 14·15는 측정 뒤 | — |
+
+**등급 보충.** CPU에서도 batch 구성에 따라 float가 미세하게 달라진다(64×4, B16 대 B1 prior 차 1.1e-6). 테스트의 기록 동일성은
+visit count가 그 차이에 흔들리지 않았다는 관측이지 보장이 아니다. 그래서 batched 경로는 CPU에서도 E1로 다룬다.
+scheduler 로직 자체(순서·RNG·refill)는 Scripted evaluator로 E0 검증했다.
+
+### 사용법
+
+S4가 끝난 뒤 별도 run이나 분기에서 쓴다. 키는 모두 NON_CRITICAL이라 기존 checkpoint에서 이어갈 수 있지만,
+한 run 안에서 장치 조합을 섞지 않는다(§1).
+
+```yaml
+devices:
+  training: cuda          # null이면 device
+  self_play: cuda         # batched와 함께 써야 의미가 있다
+  evaluation: cpu
+parallel:
+  self_play: batched      # serial | batched
+  evaluation: serial      # 루프 내 12판; batched면 상대별로 묶음
+  max_batch: null         # null = 진행 중인 게임 수(세대당 16)
+  eager: false            # true: 장치가 비면 작은 batch라도 바로 보냄(비동기 장치에서만 의미)
+```
+
+```text
+# 데스크톱 측정 순서 (각 10세대 이상, 같은 checkpoint·seed, 다른 run 없이)
+1. python scripts/check_stage8_gpu.py --checkpoint <ckpt> --device cuda --output runs/gpu5070_smoke.json
+2. 학습만 GPU:      devices.training: cuda
+3. self-play batched: devices.self_play: cuda, parallel.self_play: batched
+4. eager 비교:      parallel.eager: true
+5. checkpoint 대국:  python scripts/run_stage8_head_to_head.py --checkpoint A=... --checkpoint B=... \
+                       --pairs 50 --batched --device cuda --max-active 64
+   (같은 명령을 --batched 없이 CPU로 한 번 돌려 기보 일치율과 시간을 비교)
+```
+
+`metrics.jsonl`의 generation 이벤트에서 `self_play_seconds`, `training_seconds`, `self_play_batching.request_weighted_batch`,
+`device_seconds`, `wait_seconds`를 §4 표에 옮긴다.
+
 ## 3. 하지 않는 것
 
 - self-play 추론 batch 64/128/2048 목표(단계 6의 C arm 없이는 불가능)

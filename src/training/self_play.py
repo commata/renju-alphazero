@@ -15,8 +15,9 @@ from time import perf_counter
 from model.config import (ACTION_COUNT, ACTION_INDEX_VERSION, ENCODER_VERSION,
                           action_to_coordinate, coordinate_to_action)
 from renju import Game
-from search.alphazero import SearchConfig, run_search, select_action
-from search.evaluator import Evaluator
+from search.alphazero import SearchConfig, search_steps, select_action
+from search.evaluator import Evaluator, drive_steps, tag_requests
+from search.scheduler import SchedulerStats, run_tasks
 
 from .provenance import base_runtime_env, git_provenance
 
@@ -136,13 +137,15 @@ class SelfPlayGame:
     move_stats: list[MoveStats] = field(default_factory=list)
 
 
-def play_self_play_game(evaluator: Evaluator, config: SearchConfig, seed: int, *,
-                        model_seed: int | None = None, checkpoint_hash: str | None = None,
-                        runtime_env: dict | None = None) -> SelfPlayGame:
-    """Play one game with a single game-owned ``Random(seed)``.
+def self_play_game_steps(config: SearchConfig, seed: int, *, model_seed: int | None = None,
+                         checkpoint_hash: str | None = None, runtime_env: dict | None = None):
+    """One self-play game as a generator over its leaf evaluations (``search_steps``).
 
-    RNG order per searched move: Dirichlet gammas (legal actions ascending), then one
-    ``random()`` if ``ply < temperature_moves``. The single-legal fast path uses none.
+    Yields ``EvaluationSnapshot``s, receives validated results and returns the
+    ``SelfPlayGame``. The game owns a single ``Random(seed)``. RNG order per searched
+    move: Dirichlet gammas (legal actions ascending), then one ``random()`` if
+    ``ply < temperature_moves``. The single-legal fast path uses none. Move timings
+    include any wait for a shared batch when a scheduler drives the game.
     """
     rng = Random(seed)
     game = Game()
@@ -151,7 +154,7 @@ def play_self_play_game(evaluator: Evaluator, config: SearchConfig, seed: int, *
     while not game.done:
         started = perf_counter()
         ply = len(game.history)
-        result = run_search(game, evaluator, config, rng)
+        result, _ = yield from search_steps(game, config, rng)
         action = select_action(result, ply, config, rng)
         game.play(*action_to_coordinate(action))
         total = perf_counter() - started
@@ -174,6 +177,35 @@ def play_self_play_game(evaluator: Evaluator, config: SearchConfig, seed: int, *
         winner=game.winner, moves=tuple(s.action for s in samples), samples=samples,
     )
     return SelfPlayGame(record, game, stats)
+
+
+def play_self_play_game(evaluator: Evaluator, config: SearchConfig, seed: int, *,
+                        model_seed: int | None = None, checkpoint_hash: str | None = None,
+                        runtime_env: dict | None = None) -> SelfPlayGame:
+    """Play one game, evaluating every leaf at once (batch 1)."""
+    return drive_steps(self_play_game_steps(config, seed, model_seed=model_seed,
+                                            checkpoint_hash=checkpoint_hash,
+                                            runtime_env=runtime_env), evaluator)
+
+
+def play_self_play_games(evaluator: Evaluator, config: SearchConfig, seeds: Iterable[int], *,
+                         batched: bool = False, max_batch: int | None = None,
+                         eager: bool = False, stats: SchedulerStats | None = None,
+                         **record_kwargs) -> list[SelfPlayGame]:
+    """Play one game per seed, in seed order.
+
+    ``batched=False`` plays them one after another (the Stage 5 path). ``batched=True``
+    runs them together under ``search.scheduler`` and evaluates their leaves in shared
+    batches; every game still owns its RNG and has one outstanding leaf, so with an
+    evaluator whose output does not depend on the batch the records are identical.
+    """
+    seeds = list(seeds)
+    if not batched:
+        return [play_self_play_game(evaluator, config, seed, **record_kwargs) for seed in seeds]
+    return run_tasks(
+        [lambda seed=seed: tag_requests(self_play_game_steps(config, seed, **record_kwargs),
+                                        evaluator) for seed in seeds],
+        max_batch=max_batch, eager=eager, stats=stats)
 
 
 class ReplayError(ValueError):

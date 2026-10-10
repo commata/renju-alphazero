@@ -25,7 +25,7 @@ import torch
 from model.checkpoint import load_checkpoint
 from model.network import PolicyValueNet
 
-from .config import model_config
+from .config import model_config, role_device
 from .replay_buffer import ReplayBuffer
 from .trainer import build_optimizer
 
@@ -104,7 +104,7 @@ def init_training_state(config: dict) -> TrainingState:
     """generation 0 state: from ``training.init_checkpoint`` or a seeded random init."""
     seed = config['seed']
     seed_global_rngs(seed)
-    device = torch.device(config['device'])
+    device = torch.device(role_device(config, 'training'))
     init_path = config['training']['init_checkpoint']
     if init_path is not None:
         model = load_checkpoint(init_path, model_config(config), device=device)

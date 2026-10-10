@@ -15,6 +15,7 @@ and an Elo estimate, plus a per-checkpoint total.
 from __future__ import annotations
 
 import argparse
+import os
 from itertools import combinations
 import json
 from math import comb, log10
@@ -32,7 +33,10 @@ import torch  # noqa: E402
 
 from renju import BLACK, WHITE  # noqa: E402
 from run_stage7_checkpoint_eval import search_config_for  # noqa: E402
-from training.evaluation import PUCTAgent, make_opening, play_evaluation_game  # noqa: E402
+from model.batched_evaluator import BatchedEvaluator  # noqa: E402
+from search.evaluator import drive_requests  # noqa: E402
+from search.scheduler import SchedulerStats, run_tasks  # noqa: E402
+from training.evaluation import PUCTAgent, evaluation_game_steps, make_opening  # noqa: E402
 from training.probes import load_model_from_training_checkpoint  # noqa: E402
 from training.training_state import derive_seed  # noqa: E402
 
@@ -54,17 +58,22 @@ def elo(score: float) -> float | None:
     return -400 * log10(1 / score - 1)
 
 
-def play_match(a: dict, b: dict, *, pairs: int, seed: int, opening_plies: int,
-               radius: int, log=print) -> dict:
-    started = perf_counter()
-    games = []
+def match_tasks(a: dict, b: dict, *, pairs: int, seed: int, opening_plies: int,
+                radius: int) -> list:
+    """One task factory per game of the match, in the serial play order."""
+    tasks = []
     for pair in range(pairs):
         opening = make_opening(Random(derive_seed(seed, 'h2h', 'opening', pair)),
                                opening_plies, radius)
         for a_color in (BLACK, WHITE):
-            game = play_evaluation_game(a['agent'], b['agent'], a_color, opening)
-            game['pair'] = pair
-            games.append(game)
+            tasks.append(lambda c=a_color, op=opening:
+                         evaluation_game_steps(a['agent'], b['agent'], c, op))
+    return tasks
+
+
+def summarize_match(a: dict, b: dict, games: list, seconds: float, log=print) -> dict:
+    for index, game in enumerate(games):
+        game['pair'] = index // 2
     wins = sum(g['result'] == 'win' for g in games)
     losses = sum(g['result'] == 'loss' for g in games)
     draws = len(games) - wins - losses
@@ -78,12 +87,40 @@ def play_match(a: dict, b: dict, *, pairs: int, seed: int, opening_plies: int,
                'a_by_color': by_color, 'p_two_sided': binomial_two_sided(wins, losses),
                'elo_a_minus_b': elo(score),
                'unique_games': len({tuple(map(tuple, g['moves'])) for g in games}),
-               'seconds': perf_counter() - started}
+               'seconds': seconds}
     log(f"{a['label']} vs {b['label']}: {wins}-{losses}-{draws} score {score:.3f} "
         f"(A black {by_color['black']['wins']}/{by_color['black']['games']}, "
         f"A white {by_color['white']['wins']}/{by_color['white']['games']}) "
         f"p={summary['p_two_sided']:.3g} ({summary['seconds']:.0f}s)")
     return {'summary': summary, 'games': games}
+
+
+def play_match(a: dict, b: dict, *, pairs: int, seed: int, opening_plies: int,
+               radius: int, log=print) -> dict:
+    started = perf_counter()
+    games = [drive_requests(task()) for task in match_tasks(
+        a, b, pairs=pairs, seed=seed, opening_plies=opening_plies, radius=radius)]
+    return summarize_match(a, b, games, perf_counter() - started, log)
+
+
+def play_matches_batched(match_ups, *, pairs: int, seed: int, opening_plies: int, radius: int,
+                         max_active: int | None, max_batch: int | None, eager: bool,
+                         log=print) -> tuple[list[dict], dict]:
+    """Every game of every match-up through one scheduler queue (refilled up to
+    ``max_active`` games in flight). Same games as ``play_match``; the per-match
+    ``seconds`` is the shared wall time."""
+    started = perf_counter()
+    per_match = [match_tasks(a, b, pairs=pairs, seed=seed, opening_plies=opening_plies,
+                             radius=radius) for a, b in match_ups]
+    stats = SchedulerStats()
+    games = run_tasks([task for tasks in per_match for task in tasks], max_active=max_active,
+                      max_batch=max_batch, eager=eager, stats=stats)
+    seconds = perf_counter() - started
+    matches, offset = [], 0
+    for (a, b), tasks in zip(match_ups, per_match):
+        matches.append(summarize_match(a, b, games[offset:offset + len(tasks)], seconds, log))
+        offset += len(tasks)
+    return matches, stats.summary()
 
 
 def main() -> int:
@@ -99,9 +136,20 @@ def main() -> int:
     parser.add_argument('--opening-random-plies', type=int, default=2)
     parser.add_argument('--opening-radius', type=int, default=2)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--device', default='cpu', help="model device, e.g. 'cuda'")
+    parser.add_argument('--batched', action='store_true',
+                        help='play all games through one batching scheduler (Track A GPU plan)')
+    parser.add_argument('--max-active', type=int, default=64,
+                        help='games in flight with --batched (refilled as games end)')
+    parser.add_argument('--max-batch', type=int, help='largest network batch with --batched')
+    parser.add_argument('--eager', action='store_true',
+                        help='with --batched: submit whenever the device is idle')
     args = parser.parse_args()
     if len(args.checkpoint) < 2:
         parser.error('need at least two --checkpoint LABEL=PATH')
+    if args.device.startswith('cuda'):
+        # cuBLAS needs this before CUDA starts for deterministic algorithms.
+        os.environ.setdefault('CUBLAS_WORKSPACE_CONFIG', ':4096:8')
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
     players = []
@@ -112,12 +160,25 @@ def main() -> int:
         path = Path(path)
         model, info = load_model_from_training_checkpoint(path)
         search = search_config_for(path, args.simulations, args.tactical_rules)
+        evaluator = BatchedEvaluator(model, device=args.device) if args.batched else None
         players.append({'label': label, 'path': str(path), 'info': info,
-                        'search': search.to_dict(), 'agent': PUCTAgent(label, model, search)})
-    matches = [play_match(a, b, pairs=args.pairs, seed=args.seed,
-                          opening_plies=args.opening_random_plies, radius=args.opening_radius,
-                          log=lambda m: print(m, flush=True))
-               for a, b in combinations(players, 2)]
+                        'search': search.to_dict(),
+                        'agent': PUCTAgent(label, model, search, args.device, evaluator=evaluator)})
+    log = lambda m: print(m, flush=True)  # noqa: E731
+    batching = None
+    if args.batched:
+        matches, batching = play_matches_batched(
+            list(combinations(players, 2)), pairs=args.pairs, seed=args.seed,
+            opening_plies=args.opening_random_plies, radius=args.opening_radius,
+            max_active=args.max_active, max_batch=args.max_batch, eager=args.eager, log=log)
+        print(f"batching: mean {batching['mean_batch']:.1f}, request-weighted "
+              f"{batching['request_weighted_batch']:.1f}, max {batching['max_batch']}, "
+              f"wall {batching['wall_seconds']:.0f}s", flush=True)
+    else:
+        matches = [play_match(a, b, pairs=args.pairs, seed=args.seed,
+                              opening_plies=args.opening_random_plies, radius=args.opening_radius,
+                              log=log)
+                   for a, b in combinations(players, 2)]
     totals = {p['label']: {'points': 0.0, 'games': 0} for p in players}
     for match in matches:
         s = match['summary']
@@ -131,6 +192,7 @@ def main() -> int:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps({
             'format_version': RESULT_FORMAT, 'seed': args.seed, 'pairs': args.pairs,
+            'device': args.device, 'batched': args.batched, 'batching': batching,
             'players': [{k: v for k, v in p.items() if k != 'agent'} for p in players],
             'totals': totals, 'matches': matches}, indent=1), encoding='utf-8')
         print(f'wrote {args.output}')

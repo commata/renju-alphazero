@@ -22,7 +22,7 @@ from time import perf_counter
 
 from model.config import ACTION_COUNT, action_to_coordinate, coordinate_to_action
 
-from .evaluator import POLICY_SUM_TOLERANCE, EvaluationSnapshot, Evaluator, evaluate_validated
+from .evaluator import POLICY_SUM_TOLERANCE, EvaluationSnapshot, Evaluator, drive_steps
 from .tactics import tactical_filter
 
 SEARCH_CONFIG_FORMAT = 'stage5-search-config-v1'
@@ -213,18 +213,12 @@ def apply_root_noise(root: Node, rng: Random, alpha: float, epsilon: float) -> N
         raise ValueError(f'noised root priors must sum to 1 (got {total!r})')
 
 
-def _expand(node: Node, game, legal_moves, evaluator: Evaluator, timing: SearchTiming,
-            allowed=None) -> float:
+def _apply_expansion(node: Node, player: int, legal_moves, result, allowed=None) -> float:
     """Create children for the legal (or ``allowed``) moves; return node.to_play value.
 
     The evaluator always sees the full legal list; with a strict ``allowed`` subset the
     children's priors are renormalized over that subset.
     """
-    started = perf_counter()
-    snapshot = EvaluationSnapshot.from_game(game, legal_moves)
-    result = evaluate_validated(evaluator, [snapshot])[0]
-    timing.inference_s += perf_counter() - started
-    player = game.to_play
     moves = legal_moves if allowed is None else allowed
     priors = {coordinate_to_action(r, c): float(result.priors[coordinate_to_action(r, c)])
               for r, c in moves}
@@ -263,6 +257,30 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
     Root expansion is not a simulation and its value is not backed up; exactly
     ``config.num_simulations`` descents follow. Root Dirichlet noise is applied iff
     ``config.noise_enabled`` (self-play), consuming ``rng`` only for searched roots.
+
+    This is the batch-1 driver of ``search_steps``: each leaf is evaluated at once.
+    """
+    return drive_steps(search_steps(game, config, rng), evaluator)
+
+
+def _expansion_steps(node: Node, game, legal_moves, timing: SearchTiming, allowed=None):
+    """Expand ``node``: yield its snapshot, receive the validated result, apply it."""
+    started = perf_counter()
+    result = yield EvaluationSnapshot.from_game(game, legal_moves)
+    timing.inference_s += perf_counter() - started
+    return _apply_expansion(node, game.to_play, legal_moves, result, allowed)
+
+
+def search_steps(game, config: SearchConfig, rng: Random | None = None):
+    """Resumable search (Stage 8-E SearchSession) as a generator.
+
+    Yields an ``EvaluationSnapshot`` whenever a leaf needs the network and expects the
+    caller to ``send`` back its *validated* ``EvaluationResult``; returns
+    ``(SearchResult, root)`` like ``search_with_tree``. One tree never has more than one
+    outstanding request, so the search order is exactly the batch-1 order. A scheduler
+    may batch requests from many independent searches (``search.scheduler``).
+    ``timing.inference_s`` is the time between a yield and its resumption, so under a
+    scheduler it includes the wait for the shared batch.
     """
     started = perf_counter()
     if game.done:
@@ -291,7 +309,7 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
     if config.tactical_rules:
         # The root is never marked terminal: it only restricts the children.
         root_allowed, _ = tactical_filter(work, legal_moves)
-    _expand(root, work, legal_moves, evaluator, timing, root_allowed)
+    yield from _expansion_steps(root, work, legal_moves, timing, root_allowed)
     if config.noise_enabled:
         apply_root_noise(root, rng, config.dirichlet_alpha, config.dirichlet_epsilon)
 
@@ -326,7 +344,7 @@ def search_with_tree(game, evaluator: Evaluator, config: SearchConfig,
                 node.terminal_value = proven
                 value = proven
             else:
-                value = _expand(node, work, node_legal, evaluator, timing, allowed)
+                value = yield from _expansion_steps(node, work, node_legal, timing, allowed)
                 evaluator_calls += 1
         backup(root, path, value, node.to_play)
         for _ in range(played):

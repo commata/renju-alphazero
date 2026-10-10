@@ -182,6 +182,8 @@ def run_checks(checkpoint: Path, device_name: str, *, steps: int, positions: int
     def bench():
         rows = {'device': benchmark(deepcopy(model_cpu), snapshots, batch_sizes, repeats, 1,
                                     device=str(device)),
+                'device_batched': benchmark(deepcopy(model_cpu), snapshots, batch_sizes, repeats,
+                                            1, device=str(device), batched_evaluator=True),
                 'cpu': benchmark(deepcopy(model_cpu), snapshots, batch_sizes, repeats, 1)}
         for label, table in rows.items():
             log(f'  {label}: ' + ', '.join(f"B{r['batch']} {r['full_ms_per_position']:.2f}"

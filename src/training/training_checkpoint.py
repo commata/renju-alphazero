@@ -23,7 +23,7 @@ from model.config import (ACTION_INDEX_VERSION, CHECKPOINT_FORMAT_VERSION, ENCOD
 from model.evaluator import file_sha256
 from model.network import PolicyValueNet
 
-from .config import (ConfigError, config_differences, critical_config,
+from .config import (ConfigError, role_device, config_differences, critical_config,
                      critical_config_hash, model_config, validate_config)
 from .provenance import git_provenance
 from .replay_buffer import ReplayBuffer
@@ -68,7 +68,7 @@ def build_checkpoint(state: TrainingState) -> dict:
         'critical_config_hash': critical_config_hash(state.config),
         'git_commit': commit,
         'git_dirty': dirty,
-        'device': str(state.config['device']),
+        'device': str(role_device(state.config, 'training')),
         'model_config': asdict(state.model.config),
         'model_contract': model_contract(),
         'python_version': platform.python_version(),
@@ -177,7 +177,7 @@ def restore_training_state(payload: dict, config: dict,
         raise CheckpointCompatibilityError(
             f"model architecture mismatch: checkpoint {payload['model_config']}, "
             f'config {expected_model}')
-    device = torch.device(config['device'])
+    device = torch.device(role_device(config, 'training'))
     model = PolicyValueNet(ModelConfig(**payload['model_config'])).to(device)
     try:
         model.load_state_dict(payload['model_state_dict'], strict=True)

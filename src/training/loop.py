@@ -17,10 +17,13 @@ from time import perf_counter
 import torch
 
 from model.config import ACTION_INDEX_VERSION, CHECKPOINT_FORMAT_VERSION, ENCODER_VERSION
+from model.batched_evaluator import BatchedEvaluator
 from model.evaluator import PolicyValueEvaluator
 from renju import BLACK, WHITE
+from search.scheduler import SchedulerStats
 
-from .config import dump_config, self_play_search_config
+from .config import (DEVICE_ROLES, dump_config, parallel_setting, role_device,
+                     self_play_search_config)
 from .dataset import build_batch, samples_from_record, validate_samples
 from .evaluation import evaluate_generation, should_evaluate
 from .health import detect_color_imbalance
@@ -28,8 +31,9 @@ from .metrics import (MetricsLogger, RunMetadata, read_metrics, timestamp, trunc
                       utc_now, write_json)
 from .milestones import detect_milestones
 from .provenance import base_runtime_env, git_provenance
-from .self_play import game_hash, play_self_play_game, record_hash, replay_record, summarize_timing
-from .trainer import inference_mode_for, train_step
+from .self_play import (game_hash, play_self_play_game, play_self_play_games, record_hash,
+                        replay_record, summarize_timing)
+from .trainer import inference_mode_for, model_for_device, train_step
 from .training_checkpoint import (INIT_NAME, LATEST_NAME, build_checkpoint, copy_atomic,
                                   generation_checkpoint_name, load_training_state,
                                   prune_checkpoints, save_atomic)
@@ -60,6 +64,9 @@ def _metadata_base(config: dict) -> dict:
     commit, dirty = git_provenance()
     return {'created': utc_now(), 'git_branch': _git_branch(), 'git_commit': commit,
             'git_dirty': dirty, 'seed': config['seed'], 'device': config['device'],
+            'devices': {role: role_device(config, role) for role in DEVICE_ROLES},
+            'parallel': {key: parallel_setting(config, key)
+                         for key in ('self_play', 'evaluation', 'max_batch', 'eager')},
             'python': platform.python_version(), 'torch': str(torch.__version__),
             'numpy': getattr(numpy, '__version__', None),
             'model_version': {'encoder': ENCODER_VERSION, 'action_index': ACTION_INDEX_VERSION,
@@ -77,25 +84,37 @@ def save_generation_checkpoint(state: TrainingState, checkpoint_dir: Path) -> Pa
     return path
 
 
-def generate_self_play(state: TrainingState) -> tuple[list, list, float]:
-    """Self-play with eval mode + no_grad; one game seed per game from self_play_rng."""
+def generate_self_play(state: TrainingState) -> tuple[list, list, float, dict | None]:
+    """Self-play with eval mode + no_grad; one game seed per game from self_play_rng.
+
+    All seeds of the generation are drawn before the first game (the same seeds as
+    drawing each one just before its game: games never touch ``self_play_rng``), so a
+    batched run plays exactly the games of a serial run. Returns the scheduler summary
+    (batch-size histogram, device time) for ``parallel.self_play: batched``, else None.
+    """
     config = state.config
     search = self_play_search_config(config)
     env = runtime_env(config)
-    games = []
+    device = role_device(config, 'self_play')
+    batched = parallel_setting(config, 'self_play') == 'batched'
+    seeds = [state.self_play_rng.getrandbits(63)
+             for _ in range(config['training']['games_per_generation'])]
+    model = model_for_device(state.model, device)
+    stats = SchedulerStats() if batched else None
     started = perf_counter()
-    with inference_mode_for(state.model):
-        evaluator = PolicyValueEvaluator(state.model, device=config['device'])
-        for _ in range(config['training']['games_per_generation']):
-            seed = state.self_play_rng.getrandbits(63)
-            games.append(play_self_play_game(evaluator, search, seed,
-                                             checkpoint_hash=state.source_checkpoint_hash,
-                                             runtime_env=env))
+    with inference_mode_for(model):
+        evaluator = (BatchedEvaluator(model, device=device) if batched
+                     else PolicyValueEvaluator(model, device=device))
+        games = play_self_play_games(
+            evaluator, search, seeds, batched=batched,
+            max_batch=parallel_setting(config, 'max_batch'),
+            eager=parallel_setting(config, 'eager'), stats=stats,
+            checkpoint_hash=state.source_checkpoint_hash, runtime_env=env)
     elapsed = perf_counter() - started
     records = [g.record for g in games]
     for game in games:
         replay_record(game.record, game.final_game)  # IllegalMove/contract check
-    return records, [g.move_stats for g in games], elapsed
+    return records, [g.move_stats for g in games], elapsed, stats.summary() if stats else None
 
 
 def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
@@ -106,7 +125,7 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
     final_generation = t['generations'] - 1
     previous_model = deepcopy(state.model)  # = the checkpoint this generation starts from
 
-    records, move_stats, self_play_seconds = generate_self_play(state)
+    records, move_stats, self_play_seconds, batching = generate_self_play(state)
     samples = [s for game_id, record in enumerate(records)
                for s in samples_from_record(record, generation=gen, game_id=game_id)]
     validate_samples(samples)
@@ -119,11 +138,12 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
 
     started = perf_counter()
     first = last = None
+    train_device = role_device(config, 'training')
     for _ in range(t['steps_per_generation']):
         batch = build_batch(state.buffer, t['batch_size'], sample_rng=state.sample_rng,
                             augment_rng=state.augment_rng,
                             augment=config['augmentation']['enabled'],
-                            balanced=t.get('balanced_sampling', False))
+                            balanced=t.get('balanced_sampling', False), device=train_device)
         step = train_step(state.model, state.optimizer, batch, config['loss']['value_weight'],
                           t['grad_clip'], config['loss']['l2_coeff'])
         state.global_step += 1
@@ -149,7 +169,10 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
         'global_step': state.global_step,
         'first_step': first, 'last_step': last,
         'self_play_timing': summarize_timing(s for stats in move_stats for s in stats),
+        'devices': {role: role_device(config, role) for role in DEVICE_ROLES},
     }
+    if batching is not None:
+        generation_event['self_play_batching'] = batching
     if t.get('balanced_sampling', False):
         black_won, white_won = state.buffer.winner_groups()
         minority = min(len(black_won), len(white_won))
@@ -163,8 +186,10 @@ def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
         f'{first["total_loss"]:.4f} -> {last["total_loss"]:.4f}')
 
     if should_evaluate(config, gen, final_generation):
+        started = perf_counter()
         results = evaluate_generation(state.model, previous_model, gen, config, final_generation,
                                       log=log)
+        results['seconds'] = perf_counter() - started
         write_json(run_dir / 'evaluation' / f'gen{gen:03d}.json', results)
         for name, data in results['opponents'].items():
             metrics.log({'type': 'evaluation', 'generation': gen, 'opponent': name,
@@ -300,8 +325,9 @@ def verify_checkpoint(path: str | Path) -> dict:
     """
     state = load_training_state(path)
     search = self_play_search_config(state.config)
-    with inference_mode_for(state.model):
-        evaluator = PolicyValueEvaluator(state.model, device=state.config['device'])
+    model = model_for_device(state.model, role_device(state.config, 'self_play'))
+    with inference_mode_for(model):
+        evaluator = PolicyValueEvaluator(model, device=role_device(state.config, 'self_play'))
         game = play_self_play_game(evaluator, search,
                                    derive_seed(state.config['seed'], 'verify', state.generation),
                                    checkpoint_hash=state.source_checkpoint_hash,

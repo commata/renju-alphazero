@@ -22,6 +22,7 @@ from search.evaluator import POLICY_SUM_TOLERANCE
 
 from .replay_buffer import STATE_SHAPE, Batch, ReplayBuffer, TrainingSample
 from .self_play import GameRecord, replay_record
+from .trainer import batch_to_device
 
 LEGAL_PLANE = 5
 
@@ -89,18 +90,49 @@ def augment_batch(batch: Batch, rng: Random) -> tuple[Batch, list[int]]:
     return Batch(states, policies, batch.values.clone(), masks, batch.provenance), symmetries
 
 
+def augment_batch_grouped(batch: Batch, rng: Random) -> tuple[Batch, list[int]]:
+    """``augment_batch`` with one transform per symmetry group instead of per row.
+
+    Draws the same ``rng.randrange(8)`` per row in row order and returns identical
+    tensors (D4 maps are exact permutations), but runs at most 8 x 3 tensor ops, which
+    is what makes augmentation on a GPU cheap.
+    """
+    symmetries = [rng.randrange(len(SYMMETRIES)) for _ in range(batch.states.shape[0])]
+    states = batch.states.clone()
+    policies = batch.policies.clone()
+    masks = batch.legal_masks.clone()
+    for k in sorted(set(symmetries)):
+        if k == 0:
+            continue
+        rows = torch.tensor([i for i, s in enumerate(symmetries) if s == k],
+                            device=states.device)
+        states[rows] = transform_spatial(batch.states[rows], k)
+        policies[rows] = transform_policy(batch.policies[rows], k)
+        masks[rows] = transform_mask(batch.legal_masks[rows], k)
+    return Batch(states, policies, batch.values.clone(), masks, batch.provenance), symmetries
+
+
 def build_batch(buffer: ReplayBuffer, batch_size: int, *, sample_rng: Random,
-                augment_rng: Random, augment: bool, balanced: bool = False) -> Batch:
+                augment_rng: Random, augment: bool, balanced: bool = False,
+                device: str | torch.device | None = None) -> Batch:
     """Indices come only from ``sample_rng``; symmetries only from ``augment_rng``.
 
     ``balanced`` (Stage 8, ``training.balanced_sampling``): half from black-won and half
     from white-won games (``ReplayBuffer.sample_indices_balanced``).
+
+    ``device`` other than the CPU: the batch is moved there before augmentation, which
+    then runs grouped on the device (same RNG draws, identical tensors).
     """
     if balanced:
         indices, _ = buffer.sample_indices_balanced(batch_size, rng=sample_rng)
     else:
         indices = buffer.sample_indices(batch_size, rng=sample_rng)
     batch = buffer.get(indices)
+    if device is not None and torch.device(device).type != 'cpu':
+        batch = batch_to_device(batch, device)
+        if augment:
+            batch, _ = augment_batch_grouped(batch, augment_rng)
+        return batch
     if augment:
         batch, _ = augment_batch(batch, augment_rng)
     return batch

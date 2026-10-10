@@ -81,18 +81,29 @@ DEFAULTS: dict = {
     'flush_denormal': False,
     # Stage 8 execution-only self-play colour health (training.health); not training-critical.
     'health': {'color_imbalance': {'enabled': False, 'window': 10, 'lower': 0.10, 'upper': 0.90}},
+    # Track A GPU plan (docs/track-a-gpu-plan.md), execution-only. A null device means the
+    # top-level ``device``. Training on another device than self-play is grade E1 (float
+    # rounding differs from an all-CPU run); the critical hash is unchanged.
+    'devices': {'training': None, 'self_play': None, 'evaluation': None},
+    # ``serial``: one game after another, batch-1 PolicyValueEvaluator (the Stage 5 path).
+    # ``batched``: all games of the phase together under search.scheduler with a
+    # BatchedEvaluator (batch <= games in flight; grade E1 on a GPU).
+    'parallel': {'self_play': 'serial', 'evaluation': 'serial', 'max_batch': None,
+                 'eager': False},
 }
 
 # Execution-control keys: may differ between a checkpoint and --config / CLI on resume.
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
     ('device',), ('torch_threads',), ('output',), ('milestones',), ('health',),
-    ('flush_denormal',),
+    ('flush_denormal',), ('devices',), ('parallel',),
     ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
     ('training', 'init_checkpoint'),
 )
 
 OPPONENTS = ('random', 'tactical', 'previous', 'mcts_v6')
+PARALLEL_MODES = ('serial', 'batched')
+DEVICE_ROLES = ('training', 'self_play', 'evaluation')
 
 # Stage 7 options whose default keeps pre-Stage-7 behavior. A key at its default is
 # dropped from the critical config, so configs/checkpoints written before the key
@@ -231,6 +242,20 @@ def validate_config(config: dict) -> dict:
         if not c['lower'] < c['upper'] <= 1:
             raise ConfigError('health.color_imbalance needs 0 <= lower < upper <= 1')
 
+    devices = config.get('devices') or {}
+    for role in ('training', 'self_play', 'evaluation'):
+        if devices.get(role) is not None and not isinstance(devices[role], str):
+            raise ConfigError(f'devices.{role} must be null or a device string')
+    par = config.get('parallel')
+    if par is not None:
+        for phase in ('self_play', 'evaluation'):
+            if par[phase] not in PARALLEL_MODES:
+                raise ConfigError(f'parallel.{phase} must be one of {PARALLEL_MODES}')
+        if par['max_batch'] is not None:
+            _int(par['max_batch'], 'parallel.max_batch')
+        if type(par['eager']) is not bool:
+            raise ConfigError('parallel.eager must be a bool')
+
     out = config['output']
     if not isinstance(out['runs_dir'], str) or not isinstance(out['run_name'], str):
         raise ConfigError('output.runs_dir and output.run_name must be strings')
@@ -288,6 +313,18 @@ def config_differences(a: dict, b: dict, prefix: str = '') -> list[str]:
         elif a.get(key) != b.get(key):
             diffs.append(where)
     return diffs
+
+
+def role_device(config: dict, role: str) -> str:
+    """Device for ``training`` / ``self_play`` / ``evaluation`` (null -> ``device``)."""
+    if role not in DEVICE_ROLES:
+        raise ValueError(f'role must be one of {DEVICE_ROLES}')
+    return (config.get('devices') or {}).get(role) or config['device']
+
+
+def parallel_setting(config: dict, key: str):
+    """``parallel.<key>`` with the defaults for configs written before the key existed."""
+    return (config.get('parallel') or DEFAULTS['parallel']).get(key, DEFAULTS['parallel'][key])
 
 
 def model_config(config: dict) -> ModelConfig:

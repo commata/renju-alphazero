@@ -18,13 +18,16 @@ from random import Random
 from time import perf_counter
 
 from model.config import action_to_coordinate
+from model.batched_evaluator import BatchedEvaluator
 from model.evaluator import PolicyValueEvaluator
 from renju import BLACK, WHITE, Game, IllegalMove
 from renju.game import OPENING_MOVE
-from search.alphazero import run_search, select_action
+from search.alphazero import run_search, search_steps, select_action
+from search.evaluator import drive_requests, tag_requests
+from search.scheduler import SchedulerStats, run_tasks
 
-from .config import evaluation_search_config
-from .trainer import inference_mode_for
+from .config import evaluation_search_config, parallel_setting, role_device
+from .trainer import inference_mode_for, model_for_device
 from .training_state import derive_seed
 
 EVALUATION_FORMAT = 'stage6-evaluation-v1'
@@ -35,17 +38,26 @@ class EvaluationIllegalMoveError(RuntimeError):
 
 
 class PUCTAgent:
-    """Deterministic evaluation agent (noise OFF, temperature 0)."""
+    """Deterministic evaluation agent (noise OFF, temperature 0).
 
-    def __init__(self, name: str, model, search_config, device='cpu'):
+    ``evaluator`` replaces the default batch-1 ``PolicyValueEvaluator`` (e.g. a
+    ``BatchedEvaluator`` shared by many games under ``search.scheduler``).
+    """
+
+    def __init__(self, name: str, model, search_config, device='cpu', *, evaluator=None):
         if search_config.noise_enabled or search_config.temperature_moves != 0:
             raise ValueError('evaluation PUCT requires noise OFF and temperature 0')
         self.name = name
         self.config = search_config
-        self.evaluator = PolicyValueEvaluator(model, device=device)
+        self.evaluator = evaluator if evaluator is not None else PolicyValueEvaluator(model, device=device)
 
     def select_move(self, game: Game) -> tuple[int, int]:
         result = run_search(game, self.evaluator, self.config, None)
+        return action_to_coordinate(select_action(result, len(game.history), self.config, None))
+
+    def select_move_steps(self, game: Game):
+        """``select_move`` as a generator of ``EvalRequest``s (for ``search.scheduler``)."""
+        result, _ = yield from tag_requests(search_steps(game, self.config, None), self.evaluator)
         return action_to_coordinate(select_action(result, len(game.history), self.config, None))
 
 
@@ -65,6 +77,16 @@ def make_opening(rng: Random, random_plies: int, radius: int) -> tuple[tuple[int
 
 def play_evaluation_game(model_agent, opponent, model_color: int,
                          opening: tuple[tuple[int, int], ...]) -> dict:
+    return drive_requests(evaluation_game_steps(model_agent, opponent, model_color, opening))
+
+
+def evaluation_game_steps(model_agent, opponent, model_color: int,
+                          opening: tuple[tuple[int, int], ...]):
+    """One evaluation game as a generator of ``EvalRequest``s.
+
+    Agents with ``select_move_steps`` (PUCT) yield their leaf requests; any other agent
+    moves synchronously. Move seconds include any wait for a shared batch.
+    """
     game = Game()
     for move in opening:
         game.play(*move)  # the engine validates every opening move
@@ -73,7 +95,10 @@ def play_evaluation_game(model_agent, opponent, model_color: int,
         is_model = game.to_play == model_color
         agent = model_agent if is_model else opponent
         started = perf_counter()
-        move = agent.select_move(game)
+        if hasattr(agent, 'select_move_steps'):
+            move = yield from agent.select_move_steps(game)
+        else:
+            move = agent.select_move(game)
         times['model' if is_model else 'opponent'].append(perf_counter() - started)
         try:
             game.play(*move)
@@ -118,16 +143,20 @@ def summarize_games(games: list[dict]) -> dict:
     }
 
 
-def _opponent_factories(config: dict, previous_model) -> dict[str, tuple[Callable, dict]]:
+def _opponent_factories(config: dict, previous_model, *, batched: bool = False
+                        ) -> dict[str, tuple[Callable, dict]]:
     from agents import MCTSV6Agent, RandomAgent, TacticalAgent
     from search.mcts_v6 import V5_FINAL
 
     search = evaluation_search_config(config)
-    device = config['device']
+    device = role_device(config, 'evaluation')
+    # One evaluator shared by every 'previous' game so their requests batch together.
+    previous_evaluator = BatchedEvaluator(previous_model, device=device) if batched else None
     return {
         'random': (lambda seed: RandomAgent(seed), {'agent': 'Random'}),
         'tactical': (lambda seed: TacticalAgent(seed), {'agent': 'Tactical'}),
-        'previous': (lambda seed: PUCTAgent('previous', previous_model, search, device),
+        'previous': (lambda seed: PUCTAgent('previous', previous_model, search, device,
+                                            evaluator=previous_evaluator),
                      {'agent': 'PUCT', 'search': search.to_dict()}),
         # Frozen Stage 3 preset: MCTSV6Agent is constructed without any override.
         'mcts_v6': (lambda seed: MCTSV6Agent(seed=seed),
@@ -157,20 +186,30 @@ def should_evaluate(config: dict, generation: int, final_generation: int) -> boo
 def evaluate_generation(model, previous_model, generation: int, config: dict,
                         final_generation: int, *, log: Callable[[str], None] | None = None
                         ) -> dict:
-    """Evaluate ``model`` against every configured opponent; restores model modes."""
+    """Evaluate ``model`` against every configured opponent; restores model modes.
+
+    Runs on ``devices.evaluation`` (a copy when the training model lives elsewhere).
+    ``parallel.evaluation: batched`` plays each opponent's games together with shared
+    ``BatchedEvaluator``s (``search.scheduler``); the games themselves are unchanged.
+    """
     e = config['evaluation']
     search = evaluation_search_config(config)
     seed = config['seed']
+    device = role_device(config, 'evaluation')
+    batched = parallel_setting(config, 'evaluation') == 'batched'
     results = {'format_version': EVALUATION_FORMAT, 'generation': generation,
                'model_search': search.to_dict(), 'opponents': {}}
     previous_model = previous_model if previous_model is not None else deepcopy(model)
+    model = model_for_device(model, device)
+    previous_model = model_for_device(previous_model, device)
     with inference_mode_for(model), inference_mode_for(previous_model):
-        factories = _opponent_factories(config, previous_model)
-        model_agent = PUCTAgent('model', model, search, config['device'])
+        factories = _opponent_factories(config, previous_model, batched=batched)
+        model_agent = PUCTAgent('model', model, search, device,
+                                evaluator=BatchedEvaluator(model, device=device) if batched else None)
         for name in opponents_for_generation(config, generation, final_generation):
             factory, opponent_config = factories[name]
             started = perf_counter()
-            games = []
+            tasks = []
             for pair in range(e[name]['black_games']):
                 opening_rng = Random(derive_seed(seed, generation, name, 'opening', pair))
                 opening = make_opening(opening_rng, e['opening_random_plies'],
@@ -178,11 +217,20 @@ def evaluate_generation(model, previous_model, generation: int, config: dict,
                 for offset, color in enumerate((BLACK, WHITE)):
                     index = 2 * pair + offset
                     opponent = factory(derive_seed(seed, generation, name, 'agent', index))
-                    game = play_evaluation_game(model_agent, opponent, color, opening)
-                    game['index'] = index
-                    games.append(game)
+                    tasks.append(lambda o=opponent, c=color, op=opening:
+                                 evaluation_game_steps(model_agent, o, c, op))
+            stats = SchedulerStats() if batched else None
+            if batched:
+                games = run_tasks(tasks, max_batch=parallel_setting(config, 'max_batch'),
+                                  eager=parallel_setting(config, 'eager'), stats=stats)
+            else:
+                games = [drive_requests(task()) for task in tasks]
+            for index, game in enumerate(games):
+                game['index'] = index
             summary = summarize_games(games)
             summary['seconds'] = perf_counter() - started
+            if stats is not None:
+                summary['batching'] = stats.summary()
             results['opponents'][name] = {'summary': summary, 'opponent_config': opponent_config,
                                           'games': games}
             if log:

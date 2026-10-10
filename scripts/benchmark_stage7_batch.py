@@ -36,6 +36,7 @@ for path in (ROOT / 'src', ROOT / 'scripts'):
 import torch  # noqa: E402
 
 from model.config import ModelConfig  # noqa: E402
+from model.batched_evaluator import BatchedEvaluator  # noqa: E402
 from model.evaluator import PolicyValueEvaluator  # noqa: E402
 from model.network import PolicyValueNet  # noqa: E402
 from profile_stage7_search import load_positions  # noqa: E402
@@ -65,10 +66,15 @@ def _synchronize(device: torch.device) -> None:
 
 
 def benchmark(model, snapshots, batch_sizes, repeats: int, warmup: int,
-              device: str = 'cpu') -> list[dict]:
-    """``device`` (Stage 8): full = evaluate_batch incl. the D2H copy; forward is synchronized."""
+              device: str = 'cpu', batched_evaluator: bool = False) -> list[dict]:
+    """``device`` (Stage 8): full = evaluate_batch incl. the D2H copy; forward is synchronized.
+
+    ``batched_evaluator`` (Track A GPU plan): the full path is ``BatchedEvaluator`` (one CPU
+    encode, one copy each way) instead of the per-position ``PolicyValueEvaluator``.
+    """
     device = torch.device(device)
     evaluator = PolicyValueEvaluator(model, device=device)
+    full_evaluator = BatchedEvaluator(model, device=device) if batched_evaluator else evaluator
     single = [evaluator.evaluate_batch([s])[0] for s in snapshots]
     rows = []
     for batch in batch_sizes:
@@ -78,7 +84,7 @@ def benchmark(model, snapshots, batch_sizes, repeats: int, warmup: int,
 
         def run_full():
             for group in groups:
-                evaluator.evaluate_batch(group)
+                full_evaluator.evaluate_batch(group)
 
         def run_forward():
             with torch.inference_mode():
@@ -92,12 +98,13 @@ def benchmark(model, snapshots, batch_sizes, repeats: int, warmup: int,
         positions = batch * len(groups)
         full = _median_seconds(run_full, repeats)
         forward = _median_seconds(run_forward, repeats)
-        batched = [r for group in groups for r in evaluator.evaluate_batch(group)]
+        batched = [r for group in groups for r in full_evaluator.evaluate_batch(group)]
         max_prior = max(max(abs(a - b) for a, b in zip(r.priors, s.priors))
                         for r, s in zip(batched, single))
         max_value = max(abs(r.value - s.value) for r, s in zip(batched, single))
         rows.append({
             'batch': batch, 'batches': len(groups), 'positions': positions,
+            'path': 'batched_evaluator' if batched_evaluator else 'policy_value_evaluator',
             'full_latency_ms': 1000 * full / len(groups),
             'full_ms_per_position': 1000 * full / positions,
             'full_positions_per_second': positions / full,

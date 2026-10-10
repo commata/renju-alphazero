@@ -106,6 +106,51 @@ def evaluate_validated(evaluator: Evaluator,
             for result, snapshot in zip(results, snapshots)]
 
 
+def drive_steps(steps, evaluator: Evaluator):
+    """Run a snapshot-yielding generator (``search_steps``) with batch-1 evaluation.
+
+    Every yielded snapshot is evaluated at once with ``evaluate_validated`` and its result
+    sent back; the generator's return value is returned. This is exactly the order of the
+    blocking search, so ``search_with_tree`` is this driver over ``search_steps``.
+    """
+    try:
+        snapshot = next(steps)
+        while True:
+            snapshot = steps.send(evaluate_validated(evaluator, [snapshot])[0])
+    except StopIteration as stop:
+        return stop.value
+
+
+@dataclass(frozen=True)
+class EvalRequest:
+    """One leaf request of a task generator: which evaluator, which snapshot."""
+
+    evaluator: object
+    snapshot: EvaluationSnapshot
+
+
+def tag_requests(steps, evaluator):
+    """Adapt a snapshot-yielding generator to yield ``EvalRequest(evaluator, snapshot)``."""
+    try:
+        snapshot = next(steps)
+        while True:
+            result = yield EvalRequest(evaluator, snapshot)
+            snapshot = steps.send(result)
+    except StopIteration as stop:
+        return stop.value
+
+
+def drive_requests(task):
+    """Run an ``EvalRequest``-yielding generator serially (batch 1, in request order)."""
+    try:
+        request = next(task)
+        while True:
+            result = evaluate_validated(request.evaluator, [request.snapshot])[0]
+            request = task.send(result)
+    except StopIteration as stop:
+        return stop.value
+
+
 class UniformEvaluator:
     """Uniform prior over the supplied legal moves, value 0."""
 
