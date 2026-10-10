@@ -4,6 +4,9 @@
 batch 2048, pinned memory, torch.compile, AMP, CUDA stream)을 **저장소의 실측 기록과 코드**에 대조한 결과다.
 엔진·설정은 바꾸지 않았다. 결론부터 적는다.
 
+> **결정(사용자, 2026-10-10):** GPU/CUDA 최적화는 Track A에서만 한다. Track B와 E1/E2/S 계열은 GPU 작업을 하지 않고 현상 유지한다
+> (§2의 CPU 최적화 제안도 진행하지 않는다). Track A 목록은 [track-a-gpu-plan.md](track-a-gpu-plan.md).
+
 1. **작업마다 병목이 다르다.** Track A AlphaZero self-play는 NN이 착수 시간의 약 79%라 GPU batching이 맞는 방향이다.
    **E1/E2/S3/H5 같은 V8 대국과 Track B(Hybrid) self-play는 NN이 대국 시간의 1% 미만이다.** GPU로 옮길 것이 없다.
 2. **E2를 빠르게 하는 길은 CPU뿐이다.** 게임 단위 프로세스 병렬(이미 `--workers`)과
