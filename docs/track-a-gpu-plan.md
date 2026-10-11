@@ -1,4 +1,62 @@
-# Track A GPU/CUDA 최적화 설계 (2026-10-10, 검토 반영 v2)
+# Track A GPU/CUDA 최적화 설계
+
+> **v3 (2026-10-11) — 이 문서의 위치를 바로잡는다.**
+> Track A 본선은 `feat/stage8-plan`(`b55cbee`)이다. 그 브랜치에는 이미 G0(§12.20–12.22)가 있다:
+> `search_steps` 제너레이터, lock-step 스케줄러(`search.batched.run_lockstep`), CPU 배치 인코딩 + pinned 전송,
+> 학습 GPU, IEEE float32 고정(`model.precision`), `self_play_parallel_games`, `benchmark_self_play.py`.
+> 이 브랜치(`claude/renju-gpu-inference-optimization-vpbl1r`)는 Track B 계열(`ccr-993dfc5f`) 위에서 같은 G0를 다시 만들었다.
+> **그대로 본선에 병합하지 않는다**(Track B 커밋 63개가 함께 들어가고, `search_steps`·`self_play`·`config`가 충돌한다).
+> 본선에 없는 부분만 옮긴다(§0b).
+
+## 0a. Track A 전체 단계 (본선 기록 기준)
+
+| 구간 | 단계 | 결과 | 상태 |
+|---|---|---|---|
+| Stage 1–5 | 규칙, MCTS 기준선, policy/value 네트워크, AlphaZero PUCT | — | 완료 |
+| Stage 6–7 | 학습 MVP, 7-A~7-D(PUCT v2 `tactical_rules`, sample reuse) | D16 | 완료 |
+| Stage 8 Gate 1–3 | 데스크톱 CPU 이관, 색 쏠림 → 균형 샘플링(B) 채택 | B400 | 완료 |
+| B400 장기 | gen 400→880 | 정체(9–10수 경주) | 완료 |
+| S4 / T1 | temperature 10→4 / teacher(→Track B) | S4가 정체를 깸(대조군 상대 0.93) | 완료 |
+| S2, sims100 | temperature 2, 탐색 100 | sims100 기각 | 완료 |
+| 안정 루프 | adaptive steps(ADA), champion 게이트, C0 | **ADA1360 champion** | 완료 |
+| C1, C2 | 정체(HOLD), lr 3e-4 | `keep_control` | 완료 |
+| forensic | 지는 쪽 탐색이 220회 이하에서 "1회씩 방문"으로 퇴화 | 탐색 > 합법수 필요 | 완료 |
+| **G0** | GPU lock-step 엔진 + 배치 인코딩 + 학습 GPU, RTX 5070 점검 | 1프로세스 약 2.1배, CPU 병목 | **완료** |
+| **G1** | self-play 탐색 50→400, ADA1480에서 120세대 | **`adopt_stronger`**, v7 상대 처음 50% 이상 | **완료** |
+| **C3** | S400 champion 선정(seed 9301 라운드로빈 + seed 7107 heavy) | — | **← 여기서 멈춤**(설계·명령 완료, 결과 미커밋) |
+| 동결 | `freeze_champion.py` → `runs/anchors/S400C.pt` | — | 대기 |
+| **MP** | `self_play_workers` W, 프로세스마다 GPU lock-step | 목표 self-play 3배 | 미구현 |
+| G2a / G2b / G2c | S400 레시피로 누적 120 / 320 / 640세대 | — | 대기 |
+| Stage 9 | 최종 라운드로빈, v5/v6/v7, probe, 사람 대국 | — | 대기 |
+
+(§12.20의 H3/H4 "증명 라벨 지속 혼합"은 solver supervision이라 ROADMAP의 Track A 정의 밖이다. Track A 단계에서 뺐다.)
+
+## 0b. GPU 최적화 단계 (본선 G0 이후)
+
+| 단계 | 내용 | 기준 | 상태 |
+|---|---|---|---|
+| A1 | RTX 5070 점검, B1/B16/B64 | B16 0.23 ms/pos(CPU 1.49), B64 0.12 | **완료(G0)** |
+| A2 | 학습 GPU | 100 step 17–21배 | **완료(G0)** |
+| A3 | GPU lock-step 16, 1프로세스 | S400 self-play 중앙값 약 304 s/세대, 전체 약 366 s/세대, 평가 약 452–517회/s | **완료(G1 실측)** |
+| A4 | 비동기 겹치기(`eager`) | 상한 약 1.2배(GPU가 평가 시간의 약 15–20%) | 이 브랜치에 구현, 본선 미이식 |
+| A5 | checkpoint 대국 배치(refill, `--max-active 64`) | C3 라운드로빈·G2 champion 게이트 시간 | 이 브랜치에 구현, 본선 미이식 |
+| **A6** | **MP: `self_play_workers` W=2/3/4/6** | **≤120 s/세대**의 주 수단 | **미구현, 다음 엔지니어링 단계** |
+| A7 | CUDA Graph | A6 뒤에도 GPU 쪽이 의미 있을 때만 | 보류 |
+
+**목표 게이트(수정).**
+
+- 기준선은 **G1의 366 s/세대(GPU lock-step 16, S400)**다. CPU 기준선이 아니다. CPU 순차 S400은 같은 16판 벤치마크에서 약 2배 느리다(292.9 대 140.6 s).
+- 최종 목표: **전체 ≤120 s/세대**(3.05배). self-play가 약 304 s에서 약 100 s로 줄어야 한다.
+  1프로세스는 CPU 병목으로 약 2배가 상한이고 이미 그 위치에 있으므로, **A6(MP)이 선택이 아니라 필수**다.
+- batch 크기는 판정 게이트로 쓰지 않는다. 1프로세스 평균 batch는 5–8이었고(꼬리 + CPU 병목), GPU가 병목이 아니라서 batch를 키워도 sec/gen이 줄지 않는다.
+  W개로 나누면 프로세스당 batch 상한은 16/W가 되지만 같은 이유로 문제가 아니다. batch·evals/s는 진단용으로만 기록한다.
+- A6 판정: W=2 → 3 → 4 → 6 순서로 `benchmark_self_play.py --workers`를 같은 16판·S400으로 재고, sec/gen이 가장 짧은 W를 고른다.
+  ≤120이면 PASS, 120–150이면 채택하고 추가 최적화를 검토, >150이면 프로세스별 프로파일 후 A4/A7 검토.
+- 정확성: CPU에서 W=1과 W>1의 기록이 같음, GPU에서는 게임 길이·색·짧은 게임 분포가 같은 범위, resume, 불법수 0.
+
+---
+
+# (v2) Track A GPU/CUDA 최적화 설계 (2026-10-10)
 
 **범위 결정(사용자, 2026-10-10):** GPU/CUDA 최적화는 Track A에서만 한다. Track B와 E1/E2/S 계열(V8 대국)은
 GPU 작업을 하지 않고 현재 구현·결과를 그대로 보존한다(근거: [gpu-throughput-review.md](gpu-throughput-review.md) §1).
