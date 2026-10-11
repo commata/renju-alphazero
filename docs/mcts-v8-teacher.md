@@ -3138,7 +3138,7 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
   - 판마다 첫 stage veto는 대국 끝 2–18 plies 전이다(중앙값 10 plies, 우리 수로 약 5수).
   - KEPT 21건은 V8-A 방어 집합(forced + widened) 안의 모든 수가 패배로 증명됐거나 제외된 경우다(V8-A VCT1 UNSAFE, 즉시 패배). 집합 밖의 수는 보지 않았다.
   - LOSS_TO_LOSS 2건은 모두 widened 층의 UNKNOWN 대안이었다. 사후 검증에서 둘 다 패배였다(selective 39.7k, 117k 노드).
-  - 병목은 "stage를 검사하지 않음"에서 "검사하는 시점이 이미 늦음"으로 바뀌었다. stage 예산을 늘려도 이 문제는 풀리지 않는다.
+  - 병목은 "stage를 검사하지 않음"에서 "검사하는 시점이 이미 늦음"으로 바뀌었다. 단순한 stage 검사 예산 증가는 우선순위에서 뺀다. 지금 증거는 탐지 깊이보다 개입 시점과 후보 범위가 더 큰 병목임을 가리킨다(방어 집합 밖의 수는 검사하지 않았으므로 "예산으로는 절대 안 된다"까지 증명된 것은 아니다).
 - **tree dev replay**(E3-A, 9건, 재현 불일치 0)
   - 결과: RESCUED 4, SWITCH_UNRESOLVED 2, LOSS_TO_LOSS 1, NOT_DETECTED 2
   - E2 tree 6건 중 4건을 탐지했다(§12.31 예측과 같음). 못 잡은 2건은 74k가 필요한 수, 그리고 selective 200k로도 UNKNOWN이지만 전체 클래스 5.27M 노드로 패배가 증명된 수다.
@@ -3167,3 +3167,47 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
    - **E3-R**(교체 규칙): UNKNOWN 대안을 허용하지 않고 SAFE(NO_TARGETED) 대안만 받는다. 없으면 원래 수를 둔다(KEPT). 근거는 위의 교체 10건 중 UNKNOWN 3건, 패배 1건이다.
    - **E4**(더 이른 위치의 탐지): stage4 진입 전에, root 후보 단계에서 상대의 깊이 2 공격 위협을 찾는다. 근거는 E3-S의 "탐지는 하지만 늦다"는 결과다.
    - **L 트랙**(지연): E3-A 착수 p95는 124초다. 시간 제한 대국이 목표일 때 다룬다.
+
+### 12.34 E1-holdout 설계 확정 (2026-10-11, §12.33 수정)
+
+§12.33의 "다음 단계 1"을 아래로 대체한다. **E1-holdout 결과로는 하이퍼파라미터를 바꾸지 않는다.** 선택지는 E3-A를 그대로 동결하거나 S3-VCT2-v1로 되돌리는 것 둘뿐이다.
+
+#### 목적과 출처
+
+- 목적: 동결 직전에 **독립 표본에서 위험한 회귀가 없는지** 확인한다. 효능은 이미 8415/8416에서 관측했으므로 다시 증명하는 것이 주목적이 아니다.
+- 출처: 새 seed **8417/8418**. 각 seed에서 **S3 대국과 E3-A 대국을 모두** 둔다(상대 `v8:full+vct2atk`, arm × seed마다 25쌍, 합계 200판).
+  - 두 arm에서 나온 국면을 합치고 D4로 중복을 없앤다. 행마다 `source_arm`을 기록한다.
+  - E3-A가 수를 바꿔서 S3가 가지 않는 국면에 들어간 경우도 holdout에 들어간다(E3-A on-policy 안전성).
+- suite 규칙은 E1-dev와 같다: screen 50k, 에피소드·D4 중복 제거, pool, 10M 참값, 국면마다 seed 3개.
+- 같은 국면·seed에서 S3와 E3-A를 **둘 다** 평가한다.
+
+#### 판정 용어
+
+| 이름 | 정의 |
+|---|---|
+| `FALSE_VETO` | veto된 수의 10M 참값이 VCT2_CLEAR |
+| `UNSOUND_WITNESS` | selective PROVEN_LOSS인데 `verify_witness`가 False(전체 solver가 witness를 재현하지 못함) |
+| `UNRESOLVED` | 10M에서도 CLEAR와 PROVEN_LOSS 어느 쪽도 증명되지 않음. 실패로 세지 않고 따로 보고한다 |
+
+#### 통과 조건 (실행 전 고정)
+
+| gate | 조건 | 비고 |
+|---|---|---|
+| G1 증명 안전성 | E3-A의 `UNSOUND_WITNESS` = 0, `FALSE_VETO` = 0 | |
+| G2 탐지 보존 | S3가 veto한 모든 (국면, seed)를 E3-A도 veto | 같은 tree이고, solver는 결정적이며 예산 상한만 다르다. 10k 안에 끝난 증명은 50k에서도 똑같이 끝난다. **위반은 구현 버그로 본다** |
+| G3 rescue 보존 | S3가 RESCUED인 모든 (국면, seed)에서 E3-A도 RESCUED | S3의 대안 앞쪽 수는 10k에서 이미 패배로 증명돼 50k에서도 같고, CLEAR 대안은 어느 예산에서도 패배로 증명되지 않는다. **위반은 구현 버그로 본다** |
+| G4 교체 | E3-A가 교체했는데 최종 수의 참값이 PROVEN_LOSS인 run ≤ 1 | §12.33 정의 |
+| G5 효능 비율 | E3-A의 veto_recall ≥ S3, RESCUED ≥ S3 | **E1-P ≥ 5일 때만** 적용 |
+
+- **E1-P ≥ 5:** G1–G5를 모두 만족하면 PASS다.
+- **E1-P < 5:** G5는 N/A다. G1–G4를 모두 만족하면 PASS(safety / non-regression)다. 표본이 적다는 이유로 seed를 더 열지 않는다(순차 엿보기 금지).
+- **PASS → TB-Engine-v1 = E3-A 동결. FAIL → TB-Engine-v1 = S3-VCT2-v1.** G2·G3 위반이면 먼저 버그를 찾고, 고친 뒤에도 E3-A는 이 holdout으로 다시 판정하지 않는다.
+
+#### 병행 작업과 봉인
+
+- **H6-0은 별도 worktree와 브랜치에서만** 진행한다. E1-holdout 실행 브랜치는 dirty 상태로 두지 않는다(결과의 git_commit, git_dirty, config·checkpoint·입력 해시가 깨끗해야 한다).
+  - 할 수 있는 것: 스키마, loader, 누출 검사, runner 옵션, 테스트.
+  - 하지 않는 것: TB-Engine-v1로 teacher dataset 생성, H6 본학습.
+- **Final-1/Final-2 봉인.**
+  - 저장소에는 manifest만 둔다: 생성기 commit, 생성기 설정 해시, 제외 세트 해시, 국면·판 수, D4 규칙, 산출물 SHA-256.
+  - 실제 국면 파일과 생성 seed는 H8 전까지 저장소 밖(분석 도구와 AI가 읽지 않는 위치)에 보관한다. seed가 공개되면 다시 만들어 볼 수 있기 때문이다.
