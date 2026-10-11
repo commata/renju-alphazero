@@ -329,13 +329,15 @@ def build_tasks(args) -> tuple[list[dict], list[dict]]:
             game_seed = derive_seed(args.seed, 'game', pair, color)
             arm = args.arm + (''.join(f'[{k}={v}]' for k, v in sorted(arm_overrides.items()))
                               if arm_overrides else '')  # a resumed JSONL never mixes settings
-            prefix = arm if args.opponent == 'v7' else f'{arm}@{args.opponent}'
+            opponent_label = args.opponent + (f"[puct_c={args.opponent_puct_c}]"
+                                              if getattr(args, 'opponent_puct_c', None) is not None else '')
+            prefix = arm if args.opponent == 'v7' else f'{arm}@{opponent_label}'
             tasks.append({
                 'key': f'{prefix}/{args.seed}/{pair}/{"black" if color == BLACK else "white"}',
                 'arm': args.arm, 'opponent': args.opponent, 'pair': pair, 'seed': game_seed, 'v8_color': color,
                 'opening': [list(m) for m in opening], 'counterfactual': args.counterfactual,
                 'v8_overrides': {**args.search_overrides, **arm_overrides},
-                'v7_overrides': args.search_overrides,
+                'v7_overrides': getattr(args, 'opponent_overrides', args.search_overrides),
                 'policy_checkpoint': args.policy_checkpoint,
             })
     return tasks, openings
@@ -591,6 +593,8 @@ def main(argv=None) -> int:
     parser.add_argument('--games-jsonl', type=Path, help='per-game lines, appended as games finish (resume)')
     parser.add_argument('--output', type=Path, help='summary + all games as one JSON file')
     parser.add_argument('--puct-c', type=float, help='c_puct for a PUCT arm (required there; tested arm only)')
+    parser.add_argument('--opponent-puct-c', type=float,
+                        help='c_puct of a PUCT opponent (H6-5: v8:puct_policy as the fixed opponent, §12.19)')
     parser.add_argument('--arm-simulations', type=int,
                         help='tested arm only: simulations (time-matched check, §12.16)')
     parser.add_argument('--arm-tactical-simulations', type=int,
@@ -618,8 +622,13 @@ def main(argv=None) -> int:
         parser.error(f'{args.arm} needs --puct-c (the calibrated value, §12.16)')
     if not is_puct and args.puct_c is not None:
         parser.error('--puct-c only applies to the puct_* arms')
-    if args.opponent != 'v7' and v8_config(opponent_arm(args.opponent)).get('tree_mode') == 'puct':
-        parser.error('a PUCT arm cannot be the opponent (its c_puct would be unset)')
+    opponent_is_puct = args.opponent != 'v7' and v8_config(opponent_arm(args.opponent)).get('tree_mode') == 'puct'
+    if opponent_is_puct and args.opponent_puct_c is None:
+        parser.error('a PUCT opponent needs --opponent-puct-c')
+    if not opponent_is_puct and args.opponent_puct_c is not None:
+        parser.error('--opponent-puct-c only applies to a PUCT opponent')
+    args.opponent_overrides = ({**args.search_overrides, 'puct_c': args.opponent_puct_c}
+                               if opponent_is_puct else args.search_overrides)
     args.arm_overrides = {k: v for k, v in (('puct_c', args.puct_c), ('simulations', args.arm_simulations),
                                             ('tactical_simulations', args.arm_tactical_simulations))
                           if v is not None}
@@ -664,7 +673,8 @@ def main(argv=None) -> int:
         'policy_checkpoint': payload_checkpoint,
         'provenance': provenance(payload_checkpoint),
         'v7_config': {**V7_FINAL, **args.search_overrides},
-        'opponent_config': opponent_config(args.opponent, args.search_overrides),
+        'opponent_config': opponent_config(args.opponent, args.opponent_overrides),
+        'opponent_puct_c': args.opponent_puct_c,
         'openings': openings, 'summary': summary, 'games': games,
     }
     print(json.dumps({'arm': args.arm, 'opponent': args.opponent, **summary}, indent=2), flush=True)
