@@ -24,6 +24,12 @@ VCT2_CLEAR is an evaluation label only ("no loss within depth 2"), never a value
     python scripts/e1_build_suite.py screen --workers 14 --jsonl runs/e1/screen.jsonl --output runs/e1/screen.json
     python scripts/e1_build_suite.py pool --screen runs/e1/screen.json --workers 14 \\
         --jsonl runs/e1/pool.jsonl --output runs/e1/e1_manifest.json
+
+E1-holdout (§12.34): ``screen --sources <benchmark json>...`` reads S3 (``puct_policy_vct2``) and E3-A
+(``puct_policy_vct2_50k``) games instead of the dev logs. Keys carry the source arm (``s3:`` / ``e3a:``),
+moves that both arms reached in the same position are screened once (``also_in``), and positions
+D4-equal to a position of ``--exclude-manifest`` (default: the E1-dev and E1-S manifests) are left out.
+The split is ``holdout``; the pool step and the selection rules are the same as for dev.
 """
 from __future__ import annotations
 
@@ -53,6 +59,8 @@ CONTROL = 40         # control positions (seeded sample)
 CONTROL_SEED = 2611
 PROVEN_LOSS, CLEAR, UNKNOWN = 'PROVEN_LOSS', 'VCT2_CLEAR', 'UNKNOWN'
 FORMAT = 'e1-manifest-v1'
+HOLDOUT_ARMS = {'puct_policy_vct2': 's3', 'puct_policy_vct2_50k': 'e3a'}
+DEV_MANIFESTS = (RESULTS / 'e1' / 'e1_manifest.json', RESULTS / 'e1s' / 'e1s_manifest.json')
 
 
 def truth(history, move, budget) -> dict:
@@ -90,12 +98,43 @@ def canonical_hash(history) -> str:
     return min(json.dumps(b, separators=(',', ':')) for b in _d4(game.board))
 
 
-def screen_items() -> list[dict]:
+def manifest_hashes(paths) -> set[str]:
+    """D4-canonical hashes of every position of the given manifests (holdout exclusion)."""
+    out = set()
+    for path in paths:
+        for position in json.loads(Path(path).read_text(encoding='utf-8'))['positions']:
+            out.add(canonical_hash(position['history']))
+    return out
+
+
+def screen_items(sources=None, exclude: set[str] | None = None) -> list[dict]:
+    """Dev (``sources`` None): the fixed baseline logs. Holdout: S3 / E3-A benchmark result files."""
+    if sources is None:
+        return _screen_items_from([(name, RESULTS / name) for name in SOURCES], {'puct_policy': None})
+    items, seen, dropped = [], {}, {'excluded_d4': 0, 'same_move_other_arm': 0}
+    for item in _screen_items_from([(str(p), Path(p)) for p in sources], HOLDOUT_ARMS):
+        same = (json.dumps(item['history']), tuple(item['played']))
+        if same in seen:  # both arms reached this position and played the same move
+            seen[same]['also_in'].append(item['key'])
+            dropped['same_move_other_arm'] += 1
+            continue
+        if exclude and canonical_hash(item['history']) in exclude:
+            dropped['excluded_d4'] += 1
+            continue
+        item['also_in'] = []
+        seen[same] = item
+        items.append(item)
+    screen_items.dropped = dropped
+    return items
+
+
+def _screen_items_from(named_paths, arms: dict) -> list[dict]:
     items = []
-    for name in SOURCES:
-        run = json.loads((RESULTS / name).read_text(encoding='utf-8'))
-        if run['arm'] != 'puct_policy':
-            raise ValueError(f'{name}: arm {run["arm"]} is not the baseline puct_policy')
+    for name, path in named_paths:
+        run = json.loads(path.read_text(encoding='utf-8'))
+        if run['arm'] not in arms:
+            raise ValueError(f'{name}: arm {run["arm"]} is not one of {sorted(arms)}')
+        tag = arms[run['arm']]
         for game in run['games']:
             for record in game['v8_moves']:
                 if record['route'] != 'tree':
@@ -103,7 +142,8 @@ def screen_items() -> list[dict]:
                 status = dict((tuple(m), s) for m, s in record['root']['checked']).get(tuple(record['played']))
                 if status == 'UNSAFE':
                     continue  # V8-C already proved it lost: not the case S3 is for
-                items.append({'key': f"{run['seed']}-p{game['pair']}-{game['v8_color']}/{record['ply']}",
+                key = f"{run['seed']}-p{game['pair']}-{game['v8_color']}/{record['ply']}"
+                items.append({'key': f'{tag}:{key}' if tag else key, 'source_arm': run['arm'],
                               'source': name, 'seed': run['seed'], 'pair': game['pair'],
                               'v8_color': game['v8_color'], 'ply': record['ply'], 'result': game['result'],
                               'history': game['moves'][:record['ply']], 'played': record['played'],
@@ -114,6 +154,7 @@ def screen_items() -> list[dict]:
 def _screen_task(item):
     return {**{k: item[k] for k in ('key', 'source', 'seed', 'pair', 'v8_color', 'ply', 'result',
                                     'history', 'played', 'v8c_status')},
+            **{k: item[k] for k in ('source_arm', 'also_in') if k in item},
             'screen': truth(item['history'], item['played'], SCREEN_BUDGET), 'budget': SCREEN_BUDGET}
 
 
@@ -152,9 +193,9 @@ def _run_jobs(tasks, fn, workers, jsonl: Path | None, key, budget):
     return done
 
 
-def select(rows: list[dict]) -> dict:
+def select(rows: list[dict], sources=None) -> dict:
     """Loss positions (one per tactical episode, D4-deduplicated) and a seeded control sample."""
-    order = {name: i for i, name in enumerate(SOURCES)}
+    order = {name: i for i, name in enumerate(sources or SOURCES)}
     rows = sorted(rows, key=lambda r: (order[r['source']], r['pair'], r['v8_color'], r['ply']))
     losses, seen, dropped = [], set(), {'same_episode': 0, 'd4_duplicate': 0}
     last = {}
@@ -246,6 +287,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('step', choices=('screen', 'pool'))
     parser.add_argument('--screen', type=Path, help='pool: the screen output')
+    parser.add_argument('--sources', type=Path, nargs='+',
+                        help='screen, holdout: S3 / E3-A benchmark result files (default: the dev logs)')
+    parser.add_argument('--exclude-manifest', type=Path, nargs='*',
+                        help='holdout: leave out positions D4-equal to these manifests (default: E1-dev, E1-S)')
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     parser.add_argument('--limit', type=int, help='smoke tests: first N items only')
     parser.add_argument('--workers', type=int, default=1)
@@ -254,15 +299,25 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     common = {'git_commit': _git_commit(), 'git_dirty': _git_dirty(), 'restricted': args.limit is not None}
     if args.step == 'screen':
-        items = screen_items()[:args.limit]
+        holdout = args.sources is not None
+        excluded = list(DEV_MANIFESTS if args.exclude_manifest is None else args.exclude_manifest) if holdout else []
+        items = screen_items(args.sources, manifest_hashes(excluded) if holdout else None)[:args.limit]
         done = _run_jobs(items, _screen_task, args.workers, args.jsonl, lambda t: t['key'], SCREEN_BUDGET)
         rows = [done[i['key']] for i in items]
         status = {}
         for r in rows:
             status[r['screen']['status']] = status.get(r['screen']['status'], 0) + 1
-        payload = {'format': 'e1-screen-v1', **common, 'budget': SCREEN_BUDGET,
-                   'inputs': {n: file_sha256(RESULTS / n) for n in SOURCES},
-                   'summary': {'items': len(rows), 'status': status}, 'rows': rows}
+        inputs = ({str(p): file_sha256(p) for p in args.sources} if holdout
+                  else {n: file_sha256(RESULTS / n) for n in SOURCES})
+        summary = {'items': len(rows), 'status': status}
+        if holdout:
+            summary.update(dropped=screen_items.dropped,
+                           by_source_arm={a: sum(r['source_arm'] == a for r in rows) for a in HOLDOUT_ARMS})
+        payload = {'format': 'e1-screen-v1', **common, 'split': 'holdout' if holdout else 'dev',
+                   'budget': SCREEN_BUDGET, 'inputs': inputs,
+                   'excluded_manifests': {(str(Path(p).resolve().relative_to(ROOT)) if Path(p).resolve().is_relative_to(ROOT)
+                                           else str(p)): file_sha256(p) for p in excluded},
+                   'summary': summary, 'rows': rows}
         print(json.dumps(payload['summary'], indent=1), flush=True)
     else:
         if args.screen is None:
@@ -271,7 +326,8 @@ def main(argv=None) -> int:
 
         hashes = check_checkpoint(args.policy_checkpoint)
         screen = json.loads(args.screen.read_text(encoding='utf-8'))
-        chosen = select(screen['rows'])
+        sources = list(screen['inputs']) if screen.get('split') == 'holdout' else None
+        chosen = select(screen['rows'], sources)
         items = ([{**r, 'kind': 'loss'} for r in chosen['losses']]
                  + [{**r, 'kind': 'control'} for r in chosen['controls']])[:args.limit]
         for item in items:
@@ -283,6 +339,7 @@ def main(argv=None) -> int:
             row = done[item['key']]
             entry = {**{k: item[k] for k in ('key', 'source', 'seed', 'pair', 'v8_color', 'ply', 'result',
                                              'history', 'played', 'v8c_status', 'screen', 'e1_seeds')},
+                     **{k: item[k] for k in ('source_arm', 'also_in') if k in item},
                      'runs': row['runs'], 'truths': row['truths']}
             entry['class'] = classify(row['truths']) if item['kind'] == 'loss' else 'E1-C'
             if entry['class'] == 'E1-P':
@@ -291,7 +348,7 @@ def main(argv=None) -> int:
         classes = {}
         for p in positions:
             classes[p['class']] = classes.get(p['class'], 0) + 1
-        payload = {'format': FORMAT, **common, 'split': 'dev', 'policy': hashes,
+        payload = {'format': FORMAT, **common, 'split': screen.get('split', 'dev'), 'policy': hashes,
                    'budgets': {'screen': SCREEN_BUDGET, 'truth': TRUTH_BUDGET}, 'e1_runs': E1_RUNS,
                    'screen_input_sha256': file_sha256(args.screen), 'selection': chosen['dropped'],
                    'summary': {'positions': len(positions), 'classes': classes,

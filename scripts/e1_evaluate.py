@@ -91,11 +91,16 @@ def outcome(cls: str, truths: dict, run: dict, k: int = K) -> str:
     return 'BUDGET_AMBIGUITY'
 
 
+ARMS = {'s3': NAME, 'e3a': 'E3-A'}  # E1-holdout (§12.34) evaluates both on the same manifest
+
+
 def _evaluate(task):
-    from analysis.s3_vct2_v1 import make_agent
+    from analysis.e3_arms import make_agent as make_arm
     from scripts.run_mcts_v8_benchmark import load_policy
 
-    position, checkpoint = task
+    position, checkpoint, *rest = task
+    arm = rest[0] if rest else 's3'
+    make_agent = lambda policy, seed: make_arm(arm, policy, seed=seed)  # noqa: E731
     policy = load_policy(checkpoint)
     game = Game()
     for move in position['history']:
@@ -120,7 +125,7 @@ def _evaluate(task):
         run['outcome'] = outcome(position['class'], truths, run)
         run['unsound'] = [m for m, s in checked if s == 'UNSAFE' and truths.get(_key(m), {}).get('status') == CLEAR]
         runs.append(run)
-    return {'key': position['key'], 'class': position['class'], 'runs': runs,
+    return {'key': position['key'], 'class': position['class'], 'arm': arm, 'runs': runs,
             'truths_added': {k: v for k, v in truths.items() if k not in position['truths']}}
 
 
@@ -175,6 +180,7 @@ def main(argv=None) -> int:
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     parser.add_argument('--classes', nargs='+', default=['E1-P', 'E1-N', 'E1-C'])
+    parser.add_argument('--arm', choices=tuple(ARMS), default='s3', help="engine: 's3' (S3-VCT2-v1) or 'e3a' (E3-A)")
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--jsonl', type=Path)
     parser.add_argument('--output', type=Path)
@@ -191,6 +197,8 @@ def main(argv=None) -> int:
                 row = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if row.get('arm', 's3') != args.arm:
+                raise ValueError(f"{args.jsonl} holds rows of arm {row.get('arm', 's3')}; use another --jsonl")
             done[row['key']] = row
     pending = [p for p in positions if p['key'] not in done]
     print(f'positions={len(positions)} done={len(positions) - len(pending)} workers={args.workers}', flush=True)
@@ -205,7 +213,7 @@ def main(argv=None) -> int:
             with args.jsonl.open('a', encoding='utf-8') as handle:
                 handle.write(json.dumps(row) + '\n')
 
-    tasks = [(p, args.policy_checkpoint) for p in pending]
+    tasks = [(p, args.policy_checkpoint, args.arm) for p in pending]
     if args.workers == 1:
         for task in tasks:
             keep(_evaluate(task))
@@ -216,7 +224,8 @@ def main(argv=None) -> int:
     rows = [done[p['key']] for p in positions]
     truths_of = {p['key']: {**p['truths'], **done[p['key']]['truths_added']} for p in positions}
     summary = summarize(rows, truths_of)
-    payload = {'format': FORMAT, 'engine': NAME, 'git_commit': _git_commit(), 'git_dirty': _git_dirty(),
+    payload = {'format': FORMAT, 'engine': ARMS[args.arm], 'arm': args.arm,
+               'git_commit': _git_commit(), 'git_dirty': _git_dirty(),
                'policy': hashes, 'manifest_sha256': file_sha256(args.manifest), 'split': manifest.get('split'),
                'summary': summary, 'rows': rows}
     print(json.dumps({k: v for k, v in summary.items() if k != 'positions'}, indent=1), flush=True)

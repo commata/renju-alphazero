@@ -4,7 +4,7 @@
 > **V8-B(자기 VCT1 공격) 구현 완료, 조건부 통과**(s0 4/4, false positive 0, D4 26/32는 측정값) — §4.2.9, §11.10.
 > V8-4 pilot 완료(§11.12). **V8-C(root VCT1 safety, 트리 후 검증) 구현 완료**, root 게이트 3/3 — §4.3.
 > **2026-10-01: 두 트랙 분리(§12).** V8은 Track B(Hybrid)의 전술 모듈이 됐다. V8-C는 `aggressive`(기본)·`veto` 두 모드, runner에 `--opponent`.
-> 개발 브랜치는 `ccr-ba71e723-f37v8m`이다. V8_TEACHER 동결 전까지 `V8_DEFAULTS` 값은 바뀔 수 있다.
+> 개발 브랜치는 `feat/mcts-v8-teacher`다(2026-10-11, 이전 이름 `ccr-993dfc5f-jxbv0u`, 그 전 `ccr-ba71e723-f37v8m`). V8_TEACHER 동결 전까지 `V8_DEFAULTS` 값은 바뀔 수 있다.
 
 작성 2026-09-30. 입력: "AlphaZero 연구 라인과 teacher 제작 라인을 분리하고 V8 teacher를 새로 만든다"는 제안(V8-M1~M6,
 teacher root record, 3계층 데이터, V8-D/V8-T4 arm), 사람 대 v7 웹 대국 6판(`tests/fixtures/web_play_v7_human_games_v1.json`),
@@ -3211,3 +3211,17 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
 - **Final-1/Final-2 봉인.**
   - 저장소에는 manifest만 둔다: 생성기 commit, 생성기 설정 해시, 제외 세트 해시, 국면·판 수, D4 규칙, 산출물 SHA-256.
   - 실제 국면 파일과 생성 seed는 H8 전까지 저장소 밖(분석 도구와 AI가 읽지 않는 위치)에 보관한다. seed가 공개되면 다시 만들어 볼 수 있기 때문이다.
+
+### 12.35 E1-holdout 도구 (2026-10-11)
+
+§12.34 설계를 그대로 구현했다. dev 기본 동작(`--sources` 없음)은 바뀌지 않는다(`tests/test_e1_suite.py`).
+
+| 단계 | 도구 | 내용 |
+|---|---|---|
+| 대국 | `run_mcts_v8_benchmark.py` | seed 8417/8418 × arm `puct_policy_vct2`(S3) / `puct_policy_vct2_50k`(E3-A), 상대 `v8:full+vct2atk`, 25쌍씩 |
+| screen | `e1_build_suite.py screen --sources …` | key 앞에 `s3:` / `e3a:`. 두 arm이 같은 국면에서 같은 수를 둔 행은 한 번만 screen한다(`also_in`). E1-dev·E1-S manifest와 D4가 겹치는 국면은 뺀다(`--exclude-manifest`, 기본값). split = `holdout` |
+| pool | `e1_build_suite.py pool` | dev와 같다. 선택 순서는 `--sources`에 준 순서(S3 먼저)다 |
+| 평가 | `e1_evaluate.py --arm s3` / `--arm e3a` | 같은 manifest, 같은 국면별 seed. 행에 `arm`이 기록되고, 다른 arm의 jsonl과 섞이면 거부한다 |
+| 판정 | `e1_holdout_judge.py` | G1–G5, FALSE_VETO / UNSOUND_WITNESS(E3-A 예산으로 증명을 다시 만들어 `verify_witness`) / UNRESOLVED. PASS면 TB-Engine-v1 = E3-A, FAIL이면 S3-VCT2-v1 |
+
+테스트: `tests/test_e1_holdout.py`(holdout key·중복·제외, 판정 gate, witness 재현). witness 재현은 E1-dev 8411-p8 (7,8)로 확인했다. 50k에서는 재현되고, 10k에서는 재현되지 않는다.
