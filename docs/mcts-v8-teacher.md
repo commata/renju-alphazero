@@ -3155,7 +3155,7 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
      - E3-A의 unsound_witness 0, false_veto 0
      - E3-A의 veto_recall ≥ S3의 veto_recall
      - E3-A의 RESCUED ≥ S3의 RESCUED
-     - E3-A의 LOSS_TO_LOSS_SWITCH(E1 결과 분류) ≤ 1
+     - E3-A가 교체했는데 최종 수의 참값이 PROVEN_LOSS인 run ≤ 1. E1-P에서는 `switched = true`이면서 최종 수가 PROVEN_LOSS인 run(BUDGET_AMBIGUITY 등으로 분류된다)이고, E1-N에서는 LOSS_TO_LOSS_SWITCH다
    - 실패하면 TB-Engine-v1은 S3-VCT2-v1로 되돌리고, E3-A는 기록만 남긴다.
    - E1-P 국면이 5개보다 적으면 비율 판정 대신 사례별로 보고한다(§12.26 규모 규칙).
 2. **TB-Engine-v1 동결**(통과 시)
