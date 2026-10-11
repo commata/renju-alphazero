@@ -3098,3 +3098,72 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
   - LOSS_TO_LOSS 0, UNKNOWN 대안 교체 0이다.
 
 **순서:** 데스크톱 tree dev replay(E2 tree 6, E1-dev 3) → 결과 확인(이 단계로 설정은 바꾸지 않는다) → 8415/8416 본실험(seed마다 baseline → E3-A → E3-S, 상대 `v8:full+vct2atk`, arm당 25쌍) → `e3_compare`(E3-A, E3-S 각각) → 위 표 → E1-holdout → TB-Engine-v1.
+
+### 12.33 E3 결과와 판정: E3-A 채택, E3-S 기각 (2026-10-11)
+
+결과 파일은 `docs/mcts-v8-results/e3/`에 있다(사용자 실행, dev replay는 `3bb6ff6`, git_dirty = False). 상대는 `v8:full+vct2atk`(200k), seed 8415/8416, arm당 100판이다.
+
+| 항목 | S3 (baseline) | E3-A (50k) | E3-S (stage 10k) |
+|---|---|---|---|
+| 승/무/패 | 75/10/15 (0.800) | 76/10/14 (0.810) | 75/10/15 (0.800) |
+| 쌍 점수 차 [95%] | — | +0.010 [0.000, 0.030] | 0.000 [0.000, 0.000] |
+| 수순이 달라진 대국 / 결과가 바뀐 대국 | — | 2 / 1 (8415/7 백: 패 → 승) | 2 / 0 |
+| veto (tree / stage) | 1 / — | 4 / — | 1 / 23 |
+| veto 결과 | RESCUED 1 | RESCUED 3, KEPT 1 | RESCUED 1(tree), KEPT 21, LOSS_TO_LOSS 2 |
+| unsound / 안전 위반 | 0 / 0 | 0 / 0 | 0 / 0 |
+| 상대 `own_vct2` 승리 | 9 | 7 | 9 |
+| 시험 엔진 시간 비율 | 1.0 | 1.150 | 0.986 |
+| reading (§12.32) | — | `MECHANISM_ESTABLISHED_BUT_MATCH_UNPROVEN` | `NOT_ESTABLISHED` |
+
+**판정(§12.32 표 그대로).** E3-A는 유효하다(MECHANISM + `cost_ok`). E3-S는 유효하지 않다. → **E3-A 채택, E3-AS는 만들지 않는다.**
+
+#### 읽을 때 주의할 점
+
+- **E3-A의 점수 +0.01은 대국 하나다.** 100판 중 수순이 달라진 것이 2판, 결과가 바뀐 것이 1판이다. 기력 향상은 주장하지 않는다(구간 하한 0).
+- **E3-A의 RESCUED 3건 중 1건(8415/8 백 11수)은 baseline도 똑같이 했다.** 10k로도 잡히는 수였다. 50k가 새로 만든 veto는 3건이다.
+  - 8415/7 백 45수: 42,650 노드로 탐지했고, 교체 수는 SAFE(775 노드), 10M 참값 CLEAR다. 대국 결과가 바뀌었다.
+  - 8415/18 흑 48수: 27,248 노드로 탐지했다. 교체 수 (5,3)은 50k에서 **UNKNOWN**이었는데, 10M 참값으로 CLEAR였다. 대국은 그래도 졌다.
+  - 8415/2 흑 56수: 14,268 노드로 탐지했다. 대안이 없어 그대로 뒀다(KEPT).
+- **UNKNOWN 대안 교체의 위험은 남아 있다.**
+  - 본실험에서 교체 3건 중 1건이 UNKNOWN 대안이었다(결과는 CLEAR).
+  - tree dev replay(아래)에서는 교체 7건 중 2건이 UNKNOWN 대안이었고, 그중 1건(E1-dev 8411-p8 (6,6))은 패배였다.
+  - 합치면 교체 10건 중 UNKNOWN 대안 3건, 그중 패배 확정 1건이다. 본실험의 LOSS_TO_LOSS 0/3은 표본이 작다.
+  - 채택 판정에는 영향이 없지만 E3-R의 근거로 기록한다.
+- **E3-A 비용.**
+  - 착수당 검사 수는 평균 1.003이다.
+  - 첫 검사 노드 중앙값은 128이지만 p95는 50,000이다. 5% 이상이 예산을 끝까지 쓴다(UNKNOWN).
+  - 최대 77,248 노드, 대국 시간 비율은 1.15다.
+- **E3-S는 탐지는 했지만 너무 늦었다.**
+  - stage veto 23건은 모두 **이미 진 13판**에서 나왔다.
+  - 판마다 첫 stage veto는 대국 끝 2–18 plies 전이다(중앙값 10 plies, 우리 수로 약 5수).
+  - KEPT 21건은 V8-A 방어 집합(forced + widened) 안의 모든 수가 패배로 증명됐거나 제외된 경우다(V8-A VCT1 UNSAFE, 즉시 패배). 집합 밖의 수는 보지 않았다.
+  - LOSS_TO_LOSS 2건은 모두 widened 층의 UNKNOWN 대안이었다. 사후 검증에서 둘 다 패배였다(selective 39.7k, 117k 노드).
+  - 병목은 "stage를 검사하지 않음"에서 "검사하는 시점이 이미 늦음"으로 바뀌었다. stage 예산을 늘려도 이 문제는 풀리지 않는다.
+- **tree dev replay**(E3-A, 9건, 재현 불일치 0)
+  - 결과: RESCUED 4, SWITCH_UNRESOLVED 2, LOSS_TO_LOSS 1, NOT_DETECTED 2
+  - E2 tree 6건 중 4건을 탐지했다(§12.31 예측과 같음). 못 잡은 2건은 74k가 필요한 수, 그리고 selective 200k로도 UNKNOWN이지만 전체 클래스 5.27M 노드로 패배가 증명된 수다.
+  - 50k는 완전한 detector가 아니라 비용과 recall의 타협점이다.
+
+#### 다음 단계 (제안, 실행 전 고정할 것)
+
+1. **E1-holdout**(§12.26 요구사항, TB-Engine-v1 동결 전)
+   - 출처: 지금까지 쓰지 않은 seed **8417/8418**. S3 baseline(`puct_policy_vct2`) 대 `v8:full+vct2atk`, 25쌍씩 새로 둔다.
+   - 8413–8416은 진단이나 판정에 이미 썼으므로 쓰지 않는다.
+   - suite 규칙은 E1-dev와 같다(screen 50k, 에피소드·D4 중복 제거, pool, 10M 참값, seed 3개).
+   - 평가: 같은 국면·seed에서 **S3와 E3-A를 모두** 평가하는 짝 비교. 수순 위치 분포를 같이 보고한다.
+   - **통과 조건**(모두 만족):
+     - E3-A의 unsound_witness 0, false_veto 0
+     - E3-A의 veto_recall ≥ S3의 veto_recall
+     - E3-A의 RESCUED ≥ S3의 RESCUED
+     - E3-A의 LOSS_TO_LOSS_SWITCH(E1 결과 분류) ≤ 1
+   - 실패하면 TB-Engine-v1은 S3-VCT2-v1로 되돌리고, E3-A는 기록만 남긴다.
+   - E1-P 국면이 5개보다 적으면 비율 판정 대신 사례별로 보고한다(§12.26 규모 규칙).
+2. **TB-Engine-v1 동결**(통과 시)
+   - `src/analysis/tb_engine_v1.py`: E3-A 설정 전체와 H3 checkpoint 해시를 적는다(`s3_vct2_v1.py`와 같은 방식, 테스트로 고정).
+   - 웹 대국 상대로 등록한다.
+   - **Final-1·Final-2 봉인 manifest를 생성·커밋한다**(track-b-b1-b2.md §8.2, §13). 규칙으로 생성한 새 opening·국면을 쓰고, 알려진 모든 세트와 D4가 겹치면 뺀다.
+3. **H6-0은 1과 병렬로 시작할 수 있다.** 라벨 스키마, 누출 검사, runner의 `--value-checkpoint` 같은 작업(§12.19)은 엔진 동결에 의존하지 않는다. 데스크톱이 E1-holdout을 도는 동안 구현과 테스트를 한다.
+4. **연구 목록**(mainline이 아니다. TB-Engine-v2 후보이며 H7 주기 경계에서 gate를 거친다)
+   - **E3-R**(교체 규칙): UNKNOWN 대안을 허용하지 않고 SAFE(NO_TARGETED) 대안만 받는다. 없으면 원래 수를 둔다(KEPT). 근거는 위의 교체 10건 중 UNKNOWN 3건, 패배 1건이다.
+   - **E4**(더 이른 위치의 탐지): stage4 진입 전에, root 후보 단계에서 상대의 깊이 2 공격 위협을 찾는다. 근거는 E3-S의 "탐지는 하지만 늦다"는 결과다.
+   - **L 트랙**(지연): E3-A 착수 p95는 124초다. 시간 제한 대국이 목표일 때 다룬다.
