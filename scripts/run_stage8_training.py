@@ -201,6 +201,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--parallel-games', type=int,
                         help='override self_play_parallel_games (lock-step batched self-play, '
                              'execution only; same games as 1)')
+    parser.add_argument('--workers', type=int,
+                        help='override self_play_workers (self-play processes, each with its '
+                             'own lock-step engine; execution only)')
     parser.add_argument('--new-run', action='store_true',
                         help='start a NEW run in --run-dir (must not exist or be empty) from '
                              '--config; later invocations resume it (use --anchor 0)')
@@ -250,6 +253,8 @@ def main() -> int:
             config['device'] = args.device
         if args.parallel_games is not None:
             config['self_play_parallel_games'] = args.parallel_games
+        if args.workers is not None:
+            config['self_play_workers'] = args.workers
         validate_config(config)
         keep_every = config['training'].get('keep_every')
         if not keep_every or args.light_every % keep_every or args.anchor % keep_every:

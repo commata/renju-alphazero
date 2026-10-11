@@ -1824,6 +1824,98 @@ forensic에 다음 세 가지를 추가했다: `--check-vct-depth`, Q 순위(`*_
 **레시피 동결(G2 동안):** 탐색 400회, 온도 2, adaptive steps(6.4, 20~100), 학습률 1e-3, 64×4, balanced sampling을 바꾸지 않는다.
 step 상한 100 도달은 기록만 한다. 상한 변경은 G2 이후 별도 A/B 후보다.
 
+### 12.25 MP 구현과 GPU 측정 단계(A1–A7), Track A 전체 단계 (2026-10-11, 외부 검토 반영)
+
+**범위:** GPU/CUDA 최적화는 Track A에서만 한다. Track B·E 계열은 지금 CPU 경로를 그대로 둔다.
+
+#### Track A 전체 단계와 현재 위치
+
+| 구간 | 결과 | 상태 |
+|---|---|---|
+| Stage 1–7 | 규칙, MCTS 기준선, 네트워크, PUCT, 학습 파이프라인(D16) | 완료 |
+| Stage 8 Gate 1–3 | 균형 샘플링(B) 채택 | 완료 |
+| B400 장기 | gen 880에서 정체 | 완료 |
+| S4 / S2 / sims100 | 온도 4가 정체를 깸, sims100 기각 | 완료 |
+| 안정 루프, C0 | champion ADA1360 | 완료 |
+| C1 / C2 / forensic | 정체, `keep_control`, "탐색이 합법수보다 적으면 막지 못한다" | 완료 |
+| G0 | GPU lock-step 엔진, 배치 인코딩, 학습 GPU | 완료 |
+| G1 | 탐색 400회 `adopt_stronger` | 완료 |
+| **C3** | S400 champion 선정 | **다음 실행**(§21.1 명령 준비됨) |
+| 동결 | `S400C.pt` | 대기 |
+| **MP** | 이 절에서 구현, 측정 대기 | **구현 완료** |
+| G2a / G2b / G2c | 누적 120 / 320 / 640세대 | 대기 |
+| Stage 9 | 최종 평가 | 대기 |
+
+#### GPU 측정 단계
+
+| 단계 | 내용 | 결과·목표 | 상태 |
+|---|---|---|---|
+| A1 | RTX 5070 점검, B1/B16/B64 | B16 0.23 ms/국면(CPU 1.49), B64 0.12 | 완료(§12.22) |
+| A2 | 학습 GPU | 100 step 17–21배 | 완료(§12.21) |
+| A3 | GPU lock-step 16, 1프로세스 | S400 self-play 약 304 s/세대(중앙값), 전체 약 366 s/세대 | 완료(G1 실측, §12.23) |
+| **A6** | **MP: `self_play_workers` W** | **전체 ≤120 s/세대** | **구현 완료, 데스크톱 측정 대기** |
+| A5 | checkpoint 대국 배치(refill) | C3·G2 게이트 평가 시간 | 미이식(필요할 때) |
+| A4 | CPU·GPU 비동기 겹치기 | 상한 약 1.2배 | A6 뒤 필요할 때 |
+| A7 | CUDA Graph | GPU 쪽이 의미 있을 때만 | 보류 |
+
+**기준선은 366 s/세대이고, 이것은 이미 GPU lock-step 16(G1)이다.** CPU 순차 S400은 같은 16판 벤치마크에서 약 2배 느리다(292.9 대 140.6 s).
+1프로세스 lock-step은 CPU 병목으로 약 2배가 상한이고 이미 그 위치에 있다(평가 1회당 GPU 0.2–0.3 ms, CPU 약 1.2 ms).
+그래서 ≤120 s/세대(약 3배)에는 MP가 필요하다.
+
+**판정은 sec/gen 하나로 한다.** batch 크기는 진단용이다.
+
+- 1프로세스 평균 batch는 5–8이었다(먼저 끝난 게임이 빠지는 꼬리 + CPU 병목). GPU가 병목이 아니라서 batch를 키워도 sec/gen이 줄지 않는다.
+- W개로 나누면 프로세스당 batch 상한이 16/W가 되지만 같은 이유로 문제가 아니다.
+
+| 전체 sec/gen | 판정 |
+|---:|---|
+| ≤120 | PASS. A4·A7 없이 C3 → 동결 → G2 |
+| 120–150 | 채택하고 추가 최적화(A4) 검토 |
+| 150–180 | 프로세스별 시간(`worker_seconds`) 프로파일 |
+| >180 | MP 효과 부족. CPU 사용률·GPU 사용률 확인 |
+
+정확성 게이트: 불법수 0, 규칙·회귀 테스트, CPU에서 W=1과 W>1 기록 동일(테스트), GPU에서는 게임 길이·색·짧은 게임 분포가 같은 범위, resume.
+
+#### MP 구현 (`src/training/workers.py`)
+
+- 실행 전용 설정 `self_play_workers`(기본 1, critical hash 밖). `run_stage8_training.py --workers`, `run_champion_loop.py --workers`.
+- 학습 run마다 `spawn` 프로세스 풀을 한 번 만들고 매 세대 재사용한다(Windows에서 쓸 수 있는 유일한 방식이고 CUDA와 안전하다).
+  세대마다 현재 가중치를 CPU tensor로 보내고, 각 프로세스는 자기 모델에 불러온다.
+- 시드는 부모가 지금과 같은 순서로 뽑고 round-robin으로 나눈다(게임 i → 프로세스 i mod W). 긴 게임과 짧은 게임이 섞이고, 결과는 시드 순서로 되돌린다.
+- 각 프로세스는 자기 몫을 G0 lock-step으로 둔다(동시 판수 = min(`self_play_parallel_games`, 몫)).
+- 프로세스마다 스레드 수, `flush_denormal`, 결정적 알고리즘 설정, IEEE float32(TF32 끔)를 부모와 같게 둔다.
+- 세대 이벤트 `self_play_batching`에 `workers`, `worker_seconds`(프로세스별 시간)를 남기고, metadata 구간에 `self_play_workers`를 남긴다.
+
+**검증(이 컨테이너, CPU 4코어):**
+
+- W=2 학습 2세대의 self-play 기록과 최종 가중치가 W=1과 같다(`tests/test_stage8_mp.py`).
+- 벤치마크(64×4 무작위 가중치, 50회 탐색, 16판, lock-step 16):
+
+| W | 시간 | 배수 | 평가/s | 평균 batch | 기록 동일 |
+|---:|---:|---:|---:|---:|---|
+| 1 | 161.2 s | 1.00 | 229 | 11.3 | 기준 |
+| 2 | 89.0 s | 1.81 | 415 | 5.7 | 예 |
+| 4 | 49.4 s | 3.26 | 749 | 3.0 | 예 |
+
+  CPU만으로 잰 값이라 GPU 결과의 예측은 아니다. 코어 수에 거의 비례해 늘어난다는 것만 보여 준다.
+
+#### 데스크톱 측정 순서
+
+```powershell
+# 1) MP 벤치마크: C3 champion(또는 ADA1360)으로 같은 16판, S400
+python scripts/benchmark_self_play.py --checkpoint runs/anchors/S400C.pt `
+    --devices cuda --simulations 400 --parallel 16 --workers 1 2 3 4 6 `
+    --output runs/gpu/mp_benchmark.json
+# 2) 가장 빠른 W로 실제 학습 10세대(같은 checkpoint·seed, 다른 작업 없이) → sec/gen 중앙값·평균·p95
+# 3) G2: run_champion_loop.py ... --device cuda --parallel-games 16 --workers <W>
+```
+
+- W 후보는 2 → 3 → 4 → 6(i5-12600K P코어 6개). 각 프로세스가 CUDA context(수백 MB)를 가진다.
+- GPU에서는 W가 바뀌면 배치 구성이 달라져 float 동률 처리가 달라질 수 있다. 그래서 `same_records`가 False여도 실패가 아니다(등급 E1).
+  게임 길이·색·짧은 게임 분포를 같이 본다.
+- G2 동안은 40세대 rolling 평균 sec/gen을 기록한다.
+- 한 run 안에서는 W를 바꾸지 않는다.
+
 ## 13. PR 분리
 
 | PR | 내용 |

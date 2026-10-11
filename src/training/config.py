@@ -30,6 +30,8 @@ DEFAULTS: dict = {
     # (search.batched). Same records as 1 (one game at a time) with the same evaluator
     # outputs, so execution-only.
     'self_play_parallel_games': 1,
+    # Stage 8 MP (execution only): processes that share a generation's self-play games.
+    'self_play_workers': 1,
     'model': {
         'channels': _MODEL.channels,
         'blocks': _MODEL.blocks,
@@ -95,7 +97,8 @@ DEFAULTS: dict = {
 # Execution-control keys: may differ between a checkpoint and --config / CLI on resume.
 # Everything else is training-critical and must match the checkpoint exactly.
 NON_CRITICAL = (
-    ('device',), ('torch_threads',), ('self_play_parallel_games',), ('output',),
+    ('device',), ('torch_threads',), ('self_play_parallel_games',), ('self_play_workers',),
+    ('output',),
     ('milestones',), ('health',),
     ('flush_denormal',),
     ('training', 'generations'), ('training', 'keep_checkpoints'), ('training', 'keep_every'),
@@ -158,6 +161,7 @@ def validate_config(config: dict) -> dict:
     _int(config['torch_threads'], 'torch_threads')
     # Absent from configs and checkpoints written before Stage 8 G0: default 1.
     _int(config.get('self_play_parallel_games', 1), 'self_play_parallel_games')
+    _int(config.get('self_play_workers', 1), 'self_play_workers')
     try:
         model_config(config)
     except ValueError as exc:

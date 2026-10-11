@@ -38,6 +38,7 @@ from .training_checkpoint import (INIT_NAME, LATEST_NAME, build_checkpoint, copy
                                   generation_checkpoint_name, load_training_state,
                                   prune_checkpoints, save_atomic)
 from .training_state import TrainingState, derive_seed, init_training_state
+from .workers import SelfPlayPool
 
 try:
     import numpy
@@ -81,8 +82,13 @@ def save_generation_checkpoint(state: TrainingState, checkpoint_dir: Path) -> Pa
     return path
 
 
-def generate_self_play(state: TrainingState) -> tuple[list, list, float, dict | None]:
-    """Self-play with eval mode + no_grad; one game seed per game from self_play_rng."""
+def generate_self_play(state: TrainingState, pool: SelfPlayPool | None = None
+                       ) -> tuple[list, list, float, dict | None]:
+    """Self-play with eval mode + no_grad; one game seed per game from self_play_rng.
+
+    With ``pool`` (``self_play_workers`` > 1) the games are dealt to worker processes;
+    the seeds are drawn here in the same order either way.
+    """
     config = state.config
     search = self_play_search_config(config)
     env = runtime_env(config)
@@ -91,33 +97,40 @@ def generate_self_play(state: TrainingState) -> tuple[list, list, float, dict | 
     count = config['training']['games_per_generation']
     parallel = config.get('self_play_parallel_games', 1)
     lockstep = LockstepStats()
-    with inference_mode_for(state.model):
-        evaluator = PolicyValueEvaluator(state.model, device=config['device'])
-        # Seeds are drawn in the same order either way, so the records do not depend on
-        # how many games run together.
-        seeds = [state.self_play_rng.getrandbits(63) for _ in range(count)]
-        for first in range(0, count, parallel):
-            group = [self_play_steps(search, seed, checkpoint_hash=state.source_checkpoint_hash,
-                                     runtime_env=env) for seed in seeds[first:first + parallel]]
-            games.extend(run_lockstep(group, evaluator, lockstep) if parallel > 1
-                         else [drive(group[0], evaluator)])
+    # Seeds are drawn in the same order either way, so the records do not depend on
+    # how many games run together or in how many processes.
+    seeds = [state.self_play_rng.getrandbits(63) for _ in range(count)]
+    if pool is not None:
+        games, batching = pool.play(state.model, search, seeds, parallel=parallel,
+                                    checkpoint_hash=state.source_checkpoint_hash,
+                                    runtime_env=env)
+    else:
+        with inference_mode_for(state.model):
+            evaluator = PolicyValueEvaluator(state.model, device=config['device'])
+            for first in range(0, count, parallel):
+                group = [self_play_steps(search, seed,
+                                         checkpoint_hash=state.source_checkpoint_hash,
+                                         runtime_env=env)
+                         for seed in seeds[first:first + parallel]]
+                games.extend(run_lockstep(group, evaluator, lockstep) if parallel > 1
+                             else [drive(group[0], evaluator)])
+        batching = lockstep.to_dict() if parallel > 1 else None
     elapsed = perf_counter() - started
     records = [g.record for g in games]
     for game in games:
         replay_record(game.record, game.final_game)  # IllegalMove/contract check
-    return (records, [g.move_stats for g in games], elapsed,
-            lockstep.to_dict() if parallel > 1 else None)
+    return records, [g.move_stats for g in games], elapsed, batching
 
 
 def run_generation(state: TrainingState, run_dir: Path, metrics: MetricsLogger,
-                   log: Callable[[str], None]) -> dict:
+                   log: Callable[[str], None], pool: SelfPlayPool | None = None) -> dict:
     config = state.config
     t = config['training']
     gen = state.generation
     final_generation = t['generations'] - 1
     previous_model = deepcopy(state.model)  # = the checkpoint this generation starts from
 
-    records, move_stats, self_play_seconds, batching = generate_self_play(state)
+    records, move_stats, self_play_seconds, batching = generate_self_play(state, pool)
     samples = [s for game_id, record in enumerate(records)
                for s in samples_from_record(record, generation=gen, game_id=game_id)]
     validate_samples(samples)
@@ -288,13 +301,19 @@ def run_training(config: dict | None, *, run_dir: str | Path | None = None,
                            extra={'resume_from': str(resume) if resume else None,
                                   'truncation': truncation, 'git_commit': commit,
                                   'git_dirty': dirty, 'flush_denormal': flush_denormal,
+                                  'self_play_workers': config.get('self_play_workers', 1),
+                                  'self_play_parallel_games':
+                                  config.get('self_play_parallel_games', 1),
                                   'target_generations':
                                   config['training']['generations'], 'stop_after': stop_after})
     started = perf_counter()
     status = 'completed'
+    workers = config.get('self_play_workers', 1)
+    pool = (SelfPlayPool(workers, config['device'], threads=config['torch_threads'],
+                         flush_denormal=flush_denormal) if workers > 1 else None)
     try:
         while state.generation < config['training']['generations']:
-            run_generation(state, run_dir, metrics, log)
+            run_generation(state, run_dir, metrics, log, pool)
             if stop_after is not None and state.generation >= stop_after:
                 status = 'stopped'
                 break
@@ -303,6 +322,9 @@ def run_training(config: dict | None, *, run_dir: str | Path | None = None,
                                 duration=perf_counter() - started,
                                 error=f'{type(exc).__name__}: {exc}')
         raise
+    finally:
+        if pool is not None:
+            pool.close()
     metadata.finish_segment(end_generation=state.generation, status=status,
                             duration=perf_counter() - started)
     state.run_dir = run_dir
