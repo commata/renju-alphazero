@@ -1,0 +1,63 @@
+{
+ "format": "final-sets-manifest-v1",
+ "generator_commit": "c4da93d44a968629946f403647f755cce3d8b3aa",
+ "generator_config": {
+  "opening_plies": 4,
+  "radius": 2,
+  "counts": {
+   "final1_openings": 100,
+   "final2_direct_openings": 200,
+   "final2_common_openings": 50
+  },
+  "tactical_quota": {
+   "immediate_win": 35,
+   "must_block": 35,
+   "forced_loss": 30,
+   "unstoppable_four": 30,
+   "vcf": 35,
+   "black_forbidden": 35
+  },
+  "solver_node_limit": 20000
+ },
+ "generator_config_sha256": "78839bccd5f77762e2fe49d9da332c57d4ee09ecce19c1f8be186e15c0933e5d",
+ "d4_rule": "stones + side to move, minimized over D4 (hybrid.h6_labels.canonical_hash)",
+ "excluded": {
+  "benchmark_openings_in_docs": 74,
+  "probe_files": {
+   "tests\\fixtures\\stage7_probes_defense_v1.json": "fe1a292fdef0a8c5204cecc3e8223f38099f4e98b992e0729e69197c5ee4cd7d",
+   "tests\\fixtures\\stage7_probes_v1.json": "865ead9c3ffa5e407765da9b611b57ef95b9eb7a8834e559182ae0faf0815eae",
+   "tests\\fixtures\\v8_budget_probes_v1.json": "55bbbab598a34eeeaad767553f3a9b4e0ca5413c439df37c14c1c4b6b0e94535",
+   "tests\\fixtures\\v8c_divergence_probes_v1.json": "0d6b70065fcb24cbd3b4b6292918cfc3f6a79b8447ea87f16f86c66aa445a3dc",
+   "tests\\fixtures\\v8c_root_probes_v1.json": "9901ea09c67ed78ac310a8d314d5b79ac8060a0a519f081eaaeb34d5451b5bcd",
+   "tests\\fixtures\\vct_probes_v1.json": "bcd6235e7aa8194e315a6899b9ac24d2f939791b1e55bf1d9eac58b970c786e5",
+   "docs\\mcts-v8-results\\probe_web_v8_loss_20261007.json": "87a2b1d7acfff018dbbe6aef1f659d774a0e0a8c82fac49a12a07c9a106110b5",
+   "docs\\mcts-v8-results\\e1\\e1_manifest.json": "da6c9dbe0fe4eac6809efba7dc86f668ba13b7aa52db9070f47d593c1f378dc4",
+   "docs\\mcts-v8-results\\e1h\\e1h_manifest.json": "245f0e722f7904827bef23296e60d8ac0156bd4b94032f8c7f2ff18ccf5f1688",
+   "docs\\mcts-v8-results\\e1s\\e1s_manifest.json": "2f6e7ae9c96649ccf57c8af6e634f9e014cbb9f948a555eb93dfbede31f7ccf9"
+  }
+ },
+ "secret_commitment": "d5d332b44b45af3ef23f2e86589a9983701e4ad610824e555c2009e67cd49056",
+ "artifacts": {
+  "final1_openings": {
+   "items": 100,
+   "content_sha256": "e9944ee58be07a438cf81ae16fe5d2495626ffb684a105817ee7f53e78350ce0"
+  },
+  "final2_direct_openings": {
+   "items": 200,
+   "content_sha256": "363fdedac44dc1761a48bad88fd4d3f0722319ea3a511e4041885af5fb5c4ab3"
+  },
+  "final2_common_openings": {
+   "items": 50,
+   "content_sha256": "ed86a8a051493632aa5889ea93290bc427bf56e520513a26439ab64baa5e31eb"
+  },
+  "final1_tactical": {
+   "items": 200,
+   "content_sha256": "6f7aad981c9436170c18cc9afabbd0d3f876315ddc89fcce5d16012d2fa43bdd"
+  }
+ },
+ "tactical_generation": {
+  "attempts": 1311,
+  "short_of_quota": {}
+ },
+ "note": "content_sha256 = SHA-256 of the canonical JSON of each set's items (line endings do not matter)"
+}
