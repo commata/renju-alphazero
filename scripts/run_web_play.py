@@ -17,6 +17,7 @@ policy checkpoint whose bytes the S3 runs used) is the "s3" opponent. It is regi
     python scripts/run_web_play.py --policy-checkpoint runs/h3_policy_64x4/best.pt
 Its game logs also record the engine commit and checkpoint hashes, and every move where the
 VCT2 check proved the move lost is saved at once under ``logs/web_play/veto_positions``.
+The frozen TB-Engine-v1 (E3-A, §12.36; same checkpoint) is the "tb1" opponent and is logged the same way.
 "Undo" takes back the last human move (and the AI reply) for relaying games from elsewhere.
 
 Then open:
@@ -75,6 +76,10 @@ _ALPHAZERO_FACTORY = None
 S3_KEY = "s3"
 _S3_FACTORY = None
 _S3_INFO: dict[str, Any] = {}
+TB1_KEY = "tb1"
+_TB1_FACTORY = None
+_TB1_INFO: dict[str, Any] = {}
+FROZEN_KEYS = (S3_KEY, TB1_KEY)  # frozen Track B engines: full provenance and veto positions in the logs
 
 
 def register_alphazero(factory, label: str) -> None:
@@ -93,12 +98,23 @@ def register_s3(factory, info: dict[str, Any]) -> None:
     VERSION_LABELS[S3_KEY] = f"{NAME} (동결)"
 
 
+def register_tb1(factory, info: dict[str, Any]) -> None:
+    """Add the "tb1" opponent; ``factory(seed)`` returns a fresh TB-Engine-v1 agent."""
+    global _TB1_FACTORY, _TB1_INFO
+    from analysis.tb_engine_v1 import NAME
+
+    _TB1_FACTORY, _TB1_INFO = factory, info
+    VERSION_LABELS[TB1_KEY] = f"{NAME} (동결)"
+
+
 def create_agent(version: str, *, seed: int = 42):
     """Build one of the frozen/versioned agents used by the benchmark scripts."""
     if version == ALPHAZERO_KEY and _ALPHAZERO_FACTORY is not None:
         return _ALPHAZERO_FACTORY()  # deterministic search: the seed is unused
     if version == S3_KEY and _S3_FACTORY is not None:
         return _S3_FACTORY(seed)
+    if version == TB1_KEY and _TB1_FACTORY is not None:
+        return _TB1_FACTORY(seed)
     if version == "v321":
         return MCTSV321Agent(seed=seed)
     if version == "v41":
@@ -339,7 +355,7 @@ class PlaySession:
         if human_color not in (BLACK, WHITE):
             raise ValueError("human_color는 BLACK 또는 WHITE여야 합니다.")
         with self.lock:
-            if (self.agent_key == S3_KEY and not self.saved_game
+            if (self.agent_key in FROZEN_KEYS and not self.saved_game
                     and any(r["actor"] not in ("HUMAN", "OPENING_RULE") for r in self.move_records)):
                 self._save_completed_game_locked(unfinished=True)  # relayed games: keep the record
             self.game = Game()
@@ -420,7 +436,7 @@ class PlaySession:
         move = self.agent.select_move(self.game)
         elapsed = perf_counter() - started
         diagnostics = _diagnostics(self.agent)
-        if self.agent_key == S3_KEY:
+        if self.agent_key in FROZEN_KEYS:
             checked = diagnostics.get("v8_vct2_checked") or []
             if checked and checked[0][1] == "UNSAFE":
                 self._save_veto_position_locked(move, elapsed, diagnostics)
@@ -458,8 +474,16 @@ class PlaySession:
         })
 
     def _s3_info(self) -> dict[str, Any]:
-        from analysis.s3_vct2_v1 import NAME, RESULTS_COMMIT, S3_VCT2_V1
+        """Provenance of the frozen engine of this game (S3-VCT2-v1 or TB-Engine-v1)."""
         from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty
+
+        if self.agent_key == TB1_KEY:
+            from analysis.tb_engine_v1 import FREEZE_EVIDENCE, NAME, TB_ENGINE_V1, config_hash
+
+            return {"engine": NAME, "freeze_evidence": FREEZE_EVIDENCE, "engine_config_hash": config_hash(),
+                    "engine_commit": _git_commit(), "git_dirty": _git_dirty(), "config": dict(TB_ENGINE_V1),
+                    **_TB1_INFO}
+        from analysis.s3_vct2_v1 import NAME, RESULTS_COMMIT, S3_VCT2_V1
 
         return {"engine": NAME, "frozen_results_commit": RESULTS_COMMIT, "engine_commit": _git_commit(),
                 "git_dirty": _git_dirty(), "config": dict(S3_VCT2_V1), **_S3_INFO}
@@ -532,7 +556,7 @@ class PlaySession:
             payload["agent_info"] = {"config": _json_value(V8_DEFAULTS)}
         if alphazero:
             payload["agent_info"] = _json_value(getattr(self.agent, "info", {}))
-        s3 = self.agent_key == S3_KEY
+        s3 = self.agent_key in FROZEN_KEYS
         if s3:
             payload["agent_info"] = _json_value(self._s3_info())
             payload["undo_count"] = self.undo_count
@@ -720,6 +744,11 @@ def main() -> None:
         register_s3(lambda seed: make_agent(policy, seed=seed),
                     {"policy_checkpoint": str(args.policy_checkpoint), **hashes})
         print(f"S3-VCT2-v1 opponent: {args.policy_checkpoint} (hash OK)")
+        from analysis.tb_engine_v1 import make_agent as make_tb1
+
+        register_tb1(lambda seed: make_tb1(policy, seed=seed),
+                     {"policy_checkpoint": str(args.policy_checkpoint), **hashes})
+        print("TB-Engine-v1 opponent: same checkpoint")
     else:
         print(f"S3-VCT2-v1 opponent off: {args.policy_checkpoint} not found")
     if args.az_checkpoint is not None:
