@@ -3225,3 +3225,70 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
 | 판정 | `e1_holdout_judge.py` | G1–G5, FALSE_VETO / UNSOUND_WITNESS(E3-A 예산으로 증명을 다시 만들어 `verify_witness`) / UNRESOLVED. PASS면 TB-Engine-v1 = E3-A, FAIL이면 S3-VCT2-v1 |
 
 테스트: `tests/test_e1_holdout.py`(holdout key·중복·제외, 판정 gate, witness 재현). witness 재현은 E1-dev 8411-p8 (7,8)로 확인했다. 50k에서는 재현되고, 10k에서는 재현되지 않는다.
+
+### 12.36 E1-holdout 결과(PASS)와 TB-Engine-v1 동결 (2026-10-12)
+
+결과 파일은 `docs/mcts-v8-results/e1h/`에 있다(실행 코드 `80390d8`, git_dirty = False, 결과 커밋 `1812a4d`).
+
+#### 판정: PASS → TB-Engine-v1 = E3-A
+
+| 항목 | 값 |
+|---|---|
+| gate | G1 통과, G2 통과, G3 통과, G4 통과, G5 N/A(E1-P 0개) |
+| FALSE_VETO / UNSOUND_WITNESS / 교체 후 패배 | 0 / 0 / 0 (`bug_suspected = false`) |
+| suite | E1-C 40국면 × seed 3. S3와 E3-A 모두 120 run이 NO_VETO |
+| UNRESOLVED | 1건(`s3:8418-p10-black/12`, 같은 seed). 두 arm에서 똑같이 나왔다. control run에서 tree가 고른 수의 10M 참값이 UNKNOWN이었다 |
+
+§12.34에서 미리 정한 규칙(E1-P < 5이면 G1–G4로 판정)대로 나온 PASS다. **이 PASS의 뜻은 "독립 표본에서 안전성과 비회귀를 확인했다"이다. 50k의 rescue 효능을 다시 입증한 것이 아니다.** 효능 근거는 여전히 E3(§12.33, mechanism 확인, 대국 효과 미입증)뿐이다.
+
+#### 해석할 때 주의할 점
+
+- **screen은 tree 경로의 둔 수만 본다.** 1,038수 중 PROVEN_LOSS 0, VCT2_CLEAR 379, UNKNOWN 659(63.5%)였다.
+  - "1,038수가 안전했다"가 아니라 "50k screen으로 패배를 증명한 수가 없었다"로 읽는다.
+  - 엔진이 위험한 수를 두지 않는다는 뜻도 아니다. 같은 대국에서 상대(`v8:full+vct2atk`)가 깊이 2 공격으로 이긴 판이 S3 18판(8417: 10, 8418: 8), E3-A 17판(10, 7)이다. 그런 패배수는 50k screen으로 증명되지 않았거나 stage 경로에 있었다(E2·E3와 같은 구조).
+- **S3 + E3-A 합집합 출처는 사실상 S3 출처였다.**
+  - 두 arm의 대국은 100판 중 99판의 수순이 같다. 그래서 E3-A 행 1,036개가 S3 행과 같은 국면·같은 수로 합쳐졌다.
+  - E3-A에만 있는 screen 행은 1개였고 suite에는 뽑히지 않았다.
+  - E3-A가 수를 바꿔 들어간 국면(on-policy)에 대한 검증은 이번 holdout에서 거의 이뤄지지 않았다. 두 엔진이 거의 갈라지지 않기 때문이다.
+- **대국 성적.**
+  - S3 78승 1무 21패(0.785), E3-A 79승 1무 20패(0.795).
+  - 수순이 다른 대국은 **8418/22 흑 하나**이고 결과는 패 → 승이다.
+  - E3-A의 veto(42,615 노드로 탐지)에서 첫 대안 (4,7)도 패배로 증명됐다. 그래서 50k에서 **UNKNOWN인 (6,6)으로 교체**했다. E3에 이어 다시 UNKNOWN 대안 교체가 결과를 바꿨다.
+  - 사후 10M 검증은 아래 "보충 검증"에 둔다.
+- **veto.** S3 4건, E3-A 6건이다. E3-A에만 있는 2건은 8417/0 흑 12수(14,322 노드, 대안 없음 → KEPT)와 위의 8418/22다. 8418/4 흑 112수는 두 arm 모두 (8,2)를 veto하고 (8,3)으로 바꿨다. S3에서는 (8,3)이 10k UNKNOWN, E3-A에서는 50k SAFE였다.
+- **비용.** 대국 평균 착수 시간 비율은 8417 1.16, 8418 1.16으로 E3(1.15)와 같다. E1 평가의 착수 시간은 p50이 같고(2.27 / 2.26초) p95(6.1 / 7.7초)와 최대(11.0 / 21.3초)만 커졌다. 어려운 국면에서만 비용이 드는 의도대로다.
+- **seed를 더 열지 않는다**(§12.34 순차 엿보기 금지). E1은 여기서 끝낸다.
+- **해시 주의.** 데스크톱 원본(CRLF)과 저장소 사본(LF 정규화, `.gitattributes`)은 바이트 해시가 다르다. 결과 JSON 안의 `manifest_sha256`과 `inputs`는 데스크톱 원본 바이트의 값이다(§12.30과 같음).
+
+#### TB-Engine-v1 동결
+
+- `src/analysis/tb_engine_v1.py`:
+  - 설정 전체를 직접 적었다(E3-A와 같고, `S3_VCT2_V1`과 다른 것은 `vct2_node_budget = 50_000` 하나).
+  - H3 checkpoint 해시를 확인한다(`check_checkpoint`, S3와 같은 바이트).
+  - `config_hash()`(H6/H7 행의 `engine_config_hash`) = `2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351`.
+- `tests/test_tb_engine_v1.py`가 확인하는 것:
+  - 설정이 E3(8415/8416)와 E1-holdout(8417/8418) 실행의 `v8_config`와 같다.
+  - 모든 V8 옵션이 고정돼 있다.
+  - 동결 근거 파일의 판정이 PASS, MECHANISM이다.
+  - 웹 대국 로그에 엔진 정보가 남는다.
+- 웹 대국 상대 **"tb1"**(`run_web_play.py`): S3와 같은 checkpoint를 쓴다. 로그에는 엔진 이름, config hash, 동결 근거가 기록되고, veto 국면도 저장된다.
+- 이후 이 설정을 바꾸면 TB-Engine-v2다. H7 주기 경계에서만, track-b-post-e1.md §2의 gate로 바꾼다. 후보는 E3-R, E4다(§12.33).
+
+#### Final-1/Final-2 봉인 세트 (`scripts/make_final_sets.py`)
+
+- 구성(track-b-b1-b2.md §13): Final-1 opening 100개 + 전술 국면 약 200개, Final-2 직접 대국 opening 200개 + 공통 opening 50개.
+- **opening.** 중앙 + 무작위 4수(반경 2)로 만든다.
+  - docs의 모든 벤치마크 결과에 있는 opening, 그리고 세트끼리 D4가 겹치는 것은 뺀다.
+  - 기존 벤치마크의 2수 opening은 D4 종류가 너무 적어서 4수를 쓴다. Arena runner가 opening 파일을 읽는 옵션은 H8 전에 추가한다.
+- **전술 국면.** 무작위 근접 수순(8–40수)을 둔 뒤 규칙과 VCF 증명으로 라벨을 붙인다.
+  - 종류별 할당: immediate_win, must_block, forced_loss, unstoppable_four, vcf, black_forbidden.
+  - probe·평가 국면과 D4가 겹치면 뺀다.
+- **봉인.**
+  - 세트와 생성 secret은 저장소 밖 `--out-dir`에만 쓴다. 저장소 안 경로를 주면 거부한다.
+  - 저장소에는 manifest만 커밋한다: 생성기 commit, 설정 해시, 제외 세트 해시, 개수, 내용 해시, secret commitment.
+  - commitment는 RNG seed와 다르게 유도하므로, 공개돼도 세트를 다시 만들 수 없다.
+- **데스크톱에서 한 번만 실행한다.** H8 전까지 세트 파일을 열지 않는다.
+
+#### 보충 검증 (gate 밖)
+
+E1-holdout 대국에서 E3-A의 veto 6건을 `e3_compare.py`로 10M 검증한다(클라우드에서 실행 중). 결과는 이 절에 추가한다.
