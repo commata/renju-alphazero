@@ -1,0 +1,80 @@
+{
+ "format": "h6-label-report-v1",
+ "row_format": "h6-value-row-v1",
+ "git_commit": "b47bdd6593c3e48b9dd89d08a6749f51b64d4419",
+ "games": "..\\renju-alphazero\\data\\external\\renjunet\\games.jsonl.gz",
+ "restricted": false,
+ "settings": {
+  "splits": [
+   "train",
+   "val",
+   "test"
+  ],
+  "from_ply": 5,
+  "outcome_weight": 0.1,
+  "proof_weight": 1.0,
+  "prove_losses": false,
+  "vct1": false
+ },
+ "probe_files": [
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\tests\\fixtures\\stage7_probes_defense_v1.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\tests\\fixtures\\stage7_probes_v1.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\tests\\fixtures\\v8_budget_probes_v1.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\tests\\fixtures\\v8c_divergence_probes_v1.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\tests\\fixtures\\v8c_root_probes_v1.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\tests\\fixtures\\vct_probes_v1.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\docs\\mcts-v8-results\\probe_web_v8_loss_20261007.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\docs\\mcts-v8-results\\e1\\e1_manifest.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\docs\\mcts-v8-results\\e1h\\e1h_manifest.json",
+  "C:\\\uc624\ubaa9 \uac15\ud654\ud559\uc2b5\\renju-h6\\docs\\mcts-v8-results\\e1s\\e1s_manifest.json"
+ ],
+ "summary": {
+  "games_in": 108011,
+  "games_kept": 73944,
+  "dropped": {
+   "probe_game": 34067,
+   "other_split": 0
+  },
+  "cross_split_masked": {
+   "train": 0,
+   "val": 0,
+   "test": 0
+  },
+  "rows": 2409192,
+  "labelled": 1986865,
+  "by_split": {
+   "train": 2174614,
+   "test": 114124,
+   "val": 120454
+  },
+  "by_kind": {
+   "outcome": 1872867,
+   "proof_vcf": 68781,
+   "proof_unstoppable_four": 19509,
+   "proof_forced_loss": 11300,
+   "proof_immediate_win": 14408
+  },
+  "by_depth": {
+   "0": 113998
+  },
+  "sign": {
+   "+1": 1013905,
+   "-1": 972960
+  },
+  "sign_by_side": {
+   "white": {
+    "+1": 517622,
+    "-1": 490116
+   },
+   "black": {
+    "-1": 482844,
+    "+1": 496283
+   }
+  },
+  "masked_by_flag": {
+   "end_unknown": 1603953,
+   "outcome_conflicts_proof": 28474,
+   "h2_masked": 58590
+  }
+ }
+}
