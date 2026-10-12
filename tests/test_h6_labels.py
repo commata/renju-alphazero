@@ -126,35 +126,36 @@ class BuilderTest(unittest.TestCase):
             with self.assertRaises(SystemExit):  # RenjuNet-derived rows never go into the tracked tree
                 main(['--games', str(Path(tmp, 'g.jsonl')), '--output', 'docs/h6.jsonl.gz'])
 
-
-    def test_probe_game_min_ply_masks_opening_probes(self):
-        """An opening-level probe (few stones) masks its own position; only later probes drop whole games."""
+    def test_probe_game_min_ply_only_exempts_three_stone_openings(self):
+        """H6-v2 may keep 3-stone opening continuations; a 4+ stone probe must still drop the game."""
         from scripts.build_h6_labels import build
-        opening = [[7, 7], [7, 8], [6, 7]]  # a 3-stone (RIF opening) probe, as in the E1 manifests
+        opening = [[7, 7], [7, 8], [6, 7]]  # standard 3-stone opening control as in E1/E1-holdout
         games = [
             {'id': 1, 'split': 'train', 'bresult': '1', 'end': 'unknown', 'masked_plies': [],
              'moves': opening + [[1, 1], [2, 2], [1, 2], [3, 3], [1, 3]]},
             {'id': 2, 'split': 'train', 'bresult': '0', 'end': 'unknown', 'masked_plies': [],
              'moves': [[7, 7], [6, 6], [8, 8], [5, 5], [9, 9], [10, 10], [0, 0], [0, 1]]},
         ]
-        late = games[1]['moves'][:6]
+        tactical = games[1]['moves'][:6]
         with TemporaryDirectory() as tmp:
             Path(tmp, 'm.json').write_text(json.dumps({'positions': [
-                {'key': 'open', 'history': opening}, {'key': 'late', 'history': late},
-                {'key': 'mid', 'history': games[0]['moves'][:5]}]}), encoding='utf-8')
+                {'key': 'open', 'history': opening}, {'key': 'tactical', 'history': tactical}]}), encoding='utf-8')
             from hybrid.h6_labels import probe_positions
             probes = probe_positions([Path(tmp, 'm.json')])
-        self.assertEqual(sorted(p['ply'] for p in probes.values()), [3, 5, 6])
+        self.assertEqual(sorted(p['ply'] for p in probes.values()), [3, 6])
         kw = dict(splits={'train'}, from_ply=5, outcome_weight=0.1, proof_weight=1.0, prove_losses=False, vct1=False)
-        _, v1 = build(games, probes=probes, **kw)  # 0 = v1: every probe drops its games
+        _, v1 = build(games, probes=probes, **kw)  # strict v1: every probe drops its games
         self.assertEqual(v1['dropped']['probe_game'], 2)
-        rows, v2 = build(games, probes=probes, probe_game_min_ply=6, **kw)
+
+        rows, v2 = build(games, probes=probes, probe_game_min_ply=4, **kw)
         self.assertEqual(v2['dropped']['probe_game'], 1)
         self.assertEqual(v2['dropped']['probe_game_by_ply'], {'6': 1})
-        g1 = {r.ply: r for r in rows if r.game_id == 'renjunet:1'}
-        self.assertEqual(g1[5].flags[-1], 'probe_position')  # the 5-stone probe itself is masked
-        self.assertTrue(g1[5].value_mask)
-        self.assertFalse(g1[6].value_mask)
+        self.assertTrue(any(r.game_id == 'renjunet:1' for r in rows))
+        self.assertFalse(any(r.game_id == 'renjunet:2' for r in rows))
+
+        # N=9 would incorrectly exempt the 6-stone tactical probe; the builder must refuse it.
+        with self.assertRaises(ValueError):
+            build(games, probes=probes, probe_game_min_ply=9, **kw)
 
     def test_probe_audit(self):
         from scripts.h6_probe_audit import audit
