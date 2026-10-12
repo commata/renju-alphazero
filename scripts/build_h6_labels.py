@@ -37,10 +37,11 @@ from hybrid.h6_labels import (  # noqa: E402
     ROW_FORMAT, check_game_provenance, check_leakage, default_probe_files, game_rows, mask_cross_split,
     probe_hashes, proof_label, report, touches_probe,
 )
-from hybrid.progress import Progress, stage  # noqa: E402
+from hybrid.progress import Progress, run_chunks, stage  # noqa: E402
 from renju import BLACK, WHITE  # noqa: E402
 
 SOLVER_NODE_LIMIT = 20_000
+PROOF_CHUNK = 16  # games per pool task (results are collected as chunks finish)
 VCT1_BUDGET = {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 200_000}  # V8-B's budget
 
 
@@ -68,6 +69,10 @@ def _proofs_task(task):
     return out
 
 
+def _proofs_chunk(tasks):
+    return [_proofs_task(t) for t in tasks]
+
+
 def _git_commit() -> str | None:
     try:
         return subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True,
@@ -93,19 +98,17 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     progress = Progress('proofs', sum(max(0, len(t[0]) - from_ply) for t in tasks), 'positions',
                         every_seconds=progress_seconds)
     progress.log(f"[proofs] {len(tasks):,} games, {progress.total:,} positions, {workers} worker(s)", flush=True)
-    proofs = []
+    positions = lambda chunk: sum(max(0, len(t[0]) - from_ply) for t in chunk)  # noqa: E731
+    chunks = [tasks[i:i + PROOF_CHUNK] for i in range(0, len(tasks), PROOF_CHUNK)]
     if workers == 1:
-        results = map(_proofs_task, tasks)
+        parts = []
+        for chunk in chunks:
+            parts.append(_proofs_chunk(chunk))
+            progress.update(positions(chunk), extra=f'{len(parts):,}/{len(chunks):,} chunks')
     else:
-        pool = ProcessPoolExecutor(max_workers=workers)
-        results = pool.map(_proofs_task, tasks, chunksize=16)
-    try:
-        for task, proof in zip(tasks, results):
-            proofs.append(proof)
-            progress.update(max(0, len(task[0]) - from_ply), extra=f'{len(proofs):,}/{len(tasks):,} games')
-    finally:
-        if workers != 1:
-            pool.shutdown()
+        with ProcessPoolExecutor(max_workers=workers) as pool:
+            parts = run_chunks(pool, _proofs_chunk, chunks, progress, positions)
+    proofs = [proof for part in parts for proof in part]
     started = perf_counter()
     solver_class = 'vcf' + ('+vct1' if vct1 else '')
     budget = {'vcf_node_limit': SOLVER_NODE_LIMIT, **({'vct1': VCT1_BUDGET} if vct1 else {})}

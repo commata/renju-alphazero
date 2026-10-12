@@ -341,5 +341,40 @@ class ProgressTest(unittest.TestCase):
         self.assertTrue(lines[-1].startswith('[cache] 7 rows'))
 
 
+def _slow_first(chunk):
+    import time
+    if chunk[0] == 0:
+        time.sleep(0.6)
+    return [x * 10 for x in chunk]
+
+
+class ProgressBlockingTest(unittest.TestCase):
+    """One slow chunk at the head must not silence the log (the H6-1 run printed nothing for an hour)."""
+
+    def test_run_chunks_reports_later_chunks_and_heartbeats(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from hybrid.progress import Progress, run_chunks
+        lines = []
+        chunks = [[0, 1], [2, 3], [4, 5], [6, 7]]
+        progress = Progress('proofs', 8, 'positions', every_seconds=0.1, log=lambda text, flush: lines.append(text))
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            out = run_chunks(pool, _slow_first, chunks, progress, len)
+        self.assertEqual(out, [[0, 10], [20, 30], [40, 50], [60, 70]])  # input order kept
+        self.assertTrue(any('/4 chunks' in line and '3/4' in line or '1 pending' in line for line in lines), lines)
+        self.assertTrue(any('pending' in line for line in lines), lines)  # heartbeat while chunk 0 runs
+        self.assertIn('8/8 positions  100.0%', lines[-1])
+
+    def test_bounded_map_heartbeats_while_oldest_runs(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from hybrid.h6_value_cache import _bounded_map
+        from hybrid.progress import Progress
+        lines = []
+        progress = Progress('value cache', 8, every_seconds=0.1, log=lambda text, flush: lines.append(text))
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            out = list(_bounded_map(pool, _slow_first, iter([[0, 1], [2, 3], [4, 5]]), 2, progress))
+        self.assertEqual(out, [[0, 10], [20, 30], [40, 50]])
+        self.assertTrue(any('waiting on the oldest' in line for line in lines), lines)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -109,6 +109,17 @@ H3 policy 망의 trunk와 policy head를 그대로 두고 value head만 H6-1 라
 
 **순서:** H6-1 보고서(`docs/h6/h6_1_report.json`)를 커밋·push한 뒤에 시작한다. 캐시와 학습 모두 그 보고서 해시를 확인한다.
 
+H6-1이 끝난 직후(실행 중에는 pull하지 않는다. 보고서의 `git_commit`은 실행이 끝날 때 HEAD를 읽는다):
+
+```powershell
+$REPORT = Get-Content runs\h6\h6_1_report.json -Raw | ConvertFrom-Json
+$REPORT.git_commit ; git rev-parse HEAD      # 같아야 함
+git pull --ff-only                           # 원격의 새 커밋을 먼저 받는다(로컬 커밋이 없으므로 fast-forward)
+New-Item -ItemType Directory -Force docs\h6 | Out-Null
+Copy-Item runs\h6\h6_1_report.json docs\h6\
+git add docs\h6\h6_1_report.json ; git commit -m "H6-1 label report" ; git push origin feat/h6-value
+```
+
 ```powershell
 cd "C:\오목 강화학습\renju-h6"
 git pull
@@ -132,8 +143,10 @@ python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml -
 ```
 
 - **진행률.** 1시간 이상 걸릴 수 있는 작업은 1분마다 진행률을 출력한다(`src/hybrid/progress.py`, stdout).
-  - `build_h6_labels.py`: `[proofs] 완료/전체 positions  %  경과  ETA  판 수`. 이어서 행 생성, 교차 mask·누출 검사, 파일 쓰기 단계마다 한 줄씩 출력한다.
-  - `build_h6_value_cache.py`: `[value cache] 완료/전체`. 전체 개수는 보고서의 `labelled` 값이다.
+  - `build_h6_labels.py`: `[proofs] 완료/전체 positions  %  경과  ETA  chunk 수`. 이어서 행 생성, 교차 mask·누출 검사, 파일 쓰기 단계마다 한 줄씩 출력한다.
+    - 16판 단위 chunk를 끝나는 순서대로 받는다(`run_chunks`). 결과는 입력 순서로 되돌려 놓으므로 출력 행은 이전과 같다(합성 120판에서 `git_commit` 외 동일 확인).
+    - 1분 동안 끝난 chunk가 없어도 `... pending` heartbeat 줄을 찍는다. 처음 버전(`5ce7b77`)은 순서대로 받는 `pool.map`이라, 앞쪽 chunk가 느리면 그동안 아무것도 출력하지 않았다.
+  - `build_h6_value_cache.py`: `[value cache] 완료/전체`. 전체 개수는 보고서의 `labelled` 값이다. 캐시 순서가 해시에 들어가므로 chunk는 순서대로 받고, 가장 오래된 chunk를 기다리는 동안 1분마다 heartbeat를 찍는다.
   - `train_h6_value.py`: step 로그에 %, 경과 시간, ETA가 붙는다.
 - 캐시 출력에서 확인할 것: 분할별 `states`와 `masked_rows_dropped`, 그리고 `by_kind.proof.weight_share`(증명의 실제 비중)와 증명 행의 +1/−1 개수.
 - 결과 전달: `runs\h6_value_head_v1\best.json`과 `metrics.jsonl`, 캐시 `manifest.json`을 `docs\h6\`에 복사해 커밋한다. 셋 다 해시와 지표만 들어 있다. `best.pt`와 캐시는 RenjuNet에서 나온 결과물이라 **로컬에만 둔다.**

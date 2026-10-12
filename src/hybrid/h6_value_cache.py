@@ -12,7 +12,7 @@ whose ``labelled`` count must match), the encoder / action-index versions and th
 """
 from __future__ import annotations
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeout
 import gzip
 import hashlib
 import json
@@ -122,15 +122,29 @@ def _chunks(games, size):
         yield chunk
 
 
-def _bounded_map(pool, fn, items, window):
-    """``pool.map`` that keeps at most ``window`` chunks in flight (the label file is large)."""
+def _bounded_map(pool, fn, items, window, progress=None):
+    """``pool.map`` that keeps at most ``window`` chunks in flight (the label file is large). Results stay
+    in input order (the cache order is part of its hash); while the oldest chunk is still running, a
+    heartbeat line goes out every ``progress.every`` seconds."""
     pending = []
+
+    def oldest():
+        while True:
+            try:
+                return pending[0].result(timeout=progress.every if progress is not None else None)
+            except FuturesTimeout:
+                progress.heartbeat(f'waiting on the oldest of {len(pending)} chunks in flight')
+
     for item in items:
         pending.append(pool.submit(fn, item))
         if len(pending) >= window:
-            yield pending.pop(0).result()
-    for future in pending:
-        yield future.result()
+            result = oldest()
+            pending.pop(0)
+            yield result
+    while pending:
+        result = oldest()
+        pending.pop(0)
+        yield result
 
 
 def _tensors(records: list[tuple], game_index: list[int]) -> dict[str, torch.Tensor]:
@@ -175,7 +189,7 @@ def build_value_cache(labels: Path, out_dir: Path, *, report: Path | None = None
     progress = Progress('value cache', expected, 'labelled positions', every_seconds=progress_seconds)
     if workers > 1:
         pool = ProcessPoolExecutor(max_workers=workers)
-        parts = _bounded_map(pool, _chunk, batches, 4 * workers)
+        parts = _bounded_map(pool, _chunk, batches, 4 * workers, progress)
     else:
         pool, parts = None, map(_chunk, batches)
     try:
