@@ -10,10 +10,10 @@ Each game keeps its H2 tournament split. For every position from ``--from-ply`` 
   Agreed draws (0.5) are masked; only a full-board draw would be 0.
 
 Masks: H2 ``masked_plies`` (val/test positions already in an earlier split), positions after the first
-proof that contradicts the result (``outcome_conflicts_proof``), and cross-split duplicates. Games that
-reach a probe / evaluation position are dropped whole (``--probe-files``, default: test fixtures, web
-probes and the E1 manifests). The output is written only when ``check_leakage`` and the provenance
-check pass.
+proof that contradicts the result (``outcome_conflicts_proof``), and cross-split duplicates. Probe /
+evaluation positions normally drop their whole game. H6-v2 may exempt only 3-stone opening probes
+from whole-game exclusion; any later probe must still drop the whole game so its continuation cannot
+leak the answer. The output is written only when ``check_leakage`` and the provenance check pass.
 
     python scripts/build_h6_labels.py --games data/external/renjunet/games.jsonl.gz --workers 12 \\
         --output data/tactical/h6/renjunet_labels.jsonl.gz --report runs/h6/h6_labels_report.json
@@ -42,6 +42,7 @@ from renju import BLACK, WHITE  # noqa: E402
 
 SOLVER_NODE_LIMIT = 20_000
 PROOF_CHUNK = 16  # games per pool task (results are collected as chunks finish)
+MAX_ROW_ONLY_PROBE_PLY = 3  # only standard 3-stone openings may keep their continuations in H6-v2
 VCT1_BUDGET = {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 200_000}  # V8-B's budget
 
 
@@ -84,12 +85,28 @@ def _git_commit() -> str | None:
 def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, proof_weight: float,
           prove_losses: bool, vct1: bool, probes, workers: int = 1, probe_game_min_ply: int = 0,
           progress_seconds: float = 60.0) -> tuple[list, dict]:
-    """``probes``: probe hashes (a set) or ``probe_positions`` (hash -> {'ply', ...}). A game that reaches a
-    probe of ply >= ``probe_game_min_ply`` is dropped whole; a row whose position is an earlier (opening)
-    probe is only masked (``probe_position``). ``probe_game_min_ply`` 0 = every probe drops its games."""
+    """Build H6 rows while protecting probe/evaluation positions from continuation leakage.
+
+    ``probes`` is either a hash set or ``probe_positions`` metadata. Normally every probe drops the
+    whole game. ``probe_game_min_ply`` may exempt earlier positions, but H6-v2 intentionally permits
+    row-only treatment only for probes with at most ``MAX_ROW_ONLY_PROBE_PLY`` stones (the standard
+    3-stone RIF opening controls). If a threshold would retain a 4+ stone probe, fail rather than
+    silently train on its continuation. ``probe_game_min_ply=0`` preserves the strict v1 behaviour.
+    """
     plies = probes if isinstance(probes, dict) else {h: {'ply': 0} for h in probes}
     game_probes = {h for h, p in plies.items() if p['ply'] >= probe_game_min_ply}
     row_probes = set(plies) - game_probes
+    unsafe_row_probes = [plies[h] for h in row_probes if plies[h]['ply'] > MAX_ROW_ONLY_PROBE_PLY]
+    if unsafe_row_probes:
+        examples = ', '.join(
+            f"{p.get('file', '?')}:{p.get('label', '?')}@ply{p['ply']}" for p in unsafe_row_probes[:5]
+        )
+        raise ValueError(
+            f'probe_game_min_ply={probe_game_min_ply} would keep continuations after '
+            f'{len(unsafe_row_probes)} non-opening probe(s) ({examples}). Only <= '
+            f'{MAX_ROW_ONLY_PROBE_PLY}-stone opening probes may be row-only; use '
+            f'--probe-game-min-ply {MAX_ROW_ONLY_PROBE_PLY + 1} (current H6-v2 policy) or a stricter value.'
+        )
     kept, dropped = [], {'probe_game': 0, 'other_split': 0, 'probe_game_by_ply': {}}
     for game in games:
         if game['split'] not in splits:
@@ -160,8 +177,8 @@ def main(argv=None) -> int:
     parser.add_argument('--vct1', action='store_true', help='add proven depth-1 attacks (+1) (slow)')
     parser.add_argument('--probe-files', nargs='*', default=None)
     parser.add_argument('--probe-game-min-ply', type=int, default=0,
-                        help='drop whole games only for probes with at least this many stones; earlier (opening) '
-                             'probe positions are masked row by row (0 = every probe drops its games, v1)')
+                        help='drop whole games for probes with at least this many stones; only <=3-stone opening '
+                             'probes may be exempted (0 = strict v1, current H6-v2 recommendation = 4)')
     parser.add_argument('--limit', type=int, help='first N games (smoke tests)')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--output', type=Path, required=True, help='rows, .jsonl.gz (keep it out of git)')
