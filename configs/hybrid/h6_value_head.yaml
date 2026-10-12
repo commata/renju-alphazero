@@ -1,0 +1,27 @@
+# H6-2a: value head only on the frozen H3 network (docs/h6-value.md). Main run: RTX 5070 (device: cuda).
+# Inputs: the H3 best.pt (+ best.json) and the value cache built from the H6-1 rows by
+# scripts/build_h6_value_cache.py. First-run plan, not tuned.
+h3_checkpoint: runs/h3_policy_64x4/best.pt
+h3_metadata: ''          # '' = best.json next to h3_checkpoint
+cache_dir: data/tactical/h6/value_cache_v1
+h6_report: docs/h6/h6_1_report.json
+out_dir: runs/h6_value_head_v1
+device: cuda
+torch_threads: 4
+seed: 20261012
+channels: 64
+blocks: 4
+optimizer: adamw
+batch_size: 1024
+epochs: 3
+max_steps: 0
+learning_rate: 0.001
+weight_decay: 0.0001
+warmup_steps: 500
+min_lr_ratio: 0.05
+augment_d4: true
+eval_every: 2000
+eval_max_states: 0
+checkpoint_every: 1000
+log_every: 100
+require_clean_git: true

@@ -53,6 +53,87 @@ canonical_hash(D4, 둘 차례 포함), solver_class, solver_depth, solver_budget
 
 - `--value-checkpoint`(§12.19 H6-0 목록)는 **H6-4로 미룬다.** value leaf가 아직 없어서 지금 넣으면 아무 효과 없는 옵션이 된다. H6-4에서 leaf 통합(leaf 노드 값 = −v, 부호 테스트)과 함께 넣는다.
 
+## H6-2a: H3 망을 고정하고 value head만 학습 (2026-10-12)
+
+H3 policy 망의 trunk와 policy head를 그대로 두고 value head만 H6-1 라벨로 학습한다. 엔진 파일(`tb_engine_v1.py`, `mcts_v8.py`, `e3_arms.py`, `s3_vct2_v1.py`, `puct_v8.py`, `threats.py`)은 건드리지 않았고, PUCT leaf 통합은 H6-4에서 한다.
+
+### 주의사항 검토 결과
+
+사용자가 준 주의사항을 코드와 대조해 확인했다. 모두 사실이었고 전부 반영했다. 보완한 점은 각 항목의 "보완" 열에 적었다.
+
+| 주의사항 | 확인 결과 | 보완 |
+|---|---|---|
+| H3 `best.pt`(64×4)를 strict `load_checkpoint`로 읽는다 | 맞다. `load_checkpoint`는 설정·encoder·action index 버전이 다르거나 키가 하나라도 다르면 거부한다 | `best.json`이 `stage H3`, `policy_trained true`, `value_trained false`, 64×4인지도 검사한다 |
+| trunk와 policy head의 BatchNorm 통계까지 고정한다(`model.eval()`, `value_head.train()`만, `model.train()` 금지) | 맞다. trunk의 BN 9개와 policy head의 BN 1개는 train 모드에서 forward만 해도 running 통계가 바뀐다 | value를 계산하는 함수가 trunk나 policy head가 train 모드이면 오류를 낸다. 고정 부분(파라미터와 BN 버퍼)의 해시를 시작할 때 저장하고, `best.pt`·`last.pt`를 쓰기 전에 같은지 다시 확인한다 |
+| optimizer에는 value head 파라미터만 넣고, trunk는 `no_grad` | 맞다 | 나머지 파라미터는 `requires_grad False`로 둔다 |
+| `value_mask False`인 행만 쓴다 | 맞다 | mask된 행은 **캐시를 만들 때 버린다**(분할별 개수는 manifest에 남긴다). 그래서 trainer는 그 행을 볼 수 없다. 남는 행은 weight > 0이고 target이 ±1 또는 0인지 검사한다 |
+| loss는 Σw·l/Σw(증명 1.0, 결과 0.1) | 맞다. l은 tanh 출력의 제곱 오차다 | 행 하나의 비율은 10:1이지만 **전체 비중은 행 개수에 달려 있다.** 캐시 manifest와 학습 시작 출력에 kind별 weight 비중(`weight_share`)을 보고한다 |
+| 둘 차례 관점, 부호를 뒤집지 않는다 | 맞다. encoder가 상대 좌표다(plane 0 = 둘 차례 돌, plane 1 = 상대 돌, plane 3 = 둘 차례가 흑인지). H6-1 target도 둘 차례 관점이다 | target을 그대로 복사한다. 흑·백 차례 국면 모두 행 값과 같다는 테스트가 있다 |
+| 저장된 split 필드를 쓴다(train은 gradient, val은 선택, test는 손대지 않음) | 맞다. H6-1 행은 H2 대회 단위 분할을 그대로 쓰고, H3도 같은 분할로 학습했다. 그래서 val 국면은 trunk도 본 적이 없다 | trainer는 `test.pt`를 아예 열지 않는다. 테스트에서는 `test.pt`를 지운 상태로 학습한다 |
+| D4 증강, value target은 바꾸지 않는다 | 맞다 | H3의 `d4_tables`를 다시 쓰고, 여섯 plane(합법수 plane 포함)을 함께 변환한다. 금수 규칙이 D4에 불변이라는 사실은 H3 `verify_d4`로 확인돼 있다. 변환한 plane이 변환한 대국의 `encode_game`과 같다는 테스트가 있다 |
+| `best.pt` + `best.json` provenance | 맞다 | 해시를 남긴다: H3 checkpoint SHA는 원본 바이트로, H3 `best.json`과 H6-1 보고서 SHA는 CRLF를 LF로 바꿔서 계산한다(Windows 커밋 대비). 라벨 행 SHA는 gzip을 푼 내용으로 계산한다(gzip 헤더 시간의 영향 제거). 고정 부분 해시와 캐시 요약도 넣는다 |
+| 별도 원자적 `snapshot.pt`, resume은 H3 SHA·라벨 SHA·설정·seed·batch·optimizer가 바뀌면 거부 | 맞다 | 보고서 SHA, 캐시 SHA, 고정 부분 해시도 비교한다. 학습 결과를 바꾸는 설정 12개를 비교한다(seed, 구조, batch, epochs, max_steps, lr, wd, warmup, min_lr, D4, optimizer) |
+| 깨끗한 커밋 상태에서만 학습 | 맞다 | `require_clean_git: true`이면 git이 dirty이거나 확인할 수 없을 때 시작하지 않는다. 판단 기준은 `save_checkpoint`의 `git_dirty`와 같다(추적 중인 파일만 본다). `--allow-dirty`는 smoke 전용이고 `best.json`에 기록된다 |
+
+코드를 보다가 추가로 확인한 사실:
+- value head에도 BatchNorm(채널 1개)이 있다. 학습하는 부분이라 train 모드에서 통계가 갱신되는 것이 맞다. 검증과 이후 사용은 eval 모드(running 통계)로 한다.
+- H3는 value head를 한 번도 실행하지 않았다. 그래서 value head는 H3 checkpoint에 저장된 초기값(H3 seed로 정해짐)에서 시작한다.
+- `h4_policy.RootPolicy`는 `value_trained != false`인 checkpoint를 거부한다. 따라서 H6-2a checkpoint는 H4 root policy로 쓸 수 없다(의도된 동작이다). policy 출력은 H3와 비트 단위로 같으므로, H6-4에서 value leaf용 로더를 따로 만든다.
+- **증명 라벨은 +1에 크게 치우친다.** VCF 증명은 둘 차례의 승리이고, −1은 `forced_loss`(옵션 `vcf_loss`)뿐이다. 합성 smoke에서는 val 증명 행의 비율이 +1 155 : −1 9였다. H6-1 실제 보고서에서 비율을 확인하고, H6-3에서 −1 쪽(P94 < 0 포함)을 따로 본다.
+- 선택 기준은 val의 weighted MSE(학습 목표와 같음)다. 증명·결과별 MSE, 부호 정확도, 포화율, 흑·백별, ply 구간별 지표는 보고용으로만 남긴다. 오프라인 gate는 H6-3이 test로 판정한다.
+
+### 파일
+
+| 파일 | 내용 |
+|---|---|
+| `src/hybrid/h6_value_cache.py` | H6-1 행 → bit-packed value 캐시. 라벨 있는 행만 남기고 합법수 mask는 한 번만 계산한다. 대국 행이 연속인지, moves가 prefix인지, split이 하나인지, 보고서의 `labelled` 개수가 맞는지 검사한다. 스트리밍 방식이라 메모리 사용이 제한된다 |
+| `scripts/build_h6_value_cache.py` | 캐시 CLI. 출력은 `data/`나 `runs/` 아래에만 쓰고, 기존 캐시가 있으면 덮어쓰지 않는다 |
+| `src/hybrid/h6_value_train.py` | trainer(고정, weighted MSE, D4, val 선택, snapshot·resume, provenance, non-finite 오류) |
+| `scripts/train_h6_value.py` | 학습 CLI(`--resume`, `--allow-dirty`, override) |
+| `configs/hybrid/h6_value_head.yaml` | 본 실행 설정(cuda, batch 1024, 3 epoch, lr 1e-3, warmup 500). 첫 실행 계획값이며 튜닝하지 않은 값이다 |
+| `tests/test_h6_value.py` | 16개 테스트(아래) |
+
+테스트 항목:
+- 불러오기 검사: H3 strict load(키 누락 거부), 부모 metadata(`value_trained true` 거부), 구조 불일치 거부
+- 고정 검사: 학습 가능한 파라미터가 value head뿐인지, optimizer가 value head만 갖는지, 학습 뒤 trunk·policy의 파라미터와 BN 버퍼가 H3와 비트 단위로 같은지, value head 값은 바뀌었는지
+- 출력 검사: `best.pt`의 policy logits가 H3와 비트 단위로 같고 value는 다른지
+- 캐시 검사: mask된 행이 제외되는지, 10:1 weighting, 흑·백 관점 부호, plane = `encode_game`, D4 변환과 target 불변, 보고서 개수 불일치와 연속되지 않은 대국 거부
+- 학습 환경 검사: `test.pt` 없이 학습되는지, provenance 필드, dirty worktree 거부, 보고서 불일치 거부
+- resume 검사: 중단 후 resume한 결과가 한 번에 학습한 결과와 같은지(비트 단위), batch·seed·H3 변경 거부, NaN loss 오류
+
+클라우드 컨테이너(CPU torch 2.14)에서 실행한 결과:
+- `test_h6_value`, `test_h3`, `test_h6_labels`, `test_model_checkpoint` 40개 테스트가 통과했다.
+- 합성 RenjuNet 120판으로 `build_h6_labels` → `build_h6_value_cache` → `train_h6_value`(40 step, CPU 826 samples/s)를 끝까지 실행했다. 같은 out-dir 재실행 거부, `--resume`, `git_dirty false` 기록까지 확인했다.
+
+### 실행 명령 (데스크톱, `renju-h6` worktree)
+
+**순서:** H6-1 보고서(`docs/h6/h6_1_report.json`)를 커밋·push한 뒤에 시작한다. 캐시와 학습 모두 그 보고서 해시를 확인한다.
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+git pull
+git status --short                 # 비어 있어야 함(추적 파일 기준)
+$H3 = "..\renju-alphazero\runs\h3_policy_64x4\best.pt"
+Test-Path $H3, ($H3 -replace 'best.pt$','best.json'), data\tactical\h6\renjunet_labels_v1.jsonl.gz, docs\h6\h6_1_report.json
+
+# 1) value 캐시 (CPU, 1회)
+..\renju-alphazero\.venv-cpu\Scripts\Activate.ps1
+python -u scripts\build_h6_value_cache.py --labels data\tactical\h6\renjunet_labels_v1.jsonl.gz `
+  --report docs\h6\h6_1_report.json --out-dir data\tactical\h6\value_cache_v1 --workers 12 2>&1 | Tee-Object runs\h6\value_cache.log
+
+# 2) smoke (GPU, 300 step, 결과는 쓰지 않음)
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml --h3-checkpoint $H3 `
+  --out-dir runs\h6\value_smoke --max-steps 300 --eval-every 100 --eval-max-states 50000 2>&1 | Tee-Object runs\h6\value_smoke.log
+
+# 3) 본 실행
+python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml --h3-checkpoint $H3 2>&1 | Tee-Object runs\h6\value_v1.log
+# 중단되면 같은 인자에 --resume
+```
+
+- 캐시 출력에서 확인할 것: 분할별 `states`와 `masked_rows_dropped`, 그리고 `by_kind.proof.weight_share`(증명의 실제 비중)와 증명 행의 +1/−1 개수.
+- 결과 전달: `runs\h6_value_head_v1\best.json`과 `metrics.jsonl`, 캐시 `manifest.json`을 `docs\h6\`에 복사해 커밋한다. 셋 다 해시와 지표만 들어 있다. `best.pt`와 캐시는 RenjuNet에서 나온 결과물이라 **로컬에만 둔다.**
+
 ## 다음 (TB-Engine-v1 동결 뒤)
 
-H6-1 라벨 생성(RenjuNet train/val/test, VCF 증명 + 결과) → 출처·깊이·부호·색별 보고 → H6-2a(trunk 고정, value head만 학습) → H6-3 오프라인 gate → λ 고정 → H6-4 → H6-5(seed 8403/8404, 주 상대 `v8:puct_policy`).
+H6-1 라벨 생성(RenjuNet train/val/test, VCF 증명 + 결과) → 출처·깊이·부호·색별 보고 → H6-2a(trunk 고정, value head만 학습, **구현 완료**) → H6-3 오프라인 gate → λ 고정 → H6-4 → H6-5(seed 8403/8404, 주 상대 `v8:puct_policy`).
