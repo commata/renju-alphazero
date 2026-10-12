@@ -1,0 +1,97 @@
+{
+ "format": "e1-holdout-verdict-v1",
+ "git_commit": "80390d86ae27ad08e090296a169597a23bf143e4",
+ "git_dirty": false,
+ "inputs": {
+  "runs\\e1h\\e1h_manifest.json": "245f0e722f7904827bef23296e60d8ac0156bd4b94032f8c7f2ff18ccf5f1688",
+  "runs\\e1h\\eval_s3.json": "b0a84c65f46fd7acd760fd4d46860b2d2a78facfa56f16e25c8fc7d47206657d",
+  "runs\\e1h\\eval_e3a.json": "956133b6f37e493814306e3c167c7a54f0f62b3b90eb525604b695adb1852c1c"
+ },
+ "verdict": "PASS",
+ "tb_engine_v1": "E3-A",
+ "bug_suspected": false,
+ "gates": {
+  "G1": true,
+  "G2": true,
+  "G3": true,
+  "G4": true,
+  "G5": "N/A"
+ },
+ "e1p_positions": 0,
+ "classes_by_source_arm": {
+  "puct_policy_vct2": {
+   "E1-C": 40
+  }
+ },
+ "ply_distribution": [],
+ "veto_recall": {
+  "s3": [
+   0,
+   0
+  ],
+  "e3a": [
+   0,
+   0
+  ]
+ },
+ "rescued": {
+  "s3": 0,
+  "e3a": 0
+ },
+ "outcomes": {
+  "s3": {
+   "NO_VETO": 120
+  },
+  "e3a": {
+   "NO_VETO": 120
+  }
+ },
+ "false_veto": [],
+ "unsound_witness": [],
+ "witness_checked": true,
+ "g2_violations": [],
+ "g3_violations": [],
+ "loss_switches": [],
+ "unresolved": [
+  [
+   "s3:8418-p10-black/12",
+   1818299567,
+   "s3"
+  ],
+  [
+   "s3:8418-p10-black/12",
+   1818299567,
+   "e3a"
+  ]
+ ],
+ "cost": {
+  "s3": {
+   "vct2_seconds": {
+    "n": 120,
+    "p50": 0.104,
+    "p95": 3.323,
+    "max": 5.477
+   },
+   "move_seconds": {
+    "n": 120,
+    "p50": 2.266,
+    "p95": 6.06,
+    "max": 10.958
+   }
+  },
+  "e3a": {
+   "vct2_seconds": {
+    "n": 120,
+    "p50": 0.095,
+    "p95": 3.314,
+    "max": 19.944
+   },
+   "move_seconds": {
+    "n": 120,
+    "p50": 2.257,
+    "p95": 7.714,
+    "max": 21.268
+   }
+  }
+ }
+}
