@@ -1,6 +1,6 @@
 {
  "format": "final-sets-manifest-v1",
- "generator_commit": "c4da93d44a968629946f403647f755cce3d8b3aa",
+ "generator_commit": "d24c2ff047df1834bd5891cb947d83d2706a9ea4",
  "generator_config": {
   "opening_plies": 4,
   "radius": 2,
@@ -36,27 +36,27 @@
    "docs\\mcts-v8-results\\e1s\\e1s_manifest.json": "2f6e7ae9c96649ccf57c8af6e634f9e014cbb9f948a555eb93dfbede31f7ccf9"
   }
  },
- "secret_commitment": "d5d332b44b45af3ef23f2e86589a9983701e4ad610824e555c2009e67cd49056",
+ "secret_commitment": "7f420d44af32b335cada5b0fe8d240b083a85d7e6706257ac1462a720cbd1ff5",
  "artifacts": {
   "final1_openings": {
    "items": 100,
-   "content_sha256": "e9944ee58be07a438cf81ae16fe5d2495626ffb684a105817ee7f53e78350ce0"
+   "content_sha256": "f731ba57af9a6a9064987f67b859561ca45f26e6462781d94f9d09c9cb797189"
   },
   "final2_direct_openings": {
    "items": 200,
-   "content_sha256": "363fdedac44dc1761a48bad88fd4d3f0722319ea3a511e4041885af5fb5c4ab3"
+   "content_sha256": "8d089f5351530476b865de5f6eef57f24454b94bcbe6a1195a11614dad9e17de"
   },
   "final2_common_openings": {
    "items": 50,
-   "content_sha256": "ed86a8a051493632aa5889ea93290bc427bf56e520513a26439ab64baa5e31eb"
+   "content_sha256": "8cb618f520eeac531cbfa171f02d55c027d2a8bd1bea52bdb4bdd5a5b07d5e4b"
   },
   "final1_tactical": {
    "items": 200,
-   "content_sha256": "6f7aad981c9436170c18cc9afabbd0d3f876315ddc89fcce5d16012d2fa43bdd"
+   "content_sha256": "34be766d79dc924f0c7f414f8009f5b4742d91ad4f861460e71f423a8cdc49ee"
   }
  },
  "tactical_generation": {
-  "attempts": 1311,
+  "attempts": 1383,
   "short_of_quota": {}
  },
  "note": "content_sha256 = SHA-256 of the canonical JSON of each set's items (line endings do not matter)"
