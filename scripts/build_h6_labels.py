@@ -27,6 +27,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / 'src') not in sys.path:
@@ -36,9 +37,11 @@ from hybrid.h6_labels import (  # noqa: E402
     ROW_FORMAT, check_game_provenance, check_leakage, default_probe_files, game_rows, mask_cross_split,
     probe_hashes, proof_label, report, touches_probe,
 )
+from hybrid.progress import Progress, run_chunks, stage  # noqa: E402
 from renju import BLACK, WHITE  # noqa: E402
 
 SOLVER_NODE_LIMIT = 20_000
+PROOF_CHUNK = 16  # games per pool task (results are collected as chunks finish)
 VCT1_BUDGET = {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 200_000}  # V8-B's budget
 
 
@@ -66,6 +69,10 @@ def _proofs_task(task):
     return out
 
 
+def _proofs_chunk(tasks):
+    return [_proofs_task(t) for t in tasks]
+
+
 def _git_commit() -> str | None:
     try:
         return subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True,
@@ -75,7 +82,8 @@ def _git_commit() -> str | None:
 
 
 def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, proof_weight: float,
-          prove_losses: bool, vct1: bool, probes: set[str], workers: int = 1) -> tuple[list, dict]:
+          prove_losses: bool, vct1: bool, probes: set[str], workers: int = 1,
+          progress_seconds: float = 60.0) -> tuple[list, dict]:
     kept, dropped = [], {'probe_game': 0, 'other_split': 0}
     for game in games:
         if game['split'] not in splits:
@@ -86,11 +94,22 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
             continue
         kept.append(game)
     tasks = [(g['moves'], from_ply, prove_losses, vct1) for g in kept]
+    # progress by positions (games differ in length), one line a minute with the ETA
+    progress = Progress('proofs', sum(max(0, len(t[0]) - from_ply) for t in tasks), 'positions',
+                        every_seconds=progress_seconds)
+    progress.log(f"[proofs] {len(tasks):,} games, {progress.total:,} positions, {workers} worker(s)", flush=True)
+    positions = lambda chunk: sum(max(0, len(t[0]) - from_ply) for t in chunk)  # noqa: E731
+    chunks = [tasks[i:i + PROOF_CHUNK] for i in range(0, len(tasks), PROOF_CHUNK)]
     if workers == 1:
-        proofs = [_proofs_task(t) for t in tasks]
+        parts = []
+        for chunk in chunks:
+            parts.append(_proofs_chunk(chunk))
+            progress.update(positions(chunk), extra=f'{len(parts):,}/{len(chunks):,} chunks')
     else:
         with ProcessPoolExecutor(max_workers=workers) as pool:
-            proofs = list(pool.map(_proofs_task, tasks, chunksize=16))
+            parts = run_chunks(pool, _proofs_chunk, chunks, progress, positions)
+    proofs = [proof for part in parts for proof in part]
+    started = perf_counter()
     solver_class = 'vcf' + ('+vct1' if vct1 else '')
     budget = {'vcf_node_limit': SOLVER_NODE_LIMIT, **({'vct1': VCT1_BUDGET} if vct1 else {})}
     provenance = {'git_commit': _git_commit(), 'engine_config_hash': None, 'model_hash': None}
@@ -108,9 +127,12 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
                 row.value_mask, row.weight = True, 0.0
                 row.flags.append('h2_masked')
         rows.extend(these)
+    stage('rows', started)
+    started = perf_counter()
     cross = mask_cross_split(rows)
     check_leakage(rows)
     check_game_provenance(rows)
+    stage('cross-split mask + leakage check', started)
     return rows, {'games_in': len(games), 'games_kept': len(kept), 'dropped': dropped,
                   'cross_split_masked': cross, **report(rows)}
 
@@ -140,9 +162,11 @@ def main(argv=None) -> int:
                           prove_losses=args.prove_losses, vct1=args.vct1, probes=probe_hashes(probe_files),
                           workers=args.workers)
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    started = perf_counter()
     with gzip.open(args.output, 'wt', encoding='utf-8') as handle:
         for row in rows:
             handle.write(json.dumps(row.to_dict(), separators=(',', ':')) + '\n')
+    stage(f'write {len(rows):,} rows', started)
     payload = {'format': 'h6-label-report-v1', 'row_format': ROW_FORMAT, 'git_commit': _git_commit(),
                'games': str(args.games), 'restricted': args.limit is not None,
                'settings': {k: getattr(args, k) for k in ('splits', 'from_ply', 'outcome_weight', 'proof_weight',
