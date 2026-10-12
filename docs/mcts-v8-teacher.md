@@ -3291,4 +3291,25 @@ Track B의 계열 분리(B1-Champion / B1-Matched / B2)와 비교 실험 설계�
 
 #### 보충 검증 (gate 밖)
 
-E1-holdout 대국에서 E3-A의 veto 6건을 `e3_compare.py`로 10M 검증한다(클라우드에서 실행 중). 결과는 이 절에 추가한다.
+E1-holdout 대국(8417/8418, 상대 `v8:full+vct2atk`)에서 나온 E3-A의 veto 6건을 `e3_compare.py`로 검증했다. selective 200k와 full depth 0–2 class를 10M 예산으로 돌렸고, 실행은 클라우드에서 했다. 이 결과는 **동결 판정(G1–G4)에 쓰지 않는다**. 기록용이다.
+
+| 사건 | veto한 수 (full) | 실제 둔 수 | 둔 수 (full 10M) | 결과 |
+|---|---|---|---|---|
+| 8417/0 흑 12수 | (7,9) PROVEN_LOSS d1 | 같은 수(대안 없음) | PROVEN_LOSS | KEPT |
+| 8417/0 백 11수 | (7,5) PROVEN_LOSS d2 | (9,8) | VCT2_CLEAR (207k 노드) | **RESCUED** |
+| 8417/15 흑 38수 | (7,12) PROVEN_LOSS | 같은 수 | PROVEN_LOSS | KEPT |
+| 8418/4 흑 112수 | (8,2) PROVEN_LOSS d1 | (8,3) | PROVEN_LOSS d1 (158k 노드). E3-A의 50k selective는 SAFE | **LOSS_TO_LOSS** |
+| 8418/4 흑 128수 | (11,3) PROVEN_LOSS | 같은 수 | PROVEN_LOSS | KEPT |
+| 8418/22 흑 10수 | (5,7) PROVEN_LOSS d2 | (6,6) | UNKNOWN (예산 소진, 2.44M 노드, 1,758초) | SWITCH_UNRESOLVED |
+
+- **건전성.** veto한 6수가 모두 full class에서도 PROVEN_LOSS다. unsound는 0건이고, G1(FALSE_VETO 0)과 일치한다.
+- **대국 판독.** `e3_compare` 규칙으로 읽으면 **NOT_ESTABLISHED**다.
+  - 대국 점수: S3 0.785, E3-A 0.795. 쌍 차이는 +0.01, 95% 구간은 [0.00, 0.03]이다.
+  - MECHANISM 판독에는 LOSS_TO_LOSS 0건이 필요한데, 8418/4/112가 1건이다.
+  - 이 사건은 위에서 이미 기록한 "selective SAFE ≠ 안전"의 예다. E3-A는 veto 뒤 대안을 50k selective로만 확인하므로, full class의 depth-1 패배를 놓칠 수 있다.
+- **응징 노출.** 상대가 VCT2로 이긴 판은 S3 18판, E3-A 17판이다.
+- **비용.** 대국 시간 비율 1.16, 한도 1.5 이내다.
+- **결론.** TB-Engine-v1 = E3-A 결정은 그대로다. 근거는 G1–G4 PASS이고, 이 검증으로 바뀌지 않는다. 대신 다음 두 가지를 확정한다.
+  - "대국 효과는 미입증"이라는 단서를 그대로 유지한다.
+  - **veto 뒤 대안 수의 안전 확인이 약하다**는 점을 TB-Engine-v2 후보 과제로 넘긴다(E3-R/E4, §12.33). 예: 대안이 selective SAFE일 때 full depth-1 확인을 추가하는 방안.
+- 결과 파일: `docs/mcts-v8-results/e1h/e1h_e3a_compare.json`, `e1h_e3a_verify.jsonl`. 입력은 같은 폴더의 `puct_policy_vct2{,_50k}_{8417,8418}.json`이다.
