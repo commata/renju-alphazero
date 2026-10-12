@@ -93,6 +93,8 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     3-stone RIF opening controls). If a threshold would retain a 4+ stone probe, fail rather than
     silently train on its continuation. ``probe_game_min_ply=0`` preserves the strict v1 behaviour.
     """
+    if not isinstance(probes, dict) and probe_game_min_ply > 0:
+        raise ValueError('probe_game_min_ply needs probe_positions (hash -> ply); a bare hash set has no ply')
     plies = probes if isinstance(probes, dict) else {h: {'ply': 0} for h in probes}
     game_probes = {h for h, p in plies.items() if p['ply'] >= probe_game_min_ply}
     row_probes = set(plies) - game_probes

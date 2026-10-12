@@ -156,6 +156,9 @@ class BuilderTest(unittest.TestCase):
         # N=9 would incorrectly exempt the 6-stone tactical probe; the builder must refuse it.
         with self.assertRaises(ValueError):
             build(games, probes=probes, probe_game_min_ply=9, **kw)
+        # a bare hash set has no ply: with a threshold every probe would silently become row-only
+        with self.assertRaises(ValueError):
+            build(games, probes=set(probes), probe_game_min_ply=4, **kw)
 
     def test_probe_audit(self):
         from scripts.h6_probe_audit import audit

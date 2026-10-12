@@ -84,16 +84,18 @@ canonical_hash(D4, 둘 차례 포함), solver_class, solver_depth, solver_budget
   - 그 결과 데이터 31.5%를 잃었고, opening 분포도 한쪽으로 치우쳤다. H3 policy는 이 대국들로 학습했으므로 value만 이 opening들을 모르게 된다.
   - 통째 제외의 목적은 중반 전술 probe(P92–P94, E1-P/N, VCT probe)의 답이 대국 진행으로 새는 것을 막는 데 있다. 수가 적은 opening 국면은 수많은 대국이 거치는 공통 국면이라 이 목적에 맞지 않는다.
 
-조치(`build_h6_labels.py --probe-game-min-ply N`, 기본 0 = 이번 v1 동작):
-- 돌이 N개 이상인 probe에 닿은 대국만 통째로 뺀다.
-- 그보다 이른 probe는 **그 국면 행만 mask한다**(`probe_position`).
-- 사유별 제외 수를 보고서에 남긴다(`dropped.probe_game_by_ply`).
-- **권장 N = 9.**
-  - 8수 이하는 opening 단계다. 해당 probe는 E1-C 대조군 국면과 H3 policy gate의 `must_defend_open3` 일부다.
-  - 전술 probe(VCT 12수 이상, stage7 12수 이상, P92–P94, E1-P/N)는 모두 통째 제외가 유지된다.
+조치(`build_h6_labels.py --probe-game-min-ply N`, 기본 0 = v1 동작). 검토 기록: [`h6/h6_1_review.md`](h6/h6_1_review.md).
+- 돌이 N개 이상인 probe에 닿은 대국은 통째로 뺀다. 그보다 이른 probe는 그 국면 행만 mask한다(`probe_position`). 보고서에 `dropped.probe_game_by_ply`를 남긴다.
+- **N = 4로 확정했다(처음 제안한 9는 철회).**
+  - 처음 분석에서 "전술 probe는 모두 12수 이상"이라고 한 것은 **틀렸다.**
+  - `stage7_probes_defense_v1.json`에는 돌 5–8개짜리 `must_defend_open3` 전술 probe가 8개 있다.
+  - N = 9로 하면 이 probe의 국면만 mask되고 이후 진행은 학습에 들어간다. 그러면 답이 샌다.
+- 행 단위 예외는 3돌 opening probe만 허용한다(`MAX_ROW_ONLY_PROBE_PLY = 3`). 4돌 이상 probe가 행 단위로 처리되게 만드는 N은 builder가 `ValueError`로 거부한다. probe 정보가 ply 없는 hash 집합으로만 주어졌을 때 N > 0을 쓰는 경우도 거부한다.
+- 남는 위험: 돌 4–8개 probe는 39개다(E1-C 대조군 포함). 4–5돌 국면도 흔한 opening 진행이면 N = 4에서도 대국이 많이 빠질 수 있다. 이 규모는 audit의 `games_dropped_by_min_ply["4"]`로 확인한다.
+- 학습 weight로 본 부호 비중은 +1 64.3% · −1 35.7%다(증명 +1 102,698 + 결과 +1 911,207×0.1 대 11,300 + 961,660×0.1). gate 실패 사유는 아니지만, H6-3에서 −1 쪽 지표를 따로 보고한 뒤 `--prove-losses`가 필요한지 결정한다.
 - `scripts/h6_probe_audit.py`: 증명 없이 몇 분 만에, probe별로 닿는 대국 수와 N별 제외 대국 수를 센다. 개수만 들어 있으므로 커밋해도 된다.
 
-결정: **H6-1 gate는 v1 라벨로 통과시키지 않는다.** audit로 N을 확인하고, `--probe-game-min-ply 9`로 v2 라벨을 다시 만든 뒤 H6-2a를 진행한다. H6-2a 설정(`h6_value_head.yaml`)은 v2 경로를 가리킨다.
+결정: **H6-2a는 v1 라벨로 시작하지 않는다.** audit에서 N = 4의 효과를 확인하고 v2 라벨(`--probe-game-min-ply 4`, 다른 설정은 v1과 같게)을 만든 뒤, v2 보고서로 H6-1 gate를 다시 판정한다. H6-2a 설정(`h6_value_head.yaml`)은 v2 경로를 가리킨다.
 
 ## H6-2a: H3 망을 고정하고 value head만 학습 (2026-10-12)
 
@@ -163,7 +165,7 @@ python -u scripts\h6_probe_audit.py --games $GAMES --workers 12 --output docs\h6
 git add docs\h6\h6_probe_audit.json ; git commit -m "H6-1 probe audit" ; git push origin feat/h6-value
 
 # B) H6-1 v2 라벨 (v1보다 대국이 ~45% 많아 시간도 그만큼 더 걸린다. 1분마다 진행률)
-python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --probe-game-min-ply 9 `
+python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --probe-game-min-ply 4 `
   --output data\tactical\h6\renjunet_labels_v2.jsonl.gz --report runs\h6\h6_1_report_v2.json 2>&1 | Tee-Object runs\h6\h6_1_v2.log
 
 # C) 끝나면(실행 중에는 pull하지 않는다): 보고서 커밋
