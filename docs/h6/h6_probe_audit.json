@@ -1,0 +1,306 @@
+{
+ "format": "h6-probe-audit-v1",
+ "games": 108011,
+ "probe_positions": 327,
+ "games_dropped_by_min_ply": {
+  "0": 34067,
+  "4": 888,
+  "5": 440,
+  "6": 339,
+  "7": 300,
+  "8": 300,
+  "9": 0,
+  "10": 0,
+  "12": 0,
+  "16": 0
+ },
+ "by_split": {
+  "train": {
+   "games": 97098,
+   "reach_any_probe": 30459
+  },
+  "test": {
+   "games": 5471,
+   "reach_any_probe": 1897
+  },
+  "val": {
+   "games": 5442,
+   "reach_any_probe": 1711
+  }
+ },
+ "probes_reached": [
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8401-p19-white/3",
+   "hash": "2ce57c81ed9d5f6ad7a9acd6",
+   "games": 11711
+  },
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8418-p12-white/3",
+   "hash": "73e9e2fe7f5ad538548d49cb",
+   "games": 5408
+  },
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8418-p8-white/3",
+   "hash": "f8e3e0b5fb591b044f96c765",
+   "games": 4015
+  },
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8411-p20-white/3",
+   "hash": "49af9c69f8a9e9aa73535467",
+   "games": 3948
+  },
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8418-p13-white/3",
+   "hash": "a6df05cbb4c5e623d5bbe1de",
+   "games": 3447
+  },
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8418-p2-white/3",
+   "hash": "14ff69a7b88fde7084cf3997",
+   "games": 3218
+  },
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8402-p8-white/3",
+   "hash": "5f6d936e1c4f945c8de8592e",
+   "games": 1705
+  },
+  {
+   "ply": 4,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8402-p23-black/4",
+   "hash": "81b5fed0cc8ff08fe312fa6d",
+   "games": 317
+  },
+  {
+   "ply": 8,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8402-p2-black/8",
+   "hash": "f02f136f078ad4d326f5f1fa",
+   "games": 296
+  },
+  {
+   "ply": 4,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8418-p21-black/4",
+   "hash": "1358a10a39f7bdb47c6ecc3b",
+   "games": 150
+  },
+  {
+   "ply": 6,
+   "file": "tests/fixtures/stage7_probes_defense_v1.json",
+   "label": "must_defend_open3",
+   "hash": "8effe5fcc264e410a2f14da8",
+   "games": 39
+  },
+  {
+   "ply": 5,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8417-p18-white/5",
+   "hash": "ce62b9bcfd389aa8585dbf92",
+   "games": 35
+  },
+  {
+   "ply": 5,
+   "file": "tests/fixtures/stage7_probes_defense_v1.json",
+   "label": "must_defend_open3",
+   "hash": "36fff0e8ad620ced186eb7ec",
+   "games": 29
+  },
+  {
+   "ply": 5,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8417-p24-white/5",
+   "hash": "8ac09de2fe18911450284c1f",
+   "games": 14
+  },
+  {
+   "ply": 5,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8402-p4-white/5",
+   "hash": "21d5eeef1655c7f4b9258e98",
+   "games": 10
+  },
+  {
+   "ply": 5,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8412-p18-white/5",
+   "hash": "bb9088e785856f5daad5fd09",
+   "games": 8
+  },
+  {
+   "ply": 5,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8418-p10-white/5",
+   "hash": "3b3bdb525ab144e20caa48db",
+   "games": 4
+  },
+  {
+   "ply": 3,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8401-p9-white/3",
+   "hash": "51297ee558a5d8eeca9be15e",
+   "games": 2
+  },
+  {
+   "ply": 8,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8401-p6-black/8",
+   "hash": "d56c89299b79f24a62f21270",
+   "games": 2
+  },
+  {
+   "ply": 5,
+   "file": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "label": "8411-p4-white/5",
+   "hash": "26dd4b55c6c1e371d6eac3d1",
+   "games": 1
+  },
+  {
+   "ply": 8,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8418-p14-black/8",
+   "hash": "afc16abab1a749b53b7745b1",
+   "games": 1
+  },
+  {
+   "ply": 8,
+   "file": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "label": "s3:8417-p4-black/8",
+   "hash": "1a6bc5464cfd3ca8082c7ed1",
+   "games": 1
+  }
+ ],
+ "probes_by_ply": {
+  "3": 11,
+  "4": 6,
+  "5": 11,
+  "6": 7,
+  "7": 5,
+  "8": 10,
+  "9": 4,
+  "10": 10,
+  "11": 11,
+  "12": 8,
+  "13": 5,
+  "14": 6,
+  "15": 5,
+  "16": 5,
+  "17": 6,
+  "18": 3,
+  "19": 3,
+  "20": 4,
+  "21": 3,
+  "22": 3,
+  "23": 3,
+  "24": 4,
+  "25": 8,
+  "26": 3,
+  "27": 3,
+  "28": 3,
+  "29": 2,
+  "30": 6,
+  "31": 2,
+  "32": 3,
+  "33": 5,
+  "34": 3,
+  "35": 4,
+  "36": 3,
+  "37": 1,
+  "38": 6,
+  "39": 1,
+  "40": 3,
+  "41": 4,
+  "42": 2,
+  "43": 5,
+  "44": 4,
+  "46": 3,
+  "47": 1,
+  "48": 2,
+  "49": 2,
+  "50": 1,
+  "51": 1,
+  "52": 1,
+  "53": 1,
+  "54": 5,
+  "55": 2,
+  "56": 3,
+  "57": 2,
+  "58": 1,
+  "59": 1,
+  "60": 6,
+  "61": 3,
+  "62": 3,
+  "63": 1,
+  "64": 1,
+  "65": 1,
+  "66": 1,
+  "67": 3,
+  "68": 2,
+  "69": 1,
+  "71": 1,
+  "74": 3,
+  "75": 1,
+  "77": 2,
+  "80": 1,
+  "83": 1,
+  "84": 5,
+  "85": 2,
+  "86": 3,
+  "87": 1,
+  "88": 1,
+  "90": 3,
+  "92": 2,
+  "93": 4,
+  "94": 2,
+  "95": 1,
+  "96": 1,
+  "102": 1,
+  "107": 1,
+  "108": 1,
+  "109": 1,
+  "110": 1,
+  "111": 1,
+  "113": 2,
+  "115": 1,
+  "117": 1,
+  "121": 1,
+  "122": 1,
+  "123": 2,
+  "128": 1,
+  "129": 1,
+  "130": 2,
+  "134": 1,
+  "139": 1,
+  "141": 1,
+  "146": 1,
+  "147": 1,
+  "148": 2,
+  "149": 1,
+  "153": 2,
+  "156": 1,
+  "170": 1,
+  "174": 1,
+  "182": 1,
+  "185": 1,
+  "190": 1,
+  "206": 1,
+  "210": 2,
+  "214": 1,
+  "218": 1,
+  "224": 2
+ }
+}
