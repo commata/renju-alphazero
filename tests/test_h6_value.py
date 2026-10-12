@@ -326,5 +326,20 @@ class TrainerTest(unittest.TestCase):
             value_forward(trainer.model, torch.zeros(2, 6, 15, 15))
 
 
+class ProgressTest(unittest.TestCase):
+    def test_progress_lines(self):
+        from hybrid.progress import Progress
+        lines = []
+        p = Progress('proofs', 200, 'positions', every_seconds=0, log=lambda text, flush: lines.append(text))
+        p.update(50)
+        p.update(150, extra='3/3 games')
+        self.assertIn('[proofs] 50/200 positions  25.0%', lines[0])
+        self.assertIn('100.0%', lines[1])
+        self.assertIn('3/3 games', lines[1])
+        q = Progress('cache', None, 'rows', every_seconds=0, log=lambda text, flush: lines.append(text))
+        q.update(7)
+        self.assertTrue(lines[-1].startswith('[cache] 7 rows'))
+
+
 if __name__ == '__main__':
     unittest.main()

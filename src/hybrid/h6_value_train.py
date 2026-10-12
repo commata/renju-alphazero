@@ -336,6 +336,7 @@ class Trainer:
         cfg = self.cfg
         started, seen, loss_sum, loss_n = perf_counter(), 0, 0.0, 0
         window_started, window_seen = started, 0
+        first_step = self.step  # ETA from this run's own pace (a resumed run starts mid-way)
         while self.step < self.total_steps:
             epoch, offset = divmod(self.step, self.steps_per_epoch)
             index = self._order(epoch)[offset * cfg.batch_size:(offset + 1) * cfg.batch_size]
@@ -362,8 +363,11 @@ class Trainer:
                           'lr': self.scheduler.get_last_lr()[0], 'samples_per_second': rate}
                 with (self.out / 'train.jsonl').open('a', encoding='utf-8') as handle:
                     handle.write(json.dumps(record) + '\n')
-                self.log(f"step {self.step}/{self.total_steps} loss {record['loss']:.4f} "
-                         f"lr {record['lr']:.2e} {rate:.0f} samples/s")
+                done = self.step - first_step
+                eta = (now - started) / done * (self.total_steps - self.step) if done else float('nan')
+                self.log(f"step {self.step}/{self.total_steps} ({100 * self.step / self.total_steps:.1f}%) "
+                         f"loss {record['loss']:.4f} lr {record['lr']:.2e} {rate:.0f} samples/s "
+                         f"elapsed {(now - started) / 60:.1f} min ETA {eta / 60:.0f} min")
                 loss_sum, loss_n = 0.0, 0
             if self.step % cfg.eval_every == 0 or self.step == self.total_steps:
                 self._validate()

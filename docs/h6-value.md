@@ -131,6 +131,10 @@ python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml -
 # 중단되면 같은 인자에 --resume
 ```
 
+- **진행률.** 1시간 이상 걸릴 수 있는 작업은 1분마다 진행률을 출력한다(`src/hybrid/progress.py`, stdout).
+  - `build_h6_labels.py`: `[proofs] 완료/전체 positions  %  경과  ETA  판 수`. 이어서 행 생성, 교차 mask·누출 검사, 파일 쓰기 단계마다 한 줄씩 출력한다.
+  - `build_h6_value_cache.py`: `[value cache] 완료/전체`. 전체 개수는 보고서의 `labelled` 값이다.
+  - `train_h6_value.py`: step 로그에 %, 경과 시간, ETA가 붙는다.
 - 캐시 출력에서 확인할 것: 분할별 `states`와 `masked_rows_dropped`, 그리고 `by_kind.proof.weight_share`(증명의 실제 비중)와 증명 행의 +1/−1 개수.
 - 결과 전달: `runs\h6_value_head_v1\best.json`과 `metrics.jsonl`, 캐시 `manifest.json`을 `docs\h6\`에 복사해 커밋한다. 셋 다 해시와 지표만 들어 있다. `best.pt`와 캐시는 RenjuNet에서 나온 결과물이라 **로컬에만 둔다.**
 

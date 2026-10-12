@@ -25,6 +25,7 @@ from renju import Game
 
 from .h3_cache import FIELD_BYTES, code_identity, pack, tensor_sha256, unpack
 from .h6_labels import PERSPECTIVE, ROW_FORMAT
+from .progress import Progress
 
 CACHE_FORMAT = 'h6-value-cache-v1'
 SPLITS = ('train', 'val', 'test')
@@ -164,12 +165,14 @@ def split_summary(data: dict[str, torch.Tensor]) -> dict:
 
 
 def build_value_cache(labels: Path, out_dir: Path, *, report: Path | None = None, workers: int = 1,
-                      chunk: int = 500, git_commit: str | None = None) -> dict:
+                      chunk: int = 500, git_commit: str | None = None, progress_seconds: float = 60.0) -> dict:
     digest = hashlib.sha256()
     records = {s: [] for s in SPLITS}
     games = {s: [] for s in SPLITS}
     masked = {s: 0 for s in SPLITS}
     batches = _chunks(iter_games(labels, digest), chunk)
+    expected = json.loads(report.read_text(encoding='utf-8'))['summary']['labelled'] if report is not None else None
+    progress = Progress('value cache', expected, 'labelled positions', every_seconds=progress_seconds)
     if workers > 1:
         pool = ProcessPoolExecutor(max_workers=workers)
         parts = _bounded_map(pool, _chunk, batches, 4 * workers)
@@ -184,6 +187,7 @@ def build_value_cache(labels: Path, out_dir: Path, *, report: Path | None = None
                 index = len(games[split])
                 games[split].append(game_id)
                 records[split].extend((r, index) for r in recs)
+                progress.update(len(recs))
     finally:
         if pool is not None:
             pool.shutdown()
