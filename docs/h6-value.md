@@ -53,6 +53,48 @@ canonical_hash(D4, 둘 차례 포함), solver_class, solver_depth, solver_budget
 
 - `--value-checkpoint`(§12.19 H6-0 목록)는 **H6-4로 미룬다.** value leaf가 아직 없어서 지금 넣으면 아무 효과 없는 옵션이 된다. H6-4에서 leaf 통합(leaf 노드 값 = −v, 부호 테스트)과 함께 넣는다.
 
+## H6-1 결과 (2026-10-13, `docs/h6/h6_1_report.json`)
+
+실행: 커밋 `b47bdd6`, RenjuNet H2 전체(train/val/test), VCF 증명 + 결과, `from_ply 5`, 결과 weight 0.1, 증명 weight 1.0.
+라벨 코드(`h6_labels.py`, `build_h6_labels.py`의 라벨 로직)는 지금 HEAD와 같다. 그 뒤 바뀐 것은 진행률 출력뿐이다.
+
+| 항목 | 값 |
+|---|---|
+| 입력 대국 | 108,011 |
+| probe로 제외된 대국 | **34,067 (31.5%)** |
+| 남은 대국 | 73,944 |
+| 행 / 라벨 있는 행 | 2,409,192 / 1,986,865 (82.5%) |
+| 분할(행) | train 2,174,614 (90.3%) · val 120,454 (5.0%) · test 114,124 (4.7%) |
+| mask 422,327 | 합의 무승부 등 결과 없음 ≈ 335,263 · H2 중복 58,590 · 증명과 결과 충돌 28,474 · 교차 분할 추가 0 |
+| 결과 라벨 | 1,872,867 (94.3%). 이 중 85.6%(1,603,953)가 `end_unknown`(기권·시간·합의) |
+| 증명 라벨 | 113,998 (5.7%): vcf 68,781 · unstoppable_four 19,509 · immediate_win 14,408 · forced_loss 11,300 |
+| 증명 부호 | +1 102,698 (90.1%) · −1 11,300 (9.9%) |
+| 결과 부호 | +1 911,207 (48.7%) · −1 961,660 (51.3%) |
+| 전체 부호 | +1 51.0% · 흑 차례 +1 50.7% · 백 차례 +1 51.4% |
+| 학습 weight 비중 | 증명 37.8% · 결과 62.2% (113,998 : 187,287) |
+| 깊이 | 0만 있음(`--vct1` 끔) |
+
+판독:
+- **라벨 계약은 정상이다.** 부호가 흑·백 양쪽에서 균형이고, 누출 검사를 통과했고, provenance가 맞다. 교차 분할 추가 mask가 0인 것은 H2의 `masked_plies`(58,590)가 같은 D4 규칙으로 이미 처리했기 때문이다.
+- **증명 −1이 적다(9.9%).** 예상한 대로다. VCF 증명은 둘 차례의 승리이고, −1은 `forced_loss`뿐이다. H6-3에서 −1 쪽을 따로 본다. 늘려야 하면 `--prove-losses`(별도 실행)를 쓴다.
+- **증명이 행으로는 5.7%지만 weight로는 37.8%다.** 10:1 weight가 의도대로 작동한다.
+- **문제: probe 제외가 과하다.**
+  - 원인: E1·E1-holdout manifest의 E1-C(대조군) 국면 11개가 **3수 국면이다. 모두 중앙 5×5 안이라 RIF 표준 opening 그 자체다.**
+  - "probe에 닿은 대국은 통째로 제외" 규칙 때문에, 그 opening으로 둔 RenjuNet 대국이 전부 빠졌다. 26개 표준 opening 중 최대 11개 계열이다.
+  - 그 결과 데이터 31.5%를 잃었고, opening 분포도 한쪽으로 치우쳤다. H3 policy는 이 대국들로 학습했으므로 value만 이 opening들을 모르게 된다.
+  - 통째 제외의 목적은 중반 전술 probe(P92–P94, E1-P/N, VCT probe)의 답이 대국 진행으로 새는 것을 막는 데 있다. 수가 적은 opening 국면은 수많은 대국이 거치는 공통 국면이라 이 목적에 맞지 않는다.
+
+조치(`build_h6_labels.py --probe-game-min-ply N`, 기본 0 = 이번 v1 동작):
+- 돌이 N개 이상인 probe에 닿은 대국만 통째로 뺀다.
+- 그보다 이른 probe는 **그 국면 행만 mask한다**(`probe_position`).
+- 사유별 제외 수를 보고서에 남긴다(`dropped.probe_game_by_ply`).
+- **권장 N = 9.**
+  - 8수 이하는 opening 단계다. 해당 probe는 E1-C 대조군 국면과 H3 policy gate의 `must_defend_open3` 일부다.
+  - 전술 probe(VCT 12수 이상, stage7 12수 이상, P92–P94, E1-P/N)는 모두 통째 제외가 유지된다.
+- `scripts/h6_probe_audit.py`: 증명 없이 몇 분 만에, probe별로 닿는 대국 수와 N별 제외 대국 수를 센다. 개수만 들어 있으므로 커밋해도 된다.
+
+결정: **H6-1 gate는 v1 라벨로 통과시키지 않는다.** audit로 N을 확인하고, `--probe-game-min-ply 9`로 v2 라벨을 다시 만든 뒤 H6-2a를 진행한다. H6-2a 설정(`h6_value_head.yaml`)은 v2 경로를 가리킨다.
+
 ## H6-2a: H3 망을 고정하고 value head만 학습 (2026-10-12)
 
 H3 policy 망의 trunk와 policy head를 그대로 두고 value head만 H6-1 라벨로 학습한다. 엔진 파일(`tb_engine_v1.py`, `mcts_v8.py`, `e3_arms.py`, `s3_vct2_v1.py`, `puct_v8.py`, `threats.py`)은 건드리지 않았고, PUCT leaf 통합은 H6-4에서 한다.
@@ -107,30 +149,39 @@ H3 policy 망의 trunk와 policy head를 그대로 두고 value head만 H6-1 라
 
 ### 실행 명령 (데스크톱, `renju-h6` worktree)
 
-**순서:** H6-1 보고서(`docs/h6/h6_1_report.json`)를 커밋·push한 뒤에 시작한다. 캐시와 학습 모두 그 보고서 해시를 확인한다.
-
-H6-1이 끝난 직후(실행 중에는 pull하지 않는다. 보고서의 `git_commit`은 실행이 끝날 때 HEAD를 읽는다):
-
-```powershell
-$REPORT = Get-Content runs\h6\h6_1_report.json -Raw | ConvertFrom-Json
-$REPORT.git_commit ; git rev-parse HEAD      # 같아야 함
-git pull --ff-only                           # 원격의 새 커밋을 먼저 받는다(로컬 커밋이 없으므로 fast-forward)
-New-Item -ItemType Directory -Force docs\h6 | Out-Null
-Copy-Item runs\h6\h6_1_report.json docs\h6\
-git add docs\h6\h6_1_report.json ; git commit -m "H6-1 label report" ; git push origin feat/h6-value
-```
+**순서:** probe audit → H6-1 v2 라벨 → 보고서 커밋 → value 캐시 → (gate 판정) → smoke → 본 학습. 캐시와 학습은 v2 보고서 해시를 확인한다.
 
 ```powershell
 cd "C:\오목 강화학습\renju-h6"
-git pull
-git status --short                 # 비어 있어야 함(추적 파일 기준)
+..\renju-alphazero\.venv-cpu\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"; $env:PYTHONIOENCODING = "utf-8"
+git status --short ; git pull --ff-only      # 깨끗한 상태에서 최신 코드
+$GAMES = "..\renju-alphazero\data\external\renjunet\games.jsonl.gz"
+
+# A) probe audit (증명 없음, 몇 분). 개수만 들어 있어 커밋해도 된다
+python -u scripts\h6_probe_audit.py --games $GAMES --workers 12 --output docs\h6\h6_probe_audit.json 2>&1 | Tee-Object runs\h6\probe_audit.log
+git add docs\h6\h6_probe_audit.json ; git commit -m "H6-1 probe audit" ; git push origin feat/h6-value
+
+# B) H6-1 v2 라벨 (v1보다 대국이 ~45% 많아 시간도 그만큼 더 걸린다. 1분마다 진행률)
+python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --probe-game-min-ply 9 `
+  --output data\tactical\h6\renjunet_labels_v2.jsonl.gz --report runs\h6\h6_1_report_v2.json 2>&1 | Tee-Object runs\h6\h6_1_v2.log
+
+# C) 끝나면(실행 중에는 pull하지 않는다): 보고서 커밋
+$REPORT = Get-Content runs\h6\h6_1_report_v2.json -Raw | ConvertFrom-Json
+$REPORT.git_commit ; git rev-parse HEAD      # 같아야 함
+git pull --ff-only
+Copy-Item runs\h6\h6_1_report_v2.json docs\h6\
+git add docs\h6\h6_1_report_v2.json ; git commit -m "H6-1 v2 label report" ; git push origin feat/h6-value
+```
+
+```powershell
 $H3 = "..\renju-alphazero\runs\h3_policy_64x4\best.pt"
-Test-Path $H3, ($H3 -replace 'best.pt$','best.json'), data\tactical\h6\renjunet_labels_v1.jsonl.gz, docs\h6\h6_1_report.json
+Test-Path $H3, ($H3 -replace 'best.pt$','best.json'), data\tactical\h6\renjunet_labels_v2.jsonl.gz, docs\h6\h6_1_report_v2.json
 
 # 1) value 캐시 (CPU, 1회)
 ..\renju-alphazero\.venv-cpu\Scripts\Activate.ps1
-python -u scripts\build_h6_value_cache.py --labels data\tactical\h6\renjunet_labels_v1.jsonl.gz `
-  --report docs\h6\h6_1_report.json --out-dir data\tactical\h6\value_cache_v1 --workers 12 2>&1 | Tee-Object runs\h6\value_cache.log
+python -u scripts\build_h6_value_cache.py --labels data\tactical\h6\renjunet_labels_v2.jsonl.gz `
+  --report docs\h6\h6_1_report_v2.json --out-dir data\tactical\h6\value_cache_v2 --workers 12 2>&1 | Tee-Object runs\h6\value_cache.log
 
 # 2) smoke (GPU, 300 step, 결과는 쓰지 않음)
 ..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1

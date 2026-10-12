@@ -3,8 +3,8 @@
 # scripts/build_h6_value_cache.py. First-run plan, not tuned.
 h3_checkpoint: runs/h3_policy_64x4/best.pt
 h3_metadata: ''          # '' = best.json next to h3_checkpoint
-cache_dir: data/tactical/h6/value_cache_v1
-h6_report: docs/h6/h6_1_report.json
+cache_dir: data/tactical/h6/value_cache_v2
+h6_report: docs/h6/h6_1_report_v2.json
 out_dir: runs/h6_value_head_v1
 device: cuda
 torch_threads: 4

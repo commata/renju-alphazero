@@ -188,24 +188,50 @@ def game_rows(game: dict, *, source: str, split: str, outcome_weight: float, pro
 
 # -- probes and splits -------------------------------------------------------------
 
-def probe_hashes(paths) -> set[str]:
-    """Canonical hashes of every probe / evaluation position in the given files.
+def probe_positions(paths, root: Path | None = None) -> dict[str, dict]:
+    """Every probe / evaluation position in the given files: canonical hash -> ``{'ply', 'file', 'label'}``
+    (the smallest ply when a position occurs twice).
 
     Understood layouts: ``{'probes': [{'moves'}]}`` (test fixtures), ``{'moves', 'probes': {name:
     {'plies_played'}}}`` (web-game probes) and ``{'positions': [{'history'}]}`` (E1 manifests).
     """
-    out = set()
+    out = {}
+
+    def add(moves, path, label):
+        key = canonical_hash(moves)
+        name = str(Path(path).resolve().relative_to(root)) if root and Path(path).resolve().is_relative_to(root) \
+            else str(path)
+        if key not in out or len(moves) < out[key]['ply']:
+            out[key] = {'ply': len(moves), 'file': name.replace('\\', '/'), 'label': label}
+
     for path in paths:
         data = json.loads(Path(path).read_text(encoding='utf-8'))
         probes = data.get('probes')
         if isinstance(probes, list):
-            out.update(canonical_hash(p['moves']) for p in probes if 'moves' in p)
+            for i, p in enumerate(probes):
+                if 'moves' in p:
+                    add(p['moves'], path, str(p.get('name') or p.get('kind') or i))
         elif isinstance(probes, dict) and 'moves' in data:
-            out.update(canonical_hash(data['moves'][:p['plies_played']]) for p in probes.values())
-        for position in data.get('positions', []):
+            for name, p in probes.items():
+                add(data['moves'][:p['plies_played']], path, name)
+        for i, position in enumerate(data.get('positions', [])):
             if 'history' in position:
-                out.add(canonical_hash(position['history']))
+                add(position['history'], path, str(position.get('key', i)))
     return out
+
+
+def probe_hashes(paths) -> set[str]:
+    """Canonical hashes of every probe / evaluation position in the given files (``probe_positions``)."""
+    return set(probe_positions(paths))
+
+
+def first_probe(moves, probes) -> tuple[int, str] | None:
+    """``(ply, hash)`` of the first prefix of ``moves`` that is a probe position, or None."""
+    for ply in range(len(moves) + 1):
+        key = canonical_hash(moves[:ply])
+        if key in probes:
+            return ply, key
+    return None
 
 
 def default_probe_files(root: Path) -> list[str]:

@@ -35,7 +35,7 @@ if str(ROOT / 'src') not in sys.path:
 
 from hybrid.h6_labels import (  # noqa: E402
     ROW_FORMAT, check_game_provenance, check_leakage, default_probe_files, game_rows, mask_cross_split,
-    probe_hashes, proof_label, report, touches_probe,
+    first_probe, probe_positions, proof_label, report,
 )
 from hybrid.progress import Progress, run_chunks, stage  # noqa: E402
 from renju import BLACK, WHITE  # noqa: E402
@@ -82,15 +82,24 @@ def _git_commit() -> str | None:
 
 
 def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, proof_weight: float,
-          prove_losses: bool, vct1: bool, probes: set[str], workers: int = 1,
+          prove_losses: bool, vct1: bool, probes, workers: int = 1, probe_game_min_ply: int = 0,
           progress_seconds: float = 60.0) -> tuple[list, dict]:
-    kept, dropped = [], {'probe_game': 0, 'other_split': 0}
+    """``probes``: probe hashes (a set) or ``probe_positions`` (hash -> {'ply', ...}). A game that reaches a
+    probe of ply >= ``probe_game_min_ply`` is dropped whole; a row whose position is an earlier (opening)
+    probe is only masked (``probe_position``). ``probe_game_min_ply`` 0 = every probe drops its games."""
+    plies = probes if isinstance(probes, dict) else {h: {'ply': 0} for h in probes}
+    game_probes = {h for h, p in plies.items() if p['ply'] >= probe_game_min_ply}
+    row_probes = set(plies) - game_probes
+    kept, dropped = [], {'probe_game': 0, 'other_split': 0, 'probe_game_by_ply': {}}
     for game in games:
         if game['split'] not in splits:
             dropped['other_split'] += 1
             continue
-        if probes and touches_probe(game['moves'], probes):
+        hit = first_probe(game['moves'], game_probes) if game_probes else None
+        if hit is not None:
             dropped['probe_game'] += 1
+            key = str(plies[hit[1]]['ply'])
+            dropped['probe_game_by_ply'][key] = dropped['probe_game_by_ply'].get(key, 0) + 1
             continue
         kept.append(game)
     tasks = [(g['moves'], from_ply, prove_losses, vct1) for g in kept]
@@ -126,6 +135,9 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
             if row.ply in h2_masked and not row.value_mask:
                 row.value_mask, row.weight = True, 0.0
                 row.flags.append('h2_masked')
+            if row.canonical_hash in row_probes:
+                row.value_mask, row.weight = True, 0.0
+                row.flags.append('probe_position')
         rows.extend(these)
     stage('rows', started)
     started = perf_counter()
@@ -147,6 +159,9 @@ def main(argv=None) -> int:
     parser.add_argument('--prove-losses', action='store_true', help='add vcf_loss (-1) labels (slower)')
     parser.add_argument('--vct1', action='store_true', help='add proven depth-1 attacks (+1) (slow)')
     parser.add_argument('--probe-files', nargs='*', default=None)
+    parser.add_argument('--probe-game-min-ply', type=int, default=0,
+                        help='drop whole games only for probes with at least this many stones; earlier (opening) '
+                             'probe positions are masked row by row (0 = every probe drops its games, v1)')
     parser.add_argument('--limit', type=int, help='first N games (smoke tests)')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--output', type=Path, required=True, help='rows, .jsonl.gz (keep it out of git)')
@@ -159,7 +174,8 @@ def main(argv=None) -> int:
     games = read_games(args.games)[:args.limit]
     rows, summary = build(games, splits=set(args.splits), from_ply=args.from_ply,
                           outcome_weight=args.outcome_weight, proof_weight=args.proof_weight,
-                          prove_losses=args.prove_losses, vct1=args.vct1, probes=probe_hashes(probe_files),
+                          prove_losses=args.prove_losses, vct1=args.vct1,
+                          probes=probe_positions(probe_files, ROOT), probe_game_min_ply=args.probe_game_min_ply,
                           workers=args.workers)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     started = perf_counter()
@@ -170,8 +186,9 @@ def main(argv=None) -> int:
     payload = {'format': 'h6-label-report-v1', 'row_format': ROW_FORMAT, 'git_commit': _git_commit(),
                'games': str(args.games), 'restricted': args.limit is not None,
                'settings': {k: getattr(args, k) for k in ('splits', 'from_ply', 'outcome_weight', 'proof_weight',
-                                                          'prove_losses', 'vct1')},
-               'probe_files': probe_files, 'summary': summary}
+                                                          'prove_losses', 'vct1', 'probe_game_min_ply')},
+               'probe_files': [str(Path(p).resolve().relative_to(ROOT)).replace('\\', '/')
+                               if Path(p).resolve().is_relative_to(ROOT) else str(p) for p in probe_files], 'summary': summary}
     print(json.dumps(payload['summary'], indent=1), flush=True)
     if args.report is not None:
         args.report.parent.mkdir(parents=True, exist_ok=True)

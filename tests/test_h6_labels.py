@@ -115,7 +115,7 @@ class BuilderTest(unittest.TestCase):
         probes = {canonical_hash([[7, 7], [1, 1], [2, 2]])}
         rows, summary = build(games, splits={'train', 'val', 'test'}, from_ply=5, outcome_weight=0.1, proof_weight=1.0,
                               prove_losses=False, vct1=False, probes=probes)
-        self.assertEqual(summary['dropped'], {'probe_game': 1, 'other_split': 0})
+        self.assertEqual(summary['dropped'], {'probe_game': 1, 'other_split': 0, 'probe_game_by_ply': {'0': 1}})
         g1 = {r.ply: r for r in rows if r.game_id == 'renjunet:1'}
         self.assertEqual((g1[8].label_kind, g1[8].value_target), ('proof_immediate_win', 1))
         self.assertEqual((g1[7].label_kind, g1[7].value_target), ('proof_forced_loss', -1))  # white to move
@@ -125,6 +125,48 @@ class BuilderTest(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             with self.assertRaises(SystemExit):  # RenjuNet-derived rows never go into the tracked tree
                 main(['--games', str(Path(tmp, 'g.jsonl')), '--output', 'docs/h6.jsonl.gz'])
+
+
+    def test_probe_game_min_ply_masks_opening_probes(self):
+        """An opening-level probe (few stones) masks its own position; only later probes drop whole games."""
+        from scripts.build_h6_labels import build
+        opening = [[7, 7], [7, 8], [6, 7]]  # a 3-stone (RIF opening) probe, as in the E1 manifests
+        games = [
+            {'id': 1, 'split': 'train', 'bresult': '1', 'end': 'unknown', 'masked_plies': [],
+             'moves': opening + [[1, 1], [2, 2], [1, 2], [3, 3], [1, 3]]},
+            {'id': 2, 'split': 'train', 'bresult': '0', 'end': 'unknown', 'masked_plies': [],
+             'moves': [[7, 7], [6, 6], [8, 8], [5, 5], [9, 9], [10, 10], [0, 0], [0, 1]]},
+        ]
+        late = games[1]['moves'][:6]
+        with TemporaryDirectory() as tmp:
+            Path(tmp, 'm.json').write_text(json.dumps({'positions': [
+                {'key': 'open', 'history': opening}, {'key': 'late', 'history': late},
+                {'key': 'mid', 'history': games[0]['moves'][:5]}]}), encoding='utf-8')
+            from hybrid.h6_labels import probe_positions
+            probes = probe_positions([Path(tmp, 'm.json')])
+        self.assertEqual(sorted(p['ply'] for p in probes.values()), [3, 5, 6])
+        kw = dict(splits={'train'}, from_ply=5, outcome_weight=0.1, proof_weight=1.0, prove_losses=False, vct1=False)
+        _, v1 = build(games, probes=probes, **kw)  # 0 = v1: every probe drops its games
+        self.assertEqual(v1['dropped']['probe_game'], 2)
+        rows, v2 = build(games, probes=probes, probe_game_min_ply=6, **kw)
+        self.assertEqual(v2['dropped']['probe_game'], 1)
+        self.assertEqual(v2['dropped']['probe_game_by_ply'], {'6': 1})
+        g1 = {r.ply: r for r in rows if r.game_id == 'renjunet:1'}
+        self.assertEqual(g1[5].flags[-1], 'probe_position')  # the 5-stone probe itself is masked
+        self.assertTrue(g1[5].value_mask)
+        self.assertFalse(g1[6].value_mask)
+
+    def test_probe_audit(self):
+        from scripts.h6_probe_audit import audit
+        games = [{'split': 'train', 'moves': [[7, 7], [7, 8], [6, 7], [1, 1]]},
+                 {'split': 'val', 'moves': [[7, 7], [8, 7], [7, 6], [1, 1]]},  # D4 image of the same opening
+                 {'split': 'train', 'moves': [[7, 7], [9, 9], [1, 1]]}]
+        probes = {canonical_hash([[7, 7], [7, 8], [6, 7]]): {'ply': 3, 'file': 'm', 'label': 'open'}}
+        result = audit(games, probes)
+        self.assertEqual(result['games_dropped_by_min_ply']['0'], 2)
+        self.assertEqual(result['games_dropped_by_min_ply']['4'], 0)
+        self.assertEqual(result['probes_reached'][0]['games'], 2)
+        self.assertEqual(result['by_split']['val'], {'games': 1, 'reach_any_probe': 1})
 
 
 class RunnerTest(unittest.TestCase):
