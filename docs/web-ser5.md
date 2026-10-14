@@ -203,7 +203,7 @@ Browser ─HTTPS→ Nginx → Web/API (게임 상태, 대기열, supervisor)
 
 tree 수가 패배로 증명된 뒤 자식 검사가 deadline에 걸리면, 동결 규칙대로 "첫 UNKNOWN 자식"을 둔다.
 timeout 아래의 UNKNOWN은 대부분 "검사하지 못함"이라, 증명된 패배 수를 둘 수 있다
-(`docs/rt30-ser5-40pos-results.md` §6.1의 `14/15`). V8-B 승리 손실과 함께 보정해야 할 항목이다.
+(`docs/rt30-ser5-40pos-results.md` §5.1의 `14/15`). V8-B 승리 손실과 함께 보정해야 할 항목이다.
 
 후보 대책:
 

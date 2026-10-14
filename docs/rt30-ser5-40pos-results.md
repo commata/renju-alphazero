@@ -277,9 +277,9 @@ python scripts/run_rt30_replay.py \
 - `v7_only`를 순수 V7 비용으로 사용하며, 과거 `v7_modules`는 V8-B 시간이 포함돼 직접 비교하지 않는다.
 - 이 결과는 slow position 40개에 대한 stress-oriented sample이며 전체 게임 분포와 동일하지 않다.
 
-## 6. 검토 메모 (2026-10-14)
+## 5. 검토 메모 (2026-10-14)
 
-### 6.1 바뀐 수 5개의 분류
+### 5.1 바뀐 수 5개의 분류
 
 fast(seed 42)로 같은 국면을 다시 돌려 fast 자신의 검사 결과(V8-C·VCT2 status)로 RT의 수를 분류했다.
 V8-B와 PUCT는 같은 seed에서 결정적이라, 컨테이너에서도 SER5와 같은 수가 나왔다.
@@ -303,17 +303,17 @@ V8-B와 PUCT는 같은 seed에서 결정적이라, 컨테이너에서도 SER5와
 - replay `--baseline`은 이제 이 분류(`changed_kinds`, `played_baseline_unsafe`)를 자동으로 낸다.
   baseline 행에 검사 status(`checked`)와 tree 수가 기록되므로 baseline도 새 코드로 다시 만들어야 한다.
 
-### 6.2 deadline 개입 빈도
+### 5.2 deadline 개입 빈도
 
 40국면 중 17수(42.5%)에서 timeout 또는 skip이 있었다. 이 표본은 기록상 30초를 넘은 국면만 모은 stress set이라,
 대국 전체의 비율이 아니다. 대국 전체에서의 비율은 웹 DB의 `timed_out`으로 본다.
 
-### 6.3 supervisor 경유 측정 (컨테이너, 4국면)
+### 5.3 supervisor 경유 측정 (컨테이너, 4국면)
 
 `--arms sup`(worker 프로세스 + IPC + watchdog, 웹 서버와 같은 경로)으로 위 4국면을 돌렸다.
 결과는 wall 최대 26.004초, watchdog 0, IPC overhead 최대 3ms다. 바뀐 수의 분류도 위 표와 같다.
 
-## 5. 원본 결과
+## 6. 원본 결과
 
 - `runs/rt30/fast_uniform_40_w1.json`
 - `runs/rt30/rt27_uniform_40_w1.json`
