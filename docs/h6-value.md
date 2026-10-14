@@ -322,6 +322,66 @@ provenance:
   - H6-2b(trunk 미세조정)는 G2가 통과했으므로 아직 근거가 없다. D1에서 trunk 쪽 원인이 보이면 다시 검토한다.
 - 바뀐 모델의 최종 gate는 **B와 새 깊은 승리·패배 probe**로 한다. A와 P93·P94는 이제 dev다.
 
+## H6-2a′ 계획 (확정 2026-10-15): 부모 단위 패배 라벨 하나만 바꾸는 재학습
+
+목표: G4(부모 단위 깊은 패배)를 고친다. **바꾸는 변수는 라벨 하나**(v2 → v3, `vcf_loss` 추가)다. 추론은 D4 평균으로 고정한다(G3 해결, 학습은 바꾸지 않음). D4 일관성 학습은 이번 실험에 넣지 않는다. H6-4에서 D4 평균이 실제로 비쌀 때 별도 arm으로 한다.
+
+**순서 (앞 단계가 끝나야 다음으로 간다)**
+1. **fresh-final probe의 seed와 규칙을 동결한다(이 커밋).**
+   - seed 8601–8610을 `RESERVED_SEEDS`에 미리 추가했다(`FRESH_PROBE_SEEDS`). 이 seed의 대국은 H6, H7, 자기대국 어떤 학습 데이터에도 넣지 않는다.
+2. **fresh probe를 생성하고 봉인한다.**
+   - TB-Engine-v1(`puct_policy_vct2_50k`, c 1.5)과 `v8:full`의 대국을 seed 8601부터 돌린다. 그 대국에서 `scripts/make_h6_fresh_probes.py`로 probe를 뽑는다. 모델은 쓰지 않고 solver truth만 쓴다.
+   - 증명이 없는 깊이 0 패턴(즉시 승리, 막을 수 없는 4, VCF, `forced_loss`, `vcf_loss`)은 제외한다.
+   - +1: 상대의 즉시 위협이 없고, 둘 차례에게 증명된 깊이 1 VCT 공격(`vct1_win`)이 있는 국면.
+   - −1: `defense_label`이 `vct_loss`를 증명한 국면. VCF를 버티는 모든 수가 깊이 1에서 진다는 뜻이며, P94와 같은 종류다.
+   - **한 대국에서 probe는 최대 1개**다. 대국마다 가장 이른 후보를 고르고, 대국 순서대로 개수가 적은 부호에 배정한다(동률이면 −1).
+   - 기존 probe·평가 국면과 D4로 같은 국면은 제외한다.
+   - **멈추는 규칙(truth 개수만 본다):** seed를 차례로 추가해 +1과 −1이 **각각 서로 다른 대국 10개 이상**이 되면 멈춘다. 목표는 각 20대국이다. 8610까지 가도 10개에 못 미치면 멈추고 다시 설계한다.
+   - 파일 `docs/h6/h6_fresh_final_probes_v1.json`을 커밋한다. 이 파일은 기본 probe 파일 목록에 들어가므로, 이후 라벨 생성에서 이 국면을 지나는 RenjuNet 대국이 빠진다.
+   - **최종 gate 전에는 이 파일로 어떤 모델도 평가하지 않는다.** 개발 중에는 A, D2, P93·P94만 본다.
+3. **`--prove-losses-last-n`의 N을 train 표본 pilot으로 정한다.**
+   - `--splits train --sample-every 50 --prove-losses`(모든 ply). 결과에 따라 고르지 않는 해시 표본, 약 1,900판이다.
+   - 보고서의 `proof_by_distance_to_end.vcf_loss`에서 **`vcf_loss`의 95% 이상을 포함하는 가장 작은 N**을 고른다.
+   - N을 정할 때 val·test와 모델은 보지 않는다.
+4. **v3 라벨과 캐시를 만든다.** v2 설정에 `--prove-losses --prove-losses-last-n N`만 더한다(N = 4 probe 정책 그대로).
+5. **H6-2a′를 학습한다.**
+   - 같은 H3 checkpoint에서 value head를 처음부터 다시 학습한다. H6-2a에서 이어 학습하지 않는다.
+   - seed, optimizer, epoch, 학습률 schedule은 H6-2a와 같다. 바뀌는 것은 캐시와 out_dir뿐이다.
+6. **dev 비교:** H6-2a + D4 평균 대 H6-2a′ + D4 평균을 A, D2, P93·P94에서 비교한다(`h6_diagnose.py`).
+7. **최종 gate(한 번):** 후보 하나로 **part B + fresh probe + D4 평균 추론**을 실행한다.
+   - G1·G2·G3·G5는 H6-3 기준 그대로다. G3는 D4 평균이라 구조상 0에 가깝다.
+   - **G4는 fresh probe로 판정한다.** +1과 −1 각각 서로 다른 대국 10개 이상, 각 부호 정확도 ≥ 0.80. 실행 스크립트(`h6_offline_gate.py`)는 part B를 `--fresh-probes`와 `--d4-average` 없이는 실행하지 않는다.
+   - ECE와 λ는 B에서 다시 계산한다. A의 λ = 1.0을 이어받지 않는다.
+   - P93·P94는 dev이므로 최종 판정에서 뺀다.
+
+**실행 명령 (2단계: fresh probe 대국과 추출)**
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "$PWD\src"
+git status --short
+git pull --ff-only
+New-Item -ItemType Directory -Force runs\h6_fresh | Out-Null
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full --seed 8601 --pairs 10 `
+  --workers 6 --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt `
+  --games-jsonl runs\h6_fresh\fresh_8601.jsonl --output runs\h6_fresh\fresh_8601.json 2>&1 | Tee-Object runs\h6_fresh\fresh_8601.log
+python -u scripts\make_h6_fresh_probes.py --games runs\h6_fresh\fresh_8601.json --workers 12 `
+  --output runs\h6_fresh\count_8601.json
+```
+- `count_8601.json`은 개수 확인용이다(`counts`).
+  - +1과 −1이 각각 10대국에 못 미치면 seed 8602, 8603… 대국을 추가한다. 그다음 **모든 seed 파일을 함께** 넣어 다시 추출한다.
+  - 기준을 채우면 최종 추출 결과를 `docs/h6/h6_fresh_final_probes_v1.json`으로 출력해 커밋한다.
+
+**실행 명령 (3단계: pilot, CPU)**
+```powershell
+..\renju-alphazero\.venv-cpu\Scripts\Activate.ps1
+python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --splits train --sample-every 50 --prove-losses `
+  --probe-game-min-ply 4 --output data\tactical\h6\pilot_prove_losses.jsonl.gz --report runs\h6\h6_pilot_prove_losses.json 2>&1 | Tee-Object runs\h6\h6_pilot.log
+```
+- 보고서는 개수만 담는다. `docs/h6/`에 복사해 커밋한다. 이것을 보고 N을 정한다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
@@ -335,7 +395,7 @@ provenance:
   - 이 두 지표는 trunk feature가 회전해도 채널이 그대로인 스칼라장이라고 가정한다. 그런데 일반 CNN의 방향 선택적 채널(예: 가로선과 세로선 검출)은 회전하면 **서로 다른 채널로 옮겨 가는 것이 정상**이다. 그래서 출력이 완벽한 망이라도 이 값들은 크게 나온다.
   - 실제로 좌우 반사(s = 4)만 값이 작다(L2 0.70, cosine 0.75). 이 해석과 맞는다.
   - 따라서 "trunk 등변성이 나쁨 → H6-2b"라는 판단표는 적용하지 않는다. head만의 흔들림 0.54도 head가 학습 때 본 적 없는 입력(채널 그대로 회전한 feature)에 대한 반응일 뿐이다.
-- 결론: D4 흔들림은 고르고 체계적이다. H3 망 전체가 방향에 민감하다. 이것을 trunk 탓인지 head 탓인지 나누려면 측정이 아니라 실험이 필요하다. value head만 D4 일관성 학습을 했을 때 흔들림이 줄어드는지를 보면 된다.
+- 결론: D4 흔들림은 고르고 체계적이다. H3 망 전체(policy 출력 포함)가 방향에 민감하다. 이것을 trunk 탓인지 head 탓인지 나누려면 측정이 아니라 실험이 필요하다. value head만 D4 일관성 학습을 했을 때 흔들림이 줄어드는지를 보면 된다.
 
 **D2 엔진 국면의 깊은 패배** (157수, root 9개, child는 모두 서로 다름)
 
@@ -345,7 +405,7 @@ provenance:
 | D4 평균 | 0.968 | 0.971 | 0.962 | 1.000 | 0.969 | +0.53 |
 
 - **엔진 대국 국면에서 "둘 차례가 깊게 이긴다"는 child 단위 인식은 잘 된다.** 깊이 2에서도 0.91(D4 평균 0.97)이다. 흑·백(0.92 / 0.93), 출처(e1 0.92 / e1s 0.93)도 비슷하다.
-- 표본은 root 9개뿐이다. "엔진 국면 전반이 분포 밖이라 실패한다"는 가설(H6-2c 근거)은 **지지되지 않는다.**
+- 표본은 root 9개뿐이다. 157개를 독립으로 보면 Wilson 95% 구간이 원래 87.1–95.6%, D4 평균 92.8–98.6%다. 실제로는 같은 root의 child끼리 상관되어 있으므로 불확실성이 이보다 크다. "엔진 국면 전반이 분포 밖이라 실패한다"는 가설(H6-2c 근거)은 **지지되지 않는다.** 다만 "엔진 domain 문제가 없다"는 데까지는 말하지 않는다.
 - 그렇다면 P93의 실패(같은 종류의 child형 깊은 승리를 −0.36으로 판단)는 그 웹 대국 국면이 특이하기 때문으로 보인다(흑 덩어리, 백 격자). P93과 P94는 **같은 대국 하나**에서 나왔으므로, G4는 사실상 대국 1개에 걸린 판정이다.
 
 **D3 D4 평균 추론** (A 기준, 원래 → 평균)
@@ -361,19 +421,19 @@ provenance:
 - **비용(RTX 5070):**
   - 한 국면 지연은 1.00ms → 0.95ms로 사실상 같다(지연이 병목인 구간이라 8개를 한 batch로 돌려도 차이가 없다).
   - batch 처리량은 110,103 → 9,483국면/초로 11.6배 느려진다. 최대 VRAM은 116MB → 609MB다.
-  - MCTS leaf를 한 국면씩 또는 작은 batch로 평가하면 거의 공짜다. 큰 batch로 평가할 때만 비용이 된다.
+  - 이 측정은 미리 만든 plane에 대한 `value_forward`(고정된 trunk + value head)만 잰 microbenchmark다. 게임 인코딩, policy head, evaluator 전체는 포함하지 않는다. 현재 PUCT는 evaluator batch 1로 leaf를 하나씩 평가하므로 이 구조에서는 추가 지연이 관찰되지 않았다. **H6-4에서 실제 evaluator에 통합한 뒤 검색 전체 지연을 다시 잰다.** batch 처리량이 11.6배 떨어진다는 단서는 유지한다.
 
 **`--prove-losses` 해석 정정**
-- 학습 데이터의 증명 −1(`forced_loss`)은 "상대가 다음 수에 오목을 두 군데 이상 만들 수 있다"(또는 막을 자리가 금수)는 가장 얕은 패턴뿐이다. val·test의 증명 −1 정확도 93–95%는 이 패턴을 맞힌 것이다.
+- **고신뢰 증명 라벨(weight 1.0)에 부모 단위의 깊은 패배가 없다.** 결과 라벨(weight 0.1)에는 패배 국면이 −1로 많이 들어 있지만, 약한 지도다. v2 증명 167,757개 가운데 −1은 `forced_loss` 17,058개뿐이고 `vcf_loss`·`vct_loss`는 0개다. 증명만 보면 +1 대 −1이 8.8 : 1이다. 학습 데이터의 증명 −1(`forced_loss`)은 "상대가 다음 수에 오목을 두 군데 이상 만들 수 있다"(또는 막을 자리가 금수)는 가장 얕은 패턴뿐이다. val·test의 증명 −1 정확도 93–95%는 이 패턴을 맞힌 것이다.
 - `--prove-losses`가 추가하는 `vcf_loss`는 `solver.decision(game, 0)`이 UNSAFE인 국면이다. 즉 **"내 모든 수 뒤에 상대가 VCF로 이긴다"는 부모 국면 단위 패배 라벨**이다. P94(모든 수 뒤 상대 VCT1 승리)와 **같은 종류이고 깊이만 한 단계 얕다.** 앞서 "`--prove-losses`는 P94형이 아니다"라고 한 해석은 고친다.
-- P94 자체는 `--prove-losses`로도 라벨이 나오지 않는다(H6-3A 때 확인). 깊이 1의 부모 단위 패배 라벨은 아직 builder가 없다.
+- P94 자체는 `--prove-losses`로도 라벨이 나오지 않는다(H6-3A 때 확인). 깊이 1의 부모 단위 패배는 **판정 함수가 이미 있다**(`analysis.tactical_labels.defense_label` → `vct_loss`). 다만 H6 builder에 연결되어 있지 않다. fresh probe 도구(아래)가 이 함수로 P94를 `vct_loss`로 판정하는 것을 확인했다.
 
 **종합**
 
 | 문제 | 근거 | 대응 후보 |
 |---|---|---|
 | G3 D4 흔들림 | 대칭 전반에 고르게 0.136 | D4 평균 추론(지연 비용 거의 없음). 또는 value head D4 일관성 학습 |
-| G4 부모 단위 패배(P94) | 학습 −1이 가장 얕은 패턴뿐. child형 깊은 승리는 잘 인식(D2) | 부모 단위 패배 라벨: `--prove-losses`(VCF), 필요하면 깊이 1로 확장 |
+| G4 부모 단위 패배(P94) | 고신뢰 증명 −1이 가장 얕은 패턴뿐. child형 깊은 승리는 잘 인식(D2) | 부모 단위 패배 라벨: `--prove-losses`(VCF). 필요하면 `defense_label`(`vct_loss`)을 builder에 연결 |
 | G4 P93(특이 국면) | 엔진 국면 전반은 정상(D2). 대국 1개의 특이 국면 | 새 fresh probe를 여러 대국에서 만들어 최종 판정의 표본을 넓힘 |
 | 양수 편향 +0.15 | D4 평균으로 변하지 않음 | 부모 단위 −1 라벨이 늘면 일부 줄어들 수 있음. 관찰 |
 
@@ -390,7 +450,7 @@ provenance:
 - **value head만의 방향 민감성:** 원래 feature F(x)를 8방향으로 변환해 value head에 넣고 국면별 표준편차를 잰다. 이때 feature는 구조상 정확히 등변이므로, 남는 흔들림은 head 몫이다.
 - 보조: policy top-1이 8개 대칭에서 일치하는 비율(원래 좌표로 되돌려 비교). policy head도 D4 불변이 아니므로 trunk 판단에는 쓰지 않는다.
 
-해석:
+해석(**폐기**: 아래 H6-3D 결과의 측정 설계 오류 참조. 이 표로 판단하지 않는다):
 
 | trunk 등변성 | head만의 표준편차 | 해석 |
 |---|---|---|
@@ -419,7 +479,7 @@ provenance:
 - **비용:** 한 국면 지연(원래 vs 8개를 한 batch로), batch 256 처리량, 최대 VRAM을 잰다. 클라우드 CPU smoke에서 한 국면 지연은 2.8배, 처리량은 약 13배 느려졌다. GPU 값은 실행 결과로 정한다.
 
 **진단 결과에 따른 갈림**
-- trunk 등변성이 나쁘면: H6-2b(trunk 미세조정) 후보.
+- ~~trunk 등변성이 나쁘면: H6-2b(trunk 미세조정) 후보.~~ (폐기, 측정이 채널 이동을 반영하지 못함)
 - trunk는 괜찮고 head만의 흔들림이 크면: value head만 D4 일관성 학습을 한다(8개 대칭 모두 사용, 대칭 간 value 분산 penalty).
 - D4 평균 추론만으로 지표가 충분히 좋아지고 비용을 감당할 수 있으면: D4 평균 추론이 후보가 된다. 바뀐 모델이므로 B에서 검증한다.
 - D2도 나쁘면: 엔진 국면의 깊은 증명 데이터로 적응하는 **H6-2c**(H6-2b와 구분). TB-Engine-v1 자기대국에 새 seed를 쓰고, seed를 학습용 / dev probe용 / 최종 fresh probe용으로 미리 나눈다. 예약 seed는 제외한다.

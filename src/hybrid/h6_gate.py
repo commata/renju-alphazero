@@ -49,6 +49,8 @@ THRESHOLDS = {
     'G4': {'P93': 1, 'P94': -1},
     'G5': {'outcome_balanced_accuracy_min': 0.55, 'max_difference': 0.05},
 }
+# Final gate (part B) G4: sealed fresh probes from TB-Engine-v1 games on seeds 8601-8610, at most one per game.
+FRESH = {'min_games_per_sign': 10, 'sign_accuracy_min': 0.80}
 ECE_BINS = 10
 ECE_LAMBDA = {'ece_max_for_lambda_1': 0.10, 'lambda_low_ece': 1.0, 'lambda_high_ece': 0.5}
 FAILURE_PATHS = {
@@ -58,6 +60,7 @@ FAILURE_PATHS = {
     'G4_P94_only': 'deep forced-loss representation: --prove-losses v3 first (P94 becomes a dev probe)',
     'G4_P93': 'investigate the win-side sign / probe-specific representation; not --prove-losses',
     'G5': 'colour-conditional generalisation: analyse side bias by kind and ply before changing training',
+    'G4_fresh': 'fresh deep win / deep loss probes failed: inspect per sign before any change (no B re-run)',
 }
 
 
@@ -231,7 +234,41 @@ def probes(value_fn, probe_file: Path, device) -> dict:
     return out
 
 
-def judge(metrics: dict, d4: dict, probe: dict) -> dict:
+def d4_average(value_fn, device):
+    """V_D4(x) = mean of the value over the 8 symmetries (exactly D4-invariant)."""
+    _, src = d4_tables(device)
+
+    def fn(planes):
+        b = planes.shape[0]
+        moved = augment_planes(planes.repeat_interleave(8, dim=0), torch.arange(8, device=device).repeat(b), src)
+        return value_fn(moved).reshape(b, 8).mean(1)
+    return fn
+
+
+@torch.no_grad()
+def fresh_probes(value_fn, path: Path, device) -> dict:
+    data = json.loads(Path(path).read_text(encoding='utf-8'))
+    if data.get('format') != 'h6-fresh-probes-v1':
+        raise ValueError(f'{path} is not an H6 fresh-probe file')
+    rows = []
+    for p in data['probes']:
+        v = float(value_fn(encode_game(_position(p['moves'])).unsqueeze(0).to(device))[0])
+        rows.append({'name': p['name'], 'game_key': p['game_key'], 'expected_sign': p['expected_sign'],
+                     'kind': p['kind'], 'ply': p['ply'], 'value': v, 'correct': v * p['expected_sign'] > 0})
+    out = {'file': str(path), 'probes': rows}
+    ok = True
+    for sign, name in ((1, 'win'), (-1, 'loss')):
+        mine = [r for r in rows if r['expected_sign'] == sign]
+        games = len({r['game_key'] for r in mine})
+        acc = sum(r['correct'] for r in mine) / len(mine) if mine else None
+        out[name] = {'probes': len(mine), 'games': games, 'accuracy': acc,
+                     'mean_value': sum(r['value'] for r in mine) / len(mine) if mine else None}
+        ok = ok and games >= FRESH['min_games_per_sign'] and acc is not None and acc >= FRESH['sign_accuracy_min']
+    out['pass'] = ok
+    return out
+
+
+def judge(metrics: dict, d4: dict, probe: dict, fresh: dict | None = None) -> dict:
     t = THRESHOLDS
     pr, oc, side = metrics['proof'], metrics['outcome'], metrics['outcome_by_side']
     ge = lambda x, lo: x is not None and x >= lo  # noqa: E731
@@ -243,14 +280,16 @@ def judge(metrics: dict, d4: dict, probe: dict) -> dict:
         'G3': d4['mean_std'] is not None and d4['mean_std'] <= t['G3']['mean_std_max']
         and d4['p95_std'] <= t['G3']['p95_std_max']
         and ge(d4['confident_sign_agreement'], t['G3']['confident_sign_agreement_min']),
-        'G4': probe['P93']['pass'] and probe['P94']['pass'],
+        'G4': fresh['pass'] if fresh is not None else (probe['P93']['pass'] and probe['P94']['pass']),
         'G5': ge(side['black']['balanced_accuracy'], t['G5']['outcome_balanced_accuracy_min'])
         and ge(side['white']['balanced_accuracy'], t['G5']['outcome_balanced_accuracy_min'])
         and abs(side['black']['balanced_accuracy'] - side['white']['balanced_accuracy']) <= t['G5']['max_difference'],
     }
     failed = [g for g, ok in gates.items() if not ok]
     paths = {g: FAILURE_PATHS[g] for g in failed if g != 'G4'}
-    if 'G4' in failed:
+    if 'G4' in failed and fresh is not None:
+        paths['G4'] = FAILURE_PATHS['G4_fresh']
+    elif 'G4' in failed:
         if not probe['P93']['pass']:
             paths['G4'] = FAILURE_PATHS['G4_P93']
         elif not {'G1', 'G2', 'G3'} & set(failed):

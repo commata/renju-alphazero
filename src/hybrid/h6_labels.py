@@ -42,7 +42,10 @@ PERSPECTIVE = 'side_to_move'
 SPLIT_ORDER = ('train', 'val', 'test')
 BOARD = 15
 # Benchmark / evaluation seeds whose games never become training data (§12.19, §12.26, §12.31-12.35).
-RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8411, 8412, 8413, 8414, 8415, 8416, 8417, 8418})
+# 8601-8610: H6 fresh-final probe games (docs/h6-value.md, H6-2a'); reserved before any of them was played.
+RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8411, 8412, 8413, 8414, 8415, 8416, 8417, 8418,
+                            *range(8601, 8611)})
+FRESH_PROBE_SEEDS = tuple(range(8601, 8611))
 # Proof label kinds of ``analysis.tactical_labels`` that carry a value (side to move).
 PROOF_VALUES = {'immediate_win': 1, 'unstoppable_four': 1, 'vcf': 1, 'forced_loss': -1, 'vcf_loss': -1}
 PROOF_DEPTH = {'immediate_win': 0, 'unstoppable_four': 0, 'vcf': 0, 'forced_loss': 0, 'vcf_loss': 0,
@@ -238,6 +241,7 @@ def default_probe_files(root: Path) -> list[str]:
     files = sorted(glob.glob(str(root / 'tests' / 'fixtures' / '*probes*.json')))
     files += sorted(glob.glob(str(root / 'docs' / 'mcts-v8-results' / 'probe_*.json')))
     files += sorted(glob.glob(str(root / 'docs' / 'mcts-v8-results' / 'e1*' / '*manifest.json')))
+    files += sorted(glob.glob(str(root / 'docs' / 'h6' / '*fresh*probes*.json')))
     return files
 
 

@@ -115,7 +115,7 @@ class BuilderTest(unittest.TestCase):
         probes = {canonical_hash([[7, 7], [1, 1], [2, 2]])}
         rows, summary = build(games, splits={'train', 'val', 'test'}, from_ply=5, outcome_weight=0.1, proof_weight=1.0,
                               prove_losses=False, vct1=False, probes=probes)
-        self.assertEqual(summary['dropped'], {'probe_game': 1, 'other_split': 0, 'probe_game_by_ply': {'0': 1}})
+        self.assertEqual(summary['dropped'], {'probe_game': 1, 'other_split': 0, 'probe_game_by_ply': {'0': 1}, 'not_sampled': 0})
         g1 = {r.ply: r for r in rows if r.game_id == 'renjunet:1'}
         self.assertEqual((g1[8].label_kind, g1[8].value_target), ('proof_immediate_win', 1))
         self.assertEqual((g1[7].label_kind, g1[7].value_target), ('proof_forced_loss', -1))  # white to move

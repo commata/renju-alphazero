@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 import gzip
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -60,11 +61,12 @@ def renjunet_result(game: dict) -> dict:
 def _proofs_task(task):
     from analysis.threats import ThreatSolver
 
-    moves, from_ply, prove_losses, vct1 = task
+    moves, from_ply, prove_losses, vct1, last_n = task
     solver = ThreatSolver(node_limit=SOLVER_NODE_LIMIT)
     out = {}
     for ply in range(from_ply, len(moves)):
-        label = proof_label(moves[:ply], solver, prove_losses=prove_losses, vct1_budget=VCT1_BUDGET if vct1 else None)
+        losses = prove_losses and (not last_n or len(moves) - ply <= last_n)
+        label = proof_label(moves[:ply], solver, prove_losses=losses, vct1_budget=VCT1_BUDGET if vct1 else None)
         if label is not None:
             out[ply] = label
     return out
@@ -84,6 +86,7 @@ def _git_commit() -> str | None:
 
 def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, proof_weight: float,
           prove_losses: bool, vct1: bool, probes, workers: int = 1, probe_game_min_ply: int = 0,
+          prove_losses_last_n: int = 0, sample_every: int = 0,
           progress_seconds: float = 60.0) -> tuple[list, dict]:
     """Build H6 rows while protecting probe/evaluation positions from continuation leakage.
 
@@ -109,10 +112,13 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
             f'{MAX_ROW_ONLY_PROBE_PLY}-stone opening probes may be row-only; use '
             f'--probe-game-min-ply {MAX_ROW_ONLY_PROBE_PLY + 1} (current H6-v2 policy) or a stricter value.'
         )
-    kept, dropped = [], {'probe_game': 0, 'other_split': 0, 'probe_game_by_ply': {}}
+    kept, dropped = [], {'probe_game': 0, 'other_split': 0, 'probe_game_by_ply': {}, 'not_sampled': 0}
     for game in games:
         if game['split'] not in splits:
             dropped['other_split'] += 1
+            continue
+        if sample_every and not in_sample(game['id'], sample_every):
+            dropped['not_sampled'] += 1
             continue
         hit = first_probe(game['moves'], game_probes) if game_probes else None
         if hit is not None:
@@ -121,7 +127,7 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
             dropped['probe_game_by_ply'][key] = dropped['probe_game_by_ply'].get(key, 0) + 1
             continue
         kept.append(game)
-    tasks = [(g['moves'], from_ply, prove_losses, vct1) for g in kept]
+    tasks = [(g['moves'], from_ply, prove_losses, vct1, prove_losses_last_n) for g in kept]
     # progress by positions (games differ in length), one line a minute with the ETA
     progress = Progress('proofs', sum(max(0, len(t[0]) - from_ply) for t in tasks), 'positions',
                         every_seconds=progress_seconds)
@@ -142,7 +148,13 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     budget = {'vcf_node_limit': SOLVER_NODE_LIMIT, **({'vct1': VCT1_BUDGET} if vct1 else {})}
     provenance = {'git_commit': _git_commit(), 'engine_config_hash': None, 'model_hash': None}
     rows = []
+    by_distance = {}
     for game, proof in zip(kept, proofs):
+        for ply, label in proof.items():  # distance to the game end, for choosing --prove-losses-last-n
+            d = len(game['moves']) - ply
+            bucket = by_distance.setdefault(label['kind'], {})
+            key = str(d) if d < 40 else '40+'
+            bucket[key] = bucket.get(key, 0) + 1
         game_result = renjunet_result(game)
         these = game_rows(game_result, source='renjunet', split=game['split'], outcome_weight=outcome_weight,
                           proof_weight=proof_weight, proofs=proof, solver_class=solver_class,
@@ -165,7 +177,14 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     check_game_provenance(rows)
     stage('cross-split mask + leakage check', started)
     return rows, {'games_in': len(games), 'games_kept': len(kept), 'dropped': dropped,
-                  'cross_split_masked': cross, **report(rows)}
+                  'cross_split_masked': cross, **report(rows),
+                  'proof_by_distance_to_end': {k: dict(sorted(v.items(), key=lambda x: (len(x[0]), x[0])))
+                                               for k, v in sorted(by_distance.items())}}
+
+
+def in_sample(game_id, every: int) -> bool:
+    """Deterministic 1-in-``every`` game sample (the --prove-losses-last-n pilot), independent of results."""
+    return int(hashlib.sha256(f'h6-pilot-v1:{game_id}'.encode()).hexdigest(), 16) % every == 0
 
 
 def main(argv=None) -> int:
@@ -177,6 +196,10 @@ def main(argv=None) -> int:
     parser.add_argument('--proof-weight', type=float, default=1.0)
     parser.add_argument('--prove-losses', action='store_true', help='add vcf_loss (-1) labels (slower)')
     parser.add_argument('--vct1', action='store_true', help='add proven depth-1 attacks (+1) (slow)')
+    parser.add_argument('--prove-losses-last-n', type=int, default=0,
+                        help='with --prove-losses: only the last N positions of each game (0 = every position)')
+    parser.add_argument('--sample-every', type=int, default=0,
+                        help='pilot runs: keep a deterministic 1-in-N game sample (0 = all games)')
     parser.add_argument('--probe-files', nargs='*', default=None)
     parser.add_argument('--probe-game-min-ply', type=int, default=0,
                         help='drop whole games for probes with at least this many stones; only <=3-stone opening '
@@ -195,6 +218,7 @@ def main(argv=None) -> int:
                           outcome_weight=args.outcome_weight, proof_weight=args.proof_weight,
                           prove_losses=args.prove_losses, vct1=args.vct1,
                           probes=probe_positions(probe_files, ROOT), probe_game_min_ply=args.probe_game_min_ply,
+                          prove_losses_last_n=args.prove_losses_last_n, sample_every=args.sample_every,
                           workers=args.workers)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     started = perf_counter()
@@ -203,9 +227,10 @@ def main(argv=None) -> int:
             handle.write(json.dumps(row.to_dict(), separators=(',', ':')) + '\n')
     stage(f'write {len(rows):,} rows', started)
     payload = {'format': 'h6-label-report-v1', 'row_format': ROW_FORMAT, 'git_commit': _git_commit(),
-               'games': str(args.games), 'restricted': args.limit is not None,
+               'games': str(args.games), 'restricted': args.limit is not None or bool(args.sample_every),
                'settings': {k: getattr(args, k) for k in ('splits', 'from_ply', 'outcome_weight', 'proof_weight',
-                                                          'prove_losses', 'vct1', 'probe_game_min_ply')},
+                                                          'prove_losses', 'vct1', 'probe_game_min_ply',
+                                                          'prove_losses_last_n', 'sample_every')},
                'probe_files': [str(Path(p).resolve().relative_to(ROOT)).replace('\\', '/')
                                if Path(p).resolve().is_relative_to(ROOT) else str(p) for p in probe_files], 'summary': summary}
     print(json.dumps(payload['summary'], indent=1), flush=True)
