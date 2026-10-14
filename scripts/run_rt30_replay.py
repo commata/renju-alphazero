@@ -34,6 +34,7 @@ import platform
 import statistics
 import subprocess
 import sys
+from collections import Counter
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from random import Random
@@ -49,6 +50,8 @@ DEFAULT_JSONL = [E3 / 'puct_policy_vct2_50k_8415.jsonl', E3 / 'puct_policy_vct2_
 ARMS = ('frozen', 'fast', 'rt')
 PHASES = {'attack': 'v8_attack_seconds', 'stage_vct': 'v8_vct_seconds', 'tree': 'v8_tree_seconds',
           'root': 'v8_root_seconds', 'vct2': 'v8_vct2_seconds', 'v7_modules': 'v7_module_seconds'}
+# ``v7_module_seconds`` runs from before the own VCF to the end of the V7 root preparation, so it
+# contains V8-B; ``v7_only`` (= v7_modules - attack) is the frozen V7 work that no deadline cuts.
 DEADLINE = 27.5
 
 _WORKER: dict = {}
@@ -123,8 +126,9 @@ def _search(moves, arm: str, seed: int):
     if game.board[move[0]][move[1]] != 0 or tuple(move) not in game.legal_moves():
         raise RuntimeError(f'{arm}: illegal move {move}')
     diag = agent.diagnostics
-    return {'move': list(move), 'seconds': round(seconds, 4), 'route': diag.v8_route,
-            'phases': {name: round(getattr(diag, field), 4) for name, field in PHASES.items()},
+    phases = {name: round(getattr(diag, field), 4) for name, field in PHASES.items()}
+    phases['v7_only'] = round(max(0.0, phases['v7_modules'] - phases['attack']), 4) if phases['v7_modules'] else 0.0
+    return {'move': list(move), 'seconds': round(seconds, 4), 'route': diag.v8_route, 'phases': phases,
             'nodes': {'attack': diag.v8_attack_nodes, 'stage_vct': diag.v8_vct_nodes, 'root': diag.v8_root_nodes,
                       'vct2': diag.v8_vct2_nodes}, **extra}, _diagnostics(diag)
 
@@ -170,11 +174,13 @@ def summarize(rows, arms):
     summary = {'positions': len(rows)}
     for arm in arms:
         summary[arm] = {'seconds': _dist([r[arm]['seconds'] for r in rows]),
+                        'routes': dict(Counter(r[arm]['route'] for r in rows)),
                         'phases': {name: _dist([r[arm]['phases'][name] for r in rows if r[arm]['phases'][name] > 0])
-                                   for name in PHASES}}
+                                   for name in (*PHASES, 'v7_only')}}
     if 'rt' in arms:
         rt = [r['rt']['rt'] for r in rows]
-        summary['rt'] = {'timeouts': {p: sum(p in x['timeouts'] for x in rt) for p in ('attack', 'stage_vct', 'root', 'vct2')},
+        # Not summary['rt']: that key holds the rt arm's seconds and phases.
+        summary['rt_deadline'] = {'timeouts': {p: sum(p in x['timeouts'] for x in rt) for p in ('attack', 'stage_vct', 'root', 'vct2')},
                          'skipped': {p: sum(p in x['skipped'] for x in rt) for p in ('puct', 'vct2')},
                          'moves_with_timeout_or_skip': sum(bool(x['timeouts'] or x['skipped']) for x in rt)}
     if len(arms) >= 2:
