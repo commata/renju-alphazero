@@ -251,3 +251,57 @@ python scripts/run_rt30_replay.py --checkpoint runs\h3_policy_64x4\best.pt --arm
 | E1 / Holdout 전술 회귀 | `deadline=None` 모드에서 확인 |
 | TB1과의 착수 일치율 | 진단 지표 |
 | TB1 짝 대국 기력 | 동작이 바뀌는 변경을 넣었을 때 최종 gate |
+
+## 7. 웹대국 로그 DB (SQLite, `src/weblog/store.py`)
+
+**구조.** 다른 PC는 DB 파일을 직접 열지 않고 미니PC의 API로 조회한다(API는 다음 단계). raw 로그
+(`logs/web_play/<game>/game.json`, `moves.csv`, `veto_positions/*.json`)는 형식 그대로 대국 종료 시 쓴다.
+DB는 **착수마다** 기록하므로 서버가 죽어도 진행 중인 대국이 남는다. `games.raw_log_dir`로 둘을 연결한다.
+
+**쓰기 경로.**
+
+- 쓰는 쪽은 웹 서버 프로세스 하나다. engine worker는 DB를 건드리지 않고 결과를 서버에 넘긴다.
+- 이벤트 메서드(`start_game`, `record_move`, `mark_undone`, `record_veto`, `finish_game`)는 queue에 넣기만 한다.
+  전용 writer thread가 순서대로 반영한다.
+- 착수 응답이 디스크를 기다리지 않는다. DB 오류가 나도 대국은 계속되고, 오류는 `failures`/`last_error`로 집계해
+  `/api/health`에 보인다.
+- PRAGMA: `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout=5000`. 스키마 버전은 `PRAGMA user_version`이다.
+  버전이 다른 DB는 열지 않는다.
+
+**스키마(v1).**
+
+| 테이블 | 내용 |
+|---|---|
+| `games` | `game_id`(서버가 만든 hex), 시작·종료 시각(UTC ISO), `status`(in_progress/finished/unfinished/abandoned), 결과, 엔진·seed·사람 색, `undo_count`, provenance(engine, config hash, commit, git_dirty, policy·metadata sha256), `agent_info_json`, `final_board_json`, `raw_log_dir` |
+| `moves` | `seq`(undo된 수 포함 기록 순서), `ply`, player, actor, `row0/col0`(0 기준), `board_hash`, `engine_seconds`, `queue_seconds`, **`wall_seconds`(요청 수신 → 수 준비, 30초 판정 기준)**, `deadline_seconds`, `route`, `timed_out`, `emergency_used`, `diagnostics_json`, `rt_json`, `undone_at` |
+| `veto_positions` | `(game_id, ply)`, `reason`(VCT2_PROVEN_LOSS), tree 수, 둔 수, raw 파일 내용 전체(`payload_json`), `raw_path` |
+
+- **undo.** 행을 지우지 않고 `undone_at`을 표시한다. 살아 있는 수끼리만 `(game_id, ply)`가 unique다(partial index).
+- **엔진별 세부 정보.** 컬럼으로 늘리지 않고 JSON에서 읽는다. 예: `json_extract(diagnostics_json, '$.v8_root_nodes')`.
+- **대국 상태 전환.**
+  - 끝까지 둔 대국: `finished`
+  - 동결 엔진(s3/tb1)에서 AI 수가 있는데 새 대국으로 넘어간 경우: `unfinished`(기존 규칙과 같다)
+  - 그 밖에 새 대국으로 넘어간 경우: `abandoned`
+  - 서버가 종료되거나 죽은 경우: `in_progress`로 남는다
+
+**실행.** `--db`가 없으면 기존 동작과 같다.
+
+```bash
+python scripts/run_web_play.py --db data/renju_web.db --policy-checkpoint runs/h3_policy_64x4/best.pt
+```
+
+**백업.** WAL 모드에서는 `.db` 파일만 복사하면 안 된다. 아직 반영되지 않은 데이터가 `-wal` 파일에 있다.
+
+```bash
+sqlite3 data/renju_web.db ".backup data/backup/renju_web_$(date +%F).db"
+```
+
+**다음 단계.**
+
+1. 기존 `logs/web_play/*/game.json`을 DB로 옮기는 import 스크립트
+2. 인증이 붙은 읽기 전용 로그 API: `/api/logs/games`, `/api/logs/games/{id}/moves`, `export.csv`, latency 통계.
+   읽기는 `open_readonly`(`mode=ro`)로 한다.
+3. RT30 supervisor가 `deadline_seconds`, `timed_out`, `emergency_used`, `rt_json`을 채운다.
+
+외부에 공개하기 전에 알아둘 점이 있다. 현재 대국 API는 서버 전체에 게임이 하나뿐(`SESSION`)이고 인증이 없다.
+멀티 세션으로 바꾸기 전까지는 대국 화면도 인증(Nginx basic auth 등) 뒤에 둔다.

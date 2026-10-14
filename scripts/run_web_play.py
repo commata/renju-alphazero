@@ -20,6 +20,9 @@ VCT2 check proved the move lost is saved at once under ``logs/web_play/veto_posi
 The frozen TB-Engine-v1 (E3-A, §12.36; same checkpoint) is the "tb1" opponent and is logged the same way.
 "Undo" takes back the last human move (and the AI reply) for relaying games from elsewhere.
 
+With ``--db data/renju_web.db`` every game is also logged move by move to SQLite
+(``weblog.store``, docs/web-ser5.md §7); the files above are written as before.
+
 Then open:
     http://127.0.0.1:8000
 """
@@ -331,8 +334,14 @@ class PlaySession:
     not a multi-user service.
     """
 
-    def __init__(self, *, log_root: Path | None = None):
+    def __init__(self, *, log_root: Path | None = None, store=None):
         self.lock = Lock()
+        self.store = store  # weblog.store.LogStore or None
+        self.db_game_id: str | None = None
+        self._db_seqs: list[int] = []  # seq of each entry of move_records
+        self._db_next_seq = 0
+        self._db_finished = False
+        self._received_at: float | None = None
         self.log_root = Path(log_root) if log_root is not None else LOG_ROOT
         self.game = Game()
         self.agent_key = "v7"
@@ -349,7 +358,8 @@ class PlaySession:
         self.undo_count = 0
         self.veto_files: list[str] = []
 
-    def reset(self, *, agent_key: str, human_color: int, seed: int = 42) -> dict[str, Any]:
+    def reset(self, *, agent_key: str, human_color: int, seed: int = 42,
+              received_at: float | None = None) -> dict[str, Any]:
         if agent_key not in VERSION_LABELS:
             raise ValueError("지원하지 않는 MCTS 버전입니다.")
         if human_color not in (BLACK, WHITE):
@@ -358,6 +368,8 @@ class PlaySession:
             if (self.agent_key in FROZEN_KEYS and not self.saved_game
                     and any(r["actor"] not in ("HUMAN", "OPENING_RULE") for r in self.move_records)):
                 self._save_completed_game_locked(unfinished=True)  # relayed games: keep the record
+            self._db_leave_locked()
+            self._received_at = received_at
             self.game = Game()
             self.agent_key = agent_key
             self.agent = create_agent(agent_key, seed=seed)
@@ -372,6 +384,7 @@ class PlaySession:
             self.saved_game = False
             self.undo_count = 0
             self.veto_files = []
+            self._db_start_locked()
 
             # Project opening rule: BLACK always starts at board center.
             opening_player = self.game.to_play
@@ -389,8 +402,9 @@ class PlaySession:
                 self._play_ai_locked()
             return self._state_locked()
 
-    def play_human(self, row: int, col: int) -> dict[str, Any]:
+    def play_human(self, row: int, col: int, *, received_at: float | None = None) -> dict[str, Any]:
         with self.lock:
+            self._received_at = received_at
             if self.game.done:
                 raise IllegalMove("이미 종료된 대국입니다.")
             if self.game.to_play != self.human_color:
@@ -412,12 +426,17 @@ class PlaySession:
                 raise IllegalMove("종료된 대국은 되돌릴 수 없습니다.")
             if not any(r["actor"] == "HUMAN" for r in self.move_records):
                 raise IllegalMove("되돌릴 사람 착수가 없습니다.")
+            undone = []
             while self.move_records:
                 record = self.move_records.pop()
+                if self._db_seqs:
+                    undone.append(self._db_seqs.pop())
                 self.game.undo()
                 if record["actor"] == "HUMAN":
                     break
             self.undo_count += 1
+            if self.store is not None and self.db_game_id is not None:
+                self.store.mark_undone(self.db_game_id, undone)
             ai = [r for r in self.move_records if r["actor"] not in ("HUMAN", "OPENING_RULE")]
             self.last_ai_move = (ai[-1]["row0"], ai[-1]["col0"]) if ai else None
             self.last_ai_seconds = ai[-1]["seconds"] if ai else None
@@ -435,13 +454,16 @@ class PlaySession:
         started = perf_counter()
         move = self.agent.select_move(self.game)
         elapsed = perf_counter() - started
+        received = self._received_at
+        timing = {} if received is None else {"queue_seconds": started - received,
+                                              "wall_seconds": perf_counter() - received}
         diagnostics = _diagnostics(self.agent)
         if self.agent_key in FROZEN_KEYS:
             checked = diagnostics.get("v8_vct2_checked") or []
             if checked and checked[0][1] == "UNSAFE":
                 self._save_veto_position_locked(move, elapsed, diagnostics)
         self.game.play(*move)
-        self._record_move_locked(player, self.agent.name, move, seconds=elapsed, diagnostics=diagnostics)
+        self._record_move_locked(player, self.agent.name, move, seconds=elapsed, diagnostics=diagnostics, **timing)
         self.last_ai_move = move
         self.last_ai_seconds = elapsed
         self.message = f"AI 착수: ({move[0] + 1}, {move[1] + 1})"
@@ -456,6 +478,8 @@ class PlaySession:
         *,
         seconds: float | None,
         diagnostics: dict[str, Any],
+        queue_seconds: float | None = None,
+        wall_seconds: float | None = None,
     ) -> None:
         row, col = move
         before = [list(line) for line in self.game.board]
@@ -472,6 +496,40 @@ class PlaySession:
             "seconds": seconds,
             "diagnostics": diagnostics,
         })
+        if self.store is not None:
+            if self.db_game_id is None:  # a game played without /api/new (the initial session)
+                self._db_start_locked()
+            seq = self._db_next_seq
+            self._db_next_seq += 1
+            self._db_seqs.append(seq)
+            record = self.move_records[-1]
+            self.store.record_move(
+                self.db_game_id, seq=seq, ply=record["ply"], player=record["player"], actor=actor, row0=row, col0=col,
+                board_hash=record["board_hash"], engine_seconds=seconds, queue_seconds=queue_seconds,
+                wall_seconds=wall_seconds, route=diagnostics.get("v8_route"), diagnostics=_json_value(diagnostics))
+
+    def _db_start_locked(self) -> None:
+        """A new row in ``games`` for the current game (provenance of the frozen engines included)."""
+        if self.store is None:
+            return
+        from weblog.store import utc
+
+        info = self._s3_info() if self.agent_key in FROZEN_KEYS else {}
+        self.db_game_id = self.store.start_game(
+            started_at=utc(self.started_at), agent_key=self.agent_key, agent_name=self.agent.name, seed=self.seed,
+            human_color="BLACK" if self.human_color == BLACK else "WHITE", engine=info.get("engine"),
+            engine_config_hash=info.get("engine_config_hash"), engine_commit=info.get("engine_commit"),
+            git_dirty=info.get("git_dirty"), policy_checkpoint_sha256=info.get("policy_checkpoint_sha256"),
+            policy_metadata_sha256=info.get("policy_metadata_sha256"))
+        self._db_seqs, self._db_next_seq, self._db_finished = [], 0, False
+
+    def _db_leave_locked(self) -> None:
+        """The current game is replaced before it ended and was not saved: mark it abandoned."""
+        if self.store is None or self.db_game_id is None or self._db_finished:
+            return
+        self.store.finish_game(self.db_game_id, status="abandoned", number_of_moves=len(self.game.history),
+                               undo_count=self.undo_count, final_board=self.game.board)
+        self._db_finished = True
 
     def _s3_info(self) -> dict[str, Any]:
         """Provenance of the frozen engine of this game (S3-VCT2-v1 or TB-Engine-v1)."""
@@ -507,6 +565,8 @@ class PlaySession:
         }
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         self.veto_files.append(_display_path(path))
+        if self.store is not None and self.db_game_id is not None:
+            self.store.record_veto(self.db_game_id, ply=ply, payload=_json_value(payload), raw_path=_display_path(path))
         print(f"[web] VCT2 veto position saved: {_display_path(path)}")
 
     def _save_completed_game_locked(self, unfinished: bool = False) -> Path | None:
@@ -616,6 +676,15 @@ class PlaySession:
         self.last_log_dir = log_dir
         self.saved_game = True
         display_path = _display_path(log_dir)
+        if self.store is not None and self.db_game_id is not None and not self._db_finished:
+            from weblog.store import utc
+
+            self.store.finish_game(
+                self.db_game_id, finished_at=utc(finished_at), status="unfinished" if unfinished else "finished",
+                result=result, winner=winner, winner_actor=winner_actor, number_of_moves=len(self.game.history),
+                ai_total_seconds=ai_total_seconds, undo_count=self.undo_count, raw_log_dir=display_path,
+                final_board=self.game.board, agent_info=payload.get("agent_info"))
+            self._db_finished = True
         self.message = f"대국 종료 · 로그 저장: {display_path}"
         print(f"[web] saved game log: {display_path}")
         return log_dir
@@ -671,11 +740,15 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(SESSION.state())
             return
         if self.path == "/api/health":
-            self._send_json({"ok": True})
+            store = SESSION.store
+            db = None if store is None else {"path": _display_path(store.path), "written": store.written,
+                                             "failures": store.failures, "last_error": store.last_error}
+            self._send_json({"ok": True, "db": db})
             return
         self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
 
     def do_POST(self):
+        received_at = perf_counter()  # wall time of an AI move counts from here
         try:
             payload = self._read_json()
             if self.path == "/api/new":
@@ -685,6 +758,7 @@ class Handler(BaseHTTPRequestHandler):
                     agent_key=str(payload.get("agent", "v7")),
                     human_color=human_color,
                     seed=int(payload.get("seed", 42)),
+                    received_at=received_at,
                 )
                 self._send_json(state)
                 return
@@ -692,7 +766,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(SESSION.undo())
                 return
             if self.path == "/api/move":
-                state = SESSION.play_human(int(payload["row"]), int(payload["col"]))
+                state = SESSION.play_human(int(payload["row"]), int(payload["col"]), received_at=received_at)
                 self._send_json(state)
                 return
             self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
@@ -734,7 +808,17 @@ def main() -> None:
                         help="PUCT v2 rules (auto = the checkpoint's evaluation setting)")
     parser.add_argument("--policy-checkpoint", type=Path, default=ROOT / "runs/h3_policy_64x4/best.pt",
                         help="H3 policy checkpoint of the frozen S3-VCT2-v1 opponent (needs torch)")
+    parser.add_argument("--db", type=Path,
+                        help="also log every game move by move to this SQLite file (e.g. data/renju_web.db)")
     args = parser.parse_args()
+    global SESSION
+    store = None
+    if args.db is not None:
+        from weblog.store import LogStore
+
+        store = LogStore(args.db)
+        SESSION = PlaySession(store=store)
+        print(f"SQLite game log: {_display_path(store.path)}")
     if args.policy_checkpoint.exists():
         from analysis.s3_vct2_v1 import check_checkpoint, make_agent
         from hybrid.h4_policy import RootPolicy
@@ -770,6 +854,8 @@ def main() -> None:
         print("\n서버를 종료합니다.")
     finally:
         server.server_close()
+        if store is not None:
+            store.close()  # a game in progress stays 'in_progress' in the database
 
 
 if __name__ == "__main__":
