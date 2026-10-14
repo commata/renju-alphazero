@@ -96,7 +96,7 @@ watchdog         = request_received + 29.0
   - 멈춘 solver는 다시 탐색하지 않는다.
 - VCF 단독: k = 0…노드 수 전체에서 raise 또는 동결 결과와 같고, 판 상태가 그대로다.
 
-### 3.3 Route별 시간 배분 (다음 단계: `rt30/engine.py`)
+### 3.3 Route별 시간 배분 (구현됨: `rt30/engine.py`)
 
 V8-A와 V8-C는 한 수에서 같이 돌지 않는다. 하나의 절대 deadline을 모든 단계가 공유하고, 앞 단계가 남긴 시간은 뒤로 넘어간다.
 독립 stopwatch는 두지 않는다.
@@ -121,8 +121,13 @@ response
 - 기존 단계별 fallback 규칙을 그대로 쓴다(V8-A `_stage_vct_move`, V8-C `_verify_root_choice`, VCT2 `_vct2_veto`).
   - timeout은 그 규칙 안에서 "UNKNOWN"과 같게 처리된다.
   - 예: V7 수가 UNSAFE가 아니면 그 수, UNSAFE면 아직 반박되지 않았고 즉시 지지 않는 첫 자식.
-- **구현 방식.** 동결 `mcts_search_v8`은 solver를 내부에서 만들므로, RT 엔진은 흐름을 복사한 별도 모듈로 만든다.
-  `deadline=None`에서 TB1과 완전히 같은지 replay로 확인한다.
+- **구현 방식.** 동결 `mcts_search_v8`은 solver를 내부에서 만들므로, RT 엔진(`rt30_search`, `RT30Agent`)은 TB1 흐름
+  (PUCT tree, H4 root-policy 옵션 없음)만 복사한 별도 모듈이다. solver를 만드는 세 helper(V8-B, V8-C, VCT2)만 복사해
+  solver를 주입했고, 나머지는 동결 함수를 그대로 부른다.
+  - deadline 정보는 동결 diagnostics에 섞지 않고 `RTInfo`(timeouts, skipped, emergency, best)에 따로 둔다.
+  - `deadline=None`에서 TB1과 같은지 replay(`rt` arm)와 `tests/test_rt30_engine.py`로 확인했다(§5.1).
+- **시작값**(`RT30_TIMING`): final_margin 1.5초, V8-B cap 4초, PUCT reserve 6초, VCT2 reserve 4초, VCT2 최소 2초.
+  미니PC 측정으로 다시 정한다.
 
 ### 3.4 Best-so-far와 비상수
 
@@ -186,8 +191,8 @@ Browser ─HTTPS→ Nginx → Web/API (게임 상태, 대기열, supervisor)
 | 3 | 미니PC baseline: TB1 그대로, 기록 국면 replay | 사용자 실행 (§5) |
 | 4 | TB1-fast 동일성 확인(체크포인트 포함 전체 TB1) | 사용자 실행 (§5). 컨테이너는 uniform prior로 확인 |
 | 5 | profile 상위 항목 추가 정확 고속화 | 대기 |
-| 6 | RT 엔진: route별 soft cap, PUCT guard, 비상수, 기존 fallback | 다음 |
-| 7 | worker supervisor, 29초 watchdog, 대기열·절대 deadline | 대기 |
+| 6 | RT 엔진: route별 soft cap, PUCT guard, 비상수, 기존 fallback | **완료** (`rt30/engine.py`, 테스트). 시간 값은 미니PC 측정 후 조정 |
+| 7 | worker supervisor, 29초 watchdog, 대기열·절대 deadline | **다음** |
 | 8 | 미니PC 포화 측정: workers 1/2/4/6/8 | 대기 |
 | 9 | 필요하면 결정적 예산 재보정(V8-C 첫 수 몫, VCT2 예산) → `deadline=None` 짝 대국 gate | 대기 |
 | 10 | (선택) V8-C 자식 병렬 검사, incremental threat table | 대기 |
@@ -213,6 +218,25 @@ python scripts/run_rt30_replay.py --checkpoint runs\h3_policy_64x4\best.pt --arm
 
 **포화 측정.** `--workers 1/2/4/6/8`로 바꿔 가며 국면당 시간(median/p95/p99/최대)과 총 처리량을 비교한다.
 같은 시간대에 CPU 클럭·온도(HWiNFO 등)도 기록한다. 한 번에 하나씩 실행하고, 다른 작업은 같이 돌리지 않는다.
+
+### 5.1 컨테이너 확인 결과 (2026-10-14, 4 vCPU, H3 체크포인트 없음 → `--uniform-prior`)
+
+체크포인트가 없어 tree의 PUCT prior만 uniform이다. 전술 모듈(V8-A/B/C, VCT2)과 흐름은 TB1과 같다.
+미니PC에서 `--checkpoint`로 다시 확인해야 한다.
+
+| run | 결과 |
+|---|---|
+| frozen vs fast, 무작위 24국면 | **24/24 동일**, 전체 1.36배(쉬운 국면은 PUCT 비중이 큼) |
+| frozen vs fast, 기록상 30초 초과 8국면 | **8/8 동일**, 전체 **2.20배**(V8-B 2.1~2.6배, V8-C 2.3~2.5배, VCT2 1.8~2.2배) |
+| frozen vs fast vs rt(deadline 없음), 무작위 40국면 | **40/40 동일**, fast 2.05배, rt 2.05배 |
+| rt `--deadline 27.5`, 기록상 30초 초과 40국면(4 workers) | **최대 26.02초, 27.5초 초과 0**, 중앙값 21.0초. timeout 있는 수 18/40(V8-B 13, V8-C 8, VCT2 7) |
+
+`--deadline` run에서 확인한 점:
+
+- **V8-B 4초 cap은 승리를 놓친다.** 이 40국면 중 기록상 own_vct(VCT1 승리 증명)였던 3국면이 모두 cap에 걸려 tree route로 갔다.
+  fast 기준으로도 증명에 24~32초가 드는 국면이다. 첫 번째 보정 항목이다(cap 상향, 또는 남은 시간에 따라 V8-B 몫 조정).
+- **V7 모듈(deadline 없음)이 최대 4.7초를 썼다.** reserve가 이를 흡수했지만, 미니PC 포화 상태에서 다시 측정해야 한다.
+- 시간이 남은 수가 끝에서 26.0초 근처에 몰린다. 마지막 단계(VCT2)가 deadline − final_margin까지 쓰기 때문이다(정상 동작).
 
 ## 6. 미니PC 목표 Gate
 

@@ -5,10 +5,13 @@ agent with a fixed seed, once per arm:
 
     frozen  TB-Engine-v1 as frozen
     fast    the same engine with ``rt30.fast_windows`` installed (exact speed-up)
+    rt      the TB-RT30 search (``rt30.engine``) with the fast windows; ``--deadline S`` gives every
+            move an absolute deadline S seconds after its start, else it runs without one
 
-With both arms the run is the equivalence check: every position must give the same move and the
-same diagnostics (every field except the ``*_seconds`` timings). With one arm it is a timing
-benchmark (the mini-PC baseline). A replay does not reproduce the recorded move: the recorded
+With two or more arms the run is the equivalence check: every arm must give the first arm's move
+and diagnostics (every field except the ``*_seconds`` timings); ``rt`` without ``--deadline`` must
+match ``frozen``. With one arm it is a timing benchmark (the mini-PC baseline; ``rt --deadline
+27.5`` is the latency run). A replay does not reproduce the recorded move: the recorded
 agent's random stream had advanced through the game, the replay starts a fresh one.
 
 The tree route needs the H3 policy (``--checkpoint``, checked against the frozen hashes). Without
@@ -19,6 +22,8 @@ equivalence check of the tactical modules, but not TB1 itself (the output says s
         --workers 4 --output runs/rt30/equivalence_slow.json 2>&1 | Tee-Object runs/rt30/equivalence_slow.log
     python scripts/run_rt30_replay.py --checkpoint runs/h3_policy_64x4/best.pt --arms frozen `
         --select sample --sample 300 --workers 1 --output runs/rt30/baseline_frozen.json
+    python scripts/run_rt30_replay.py --checkpoint runs/h3_policy_64x4/best.pt --arms rt --deadline 27.5 `
+        --select slow --workers 1 --output runs/rt30/rt_deadline_slow.json
 """
 from __future__ import annotations
 
@@ -41,7 +46,7 @@ from hybrid.progress import Progress, run_chunks  # noqa: E402
 
 E3 = ROOT / 'docs' / 'mcts-v8-results' / 'e3'
 DEFAULT_JSONL = [E3 / 'puct_policy_vct2_50k_8415.jsonl', E3 / 'puct_policy_vct2_50k_8416.jsonl']
-ARMS = ('frozen', 'fast')
+ARMS = ('frozen', 'fast', 'rt')
 PHASES = {'attack': 'v8_attack_seconds', 'stage_vct': 'v8_vct_seconds', 'tree': 'v8_tree_seconds',
           'root': 'v8_root_seconds', 'vct2': 'v8_vct2_seconds', 'v7_modules': 'v7_module_seconds'}
 DEADLINE = 27.5
@@ -65,7 +70,7 @@ def load_positions(paths, select: str, slow_seconds: float, sample: int, seed: i
     return rows[:limit] if limit else rows
 
 
-def _init_worker(checkpoint, uniform_prior):
+def _init_worker(checkpoint, uniform_prior, deadline):
     from analysis.tb_engine_v1 import TB_ENGINE_V1
 
     config = dict(TB_ENGINE_V1)
@@ -80,7 +85,7 @@ def _init_worker(checkpoint, uniform_prior):
         config['puct_prior'] = 'uniform'
     else:
         raise ValueError('pass --checkpoint, or --uniform-prior for a policy-free equivalence check')
-    _WORKER.update(config=config, policy=policy)
+    _WORKER.update(config=config, policy=policy, deadline=deadline)
 
 
 def _diagnostics(diag) -> dict:
@@ -91,23 +96,37 @@ def _search(moves, arm: str, seed: int):
     from analysis.mcts_v8_agent import MCTSV8Agent
     from renju import Game
     from rt30 import fast_windows
+    from rt30.deadline import Deadline
+    from rt30.engine import RT30Agent
 
-    if arm == 'fast':
-        fast_windows.install()
-    else:
+    if arm == 'frozen':
         fast_windows.uninstall()
+    else:
+        fast_windows.install()
     game = Game()
     for move in moves:
         game.play(*move)
-    agent = MCTSV8Agent(seed=seed, root_policy=_WORKER['policy'], **_WORKER['config'])
     started = perf_counter()
-    move = agent.select_move(game)
+    extra = {}
+    if arm == 'rt':
+        agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], **_WORKER['config'])
+        seconds = _WORKER['deadline']
+        deadline = Deadline.after(seconds) if seconds else None
+        move = agent.select_move(game, deadline=deadline)
+        info = agent.rt_info
+        extra = {'rt': {'timeouts': info.timeouts, 'skipped': info.skipped, 'emergency': info.emergency,
+                        'best': [[stage, list(m)] for stage, m in info.best]}}
+    else:
+        agent = MCTSV8Agent(seed=seed, root_policy=_WORKER['policy'], **_WORKER['config'])
+        move = agent.select_move(game)
     seconds = perf_counter() - started
+    if game.board[move[0]][move[1]] != 0 or tuple(move) not in game.legal_moves():
+        raise RuntimeError(f'{arm}: illegal move {move}')
     diag = agent.diagnostics
     return {'move': list(move), 'seconds': round(seconds, 4), 'route': diag.v8_route,
             'phases': {name: round(getattr(diag, field), 4) for name, field in PHASES.items()},
             'nodes': {'attack': diag.v8_attack_nodes, 'stage_vct': diag.v8_vct_nodes, 'root': diag.v8_root_nodes,
-                      'vct2': diag.v8_vct2_nodes}}, _diagnostics(diag)
+                      'vct2': diag.v8_vct2_nodes}, **extra}, _diagnostics(diag)
 
 
 def _first_difference(a: dict, b: dict):
@@ -124,13 +143,15 @@ def run_chunk(chunk):
         diags = {}
         for arm in chunk['arms']:
             out[arm], diags[arm] = _search(row['moves'], arm, chunk['seed'])
-        if len(chunk['arms']) == 2:
-            a, b = (diags[arm] for arm in chunk['arms'])
-            ra, rb = (out[arm] for arm in chunk['arms'])
-            same = ra['move'] == rb['move'] and a == b
-            out['identical'] = same
-            if not same:
-                out['first_difference'] = 'move' if ra['move'] != rb['move'] else _first_difference(a, b)
+        if len(chunk['arms']) >= 2:
+            first = chunk['arms'][0]
+            out['identical'] = True
+            for arm in chunk['arms'][1:]:
+                if out[arm]['move'] != out[first]['move'] or diags[arm] != diags[first]:
+                    out['identical'] = False
+                    out['first_difference'] = (arm, 'move' if out[arm]['move'] != out[first]['move']
+                                               else _first_difference(diags[first], diags[arm]))
+                    break
         rows_out.append(out)
     return rows_out
 
@@ -151,12 +172,18 @@ def summarize(rows, arms):
         summary[arm] = {'seconds': _dist([r[arm]['seconds'] for r in rows]),
                         'phases': {name: _dist([r[arm]['phases'][name] for r in rows if r[arm]['phases'][name] > 0])
                                    for name in PHASES}}
-    if len(arms) == 2:
+    if 'rt' in arms:
+        rt = [r['rt']['rt'] for r in rows]
+        summary['rt'] = {'timeouts': {p: sum(p in x['timeouts'] for x in rt) for p in ('attack', 'stage_vct', 'root', 'vct2')},
+                         'skipped': {p: sum(p in x['skipped'] for x in rt) for p in ('puct', 'vct2')},
+                         'moves_with_timeout_or_skip': sum(bool(x['timeouts'] or x['skipped']) for x in rt)}
+    if len(arms) >= 2:
         summary['identical'] = sum(r['identical'] for r in rows)
         summary['different'] = [{'key': r['key'], 'first_difference': r['first_difference']}
                                 for r in rows if not r['identical']]
-        a, b = (sum(r[arm]['seconds'] for r in rows) for arm in arms)
-        summary['speedup_total'] = round(a / b, 3) if b else None
+        total = {arm: sum(r[arm]['seconds'] for r in rows) for arm in arms}
+        summary['speedup_vs_first'] = {arm: round(total[arms[0]] / total[arm], 3) if total[arm] else None
+                                       for arm in arms[1:]}
     return summary
 
 
@@ -176,7 +203,8 @@ def main(argv=None):
     parser.add_argument('--sample', type=int, default=200)
     parser.add_argument('--limit', type=int)
     parser.add_argument('--seed', type=int, default=42, help='sample seed and agent seed')
-    parser.add_argument('--arms', default='frozen,fast', help="'frozen,fast' (equivalence), 'frozen' or 'fast'")
+    parser.add_argument('--arms', default='frozen,fast', help="comma list of frozen, fast, rt (2+: equivalence)")
+    parser.add_argument('--deadline', type=float, help='rt arm: seconds from the start of each move (none: no deadline)')
     parser.add_argument('--checkpoint', type=Path, help='H3 policy checkpoint of TB-Engine-v1')
     parser.add_argument('--uniform-prior', action='store_true', help='no checkpoint: uniform PUCT prior (not TB1)')
     parser.add_argument('--workers', type=int, default=1)
@@ -195,13 +223,13 @@ def main(argv=None):
     print(f'positions={len(positions)} arms={",".join(arms)} workers={args.workers} '
           f'engine={"TB-Engine-v1" if args.checkpoint else "TB1 config, uniform prior"}', flush=True)
     progress = Progress('rt30-replay', len(positions), 'positions')
-    init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior)
+    init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior, args.deadline)
     with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=init) as pool:
         results = run_chunks(pool, run_chunk, chunks, progress, lambda c: len(c['rows']))
     rows = [row for chunk in results for row in chunk]
     summary = summarize(rows, arms)
     report = {'format': 'rt30-replay-v1', 'engine': 'TB-Engine-v1' if args.checkpoint else 'tb1-uniform-prior',
-              'arms': arms, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
+              'arms': arms, 'deadline': args.deadline, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
               'workers': args.workers, 'git_commit': _commit(), 'jsonl': [str(p) for p in args.jsonl],
               'machine': {'platform': platform.platform(), 'processor': platform.processor(),
                           'cpu_count': os.cpu_count(), 'python': platform.python_version()},
@@ -209,7 +237,7 @@ def main(argv=None):
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=1), encoding='utf-8')
     print(json.dumps(summary, indent=1), flush=True)
-    if len(arms) == 2 and summary['identical'] != len(rows):
+    if len(arms) >= 2 and summary['identical'] != len(rows):
         print(f'NOT IDENTICAL: {len(rows) - summary["identical"]} position(s)', flush=True)
         return 1
     return 0
