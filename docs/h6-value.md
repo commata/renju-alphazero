@@ -322,6 +322,68 @@ provenance:
   - H6-2b(trunk 미세조정)는 G2가 통과했으므로 아직 근거가 없다. D1에서 trunk 쪽 원인이 보이면 다시 검토한다.
 - 바뀐 모델의 최종 gate는 **B와 새 깊은 승리·패배 probe**로 한다. A와 P93·P94는 이제 dev다.
 
+## H6-3D 진단 (구현 2026-10-15, dev 데이터만)
+
+구현: `src/hybrid/h6_diag.py`, `scripts/h6_diagnose.py`, `tests/test_h6_diag.py`.
+- 쓰는 데이터는 test part A(dev)와 E1·E1-holdout·E1-S manifest뿐이다.
+- 스크립트가 분할을 A로 고정하므로 B는 열 수 없다.
+- 결과 파일은 지표만 담으므로 커밋한다.
+
+**D1 D4 원인 분해** (part A 전체 53,531국면 × 8개 대칭)
+- 처음부터 끝까지(end-to-end): 국면별 8개 value의 표준편차를 종류, 흑백, ply 구간, \|8개 평균\| 구간(0–0.1, 0.1–0.3, 0.3–0.6, 0.6–1)별로 본다. 대칭별 \|v_s − v_원래\| 평균과 8개 부호 일치율도 잰다.
+- **trunk 등변성:** 대칭 s마다 T_s⁻¹F(T_s x)와 F(x)의 상대 L2와 cosine을 잰다(F는 trunk feature).
+- **value head만의 방향 민감성:** 원래 feature F(x)를 8방향으로 변환해 value head에 넣고 국면별 표준편차를 잰다. 이때 feature는 구조상 정확히 등변이므로, 남는 흔들림은 head 몫이다.
+- 보조: policy top-1이 8개 대칭에서 일치하는 비율(원래 좌표로 되돌려 비교). policy head도 D4 불변이 아니므로 trunk 판단에는 쓰지 않는다.
+
+해석:
+
+| trunk 등변성 | head만의 표준편차 | 해석 |
+|---|---|---|
+| 좋음 | 큼 | value head가 주원인 |
+| 나쁨 | 작음 | H3 trunk가 주원인 |
+| 나쁨 | 큼 | 둘 다 |
+| 좋음 | 작음, 그런데 end-to-end만 큼 | 예상 밖. 구현이나 BN을 다시 조사 |
+
+**D2 엔진 국면의 깊은 패배**
+- E1·E1-holdout·E1-S의 10M truth가 `PROVEN_LOSS`인 수를 둔 뒤의 국면을 쓴다. 상대 차례이고 상대가 이기므로 value > 0이어야 한다.
+- 표본은 **157수인데 root 국면은 9개뿐이다.** child 157개는 D4로 겹치는 것이 없다.
+  - 출처: e1 74, e1s 83
+  - 깊이: 0이 78, 1이 15, 2가 64
+  - child의 둘 차례: 흑 99, 백 58
+  - 실질적인 독립 표본은 root 9개 수준이다. 그래서 수 단위 정확도와 함께 **root별 평균 정확도**와 깊이별 정확도를 본다.
+- 이것은 child 단위로 깊은 승리를 알아보는지를 시험한다. P94처럼 부모 국면에서 "모든 수가 진다 → v < 0"을 판단하는 능력과는 다르다. 그래서 D2가 좋아도 P94 문제가 해결된다고 결론 내리지 않는다.
+- manifest에 `PROVEN_WIN` truth가 없어서 반대 부호 비교군은 없다.
+
+**D3 D4 평균 추론** V_D4(x) = 8개 대칭 value의 평균
+- 같은 A와 D2에서 원래 추론과 나란히 비교한다. 비교 항목은 다음과 같다.
+  - 증명 balanced accuracy, 증명 −1 정확도
+  - 결과 balanced accuracy와 MSE, 흑·백 결과 balanced accuracy
+  - **ECE**, 결과 편향
+  - D2 정확도(수 단위, child 단위, root 평균)와 평균 value
+- P93·P94 값은 dev 참고로만 남긴다.
+- **비용:** 한 국면 지연(원래 vs 8개를 한 batch로), batch 256 처리량, 최대 VRAM을 잰다. 클라우드 CPU smoke에서 한 국면 지연은 2.8배, 처리량은 약 13배 느려졌다. GPU 값은 실행 결과로 정한다.
+
+**진단 결과에 따른 갈림**
+- trunk 등변성이 나쁘면: H6-2b(trunk 미세조정) 후보.
+- trunk는 괜찮고 head만의 흔들림이 크면: value head만 D4 일관성 학습을 한다(8개 대칭 모두 사용, 대칭 간 value 분산 penalty).
+- D4 평균 추론만으로 지표가 충분히 좋아지고 비용을 감당할 수 있으면: D4 평균 추론이 후보가 된다. 바뀐 모델이므로 B에서 검증한다.
+- D2도 나쁘면: 엔진 국면의 깊은 증명 데이터로 적응하는 **H6-2c**(H6-2b와 구분). TB-Engine-v1 자기대국에 새 seed를 쓰고, seed를 학습용 / dev probe용 / 최종 fresh probe용으로 미리 나눈다. 예약 seed는 제외한다.
+- D2는 좋은데 P94만 계속 틀리면: 부모 국면의 강제 패배 라벨과 그 학습 정의를 따로 설계한다.
+- 수정 우선순위: D4 평균 추론(학습 없이 상한 확인) → value head D4 일관성 학습 → pooling 등 head 구조 변경 → H6-2b.
+
+**실행** (깨끗한 worktree, GPU, A 전체 기준 수 분):
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "$PWD\src"
+git status --short
+git pull --ff-only
+python -u scripts\h6_diagnose.py --checkpoint runs\h6_value_head_v1\best.pt `
+  --cache-dir data\tactical\h6\value_cache_v2 --device cuda --output docs\h6\h6_3d_diag.json 2>&1 | Tee-Object runs\h6\h6_3d_diag.log
+```
+
 ## H6-3 오프라인 gate (확정 2026-10-14, test를 열기 전)
 
 구현: `src/hybrid/h6_gate.py`(기준값 `THRESHOLDS` 상수), `scripts/h6_offline_gate.py`, `tests/test_h6_gate.py`.
