@@ -1,0 +1,515 @@
+{
+ "version": "slow-stratified-v1",
+ "kind": "rt30-eval-manifest",
+ "description": "Recorded E3-A V8 moves slower than the threshold, stratified by record file and game.",
+ "source_threshold_seconds": 30.0,
+ "per_file": 30,
+ "max_positions_per_game": 2,
+ "sampling_seed": 42,
+ "sources": [
+  {
+   "file": "docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+   "pool_positions": 258,
+   "pool_games": 37,
+   "chosen": 30,
+   "chosen_games": 30
+  },
+  {
+   "file": "docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl",
+   "pool_positions": 254,
+   "pool_games": 39,
+   "chosen": 30,
+   "chosen_games": 30
+  }
+ ],
+ "routes": {
+  "tree": 47,
+  "own_vct": 7,
+  "stage5": 1,
+  "stage4": 5
+ },
+ "keys": [
+  "puct_policy_vct2_50k_8415/2/14",
+  "puct_policy_vct2_50k_8415/10/20",
+  "puct_policy_vct2_50k_8415/11/11",
+  "puct_policy_vct2_50k_8415/12/26",
+  "puct_policy_vct2_50k_8415/13/20",
+  "puct_policy_vct2_50k_8415/14/9",
+  "puct_policy_vct2_50k_8415/17/15",
+  "puct_policy_vct2_50k_8415/19/13",
+  "puct_policy_vct2_50k_8415/21/64",
+  "puct_policy_vct2_50k_8415/22/43",
+  "puct_policy_vct2_50k_8415/25/20",
+  "puct_policy_vct2_50k_8415/28/14",
+  "puct_policy_vct2_50k_8415/30/77",
+  "puct_policy_vct2_50k_8415/31/17",
+  "puct_policy_vct2_50k_8415/32/21",
+  "puct_policy_vct2_50k_8415/33/18",
+  "puct_policy_vct2_50k_8415/34/24",
+  "puct_policy_vct2_50k_8415/37/13",
+  "puct_policy_vct2_50k_8415/38/11",
+  "puct_policy_vct2_50k_8415/39/73",
+  "puct_policy_vct2_50k_8415/40/9",
+  "puct_policy_vct2_50k_8415/41/39",
+  "puct_policy_vct2_50k_8415/42/61",
+  "puct_policy_vct2_50k_8415/43/31",
+  "puct_policy_vct2_50k_8415/44/40",
+  "puct_policy_vct2_50k_8415/45/20",
+  "puct_policy_vct2_50k_8415/46/49",
+  "puct_policy_vct2_50k_8415/47/45",
+  "puct_policy_vct2_50k_8415/48/40",
+  "puct_policy_vct2_50k_8415/49/93",
+  "puct_policy_vct2_50k_8416/1/19",
+  "puct_policy_vct2_50k_8416/2/11",
+  "puct_policy_vct2_50k_8416/4/16",
+  "puct_policy_vct2_50k_8416/5/10",
+  "puct_policy_vct2_50k_8416/6/13",
+  "puct_policy_vct2_50k_8416/7/25",
+  "puct_policy_vct2_50k_8416/8/25",
+  "puct_policy_vct2_50k_8416/10/38",
+  "puct_policy_vct2_50k_8416/13/16",
+  "puct_policy_vct2_50k_8416/14/39",
+  "puct_policy_vct2_50k_8416/15/13",
+  "puct_policy_vct2_50k_8416/18/52",
+  "puct_policy_vct2_50k_8416/26/15",
+  "puct_policy_vct2_50k_8416/27/13",
+  "puct_policy_vct2_50k_8416/30/39",
+  "puct_policy_vct2_50k_8416/31/11",
+  "puct_policy_vct2_50k_8416/33/16",
+  "puct_policy_vct2_50k_8416/34/15",
+  "puct_policy_vct2_50k_8416/37/17",
+  "puct_policy_vct2_50k_8416/38/13",
+  "puct_policy_vct2_50k_8416/39/18",
+  "puct_policy_vct2_50k_8416/40/56",
+  "puct_policy_vct2_50k_8416/41/32",
+  "puct_policy_vct2_50k_8416/42/48",
+  "puct_policy_vct2_50k_8416/43/42",
+  "puct_policy_vct2_50k_8416/44/14",
+  "puct_policy_vct2_50k_8416/45/48",
+  "puct_policy_vct2_50k_8416/46/59",
+  "puct_policy_vct2_50k_8416/47/55",
+  "puct_policy_vct2_50k_8416/48/83"
+ ],
+ "positions": [
+  {
+   "key": "puct_policy_vct2_50k_8415/2/14",
+   "game": 2,
+   "ply": 14,
+   "recorded_seconds": 37.7564,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "game": 10,
+   "ply": 20,
+   "recorded_seconds": 57.1264,
+   "recorded_route": "own_vct"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/11",
+   "game": 11,
+   "ply": 11,
+   "recorded_seconds": 37.2661,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/26",
+   "game": 12,
+   "ply": 26,
+   "recorded_seconds": 42.3535,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/20",
+   "game": 13,
+   "ply": 20,
+   "recorded_seconds": 129.3492,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/9",
+   "game": 14,
+   "ply": 9,
+   "recorded_seconds": 37.8607,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/15",
+   "game": 17,
+   "ply": 15,
+   "recorded_seconds": 65.3227,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/19/13",
+   "game": 19,
+   "ply": 13,
+   "recorded_seconds": 35.1253,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/64",
+   "game": 21,
+   "ply": 64,
+   "recorded_seconds": 199.2761,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/43",
+   "game": 22,
+   "ply": 43,
+   "recorded_seconds": 95.8308,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/25/20",
+   "game": 25,
+   "ply": 20,
+   "recorded_seconds": 36.9199,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/28/14",
+   "game": 28,
+   "ply": 14,
+   "recorded_seconds": 68.1996,
+   "recorded_route": "own_vct"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/30/77",
+   "game": 30,
+   "ply": 77,
+   "recorded_seconds": 58.5688,
+   "recorded_route": "own_vct"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/31/17",
+   "game": 31,
+   "ply": 17,
+   "recorded_seconds": 46.3602,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/32/21",
+   "game": 32,
+   "ply": 21,
+   "recorded_seconds": 38.5338,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/33/18",
+   "game": 33,
+   "ply": 18,
+   "recorded_seconds": 92.7616,
+   "recorded_route": "stage5"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/34/24",
+   "game": 34,
+   "ply": 24,
+   "recorded_seconds": 45.3753,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/37/13",
+   "game": 37,
+   "ply": 13,
+   "recorded_seconds": 40.5418,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/38/11",
+   "game": 38,
+   "ply": 11,
+   "recorded_seconds": 194.2724,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/73",
+   "game": 39,
+   "ply": 73,
+   "recorded_seconds": 69.161,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/40/9",
+   "game": 40,
+   "ply": 9,
+   "recorded_seconds": 31.8162,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/41/39",
+   "game": 41,
+   "ply": 39,
+   "recorded_seconds": 88.5665,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/42/61",
+   "game": 42,
+   "ply": 61,
+   "recorded_seconds": 52.6265,
+   "recorded_route": "stage4"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/43/31",
+   "game": 43,
+   "ply": 31,
+   "recorded_seconds": 43.4334,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/44/40",
+   "game": 44,
+   "ply": 40,
+   "recorded_seconds": 31.6124,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/45/20",
+   "game": 45,
+   "ply": 20,
+   "recorded_seconds": 39.4803,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/46/49",
+   "game": 46,
+   "ply": 49,
+   "recorded_seconds": 217.5983,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/47/45",
+   "game": 47,
+   "ply": 45,
+   "recorded_seconds": 33.7362,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/48/40",
+   "game": 48,
+   "ply": 40,
+   "recorded_seconds": 47.253,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/49/93",
+   "game": 49,
+   "ply": 93,
+   "recorded_seconds": 36.0762,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/1/19",
+   "game": 1,
+   "ply": 19,
+   "recorded_seconds": 32.3317,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/2/11",
+   "game": 2,
+   "ply": 11,
+   "recorded_seconds": 34.5222,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/4/16",
+   "game": 4,
+   "ply": 16,
+   "recorded_seconds": 33.5461,
+   "recorded_route": "own_vct"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/5/10",
+   "game": 5,
+   "ply": 10,
+   "recorded_seconds": 164.0427,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/6/13",
+   "game": 6,
+   "ply": 13,
+   "recorded_seconds": 30.6145,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/7/25",
+   "game": 7,
+   "ply": 25,
+   "recorded_seconds": 142.8152,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/8/25",
+   "game": 8,
+   "ply": 25,
+   "recorded_seconds": 222.8748,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/10/38",
+   "game": 10,
+   "ply": 38,
+   "recorded_seconds": 38.6348,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/13/16",
+   "game": 13,
+   "ply": 16,
+   "recorded_seconds": 407.2884,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/14/39",
+   "game": 14,
+   "ply": 39,
+   "recorded_seconds": 30.7713,
+   "recorded_route": "stage4"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/15/13",
+   "game": 15,
+   "ply": 13,
+   "recorded_seconds": 33.5657,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/18/52",
+   "game": 18,
+   "ply": 52,
+   "recorded_seconds": 286.4509,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/26/15",
+   "game": 26,
+   "ply": 15,
+   "recorded_seconds": 34.8781,
+   "recorded_route": "own_vct"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/27/13",
+   "game": 27,
+   "ply": 13,
+   "recorded_seconds": 34.7076,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/30/39",
+   "game": 30,
+   "ply": 39,
+   "recorded_seconds": 82.6977,
+   "recorded_route": "stage4"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/31/11",
+   "game": 31,
+   "ply": 11,
+   "recorded_seconds": 36.9931,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/33/16",
+   "game": 33,
+   "ply": 16,
+   "recorded_seconds": 35.5448,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/34/15",
+   "game": 34,
+   "ply": 15,
+   "recorded_seconds": 32.2132,
+   "recorded_route": "own_vct"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/37/17",
+   "game": 37,
+   "ply": 17,
+   "recorded_seconds": 37.7298,
+   "recorded_route": "own_vct"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/38/13",
+   "game": 38,
+   "ply": 13,
+   "recorded_seconds": 107.9399,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/39/18",
+   "game": 39,
+   "ply": 18,
+   "recorded_seconds": 142.9286,
+   "recorded_route": "stage4"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/40/56",
+   "game": 40,
+   "ply": 56,
+   "recorded_seconds": 275.9383,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/41/32",
+   "game": 41,
+   "ply": 32,
+   "recorded_seconds": 38.3559,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/42/48",
+   "game": 42,
+   "ply": 48,
+   "recorded_seconds": 139.5498,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/43/42",
+   "game": 43,
+   "ply": 42,
+   "recorded_seconds": 33.9536,
+   "recorded_route": "stage4"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/44/14",
+   "game": 44,
+   "ply": 14,
+   "recorded_seconds": 43.2384,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/45/48",
+   "game": 45,
+   "ply": 48,
+   "recorded_seconds": 160.5101,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/46/59",
+   "game": 46,
+   "ply": 59,
+   "recorded_seconds": 96.9717,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/55",
+   "game": 47,
+   "ply": 55,
+   "recorded_seconds": 238.3375,
+   "recorded_route": "tree"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/48/83",
+   "game": 48,
+   "ply": 83,
+   "recorded_seconds": 182.297,
+   "recorded_route": "tree"
+  }
+ ]
+}

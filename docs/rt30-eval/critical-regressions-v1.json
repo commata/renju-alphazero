@@ -1,0 +1,56 @@
+{
+ "version": "critical-regressions-v1",
+ "kind": "rt30-eval-manifest",
+ "description": "Known RT30 failure positions (uniform prior, seed 42, SER5 and container agree). A regression gate, kept apart from the stratified set so the aggregate numbers are not tuned to them.",
+ "found_in": [
+  "docs/rt30-ser5-40pos-results.md §5.1",
+  "docs/rt30-results/rt27_uniform_40_v2.json"
+ ],
+ "seed": 42,
+ "keys": [
+  "puct_policy_vct2_50k_8415/9/26",
+  "puct_policy_vct2_50k_8415/10/20",
+  "puct_policy_vct2_50k_8415/15/32",
+  "puct_policy_vct2_50k_8415/14/15",
+  "puct_policy_vct2_50k_8415/17/23",
+  "puct_policy_vct2_50k_8415/22/37"
+ ],
+ "cases": [
+  {
+   "key": "puct_policy_vct2_50k_8415/9/26",
+   "kind": "lost_win",
+   "observed": "fast proves a VCT1 win [2,7] (own_vct); RT27 cuts V8-B and reaches [2,7] only by the tree (seed 42).",
+   "expect": "own_vct proof kept, or the same winning move"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "kind": "lost_win",
+   "observed": "fast proves the win [10,9]; RT27 plays [5,9], REFUTED as an attack (offline check, SAFE as a defence).",
+   "expect": "own_vct proof kept"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/15/32",
+   "kind": "lost_win",
+   "observed": "fast proves the win [5,11]; RT27 plays [4,8].",
+   "expect": "own_vct proof kept"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/15",
+   "kind": "played_baseline_unsafe",
+   "observed": "tree move [5,8] proven lost; RT27 times out in the child search and the frozen fallback (first UNKNOWN child) plays [5,6], which fast proves UNSAFE.",
+   "expect": "never a move proven UNSAFE (by RT itself or by a full-budget re-check)"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/23",
+   "kind": "kept_tree_move",
+   "observed": "fast replaces the UNKNOWN tree move [8,11] by a proven SAFE child [9,11]; RT27 keeps [8,11].",
+   "expect": "diagnostic only (the kept move is not proven lost)"
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/37",
+   "kind": "kept_tree_move",
+   "observed": "fast replaces the UNKNOWN tree move [2,8] by a proven SAFE child [4,4]; RT27 keeps [2,8].",
+   "expect": "diagnostic only"
+  }
+ ]
+}

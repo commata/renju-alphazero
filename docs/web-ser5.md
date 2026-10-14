@@ -300,6 +300,58 @@ python scripts/run_rt30_replay.py --checkpoint runs\h3_policy_64x4\best.pt --arm
 **포화 측정.** `--workers 1/2/4/6/8`로 바꿔 가며 국면당 시간(median/p95/p99/최대)과 총 처리량을 비교한다.
 같은 시간대에 CPU 클럭·온도(HWiNFO 등)도 기록한다. 한 번에 하나씩 실행하고, 다른 작업은 같이 돌리지 않는다.
 
+### 5.2 고정 평가셋과 H3 baseline (2026-10-14)
+
+**왜 다시 만드는가.** `--select slow --limit 40`은 파일 순서대로 앞의 40개를 고른다. 그래서 seed 8415 한 파일의 13판에서
+연속된 수만 뽑혔다. 앞으로 비교는 저장소에 동결한 key manifest로만 한다. 비교할 때마다 다시 뽑지 않는다.
+
+| manifest | 내용 | 용도 |
+|---|---|---|
+| `docs/rt30-eval/slow-stratified-v1.json` | 기록상 30초 초과 수에서 파일(seed)당 30개, 판당 최대 2개, `Random(42)`. 실제 결과는 60판에서 1개씩, route는 tree 47·own_vct 7·stage4 5·stage5 1 | 일반 성능·기력 gate |
+| `docs/rt30-eval/critical-regressions-v1.json` | 이미 발견한 실패 6국면(`9/26`, `10/20`, `15/32` 승리 손실, `14/15` 지는 수, `17/23`, `22/37` tree 수 유지)과 각 기대 동작 | 회귀 gate. 통계에 섞지 않는다 |
+
+- 두 셋은 `10/20` 하나가 겹친다. 무작위 추출에서 우연히 겹친 것이고 일부러 넣은 것이 아니다.
+- `scripts/build_rt30_eval_set.py`는 같은 인자로 같은 key를 만든다. 테스트가 커밋된 manifest와 다시 만든 결과가 같은지 확인한다.
+  이미 있는 manifest와 key가 다르면 덮어쓰지 않는다(새 version으로 만든다).
+- replay는 `--keys-file`로 manifest의 국면을 manifest 순서대로 돈다. 출력 `manifest`에 path와 version이 남는다.
+
+**수정 전 baseline (현재 코드, H3, SER5).** fast는 deadline이 없어 수가 시간에 의존하지 않으므로 workers 4로 돌려도 된다.
+rt와 sup은 시간을 재므로 workers 1로 돌린다. frozen = fast = rt(deadline 없음)는 H3 8국면에서 이미 확인했으므로 frozen은 생략한다.
+
+```bash
+CK=runs/h3_policy_64x4/best.pt; SET=docs/rt30-eval/slow-stratified-v1.json
+python scripts/run_rt30_replay.py --checkpoint $CK --arms fast --keys-file $SET --workers 4 \
+  --output runs/rt30/fast_h3_s60.json 2>&1 | tee runs/rt30/fast_h3_s60.log
+python scripts/run_rt30_replay.py --checkpoint $CK --arms rt --deadline 27.5 --keys-file $SET --workers 1 \
+  --baseline runs/rt30/fast_h3_s60.json --output runs/rt30/rt27_h3_s60.json 2>&1 | tee runs/rt30/rt27_h3_s60.log
+python scripts/run_rt30_replay.py --checkpoint $CK --arms sup --deadline 27.5 --keys-file $SET \
+  --baseline runs/rt30/fast_h3_s60.json --output runs/rt30/sup27_h3_s60.json 2>&1 | tee runs/rt30/sup27_h3_s60.log
+# 회귀셋도 같은 방식으로: SET=docs/rt30-eval/critical-regressions-v1.json, 출력 이름 *_h3_crit
+```
+
+**이후 변경의 gate 정의.**
+
+- **정확 고속화.**
+  - correctness: frozen = fast. 수·diagnostics·nodes·calls가 같아야 한다.
+  - RT 영향: 고정셋에서 승리 손실·지는 수·timeout·지연 시간을 다시 잰다.
+  - 같은 4초 안에 더 많이 탐색하므로, deadline이 있는 RT에서는 착수가 달라질 수 있다. "기력 변화 없음"은 deadline이 없을 때만 맞다.
+- **V8-C rescue**(다음 코드 단계, §3.6.2).
+  - tree 수가 UNSAFE로 증명되면 VCT2를 포기한다(`skipped += vct2_root_rescue`).
+  - V8-C는 VCT2 reserve를 뺀 deadline 대신 `global − final_margin`까지 **기존 VCT1 solver로** SAFE를 계속 찾는다.
+  - 못 찾으면 증명된 UNSAFE는 제외하고, UNKNOWN 중 `_not_immediately_lost`를 통과한 수를 둔다.
+  - 새 휴리스틱(VCF만 확인하는 "빠른 안전 검사")은 넣지 않는다. VCF가 없다는 것은 VCT1 SAFE가 아니다.
+  - 구현하려면 normal/rescue 두 deadline을 V8-C에 함께 넘겨야 한다.
+  - gate:
+    - 바뀐 수(RT ≠ fast)를 full-budget VCT1로 다시 검사한 결과 `changed_move_proven_unsafe = 0`
+      (baseline이 검사하지 않은 수도 잡기 위해 `played_baseline_unsafe`보다 강한 기준을 쓴다)
+    - 회귀셋 `14/15`에서 증명된 UNSAFE 수를 두지 않을 것
+    - 불변식 테스트: RT가 스스로 UNSAFE로 증명한 수를 두지 않을 것
+    - wall 최대 26초 이하
+- **V8-B cap.** V8-C rescue 이후에 4/6/8초를 전체 RT로 비교한다.
+  지표: lost_own_vct, changed_move_proven_unsafe, root·vct2 timeout, vct2 skip, wall max, 30초 초과.
+- **동시성.** EngineSupervisor 큐의 동시 요청 테스트는 지금 할 수 있다.
+  실제 다중 사용자 HTTP 동시성은 멀티 세션을 구현한 뒤에 한다.
+
 ### 5.1 컨테이너 확인 결과 (2026-10-14, 4 vCPU, H3 체크포인트 없음 → `--uniform-prior`)
 
 체크포인트가 없어 tree의 PUCT prior만 uniform이다. 전술 모듈(V8-A/B/C, VCT2)과 흐름은 TB1과 같다.

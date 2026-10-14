@@ -332,6 +332,8 @@ def main(argv=None):
     parser.add_argument('--sample', type=int, default=200)
     parser.add_argument('--limit', type=int)
     parser.add_argument('--keys', nargs='+', help='replay exactly these positions (keys as in the output rows)')
+    parser.add_argument('--keys-file', type=Path,
+                        help='replay the positions of a committed manifest (docs/rt30-eval/*.json, or a JSON list)')
     parser.add_argument('--seed', type=int, default=42, help='sample seed and agent seed')
     parser.add_argument('--arms', default='frozen,fast', help="comma list of frozen, fast, rt (2+: equivalence)")
     parser.add_argument('--deadline', type=float, help='rt arm: seconds from the start of each move (none: no deadline)')
@@ -367,8 +369,20 @@ def main(argv=None):
         if key not in RT30_TIMING or not value:
             parser.error(f'--timing {item!r}: use KEY=SECONDS with KEY in {sorted(RT30_TIMING)}')
         timing[key] = float(value)
+    manifest = None
+    if args.keys_file is not None:
+        if args.keys:
+            parser.error('--keys and --keys-file are exclusive')
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        from build_rt30_eval_set import load_keys
+
+        args.keys, version = load_keys(args.keys_file)
+        manifest = {'path': str(args.keys_file), 'version': version, 'keys': len(args.keys)}
     positions = load_positions(args.jsonl, args.select, args.slow_seconds, args.sample, args.seed, args.limit,
                                args.keys)
+    if args.keys:
+        order = {key: i for i, key in enumerate(args.keys)}  # the manifest's order, not the files'
+        positions.sort(key=lambda r: order[r['key']])
     chunks = [{'rows': positions[i:i + args.chunk], 'arms': arms, 'seed': args.seed}
               for i in range(0, len(positions), args.chunk)]
     print(f'positions={len(positions)} arms={",".join(arms)} workers={args.workers} '
@@ -385,7 +399,7 @@ def main(argv=None):
     if args.baseline is not None:
         summary['vs_baseline'] = compare_baseline(rows, arms[-1], args.baseline, args.baseline_arm, args.seed)
     report = {'format': 'rt30-replay-v1', 'engine': 'TB-Engine-v1' if args.checkpoint else 'tb1-uniform-prior',
-              'arms': arms, 'deadline': args.deadline, 'timing': {**RT30_TIMING, **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
+              'arms': arms, 'manifest': manifest, 'deadline': args.deadline, 'timing': {**RT30_TIMING, **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
               'workers': args.workers, 'git_commit': _commit(), 'jsonl': [str(p) for p in args.jsonl],
               'machine': {'platform': platform.platform(), 'processor': platform.processor(),
                           'cpu_count': os.cpu_count(), 'python': platform.python_version()},
