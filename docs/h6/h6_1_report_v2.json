@@ -1,0 +1,87 @@
+{
+ "format": "h6-label-report-v1",
+ "row_format": "h6-value-row-v1",
+ "git_commit": "e68f441311489a9f97b9a0704eac54f6eb1a08d5",
+ "games": "..\\renju-alphazero\\data\\external\\renjunet\\games.jsonl.gz",
+ "restricted": false,
+ "settings": {
+  "splits": [
+   "train",
+   "val",
+   "test"
+  ],
+  "from_ply": 5,
+  "outcome_weight": 0.1,
+  "proof_weight": 1.0,
+  "prove_losses": false,
+  "vct1": false,
+  "probe_game_min_ply": 4
+ },
+ "probe_files": [
+  "tests/fixtures/stage7_probes_defense_v1.json",
+  "tests/fixtures/stage7_probes_v1.json",
+  "tests/fixtures/v8_budget_probes_v1.json",
+  "tests/fixtures/v8c_divergence_probes_v1.json",
+  "tests/fixtures/v8c_root_probes_v1.json",
+  "tests/fixtures/vct_probes_v1.json",
+  "docs/mcts-v8-results/probe_web_v8_loss_20261007.json",
+  "docs/mcts-v8-results/e1/e1_manifest.json",
+  "docs/mcts-v8-results/e1h/e1h_manifest.json",
+  "docs/mcts-v8-results/e1s/e1s_manifest.json"
+ ],
+ "summary": {
+  "games_in": 108011,
+  "games_kept": 107123,
+  "dropped": {
+   "probe_game": 888,
+   "other_split": 0,
+   "probe_game_by_ply": {
+    "5": 82,
+    "8": 300,
+    "4": 467,
+    "6": 39
+   }
+  },
+  "cross_split_masked": {
+   "train": 0,
+   "val": 0,
+   "test": 0
+  },
+  "rows": 3499207,
+  "labelled": 2893475,
+  "by_split": {
+   "train": 3152862,
+   "test": 172390,
+   "val": 173955
+  },
+  "by_kind": {
+   "outcome": 2725718,
+   "proof_vcf": 99783,
+   "proof_unstoppable_four": 28852,
+   "proof_immediate_win": 22064,
+   "proof_forced_loss": 17058
+  },
+  "by_depth": {
+   "0": 167757
+  },
+  "sign": {
+   "+1": 1477042,
+   "-1": 1416433
+  },
+  "sign_by_side": {
+   "white": {
+    "+1": 763115,
+    "-1": 704462
+   },
+   "black": {
+    "-1": 711971,
+    "+1": 713927
+   }
+  },
+  "masked_by_flag": {
+   "end_unknown": 2314848,
+   "outcome_conflicts_proof": 41622,
+   "h2_masked": 86065
+  }
+ }
+}
