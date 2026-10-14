@@ -193,6 +193,31 @@ def summarize(rows, arms):
     return summary
 
 
+def compare_baseline(rows, arm: str, path: Path, baseline_arm: str, seed: int) -> dict:
+    """Moves and routes of ``arm`` against ``baseline_arm`` of an earlier run on the same positions.
+
+    ``lost_own_vct``: the baseline proved a VCT1 win (route own_vct) and this run played another
+    route; ``same_move`` tells whether the move still was the proven one."""
+    report = json.loads(Path(path).read_text(encoding='utf-8'))
+    base = {r['key']: r[baseline_arm] for r in report['rows'] if baseline_arm in r}
+    if report.get('seed') != seed:
+        # The PUCT rollouts follow the agent seed: other seeds give other tree moves.
+        raise SystemExit(f"--baseline was run with --seed {report.get('seed')}, this run uses {seed}")
+    common = [r for r in rows if r['key'] in base]
+    changed, lost = [], []
+    for r in common:
+        a, b = base[r['key']], r[arm]
+        if a['move'] != b['move'] or a['route'] != b['route']:
+            changed.append({'key': r['key'], 'baseline': [a['route'], a['move']], 'run': [b['route'], b['move']]})
+        if a['route'] == 'own_vct' and b['route'] != 'own_vct':
+            lost.append({'key': r['key'], 'win': a['move'], 'played': b['move'], 'same_move': a['move'] == b['move']})
+    return {'baseline': str(path), 'baseline_arm': baseline_arm, 'positions': len(common),
+            'missing': len(rows) - len(common), 'same_move': len(common) - sum(c['baseline'][1] != c['run'][1]
+                                                                                for c in changed),
+            'changed': changed, 'lost_own_vct': lost,
+            'lost_own_vct_other_move': sum(not x['same_move'] for x in lost)}
+
+
 def _commit():
     try:
         return subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True,
@@ -213,6 +238,9 @@ def main(argv=None):
     parser.add_argument('--deadline', type=float, help='rt arm: seconds from the start of each move (none: no deadline)')
     parser.add_argument('--checkpoint', type=Path, help='H3 policy checkpoint of TB-Engine-v1')
     parser.add_argument('--uniform-prior', action='store_true', help='no checkpoint: uniform PUCT prior (not TB1)')
+    parser.add_argument('--baseline', type=Path,
+                        help='earlier replay JSON on the same positions: report move/route changes against it')
+    parser.add_argument('--baseline-arm', default='fast', help='arm of --baseline to compare with (default fast)')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--chunk', type=int, default=1, help='positions per task')
     parser.add_argument('--output', type=Path, required=True)
@@ -223,6 +251,10 @@ def main(argv=None):
     if args.checkpoint is None and not args.uniform_prior:
         parser.error('pass --checkpoint, or --uniform-prior for a policy-free equivalence check')
 
+    if args.baseline is not None:
+        base_seed = json.loads(args.baseline.read_text(encoding='utf-8')).get('seed')
+        if base_seed != args.seed:
+            parser.error(f'--baseline was run with --seed {base_seed}; pass the same --seed')
     positions = load_positions(args.jsonl, args.select, args.slow_seconds, args.sample, args.seed, args.limit)
     chunks = [{'rows': positions[i:i + args.chunk], 'arms': arms, 'seed': args.seed}
               for i in range(0, len(positions), args.chunk)]
@@ -234,6 +266,8 @@ def main(argv=None):
         results = run_chunks(pool, run_chunk, chunks, progress, lambda c: len(c['rows']))
     rows = [row for chunk in results for row in chunk]
     summary = summarize(rows, arms)
+    if args.baseline is not None:
+        summary['vs_baseline'] = compare_baseline(rows, arms[-1], args.baseline, args.baseline_arm, args.seed)
     report = {'format': 'rt30-replay-v1', 'engine': 'TB-Engine-v1' if args.checkpoint else 'tb1-uniform-prior',
               'arms': arms, 'deadline': args.deadline, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
               'workers': args.workers, 'git_commit': _commit(), 'jsonl': [str(p) for p in args.jsonl],

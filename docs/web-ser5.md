@@ -235,6 +235,9 @@ python scripts/run_rt30_replay.py --checkpoint runs\h3_policy_64x4\best.pt --arm
 
 - **V8-B 4초 cap은 승리를 놓친다.** 이 40국면 중 기록상 own_vct(VCT1 승리 증명)였던 3국면이 모두 cap에 걸려 tree route로 갔다.
   fast 기준으로도 증명에 24~32초가 드는 국면이다. 첫 번째 보정 항목이다(cap 상향, 또는 남은 시간에 따라 V8-B 몫 조정).
+  SER5 smoke(`docs/rt30-ser5-smoke-results.md` §4.1)에서도 8국면 중 2개 승리가 끊겼고, `8415/10/20`은 실제로 승리가 아닌 수를 뒀다.
+  그 승리 한 수의 증명은 7초인데 V8-B 전체는 32~43초다. 공정 배분이 예산을 후보 전체에 나누기 때문이라,
+  cap 상향과 함께 후보 순서와 배분 방식도 본다.
 - **deadline이 닿지 않는 V7 모듈의 실제 몫은 최대 2.3초였다.** `v7_module_seconds`는 own VCF 직전부터 V7 root 준비가
   끝날 때까지 재는 타이머라 **V8-B 시간이 안에 들어 있다.** 실제 V7 몫은 `v7_modules − attack`이다(replay 출력의 `v7_only`).
   이 문서의 첫 판에 쓴 "최대 4.7초"는 V8-B가 섞인 값이라 틀렸다. 미니PC 포화 상태에서 다시 측정해야 한다.
