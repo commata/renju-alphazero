@@ -73,7 +73,7 @@ def load_positions(paths, select: str, slow_seconds: float, sample: int, seed: i
     return rows[:limit] if limit else rows
 
 
-def _init_worker(checkpoint, uniform_prior, deadline):
+def _init_worker(checkpoint, uniform_prior, deadline, timing):
     from analysis.tb_engine_v1 import TB_ENGINE_V1
 
     config = dict(TB_ENGINE_V1)
@@ -88,7 +88,7 @@ def _init_worker(checkpoint, uniform_prior, deadline):
         config['puct_prior'] = 'uniform'
     else:
         raise ValueError('pass --checkpoint, or --uniform-prior for a policy-free equivalence check')
-    _WORKER.update(config=config, policy=policy, deadline=deadline)
+    _WORKER.update(config=config, policy=policy, deadline=deadline, timing=timing)
 
 
 def _diagnostics(diag) -> dict:
@@ -112,7 +112,7 @@ def _search(moves, arm: str, seed: int):
     started = perf_counter()
     extra = {}
     if arm == 'rt':
-        agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], **_WORKER['config'])
+        agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'], **_WORKER['config'])
         seconds = _WORKER['deadline']
         deadline = Deadline.after(seconds) if seconds else None
         move = agent.select_move(game, deadline=deadline)
@@ -236,6 +236,8 @@ def main(argv=None):
     parser.add_argument('--seed', type=int, default=42, help='sample seed and agent seed')
     parser.add_argument('--arms', default='frozen,fast', help="comma list of frozen, fast, rt (2+: equivalence)")
     parser.add_argument('--deadline', type=float, help='rt arm: seconds from the start of each move (none: no deadline)')
+    parser.add_argument('--timing', nargs='*', default=[], metavar='KEY=SECONDS',
+                        help='rt arm: override rt30.engine.RT30_TIMING, e.g. attack_seconds=8')
     parser.add_argument('--checkpoint', type=Path, help='H3 policy checkpoint of TB-Engine-v1')
     parser.add_argument('--uniform-prior', action='store_true', help='no checkpoint: uniform PUCT prior (not TB1)')
     parser.add_argument('--baseline', type=Path,
@@ -255,13 +257,21 @@ def main(argv=None):
         base_seed = json.loads(args.baseline.read_text(encoding='utf-8')).get('seed')
         if base_seed != args.seed:
             parser.error(f'--baseline was run with --seed {base_seed}; pass the same --seed')
+    from rt30.engine import RT30_TIMING
+
+    timing = {}
+    for item in args.timing:
+        key, _, value = item.partition('=')
+        if key not in RT30_TIMING or not value:
+            parser.error(f'--timing {item!r}: use KEY=SECONDS with KEY in {sorted(RT30_TIMING)}')
+        timing[key] = float(value)
     positions = load_positions(args.jsonl, args.select, args.slow_seconds, args.sample, args.seed, args.limit)
     chunks = [{'rows': positions[i:i + args.chunk], 'arms': arms, 'seed': args.seed}
               for i in range(0, len(positions), args.chunk)]
     print(f'positions={len(positions)} arms={",".join(arms)} workers={args.workers} '
           f'engine={"TB-Engine-v1" if args.checkpoint else "TB1 config, uniform prior"}', flush=True)
     progress = Progress('rt30-replay', len(positions), 'positions')
-    init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior, args.deadline)
+    init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior, args.deadline, timing)
     with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=init) as pool:
         results = run_chunks(pool, run_chunk, chunks, progress, lambda c: len(c['rows']))
     rows = [row for chunk in results for row in chunk]
@@ -269,7 +279,7 @@ def main(argv=None):
     if args.baseline is not None:
         summary['vs_baseline'] = compare_baseline(rows, arms[-1], args.baseline, args.baseline_arm, args.seed)
     report = {'format': 'rt30-replay-v1', 'engine': 'TB-Engine-v1' if args.checkpoint else 'tb1-uniform-prior',
-              'arms': arms, 'deadline': args.deadline, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
+              'arms': arms, 'deadline': args.deadline, 'timing': {**RT30_TIMING, **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
               'workers': args.workers, 'git_commit': _commit(), 'jsonl': [str(p) for p in args.jsonl],
               'machine': {'platform': platform.platform(), 'processor': platform.processor(),
                           'cpu_count': os.cpu_count(), 'python': platform.python_version()},
