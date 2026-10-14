@@ -38,6 +38,8 @@ from .deadline import Deadline
 from .solver import DeadlineSelectiveSolver, DeadlineSolver
 
 Move = tuple[int, int]
+ATTACK_ORDERS = ('frozen', 'threes_first')
+ATTACK_SCHEDULERS = ('fair', 'widen', 'widen3')
 RT30_TIMING = {
     'final_margin': 1.5,    # kept free at the end of every phase: response, IPC, clock jitter
     'attack_seconds': 4.0,  # V8-B cap from its own start
@@ -85,14 +87,88 @@ def emergency_move(game, context, policy=None) -> Move:
     return next((m for m in ranked[:20] if _not_immediately_lost(game, m)), ranked[0])
 
 
-def _own_vct_attack(game, context, diag, *, node_limit, call_limit, node_budget, deadline) -> Move | None:
-    """``analysis.mcts_v8._own_vct_attack`` with a deadline solver."""
+def attack_order(game, candidates: list[Move], order: str) -> list[Move]:
+    """V8-B candidate order. ``frozen``: V8's own (V3.2.1 priority). ``threes_first``: moves making
+    an open three first, V8's order inside each group (in the E3-A records the VCT1 winning move is an
+    open-three move far more often than a four: own VCF has already looked for the four wins)."""
+    if order == 'frozen':
+        return candidates
+    if order == 'threes_first':
+        from search.mcts_v321 import _fast_pattern_features_for_move
+
+        player = game.to_play
+        threes = {m: _fast_pattern_features_for_move(game, player, m, assume_legal=True).open_three_directions
+                  for m in candidates}
+        return sorted(candidates, key=lambda m: (-threes[m], candidates.index(m)))
+    raise ValueError(f'attack order must be one of {ATTACK_ORDERS}')
+
+
+def _widening_proven(game, candidates, statuses, solver, evaluate, target, stages=None):
+    """Progressive widening: the fair scheduler on growing heads of the order.
+
+    ``stages`` is [(head size, share of what is left)], the last stage taking all candidates and the
+    rest; default 1, 2, 4, ... with half of what is left each. The share is of the remaining *time*
+    when the solver has a deadline (under a cap a node slice would outlast it), else of the remaining
+    nodes and calls. A stage cut by its slice leaves the solver usable for the next stage; finished
+    sub-results stay cached, so a later stage resumes earlier ones cheaply.
+    """
+    if stages is None:
+        stages, k = [], 1
+        while k < len(candidates):
+            stages.append((k, 0.5))
+            k *= 2
+    stages = [(min(size, len(candidates)), share) for size, share in stages if size < len(candidates)]
+    stages.append((len(candidates), 1.0))
+    outer = solver.deadline
+    for index, (size, share) in enumerate(stages):
+        last = index == len(stages) - 1
+        saved = (solver.node_budget, solver.call_limit)
+        if not last:
+            if isinstance(outer, Deadline):
+                now = outer.clock()
+                solver.deadline = Deadline(min(outer.at, now + (outer.at - now) * share), outer.clock)
+            else:
+                solver.node_budget = solver.nodes_used + int((saved[0] - solver.nodes_used) * share)
+                solver.call_limit = solver.vcf_calls + int((saved[1] - solver.vcf_calls) * share)
+        try:
+            found = _first_proven(game, candidates[:size], statuses, solver, evaluate, target)
+        finally:
+            solver.deadline = outer
+            solver.node_budget, solver.call_limit = saved
+        if found is not None:
+            return found
+        if not last:
+            outer_done = outer is not None and isinstance(outer, Deadline) and outer.expired()
+            if solver.timed_out and not outer_done:
+                solver.timed_out = False  # only this stage's time slice ran out
+            if solver.timed_out:
+                return None
+            if solver.nodes_used < solver.node_budget and solver.vcf_calls < solver.call_limit:
+                solver.exhausted = False  # only this stage's node slice was used up
+            if solver.exhausted:
+                return None
+    return None
+
+
+ATTACK_STAGES = {'widen': None, 'widen3': [(1, 0.4), (3, 0.6)]}
+
+
+def _own_vct_attack(game, context, diag, *, node_limit, call_limit, node_budget, deadline,
+                    order: str = 'frozen', scheduler: str = 'fair'):
+    """``analysis.mcts_v8._own_vct_attack`` with a deadline solver (and, opt-in, another candidate
+    order or scheduler; ``frozen`` / ``fair`` are V8's own)."""
+    if scheduler not in ATTACK_SCHEDULERS:
+        raise ValueError(f'attack scheduler must be one of {ATTACK_SCHEDULERS}')
     started = perf_counter()
-    candidates = _attack_candidates(game, context)
+    candidates = attack_order(game, _attack_candidates(game, context), order)
     diag.v8_attack_candidates = len(candidates)
     solver = DeadlineSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget, deadline=deadline)
     statuses: dict[Move, str] = {}
-    chosen = _first_proven(game, candidates, statuses, solver, solver.attack_status, WIN)
+    if scheduler == 'fair':
+        chosen = _first_proven(game, candidates, statuses, solver, solver.attack_status, WIN)
+    else:
+        chosen = _widening_proven(game, candidates, statuses, solver, solver.attack_status, WIN,
+                                  stages=ATTACK_STAGES[scheduler])
     diag.v8_attack_checked = tuple(statuses.items())
     diag.v8_attack_calls = solver.vcf_calls
     diag.v8_attack_nodes = solver.nodes_used
@@ -169,7 +245,8 @@ def check_config(config: dict) -> None:
 
 
 def rt30_search(game, *, config: dict, root_policy=None, random=None, diagnostics=None, deadline=None,
-                timing: dict | None = None, progress=None, info: RTInfo | None = None) -> Move:
+                timing: dict | None = None, progress=None, info: RTInfo | None = None,
+                attack_order: str = 'frozen', attack_scheduler: str = 'fair') -> Move:
     c = {**V8_DEFAULTS, **config}
     check_config(c)
     if c['puct_prior'] == 'policy' and root_policy is None:
@@ -222,7 +299,8 @@ def rt30_search(game, *, config: dict, root_policy=None, random=None, diagnostic
         attack, cut = _own_vct_attack(
             game, context, diag, node_limit=c['attack_vcf_node_limit'], call_limit=c['attack_call_limit'],
             node_budget=c['attack_node_budget'],
-            deadline=limited(deadline, reserve=t['final_margin'], cap=t['attack_seconds']))
+            deadline=limited(deadline, reserve=t['final_margin'], cap=t['attack_seconds']),
+            order=attack_order, scheduler=attack_scheduler)
         if cut:
             info.timeouts.append('attack')
         if attack is not None:
@@ -333,8 +411,12 @@ def rt30_search(game, *, config: dict, root_policy=None, random=None, diagnostic
 class RT30Agent(MCTSV8Agent):
     """``MCTSV8Agent`` (same configuration handling and random stream) running ``rt30_search``."""
 
-    def __init__(self, seed: int = 42, root_policy=None, timing: dict | None = None, **overrides):
+    def __init__(self, seed: int = 42, root_policy=None, timing: dict | None = None,
+                 attack_order: str = 'frozen', attack_scheduler: str = 'fair', **overrides):
         super().__init__(seed=seed, root_policy=root_policy, **overrides)
+        if attack_order not in ATTACK_ORDERS or attack_scheduler not in ATTACK_SCHEDULERS:
+            raise ValueError(f'attack_order in {ATTACK_ORDERS}, attack_scheduler in {ATTACK_SCHEDULERS}')
+        self.attack_order, self.attack_scheduler = attack_order, attack_scheduler
         check_config({key: getattr(self, key) for key in V8_DEFAULTS})
         self.name = 'TB-RT30'
         self.timing = {**RT30_TIMING, **(timing or {})}
@@ -343,4 +425,5 @@ class RT30Agent(MCTSV8Agent):
     def select_move(self, game, deadline=None, progress=None) -> Move:
         return rt30_search(game, config={key: getattr(self, key) for key in V8_DEFAULTS},
                            root_policy=self.root_policy, random=self._random, diagnostics=self.diagnostics,
-                           deadline=deadline, timing=self.timing, progress=progress, info=self.rt_info)
+                           deadline=deadline, timing=self.timing, progress=progress, info=self.rt_info,
+                           attack_order=self.attack_order, attack_scheduler=self.attack_scheduler)

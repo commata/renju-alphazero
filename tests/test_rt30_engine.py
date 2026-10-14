@@ -135,3 +135,60 @@ class HelpersTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class AttackVariantsTest(_Engine):
+    """Opt-in V8-B order / scheduler (docs/web-ser5.md §3.8): proofs stay proofs; defaults are V8's."""
+
+    def attack(self, key, **kwargs):
+        from analysis.mcts_v8 import SearchDiagnostics
+        from rt30.engine import _own_vct_attack
+        from search.mcts_v5 import _RootContext
+
+        game = recorded_position(*key)
+        diag = SearchDiagnostics()
+        move, _ = _own_vct_attack(game, _RootContext(game.legal_moves(), diag), diag, node_limit=20_000,
+                                  call_limit=10_000, node_budget=200_000, deadline=None, **kwargs)
+        return game, move, diag
+
+    def test_threes_first_keeps_the_candidates_and_puts_open_threes_first(self):
+        from analysis.mcts_v8 import SearchDiagnostics, _attack_candidates
+        from rt30.engine import attack_order
+        from search.mcts_v321 import _fast_pattern_features_for_move
+        from search.mcts_v5 import _RootContext
+
+        game = recorded_position(8415, 9, 26)
+        frozen = _attack_candidates(game, _RootContext(game.legal_moves(), SearchDiagnostics()))
+        ordered = attack_order(game, frozen, 'threes_first')
+        self.assertEqual(sorted(ordered), sorted(frozen))
+        threes = [_fast_pattern_features_for_move(game, game.to_play, m, assume_legal=True).open_three_directions
+                  for m in ordered]
+        self.assertEqual(threes, sorted(threes, reverse=True))
+        self.assertEqual(attack_order(game, frozen, 'frozen'), frozen)
+
+    def test_every_variant_finds_a_proven_win_where_v8_does(self):
+        from analysis.mcts_v8 import WIN, _BudgetedSolver
+
+        key = POSITIONS['own_vct'][0]
+        _, expected, _ = self.attack(key)
+        self.assertIsNotNone(expected)
+        for order in ('frozen', 'threes_first'):
+            for scheduler in ('fair', 'widen'):
+                game, move, diag = self.attack(key, order=order, scheduler=scheduler)
+                self.assertIsNotNone(move, (order, scheduler))
+                self.assertEqual(diag.v8_attack_status, WIN)
+                # Re-prove the move with a fresh frozen solver: a variant can only find proofs.
+                solver = _BudgetedSolver(node_limit=20_000, call_limit=10_000, node_budget=200_000)
+                self.assertEqual(solver.attack_status(game, move), WIN)
+
+    def test_default_is_v8(self):
+        _, move, diag = self.attack(POSITIONS['own_vct'][0])
+        _, move2, diag2 = self.attack(POSITIONS['own_vct'][0], order='frozen', scheduler='fair')
+        self.assertEqual((move, diag.v8_attack_checked, diag.v8_attack_nodes),
+                         (move2, diag2.v8_attack_checked, diag2.v8_attack_nodes))
+
+    def test_unknown_names_rejected(self):
+        with self.assertRaises(ValueError):
+            RT30Agent(**CONFIG, attack_order='nope')
+        with self.assertRaises(ValueError):
+            self.attack(POSITIONS['own_vct'][0], scheduler='nope')
