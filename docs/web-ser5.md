@@ -178,6 +178,40 @@ Browser ─HTTPS→ Nginx → Web/API (게임 상태, 대기열, supervisor)
 - **worker 수는 실측으로 정한다.** 6은 시작값일 뿐이다(§5).
 - **세션.** 멀티 사용자 세션(게임별 상태, 기록)은 PlaySession을 대체하는 별도 작업이다.
 
+### 3.6.1 구현 (`rt30/supervisor.py`)
+
+- `EngineSupervisor.select(game_key, seed, history, received_at)`:
+  - deadline은 `received + 27.5`, watchdog은 `received + 29`다. 둘 다 `time.monotonic()` 절대 시각이고,
+    Linux와 Windows에서 이 시계는 프로세스 간에 공유된다.
+  - worker는 `started` → `progress(stage, move)`(비상수, PUCT, V8-C, VCT2 순) → `result` 순으로 메시지를 보낸다.
+  - 결과가 오지 않은 채 watchdog이 되면, **마지막 progress 수를 먼저 반환하고** 그 뒤에 worker를 정리한다.
+    정리는 별도 thread에서 terminate → kill 순으로 하고, 예열된 spare가 바로 교체된다.
+    progress가 전혀 없으면 ms 단위 규칙으로 고른다(`fallback_move`: 즉시 승리 → 즉시 방어 → 마지막 돌 근처).
+  - worker 오류는 best-so-far를 두고 worker를 유지한다. worker가 죽으면 교체한다.
+  - 동시 탐색은 1개다(lock). lock을 기다린 시간도 같은 deadline 안에 들어간다.
+- `ProcessPoolExecutor`가 아닌 직접 관리하는 `spawn` 프로세스와 `Pipe`를 쓴다.
+  - worker 안에서 torch와 BLAS thread를 1로 고정한다.
+  - 게임마다 엔진 agent를 따로 둔다(난수 흐름 유지, 최대 8게임).
+  - policy checkpoint는 worker에서만 로드한다.
+- 웹: `python scripts/run_web_play.py --rt30 [--rt30-uniform-prior] --db data/renju_web.db`로 "rt30" 상대를 띄운다.
+  DB `moves`에 `queue_seconds`, `engine_seconds`, `wall_seconds`, `deadline_seconds`, `timed_out`, `emergency_used`가 기록된다.
+  `rt_json`에는 timeouts, skipped, source, watchdog, best, error가 들어간다.
+- 측정: `run_rt30_replay.py --arms sup --deadline 27.5`는 같은 국면을 웹 서버와 같은 경로로 돈다.
+  `seconds`가 요청부터의 wall time이고, `sup_wall`에 source·watchdog·30초 초과·IPC overhead가 나온다.
+
+### 3.6.2 timeout 아래의 V8-C fallback (40국면에서 발견)
+
+tree 수가 패배로 증명된 뒤 자식 검사가 deadline에 걸리면, 동결 규칙대로 "첫 UNKNOWN 자식"을 둔다.
+timeout 아래의 UNKNOWN은 대부분 "검사하지 못함"이라, 증명된 패배 수를 둘 수 있다
+(`docs/rt30-ser5-40pos-results.md` §6.1의 `14/15`). V8-B 승리 손실과 함께 보정해야 할 항목이다.
+
+후보 대책:
+
+- tree 수가 UNSAFE로 판정되면 자식 검사에 남은 시간을 우선 배정한다(VCT2 reserve를 양보).
+- timeout fallback에서는 V8-C가 SAFE로 증명한 자식, 아니면 VCT2/`_not_immediately_lost`를 통과한 자식을 우선한다.
+
+둘 다 동작이 바뀌므로 gate가 필요하다.
+
 ### 3.7 병렬 V8-C 자식 검사 (선택)
 
 동시 대국과 코어를 두고 경쟁하므로 사용자가 적을 때만 의미가 있다. 맨 마지막에, 측정 결과를 보고 결정한다.
@@ -192,7 +226,7 @@ Browser ─HTTPS→ Nginx → Web/API (게임 상태, 대기열, supervisor)
 | 4 | TB1-fast 동일성 확인(체크포인트 포함 전체 TB1) | 사용자 실행 (§5). 컨테이너는 uniform prior로 확인 |
 | 5 | profile 상위 항목 추가 정확 고속화 | 대기 |
 | 6 | RT 엔진: route별 soft cap, PUCT guard, 비상수, 기존 fallback | **완료** (`rt30/engine.py`, 테스트). 시간 값은 미니PC 측정 후 조정 |
-| 7 | worker supervisor, 29초 watchdog, 대기열·절대 deadline | **다음** |
+| 7 | worker supervisor, 29초 watchdog, 대기열·절대 deadline | **완료** (`rt30/supervisor.py`, 웹 `--rt30`, replay `--arms sup`). 미니PC 측정 대기 |
 | 8 | 미니PC 포화 측정: workers 1/2/4/6/8 | 대기 |
 | 9 | 필요하면 결정적 예산 재보정(V8-C 첫 수 몫, VCT2 예산) → `deadline=None` 짝 대국 gate | 대기 |
 | 10 | (선택) V8-C 자식 병렬 검사, incremental threat table | 대기 |

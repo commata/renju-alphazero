@@ -20,6 +20,11 @@ VCT2 check proved the move lost is saved at once under ``logs/web_play/veto_posi
 The frozen TB-Engine-v1 (E3-A, §12.36; same checkpoint) is the "tb1" opponent and is logged the same way.
 "Undo" takes back the last human move (and the AI reply) for relaying games from elsewhere.
 
+With ``--rt30`` the "rt30" opponent is TB-RT30 (docs/web-ser5.md): searched in a separate engine
+worker process under an absolute deadline counted from the request (27.5 s) with a 29 s watchdog;
+it uses the H3 checkpoint of ``--policy-checkpoint``, or ``--rt30-uniform-prior`` when there is none
+(a test engine, not TB1).
+
 With ``--db data/renju_web.db`` every game is also logged move by move to SQLite
 (``weblog.store``, docs/web-ser5.md §7); the files above are written as before.
 
@@ -39,7 +44,7 @@ import json
 from pathlib import Path
 import sys
 from threading import Lock
-from time import perf_counter
+from time import monotonic, perf_counter
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -83,6 +88,9 @@ TB1_KEY = "tb1"
 _TB1_FACTORY = None
 _TB1_INFO: dict[str, Any] = {}
 FROZEN_KEYS = (S3_KEY, TB1_KEY)  # frozen Track B engines: full provenance and veto positions in the logs
+RT30_KEY = "rt30"
+_RT30: dict[str, Any] = {}  # supervisor, label, info (register_rt30)
+TRACKED_KEYS = FROZEN_KEYS + (RT30_KEY,)  # logged like the frozen engines (TB-RT30 runs the TB1 flow)
 
 
 def register_alphazero(factory, label: str) -> None:
@@ -110,6 +118,33 @@ def register_tb1(factory, info: dict[str, Any]) -> None:
     VERSION_LABELS[TB1_KEY] = f"{NAME} (동결)"
 
 
+class SupervisedAgent:
+    """An opponent searched by ``rt30.supervisor.EngineSupervisor`` in a worker process.
+
+    ``select_move(game, received_at=...)`` returns the move; ``last`` keeps the full result
+    (times, source, watchdog), ``diagnostics`` the worker's diagnostics (a dict)."""
+
+    def __init__(self, supervisor, name: str, seed: int):
+        import uuid
+
+        self.supervisor, self.name, self.seed = supervisor, name, seed
+        self.game_key = uuid.uuid4().hex  # one engine agent (random stream) per game in the worker
+        self.diagnostics: dict[str, Any] = {}
+        self.last = None
+
+    def select_move(self, game: Game, received_at: float | None = None) -> tuple[int, int]:
+        result = self.supervisor.select(game_key=self.game_key, seed=self.seed, history=list(game.history),
+                                        received_at=received_at)
+        self.diagnostics, self.last = result.diagnostics, result
+        return result.move
+
+
+def register_rt30(supervisor, label: str, info: dict[str, Any]) -> None:
+    """Add the "rt30" opponent, searched by ``supervisor``."""
+    _RT30.update(supervisor=supervisor, label=label, info=info)
+    VERSION_LABELS[RT30_KEY] = label
+
+
 def create_agent(version: str, *, seed: int = 42):
     """Build one of the frozen/versioned agents used by the benchmark scripts."""
     if version == ALPHAZERO_KEY and _ALPHAZERO_FACTORY is not None:
@@ -118,6 +153,8 @@ def create_agent(version: str, *, seed: int = 42):
         return _S3_FACTORY(seed)
     if version == TB1_KEY and _TB1_FACTORY is not None:
         return _TB1_FACTORY(seed)
+    if version == RT30_KEY and _RT30:
+        return SupervisedAgent(_RT30["supervisor"], _RT30["info"]["engine"], seed)
     if version == "v321":
         return MCTSV321Agent(seed=seed)
     if version == "v41":
@@ -365,7 +402,7 @@ class PlaySession:
         if human_color not in (BLACK, WHITE):
             raise ValueError("human_color는 BLACK 또는 WHITE여야 합니다.")
         with self.lock:
-            if (self.agent_key in FROZEN_KEYS and not self.saved_game
+            if (self.agent_key in TRACKED_KEYS and not self.saved_game
                     and any(r["actor"] not in ("HUMAN", "OPENING_RULE") for r in self.move_records)):
                 self._save_completed_game_locked(unfinished=True)  # relayed games: keep the record
             self._db_leave_locked()
@@ -452,13 +489,28 @@ class PlaySession:
             return
         player = self.game.to_play
         started = perf_counter()
-        move = self.agent.select_move(self.game)
-        elapsed = perf_counter() - started
         received = self._received_at
-        timing = {} if received is None else {"queue_seconds": started - received,
-                                              "wall_seconds": perf_counter() - received}
+        supervised = isinstance(self.agent, SupervisedAgent)
+        if supervised:
+            move = self.agent.select_move(self.game, received_at=received)
+        else:
+            move = self.agent.select_move(self.game)
+        elapsed = perf_counter() - started
+        if supervised:
+            result = self.agent.last
+            rt = {**result.rt, "source": result.source, "watchdog": result.watchdog,
+                  "worker_restarted": result.worker_restarted, "best": result.best, "error": result.error}
+            timing = {"queue_seconds": result.queue_seconds, "wall_seconds": result.wall_seconds,
+                      "deadline_seconds": result.deadline_seconds, "rt": rt,
+                      "timed_out": bool(result.rt.get("timeouts") or result.rt.get("skipped")) or result.watchdog,
+                      "emergency_used": result.source != "engine"}
+            if result.engine_seconds is not None:
+                elapsed = result.engine_seconds
+        else:
+            timing = {} if received is None else {"queue_seconds": monotonic() - received - elapsed,
+                                                  "wall_seconds": monotonic() - received}
         diagnostics = _diagnostics(self.agent)
-        if self.agent_key in FROZEN_KEYS:
+        if self.agent_key in TRACKED_KEYS:
             checked = diagnostics.get("v8_vct2_checked") or []
             if checked and checked[0][1] == "UNSAFE":
                 self._save_veto_position_locked(move, elapsed, diagnostics)
@@ -480,6 +532,10 @@ class PlaySession:
         diagnostics: dict[str, Any],
         queue_seconds: float | None = None,
         wall_seconds: float | None = None,
+        deadline_seconds: float | None = None,
+        rt: dict[str, Any] | None = None,
+        timed_out: bool | None = None,
+        emergency_used: bool | None = None,
     ) -> None:
         row, col = move
         before = [list(line) for line in self.game.board]
@@ -506,7 +562,9 @@ class PlaySession:
             self.store.record_move(
                 self.db_game_id, seq=seq, ply=record["ply"], player=record["player"], actor=actor, row0=row, col0=col,
                 board_hash=record["board_hash"], engine_seconds=seconds, queue_seconds=queue_seconds,
-                wall_seconds=wall_seconds, route=diagnostics.get("v8_route"), diagnostics=_json_value(diagnostics))
+                wall_seconds=wall_seconds, deadline_seconds=deadline_seconds, route=diagnostics.get("v8_route"),
+                timed_out=timed_out, emergency_used=emergency_used, diagnostics=_json_value(diagnostics),
+                rt=None if rt is None else _json_value(rt))
 
     def _db_start_locked(self) -> None:
         """A new row in ``games`` for the current game (provenance of the frozen engines included)."""
@@ -514,7 +572,7 @@ class PlaySession:
             return
         from weblog.store import utc
 
-        info = self._s3_info() if self.agent_key in FROZEN_KEYS else {}
+        info = self._s3_info() if self.agent_key in TRACKED_KEYS else {}
         self.db_game_id = self.store.start_game(
             started_at=utc(self.started_at), agent_key=self.agent_key, agent_name=self.agent.name, seed=self.seed,
             human_color="BLACK" if self.human_color == BLACK else "WHITE", engine=info.get("engine"),
@@ -535,6 +593,11 @@ class PlaySession:
         """Provenance of the frozen engine of this game (S3-VCT2-v1 or TB-Engine-v1)."""
         from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty
 
+        if self.agent_key == RT30_KEY:
+            from analysis.tb_engine_v1 import TB_ENGINE_V1, config_hash
+
+            return {**_RT30["info"], "base_engine_config_hash": config_hash(), "config": dict(TB_ENGINE_V1),
+                    "engine_commit": _git_commit(), "git_dirty": _git_dirty()}
         if self.agent_key == TB1_KEY:
             from analysis.tb_engine_v1 import FREEZE_EVIDENCE, NAME, TB_ENGINE_V1, config_hash
 
@@ -616,7 +679,7 @@ class PlaySession:
             payload["agent_info"] = {"config": _json_value(V8_DEFAULTS)}
         if alphazero:
             payload["agent_info"] = _json_value(getattr(self.agent, "info", {}))
-        s3 = self.agent_key in FROZEN_KEYS
+        s3 = self.agent_key in TRACKED_KEYS
         if s3:
             payload["agent_info"] = _json_value(self._s3_info())
             payload["undo_count"] = self.undo_count
@@ -748,7 +811,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
 
     def do_POST(self):
-        received_at = perf_counter()  # wall time of an AI move counts from here
+        received_at = monotonic()  # wall time and the RT30 deadline of an AI move count from here
         try:
             payload = self._read_json()
             if self.path == "/api/new":
@@ -808,6 +871,12 @@ def main() -> None:
                         help="PUCT v2 rules (auto = the checkpoint's evaluation setting)")
     parser.add_argument("--policy-checkpoint", type=Path, default=ROOT / "runs/h3_policy_64x4/best.pt",
                         help="H3 policy checkpoint of the frozen S3-VCT2-v1 opponent (needs torch)")
+    parser.add_argument("--rt30", action="store_true",
+                        help="add the TB-RT30 opponent (engine worker process, 27.5 s deadline, 29 s watchdog)")
+    parser.add_argument("--rt30-uniform-prior", action="store_true",
+                        help="TB-RT30 without the H3 checkpoint (uniform PUCT prior; a test engine, not TB1)")
+    parser.add_argument("--rt30-deadline", type=float, default=27.5)
+    parser.add_argument("--rt30-watchdog", type=float, default=29.0)
     parser.add_argument("--db", type=Path,
                         help="also log every game move by move to this SQLite file (e.g. data/renju_web.db)")
     args = parser.parse_args()
@@ -835,6 +904,28 @@ def main() -> None:
         print("TB-Engine-v1 opponent: same checkpoint")
     else:
         print(f"S3-VCT2-v1 opponent off: {args.policy_checkpoint} not found")
+    supervisor = None
+    if args.rt30:
+        from rt30.supervisor import AgentSpec, EngineSupervisor
+
+        if args.policy_checkpoint.exists():
+            from analysis.tb_engine_v1 import check_checkpoint as check_tb1
+
+            kwargs, engine = {"checkpoint": str(args.policy_checkpoint)}, "TB-RT30"
+            extra = {"policy_checkpoint": str(args.policy_checkpoint), **check_tb1(args.policy_checkpoint)}
+        elif args.rt30_uniform_prior:
+            kwargs, engine, extra = {"uniform_prior": True}, "TB-RT30 (uniform prior)", {}
+        else:
+            parser.error("--rt30 needs --policy-checkpoint (found) or --rt30-uniform-prior")
+        print(f"{engine}: starting the engine worker ...", flush=True)
+        supervisor = EngineSupervisor(AgentSpec("rt30.supervisor:make_rt30_agent", kwargs),
+                                      engine_deadline=args.rt30_deadline, watchdog=args.rt30_watchdog)
+        from rt30.engine import RT30_TIMING
+
+        register_rt30(supervisor, f"{engine} (실시간 {args.rt30_deadline:g}초)",
+                      {"engine": engine, "deadline_seconds": args.rt30_deadline,
+                       "watchdog_seconds": args.rt30_watchdog, "timing": dict(RT30_TIMING), **extra})
+        print(f"{engine}: worker ready (deadline {args.rt30_deadline:g} s, watchdog {args.rt30_watchdog:g} s)")
     if args.az_checkpoint is not None:
         from agents.alphazero_agent import AlphaZeroAgent
 
@@ -854,6 +945,8 @@ def main() -> None:
         print("\n서버를 종료합니다.")
     finally:
         server.server_close()
+        if supervisor is not None:
+            supervisor.close()
         if store is not None:
             store.close()  # a game in progress stays 'in_progress' in the database
 

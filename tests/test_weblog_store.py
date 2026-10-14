@@ -12,13 +12,13 @@ from weblog.store import SCHEMA_VERSION, LogStore, SchemaVersionError, initializ
 
 class _Tmp(unittest.TestCase):
     def setUp(self):
+        # Registered first, so it runs last: every store's writer thread is closed before the
+        # directory goes (tearDown would run before the stores' cleanups).
         self._tmp = TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
         self.dir = Path(self._tmp.name)
         self.db = self.dir / 'data' / 'renju_web.db'
         self.messages = []
-
-    def tearDown(self):
-        self._tmp.cleanup()
 
     def store(self):
         store = LogStore(self.db, log=lambda *a, **k: self.messages.append(a[0]))
