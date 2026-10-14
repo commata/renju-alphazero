@@ -337,7 +337,7 @@ def fallback_move(history) -> tuple[int, int]:
 # -- agent factories (run in the worker) -------------------------------------------
 def make_rt30_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_prior: bool = False,
                     timing: dict | None = None, fast: bool = True, attack_order: str = 'frozen',
-                    attack_scheduler: str = 'fair'):
+                    attack_scheduler: str = 'fair', root_rescue: bool = True):
     """TB-RT30 with the TB-Engine-v1 configuration: the H3 policy from ``checkpoint`` (hash-checked),
     or ``uniform_prior=True`` without one (not TB1: for testing the server without the checkpoint)."""
     from analysis.tb_engine_v1 import TB_ENGINE_V1
@@ -361,7 +361,7 @@ def make_rt30_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_pr
 
         fast_windows.install()
     agent = RT30Agent(seed=seed, root_policy=policy, timing=timing, attack_order=attack_order,
-                      attack_scheduler=attack_scheduler, **config)
+                      attack_scheduler=attack_scheduler, root_rescue=root_rescue, **config)
     agent.supports_deadline = True
     agent.name = 'TB-RT30' if checkpoint else 'TB-RT30 (uniform prior)'
     return agent

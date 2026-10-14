@@ -59,6 +59,7 @@ class RTInfo:
     skipped: list[str] = field(default_factory=list)
     best: list[tuple[str, Move]] = field(default_factory=list)
     seconds: float = 0.0
+    rescued: bool = False   # V8-C root rescue: the tree move was proven lost, VCT2's time went to V8-C
 
 
 def limited(deadline, *, reserve: float = 0.0, cap: float | None = None):
@@ -182,14 +183,24 @@ def _own_vct_attack(game, context, diag, *, node_limit, call_limit, node_budget,
 
 
 def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit, node_budget,
-                        max_children, mode, deadline):
-    """``analysis.mcts_v8._verify_root_choice`` with a deadline solver."""
+                        max_children, mode, deadline, rescue_deadline=None):
+    """``analysis.mcts_v8._verify_root_choice`` with a deadline solver; returns (move, timed out, rescued).
+
+    Root rescue (docs/web-ser5.md §3.6.2): when the tree move is *proven* UNSAFE and ``rescue_deadline``
+    is given, the child search runs until ``rescue_deadline`` (the move's deadline minus the final
+    margin: VCT2 gives its reserve up) instead of ``deadline``. The search and the statuses are V8-C's
+    own; only the time changes, so a cut child is still UNKNOWN and a proven UNSAFE one is never played
+    while an unrefuted child exists (the frozen fallback rule).
+    """
     started = perf_counter()
     solver = DeadlineSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget, deadline=deadline)
     order = _root_order(chosen, children)
     statuses = {chosen: solver.status_after(game, chosen, node_budget // 2, call_limit // 2)}
     if statuses[chosen] == SAFE or (mode == "veto" and statuses[chosen] != UNSAFE):
-        return _record_root(diag, solver, statuses, order, chosen, chosen, started), solver.timed_out
+        return _record_root(diag, solver, statuses, order, chosen, chosen, started), solver.timed_out, False
+    rescued = rescue_deadline is not None and statuses[chosen] == UNSAFE
+    if rescued:
+        solver.deadline = rescue_deadline
     final = _search_root_children(game, order, statuses, solver, max_children)
     if mode == "veto":
         final = next((m for m in order[1:] if statuses.get(m, UNKNOWN) != UNSAFE
@@ -200,7 +211,7 @@ def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit,
         else:
             final = next((m for m in order[1:] if statuses.get(m, UNKNOWN) == UNKNOWN
                           and _not_immediately_lost(game, m)), chosen)
-    return _record_root(diag, solver, statuses, order, chosen, final, started), solver.timed_out
+    return _record_root(diag, solver, statuses, order, chosen, final, started), solver.timed_out, rescued
 
 
 def _vct2_veto(game, chosen, children, diag, *, budget, max_children, deadline):
@@ -246,7 +257,7 @@ def check_config(config: dict) -> None:
 
 def rt30_search(game, *, config: dict, root_policy=None, random=None, diagnostics=None, deadline=None,
                 timing: dict | None = None, progress=None, info: RTInfo | None = None,
-                attack_order: str = 'frozen', attack_scheduler: str = 'fair') -> Move:
+                attack_order: str = 'frozen', attack_scheduler: str = 'fair', root_rescue: bool = True) -> Move:
     c = {**V8_DEFAULTS, **config}
     check_config(c)
     if c['puct_prior'] == 'policy' and root_policy is None:
@@ -377,17 +388,25 @@ def rt30_search(game, *, config: dict, root_policy=None, random=None, diagnostic
     v7_move = chosen
     best('puct', chosen)
 
+    rescued = False
     if c['root_vct_safety']:
-        chosen, cut = _verify_root_choice(
+        # Rescue needs a deadline: without one nothing is cut, and the search stays TB-Engine-v1's.
+        rescue_deadline = (limited(deadline, reserve=t['final_margin'])
+                           if root_rescue and deadline is not None and c['root_vct2_check'] else None)
+        chosen, cut, rescued = _verify_root_choice(
             game, chosen, children, diag, node_limit=c['root_vcf_node_limit'], call_limit=c['root_call_limit'],
             node_budget=c['root_node_budget'], max_children=c['root_max_children'], mode=c['root_vct_mode'],
             deadline=limited(deadline, reserve=t['vct2_reserve'] + t['final_margin']) if c['root_vct2_check']
-            else limited(deadline, reserve=t['final_margin']))
+            else limited(deadline, reserve=t['final_margin']), rescue_deadline=rescue_deadline)
         if cut:
             info.timeouts.append('root')
+        if rescued:
+            info.rescued = True
         best('root', chosen)
     if c['root_vct2_check']:
-        if remaining(deadline) < t['vct2_min'] + t['final_margin']:
+        if rescued:
+            info.skipped.append('vct2_root_rescue')  # its reserve went to the V8-C child search
+        elif remaining(deadline) < t['vct2_min'] + t['final_margin']:
             info.skipped.append('vct2')
         else:
             chosen, cut = _vct2_veto(
@@ -412,11 +431,13 @@ class RT30Agent(MCTSV8Agent):
     """``MCTSV8Agent`` (same configuration handling and random stream) running ``rt30_search``."""
 
     def __init__(self, seed: int = 42, root_policy=None, timing: dict | None = None,
-                 attack_order: str = 'frozen', attack_scheduler: str = 'fair', **overrides):
+                 attack_order: str = 'frozen', attack_scheduler: str = 'fair', root_rescue: bool = True,
+                 **overrides):
         super().__init__(seed=seed, root_policy=root_policy, **overrides)
         if attack_order not in ATTACK_ORDERS or attack_scheduler not in ATTACK_SCHEDULERS:
             raise ValueError(f'attack_order in {ATTACK_ORDERS}, attack_scheduler in {ATTACK_SCHEDULERS}')
         self.attack_order, self.attack_scheduler = attack_order, attack_scheduler
+        self.root_rescue = root_rescue
         check_config({key: getattr(self, key) for key in V8_DEFAULTS})
         self.name = 'TB-RT30'
         self.timing = {**RT30_TIMING, **(timing or {})}
@@ -426,4 +447,5 @@ class RT30Agent(MCTSV8Agent):
         return rt30_search(game, config={key: getattr(self, key) for key in V8_DEFAULTS},
                            root_policy=self.root_policy, random=self._random, diagnostics=self.diagnostics,
                            deadline=deadline, timing=self.timing, progress=progress, info=self.rt_info,
-                           attack_order=self.attack_order, attack_scheduler=self.attack_scheduler)
+                           attack_order=self.attack_order, attack_scheduler=self.attack_scheduler,
+                           root_rescue=self.root_rescue)

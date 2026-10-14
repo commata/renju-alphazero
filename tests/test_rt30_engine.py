@@ -192,3 +192,136 @@ class AttackVariantsTest(_Engine):
             RT30Agent(**CONFIG, attack_order='nope')
         with self.assertRaises(ValueError):
             self.attack(POSITIONS['own_vct'][0], scheduler='nope')
+
+
+class _FakeSolver:
+    """Scripted V8-C statuses with a deadline: one check per status_after; at the deadline the
+    solver stops like DeadlineSolver (UNKNOWN, cut, exhausted, timed out)."""
+
+    script: dict = {}
+
+    def __init__(self, *, node_limit, call_limit, node_budget, deadline):
+        self.node_limit, self.call_limit, self.node_budget, self.deadline = node_limit, call_limit, node_budget, deadline
+        self.nodes_used = self.vcf_calls = 0
+        self.exhausted = self.timed_out = self.last_cut = False
+
+    def status_after(self, game, move, share=None, call_share=None):
+        self.last_cut = True
+        if self.exhausted:
+            return 'UNKNOWN'
+        if self.deadline is not None and self.deadline.expired():
+            self.timed_out = self.exhausted = True
+            return 'UNKNOWN'
+        self.nodes_used += 1
+        self.vcf_calls += 1
+        self.last_cut = False
+        return self.script[tuple(move)]
+
+
+class RootRescueTest(unittest.TestCase):
+    """V8-C root rescue (docs/web-ser5.md §3.6.2) on scripted statuses."""
+
+    def setUp(self):
+        from collections import namedtuple
+
+        import rt30.engine as engine
+
+        self.engine = engine
+        original = engine.DeadlineSolver
+        engine.DeadlineSolver = _FakeSolver
+        self.addCleanup(setattr, engine, 'DeadlineSolver', original)
+        original_lost = engine._not_immediately_lost
+        engine._not_immediately_lost = lambda game, move: True
+        self.addCleanup(setattr, engine, '_not_immediately_lost', original_lost)
+        Child = namedtuple('Child', 'move visits mean_value')
+        # Tree order: (0,0) chosen, then (1,1) (2,2) (3,3) (4,4) by visits.
+        self.children = [Child((i, i), 10 - i, 0.0) for i in range(5)]
+
+    def verify(self, script, deadline, rescue=None):
+        from analysis.mcts_v8 import SearchDiagnostics
+        from rt30.deadline import CheckLimit
+
+        _FakeSolver.script = script
+        diag = SearchDiagnostics()
+        move, cut, rescued = self.engine._verify_root_choice(
+            None, (0, 0), self.children, diag, node_limit=10, call_limit=1000, node_budget=1000, max_children=4,
+            mode='aggressive', deadline=CheckLimit(deadline), rescue_deadline=None if rescue is None else CheckLimit(rescue))
+        return move, cut, rescued, dict(diag.v8_root_checked)
+
+    def test_bug_path_without_rescue_and_the_fix(self):
+        # The tree move is proven lost, the next child is lost too, the third is the safe one.
+        script = {(0, 0): 'UNSAFE', (1, 1): 'UNSAFE', (2, 2): 'SAFE', (3, 3): 'UNSAFE', (4, 4): 'UNSAFE'}
+        # Deadline right after the tree move's proof: the old rule plays the first unchecked child.
+        move, cut, rescued, statuses = self.verify(script, deadline=1)
+        self.assertEqual((move, cut, rescued), ((1, 1), True, False))
+        self.assertEqual(statuses.get((1, 1)), 'UNKNOWN')  # unchecked, though the script says it loses
+        # With the rescue the child search goes on and finds the proven SAFE child.
+        move, cut, rescued, statuses = self.verify(script, deadline=1, rescue=10 ** 6)
+        self.assertEqual((move, rescued), ((2, 2), True))
+        self.assertEqual(statuses[(1, 1)], 'UNSAFE')
+        self.assertEqual(statuses[(2, 2)], 'SAFE')
+
+    def test_no_rescue_when_the_tree_move_is_not_proven_lost(self):
+        for status in ('SAFE', 'UNKNOWN'):
+            script = {(i, i): 'SAFE' for i in range(5)}
+            script[(0, 0)] = status
+            _, _, rescued, _ = self.verify(script, deadline=1, rescue=10 ** 6)
+            self.assertFalse(rescued, status)
+
+    def test_never_plays_its_own_proven_loss_while_an_unrefuted_child_exists(self):
+        from itertools import product
+
+        for statuses in product(('UNSAFE', 'SAFE', 'UNKNOWN'), repeat=4):
+            script = {(0, 0): 'UNSAFE', **{(i + 1, i + 1): s for i, s in enumerate(statuses)}}
+            for deadline, rescue in ((1, None), (2, None), (3, None), (1, 2), (1, 10 ** 6), (10 ** 6, None)):
+                move, _, _, seen = self.verify(script, deadline, rescue)
+                if seen.get(move) == 'UNSAFE':
+                    # Only when every child the search could choose is proven lost.
+                    others = [m for m in [(i, i) for i in range(1, 5)] if seen.get(m, 'UNKNOWN') != 'UNSAFE']
+                    self.assertEqual(others, [], (script, deadline, rescue, move, seen))
+
+    def test_engine_gives_vct2_time_to_the_rescue(self):
+        # rt30_search: when V8-C reports a rescue, VCT2 is skipped and the move info says so.
+        engine = self.engine
+        original = engine._verify_root_choice
+
+        def rescued(game, chosen, children, diag, **kwargs):
+            self.assertIsNotNone(kwargs['rescue_deadline'])
+            move, cut, _ = original(game, chosen, children, diag, **{**kwargs, 'rescue_deadline': None})
+            return move, cut, True
+
+        engine._verify_root_choice = rescued
+        self.addCleanup(setattr, engine, '_verify_root_choice', original)
+        engine.DeadlineSolver = TestRealSolver.real()
+        _FakeSolver.script = {}
+        game = recorded_position(*POSITIONS['tree'][0])
+        agent = RT30Agent(seed=7, **CONFIG)
+        agent.select_move(game, deadline=Deadline.after(600.0))
+        self.assertTrue(agent.rt_info.rescued)
+        self.assertIn('vct2_root_rescue', agent.rt_info.skipped)
+        self.assertEqual(agent.diagnostics.v8_vct2_checked, ())
+
+    def test_rescue_off_and_no_deadline_keep_the_old_rule(self):
+        engine = self.engine
+        calls = []
+        original = engine._verify_root_choice
+
+        def spy(*args, **kwargs):
+            calls.append(kwargs['rescue_deadline'])
+            return original(*args, **kwargs)
+
+        engine._verify_root_choice = spy
+        self.addCleanup(setattr, engine, '_verify_root_choice', original)
+        engine.DeadlineSolver = TestRealSolver.real()
+        game = recorded_position(*POSITIONS['tree'][0])
+        RT30Agent(seed=7, **CONFIG).select_move(game)                                   # no deadline
+        RT30Agent(seed=7, root_rescue=False, **CONFIG).select_move(game, deadline=Deadline.after(600.0))
+        self.assertEqual(calls, [None, None])
+
+
+class TestRealSolver:
+    @staticmethod
+    def real():
+        from rt30.solver import DeadlineSolver
+
+        return DeadlineSolver

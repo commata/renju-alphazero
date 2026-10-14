@@ -81,7 +81,7 @@ def load_positions(paths, select: str, slow_seconds: float, sample: int, seed: i
     return rows[:limit] if limit else rows
 
 
-def _init_worker(checkpoint, uniform_prior, deadline, timing):
+def _init_worker(checkpoint, uniform_prior, deadline, timing, root_rescue=True):
     from analysis.tb_engine_v1 import TB_ENGINE_V1
 
     config = dict(TB_ENGINE_V1)
@@ -96,7 +96,7 @@ def _init_worker(checkpoint, uniform_prior, deadline, timing):
         config['puct_prior'] = 'uniform'
     else:
         raise ValueError('pass --checkpoint, or --uniform-prior for a policy-free equivalence check')
-    _WORKER.update(config=config, policy=policy, deadline=deadline, timing=timing)
+    _WORKER.update(config=config, policy=policy, deadline=deadline, timing=timing, root_rescue=root_rescue)
 
 
 def _diagnostics(diag) -> dict:
@@ -120,12 +120,14 @@ def _search(moves, arm: str, seed: int):
     started = perf_counter()
     extra = {}
     if arm == 'rt':
-        agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'], **_WORKER['config'])
+        agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'],
+                          root_rescue=_WORKER['root_rescue'], **_WORKER['config'])
         seconds = _WORKER['deadline']
         deadline = Deadline.after(seconds) if seconds else None
         move = agent.select_move(game, deadline=deadline)
         info = agent.rt_info
         extra = {'rt': {'timeouts': info.timeouts, 'skipped': info.skipped, 'emergency': info.emergency,
+                        'rescued': info.rescued,
                         'best': [[stage, list(m)] for stage, m in info.best]}}
     else:
         agent = MCTSV8Agent(seed=seed, root_policy=_WORKER['policy'], **_WORKER['config'])
@@ -156,6 +158,7 @@ def run_supervised(positions, args, timing, progress):
     from rt30.supervisor import AgentSpec, EngineSupervisor
 
     kwargs = {'checkpoint': str(args.checkpoint)} if args.checkpoint else {'uniform_prior': True}
+    kwargs['root_rescue'] = not args.no_root_rescue
     if timing:
         kwargs['timing'] = timing
     sup = EngineSupervisor(AgentSpec('rt30.supervisor:make_rt30_agent', kwargs), engine_deadline=args.deadline,
@@ -181,6 +184,7 @@ def run_supervised(positions, args, timing, progress):
                                                                                 ('vct2', 'v8_vct2_checked'))},
                                  'tree_move': diag.get('v8_v7_move'),
                                  'rt': {'timeouts': rt.get('timeouts', []), 'skipped': rt.get('skipped', []),
+                                        'rescued': bool(rt.get('rescued')),
                                         'emergency': rt.get('emergency'), 'best': result.best}}})
             progress.update(1)
     finally:
@@ -245,7 +249,8 @@ def summarize(rows, arms):
         rt = [r[arm]['rt'] for r in rows]
         # Not summary['rt']: that key holds the rt arm's seconds and phases.
         summary['rt_deadline'] = {'timeouts': {p: sum(p in x['timeouts'] for x in rt) for p in ('attack', 'stage_vct', 'root', 'vct2')},
-                         'skipped': {p: sum(p in x['skipped'] for x in rt) for p in ('puct', 'vct2')},
+                         'skipped': {p: sum(p in x['skipped'] for x in rt) for p in ('puct', 'vct2', 'vct2_root_rescue')},
+                         'root_rescued': sum(bool(x.get('rescued')) for x in rt),
                          'moves_with_timeout_or_skip': sum(bool(x['timeouts'] or x['skipped']) for x in rt)}
     if len(arms) >= 2:
         summary['identical'] = sum(r['identical'] for r in rows)
@@ -338,6 +343,8 @@ def main(argv=None):
     parser.add_argument('--arms', default='frozen,fast', help="comma list of frozen, fast, rt (2+: equivalence)")
     parser.add_argument('--deadline', type=float, help='rt arm: seconds from the start of each move (none: no deadline)')
     parser.add_argument('--watchdog', type=float, default=29.0, help='sup arm: watchdog seconds')
+    parser.add_argument('--no-root-rescue', action='store_true',
+                        help='rt/sup arms: the V8-C behaviour before the root rescue (baseline reproduction)')
     parser.add_argument('--timing', nargs='*', default=[], metavar='KEY=SECONDS',
                         help='rt arm: override rt30.engine.RT30_TIMING, e.g. attack_seconds=8')
     parser.add_argument('--checkpoint', type=Path, help='H3 policy checkpoint of TB-Engine-v1')
@@ -388,7 +395,8 @@ def main(argv=None):
     print(f'positions={len(positions)} arms={",".join(arms)} workers={args.workers} '
           f'engine={"TB-Engine-v1" if args.checkpoint else "TB1 config, uniform prior"}', flush=True)
     progress = Progress('rt30-replay', len(positions), 'positions')
-    init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior, args.deadline, timing)
+    init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior, args.deadline, timing,
+            not args.no_root_rescue)
     if arms == ('sup',):
         rows = run_supervised(positions, args, timing, progress)
     else:
@@ -399,7 +407,7 @@ def main(argv=None):
     if args.baseline is not None:
         summary['vs_baseline'] = compare_baseline(rows, arms[-1], args.baseline, args.baseline_arm, args.seed)
     report = {'format': 'rt30-replay-v1', 'engine': 'TB-Engine-v1' if args.checkpoint else 'tb1-uniform-prior',
-              'arms': arms, 'manifest': manifest, 'deadline': args.deadline, 'timing': {**RT30_TIMING, **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
+              'arms': arms, 'manifest': manifest, 'deadline': args.deadline, 'root_rescue': not args.no_root_rescue, 'timing': {**RT30_TIMING, **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
               'workers': args.workers, 'git_commit': _commit(), 'jsonl': [str(p) for p in args.jsonl],
               'machine': {'platform': platform.platform(), 'processor': platform.processor(),
                           'cpu_count': os.cpu_count(), 'python': platform.python_version()},

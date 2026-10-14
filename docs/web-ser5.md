@@ -259,6 +259,34 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 3. **policy 순서.** H3 policy로 후보를 정렬한다(체크포인트 필요). 열린 3 규칙보다 승리 수를 더 앞에 둘 가능성이 크다.
 4. **V8-C timeout fallback 보정**(§3.6.2).
 
+### 3.6.3 V8-C root rescue 구현과 측정 (2026-10-14)
+
+**구현** (`rt30.engine._verify_root_choice(..., rescue_deadline=)`, `RT30Agent(root_rescue=True)` 기본):
+
+- tree 수가 V8-C에서 **UNSAFE로 증명**되면 자식 검사의 deadline을 `deadline − vct2_reserve − final_margin`에서
+  `deadline − final_margin`으로 늘린다.
+- VCT2는 그 수에서 건너뛴다(`skipped += vct2_root_rescue`, `RTInfo.rescued`).
+- 검사와 status는 V8-C 그대로다. 새 휴리스틱은 없다. 잘린 자식은 UNKNOWN이고 fallback 규칙도 동결 그대로다.
+- deadline이 없으면 rescue는 꺼진다. 그래서 `deadline=None`은 계속 TB1과 같다(기존 동일성 테스트 통과).
+  `--no-root-rescue`로 이전 동작을 재현할 수 있다.
+
+**불변식 테스트**(`tests/test_rt30_engine.py::RootRescueTest`, scripted solver):
+
+- 자식 4개의 status 81가지 조합 × cut 지점 6가지를 돌렸다.
+  RT가 스스로 UNSAFE로 증명한 수를 두는 것은, 고를 수 있는 자식이 모두 UNSAFE일 때뿐이다.
+- 버그 경로도 재현했다. rescue가 없으면 첫 미검사 자식을 두고, rescue가 있으면 증명된 SAFE 자식을 둔다.
+
+**실제 국면 `14/15`(uniform).**
+
+- 시간 제한 없이 rescue로 끝까지 검사하면(CheckLimit) fast와 같다. `[5,6]`, `[5,9]` UNSAFE, `[5,4]` SAFE로 `[5,4]`를 둔다.
+- 하지만 **27.5초 안에서는 부족하다.**
+  - 컨테이너 RT에서 rescue가 걸렸지만 V8-C가 21초(94k 노드) 뒤 다시 잘렸고, 여전히 `[5,6]`을 뒀다.
+  - fast(SER5)는 이 국면 V8-C에 51초, 221k 노드를 썼다.
+  - 자식 하나의 증명에도 각각 50~65k 노드(컨테이너 10~14초)가 든다. `[5,4]` SAFE가 65k, `[5,6]` UNSAFE가 65k, `[5,9]` UNSAFE가 50k다.
+  - 그래서 순서를 바꿔도 창 안에 증명 1~2개밖에 들어가지 않는다.
+- 결론: rescue는 **안전 불변식과 시간 재배정을 위한 수정**이다. 이 국면의 실패를 직접 풀려면 속도(2차 정확 고속화)가 필요하다.
+- uniform critical 결과(컨테이너, workers 2): 최대 26.016초, rescue 1회(`14/15`). 나머지 5국면은 이전과 같은 분류다.
+
 ### 3.7 병렬 V8-C 자식 검사 (선택)
 
 동시 대국과 코어를 두고 경쟁하므로 사용자가 적을 때만 의미가 있다. 맨 마지막에, 측정 결과를 보고 결정한다.
