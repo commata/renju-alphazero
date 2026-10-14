@@ -368,8 +368,11 @@ python -u scripts\run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1
   --workers 6 --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt `
   --games-jsonl runs\h6_fresh\fresh_8601.jsonl --output runs\h6_fresh\fresh_8601.json 2>&1 | Tee-Object runs\h6_fresh\fresh_8601.log
 python -u scripts\make_h6_fresh_probes.py --games runs\h6_fresh\fresh_8601.json --workers 12 `
-  --output runs\h6_fresh\count_8601.json
+  --jsonl runs\h6_fresh\scan.jsonl --output runs\h6_fresh\count_8601.json
 ```
+- `--jsonl`에 대국별 탐색 결과가 끝나는 대로 저장된다. 중단돼도 같은 명령을 다시 실행하면 끝난 대국은 건너뛴다(2026-10-15 추가).
+  - 첫 실행은 저장 기능이 없어서, 20판 중 19판을 끝낸 뒤 중단되어 결과를 모두 잃었다.
+  - 같은 날 탐색도 빠르게 했다. VCF를 버티는 수가 8개를 넘으면 그 자리에서 멈추고, `vcf_loss` 확인과 `vct_loss` 확인이 이 한 번의 탐색을 같이 쓴다. 판정은 이전과 같고 약 3배 빠르다.
 - `count_8601.json`은 개수 확인용이다(`counts`).
   - +1과 −1이 각각 10대국에 못 미치면 seed 8602, 8603… 대국을 추가한다. 그다음 **모든 seed 파일을 함께** 넣어 다시 추출한다.
   - 기준을 채우면 최종 추출 결과를 `docs/h6/h6_fresh_final_probes_v1.json`으로 출력해 커밋한다.

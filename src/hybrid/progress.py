@@ -49,7 +49,8 @@ class Progress:
         return f'{text}  {extra}' if extra else text
 
 
-def run_chunks(pool, fn, chunks: list, progress: Progress, amount, *, unit_name: str = 'chunks') -> list:
+def run_chunks(pool, fn, chunks: list, progress: Progress, amount, *, unit_name: str = 'chunks',
+               on_result=None) -> list:
     """``[fn(c) for c in chunks]`` on ``pool``, collected as each finishes (no head-of-line wait);
     ``amount(chunk)`` is the progress credit of a finished chunk. A heartbeat line every
     ``progress.every`` seconds while nothing finishes. The result keeps the input order."""
@@ -62,6 +63,8 @@ def run_chunks(pool, fn, chunks: list, progress: Progress, amount, *, unit_name:
             for future in done:
                 i = futures[future]
                 results[i] = future.result()
+                if on_result is not None:  # e.g. append to a resume file as soon as a chunk finishes
+                    on_result(i, results[i])
                 finished += 1
                 progress.update(amount(chunks[i]), extra=f'{finished:,}/{len(chunks):,} {unit_name}')
             if not done:

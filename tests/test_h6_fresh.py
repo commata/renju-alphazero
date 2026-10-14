@@ -59,6 +59,27 @@ class FreshProbeTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_games([Path(tmp, 'c.json')])
 
+    def test_resume_skips_scanned_games(self):
+        from scripts import make_h6_fresh_probes as maker
+        with TemporaryDirectory() as tmp:
+            games = {'arm': ENGINE_ARM, 'seed': 8601, 'opponent': 'v8:full',
+                     'games': [{'key': 'g1', 'moves': WEB['moves'][:96]}]}
+            Path(tmp, 'g.json').write_text(json.dumps(games), encoding='utf-8')
+            args = ['--games', str(Path(tmp, 'g.json')), '--from-ply', '93', '--jsonl', str(Path(tmp, 'scan.jsonl'))]
+            self.assertEqual(maker.main(args + ['--output', str(Path(tmp, 'a.json'))]), 0)
+            calls = []
+            original = maker._scan_chunk
+            maker._scan_chunk = lambda tasks: calls.append(tasks) or original(tasks)
+            try:
+                self.assertEqual(maker.main(args + ['--output', str(Path(tmp, 'b.json'))]), 0)
+            finally:
+                maker._scan_chunk = original
+            self.assertEqual(calls, [])  # nothing rescanned
+            a = json.loads(Path(tmp, 'a.json').read_text(encoding='utf-8'))
+            b = json.loads(Path(tmp, 'b.json').read_text(encoding='utf-8'))
+            self.assertEqual(a['counts'], b['counts'])
+            self.assertEqual(a['counts']['games_with_loss'], 1)
+
 
 @unittest.skipIf(torch is None, 'torch is not installed')
 class FreshGateTest(unittest.TestCase):

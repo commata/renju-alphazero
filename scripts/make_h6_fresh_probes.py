@@ -52,26 +52,53 @@ def _game(moves) -> Game:
     return game
 
 
+def _vcf_survivors(game: Game, solver, limit: int):
+    """Moves of the side to move that survive the opponent's VCF, stopping as soon as more than ``limit``
+    survive: a list (all moves checked), ``'many'`` (> limit, not a deep loss) or ``'unknown'``. An empty list
+    means every move loses to VCF (``vcf_loss``, depth 0). Same verdicts as ``defense_label``'s first step,
+    without classifying every legal move."""
+    from analysis.threats import SAFE, UNKNOWN, ordered_moves
+
+    safe = []
+    for move in ordered_moves(game):
+        game.play(*move)
+        try:
+            status, _ = solver.after_move(game, 0, 0)
+        finally:
+            game.undo()
+        if status == UNKNOWN:
+            return 'unknown'
+        if status == SAFE:
+            safe.append(move)
+            if len(safe) > limit:
+                return 'many'
+    return safe
+
+
 def classify(moves) -> str | None:
     """'win' / 'loss' / None for the position after ``moves`` (side to move's view)."""
-    from analysis.tactical_labels import defense_label, label_position
-    from analysis.threats import ThreatSolver
+    from analysis.tactical_labels import label_position
+    from analysis.threats import SAFE, UNKNOWN, ThreatSolver
 
     game = _game(moves)
     if game.done:
         return None
     solver = ThreatSolver(node_limit=SOLVER_NODE_LIMIT)
-    shallow = label_position(game, solver, prove_losses=True)
+    shallow = label_position(game, solver)
     if shallow is not None and shallow['kind'] in DEPTH0_KINDS:
         return None
+    survivors = _vcf_survivors(game, solver, DEFENSE_MAX_CANDIDATES)
+    if survivors == []:
+        return None  # vcf_loss: a depth-0 loss
     if shallow is None:  # a deep win only without any pending threat (must_block) of the opponent
         deep = proof_label(moves, solver, vct1_budget=VCT1_BUDGET)
         if deep is not None and deep['kind'] == 'vct1_win':
             return 'win'
-    label = defense_label(_game(moves), ThreatSolver(node_limit=SOLVER_NODE_LIMIT),
-                          max_candidates=DEFENSE_MAX_CANDIDATES)
-    if label is not None and label['kind'] == 'vct_loss':
-        return 'loss'
+    if isinstance(survivors, list):  # defense_label's vct_loss: every VCF survivor loses at depth 1
+        deep = solver.classify(game, survivors, vct_depth=1)
+        statuses = [status for status, _ in deep.values()]
+        if UNKNOWN not in statuses and SAFE not in statuses:
+            return 'loss'
     return None
 
 
@@ -136,24 +163,41 @@ def main(argv=None) -> int:
     parser.add_argument('--games', nargs='+', required=True, help='run_mcts_v8_benchmark outputs (globs allowed)')
     parser.add_argument('--from-ply', type=int, default=10)
     parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--jsonl', type=Path, help='per-game scan results, appended as games finish (resume)')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     if args.output.exists():
         parser.error(f'{args.output} exists: the fresh probes are made once')
     paths = [Path(p) for pattern in args.games for p in (sorted(glob.glob(pattern)) or [pattern])]
     games, sources = load_games(paths)
-    tasks = [(g['moves'], args.from_ply) for g in games]
-    chunks = [tasks[i:i + 1] for i in range(len(tasks))]
-    progress = Progress('fresh probes', len(tasks), 'games')
-    if args.workers > 1:
+    done = {}
+    if args.jsonl is not None and args.jsonl.exists():
+        for line in args.jsonl.read_text(encoding='utf-8').splitlines():
+            if line.strip():
+                row = json.loads(line)
+                if row.get('from_ply') == args.from_ply:
+                    done[row['key']] = row['found']
+    todo = [i for i, g in enumerate(games) if g['key'] not in done]
+    print(f'[fresh probes] {len(games)} games, {len(games) - len(todo)} already scanned', flush=True)
+    chunks = [[(games[i]['moves'], args.from_ply)] for i in todo]
+
+    def record(j, result):
+        key = games[todo[j]]['key']
+        done[key] = result[0]
+        if args.jsonl is not None:
+            args.jsonl.parent.mkdir(parents=True, exist_ok=True)
+            with args.jsonl.open('a', encoding='utf-8') as handle:
+                handle.write(json.dumps({'key': key, 'from_ply': args.from_ply, 'found': result[0]}) + '\n')
+
+    progress = Progress('fresh probes', len(todo), 'games')
+    if args.workers > 1 and todo:
         with ProcessPoolExecutor(max_workers=args.workers) as pool:
-            found = [x for part in run_chunks(pool, _scan_chunk, chunks, progress, len, unit_name='games')
-                     for x in part]
+            run_chunks(pool, _scan_chunk, chunks, progress, len, unit_name='games', on_result=record)
     else:
-        found = []
-        for c in chunks:
-            found.extend(_scan_chunk(c))
+        for j, c in enumerate(chunks):
+            record(j, _scan_chunk(c))
             progress.update(1)
+    found = [{k: int(v) for k, v in done[g['key']].items()} for g in games]
     exclude = probe_hashes(p for p in default_probe_files(ROOT) if Path(p).resolve() != args.output.resolve())
     probes = select(games, found, exclude)
     counts = {'win': sum(p['expected_sign'] == 1 for p in probes), 'loss': sum(p['expected_sign'] == -1 for p in probes),
