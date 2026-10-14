@@ -1,0 +1,1236 @@
+{
+ "format": "rt30-replay-v1",
+ "engine": "tb1-uniform-prior",
+ "arms": [
+  "fast"
+ ],
+ "deadline": null,
+ "timing": {
+  "final_margin": 1.5,
+  "attack_seconds": 4.0,
+  "puct_reserve": 6.0,
+  "vct2_reserve": 4.0,
+  "vct2_min": 2.0
+ },
+ "select": "slow",
+ "slow_seconds": 30.0,
+ "seed": 42,
+ "workers": 1,
+ "git_commit": "7e9239744b7473b3a0ad31e3fd40a8f5b8b2a10d",
+ "jsonl": [
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl"
+ ],
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "processor": "",
+  "cpu_count": 16,
+  "python": "3.14.4"
+ },
+ "summary": {
+  "positions": 40,
+  "fast": {
+   "seconds": {
+    "n": 40,
+    "median": 13.35,
+    "p95": 99.936,
+    "p99": 127.949,
+    "max": 127.949,
+    "sum": 1111.9,
+    "over_27.5s": 12
+   },
+   "routes": {
+    "tree": 33,
+    "own_vct": 3,
+    "stage4": 4
+   },
+   "phases": {
+    "attack": {
+     "n": 40,
+     "median": 0.181,
+     "p95": 42.316,
+     "p99": 43.136,
+     "max": 43.136,
+     "sum": 372.7,
+     "over_27.5s": 8
+    },
+    "stage_vct": {
+     "n": 4,
+     "median": 5.899,
+     "p95": 13.158,
+     "p99": 13.158,
+     "max": 13.158,
+     "sum": 25.8,
+     "over_27.5s": 0
+    },
+    "tree": {
+     "n": 33,
+     "median": 1.162,
+     "p95": 2.231,
+     "p99": 2.26,
+     "max": 2.26,
+     "sum": 42.8,
+     "over_27.5s": 0
+    },
+    "root": {
+     "n": 33,
+     "median": 0.74,
+     "p95": 85.579,
+     "p99": 85.618,
+     "max": 85.618,
+     "sum": 423.5,
+     "over_27.5s": 5
+    },
+    "vct2": {
+     "n": 33,
+     "median": 9.813,
+     "p95": 11.894,
+     "p99": 12.638,
+     "max": 12.638,
+     "sum": 239.4,
+     "over_27.5s": 0
+    },
+    "v7_modules": {
+     "n": 40,
+     "median": 0.375,
+     "p95": 42.467,
+     "p99": 43.266,
+     "max": 43.266,
+     "sum": 380.3,
+     "over_27.5s": 8
+    },
+    "v7_only": {
+     "n": 40,
+     "median": 0.065,
+     "p95": 1.104,
+     "p99": 1.469,
+     "max": 1.469,
+     "sum": 7.6,
+     "over_27.5s": 0
+    }
+   }
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/2/14",
+   "recorded_seconds": 37.7564,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     6,
+     6
+    ],
+    "seconds": 12.6129,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0609,
+     "stage_vct": 0.0,
+     "tree": 0.8549,
+     "root": 0.3172,
+     "vct2": 11.325,
+     "v7_modules": 0.1142,
+     "v7_only": 0.0533
+    },
+    "nodes": {
+     "attack": 72,
+     "stage_vct": 0,
+     "root": 110,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/18",
+   "recorded_seconds": 134.6504,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     10
+    ],
+    "seconds": 44.9534,
+    "route": "tree",
+    "phases": {
+     "attack": 43.136,
+     "stage_vct": 0.0,
+     "tree": 1.17,
+     "root": 0.4363,
+     "vct2": 0.0793,
+     "v7_modules": 43.266,
+     "v7_only": 0.13
+    },
+    "nodes": {
+     "attack": 199999,
+     "stage_vct": 0,
+     "root": 719,
+     "vct2": 2
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/26",
+   "recorded_seconds": 40.3362,
+   "recorded_route": "own_vct",
+   "fast": {
+    "move": [
+     2,
+     7
+    ],
+    "seconds": 13.9472,
+    "route": "own_vct",
+    "phases": {
+     "attack": 13.9264,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 13.9457,
+     "v7_only": 0.0193
+    },
+    "nodes": {
+     "attack": 85208,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/18",
+   "recorded_seconds": 151.5892,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     9
+    ],
+    "seconds": 12.5609,
+    "route": "tree",
+    "phases": {
+     "attack": 0.8306,
+     "stage_vct": 0.0,
+     "tree": 1.0675,
+     "root": 8.3033,
+     "vct2": 2.294,
+     "v7_modules": 0.8934,
+     "v7_only": 0.0628
+    },
+    "nodes": {
+     "attack": 3458,
+     "stage_vct": 0,
+     "root": 38915,
+     "vct2": 9738
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "recorded_seconds": 57.1264,
+   "recorded_route": "own_vct",
+   "fast": {
+    "move": [
+     10,
+     9
+    ],
+    "seconds": 19.0138,
+    "route": "own_vct",
+    "phases": {
+     "attack": 18.8576,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 19.0121,
+     "v7_only": 0.1545
+    },
+    "nodes": {
+     "attack": 82095,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/9",
+   "recorded_seconds": 34.0601,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     8,
+     11
+    ],
+    "seconds": 9.392,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1022,
+     "stage_vct": 0.0,
+     "tree": 1.1396,
+     "root": 0.253,
+     "vct2": 7.8425,
+     "v7_modules": 0.1557,
+     "v7_only": 0.0535
+    },
+    "nodes": {
+     "attack": 262,
+     "stage_vct": 0,
+     "root": 391,
+     "vct2": 29541
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/11",
+   "recorded_seconds": 37.2661,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 11.6036,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0564,
+     "stage_vct": 0.0,
+     "tree": 1.1598,
+     "root": 0.521,
+     "vct2": 9.813,
+     "v7_modules": 0.1084,
+     "v7_only": 0.052
+    },
+    "nodes": {
+     "attack": 62,
+     "stage_vct": 0,
+     "root": 1369,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/13",
+   "recorded_seconds": 39.6516,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 13.6155,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1641,
+     "stage_vct": 0.0,
+     "tree": 1.0345,
+     "root": 0.4081,
+     "vct2": 11.8943,
+     "v7_modules": 0.2775,
+     "v7_only": 0.1134
+    },
+    "nodes": {
+     "attack": 529,
+     "stage_vct": 0,
+     "root": 934,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/20",
+   "recorded_seconds": 31.1589,
+   "recorded_route": "stage4",
+   "fast": {
+    "move": [
+     5,
+     3
+    ],
+    "seconds": 10.5477,
+    "route": "stage4",
+    "phases": {
+     "attack": 9.5002,
+     "stage_vct": 0.9579,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 9.5854,
+     "v7_only": 0.0852
+    },
+    "nodes": {
+     "attack": 45763,
+     "stage_vct": 3203,
+     "root": 0,
+     "vct2": 0
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/26",
+   "recorded_seconds": 42.3535,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     7
+    ],
+    "seconds": 12.6249,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1298,
+     "stage_vct": 0.0,
+     "tree": 1.7884,
+     "root": 1.0395,
+     "vct2": 9.5515,
+     "v7_modules": 0.2427,
+     "v7_only": 0.1129
+    },
+    "nodes": {
+     "attack": 380,
+     "stage_vct": 0,
+     "root": 3430,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/28",
+   "recorded_seconds": 36.7895,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     7
+    ],
+    "seconds": 13.0962,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1628,
+     "stage_vct": 0.0,
+     "tree": 1.573,
+     "root": 1.1334,
+     "vct2": 10.1578,
+     "v7_modules": 0.2297,
+     "v7_only": 0.0669
+    },
+    "nodes": {
+     "attack": 564,
+     "stage_vct": 0,
+     "root": 3925,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/30",
+   "recorded_seconds": 37.2884,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     3,
+     8
+    ],
+    "seconds": 12.0775,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1989,
+     "stage_vct": 0.0,
+     "tree": 0.5301,
+     "root": 1.1424,
+     "vct2": 10.0221,
+     "v7_modules": 0.3807,
+     "v7_only": 0.1818
+    },
+    "nodes": {
+     "attack": 728,
+     "stage_vct": 0,
+     "root": 4099,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/18",
+   "recorded_seconds": 40.1559,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 11.2139,
+    "route": "tree",
+    "phases": {
+     "attack": 1.4109,
+     "stage_vct": 0.0,
+     "tree": 0.9666,
+     "root": 0.3226,
+     "vct2": 8.4654,
+     "v7_modules": 1.4579,
+     "v7_only": 0.047
+    },
+    "nodes": {
+     "attack": 5970,
+     "stage_vct": 0,
+     "root": 197,
+     "vct2": 36441
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/20",
+   "recorded_seconds": 129.3492,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     5
+    ],
+    "seconds": 54.7428,
+    "route": "tree",
+    "phases": {
+     "attack": 42.1098,
+     "stage_vct": 0.0,
+     "tree": 1.1046,
+     "root": 0.5001,
+     "vct2": 10.891,
+     "v7_modules": 42.2449,
+     "v7_only": 0.1351
+    },
+    "nodes": {
+     "attack": 200000,
+     "stage_vct": 0,
+     "root": 925,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/22",
+   "recorded_seconds": 128.683,
+   "recorded_route": "stage4",
+   "fast": {
+    "move": [
+     9,
+     6
+    ],
+    "seconds": 43.2942,
+    "route": "stage4",
+    "phases": {
+     "attack": 42.3164,
+     "stage_vct": 0.8229,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 42.4671,
+     "v7_only": 0.1507
+    },
+    "nodes": {
+     "attack": 199999,
+     "stage_vct": 2282,
+     "root": 0,
+     "vct2": 0
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/9",
+   "recorded_seconds": 37.8607,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     6,
+     8
+    ],
+    "seconds": 14.2204,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0655,
+     "stage_vct": 0.0,
+     "tree": 1.1118,
+     "root": 0.3695,
+     "vct2": 12.6377,
+     "v7_modules": 0.1003,
+     "v7_only": 0.0348
+    },
+    "nodes": {
+     "attack": 91,
+     "stage_vct": 0,
+     "root": 908,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/11",
+   "recorded_seconds": 33.3569,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     6,
+     7
+    ],
+    "seconds": 12.3372,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0713,
+     "stage_vct": 0.0,
+     "tree": 1.162,
+     "root": 0.5439,
+     "vct2": 10.5246,
+     "v7_modules": 0.1055,
+     "v7_only": 0.0342
+    },
+    "nodes": {
+     "attack": 102,
+     "stage_vct": 0,
+     "root": 1653,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/13",
+   "recorded_seconds": 37.4751,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     7,
+     3
+    ],
+    "seconds": 13.4941,
+    "route": "tree",
+    "phases": {
+     "attack": 0.3893,
+     "stage_vct": 0.0,
+     "tree": 1.049,
+     "root": 0.74,
+     "vct2": 11.2287,
+     "v7_modules": 0.475,
+     "v7_only": 0.0857
+    },
+    "nodes": {
+     "attack": 1619,
+     "stage_vct": 0,
+     "root": 2436,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/15",
+   "recorded_seconds": 47.9912,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     4
+    ],
+    "seconds": 65.8702,
+    "route": "tree",
+    "phases": {
+     "attack": 2.5215,
+     "stage_vct": 0.0,
+     "tree": 2.0885,
+     "root": 50.9302,
+     "vct2": 9.8611,
+     "v7_modules": 2.9719,
+     "v7_only": 0.4504
+    },
+    "nodes": {
+     "attack": 11985,
+     "stage_vct": 0,
+     "root": 221452,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/15/32",
+   "recorded_seconds": 123.5888,
+   "recorded_route": "own_vct",
+   "fast": {
+    "move": [
+     5,
+     11
+    ],
+    "seconds": 41.8503,
+    "route": "own_vct",
+    "phases": {
+     "attack": 41.7111,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 41.8481,
+     "v7_only": 0.137
+    },
+    "nodes": {
+     "attack": 193698,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/14",
+   "recorded_seconds": 35.4578,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 9.4536,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0726,
+     "stage_vct": 0.0,
+     "tree": 1.1014,
+     "root": 0.7135,
+     "vct2": 7.5251,
+     "v7_modules": 0.112,
+     "v7_only": 0.0394
+    },
+    "nodes": {
+     "attack": 122,
+     "stage_vct": 0,
+     "root": 2092,
+     "vct2": 32955
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/16",
+   "recorded_seconds": 47.3398,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     8
+    ],
+    "seconds": 14.3389,
+    "route": "tree",
+    "phases": {
+     "attack": 0.3275,
+     "stage_vct": 0.0,
+     "tree": 1.021,
+     "root": 1.5453,
+     "vct2": 11.4014,
+     "v7_modules": 0.3684,
+     "v7_only": 0.0409
+    },
+    "nodes": {
+     "attack": 1273,
+     "stage_vct": 0,
+     "root": 5750,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/18",
+   "recorded_seconds": 43.2011,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 12.7594,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0988,
+     "stage_vct": 0.0,
+     "tree": 0.9916,
+     "root": 0.6692,
+     "vct2": 10.9574,
+     "v7_modules": 0.1394,
+     "v7_only": 0.0406
+    },
+    "nodes": {
+     "attack": 227,
+     "stage_vct": 0,
+     "root": 1881,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/20",
+   "recorded_seconds": 34.5429,
+   "recorded_route": "stage4",
+   "fast": {
+    "move": [
+     6,
+     4
+    ],
+    "seconds": 11.1415,
+    "route": "stage4",
+    "phases": {
+     "attack": 0.239,
+     "stage_vct": 10.8406,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 0.2896,
+     "v7_only": 0.0506
+    },
+    "nodes": {
+     "attack": 847,
+     "stage_vct": 47017,
+     "root": 0,
+     "vct2": 0
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/26",
+   "recorded_seconds": 36.9849,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     5
+    ],
+    "seconds": 12.5833,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0666,
+     "stage_vct": 0.0,
+     "tree": 1.2616,
+     "root": 0.6947,
+     "vct2": 10.5184,
+     "v7_modules": 0.1068,
+     "v7_only": 0.0402
+    },
+    "nodes": {
+     "attack": 121,
+     "stage_vct": 0,
+     "root": 1757,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/28",
+   "recorded_seconds": 37.2554,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     10,
+     7
+    ],
+    "seconds": 13.0273,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0422,
+     "stage_vct": 0.0,
+     "tree": 1.3269,
+     "root": 0.6909,
+     "vct2": 10.9231,
+     "v7_modules": 0.0847,
+     "v7_only": 0.0425
+    },
+    "nodes": {
+     "attack": 32,
+     "stage_vct": 0,
+     "root": 1636,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/36",
+   "recorded_seconds": 41.9817,
+   "recorded_route": "stage4",
+   "fast": {
+    "move": [
+     11,
+     11
+    ],
+    "seconds": 13.2051,
+    "route": "stage4",
+    "phases": {
+     "attack": 0.0382,
+     "stage_vct": 13.1581,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 0.0431,
+     "v7_only": 0.0049
+    },
+    "nodes": {
+     "attack": 30,
+     "stage_vct": 65187,
+     "root": 0,
+     "vct2": 0
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/15",
+   "recorded_seconds": 65.3227,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     7,
+     11
+    ],
+    "seconds": 16.0883,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1214,
+     "stage_vct": 0.0,
+     "tree": 1.3417,
+     "root": 2.7697,
+     "vct2": 11.7959,
+     "v7_modules": 0.1779,
+     "v7_only": 0.0565
+    },
+    "nodes": {
+     "attack": 353,
+     "stage_vct": 0,
+     "root": 10341,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/17",
+   "recorded_seconds": 40.3138,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     6,
+     7
+    ],
+    "seconds": 5.7863,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0842,
+     "stage_vct": 0.0,
+     "tree": 2.2598,
+     "root": 0.2949,
+     "vct2": 3.0897,
+     "v7_modules": 0.1406,
+     "v7_only": 0.0564
+    },
+    "nodes": {
+     "attack": 178,
+     "stage_vct": 0,
+     "root": 435,
+     "vct2": 12290
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/23",
+   "recorded_seconds": 178.7036,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     9,
+     11
+    ],
+    "seconds": 127.9486,
+    "route": "tree",
+    "phases": {
+     "attack": 41.7823,
+     "stage_vct": 0.0,
+     "tree": 1.8235,
+     "root": 74.1996,
+     "vct2": 9.4956,
+     "v7_modules": 42.4222,
+     "v7_only": 0.6399
+    },
+    "nodes": {
+     "attack": 198036,
+     "stage_vct": 0,
+     "root": 380931,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/19/13",
+   "recorded_seconds": 35.1253,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     6
+    ],
+    "seconds": 2.4992,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0724,
+     "stage_vct": 0.0,
+     "tree": 1.1325,
+     "root": 0.2554,
+     "vct2": 0.974,
+     "v7_modules": 0.1363,
+     "v7_only": 0.0639
+    },
+    "nodes": {
+     "attack": 158,
+     "stage_vct": 0,
+     "root": 359,
+     "vct2": 2389
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/40",
+   "recorded_seconds": 30.9197,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 11.3076,
+    "route": "tree",
+    "phases": {
+     "attack": 9.2534,
+     "stage_vct": 0.0,
+     "tree": 1.2914,
+     "root": 0.4012,
+     "vct2": 0.1373,
+     "v7_modules": 9.4759,
+     "v7_only": 0.2225
+    },
+    "nodes": {
+     "attack": 40872,
+     "stage_vct": 0,
+     "root": 195,
+     "vct2": 131
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/60",
+   "recorded_seconds": 63.9029,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     8,
+     3
+    ],
+    "seconds": 22.6699,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0525,
+     "stage_vct": 0.0,
+     "tree": 1.5812,
+     "root": 20.3211,
+     "vct2": 0.3001,
+     "v7_modules": 0.4652,
+     "v7_only": 0.4127
+    },
+    "nodes": {
+     "attack": 72,
+     "stage_vct": 0,
+     "root": 96984,
+     "vct2": 490
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/62",
+   "recorded_seconds": 287.6087,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     10
+    ],
+    "seconds": 98.3785,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0334,
+     "stage_vct": 0.0,
+     "tree": 1.2629,
+     "root": 85.5791,
+     "vct2": 10.9067,
+     "v7_modules": 0.6272,
+     "v7_only": 0.5938
+    },
+    "nodes": {
+     "attack": 8,
+     "stage_vct": 0,
+     "root": 400000,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/64",
+   "recorded_seconds": 199.2761,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     3,
+     9
+    ],
+    "seconds": 99.936,
+    "route": "tree",
+    "phases": {
+     "attack": 1.0713,
+     "stage_vct": 0.0,
+     "tree": 1.0965,
+     "root": 85.6182,
+     "vct2": 10.6784,
+     "v7_modules": 2.5404,
+     "v7_only": 1.4691
+    },
+    "nodes": {
+     "attack": 4767,
+     "stage_vct": 0,
+     "root": 400000,
+     "vct2": 50000
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/37",
+   "recorded_seconds": 154.8375,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     4,
+     4
+    ],
+    "seconds": 55.3641,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0957,
+     "stage_vct": 0.0,
+     "tree": 1.3537,
+     "root": 50.8975,
+     "vct2": 2.9641,
+     "v7_modules": 0.147,
+     "v7_only": 0.0513
+    },
+    "nodes": {
+     "attack": 266,
+     "stage_vct": 0,
+     "root": 234138,
+     "vct2": 12779
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/39",
+   "recorded_seconds": 35.3141,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     1,
+     8
+    ],
+    "seconds": 12.2523,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0949,
+     "stage_vct": 0.0,
+     "tree": 1.3562,
+     "root": 10.578,
+     "vct2": 0.1667,
+     "v7_modules": 0.1497,
+     "v7_only": 0.0548
+    },
+    "nodes": {
+     "attack": 285,
+     "stage_vct": 0,
+     "root": 47016,
+     "vct2": 20
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/43",
+   "recorded_seconds": 95.8308,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     1,
+     7
+    ],
+    "seconds": 42.2843,
+    "route": "tree",
+    "phases": {
+     "attack": 28.5309,
+     "stage_vct": 0.0,
+     "tree": 0.6607,
+     "root": 12.2418,
+     "vct2": 0.5559,
+     "v7_modules": 28.8245,
+     "v7_only": 0.2936
+    },
+    "nodes": {
+     "attack": 142968,
+     "stage_vct": 0,
+     "root": 52483,
+     "vct2": 1122
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/57",
+   "recorded_seconds": 110.8965,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     4
+    ],
+    "seconds": 44.0245,
+    "route": "tree",
+    "phases": {
+     "attack": 35.7907,
+     "stage_vct": 0.0,
+     "tree": 2.2314,
+     "root": 5.597,
+     "vct2": 0.26,
+     "v7_modules": 35.9346,
+     "v7_only": 0.1439
+    },
+    "nodes": {
+     "attack": 200000,
+     "stage_vct": 0,
+     "root": 24993,
+     "vct2": 166
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/65",
+   "recorded_seconds": 118.9769,
+   "recorded_route": "tree",
+   "fast": {
+    "move": [
+     5,
+     4
+    ],
+    "seconds": 43.7667,
+    "route": "tree",
+    "phases": {
+     "attack": 37.1533,
+     "stage_vct": 0.0,
+     "tree": 1.8627,
+     "root": 3.4575,
+     "vct2": 0.1869,
+     "v7_modules": 38.2572,
+     "v7_only": 1.1039
+    },
+    "nodes": {
+     "attack": 200000,
+     "stage_vct": 0,
+     "root": 14663,
+     "vct2": 198
+    }
+   }
+  }
+ ]
+}

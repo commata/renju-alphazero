@@ -1,0 +1,122 @@
+positions=40 arms=sup workers=1 engine=TB1 config, uniform prior
+[rt30-replay] 5/40 positions  12.5%  1.1 min  ETA 8 min
+[rt30-replay] 11/40 positions  27.5%  2.2 min  ETA 6 min
+[rt30-replay] 16/40 positions  40.0%  3.2 min  ETA 5 min
+[rt30-replay] 21/40 positions  52.5%  4.4 min  ETA 4 min
+[rt30-replay] 26/40 positions  65.0%  5.5 min  ETA 3 min
+[rt30-replay] 30/40 positions  75.0%  6.5 min  ETA 2 min
+[rt30-replay] 35/40 positions  87.5%  7.9 min  ETA 1 min
+[rt30-replay] 39/40 positions  97.5%  9.0 min  ETA 0 min
+[rt30-replay] 40/40 positions  100.0%  9.2 min  ETA 0 min
+{
+ "positions": 40,
+ "sup": {
+  "seconds": {
+   "n": 40,
+   "median": 12.958,
+   "p95": 26.001,
+   "p99": 26.002,
+   "max": 26.002,
+   "sum": 551.7,
+   "over_27.5s": 0
+  },
+  "routes": {
+   "tree": 36,
+   "stage4": 4
+  },
+  "phases": {
+   "attack": {
+    "n": 40,
+    "median": 0.186,
+    "p95": 4.0,
+    "p99": 4.0,
+    "max": 4.0,
+    "sum": 56.9,
+    "over_27.5s": 0
+   },
+   "stage_vct": {
+    "n": 4,
+    "median": 6.114,
+    "p95": 13.62,
+    "p99": 13.62,
+    "max": 13.62,
+    "sum": 26.7,
+    "over_27.5s": 0
+   },
+   "tree": {
+    "n": 36,
+    "median": 1.166,
+    "p95": 2.259,
+    "p99": 2.301,
+    "max": 2.301,
+    "sum": 46.3,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 36,
+    "median": 0.749,
+    "p95": 20.106,
+    "p99": 20.477,
+    "max": 20.477,
+    "sum": 186.6,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 36,
+    "median": 5.908,
+    "p95": 12.218,
+    "p99": 13.081,
+    "max": 13.081,
+    "sum": 227.1,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 40,
+    "median": 0.381,
+    "p95": 4.608,
+    "p99": 5.097,
+    "max": 5.097,
+    "sum": 64.6,
+    "over_27.5s": 0
+   },
+   "v7_only": {
+    "n": 40,
+    "median": 0.065,
+    "p95": 1.097,
+    "p99": 1.46,
+    "max": 1.46,
+    "sum": 7.7,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "sup_wall": {
+  "sources": {
+   "engine": 40
+  },
+  "watchdogs": 0,
+  "over_30s": 0,
+  "ipc_overhead": {
+   "n": 40,
+   "median": 0.0,
+   "p95": 0.001,
+   "p99": 0.001,
+   "max": 0.001,
+   "sum": 0.0,
+   "over_27.5s": 0
+  }
+ },
+ "rt_deadline": {
+  "timeouts": {
+   "attack": 12,
+   "stage_vct": 0,
+   "root": 7,
+   "vct2": 6
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0
+  },
+  "moves_with_timeout_or_skip": 17
+ }
+}

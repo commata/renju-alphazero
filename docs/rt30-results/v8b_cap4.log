@@ -1,0 +1,63 @@
+positives=67 negatives=0 combos=2 cap=4.0 workers=1
+[v8b-bench] 12/67 positions  17.9%  1.0 min  ETA 5 min  12/67 positions
+[v8b-bench] 22/67 positions  32.8%  2.1 min  ETA 4 min  22/67 positions
+[v8b-bench] 35/67 positions  52.2%  3.1 min  ETA 3 min  35/67 positions
+[v8b-bench] 51/67 positions  76.1%  4.1 min  ETA 1 min  51/67 positions
+[v8b-bench] 64/67 positions  95.5%  5.1 min  ETA 0 min  64/67 positions
+[v8b-bench] 67/67 positions  100.0%  5.3 min  ETA 0 min  67/67 positions
+{
+ "positives": 67,
+ "negatives": 0,
+ "combos": {
+  "frozen/fair": {
+   "recall": "36/67",
+   "won": 36,
+   "same_move": 36,
+   "positive_seconds": {
+    "n": 67,
+    "median": 2.898,
+    "p95": 4.002,
+    "max": 4.003,
+    "sum": 163.6
+   },
+   "positive_seconds_when_won": {
+    "n": 36,
+    "median": 0.952,
+    "p95": 3.244,
+    "max": 3.555,
+    "sum": 39.5
+   },
+   "negative_seconds": {},
+   "timeouts": {
+    "positive": 31,
+    "negative": 0
+   },
+   "false_wins_on_negatives": 0
+  },
+  "frozen/widen": {
+   "recall": "38/67",
+   "won": 38,
+   "same_move": 38,
+   "positive_seconds": {
+    "n": 67,
+    "median": 1.865,
+    "p95": 4.003,
+    "max": 4.004,
+    "sum": 156.7
+   },
+   "positive_seconds_when_won": {
+    "n": 38,
+    "median": 0.942,
+    "p95": 3.151,
+    "max": 3.662,
+    "sum": 40.7
+   },
+   "negative_seconds": {},
+   "timeouts": {
+    "positive": 29,
+    "negative": 0
+   },
+   "false_wins_on_negatives": 0
+  }
+ }
+}

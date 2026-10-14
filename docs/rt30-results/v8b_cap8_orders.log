@@ -1,0 +1,123 @@
+positives=67 negatives=0 combos=4 cap=8.0 workers=1
+[v8b-bench] 7/67 positions  10.4%  1.3 min  ETA 11 min  7/67 positions
+[v8b-bench] 9/67 positions  13.4%  2.4 min  ETA 15 min  9/67 positions
+[v8b-bench] 13/67 positions  19.4%  3.6 min  ETA 15 min  13/67 positions
+[v8b-bench] 17/67 positions  25.4%  4.7 min  ETA 14 min  17/67 positions
+[v8b-bench] 20/67 positions  29.9%  5.7 min  ETA 13 min  20/67 positions
+[v8b-bench] 22/67 positions  32.8%  6.8 min  ETA 14 min  22/67 positions
+[v8b-bench] 25/67 positions  37.3%  7.9 min  ETA 13 min  25/67 positions
+[v8b-bench] 28/67 positions  41.8%  9.2 min  ETA 13 min  28/67 positions
+[v8b-bench] 33/67 positions  49.3%  10.2 min  ETA 11 min  33/67 positions
+[v8b-bench] 40/67 positions  59.7%  11.3 min  ETA 8 min  40/67 positions
+[v8b-bench] 46/67 positions  68.7%  12.5 min  ETA 6 min  46/67 positions
+[v8b-bench] 52/67 positions  77.6%  13.5 min  ETA 4 min  52/67 positions
+[v8b-bench] 60/67 positions  89.6%  15.0 min  ETA 2 min  60/67 positions
+[v8b-bench] 63/67 positions  94.0%  16.2 min  ETA 1 min  63/67 positions
+[v8b-bench] 65/67 positions  97.0%  17.2 min  ETA 1 min  65/67 positions
+[v8b-bench] 67/67 positions  100.0%  17.5 min  ETA 0 min  67/67 positions
+{
+ "positives": 67,
+ "negatives": 0,
+ "combos": {
+  "frozen/fair": {
+   "recall": "48/67",
+   "won": 48,
+   "same_move": 48,
+   "positive_seconds": {
+    "n": 67,
+    "median": 2.912,
+    "p95": 8.004,
+    "max": 8.007,
+    "sum": 262.9
+   },
+   "positive_seconds_when_won": {
+    "n": 48,
+    "median": 1.418,
+    "p95": 6.41,
+    "max": 7.652,
+    "sum": 110.8
+   },
+   "negative_seconds": {},
+   "timeouts": {
+    "positive": 19,
+    "negative": 0
+   },
+   "false_wins_on_negatives": 0
+  },
+  "frozen/widen": {
+   "recall": "48/67",
+   "won": 48,
+   "same_move": 46,
+   "positive_seconds": {
+    "n": 67,
+    "median": 1.867,
+    "p95": 8.003,
+    "max": 8.005,
+    "sum": 252.3
+   },
+   "positive_seconds_when_won": {
+    "n": 48,
+    "median": 1.318,
+    "p95": 6.562,
+    "max": 7.651,
+    "sum": 100.3
+   },
+   "negative_seconds": {},
+   "timeouts": {
+    "positive": 19,
+    "negative": 0
+   },
+   "false_wins_on_negatives": 0
+  },
+  "threes_first/fair": {
+   "recall": "45/67",
+   "won": 45,
+   "same_move": 45,
+   "positive_seconds": {
+    "n": 67,
+    "median": 4.531,
+    "p95": 8.004,
+    "max": 8.007,
+    "sum": 281.1
+   },
+   "positive_seconds_when_won": {
+    "n": 45,
+    "median": 1.304,
+    "p95": 6.867,
+    "max": 7.652,
+    "sum": 105.1
+   },
+   "negative_seconds": {},
+   "timeouts": {
+    "positive": 22,
+    "negative": 0
+   },
+   "false_wins_on_negatives": 0
+  },
+  "threes_first/widen": {
+   "recall": "47/67",
+   "won": 47,
+   "same_move": 46,
+   "positive_seconds": {
+    "n": 67,
+    "median": 1.853,
+    "p95": 8.001,
+    "max": 8.007,
+    "sum": 251.2
+   },
+   "positive_seconds_when_won": {
+    "n": 47,
+    "median": 1.304,
+    "p95": 6.353,
+    "max": 7.65,
+    "sum": 91.2
+   },
+   "negative_seconds": {},
+   "timeouts": {
+    "positive": 20,
+    "negative": 0
+   },
+   "false_wins_on_negatives": 0
+  }
+ }
+}

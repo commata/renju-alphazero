@@ -1,0 +1,4456 @@
+{
+ "format": "v8b-bench-v1",
+ "cap": 8.0,
+ "combos": [
+  [
+   "frozen",
+   "fair"
+  ],
+  [
+   "frozen",
+   "widen"
+  ],
+  [
+   "threes_first",
+   "fair"
+  ],
+  [
+   "threes_first",
+   "widen"
+  ]
+ ],
+ "neg_seconds": 5.0,
+ "workers": 1,
+ "jsonl": [
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl"
+ ],
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "cpu_count": 16
+ },
+ "summary": {
+  "positives": 67,
+  "negatives": 0,
+  "combos": {
+   "frozen/fair": {
+    "recall": "48/67",
+    "won": 48,
+    "same_move": 48,
+    "positive_seconds": {
+     "n": 67,
+     "median": 2.912,
+     "p95": 8.004,
+     "max": 8.007,
+     "sum": 262.9
+    },
+    "positive_seconds_when_won": {
+     "n": 48,
+     "median": 1.418,
+     "p95": 6.41,
+     "max": 7.652,
+     "sum": 110.8
+    },
+    "negative_seconds": {},
+    "timeouts": {
+     "positive": 19,
+     "negative": 0
+    },
+    "false_wins_on_negatives": 0
+   },
+   "frozen/widen": {
+    "recall": "48/67",
+    "won": 48,
+    "same_move": 46,
+    "positive_seconds": {
+     "n": 67,
+     "median": 1.867,
+     "p95": 8.003,
+     "max": 8.005,
+     "sum": 252.3
+    },
+    "positive_seconds_when_won": {
+     "n": 48,
+     "median": 1.318,
+     "p95": 6.562,
+     "max": 7.651,
+     "sum": 100.3
+    },
+    "negative_seconds": {},
+    "timeouts": {
+     "positive": 19,
+     "negative": 0
+    },
+    "false_wins_on_negatives": 0
+   },
+   "threes_first/fair": {
+    "recall": "45/67",
+    "won": 45,
+    "same_move": 45,
+    "positive_seconds": {
+     "n": 67,
+     "median": 4.531,
+     "p95": 8.004,
+     "max": 8.007,
+     "sum": 281.1
+    },
+    "positive_seconds_when_won": {
+     "n": 45,
+     "median": 1.304,
+     "p95": 6.867,
+     "max": 7.652,
+     "sum": 105.1
+    },
+    "negative_seconds": {},
+    "timeouts": {
+     "positive": 22,
+     "negative": 0
+    },
+    "false_wins_on_negatives": 0
+   },
+   "threes_first/widen": {
+    "recall": "47/67",
+    "won": 47,
+    "same_move": 46,
+    "positive_seconds": {
+     "n": 67,
+     "median": 1.853,
+     "p95": 8.001,
+     "max": 8.007,
+     "sum": 251.2
+    },
+    "positive_seconds_when_won": {
+     "n": 47,
+     "median": 1.304,
+     "p95": 6.353,
+     "max": 7.65,
+     "sum": 91.2
+    },
+    "negative_seconds": {},
+    "timeouts": {
+     "positive": 20,
+     "negative": 0
+    },
+    "false_wins_on_negatives": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/0/25",
+   "kind": "positive",
+   "win": [
+    8,
+    6
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 2.8972,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.9863,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4341,
+     "calls": 407,
+     "rank": 3,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.9718,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4341,
+     "calls": 407,
+     "rank": 3,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 0.9342,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4177,
+     "calls": 394,
+     "rank": 1,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 0.9332,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4177,
+     "calls": 394,
+     "rank": 1,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/1/12",
+   "kind": "positive",
+   "win": [
+    9,
+    6
+   ],
+   "recorded_rank": 10,
+   "recorded_attack_seconds": 5.6908,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.8682,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7816,
+     "calls": 240,
+     "rank": 10,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 1.8671,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7816,
+     "calls": 240,
+     "rank": 10,
+     "candidates": 13
+    },
+    "threes_first/fair": {
+     "seconds": 1.8538,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7744,
+     "calls": 234,
+     "rank": 4,
+     "candidates": 13
+    },
+    "threes_first/widen": {
+     "seconds": 1.8527,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7744,
+     "calls": 234,
+     "rank": 4,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/2/16",
+   "kind": "positive",
+   "win": [
+    9,
+    3
+   ],
+   "recorded_rank": 10,
+   "recorded_attack_seconds": 4.8217,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.6083,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6585,
+     "calls": 238,
+     "rank": 10,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 1.6064,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6585,
+     "calls": 238,
+     "rank": 10,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 1.5993,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6577,
+     "calls": 234,
+     "rank": 6,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 1.5965,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6577,
+     "calls": 234,
+     "rank": 6,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/3/15",
+   "kind": "positive",
+   "win": [
+    6,
+    7
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 10.8823,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 3.5516,
+     "won": true,
+     "move": [
+      6,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 14632,
+     "calls": 1908,
+     "rank": 1,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 3.1388,
+     "won": true,
+     "move": [
+      6,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 13023,
+     "calls": 1845,
+     "rank": 1,
+     "candidates": 13
+    },
+    "threes_first/fair": {
+     "seconds": 3.5308,
+     "won": true,
+     "move": [
+      6,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 14632,
+     "calls": 1908,
+     "rank": 1,
+     "candidates": 13
+    },
+    "threes_first/widen": {
+     "seconds": 3.1531,
+     "won": true,
+     "move": [
+      6,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 13023,
+     "calls": 1845,
+     "rank": 1,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/4/15",
+   "kind": "positive",
+   "win": [
+    5,
+    6
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 1.5634,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.494,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1956,
+     "calls": 222,
+     "rank": 6,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.4922,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1956,
+     "calls": 222,
+     "rank": 6,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 0.3826,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1464,
+     "calls": 218,
+     "rank": 2,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 0.3834,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1464,
+     "calls": 218,
+     "rank": 2,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/5/16",
+   "kind": "positive",
+   "win": [
+    9,
+    8
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 24.6797,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0032,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 36905,
+     "calls": 1546,
+     "rank": 0,
+     "candidates": 14
+    },
+    "frozen/widen": {
+     "seconds": 8.0037,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33877,
+     "calls": 1689,
+     "rank": 0,
+     "candidates": 14
+    },
+    "threes_first/fair": {
+     "seconds": 8.0025,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 36905,
+     "calls": 1546,
+     "rank": 0,
+     "candidates": 14
+    },
+    "threes_first/widen": {
+     "seconds": 2.9114,
+     "won": true,
+     "move": [
+      9,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 13402,
+     "calls": 1024,
+     "rank": 1,
+     "candidates": 14
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/7/16",
+   "kind": "positive",
+   "win": [
+    5,
+    7
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 19.041,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 6.4105,
+     "won": true,
+     "move": [
+      5,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 26604,
+     "calls": 938,
+     "rank": 7,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 3.632,
+     "won": true,
+     "move": [
+      5,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 14873,
+     "calls": 624,
+     "rank": 7,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 6.4368,
+     "won": true,
+     "move": [
+      5,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 26604,
+     "calls": 938,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 3.6168,
+     "won": true,
+     "move": [
+      5,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 14801,
+     "calls": 618,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/26",
+   "kind": "positive",
+   "win": [
+    2,
+    7
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 40.2731,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 45838,
+     "calls": 257,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 8.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 45610,
+     "calls": 255,
+     "rank": 0,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 8.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 45838,
+     "calls": 257,
+     "rank": 0,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 8.0005,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 45724,
+     "calls": 261,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "kind": "positive",
+   "win": [
+    10,
+    9
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 56.6678,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0026,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33129,
+     "calls": 1131,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 8.0027,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33344,
+     "calls": 941,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 8.0027,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33049,
+     "calls": 1129,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 8.0013,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 24956,
+     "calls": 736,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/15",
+   "kind": "positive",
+   "win": [
+    9,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.3405,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.1366,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 226,
+     "calls": 207,
+     "rank": 1,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.1368,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 226,
+     "calls": 207,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 0.138,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 226,
+     "calls": 207,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 0.1378,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 226,
+     "calls": 207,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/32",
+   "kind": "positive",
+   "win": [
+    6,
+    9
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 14.5112,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 5.2407,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 22580,
+     "calls": 787,
+     "rank": 7,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 4.6656,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 19863,
+     "calls": 762,
+     "rank": 7,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 5.2313,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 22580,
+     "calls": 787,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 4.6453,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 19799,
+     "calls": 757,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/24",
+   "kind": "positive",
+   "win": [
+    8,
+    8
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 4.6925,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.7887,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 9249,
+     "calls": 2,
+     "rank": 2,
+     "candidates": 21
+    },
+    "frozen/widen": {
+     "seconds": 4.7721,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 24488,
+     "calls": 2,
+     "rank": 2,
+     "candidates": 21
+    },
+    "threes_first/fair": {
+     "seconds": 8.0001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 38088,
+     "calls": 28,
+     "rank": 0,
+     "candidates": 21
+    },
+    "threes_first/widen": {
+     "seconds": 8.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 20000,
+     "calls": 6,
+     "rank": 0,
+     "candidates": 21
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/17",
+   "kind": "positive",
+   "win": [
+    7,
+    3
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 24.0964,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 7.6524,
+     "won": true,
+     "move": [
+      7,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 34008,
+     "calls": 1842,
+     "rank": 7,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 7.651,
+     "won": true,
+     "move": [
+      7,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 34008,
+     "calls": 1842,
+     "rank": 7,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 7.6521,
+     "won": true,
+     "move": [
+      7,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 34008,
+     "calls": 1842,
+     "rank": 3,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 7.6501,
+     "won": true,
+     "move": [
+      7,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 34008,
+     "calls": 1843,
+     "rank": 3,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/15/32",
+   "kind": "positive",
+   "win": [
+    5,
+    11
+   ],
+   "recorded_rank": 12,
+   "recorded_attack_seconds": 123.1712,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 32087,
+     "calls": 88,
+     "rank": 0,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 29061,
+     "calls": 27,
+     "rank": 0,
+     "candidates": 13
+    },
+    "threes_first/fair": {
+     "seconds": 8.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 32087,
+     "calls": 88,
+     "rank": 0,
+     "candidates": 13
+    },
+    "threes_first/widen": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 25260,
+     "calls": 13,
+     "rank": 0,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/18/10",
+   "kind": "positive",
+   "win": [
+    8,
+    6
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 1.2575,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.4526,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1506,
+     "calls": 244,
+     "rank": 9,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.4509,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1506,
+     "calls": 244,
+     "rank": 9,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 0.4474,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1498,
+     "calls": 240,
+     "rank": 5,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 0.448,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1498,
+     "calls": 240,
+     "rank": 5,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/19/15",
+   "kind": "positive",
+   "win": [
+    6,
+    9
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 18.2183,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 5.8394,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 25891,
+     "calls": 228,
+     "rank": 7,
+     "candidates": 7
+    },
+    "frozen/widen": {
+     "seconds": 5.7992,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 25805,
+     "calls": 227,
+     "rank": 7,
+     "candidates": 7
+    },
+    "threes_first/fair": {
+     "seconds": 5.8235,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 25891,
+     "calls": 228,
+     "rank": 3,
+     "candidates": 7
+    },
+    "threes_first/widen": {
+     "seconds": 5.8292,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 25797,
+     "calls": 224,
+     "rank": 3,
+     "candidates": 7
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/67",
+   "kind": "positive",
+   "win": [
+    7,
+    13
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 4.1486,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.5074,
+     "won": true,
+     "move": [
+      7,
+      13
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6245,
+     "calls": 466,
+     "rank": 2,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.5065,
+     "won": true,
+     "move": [
+      7,
+      13
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6245,
+     "calls": 466,
+     "rank": 2,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 1.5028,
+     "won": true,
+     "move": [
+      7,
+      13
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6245,
+     "calls": 466,
+     "rank": 2,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 1.5056,
+     "won": true,
+     "move": [
+      7,
+      13
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6245,
+     "calls": 466,
+     "rank": 2,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/23/18",
+   "kind": "positive",
+   "win": [
+    9,
+    4
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 3.8618,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.3288,
+     "won": true,
+     "move": [
+      9,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5403,
+     "calls": 233,
+     "rank": 9,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.3328,
+     "won": true,
+     "move": [
+      9,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5403,
+     "calls": 233,
+     "rank": 9,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 1.3038,
+     "won": true,
+     "move": [
+      9,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5331,
+     "calls": 227,
+     "rank": 3,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 1.3045,
+     "won": true,
+     "move": [
+      9,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5331,
+     "calls": 227,
+     "rank": 3,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/26/26",
+   "kind": "positive",
+   "win": [
+    3,
+    7
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 14.9708,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 5.2658,
+     "won": true,
+     "move": [
+      3,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 23732,
+     "calls": 5,
+     "rank": 5,
+     "candidates": 17
+    },
+    "frozen/widen": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 0,
+     "calls": 6,
+     "rank": 0,
+     "candidates": 17
+    },
+    "threes_first/fair": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 31455,
+     "calls": 16,
+     "rank": 0,
+     "candidates": 17
+    },
+    "threes_first/widen": {
+     "seconds": 8.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 0,
+     "calls": 6,
+     "rank": 0,
+     "candidates": 17
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/27/28",
+   "kind": "positive",
+   "win": [
+    7,
+    11
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 41.6109,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0019,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35872,
+     "calls": 559,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 5.8523,
+     "won": true,
+     "move": [
+      7,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 26134,
+     "calls": 583,
+     "rank": 1,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 8.0012,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35872,
+     "calls": 559,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 5.8565,
+     "won": true,
+     "move": [
+      7,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 26134,
+     "calls": 583,
+     "rank": 1,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/28/14",
+   "kind": "positive",
+   "win": [
+    10,
+    4
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 68.0625,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35293,
+     "calls": 264,
+     "rank": 0,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 29010,
+     "calls": 40,
+     "rank": 0,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 8.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35298,
+     "calls": 266,
+     "rank": 0,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 8.0001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 20515,
+     "calls": 36,
+     "rank": 0,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/29/23",
+   "kind": "positive",
+   "win": [
+    6,
+    3
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 104.241,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0074,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35168,
+     "calls": 2452,
+     "rank": 0,
+     "candidates": 9
+    },
+    "frozen/widen": {
+     "seconds": 8.0055,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33298,
+     "calls": 2185,
+     "rank": 0,
+     "candidates": 9
+    },
+    "threes_first/fair": {
+     "seconds": 8.0072,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35218,
+     "calls": 2457,
+     "rank": 0,
+     "candidates": 9
+    },
+    "threes_first/widen": {
+     "seconds": 8.0066,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33215,
+     "calls": 2233,
+     "rank": 0,
+     "candidates": 9
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/30/77",
+   "kind": "positive",
+   "win": [
+    1,
+    4
+   ],
+   "recorded_rank": 14,
+   "recorded_attack_seconds": 58.5393,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0013,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 38380,
+     "calls": 392,
+     "rank": 0,
+     "candidates": 15
+    },
+    "frozen/widen": {
+     "seconds": 8.0013,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 38372,
+     "calls": 396,
+     "rank": 0,
+     "candidates": 15
+    },
+    "threes_first/fair": {
+     "seconds": 8.0008,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 38380,
+     "calls": 392,
+     "rank": 0,
+     "candidates": 15
+    },
+    "threes_first/widen": {
+     "seconds": 8.0011,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 38448,
+     "calls": 397,
+     "rank": 0,
+     "candidates": 15
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/31/19",
+   "kind": "positive",
+   "win": [
+    8,
+    8
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 2.968,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.9192,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4001,
+     "calls": 413,
+     "rank": 2,
+     "candidates": 9
+    },
+    "frozen/widen": {
+     "seconds": 0.9211,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4001,
+     "calls": 413,
+     "rank": 2,
+     "candidates": 9
+    },
+    "threes_first/fair": {
+     "seconds": 0.915,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3985,
+     "calls": 406,
+     "rank": 1,
+     "candidates": 9
+    },
+    "threes_first/widen": {
+     "seconds": 0.9144,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3985,
+     "calls": 406,
+     "rank": 1,
+     "candidates": 9
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/33/30",
+   "kind": "positive",
+   "win": [
+    10,
+    9
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 37.3424,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0046,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 28115,
+     "calls": 1517,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 6.5621,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 26245,
+     "calls": 2834,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 8.0045,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 28115,
+     "calls": 1517,
+     "rank": 0,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 6.5766,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 26245,
+     "calls": 2834,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/34/26",
+   "kind": "positive",
+   "win": [
+    9,
+    9
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 14.3592,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 5.1471,
+     "won": true,
+     "move": [
+      9,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 22164,
+     "calls": 1204,
+     "rank": 5,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 4.9269,
+     "won": true,
+     "move": [
+      9,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 21180,
+     "calls": 1172,
+     "rank": 5,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 5.1601,
+     "won": true,
+     "move": [
+      9,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 22164,
+     "calls": 1204,
+     "rank": 1,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 4.9167,
+     "won": true,
+     "move": [
+      9,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 21174,
+     "calls": 1168,
+     "rank": 1,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/35/20",
+   "kind": "positive",
+   "win": [
+    1,
+    8
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 17.8046,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 5.8902,
+     "won": true,
+     "move": [
+      1,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 24342,
+     "calls": 287,
+     "rank": 8,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 8.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33097,
+     "calls": 251,
+     "rank": 0,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 5.8764,
+     "won": true,
+     "move": [
+      1,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 24334,
+     "calls": 283,
+     "rank": 4,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 8.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 32754,
+     "calls": 164,
+     "rank": 0,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/38/19",
+   "kind": "positive",
+   "win": [
+    10,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 43.2613,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 36927,
+     "calls": 318,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 8.0007,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 37708,
+     "calls": 376,
+     "rank": 0,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 36927,
+     "calls": 318,
+     "rank": 0,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 37708,
+     "calls": 376,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/87",
+   "kind": "positive",
+   "win": [
+    6,
+    2
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 3.1338,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.3038,
+     "won": true,
+     "move": [
+      6,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6061,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.304,
+     "won": true,
+     "move": [
+      6,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6061,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 1.3056,
+     "won": true,
+     "move": [
+      6,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6061,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 1.3064,
+     "won": true,
+     "move": [
+      6,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6061,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/89",
+   "kind": "positive",
+   "win": [
+    4,
+    3
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 1.3947,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.5621,
+     "won": true,
+     "move": [
+      4,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 2520,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.5627,
+     "won": true,
+     "move": [
+      4,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 2520,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 0.5647,
+     "won": true,
+     "move": [
+      4,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 2520,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 0.5633,
+     "won": true,
+     "move": [
+      4,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 2520,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/40/71",
+   "kind": "positive",
+   "win": [
+    10,
+    5
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 0.4374,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2188,
+     "won": true,
+     "move": [
+      10,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 765,
+     "calls": 155,
+     "rank": 3,
+     "candidates": 7
+    },
+    "frozen/widen": {
+     "seconds": 0.2184,
+     "won": true,
+     "move": [
+      10,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 765,
+     "calls": 155,
+     "rank": 3,
+     "candidates": 7
+    },
+    "threes_first/fair": {
+     "seconds": 0.215,
+     "won": true,
+     "move": [
+      10,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 765,
+     "calls": 154,
+     "rank": 2,
+     "candidates": 7
+    },
+    "threes_first/widen": {
+     "seconds": 0.2148,
+     "won": true,
+     "move": [
+      10,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 765,
+     "calls": 154,
+     "rank": 2,
+     "candidates": 7
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/41/47",
+   "kind": "positive",
+   "win": [
+    9,
+    3
+   ],
+   "recorded_rank": 4,
+   "recorded_attack_seconds": 4.6931,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 2.1838,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 11118,
+     "calls": 4,
+     "rank": 4,
+     "candidates": 18
+    },
+    "frozen/widen": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 20024,
+     "calls": 7,
+     "rank": 0,
+     "candidates": 18
+    },
+    "threes_first/fair": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 38937,
+     "calls": 25,
+     "rank": 0,
+     "candidates": 18
+    },
+    "threes_first/widen": {
+     "seconds": 8.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 20024,
+     "calls": 7,
+     "rank": 0,
+     "candidates": 18
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/43/45",
+   "kind": "positive",
+   "win": [
+    12,
+    7
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 5.7538,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 2.9118,
+     "won": true,
+     "move": [
+      12,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 12500,
+     "calls": 2,
+     "rank": 3,
+     "candidates": 16
+    },
+    "frozen/widen": {
+     "seconds": 8.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 0,
+     "calls": 5,
+     "rank": 0,
+     "candidates": 16
+    },
+    "threes_first/fair": {
+     "seconds": 6.8668,
+     "won": true,
+     "move": [
+      12,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 29957,
+     "calls": 642,
+     "rank": 7,
+     "candidates": 16
+    },
+    "threes_first/widen": {
+     "seconds": 8.0011,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 32770,
+     "calls": 615,
+     "rank": 0,
+     "candidates": 16
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/0/13",
+   "kind": "positive",
+   "win": [
+    5,
+    4
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.9051,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2874,
+     "won": true,
+     "move": [
+      5,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1062,
+     "calls": 211,
+     "rank": 1,
+     "candidates": 9
+    },
+    "frozen/widen": {
+     "seconds": 0.2877,
+     "won": true,
+     "move": [
+      5,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1062,
+     "calls": 211,
+     "rank": 1,
+     "candidates": 9
+    },
+    "threes_first/fair": {
+     "seconds": 0.2883,
+     "won": true,
+     "move": [
+      5,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1062,
+     "calls": 211,
+     "rank": 1,
+     "candidates": 9
+    },
+    "threes_first/widen": {
+     "seconds": 0.2881,
+     "won": true,
+     "move": [
+      5,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1062,
+     "calls": 211,
+     "rank": 1,
+     "candidates": 9
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/1/25",
+   "kind": "positive",
+   "win": [
+    8,
+    2
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 0.8527,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.279,
+     "won": true,
+     "move": [
+      8,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1036,
+     "calls": 203,
+     "rank": 5,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.2798,
+     "won": true,
+     "move": [
+      8,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1036,
+     "calls": 203,
+     "rank": 5,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 0.2683,
+     "won": true,
+     "move": [
+      8,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1016,
+     "calls": 199,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 0.2673,
+     "won": true,
+     "move": [
+      8,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1016,
+     "calls": 199,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/2/19",
+   "kind": "positive",
+   "win": [
+    7,
+    4
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.5002,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.1757,
+     "won": true,
+     "move": [
+      7,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 470,
+     "calls": 205,
+     "rank": 1,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 0.1764,
+     "won": true,
+     "move": [
+      7,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 470,
+     "calls": 205,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 0.1768,
+     "won": true,
+     "move": [
+      7,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 470,
+     "calls": 205,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 0.1764,
+     "won": true,
+     "move": [
+      7,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 470,
+     "calls": 205,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/3/18",
+   "kind": "positive",
+   "win": [
+    10,
+    8
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 0.9446,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.3516,
+     "won": true,
+     "move": [
+      10,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1203,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.3511,
+     "won": true,
+     "move": [
+      10,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1203,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 0.3477,
+     "won": true,
+     "move": [
+      10,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1195,
+     "calls": 215,
+     "rank": 2,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 0.3476,
+     "won": true,
+     "move": [
+      10,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1195,
+     "calls": 215,
+     "rank": 2,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/4/16",
+   "kind": "positive",
+   "win": [
+    5,
+    2
+   ],
+   "recorded_rank": 10,
+   "recorded_attack_seconds": 33.4755,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0005,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 36786,
+     "calls": 326,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 6.1864,
+     "won": true,
+     "move": [
+      6,
+      3
+     ],
+     "same_move": false,
+     "timed_out": false,
+     "nodes": 32987,
+     "calls": 223,
+     "rank": 6,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 8.001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 36927,
+     "calls": 327,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 6.1675,
+     "won": true,
+     "move": [
+      6,
+      3
+     ],
+     "same_move": false,
+     "timed_out": false,
+     "nodes": 32869,
+     "calls": 220,
+     "rank": 2,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/5/18",
+   "kind": "positive",
+   "win": [
+    11,
+    6
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 2.814,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.9944,
+     "won": true,
+     "move": [
+      11,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4158,
+     "calls": 273,
+     "rank": 11,
+     "candidates": 17
+    },
+    "frozen/widen": {
+     "seconds": 0.9883,
+     "won": true,
+     "move": [
+      11,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4158,
+     "calls": 273,
+     "rank": 11,
+     "candidates": 17
+    },
+    "threes_first/fair": {
+     "seconds": 0.9897,
+     "won": true,
+     "move": [
+      11,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4158,
+     "calls": 271,
+     "rank": 9,
+     "candidates": 17
+    },
+    "threes_first/widen": {
+     "seconds": 0.9877,
+     "won": true,
+     "move": [
+      11,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4158,
+     "calls": 271,
+     "rank": 9,
+     "candidates": 17
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/6/15",
+   "kind": "positive",
+   "win": [
+    9,
+    7
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 41.4071,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0042,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 31890,
+     "calls": 1488,
+     "rank": 0,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 8.0052,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 25436,
+     "calls": 2154,
+     "rank": 0,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 8.0043,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 31890,
+     "calls": 1488,
+     "rank": 0,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 8.0068,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 32414,
+     "calls": 2915,
+     "rank": 0,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/7/27",
+   "kind": "positive",
+   "win": [
+    5,
+    8
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.553,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.1822,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 593,
+     "calls": 197,
+     "rank": 1,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.1819,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 593,
+     "calls": 197,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 0.1839,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 593,
+     "calls": 197,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 0.1836,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 593,
+     "calls": 197,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/8/27",
+   "kind": "positive",
+   "win": [
+    4,
+    6
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 13.9561,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.5206,
+     "won": true,
+     "move": [
+      4,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 21066,
+     "calls": 1050,
+     "rank": 2,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 0.9039,
+     "won": true,
+     "move": [
+      4,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3825,
+     "calls": 584,
+     "rank": 2,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 4.5306,
+     "won": true,
+     "move": [
+      4,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 21066,
+     "calls": 1050,
+     "rank": 1,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 0.9004,
+     "won": true,
+     "move": [
+      4,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3813,
+     "calls": 583,
+     "rank": 1,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/9/14",
+   "kind": "positive",
+   "win": [
+    10,
+    12
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 16.1567,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 5.4077,
+     "won": true,
+     "move": [
+      10,
+      12
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 23397,
+     "calls": 236,
+     "rank": 11,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 6.6668,
+     "won": true,
+     "move": [
+      8,
+      10
+     ],
+     "same_move": false,
+     "timed_out": false,
+     "nodes": 28476,
+     "calls": 218,
+     "rank": 9,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 5.2648,
+     "won": true,
+     "move": [
+      10,
+      12
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 22773,
+     "calls": 228,
+     "rank": 3,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 8.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 15042,
+     "calls": 87,
+     "rank": 0,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/11/12",
+   "kind": "positive",
+   "win": [
+    5,
+    8
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 1.3585,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.491,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1682,
+     "calls": 216,
+     "rank": 5,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 0.4912,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1682,
+     "calls": 216,
+     "rank": 5,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 0.4871,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1674,
+     "calls": 212,
+     "rank": 1,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 0.4869,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1674,
+     "calls": 212,
+     "rank": 1,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/12/22",
+   "kind": "positive",
+   "win": [
+    8,
+    8
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 27.2892,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0008,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 29247,
+     "calls": 378,
+     "rank": 0,
+     "candidates": 16
+    },
+    "frozen/widen": {
+     "seconds": 2.0107,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7675,
+     "calls": 608,
+     "rank": 9,
+     "candidates": 16
+    },
+    "threes_first/fair": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 28623,
+     "calls": 370,
+     "rank": 0,
+     "candidates": 16
+    },
+    "threes_first/widen": {
+     "seconds": 1.8556,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7051,
+     "calls": 600,
+     "rank": 1,
+     "candidates": 16
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/14/43",
+   "kind": "positive",
+   "win": [
+    9,
+    11
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 6.9747,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 2.3901,
+     "won": true,
+     "move": [
+      9,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 10093,
+     "calls": 585,
+     "rank": 2,
+     "candidates": 16
+    },
+    "frozen/widen": {
+     "seconds": 1.6665,
+     "won": true,
+     "move": [
+      9,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6968,
+     "calls": 538,
+     "rank": 2,
+     "candidates": 16
+    },
+    "threes_first/fair": {
+     "seconds": 2.3884,
+     "won": true,
+     "move": [
+      9,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 10093,
+     "calls": 585,
+     "rank": 1,
+     "candidates": 16
+    },
+    "threes_first/widen": {
+     "seconds": 1.6662,
+     "won": true,
+     "move": [
+      9,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6966,
+     "calls": 537,
+     "rank": 1,
+     "candidates": 16
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/15/15",
+   "kind": "positive",
+   "win": [
+    6,
+    9
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 0.8755,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2899,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1051,
+     "calls": 211,
+     "rank": 3,
+     "candidates": 6
+    },
+    "frozen/widen": {
+     "seconds": 0.2878,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1051,
+     "calls": 211,
+     "rank": 3,
+     "candidates": 6
+    },
+    "threes_first/fair": {
+     "seconds": 0.2843,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1051,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 6
+    },
+    "threes_first/widen": {
+     "seconds": 0.2842,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1051,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 6
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/16/20",
+   "kind": "positive",
+   "win": [
+    9,
+    8
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 17.8081,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 6.347,
+     "won": true,
+     "move": [
+      9,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 27640,
+     "calls": 1048,
+     "rank": 9,
+     "candidates": 14
+    },
+    "frozen/widen": {
+     "seconds": 1.3939,
+     "won": true,
+     "move": [
+      9,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5396,
+     "calls": 426,
+     "rank": 9,
+     "candidates": 14
+    },
+    "threes_first/fair": {
+     "seconds": 6.3481,
+     "won": true,
+     "move": [
+      9,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 27640,
+     "calls": 1048,
+     "rank": 3,
+     "candidates": 14
+    },
+    "threes_first/widen": {
+     "seconds": 1.3597,
+     "won": true,
+     "move": [
+      9,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5288,
+     "calls": 420,
+     "rank": 3,
+     "candidates": 14
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/19/15",
+   "kind": "positive",
+   "win": [
+    10,
+    9
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.7562,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2451,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 843,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.2433,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 843,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 0.2468,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 843,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 0.2464,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 843,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/21/18",
+   "kind": "positive",
+   "win": [
+    3,
+    8
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 5.3554,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.7247,
+     "won": true,
+     "move": [
+      3,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6895,
+     "calls": 212,
+     "rank": 7,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 1.7207,
+     "won": true,
+     "move": [
+      3,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6895,
+     "calls": 212,
+     "rank": 7,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 1.6996,
+     "won": true,
+     "move": [
+      3,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6823,
+     "calls": 206,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 1.6985,
+     "won": true,
+     "move": [
+      3,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6823,
+     "calls": 206,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/22/37",
+   "kind": "positive",
+   "win": [
+    7,
+    3
+   ],
+   "recorded_rank": 13,
+   "recorded_attack_seconds": 58.7301,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0019,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35560,
+     "calls": 350,
+     "rank": 0,
+     "candidates": 15
+    },
+    "frozen/widen": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 36673,
+     "calls": 199,
+     "rank": 0,
+     "candidates": 15
+    },
+    "threes_first/fair": {
+     "seconds": 8.0012,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35560,
+     "calls": 350,
+     "rank": 0,
+     "candidates": 15
+    },
+    "threes_first/widen": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34396,
+     "calls": 68,
+     "rank": 0,
+     "candidates": 15
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/23/14",
+   "kind": "positive",
+   "win": [
+    5,
+    10
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 4.6131,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.5156,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6027,
+     "calls": 229,
+     "rank": 6,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 1.5158,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6027,
+     "calls": 229,
+     "rank": 6,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 1.5086,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6019,
+     "calls": 225,
+     "rank": 2,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 1.5059,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6019,
+     "calls": 225,
+     "rank": 2,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/24/16",
+   "kind": "positive",
+   "win": [
+    6,
+    6
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 5.1376,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.7529,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6810,
+     "calls": 212,
+     "rank": 5,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 1.7515,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6810,
+     "calls": 212,
+     "rank": 5,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 1.7424,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6774,
+     "calls": 208,
+     "rank": 1,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 1.7381,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6774,
+     "calls": 208,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/26/15",
+   "kind": "positive",
+   "win": [
+    5,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 34.8666,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0057,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35220,
+     "calls": 2537,
+     "rank": 0,
+     "candidates": 20
+    },
+    "frozen/widen": {
+     "seconds": 6.3703,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 27838,
+     "calls": 1820,
+     "rank": 1,
+     "candidates": 20
+    },
+    "threes_first/fair": {
+     "seconds": 8.005,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35284,
+     "calls": 2541,
+     "rank": 0,
+     "candidates": 20
+    },
+    "threes_first/widen": {
+     "seconds": 6.353,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 27838,
+     "calls": 1819,
+     "rank": 1,
+     "candidates": 20
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/27/23",
+   "kind": "positive",
+   "win": [
+    2,
+    7
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 2.199,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.7168,
+     "won": true,
+     "move": [
+      2,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3019,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.716,
+     "won": true,
+     "move": [
+      2,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3019,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 8
+    },
+    "threes_first/fair": {
+     "seconds": 0.7083,
+     "won": true,
+     "move": [
+      2,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3011,
+     "calls": 215,
+     "rank": 2,
+     "candidates": 8
+    },
+    "threes_first/widen": {
+     "seconds": 0.7077,
+     "won": true,
+     "move": [
+      2,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3011,
+     "calls": 215,
+     "rank": 2,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/28/21",
+   "kind": "positive",
+   "win": [
+    4,
+    5
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 3.2214,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.0517,
+     "won": true,
+     "move": [
+      4,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4393,
+     "calls": 209,
+     "rank": 7,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.0485,
+     "won": true,
+     "move": [
+      4,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4393,
+     "calls": 209,
+     "rank": 7,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 1.0281,
+     "won": true,
+     "move": [
+      4,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4321,
+     "calls": 203,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 1.0261,
+     "won": true,
+     "move": [
+      4,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4321,
+     "calls": 203,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/31/15",
+   "kind": "positive",
+   "win": [
+    5,
+    5
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 1.5468,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.5499,
+     "won": true,
+     "move": [
+      5,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1680,
+     "calls": 694,
+     "rank": 1,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.3063,
+     "won": true,
+     "move": [
+      5,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 681,
+     "calls": 618,
+     "rank": 1,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 0.5513,
+     "won": true,
+     "move": [
+      5,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1680,
+     "calls": 694,
+     "rank": 1,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 0.3046,
+     "won": true,
+     "move": [
+      5,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 681,
+     "calls": 618,
+     "rank": 1,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/32/11",
+   "kind": "positive",
+   "win": [
+    9,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 1.2836,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.4112,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1523,
+     "calls": 213,
+     "rank": 1,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 0.4123,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1523,
+     "calls": 213,
+     "rank": 1,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 0.4142,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1523,
+     "calls": 213,
+     "rank": 1,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 0.4151,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1523,
+     "calls": 213,
+     "rank": 1,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/33/18",
+   "kind": "positive",
+   "win": [
+    10,
+    6
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 9.2819,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 3.2705,
+     "won": true,
+     "move": [
+      10,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 13914,
+     "calls": 231,
+     "rank": 8,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 3.0049,
+     "won": true,
+     "move": [
+      10,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 12789,
+     "calls": 216,
+     "rank": 8,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 3.2695,
+     "won": true,
+     "move": [
+      10,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 13914,
+     "calls": 231,
+     "rank": 4,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 2.9965,
+     "won": true,
+     "move": [
+      10,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 12773,
+     "calls": 212,
+     "rank": 4,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/34/15",
+   "kind": "positive",
+   "win": [
+    4,
+    9
+   ],
+   "recorded_rank": 13,
+   "recorded_attack_seconds": 32.2028,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35725,
+     "calls": 1019,
+     "rank": 0,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 8.0007,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34298,
+     "calls": 247,
+     "rank": 0,
+     "candidates": 13
+    },
+    "threes_first/fair": {
+     "seconds": 8.0042,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 35725,
+     "calls": 1019,
+     "rank": 0,
+     "candidates": 13
+    },
+    "threes_first/widen": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34035,
+     "calls": 194,
+     "rank": 0,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/35/14",
+   "kind": "positive",
+   "win": [
+    6,
+    6
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 3.2339,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.1054,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4292,
+     "calls": 216,
+     "rank": 7,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.1079,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4292,
+     "calls": 216,
+     "rank": 7,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 1.0876,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4220,
+     "calls": 210,
+     "rank": 1,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 1.0839,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4220,
+     "calls": 210,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/36/28",
+   "kind": "positive",
+   "win": [
+    12,
+    7
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 97.8039,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 42119,
+     "calls": 355,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 44725,
+     "calls": 366,
+     "rank": 0,
+     "candidates": 10
+    },
+    "threes_first/fair": {
+     "seconds": 8.0005,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 42119,
+     "calls": 355,
+     "rank": 0,
+     "candidates": 10
+    },
+    "threes_first/widen": {
+     "seconds": 8.0007,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 39799,
+     "calls": 357,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/37/17",
+   "kind": "positive",
+   "win": [
+    5,
+    8
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 37.7162,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0025,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34394,
+     "calls": 1174,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 8.0023,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34498,
+     "calls": 1147,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 8.0021,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34350,
+     "calls": 1171,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 8.0018,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34498,
+     "calls": 1147,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/38/19",
+   "kind": "positive",
+   "win": [
+    12,
+    8
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 20.7288,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 7.6431,
+     "won": true,
+     "move": [
+      12,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 37372,
+     "calls": 1670,
+     "rank": 8,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 8.0008,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 42453,
+     "calls": 392,
+     "rank": 0,
+     "candidates": 13
+    },
+    "threes_first/fair": {
+     "seconds": 7.6453,
+     "won": true,
+     "move": [
+      12,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 37372,
+     "calls": 1670,
+     "rank": 6,
+     "candidates": 13
+    },
+    "threes_first/widen": {
+     "seconds": 8.0007,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 42135,
+     "calls": 390,
+     "rank": 0,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/39/20",
+   "kind": "positive",
+   "win": [
+    9,
+    3
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 94.1702,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 8.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34495,
+     "calls": 216,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 8.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33498,
+     "calls": 116,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/fair": {
+     "seconds": 8.001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 34495,
+     "calls": 216,
+     "rank": 0,
+     "candidates": 12
+    },
+    "threes_first/widen": {
+     "seconds": 8.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 33424,
+     "calls": 116,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/46/87",
+   "kind": "positive",
+   "win": [
+    5,
+    10
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 9.4233,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 5.664,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 25787,
+     "calls": 1427,
+     "rank": 7,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 1.6962,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7202,
+     "calls": 935,
+     "rank": 7,
+     "candidates": 11
+    },
+    "threes_first/fair": {
+     "seconds": 5.6736,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 25787,
+     "calls": 1427,
+     "rank": 1,
+     "candidates": 11
+    },
+    "threes_first/widen": {
+     "seconds": 1.63,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7008,
+     "calls": 929,
+     "rank": 1,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/147",
+   "kind": "positive",
+   "win": [
+    1,
+    4
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 0.2845,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.1857,
+     "won": true,
+     "move": [
+      1,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 787,
+     "calls": 80,
+     "rank": 2,
+     "candidates": 2
+    },
+    "frozen/widen": {
+     "seconds": 0.1855,
+     "won": true,
+     "move": [
+      1,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 787,
+     "calls": 80,
+     "rank": 2,
+     "candidates": 2
+    },
+    "threes_first/fair": {
+     "seconds": 0.1847,
+     "won": true,
+     "move": [
+      1,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 787,
+     "calls": 80,
+     "rank": 2,
+     "candidates": 2
+    },
+    "threes_first/widen": {
+     "seconds": 0.1856,
+     "won": true,
+     "move": [
+      1,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 787,
+     "calls": 80,
+     "rank": 2,
+     "candidates": 2
+    }
+   }
+  }
+ ]
+}

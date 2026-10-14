@@ -1,0 +1,150 @@
+positions=8 arms=frozen,fast,rt workers=1 engine=TB1 config, uniform prior
+[rt30-replay] 0/8 positions  0.0%  1.0 min  ETA nan min  0/8 chunks, 8 pending
+[rt30-replay] 1/8 positions  12.5%  2.1 min  ETA 14 min  1/8 chunks, 7 pending
+[rt30-replay] 1/8 positions  12.5%  3.1 min  ETA 21 min  1/8 chunks, 7 pending
+[rt30-replay] 1/8 positions  12.5%  4.1 min  ETA 28 min  1/8 chunks, 7 pending
+[rt30-replay] 2/8 positions  25.0%  5.4 min  ETA 16 min  2/8 chunks, 6 pending
+[rt30-replay] 4/8 positions  50.0%  7.3 min  ETA 7 min  4/8 chunks, 4 pending
+[rt30-replay] 6/8 positions  75.0%  8.4 min  ETA 3 min  6/8 chunks
+[rt30-replay] 7/8 positions  87.5%  10.3 min  ETA 1 min  7/8 chunks, 1 pending
+[rt30-replay] 8/8 positions  100.0%  10.3 min  ETA 0 min  8/8 chunks
+{
+ "positions": 8,
+ "frozen": {
+  "seconds": {
+   "n": 8,
+   "median": 33.556,
+   "p95": 110.735,
+   "p99": 110.735,
+   "max": 110.735,
+   "sum": 340.5,
+   "over_27.5s": 6
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 1.24,
+    "p95": 108.4,
+    "p99": 108.4,
+    "max": 108.4,
+    "sum": 192.7,
+    "over_27.5s": 3
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.078,
+    "p95": 1.176,
+    "p99": 1.176,
+    "max": 1.176,
+    "sum": 6.4,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.847,
+    "p95": 20.295,
+    "p99": 20.295,
+    "max": 20.295,
+    "sum": 24.3,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 21.259,
+    "p95": 36.711,
+    "p99": 36.711,
+    "max": 36.711,
+    "sum": 115.9,
+    "over_27.5s": 2
+   },
+   "v7_modules": {
+    "n": 8,
+    "median": 1.373,
+    "p95": 108.686,
+    "p99": 108.686,
+    "max": 108.686,
+    "sum": 194.0,
+    "over_27.5s": 3
+   }
+  }
+ },
+ "fast": {
+  "seconds": {
+   "n": 8,
+   "median": 13.072,
+   "p95": 45.028,
+   "p99": 45.028,
+   "max": 45.028,
+   "sum": 137.5,
+   "over_27.5s": 1
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 0.496,
+    "p95": 43.193,
+    "p99": 43.193,
+    "max": 43.193,
+    "sum": 77.1,
+    "over_27.5s": 1
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.089,
+    "p95": 1.191,
+    "p99": 1.191,
+    "max": 1.191,
+    "sum": 6.4,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.419,
+    "p95": 8.275,
+    "p99": 8.275,
+    "max": 8.275,
+    "sum": 10.2,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 8.817,
+    "p95": 11.859,
+    "p99": 11.859,
+    "max": 11.859,
+    "sum": 43.2,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 8,
+    "median": 0.583,
+    "p95": 43.323,
+    "p99": 43.323,
+    "max": 43.323,
+    "sum": 77.8,
+    "over_27.5s": 1
+   }
+  }
+ },
+ "rt": {
+  "timeouts": {
+   "attack": 0,
+   "stage_vct": 0,
+   "root": 0,
+   "vct2": 0
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0
+  },
+  "moves_with_timeout_or_skip": 0
+ },
+ "identical": 8,
+ "different": [],
+ "speedup_vs_first": {
+  "fast": 2.476,
+  "rt": 2.481
+ }
+}

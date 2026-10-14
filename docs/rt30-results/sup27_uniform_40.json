@@ -1,0 +1,3934 @@
+{
+ "format": "rt30-replay-v1",
+ "engine": "tb1-uniform-prior",
+ "arms": [
+  "sup"
+ ],
+ "deadline": 27.5,
+ "timing": {
+  "final_margin": 1.5,
+  "attack_seconds": 4.0,
+  "puct_reserve": 6.0,
+  "vct2_reserve": 4.0,
+  "vct2_min": 2.0
+ },
+ "select": "slow",
+ "slow_seconds": 30.0,
+ "seed": 42,
+ "workers": 1,
+ "git_commit": "c9856c518fa64ecfc017ea4a95046a9c7a7edc89",
+ "jsonl": [
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl"
+ ],
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "processor": "",
+  "cpu_count": 16,
+  "python": "3.14.4"
+ },
+ "summary": {
+  "positions": 40,
+  "sup": {
+   "seconds": {
+    "n": 40,
+    "median": 12.958,
+    "p95": 26.001,
+    "p99": 26.002,
+    "max": 26.002,
+    "sum": 551.7,
+    "over_27.5s": 0
+   },
+   "routes": {
+    "tree": 36,
+    "stage4": 4
+   },
+   "phases": {
+    "attack": {
+     "n": 40,
+     "median": 0.186,
+     "p95": 4.0,
+     "p99": 4.0,
+     "max": 4.0,
+     "sum": 56.9,
+     "over_27.5s": 0
+    },
+    "stage_vct": {
+     "n": 4,
+     "median": 6.114,
+     "p95": 13.62,
+     "p99": 13.62,
+     "max": 13.62,
+     "sum": 26.7,
+     "over_27.5s": 0
+    },
+    "tree": {
+     "n": 36,
+     "median": 1.166,
+     "p95": 2.259,
+     "p99": 2.301,
+     "max": 2.301,
+     "sum": 46.3,
+     "over_27.5s": 0
+    },
+    "root": {
+     "n": 36,
+     "median": 0.749,
+     "p95": 20.106,
+     "p99": 20.477,
+     "max": 20.477,
+     "sum": 186.6,
+     "over_27.5s": 0
+    },
+    "vct2": {
+     "n": 36,
+     "median": 5.908,
+     "p95": 12.218,
+     "p99": 13.081,
+     "max": 13.081,
+     "sum": 227.1,
+     "over_27.5s": 0
+    },
+    "v7_modules": {
+     "n": 40,
+     "median": 0.381,
+     "p95": 4.608,
+     "p99": 5.097,
+     "max": 5.097,
+     "sum": 64.6,
+     "over_27.5s": 0
+    },
+    "v7_only": {
+     "n": 40,
+     "median": 0.065,
+     "p95": 1.097,
+     "p99": 1.46,
+     "max": 1.46,
+     "sum": 7.7,
+     "over_27.5s": 0
+    }
+   }
+  },
+  "sup_wall": {
+   "sources": {
+    "engine": 40
+   },
+   "watchdogs": 0,
+   "over_30s": 0,
+   "ipc_overhead": {
+    "n": 40,
+    "median": 0.0,
+    "p95": 0.001,
+    "p99": 0.001,
+    "max": 0.001,
+    "sum": 0.0,
+    "over_27.5s": 0
+   }
+  },
+  "rt_deadline": {
+   "timeouts": {
+    "attack": 12,
+    "stage_vct": 0,
+    "root": 7,
+    "vct2": 6
+   },
+   "skipped": {
+    "puct": 0,
+    "vct2": 0
+   },
+   "moves_with_timeout_or_skip": 17
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/2/14",
+   "recorded_seconds": 37.7564,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     6,
+     6
+    ],
+    "seconds": 13.0538,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0616,
+     "stage_vct": 0.0,
+     "tree": 0.8296,
+     "root": 0.3212,
+     "vct2": 11.7465,
+     "v7_modules": 0.1143,
+     "v7_only": 0.0527
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.00011440902017056942,
+    "engine_seconds": 13.053353386931121,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        6,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        6,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     6,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      2
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        6,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/18",
+   "recorded_seconds": 134.6504,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     10
+    ],
+    "seconds": 5.8463,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0002,
+     "stage_vct": 0.0,
+     "tree": 1.1858,
+     "root": 0.444,
+     "vct2": 0.0777,
+     "v7_modules": 4.1297,
+     "v7_only": 0.1295
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.716806769371033e-05,
+    "engine_seconds": 5.845901920925826,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        10
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        10
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     10
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      3,
+      3
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        10
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        10
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        10
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/26",
+   "recorded_seconds": 40.3362,
+   "recorded_route": "own_vct",
+   "sup": {
+    "move": [
+     2,
+     7
+    ],
+    "seconds": 6.4243,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0003,
+     "stage_vct": 0.0,
+     "tree": 1.0607,
+     "root": 0.526,
+     "vct2": 0.7698,
+     "v7_modules": 4.0578,
+     "v7_only": 0.0575
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.0001191580668091774,
+    "engine_seconds": 6.423919049091637,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        2,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        2,
+        7
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     2,
+     7
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      0,
+      5
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        0,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        2,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        2,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        2,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/18",
+   "recorded_seconds": 151.5892,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     9
+    ],
+    "seconds": 12.9246,
+    "route": "tree",
+    "phases": {
+     "attack": 0.85,
+     "stage_vct": 0.0,
+     "tree": 1.0732,
+     "root": 8.5748,
+     "vct2": 2.3549,
+     "v7_modules": 0.912,
+     "v7_only": 0.062
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.550395093858242e-05,
+    "engine_seconds": 12.924259696854278,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        9
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        9
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     9
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      10,
+      6
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "recorded_seconds": 57.1264,
+   "recorded_route": "own_vct",
+   "sup": {
+    "move": [
+     5,
+     9
+    ],
+    "seconds": 26.0016,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0001,
+     "stage_vct": 0.0,
+     "tree": 1.1379,
+     "root": 16.6122,
+     "vct2": 3.9924,
+     "v7_modules": 4.2414,
+     "v7_only": 0.2413
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.843808270990849e-05,
+    "engine_seconds": 26.00116472085938,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     9
+    ],
+    "rt": {
+     "timeouts": [
+      "attack",
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      6,
+      4
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/9",
+   "recorded_seconds": 34.0601,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     8,
+     11
+    ],
+    "seconds": 9.6623,
+    "route": "tree",
+    "phases": {
+     "attack": 0.105,
+     "stage_vct": 0.0,
+     "tree": 1.1549,
+     "root": 0.2593,
+     "vct2": 8.0819,
+     "v7_modules": 0.1584,
+     "v7_only": 0.0534
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.501593790948391e-05,
+    "engine_seconds": 9.661897615995258,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        11
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        11
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     11
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      7
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        11
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/11",
+   "recorded_seconds": 37.2661,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 12.0033,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0566,
+     "stage_vct": 0.0,
+     "tree": 1.1551,
+     "root": 0.5369,
+     "vct2": 10.1943,
+     "v7_modules": 0.1092,
+     "v7_only": 0.0526
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.445621304214001e-05,
+    "engine_seconds": 12.002907980931923,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      2
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/13",
+   "recorded_seconds": 39.6516,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 13.9552,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1676,
+     "stage_vct": 0.0,
+     "tree": 1.0318,
+     "root": 0.4181,
+     "vct2": 12.2183,
+     "v7_modules": 0.2793,
+     "v7_only": 0.1117
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.787905633449554e-05,
+    "engine_seconds": 13.954778932966292,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      2
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/20",
+   "recorded_seconds": 31.1589,
+   "recorded_route": "stage4",
+   "sup": {
+    "move": [
+     5,
+     3
+    ],
+    "seconds": 5.0785,
+    "route": "stage4",
+    "phases": {
+     "attack": 4.0002,
+     "stage_vct": 0.9807,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 4.0846,
+     "v7_only": 0.0844
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.808906957507133e-05,
+    "engine_seconds": 5.078188402112573,
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        5,
+        3
+       ],
+       "SAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     5,
+     3
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      5,
+      3
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        3
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        5,
+        3
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        5,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/26",
+   "recorded_seconds": 42.3535,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     7
+    ],
+    "seconds": 12.9569,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1314,
+     "stage_vct": 0.0,
+     "tree": 1.7744,
+     "root": 1.0667,
+     "vct2": 9.8628,
+     "v7_modules": 0.2429,
+     "v7_only": 0.1115
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.613282650709152e-05,
+    "engine_seconds": 12.956554196076468,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      9,
+      9
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        9
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/28",
+   "recorded_seconds": 36.7895,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     7
+    ],
+    "seconds": 13.5297,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1669,
+     "stage_vct": 0.0,
+     "tree": 1.574,
+     "root": 1.171,
+     "vct2": 10.542,
+     "v7_modules": 0.2331,
+     "v7_only": 0.0662
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.711094804108143e-05,
+    "engine_seconds": 13.529365573078394,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      8
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/30",
+   "recorded_seconds": 37.2884,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     3,
+     8
+    ],
+    "seconds": 12.46,
+    "route": "tree",
+    "phases": {
+     "attack": 0.2042,
+     "stage_vct": 0.0,
+     "tree": 0.5417,
+     "root": 1.1772,
+     "vct2": 10.3458,
+     "v7_modules": 0.3855,
+     "v7_only": 0.1813
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.269911631941795e-05,
+    "engine_seconds": 12.459585109958425,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        3,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        3,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     3,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      9
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        9
+       ]
+      ],
+      [
+       "puct",
+       [
+        3,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        3,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        3,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/18",
+   "recorded_seconds": 40.1559,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 11.5663,
+    "route": "tree",
+    "phases": {
+     "attack": 1.4482,
+     "stage_vct": 0.0,
+     "tree": 0.9812,
+     "root": 0.3276,
+     "vct2": 8.7541,
+     "v7_modules": 1.4951,
+     "v7_only": 0.0469
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.711001671850681e-05,
+    "engine_seconds": 11.565958586055785,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        6
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      7,
+      3
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/20",
+   "recorded_seconds": 129.3492,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     5
+    ],
+    "seconds": 17.0018,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0002,
+     "stage_vct": 0.0,
+     "tree": 1.103,
+     "root": 0.5073,
+     "vct2": 11.248,
+     "v7_modules": 4.1339,
+     "v7_only": 0.1337
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.997499778866768e-05,
+    "engine_seconds": 17.001414402853698,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        5
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        5
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     5
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      3,
+      3
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        5
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        5
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        5
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/22",
+   "recorded_seconds": 128.683,
+   "recorded_route": "stage4",
+   "sup": {
+    "move": [
+     9,
+     6
+    ],
+    "seconds": 5.0073,
+    "route": "stage4",
+    "phases": {
+     "attack": 4.0001,
+     "stage_vct": 0.8455,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 4.1498,
+     "v7_only": 0.1497
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.325721137225628e-05,
+    "engine_seconds": 5.006975065916777,
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        9,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     9,
+     6
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      5,
+      2
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        2
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        9,
+        6
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        9,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/9",
+   "recorded_seconds": 37.8607,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     6,
+     8
+    ],
+    "seconds": 14.6688,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0661,
+     "stage_vct": 0.0,
+     "tree": 1.0995,
+     "root": 0.3806,
+     "vct2": 13.0805,
+     "v7_modules": 0.1008,
+     "v7_only": 0.0347
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 9.296718053519726e-05,
+    "engine_seconds": 14.668381449999288,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        6,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        6,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     6,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      9,
+      7
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        6,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/11",
+   "recorded_seconds": 33.3569,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     6,
+     7
+    ],
+    "seconds": 12.721,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0727,
+     "stage_vct": 0.0,
+     "tree": 1.1777,
+     "root": 0.5609,
+     "vct2": 10.8675,
+     "v7_modules": 0.1069,
+     "v7_only": 0.0342
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 6.95670023560524e-05,
+    "engine_seconds": 12.720657999860123,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        6,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        6,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     6,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      7,
+      4
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        6,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/13",
+   "recorded_seconds": 37.4751,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     7,
+     3
+    ],
+    "seconds": 13.8933,
+    "route": "tree",
+    "phases": {
+     "attack": 0.4038,
+     "stage_vct": 0.0,
+     "tree": 1.042,
+     "root": 0.762,
+     "vct2": 11.5912,
+     "v7_modules": 0.49,
+     "v7_only": 0.0862
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.919509127736092e-05,
+    "engine_seconds": 13.892913192044944,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        3
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        7,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     7,
+     3
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      4,
+      6
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        3
+       ]
+      ],
+      [
+       "root",
+       [
+        7,
+        3
+       ]
+      ],
+      [
+       "vct2",
+       [
+        7,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/15",
+   "recorded_seconds": 47.9912,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     6
+    ],
+    "seconds": 26.0008,
+    "route": "tree",
+    "phases": {
+     "attack": 2.6129,
+     "stage_vct": 0.0,
+     "tree": 2.1305,
+     "root": 16.7984,
+     "vct2": 3.992,
+     "v7_modules": 3.0637,
+     "v7_only": 0.4508
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.123205043375492e-05,
+    "engine_seconds": 26.000351703958586,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        8
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        5,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      5,
+      8
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/15/32",
+   "recorded_seconds": 123.5888,
+   "recorded_route": "own_vct",
+   "sup": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 5.8676,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0002,
+     "stage_vct": 0.0,
+     "tree": 1.1863,
+     "root": 0.4215,
+     "vct2": 0.0737,
+     "v7_modules": 4.1757,
+     "v7_only": 0.1755
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.000105259008705616,
+    "engine_seconds": 5.867180462926626,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        8
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      4,
+      7
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/14",
+   "recorded_seconds": 35.4578,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 9.7847,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0728,
+     "stage_vct": 0.0,
+     "tree": 1.1128,
+     "root": 0.7361,
+     "vct2": 7.815,
+     "v7_modules": 0.1116,
+     "v7_only": 0.0388
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.542300201952457e-05,
+    "engine_seconds": 9.784328062087297,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        8
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      5
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/16",
+   "recorded_seconds": 47.3398,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     8
+    ],
+    "seconds": 14.9092,
+    "route": "tree",
+    "phases": {
+     "attack": 0.3346,
+     "stage_vct": 0.0,
+     "tree": 1.0237,
+     "root": 1.6149,
+     "vct2": 11.8854,
+     "v7_modules": 0.3756,
+     "v7_only": 0.041
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.72508792579174e-05,
+    "engine_seconds": 14.908848769031465,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      7
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/18",
+   "recorded_seconds": 43.2011,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 13.2222,
+    "route": "tree",
+    "phases": {
+     "attack": 0.101,
+     "stage_vct": 0.0,
+     "tree": 0.9965,
+     "root": 0.6887,
+     "vct2": 11.3867,
+     "v7_modules": 0.1414,
+     "v7_only": 0.0404
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.85081647336483e-05,
+    "engine_seconds": 13.22178604081273,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      11
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/20",
+   "recorded_seconds": 34.5429,
+   "recorded_route": "stage4",
+   "sup": {
+    "move": [
+     6,
+     4
+    ],
+    "seconds": 11.5628,
+    "route": "stage4",
+    "phases": {
+     "attack": 0.2458,
+     "stage_vct": 11.2467,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 0.2964,
+     "v7_only": 0.0506
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.906719110906124e-05,
+    "engine_seconds": 11.562532181851566,
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        10,
+        8
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        6,
+        4
+       ],
+       "SAFE"
+      ],
+      [
+       [
+        11,
+        9
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        5,
+        3
+       ],
+       "UNSAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     10,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      10,
+      8
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        8
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        10,
+        8
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        6,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/26",
+   "recorded_seconds": 36.9849,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     5
+    ],
+    "seconds": 12.9598,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0675,
+     "stage_vct": 0.0,
+     "tree": 1.2497,
+     "root": 0.7108,
+     "vct2": 10.8825,
+     "v7_modules": 0.1076,
+     "v7_only": 0.0401
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.00010211602784693241,
+    "engine_seconds": 12.959463943028823,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        5
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        5
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     5
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      7
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        5
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        5
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        5
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/28",
+   "recorded_seconds": 37.2554,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     10,
+     7
+    ],
+    "seconds": 13.4039,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0412,
+     "stage_vct": 0.0,
+     "tree": 1.3088,
+     "root": 0.7063,
+     "vct2": 11.297,
+     "v7_modules": 0.0827,
+     "v7_only": 0.0415
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.081179112195969e-05,
+    "engine_seconds": 13.403560341103002,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        10,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        10,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     10,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      11
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        11
+       ]
+      ],
+      [
+       "puct",
+       [
+        10,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        10,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        10,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/16/36",
+   "recorded_seconds": 41.9817,
+   "recorded_route": "stage4",
+   "sup": {
+    "move": [
+     11,
+     11
+    ],
+    "seconds": 13.6757,
+    "route": "stage4",
+    "phases": {
+     "attack": 0.0377,
+     "stage_vct": 13.6199,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 0.0427,
+     "v7_only": 0.005
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.549191989004612e-05,
+    "engine_seconds": 13.67534311604686,
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        11,
+        11
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        12,
+        11
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        7,
+        11
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        3,
+        6
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        12,
+        9
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        4,
+        11
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        8,
+        7
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        5,
+        8
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        10,
+        10
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        5,
+        9
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        6,
+        5
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        5,
+        10
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        5,
+        5
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        8,
+        5
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        9,
+        6
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        10,
+        7
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        8,
+        12
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        7,
+        12
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        11,
+        10
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        6,
+        12
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        11,
+        8
+       ],
+       "UNSAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     11,
+     11
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      11,
+      11
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        11,
+        11
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        11,
+        11
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        11,
+        11
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/15",
+   "recorded_seconds": 65.3227,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     7,
+     11
+    ],
+    "seconds": 16.587,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1232,
+     "stage_vct": 0.0,
+     "tree": 1.3212,
+     "root": 2.8729,
+     "vct2": 12.204,
+     "v7_modules": 0.1792,
+     "v7_only": 0.056
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.4037816375494e-05,
+    "engine_seconds": 16.586580245988443,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        11
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        7,
+        11
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     7,
+     11
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      11,
+      5
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        11,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        7,
+        11
+       ]
+      ],
+      [
+       "vct2",
+       [
+        7,
+        11
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/17",
+   "recorded_seconds": 40.3138,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     6,
+     7
+    ],
+    "seconds": 5.9558,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0859,
+     "stage_vct": 0.0,
+     "tree": 2.3006,
+     "root": 0.3049,
+     "vct2": 3.1993,
+     "v7_modules": 0.1427,
+     "v7_only": 0.0568
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.787905633449554e-05,
+    "engine_seconds": 5.955212904838845,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        6,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        6,
+        7
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     6,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      10
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        6,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/23",
+   "recorded_seconds": 178.7036,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     8,
+     11
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0001,
+     "stage_vct": 0.0,
+     "tree": 1.8578,
+     "root": 15.5255,
+     "vct2": 3.9998,
+     "v7_modules": 4.6081,
+     "v7_only": 0.608
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 7.88569450378418e-05,
+    "engine_seconds": 26.000064983032644,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        11
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        11
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     11
+    ],
+    "rt": {
+     "timeouts": [
+      "attack",
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      9,
+      10
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        11
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/19/13",
+   "recorded_seconds": 35.1253,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     6
+    ],
+    "seconds": 2.5487,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0732,
+     "stage_vct": 0.0,
+     "tree": 1.1405,
+     "root": 0.2625,
+     "vct2": 1.0013,
+     "v7_modules": 0.1369,
+     "v7_only": 0.0637
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.577201515436172e-05,
+    "engine_seconds": 2.548362764995545,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        6
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      7
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/40",
+   "recorded_seconds": 30.9197,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 6.0713,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0002,
+     "stage_vct": 0.0,
+     "tree": 1.2918,
+     "root": 0.4078,
+     "vct2": 0.1404,
+     "v7_modules": 4.2218,
+     "v7_only": 0.2216
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.297804743051529e-05,
+    "engine_seconds": 6.070871636038646,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        8
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      7,
+      11
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        11
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/60",
+   "recorded_seconds": 63.9029,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     8,
+     3
+    ],
+    "seconds": 22.3058,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0537,
+     "stage_vct": 0.0,
+     "tree": 1.576,
+     "root": 19.9465,
+     "vct2": 0.3045,
+     "v7_modules": 0.4672,
+     "v7_only": 0.4135
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.00012195296585559845,
+    "engine_seconds": 22.305064171086997,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        3
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     3
+    ],
+    "rt": {
+     "timeouts": [
+      "root"
+     ],
+     "skipped": [],
+     "emergency": [
+      11,
+      11
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        11,
+        11
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        3
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        3
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/62",
+   "recorded_seconds": 287.6087,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     4,
+     10
+    ],
+    "seconds": 26.0008,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0329,
+     "stage_vct": 0.0,
+     "tree": 1.2573,
+     "root": 20.1064,
+     "vct2": 3.9999,
+     "v7_modules": 0.6259,
+     "v7_only": 0.593
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.0001368299126625061,
+    "engine_seconds": 26.00031601288356,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        10
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        10
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     10
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      12,
+      5
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        12,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        10
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        10
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        10
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/64",
+   "recorded_seconds": 199.2761,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     3,
+     9
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 1.0992,
+     "stage_vct": 0.0,
+     "tree": 1.0902,
+     "root": 18.3395,
+     "vct2": 4.0,
+     "v7_modules": 2.5589,
+     "v7_only": 1.4597
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.0001190889161080122,
+    "engine_seconds": 26.000077835051343,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        3,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        3,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     3,
+     9
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      6,
+      10
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        3,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        3,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        3,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/37",
+   "recorded_seconds": 154.8375,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     2,
+     8
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0981,
+     "stage_vct": 0.0,
+     "tree": 1.3655,
+     "root": 20.4768,
+     "vct2": 4.0,
+     "v7_modules": 0.1492,
+     "v7_only": 0.0511
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.821696974337101e-05,
+    "engine_seconds": 26.000101373065263,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        2,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        2,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     2,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      4,
+      4
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        2,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        2,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        2,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/39",
+   "recorded_seconds": 35.3141,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     1,
+     8
+    ],
+    "seconds": 12.6129,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0978,
+     "stage_vct": 0.0,
+     "tree": 1.3711,
+     "root": 10.9136,
+     "vct2": 0.1666,
+     "v7_modules": 0.1526,
+     "v7_only": 0.0548
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.00011964701116085052,
+    "engine_seconds": 12.612503189127892,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        1,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        1,
+        8
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     1,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      2,
+      4
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        2,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        1,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        1,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        1,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/43",
+   "recorded_seconds": 95.8308,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     1,
+     7
+    ],
+    "seconds": 18.2387,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0001,
+     "stage_vct": 0.0,
+     "tree": 0.6686,
+     "root": 12.7007,
+     "vct2": 0.5694,
+     "v7_modules": 4.2905,
+     "v7_only": 0.2904
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.00012097391299903393,
+    "engine_seconds": 18.238326834049076,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        1,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        1,
+        7
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     1,
+     7
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      3,
+      11
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        11
+       ]
+      ],
+      [
+       "puct",
+       [
+        1,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        1,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        1,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/57",
+   "recorded_seconds": 110.8965,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     4
+    ],
+    "seconds": 12.4762,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0002,
+     "stage_vct": 0.0,
+     "tree": 2.2585,
+     "root": 5.7962,
+     "vct2": 0.2676,
+     "v7_modules": 4.1443,
+     "v7_only": 0.1441
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 8.975295349955559e-05,
+    "engine_seconds": 12.475811355980113,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        4
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     4
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      7,
+      11
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        11
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/65",
+   "recorded_seconds": 118.9769,
+   "recorded_route": "tree",
+   "sup": {
+    "move": [
+     5,
+     4
+    ],
+    "seconds": 10.7765,
+    "route": "tree",
+    "phases": {
+     "attack": 4.0002,
+     "stage_vct": 0.0,
+     "tree": 1.8859,
+     "root": 3.5911,
+     "vct2": 0.1912,
+     "v7_modules": 5.097,
+     "v7_only": 1.0968
+    },
+    "source": "engine",
+    "watchdog": false,
+    "worker_restarted": false,
+    "error": null,
+    "queue_seconds": 0.00010861200280487537,
+    "engine_seconds": 10.776090156054124,
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        4
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     4
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      6,
+      13
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        13
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  }
+ ]
+}

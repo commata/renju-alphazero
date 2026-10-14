@@ -1,0 +1,247 @@
+positions=8 arms=frozen,fast,rt workers=1 engine=TB-Engine-v1
+[rt30-replay] 1/8 positions  12.5%  1.7 min  ETA 12 min  1/8 chunks, 7 pending
+[rt30-replay] 1/8 positions  12.5%  2.7 min  ETA 19 min  1/8 chunks, 7 pending
+[rt30-replay] 1/8 positions  12.5%  3.7 min  ETA 26 min  1/8 chunks, 7 pending
+[rt30-replay] 2/8 positions  25.0%  5.0 min  ETA 15 min  2/8 chunks, 6 pending
+[rt30-replay] 4/8 positions  50.0%  6.3 min  ETA 6 min  4/8 chunks, 4 pending
+[rt30-replay] 6/8 positions  75.0%  7.6 min  ETA 3 min  6/8 chunks
+[rt30-replay] 7/8 positions  87.5%  9.1 min  ETA 1 min  7/8 chunks, 1 pending
+[rt30-replay] 8/8 positions  100.0%  9.1 min  ETA 0 min  8/8 chunks
+{
+ "positions": 8,
+ "frozen": {
+  "seconds": {
+   "n": 8,
+   "median": 30.58,
+   "p95": 112.257,
+   "p99": 112.257,
+   "max": 112.257,
+   "sum": 298.6,
+   "over_27.5s": 5
+  },
+  "routes": {
+   "tree": 6,
+   "own_vct": 2
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 1.234,
+    "p95": 110.004,
+    "p99": 110.004,
+    "max": 110.004,
+    "sum": 193.2,
+    "over_27.5s": 3
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.227,
+    "p95": 1.386,
+    "p99": 1.386,
+    "max": 1.386,
+    "sum": 7.3,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.687,
+    "p95": 2.151,
+    "p99": 2.151,
+    "max": 2.151,
+    "sum": 5.4,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 16.037,
+    "p95": 28.841,
+    "p99": 28.841,
+    "max": 28.841,
+    "sum": 91.5,
+    "over_27.5s": 1
+   },
+   "v7_modules": {
+    "n": 8,
+    "median": 1.366,
+    "p95": 110.293,
+    "p99": 110.293,
+    "max": 110.293,
+    "sum": 194.5,
+    "over_27.5s": 3
+   },
+   "v7_only": {
+    "n": 8,
+    "median": 0.1,
+    "p95": 0.388,
+    "p99": 0.388,
+    "max": 0.388,
+    "sum": 1.2,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "fast": {
+  "seconds": {
+   "n": 8,
+   "median": 13.194,
+   "p95": 44.872,
+   "p99": 44.872,
+   "max": 44.872,
+   "sum": 123.8,
+   "over_27.5s": 1
+  },
+  "routes": {
+   "tree": 6,
+   "own_vct": 2
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 0.497,
+    "p95": 43.14,
+    "p99": 43.14,
+    "max": 43.14,
+    "sum": 77.1,
+    "over_27.5s": 1
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.223,
+    "p95": 1.383,
+    "p99": 1.383,
+    "max": 1.383,
+    "sum": 7.3,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.383,
+    "p95": 0.906,
+    "p99": 0.906,
+    "max": 0.906,
+    "sum": 2.6,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 6.028,
+    "p95": 11.469,
+    "p99": 11.469,
+    "max": 11.469,
+    "sum": 36.1,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 8,
+    "median": 0.584,
+    "p95": 43.271,
+    "p99": 43.271,
+    "max": 43.271,
+    "sum": 77.7,
+    "over_27.5s": 1
+   },
+   "v7_only": {
+    "n": 8,
+    "median": 0.058,
+    "p95": 0.153,
+    "p99": 0.153,
+    "max": 0.153,
+    "sum": 0.6,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "rt": {
+  "seconds": {
+   "n": 8,
+   "median": 13.183,
+   "p95": 44.871,
+   "p99": 44.871,
+   "max": 44.871,
+   "sum": 123.7,
+   "over_27.5s": 1
+  },
+  "routes": {
+   "tree": 6,
+   "own_vct": 2
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 0.494,
+    "p95": 43.124,
+    "p99": 43.124,
+    "max": 43.124,
+    "sum": 77.0,
+    "over_27.5s": 1
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.23,
+    "p95": 1.384,
+    "p99": 1.384,
+    "max": 1.384,
+    "sum": 7.3,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.384,
+    "p95": 0.905,
+    "p99": 0.905,
+    "max": 0.905,
+    "sum": 2.6,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 6.023,
+    "p95": 11.46,
+    "p99": 11.46,
+    "max": 11.46,
+    "sum": 36.1,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 8,
+    "median": 0.581,
+    "p95": 43.254,
+    "p99": 43.254,
+    "max": 43.254,
+    "sum": 77.6,
+    "over_27.5s": 1
+   },
+   "v7_only": {
+    "n": 8,
+    "median": 0.057,
+    "p95": 0.153,
+    "p99": 0.153,
+    "max": 0.153,
+    "sum": 0.6,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "rt_deadline": {
+  "timeouts": {
+   "attack": 0,
+   "stage_vct": 0,
+   "root": 0,
+   "vct2": 0
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0
+  },
+  "moves_with_timeout_or_skip": 0
+ },
+ "identical": 8,
+ "different": [],
+ "speedup_vs_first": {
+  "fast": 2.413,
+  "rt": 2.414
+ }
+}

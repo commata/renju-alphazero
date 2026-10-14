@@ -1,0 +1,2582 @@
+{
+ "format": "v8b-bench-v1",
+ "cap": 4.0,
+ "combos": [
+  [
+   "frozen",
+   "fair"
+  ],
+  [
+   "frozen",
+   "widen"
+  ]
+ ],
+ "neg_seconds": 5.0,
+ "workers": 1,
+ "jsonl": [
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl"
+ ],
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "cpu_count": 16
+ },
+ "summary": {
+  "positives": 67,
+  "negatives": 0,
+  "combos": {
+   "frozen/fair": {
+    "recall": "36/67",
+    "won": 36,
+    "same_move": 36,
+    "positive_seconds": {
+     "n": 67,
+     "median": 2.898,
+     "p95": 4.002,
+     "max": 4.003,
+     "sum": 163.6
+    },
+    "positive_seconds_when_won": {
+     "n": 36,
+     "median": 0.952,
+     "p95": 3.244,
+     "max": 3.555,
+     "sum": 39.5
+    },
+    "negative_seconds": {},
+    "timeouts": {
+     "positive": 31,
+     "negative": 0
+    },
+    "false_wins_on_negatives": 0
+   },
+   "frozen/widen": {
+    "recall": "38/67",
+    "won": 38,
+    "same_move": 38,
+    "positive_seconds": {
+     "n": 67,
+     "median": 1.865,
+     "p95": 4.003,
+     "max": 4.004,
+     "sum": 156.7
+    },
+    "positive_seconds_when_won": {
+     "n": 38,
+     "median": 0.942,
+     "p95": 3.151,
+     "max": 3.662,
+     "sum": 40.7
+    },
+    "negative_seconds": {},
+    "timeouts": {
+     "positive": 29,
+     "negative": 0
+    },
+    "false_wins_on_negatives": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/0/25",
+   "kind": "positive",
+   "win": [
+    8,
+    6
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 2.8972,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.985,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4341,
+     "calls": 407,
+     "rank": 3,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.9687,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4341,
+     "calls": 407,
+     "rank": 3,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/1/12",
+   "kind": "positive",
+   "win": [
+    9,
+    6
+   ],
+   "recorded_rank": 10,
+   "recorded_attack_seconds": 5.6908,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.8617,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7816,
+     "calls": 240,
+     "rank": 10,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 1.8648,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7816,
+     "calls": 240,
+     "rank": 10,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/2/16",
+   "kind": "positive",
+   "win": [
+    9,
+    3
+   ],
+   "recorded_rank": 10,
+   "recorded_attack_seconds": 4.8217,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.5982,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6585,
+     "calls": 238,
+     "rank": 10,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 1.5971,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6585,
+     "calls": 238,
+     "rank": 10,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/3/15",
+   "kind": "positive",
+   "win": [
+    6,
+    7
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 10.8823,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 3.5554,
+     "won": true,
+     "move": [
+      6,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 14632,
+     "calls": 1908,
+     "rank": 1,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 3.151,
+     "won": true,
+     "move": [
+      6,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 13023,
+     "calls": 1847,
+     "rank": 1,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/4/15",
+   "kind": "positive",
+   "win": [
+    5,
+    6
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 1.5634,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.4903,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1956,
+     "calls": 222,
+     "rank": 6,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.4903,
+     "won": true,
+     "move": [
+      5,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1956,
+     "calls": 222,
+     "rank": 6,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/5/16",
+   "kind": "positive",
+   "win": [
+    9,
+    8
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 24.6797,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0013,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 15561,
+     "calls": 731,
+     "rank": 0,
+     "candidates": 14
+    },
+    "frozen/widen": {
+     "seconds": 4.0016,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 19128,
+     "calls": 1169,
+     "rank": 0,
+     "candidates": 14
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/7/16",
+   "kind": "positive",
+   "win": [
+    5,
+    7
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 19.041,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0007,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16760,
+     "calls": 457,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 3.6619,
+     "won": true,
+     "move": [
+      5,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 14873,
+     "calls": 625,
+     "rank": 7,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/26",
+   "kind": "positive",
+   "win": [
+    2,
+    7
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 40.2731,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 22840,
+     "calls": 81,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 22337,
+     "calls": 79,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "kind": "positive",
+   "win": [
+    10,
+    9
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 56.6678,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16739,
+     "calls": 423,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 4.0008,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16384,
+     "calls": 508,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/15",
+   "kind": "positive",
+   "win": [
+    9,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.3405,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.1356,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 226,
+     "calls": 207,
+     "rank": 1,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.1359,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 226,
+     "calls": 207,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/32",
+   "kind": "positive",
+   "win": [
+    6,
+    9
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 14.5112,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0006,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17792,
+     "calls": 374,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 4.0008,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17087,
+     "calls": 480,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/24",
+   "kind": "positive",
+   "win": [
+    8,
+    8
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 4.6925,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.7762,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 9249,
+     "calls": 2,
+     "rank": 2,
+     "candidates": 21
+    },
+    "frozen/widen": {
+     "seconds": 4.0001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 0,
+     "calls": 6,
+     "rank": 0,
+     "candidates": 21
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/17",
+   "kind": "positive",
+   "win": [
+    7,
+    3
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 24.0964,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0015,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17768,
+     "calls": 939,
+     "rank": 0,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 4.0014,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17834,
+     "calls": 942,
+     "rank": 0,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/15/32",
+   "kind": "positive",
+   "win": [
+    5,
+    11
+   ],
+   "recorded_rank": 12,
+   "recorded_attack_seconds": 123.1712,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17775,
+     "calls": 23,
+     "rank": 0,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 4.0001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16662,
+     "calls": 15,
+     "rank": 0,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/18/10",
+   "kind": "positive",
+   "win": [
+    8,
+    6
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 1.2575,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.4459,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1506,
+     "calls": 244,
+     "rank": 9,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.4467,
+     "won": true,
+     "move": [
+      8,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1506,
+     "calls": 244,
+     "rank": 9,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/19/15",
+   "kind": "positive",
+   "win": [
+    6,
+    9
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 18.2183,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17701,
+     "calls": 166,
+     "rank": 0,
+     "candidates": 7
+    },
+    "frozen/widen": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17745,
+     "calls": 166,
+     "rank": 0,
+     "candidates": 7
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/67",
+   "kind": "positive",
+   "win": [
+    7,
+    13
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 4.1486,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.4956,
+     "won": true,
+     "move": [
+      7,
+      13
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6245,
+     "calls": 466,
+     "rank": 2,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.4949,
+     "won": true,
+     "move": [
+      7,
+      13
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6245,
+     "calls": 466,
+     "rank": 2,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/23/18",
+   "kind": "positive",
+   "win": [
+    9,
+    4
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 3.8618,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.3168,
+     "won": true,
+     "move": [
+      9,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5403,
+     "calls": 233,
+     "rank": 9,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.3133,
+     "won": true,
+     "move": [
+      9,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5403,
+     "calls": 233,
+     "rank": 9,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/26/26",
+   "kind": "positive",
+   "win": [
+    3,
+    7
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 14.9708,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17646,
+     "calls": 4,
+     "rank": 0,
+     "candidates": 17
+    },
+    "frozen/widen": {
+     "seconds": 4.0001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 0,
+     "calls": 6,
+     "rank": 0,
+     "candidates": 17
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/27/28",
+   "kind": "positive",
+   "win": [
+    7,
+    11
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 41.6109,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0005,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 18373,
+     "calls": 275,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 4.0009,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17475,
+     "calls": 494,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/28/14",
+   "kind": "positive",
+   "win": [
+    10,
+    4
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 68.0625,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16640,
+     "calls": 19,
+     "rank": 0,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 12362,
+     "calls": 32,
+     "rank": 0,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/29/23",
+   "kind": "positive",
+   "win": [
+    6,
+    3
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 104.241,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0027,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17371,
+     "calls": 1161,
+     "rank": 0,
+     "candidates": 9
+    },
+    "frozen/widen": {
+     "seconds": 4.0037,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16046,
+     "calls": 1428,
+     "rank": 0,
+     "candidates": 9
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/30/77",
+   "kind": "positive",
+   "win": [
+    1,
+    4
+   ],
+   "recorded_rank": 14,
+   "recorded_attack_seconds": 58.5393,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0005,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16065,
+     "calls": 245,
+     "rank": 0,
+     "candidates": 15
+    },
+    "frozen/widen": {
+     "seconds": 4.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 14165,
+     "calls": 240,
+     "rank": 0,
+     "candidates": 15
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/31/19",
+   "kind": "positive",
+   "win": [
+    8,
+    8
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 2.968,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.9207,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4001,
+     "calls": 413,
+     "rank": 2,
+     "candidates": 9
+    },
+    "frozen/widen": {
+     "seconds": 0.9161,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4001,
+     "calls": 413,
+     "rank": 2,
+     "candidates": 9
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/33/30",
+   "kind": "positive",
+   "win": [
+    10,
+    9
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 37.3424,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 15992,
+     "calls": 516,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 4.0026,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 15923,
+     "calls": 1670,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/34/26",
+   "kind": "positive",
+   "win": [
+    9,
+    9
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 14.3592,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0013,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17563,
+     "calls": 743,
+     "rank": 0,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 4.0015,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17362,
+     "calls": 820,
+     "rank": 0,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/35/20",
+   "kind": "positive",
+   "win": [
+    1,
+    8
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 17.8046,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16450,
+     "calls": 79,
+     "rank": 0,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16638,
+     "calls": 80,
+     "rank": 0,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/38/19",
+   "kind": "positive",
+   "win": [
+    10,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 43.2613,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 18795,
+     "calls": 116,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 4.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 19086,
+     "calls": 185,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/87",
+   "kind": "positive",
+   "win": [
+    6,
+    2
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 3.1338,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.2981,
+     "won": true,
+     "move": [
+      6,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6061,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.2964,
+     "won": true,
+     "move": [
+      6,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6061,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/89",
+   "kind": "positive",
+   "win": [
+    4,
+    3
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 1.3947,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.5581,
+     "won": true,
+     "move": [
+      4,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 2520,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.5586,
+     "won": true,
+     "move": [
+      4,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 2520,
+     "calls": 1,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/40/71",
+   "kind": "positive",
+   "win": [
+    10,
+    5
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 0.4374,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2163,
+     "won": true,
+     "move": [
+      10,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 765,
+     "calls": 155,
+     "rank": 3,
+     "candidates": 7
+    },
+    "frozen/widen": {
+     "seconds": 0.2165,
+     "won": true,
+     "move": [
+      10,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 765,
+     "calls": 155,
+     "rank": 3,
+     "candidates": 7
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/41/47",
+   "kind": "positive",
+   "win": [
+    9,
+    3
+   ],
+   "recorded_rank": 4,
+   "recorded_attack_seconds": 4.6931,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 2.1763,
+     "won": true,
+     "move": [
+      9,
+      3
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 11118,
+     "calls": 4,
+     "rank": 4,
+     "candidates": 18
+    },
+    "frozen/widen": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 0,
+     "calls": 6,
+     "rank": 0,
+     "candidates": 18
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/43/45",
+   "kind": "positive",
+   "win": [
+    12,
+    7
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 5.7538,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 2.8982,
+     "won": true,
+     "move": [
+      12,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 12500,
+     "calls": 2,
+     "rank": 3,
+     "candidates": 16
+    },
+    "frozen/widen": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 0,
+     "calls": 5,
+     "rank": 0,
+     "candidates": 16
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/0/13",
+   "kind": "positive",
+   "win": [
+    5,
+    4
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.9051,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2861,
+     "won": true,
+     "move": [
+      5,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1062,
+     "calls": 211,
+     "rank": 1,
+     "candidates": 9
+    },
+    "frozen/widen": {
+     "seconds": 0.2861,
+     "won": true,
+     "move": [
+      5,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1062,
+     "calls": 211,
+     "rank": 1,
+     "candidates": 9
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/1/25",
+   "kind": "positive",
+   "win": [
+    8,
+    2
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 0.8527,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2794,
+     "won": true,
+     "move": [
+      8,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1036,
+     "calls": 203,
+     "rank": 5,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.2793,
+     "won": true,
+     "move": [
+      8,
+      2
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1036,
+     "calls": 203,
+     "rank": 5,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/2/19",
+   "kind": "positive",
+   "win": [
+    7,
+    4
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.5002,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.1748,
+     "won": true,
+     "move": [
+      7,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 470,
+     "calls": 205,
+     "rank": 1,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 0.174,
+     "won": true,
+     "move": [
+      7,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 470,
+     "calls": 205,
+     "rank": 1,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/3/18",
+   "kind": "positive",
+   "win": [
+    10,
+    8
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 0.9446,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.3501,
+     "won": true,
+     "move": [
+      10,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1203,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.3497,
+     "won": true,
+     "move": [
+      10,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1203,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/4/16",
+   "kind": "positive",
+   "win": [
+    5,
+    2
+   ],
+   "recorded_rank": 10,
+   "recorded_attack_seconds": 33.4755,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 18421,
+     "calls": 148,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 20579,
+     "calls": 136,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/5/18",
+   "kind": "positive",
+   "win": [
+    11,
+    6
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 2.814,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.9842,
+     "won": true,
+     "move": [
+      11,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4158,
+     "calls": 273,
+     "rank": 11,
+     "candidates": 17
+    },
+    "frozen/widen": {
+     "seconds": 0.984,
+     "won": true,
+     "move": [
+      11,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4158,
+     "calls": 273,
+     "rank": 11,
+     "candidates": 17
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/6/15",
+   "kind": "positive",
+   "win": [
+    9,
+    7
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 41.4071,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0013,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17964,
+     "calls": 859,
+     "rank": 0,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 4.0031,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16100,
+     "calls": 1608,
+     "rank": 0,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/7/27",
+   "kind": "positive",
+   "win": [
+    5,
+    8
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.553,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.181,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 593,
+     "calls": 197,
+     "rank": 1,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.1803,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 593,
+     "calls": 197,
+     "rank": 1,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/8/27",
+   "kind": "positive",
+   "win": [
+    4,
+    6
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 13.9561,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0016,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 18583,
+     "calls": 882,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 0.8988,
+     "won": true,
+     "move": [
+      4,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3825,
+     "calls": 584,
+     "rank": 2,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/9/14",
+   "kind": "positive",
+   "win": [
+    10,
+    12
+   ],
+   "recorded_rank": 11,
+   "recorded_attack_seconds": 16.1567,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 13122,
+     "calls": 26,
+     "rank": 0,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 15666,
+     "calls": 91,
+     "rank": 0,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/11/12",
+   "kind": "positive",
+   "win": [
+    5,
+    8
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 1.3585,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.4838,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1682,
+     "calls": 216,
+     "rank": 5,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 0.4851,
+     "won": true,
+     "move": [
+      5,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1682,
+     "calls": 216,
+     "rank": 5,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/12/22",
+   "kind": "positive",
+   "win": [
+    8,
+    8
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 27.2892,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.001,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16911,
+     "calls": 365,
+     "rank": 0,
+     "candidates": 16
+    },
+    "frozen/widen": {
+     "seconds": 1.995,
+     "won": true,
+     "move": [
+      8,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7675,
+     "calls": 608,
+     "rank": 9,
+     "candidates": 16
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/14/43",
+   "kind": "positive",
+   "win": [
+    9,
+    11
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 6.9747,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 2.3665,
+     "won": true,
+     "move": [
+      9,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 10093,
+     "calls": 585,
+     "rank": 2,
+     "candidates": 16
+    },
+    "frozen/widen": {
+     "seconds": 1.6526,
+     "won": true,
+     "move": [
+      9,
+      11
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6968,
+     "calls": 538,
+     "rank": 2,
+     "candidates": 16
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/15/15",
+   "kind": "positive",
+   "win": [
+    6,
+    9
+   ],
+   "recorded_rank": 3,
+   "recorded_attack_seconds": 0.8755,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2852,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1051,
+     "calls": 211,
+     "rank": 3,
+     "candidates": 6
+    },
+    "frozen/widen": {
+     "seconds": 0.2838,
+     "won": true,
+     "move": [
+      6,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1051,
+     "calls": 211,
+     "rank": 3,
+     "candidates": 6
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/16/20",
+   "kind": "positive",
+   "win": [
+    9,
+    8
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 17.8081,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0011,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 14780,
+     "calls": 639,
+     "rank": 0,
+     "candidates": 14
+    },
+    "frozen/widen": {
+     "seconds": 1.3761,
+     "won": true,
+     "move": [
+      9,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 5396,
+     "calls": 426,
+     "rank": 9,
+     "candidates": 14
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/19/15",
+   "kind": "positive",
+   "win": [
+    10,
+    9
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 0.7562,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.2425,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 843,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.241,
+     "won": true,
+     "move": [
+      10,
+      9
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 843,
+     "calls": 209,
+     "rank": 1,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/21/18",
+   "kind": "positive",
+   "win": [
+    3,
+    8
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 5.3554,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.7028,
+     "won": true,
+     "move": [
+      3,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6895,
+     "calls": 212,
+     "rank": 7,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 1.7039,
+     "won": true,
+     "move": [
+      3,
+      8
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6895,
+     "calls": 212,
+     "rank": 7,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/22/37",
+   "kind": "positive",
+   "win": [
+    7,
+    3
+   ],
+   "recorded_rank": 13,
+   "recorded_attack_seconds": 58.7301,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16791,
+     "calls": 49,
+     "rank": 0,
+     "candidates": 15
+    },
+    "frozen/widen": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17949,
+     "calls": 47,
+     "rank": 0,
+     "candidates": 15
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/23/14",
+   "kind": "positive",
+   "win": [
+    5,
+    10
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 4.6131,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.4934,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6027,
+     "calls": 229,
+     "rank": 6,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 1.4943,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6027,
+     "calls": 229,
+     "rank": 6,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/24/16",
+   "kind": "positive",
+   "win": [
+    6,
+    6
+   ],
+   "recorded_rank": 5,
+   "recorded_attack_seconds": 5.1376,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.7316,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6810,
+     "calls": 212,
+     "rank": 5,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 1.7266,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 6810,
+     "calls": 212,
+     "rank": 5,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/26/15",
+   "kind": "positive",
+   "win": [
+    5,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 34.8666,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0034,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17582,
+     "calls": 1278,
+     "rank": 0,
+     "candidates": 20
+    },
+    "frozen/widen": {
+     "seconds": 4.0025,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17286,
+     "calls": 1169,
+     "rank": 0,
+     "candidates": 20
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/27/23",
+   "kind": "positive",
+   "win": [
+    2,
+    7
+   ],
+   "recorded_rank": 6,
+   "recorded_attack_seconds": 2.199,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.7129,
+     "won": true,
+     "move": [
+      2,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3019,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 8
+    },
+    "frozen/widen": {
+     "seconds": 0.7126,
+     "won": true,
+     "move": [
+      2,
+      7
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 3019,
+     "calls": 219,
+     "rank": 6,
+     "candidates": 8
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/28/21",
+   "kind": "positive",
+   "win": [
+    4,
+    5
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 3.2214,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.0459,
+     "won": true,
+     "move": [
+      4,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4393,
+     "calls": 209,
+     "rank": 7,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.046,
+     "won": true,
+     "move": [
+      4,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4393,
+     "calls": 209,
+     "rank": 7,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/31/15",
+   "kind": "positive",
+   "win": [
+    5,
+    5
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 1.5468,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.5452,
+     "won": true,
+     "move": [
+      5,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1680,
+     "calls": 694,
+     "rank": 1,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 0.3018,
+     "won": true,
+     "move": [
+      5,
+      5
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 681,
+     "calls": 618,
+     "rank": 1,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/32/11",
+   "kind": "positive",
+   "win": [
+    9,
+    6
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 1.2836,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.4091,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1523,
+     "calls": 213,
+     "rank": 1,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 0.4093,
+     "won": true,
+     "move": [
+      9,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 1523,
+     "calls": 213,
+     "rank": 1,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/33/18",
+   "kind": "positive",
+   "win": [
+    10,
+    6
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 9.2819,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 3.2445,
+     "won": true,
+     "move": [
+      10,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 13914,
+     "calls": 231,
+     "rank": 8,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 2.9951,
+     "won": true,
+     "move": [
+      10,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 12789,
+     "calls": 217,
+     "rank": 8,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/34/15",
+   "kind": "positive",
+   "win": [
+    4,
+    9
+   ],
+   "recorded_rank": 13,
+   "recorded_attack_seconds": 32.2028,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0021,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 18089,
+     "calls": 604,
+     "rank": 0,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 15599,
+     "calls": 81,
+     "rank": 0,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/35/14",
+   "kind": "positive",
+   "win": [
+    6,
+    6
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 3.2339,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 1.0978,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4292,
+     "calls": 216,
+     "rank": 7,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 1.0971,
+     "won": true,
+     "move": [
+      6,
+      6
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 4292,
+     "calls": 216,
+     "rank": 7,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/36/28",
+   "kind": "positive",
+   "win": [
+    12,
+    7
+   ],
+   "recorded_rank": 9,
+   "recorded_attack_seconds": 97.8039,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0002,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 19639,
+     "calls": 172,
+     "rank": 0,
+     "candidates": 10
+    },
+    "frozen/widen": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 21695,
+     "calls": 156,
+     "rank": 0,
+     "candidates": 10
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/37/17",
+   "kind": "positive",
+   "win": [
+    5,
+    8
+   ],
+   "recorded_rank": 1,
+   "recorded_attack_seconds": 37.7162,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0013,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17161,
+     "calls": 606,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 4.0007,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17262,
+     "calls": 576,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/38/19",
+   "kind": "positive",
+   "win": [
+    12,
+    8
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 20.7288,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0012,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 19439,
+     "calls": 974,
+     "rank": 0,
+     "candidates": 13
+    },
+    "frozen/widen": {
+     "seconds": 4.0004,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 20873,
+     "calls": 194,
+     "rank": 0,
+     "candidates": 13
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/39/20",
+   "kind": "positive",
+   "win": [
+    9,
+    3
+   ],
+   "recorded_rank": 8,
+   "recorded_attack_seconds": 94.1702,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 17325,
+     "calls": 131,
+     "rank": 0,
+     "candidates": 12
+    },
+    "frozen/widen": {
+     "seconds": 4.0003,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 16737,
+     "calls": 60,
+     "rank": 0,
+     "candidates": 12
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/46/87",
+   "kind": "positive",
+   "win": [
+    5,
+    10
+   ],
+   "recorded_rank": 7,
+   "recorded_attack_seconds": 9.4233,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 4.0011,
+     "won": false,
+     "move": null,
+     "same_move": false,
+     "timed_out": true,
+     "nodes": 18477,
+     "calls": 840,
+     "rank": 0,
+     "candidates": 11
+    },
+    "frozen/widen": {
+     "seconds": 1.6859,
+     "won": true,
+     "move": [
+      5,
+      10
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 7202,
+     "calls": 935,
+     "rank": 7,
+     "candidates": 11
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/147",
+   "kind": "positive",
+   "win": [
+    1,
+    4
+   ],
+   "recorded_rank": 2,
+   "recorded_attack_seconds": 0.2845,
+   "runs": {
+    "frozen/fair": {
+     "seconds": 0.1847,
+     "won": true,
+     "move": [
+      1,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 787,
+     "calls": 80,
+     "rank": 2,
+     "candidates": 2
+    },
+    "frozen/widen": {
+     "seconds": 0.1841,
+     "won": true,
+     "move": [
+      1,
+      4
+     ],
+     "same_move": true,
+     "timed_out": false,
+     "nodes": 787,
+     "calls": 80,
+     "rank": 2,
+     "candidates": 2
+    }
+   }
+  }
+ ]
+}

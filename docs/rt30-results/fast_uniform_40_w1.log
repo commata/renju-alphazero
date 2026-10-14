@@ -1,0 +1,99 @@
+positions=40 arms=fast workers=1 engine=TB1 config, uniform prior
+[rt30-replay] 3/40 positions  7.5%  1.2 min  ETA 15 min  3/40 chunks
+[rt30-replay] 8/40 positions  20.0%  2.3 min  ETA 9 min  8/40 chunks
+[rt30-replay] 14/40 positions  35.0%  4.2 min  ETA 8 min  14/40 chunks
+[rt30-replay] 17/40 positions  42.5%  5.4 min  ETA 7 min  17/40 chunks
+[rt30-replay] 18/40 positions  45.0%  6.6 min  ETA 8 min  18/40 chunks, 22 pending
+[rt30-replay] 22/40 positions  55.0%  7.8 min  ETA 6 min  22/40 chunks
+[rt30-replay] 27/40 positions  67.5%  8.8 min  ETA 4 min  27/40 chunks
+[rt30-replay] 29/40 positions  72.5%  10.2 min  ETA 4 min  29/40 chunks, 11 pending
+[rt30-replay] 29/40 positions  72.5%  11.2 min  ETA 4 min  29/40 chunks, 11 pending
+[rt30-replay] 33/40 positions  82.5%  12.9 min  ETA 3 min  33/40 chunks, 7 pending
+[rt30-replay] 34/40 positions  85.0%  14.6 min  ETA 3 min  34/40 chunks, 6 pending
+[rt30-replay] 36/40 positions  90.0%  16.2 min  ETA 2 min  36/40 chunks
+[rt30-replay] 39/40 positions  97.5%  17.8 min  ETA 0 min  39/40 chunks
+[rt30-replay] 40/40 positions  100.0%  18.5 min  ETA 0 min  40/40 chunks
+{
+ "positions": 40,
+ "fast": {
+  "seconds": {
+   "n": 40,
+   "median": 13.35,
+   "p95": 99.936,
+   "p99": 127.949,
+   "max": 127.949,
+   "sum": 1111.9,
+   "over_27.5s": 12
+  },
+  "routes": {
+   "tree": 33,
+   "own_vct": 3,
+   "stage4": 4
+  },
+  "phases": {
+   "attack": {
+    "n": 40,
+    "median": 0.181,
+    "p95": 42.316,
+    "p99": 43.136,
+    "max": 43.136,
+    "sum": 372.7,
+    "over_27.5s": 8
+   },
+   "stage_vct": {
+    "n": 4,
+    "median": 5.899,
+    "p95": 13.158,
+    "p99": 13.158,
+    "max": 13.158,
+    "sum": 25.8,
+    "over_27.5s": 0
+   },
+   "tree": {
+    "n": 33,
+    "median": 1.162,
+    "p95": 2.231,
+    "p99": 2.26,
+    "max": 2.26,
+    "sum": 42.8,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 33,
+    "median": 0.74,
+    "p95": 85.579,
+    "p99": 85.618,
+    "max": 85.618,
+    "sum": 423.5,
+    "over_27.5s": 5
+   },
+   "vct2": {
+    "n": 33,
+    "median": 9.813,
+    "p95": 11.894,
+    "p99": 12.638,
+    "max": 12.638,
+    "sum": 239.4,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 40,
+    "median": 0.375,
+    "p95": 42.467,
+    "p99": 43.266,
+    "max": 43.266,
+    "sum": 380.3,
+    "over_27.5s": 8
+   },
+   "v7_only": {
+    "n": 40,
+    "median": 0.065,
+    "p95": 1.104,
+    "p99": 1.469,
+    "max": 1.469,
+    "sum": 7.6,
+    "over_27.5s": 0
+   }
+  }
+ }
+}

@@ -1,0 +1,1019 @@
+{
+ "format": "rt30-replay-v1",
+ "engine": "tb1-uniform-prior",
+ "arms": [
+  "frozen",
+  "fast",
+  "rt"
+ ],
+ "deadline": null,
+ "select": "slow",
+ "slow_seconds": 30.0,
+ "seed": 42,
+ "workers": 1,
+ "git_commit": "d978c0c3426d66cb0d935d4633a695af65863518",
+ "jsonl": [
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl"
+ ],
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "processor": "",
+  "cpu_count": 16,
+  "python": "3.14.4"
+ },
+ "summary": {
+  "positions": 8,
+  "frozen": {
+   "seconds": {
+    "n": 8,
+    "median": 33.556,
+    "p95": 110.735,
+    "p99": 110.735,
+    "max": 110.735,
+    "sum": 340.5,
+    "over_27.5s": 6
+   },
+   "phases": {
+    "attack": {
+     "n": 8,
+     "median": 1.24,
+     "p95": 108.4,
+     "p99": 108.4,
+     "max": 108.4,
+     "sum": 192.7,
+     "over_27.5s": 3
+    },
+    "stage_vct": {},
+    "tree": {
+     "n": 6,
+     "median": 1.078,
+     "p95": 1.176,
+     "p99": 1.176,
+     "max": 1.176,
+     "sum": 6.4,
+     "over_27.5s": 0
+    },
+    "root": {
+     "n": 6,
+     "median": 0.847,
+     "p95": 20.295,
+     "p99": 20.295,
+     "max": 20.295,
+     "sum": 24.3,
+     "over_27.5s": 0
+    },
+    "vct2": {
+     "n": 6,
+     "median": 21.259,
+     "p95": 36.711,
+     "p99": 36.711,
+     "max": 36.711,
+     "sum": 115.9,
+     "over_27.5s": 2
+    },
+    "v7_modules": {
+     "n": 8,
+     "median": 1.373,
+     "p95": 108.686,
+     "p99": 108.686,
+     "max": 108.686,
+     "sum": 194.0,
+     "over_27.5s": 3
+    }
+   }
+  },
+  "fast": {
+   "seconds": {
+    "n": 8,
+    "median": 13.072,
+    "p95": 45.028,
+    "p99": 45.028,
+    "max": 45.028,
+    "sum": 137.5,
+    "over_27.5s": 1
+   },
+   "phases": {
+    "attack": {
+     "n": 8,
+     "median": 0.496,
+     "p95": 43.193,
+     "p99": 43.193,
+     "max": 43.193,
+     "sum": 77.1,
+     "over_27.5s": 1
+    },
+    "stage_vct": {},
+    "tree": {
+     "n": 6,
+     "median": 1.089,
+     "p95": 1.191,
+     "p99": 1.191,
+     "max": 1.191,
+     "sum": 6.4,
+     "over_27.5s": 0
+    },
+    "root": {
+     "n": 6,
+     "median": 0.419,
+     "p95": 8.275,
+     "p99": 8.275,
+     "max": 8.275,
+     "sum": 10.2,
+     "over_27.5s": 0
+    },
+    "vct2": {
+     "n": 6,
+     "median": 8.817,
+     "p95": 11.859,
+     "p99": 11.859,
+     "max": 11.859,
+     "sum": 43.2,
+     "over_27.5s": 0
+    },
+    "v7_modules": {
+     "n": 8,
+     "median": 0.583,
+     "p95": 43.323,
+     "p99": 43.323,
+     "max": 43.323,
+     "sum": 77.8,
+     "over_27.5s": 1
+    }
+   }
+  },
+  "rt": {
+   "timeouts": {
+    "attack": 0,
+    "stage_vct": 0,
+    "root": 0,
+    "vct2": 0
+   },
+   "skipped": {
+    "puct": 0,
+    "vct2": 0
+   },
+   "moves_with_timeout_or_skip": 0
+  },
+  "identical": 8,
+  "different": [],
+  "speedup_vs_first": {
+   "fast": 2.476,
+   "rt": 2.481
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/2/14",
+   "recorded_seconds": 37.7564,
+   "recorded_route": "tree",
+   "frozen": {
+    "move": [
+     6,
+     6
+    ],
+    "seconds": 38.2738,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0944,
+     "stage_vct": 0.0,
+     "tree": 0.8428,
+     "root": 0.5277,
+     "vct2": 36.7107,
+     "v7_modules": 0.1895
+    },
+    "nodes": {
+     "attack": 72,
+     "stage_vct": 0,
+     "root": 110,
+     "vct2": 50000
+    }
+   },
+   "fast": {
+    "move": [
+     6,
+     6
+    ],
+    "seconds": 12.5753,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0604,
+     "stage_vct": 0.0,
+     "tree": 0.8428,
+     "root": 0.3155,
+     "vct2": 11.3023,
+     "v7_modules": 0.1131
+    },
+    "nodes": {
+     "attack": 72,
+     "stage_vct": 0,
+     "root": 110,
+     "vct2": 50000
+    }
+   },
+   "rt": {
+    "move": [
+     6,
+     6
+    ],
+    "seconds": 12.5747,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0612,
+     "stage_vct": 0.0,
+     "tree": 0.8404,
+     "root": 0.3156,
+     "vct2": 11.3018,
+     "v7_modules": 0.1137
+    },
+    "nodes": {
+     "attack": 72,
+     "stage_vct": 0,
+     "root": 110,
+     "vct2": 50000
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      2
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        6,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        6
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/18",
+   "recorded_seconds": 134.6504,
+   "recorded_route": "tree",
+   "frozen": {
+    "move": [
+     4,
+     10
+    ],
+    "seconds": 110.7348,
+    "route": "tree",
+    "phases": {
+     "attack": 108.4,
+     "stage_vct": 0.0,
+     "tree": 1.1763,
+     "root": 0.7867,
+     "vct2": 0.0828,
+     "v7_modules": 108.6863
+    },
+    "nodes": {
+     "attack": 199999,
+     "stage_vct": 0,
+     "root": 719,
+     "vct2": 2
+    }
+   },
+   "fast": {
+    "move": [
+     4,
+     10
+    ],
+    "seconds": 45.0278,
+    "route": "tree",
+    "phases": {
+     "attack": 43.1929,
+     "stage_vct": 0.0,
+     "tree": 1.1911,
+     "root": 0.4319,
+     "vct2": 0.0799,
+     "v7_modules": 43.3231
+    },
+    "nodes": {
+     "attack": 199999,
+     "stage_vct": 0,
+     "root": 719,
+     "vct2": 2
+    }
+   },
+   "rt": {
+    "move": [
+     4,
+     10
+    ],
+    "seconds": 44.9235,
+    "route": "tree",
+    "phases": {
+     "attack": 43.0948,
+     "stage_vct": 0.0,
+     "tree": 1.181,
+     "root": 0.4352,
+     "vct2": 0.0786,
+     "v7_modules": 43.2249
+    },
+    "nodes": {
+     "attack": 199999,
+     "stage_vct": 0,
+     "root": 719,
+     "vct2": 2
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      3
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        10
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        10
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        10
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/9/26",
+   "recorded_seconds": 40.3362,
+   "recorded_route": "own_vct",
+   "frozen": {
+    "move": [
+     2,
+     7
+    ],
+    "seconds": 33.7894,
+    "route": "own_vct",
+    "phases": {
+     "attack": 33.7363,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 33.787
+    },
+    "nodes": {
+     "attack": 85208,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    }
+   },
+   "fast": {
+    "move": [
+     2,
+     7
+    ],
+    "seconds": 13.9483,
+    "route": "own_vct",
+    "phases": {
+     "attack": 13.9274,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 13.9468
+    },
+    "nodes": {
+     "attack": 85208,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    }
+   },
+   "rt": {
+    "move": [
+     2,
+     7
+    ],
+    "seconds": 13.8718,
+    "route": "own_vct",
+    "phases": {
+     "attack": 13.8494,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 13.8684
+    },
+    "nodes": {
+     "attack": 85208,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      0,
+      5
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        0,
+        5
+       ]
+      ],
+      [
+       "own_vct",
+       [
+        2,
+        7
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/18",
+   "recorded_seconds": 151.5892,
+   "recorded_route": "tree",
+   "frozen": {
+    "move": [
+     5,
+     9
+    ],
+    "seconds": 29.3492,
+    "route": "tree",
+    "phases": {
+     "attack": 2.0841,
+     "stage_vct": 0.0,
+     "tree": 1.0555,
+     "root": 20.295,
+     "vct2": 5.797,
+     "v7_modules": 2.1979
+    },
+    "nodes": {
+     "attack": 3458,
+     "stage_vct": 0,
+     "root": 38915,
+     "vct2": 9738
+    }
+   },
+   "fast": {
+    "move": [
+     5,
+     9
+    ],
+    "seconds": 12.5013,
+    "route": "tree",
+    "phases": {
+     "attack": 0.8272,
+     "stage_vct": 0.0,
+     "tree": 1.0556,
+     "root": 8.2751,
+     "vct2": 2.2782,
+     "v7_modules": 0.8896
+    },
+    "nodes": {
+     "attack": 3458,
+     "stage_vct": 0,
+     "root": 38915,
+     "vct2": 9738
+    }
+   },
+   "rt": {
+    "move": [
+     5,
+     9
+    ],
+    "seconds": 12.4715,
+    "route": "tree",
+    "phases": {
+     "attack": 0.8269,
+     "stage_vct": 0.0,
+     "tree": 1.0499,
+     "root": 8.26,
+     "vct2": 2.2679,
+     "v7_modules": 0.8889
+    },
+    "nodes": {
+     "attack": 3458,
+     "stage_vct": 0,
+     "root": 38915,
+     "vct2": 9738
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      10,
+      6
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        9
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "recorded_seconds": 57.1264,
+   "recorded_route": "own_vct",
+   "frozen": {
+    "move": [
+     10,
+     9
+    ],
+    "seconds": 48.1281,
+    "route": "own_vct",
+    "phases": {
+     "attack": 47.7333,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 48.1255
+    },
+    "nodes": {
+     "attack": 82095,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    }
+   },
+   "fast": {
+    "move": [
+     10,
+     9
+    ],
+    "seconds": 18.9436,
+    "route": "own_vct",
+    "phases": {
+     "attack": 18.7877,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 18.9418
+    },
+    "nodes": {
+     "attack": 82095,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    }
+   },
+   "rt": {
+    "move": [
+     10,
+     9
+    ],
+    "seconds": 18.8998,
+    "route": "own_vct",
+    "phases": {
+     "attack": 18.7422,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 18.8959
+    },
+    "nodes": {
+     "attack": 82095,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      4
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        4
+       ]
+      ],
+      [
+       "own_vct",
+       [
+        10,
+        9
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/9",
+   "recorded_seconds": 34.0601,
+   "recorded_route": "tree",
+   "frozen": {
+    "move": [
+     8,
+     11
+    ],
+    "seconds": 21.5178,
+    "route": "tree",
+    "phases": {
+     "attack": 0.2131,
+     "stage_vct": 0.0,
+     "tree": 1.1008,
+     "root": 0.5356,
+     "vct2": 19.5997,
+     "v7_modules": 0.2798
+    },
+    "nodes": {
+     "attack": 262,
+     "stage_vct": 0,
+     "root": 391,
+     "vct2": 29541
+    }
+   },
+   "fast": {
+    "move": [
+     8,
+     11
+    ],
+    "seconds": 9.3265,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1011,
+     "stage_vct": 0.0,
+     "tree": 1.1231,
+     "root": 0.2503,
+     "vct2": 7.7984,
+     "v7_modules": 0.1537
+    },
+    "nodes": {
+     "attack": 262,
+     "stage_vct": 0,
+     "root": 391,
+     "vct2": 29541
+    }
+   },
+   "rt": {
+    "move": [
+     8,
+     11
+    ],
+    "seconds": 9.3475,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1022,
+     "stage_vct": 0.0,
+     "tree": 1.1287,
+     "root": 0.2527,
+     "vct2": 7.8087,
+     "v7_modules": 0.1551
+    },
+    "nodes": {
+     "attack": 262,
+     "stage_vct": 0,
+     "root": 391,
+     "vct2": 29541
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      7
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        11
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/11",
+   "recorded_seconds": 37.2661,
+   "recorded_route": "tree",
+   "frozen": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 25.4322,
+    "route": "tree",
+    "phases": {
+     "attack": 0.087,
+     "stage_vct": 0.0,
+     "tree": 1.1581,
+     "root": 1.202,
+     "vct2": 22.9192,
+     "v7_modules": 0.1507
+    },
+    "nodes": {
+     "attack": 62,
+     "stage_vct": 0,
+     "root": 1369,
+     "vct2": 50000
+    }
+   },
+   "fast": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 11.6264,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0566,
+     "stage_vct": 0.0,
+     "tree": 1.1582,
+     "root": 0.5211,
+     "vct2": 9.8365,
+     "v7_modules": 0.1092
+    },
+    "nodes": {
+     "attack": 62,
+     "stage_vct": 0,
+     "root": 1369,
+     "vct2": 50000
+    }
+   },
+   "rt": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 11.6308,
+    "route": "tree",
+    "phases": {
+     "attack": 0.056,
+     "stage_vct": 0.0,
+     "tree": 1.1531,
+     "root": 0.5215,
+     "vct2": 9.8458,
+     "v7_modules": 0.1079
+    },
+    "nodes": {
+     "attack": 62,
+     "stage_vct": 0,
+     "root": 1369,
+     "vct2": 50000
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      2
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        6
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/13",
+   "recorded_seconds": 39.6516,
+   "recorded_route": "tree",
+   "frozen": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 33.323,
+    "route": "tree",
+    "phases": {
+     "attack": 0.3957,
+     "stage_vct": 0.0,
+     "tree": 1.0487,
+     "root": 0.9076,
+     "vct2": 30.8167,
+     "v7_modules": 0.5481
+    },
+    "nodes": {
+     "attack": 529,
+     "stage_vct": 0,
+     "root": 934,
+     "vct2": 50000
+    }
+   },
+   "fast": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 13.5693,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1641,
+     "stage_vct": 0.0,
+     "tree": 1.0266,
+     "root": 0.4064,
+     "vct2": 11.8591,
+     "v7_modules": 0.276
+    },
+    "nodes": {
+     "attack": 529,
+     "stage_vct": 0,
+     "root": 934,
+     "vct2": 50000
+    }
+   },
+   "rt": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 13.519,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1627,
+     "stage_vct": 0.0,
+     "tree": 1.0252,
+     "root": 0.4053,
+     "vct2": 11.8121,
+     "v7_modules": 0.2739
+    },
+    "nodes": {
+     "attack": 529,
+     "stage_vct": 0,
+     "root": 934,
+     "vct2": 50000
+    },
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      3,
+      2
+     ],
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        7
+       ]
+      ]
+     ]
+    }
+   },
+   "identical": true
+  }
+ ]
+}

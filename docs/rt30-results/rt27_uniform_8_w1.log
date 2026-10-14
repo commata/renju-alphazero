@@ -1,0 +1,19 @@
+positions=8 arms=rt workers=1 engine=TB1 config, uniform prior
+[rt30-replay] 5/8 positions  62.5%  1.1 min  ETA 1 min  5/8 chunks
+[rt30-replay] 8/8 positions  100.0%  1.7 min  ETA 0 min  8/8 chunks
+{
+ "positions": 8,
+ "rt": {
+  "timeouts": {
+   "attack": 3,
+   "stage_vct": 0,
+   "root": 1,
+   "vct2": 1
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0
+  },
+  "moves_with_timeout_or_skip": 3
+ }
+}
