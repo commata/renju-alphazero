@@ -12,6 +12,8 @@ dependencies = ["PyYAML>=6.0"]
 
 [project.optional-dependencies]
 neural = ["torch==2.14.0"]
+# Web_SER5 engine worker: numpy speeds up rt30.fast_windows (a pure-Python fallback is used without it).
+server = ["numpy>=1.24"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
