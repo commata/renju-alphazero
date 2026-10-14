@@ -1,0 +1,61 @@
+{
+ "format": "rt30-recheck-v1",
+ "vct1_budget": {
+  "node_limit": 20000,
+  "call_limit": 20000,
+  "node_budget": 800000
+ },
+ "vct2_budget": {
+  "node_limit": 20000,
+  "call_limit": 20000,
+  "node_budget": 200000
+ },
+ "summary": {
+  "run": "runs/rt30/rt27_h3_crit.json",
+  "manifest": {
+   "path": "docs/rt30-eval/critical-regressions-v1.json",
+   "version": "critical-regressions-v1",
+   "keys": 6
+  },
+  "engine": "TB-Engine-v1",
+  "changed_moves_checked": 1,
+  "changed_move_proven_unsafe": 0,
+  "unsafe_keys": [],
+  "changed_vct1": {
+   "SAFE": 1,
+   "UNKNOWN": 0,
+   "UNSAFE": 0
+  },
+  "gate_pass": true
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/22/37",
+   "who": "run",
+   "kind": "kept_tree_move",
+   "move": [
+    2,
+    7
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 588799,
+   "vct2": "UNKNOWN",
+   "vct2_nodes": 200000,
+   "seconds": 143.3
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/37",
+   "who": "baseline",
+   "kind": "kept_tree_move",
+   "move": [
+    4,
+    4
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 9138,
+   "vct2": "SAFE",
+   "vct2_nodes": 12779,
+   "seconds": 5.1
+  }
+ ]
+}
