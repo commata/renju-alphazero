@@ -3,7 +3,7 @@ import unittest
 
 from analysis.mcts_v8_agent import MCTSV8Agent
 from analysis.tb_engine_v1 import TB_ENGINE_V1
-from rt30 import fast_windows
+from rt30 import fast
 from rt30.deadline import Deadline
 from rt30.engine import RT30Agent, RT30_TIMING, check_config, limited
 
@@ -35,11 +35,11 @@ class TickClock:
 class _Engine(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fast_windows.install()  # exact (test_rt30_fast_windows); only makes these tests faster
+        fast.install_all()  # exact (test_rt30_fast_windows, test_rt30_fast_extensions); only faster
 
     @classmethod
     def tearDownClass(cls):
-        fast_windows.uninstall()
+        fast.uninstall_all()
 
 
 class NoDeadlineIsTB1Test(_Engine):

@@ -2,8 +2,12 @@
 
 The frozen function scans all 572 five-cell windows in Python on every call; on the slow V8-B
 positions of E3-A it is 77% of the run time. ``threat_windows`` returns the same windows in the
-same order (``WINDOWS`` order), vectorized with numpy when it is importable, else with an
-unrolled pure-Python loop (both are tested against the frozen function).
+same order (``WINDOWS`` order). Three versions, all tested against the frozen function:
+
+- ``threat_windows_codes`` (default with numpy, 2nd speed-up §3.9): each window as a base-3 code
+  (empty 0, black 1, white 2) and one lookup in a 243-entry table per (player, minimum);
+- ``threat_windows_numpy`` (1st speed-up): the per-window counts with numpy reductions;
+- ``threat_windows_pure``: an unrolled loop, used without numpy.
 
 It is evaluated eagerly where the frozen one is a lazy generator. That is exact because no
 caller changes the board while it iterates (every caller only reads cells inside the loop), and
@@ -50,10 +54,32 @@ if _np is not None:
         keep = ~(values == -player).any(axis=1) & ((values == player).sum(axis=1) >= minimum)
         return iter([WINDOWS[i] for i in _np.flatnonzero(keep).tolist()])
 
-    threat_windows = threat_windows_numpy
+    _POW = _np.array([81, 27, 9, 3, 1], dtype=_np.int16)
+
+    def _table(player: int, minimum: int):
+        keep = _np.zeros(243, dtype=bool)
+        for code in range(243):
+            cells = [(code // 3 ** k) % 3 for k in range(4, -1, -1)]
+            values = [0 if d == 0 else (1 if d == 1 else -1) for d in cells]
+            keep[code] = -player not in values and values.count(player) >= minimum
+        return keep
+
+    _TABLES: dict = {}
+
+    def threat_windows_codes(game, player: int, minimum: int = 3):
+        table = _TABLES.get((player, minimum))
+        if table is None:
+            table = _TABLES[(player, minimum)] = _table(player, minimum)
+        # -1 % 3 == 2: white is digit 2, black 1, empty 0.
+        codes = (_np.array(game.board, dtype=_np.int8).ravel() % 3)[_INDEX].astype(_np.int16) @ _POW
+        return iter([WINDOWS[i] for i in _np.flatnonzero(table[codes]).tolist()])
+
+    threat_windows = threat_windows_codes
 else:
-    threat_windows_numpy = None
+    threat_windows_numpy = threat_windows_codes = None
     threat_windows = threat_windows_pure
+
+REPLACEMENTS = tuple(f for f in (threat_windows_pure, threat_windows_numpy, threat_windows_codes) if f is not None)
 
 
 def _bindings(target):
@@ -71,7 +97,7 @@ def install(implementation=None) -> int:
     """Rebind the frozen function to ``implementation`` (default ``threat_windows``) in every
     loaded module; returns how many names were rebound. Import the engine modules first."""
     implementation = implementation or threat_windows
-    bound = _bindings(FROZEN)
+    bound = [b for target in (FROZEN, *REPLACEMENTS) for b in _bindings(target)]  # also switches versions
     for module, name in bound:
         setattr(module, name, implementation)
     return len(bound)
@@ -79,9 +105,8 @@ def install(implementation=None) -> int:
 
 def uninstall() -> int:
     """Put the frozen function back wherever a replacement from this module is bound."""
-    replacements = {threat_windows_pure, threat_windows_numpy} - {None}
     count = 0
-    for target in replacements:
+    for target in REPLACEMENTS:
         for module, name in _bindings(target):
             setattr(module, name, FROZEN)
             count += 1

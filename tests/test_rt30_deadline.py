@@ -5,7 +5,7 @@ import unittest
 from analysis.mcts_v8 import WIN, _BudgetedSolver, _first_proven
 from analysis.selective_vct import SelectiveSolver
 from analysis.threats import SAFE, UNKNOWN, UNSAFE, ordered_moves
-from rt30 import fast_windows
+from rt30 import fast
 from rt30.deadline import CheckLimit, Deadline, SearchTimeout
 from rt30.solver import DeadlineSelectiveSolver, DeadlineSolver
 from rt30.vcf import find_vcf_with_stats
@@ -63,7 +63,7 @@ def cut_points(total: int, count: int = 12) -> list[int]:
 class _Cases(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        fast_windows.install()  # exact (test_rt30_fast_windows); only makes these tests faster
+        fast.install_all()  # exact (test_rt30_fast_windows, test_rt30_fast_extensions); only faster
         cls.cases = []
         for seed, line, ply, move, budget, check in CASES:
             game = recorded_position(seed, line, ply)
@@ -71,7 +71,7 @@ class _Cases(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        fast_windows.uninstall()
+        fast.uninstall_all()
 
 
 class NoDeadlineIsFrozenTest(_Cases):

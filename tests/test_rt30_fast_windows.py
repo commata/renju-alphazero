@@ -48,7 +48,7 @@ class _Board:
 
 
 IMPLEMENTATIONS = [fast_windows.threat_windows_pure] + (
-    [fast_windows.threat_windows_numpy] if fast_windows.threat_windows_numpy else [])
+    [fast_windows.threat_windows_numpy, fast_windows.threat_windows_codes] if fast_windows.threat_windows_numpy else [])
 
 
 class SameWindowsTest(unittest.TestCase):
@@ -99,6 +99,13 @@ class InstallTest(unittest.TestCase):
         self.assertFalse(fast_windows.installed())
         for module in modules:
             self.assertIs(module._threat_windows, fast_windows.FROZEN)
+
+    def test_install_switches_between_versions(self):
+        fast_windows.install(fast_windows.threat_windows_pure)
+        fast_windows.install()
+        self.assertIs(mcts_v7._threat_windows, fast_windows.threat_windows)
+        fast_windows.uninstall()
+        self.assertIs(mcts_v7._threat_windows, fast_windows.FROZEN)
 
     def test_context_manager(self):
         with fast_windows.fast_windows(fast_windows.threat_windows_pure):

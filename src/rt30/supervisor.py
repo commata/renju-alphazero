@@ -357,9 +357,9 @@ def make_rt30_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_pr
     else:
         raise ValueError('make_rt30_agent needs checkpoint=... or uniform_prior=True')
     if fast:
-        from . import fast_windows
+        from . import fast
 
-        fast_windows.install()
+        fast.install_all()
     agent = RT30Agent(seed=seed, root_policy=policy, timing=timing, attack_order=attack_order,
                       attack_scheduler=attack_scheduler, root_rescue=root_rescue, **config)
     agent.supports_deadline = True

@@ -45,9 +45,9 @@ def position(key: str):
 def check(task):
     from analysis.mcts_v8 import _BudgetedSolver
     from analysis.selective_vct import SelectiveSolver
-    from rt30 import fast_windows
+    from rt30 import fast
 
-    fast_windows.install()
+    fast.install_all()
     game = position(task['key'])
     move = tuple(task['move'])
     started = perf_counter()

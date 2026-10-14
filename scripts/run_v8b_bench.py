@@ -60,12 +60,12 @@ def load_sets(paths, neg_seconds: float, neg_limit: int | None):
 def run_one(task):
     from analysis.mcts_v8 import SearchDiagnostics
     from renju import Game
-    from rt30 import fast_windows
+    from rt30 import fast
     from rt30.deadline import Deadline
     from rt30.engine import _own_vct_attack
     from search.mcts_v5 import _RootContext
 
-    fast_windows.install()
+    fast.install_all()
     row, combos, cap = task['row'], task['combos'], task['cap']
     game = Game()
     for move in row['moves']:

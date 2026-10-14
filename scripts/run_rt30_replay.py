@@ -4,7 +4,7 @@ Each selected position (the board before a V8 move of the E3-A games) is searche
 agent with a fixed seed, once per arm:
 
     frozen  TB-Engine-v1 as frozen
-    fast    the same engine with ``rt30.fast_windows`` installed (exact speed-up)
+    fast    the same engine with every exact speed-up installed (``rt30.fast.install_all``)
     rt      the TB-RT30 search (``rt30.engine``) with the fast windows; ``--deadline S`` gives every
             move an absolute deadline S seconds after its start, else it runs without one
     sup     TB-RT30 through ``rt30.supervisor`` (engine worker process, IPC, watchdog), as the web
@@ -106,14 +106,14 @@ def _diagnostics(diag) -> dict:
 def _search(moves, arm: str, seed: int):
     from analysis.mcts_v8_agent import MCTSV8Agent
     from renju import Game
-    from rt30 import fast_windows
+    from rt30 import fast
     from rt30.deadline import Deadline
     from rt30.engine import RT30Agent
 
     if arm == 'frozen':
-        fast_windows.uninstall()
+        fast.uninstall_all()
     else:
-        fast_windows.install()
+        fast.install_all()
     game = Game()
     for move in moves:
         game.play(*move)
