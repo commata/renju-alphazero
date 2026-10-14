@@ -186,6 +186,10 @@ def evaluate(model, data, device, *, seed: int = 0, max_states: int = 0, batch_s
             'weighted_mse': float((w * (v - t).square()).sum() / w.sum()) if order.shape[0] else None,
             'all': stats(every),
             'by_kind': {'proof': stats(kind == KIND_PROOF), 'outcome': stats(kind == KIND_OUTCOME)},
+            # per target sign: a constant positive bias shows as high +1 / low -1 accuracy (proofs are ~90% +1)
+            'by_kind_sign': {f'{name}{sign}': stats((kind == code) & (t == value))
+                             for name, code in (('proof', KIND_PROOF), ('outcome', KIND_OUTCOME))
+                             for sign, value in (('+1', 1.0), ('-1', -1.0))},
             'by_side': {'black': stats(ply % 2 == 0), 'white': stats(ply % 2 == 1)},
             'by_ply': {f'{lo}-{hi}': stats((ply >= lo) & (ply <= hi)) for lo, hi in PLY_BUCKETS}}
 
@@ -327,9 +331,11 @@ class Trainer:
             _atomic_text(json.dumps(self.metadata(self.step, metrics), indent=1), self.out / 'best.json')
         with (self.out / 'metrics.jsonl').open('a', encoding='utf-8') as handle:
             handle.write(json.dumps({'step': self.step, 'val': metrics}) + '\n')
-        proof = metrics['by_kind']['proof']
-        self.log(f"step {self.step} val wmse {metrics['weighted_mse']:.4f} proof sign {proof.get('sign_acc')} "
-                 f"outcome mse {metrics['by_kind']['outcome'].get('mse')}")
+        acc = lambda key: metrics['by_kind_sign'][key].get('sign_acc')  # noqa: E731
+        fmt = lambda x: 'n/a' if x is None else f'{x:.3f}'  # noqa: E731
+        self.log(f"step {self.step} val wmse {metrics['weighted_mse']:.4f} | sign acc proof +1 {fmt(acc('proof+1'))} "
+                 f"-1 {fmt(acc('proof-1'))} outcome +1 {fmt(acc('outcome+1'))} -1 {fmt(acc('outcome-1'))} | "
+                 f"outcome mse {fmt(metrics['by_kind']['outcome'].get('mse'))} (predicting 0 everywhere: 1.000)")
         return metrics
 
     def train(self) -> dict:

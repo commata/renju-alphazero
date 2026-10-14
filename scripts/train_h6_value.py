@@ -52,7 +52,10 @@ def main(argv=None) -> int:
     print(json.dumps({'step': result['step'], 'samples_per_second': round(result['samples_per_second'], 1),
                       'best_step': best and best['step'], 'best_val_weighted_mse': best and best['weighted_mse'],
                       'best_val_proof': best and best['metrics']['by_kind']['proof'],
-                      'best_val_outcome': best and best['metrics']['by_kind']['outcome']}, indent=1))
+                      'best_val_outcome': best and best['metrics']['by_kind']['outcome'],
+                      'best_val_by_sign': best and {k: {kk: v.get(kk) for kk in ('states', 'sign_acc', 'mean_value', 'mse')}
+                                                    for k, v in best['metrics']['by_kind_sign'].items()}},
+                     indent=1))
     return 0
 
 

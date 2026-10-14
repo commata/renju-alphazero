@@ -257,6 +257,9 @@ class TrainerTest(unittest.TestCase):
             self.assertIn(key, meta)
         self.assertEqual(meta['val']['states'], manifest['splits']['val']['states'])
         self.assertNotIn('test', meta['cache_sha256'])
+        signs = meta['val']['by_kind_sign']
+        self.assertEqual(set(signs), {'proof+1', 'proof-1', 'outcome+1', 'outcome-1'})
+        self.assertEqual(sum(v['states'] for v in signs.values()), meta['val']['states'])
 
     def test_refuses_value_trained_parent_and_wrong_architecture(self):
         bad = write_h3(self.root / 'h3_bad', self.h3_model, value_trained=True)
