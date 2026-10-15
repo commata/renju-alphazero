@@ -7,6 +7,7 @@ agent with a fixed seed, once per arm:
     fast    the same engine with every exact speed-up installed (``rt30.fast.install_all``)
     rt      the TB-RT30 search (``rt30.engine``) with the fast windows; ``--deadline S`` gives every
             move an absolute deadline S seconds after its start, else it runs without one
+    rt2     the same with the TB-RT30-v2 search (``rt30.engine_v2``: V8-B slack retry)
     sup     TB-RT30 through ``rt30.supervisor`` (engine worker process, IPC, watchdog), as the web
             server runs it: ``seconds`` is the wall time from the request; needs ``--deadline`` and
             is the only arm of its run (``--watchdog``, default 29)
@@ -50,7 +51,7 @@ from hybrid.progress import Progress, run_chunks  # noqa: E402
 
 E3 = ROOT / 'docs' / 'mcts-v8-results' / 'e3'
 DEFAULT_JSONL = [E3 / 'puct_policy_vct2_50k_8415.jsonl', E3 / 'puct_policy_vct2_50k_8416.jsonl']
-ARMS = ('frozen', 'fast', 'rt', 'sup')
+ARMS = ('frozen', 'fast', 'rt', 'rt2', 'sup')
 PHASES = {'attack': 'v8_attack_seconds', 'stage_vct': 'v8_vct_seconds', 'tree': 'v8_tree_seconds',
           'root': 'v8_root_seconds', 'vct2': 'v8_vct2_seconds', 'v7_modules': 'v7_module_seconds'}
 # ``v7_module_seconds`` runs from before the own VCF to the end of the V7 root preparation, so it
@@ -119,16 +120,24 @@ def _search(moves, arm: str, seed: int):
         game.play(*move)
     started = perf_counter()
     extra = {}
-    if arm == 'rt':
-        agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'],
-                          root_rescue=_WORKER['root_rescue'], **_WORKER['config'])
+    if arm in ('rt', 'rt2'):
+        if arm == 'rt':
+            agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'],
+                              root_rescue=_WORKER['root_rescue'], **_WORKER['config'])
+        else:
+            from rt30.engine_v2 import RT30AgentV2
+
+            agent = RT30AgentV2(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'],
+                                root_rescue=_WORKER['root_rescue'], **_WORKER['config'])
         seconds = _WORKER['deadline']
         deadline = Deadline.after(seconds) if seconds else None
         move = agent.select_move(game, deadline=deadline)
         info = agent.rt_info
         extra = {'rt': {'timeouts': info.timeouts, 'skipped': info.skipped, 'emergency': info.emergency,
                         'rescued': info.rescued,
-                        'best': [[stage, list(m)] for stage, m in info.best]}}
+                        'best': [[stage, list(m)] for stage, m in info.best],
+                        **{k: getattr(info, k) for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_seconds',
+                                                          'attack_retry_win') if hasattr(info, k)}}}
     else:
         agent = MCTSV8Agent(seed=seed, root_policy=_WORKER['policy'], **_WORKER['config'])
         move = agent.select_move(game)
@@ -243,7 +252,7 @@ def summarize(rows, arms):
                                'over_30s': sum(x['seconds'] >= 30.0 for x in sup),
                                'ipc_overhead': _dist([x['seconds'] - x['engine_seconds'] for x in sup
                                                       if x['engine_seconds'] is not None])}
-    for arm in ('rt', 'sup'):
+    for arm in ('rt', 'rt2', 'sup'):
         if arm not in arms:
             continue
         rt = [r[arm]['rt'] for r in rows]
@@ -252,6 +261,9 @@ def summarize(rows, arms):
                          'skipped': {p: sum(p in x['skipped'] for x in rt) for p in ('puct', 'vct2', 'vct2_root_rescue')},
                          'root_rescued': sum(bool(x.get('rescued')) for x in rt),
                          'moves_with_timeout_or_skip': sum(bool(x['timeouts'] or x['skipped']) for x in rt)}
+        if arm == 'rt2':
+            summary['rt_deadline'].update({k: sum(bool(x.get(k)) for x in rt)
+                                           for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_win')})
     if len(arms) >= 2:
         summary['identical'] = sum(r['identical'] for r in rows)
         summary['different'] = [{'key': r['key'], 'first_difference': r['first_difference']}
@@ -369,12 +381,14 @@ def main(argv=None):
         if base_seed != args.seed:
             parser.error(f'--baseline was run with --seed {base_seed}; pass the same --seed')
     from rt30.engine import RT30_TIMING
+    from rt30.engine_v2 import V2_TIMING
 
     timing = {}
+    known = V2_TIMING if 'rt2' in arms else RT30_TIMING
     for item in args.timing:
         key, _, value = item.partition('=')
-        if key not in RT30_TIMING or not value:
-            parser.error(f'--timing {item!r}: use KEY=SECONDS with KEY in {sorted(RT30_TIMING)}')
+        if key not in known or not value:
+            parser.error(f'--timing {item!r}: use KEY=SECONDS with KEY in {sorted(known)}')
         timing[key] = float(value)
     manifest = None
     if args.keys_file is not None:
@@ -407,7 +421,7 @@ def main(argv=None):
     if args.baseline is not None:
         summary['vs_baseline'] = compare_baseline(rows, arms[-1], args.baseline, args.baseline_arm, args.seed)
     report = {'format': 'rt30-replay-v1', 'engine': 'TB-Engine-v1' if args.checkpoint else 'tb1-uniform-prior',
-              'arms': arms, 'manifest': manifest, 'deadline': args.deadline, 'root_rescue': not args.no_root_rescue, 'timing': {**RT30_TIMING, **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
+              'arms': arms, 'manifest': manifest, 'deadline': args.deadline, 'root_rescue': not args.no_root_rescue, 'timing': {**(V2_TIMING if 'rt2' in arms else RT30_TIMING), **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
               'workers': args.workers, 'git_commit': _commit(), 'jsonl': [str(p) for p in args.jsonl],
               'machine': {'platform': platform.platform(), 'processor': platform.processor(),
                           'cpu_count': os.cpu_count(), 'python': platform.python_version()},

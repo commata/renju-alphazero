@@ -21,7 +21,7 @@ from pathlib import Path
 def row(label: str, run_path: Path, recheck_path: Path | None) -> dict:
     run = json.loads(run_path.read_text(encoding='utf-8'))
     summary = run['summary']
-    arm = next(a for a in ('sup', 'rt', 'fast', 'frozen') if a in summary)
+    arm = next(a for a in ('sup', 'rt2', 'rt', 'fast', 'frozen') if a in summary)
     seconds = summary[arm]['seconds']
     deadline = summary.get('rt_deadline', {})
     vs = summary.get('vs_baseline', {})

@@ -90,12 +90,18 @@ def make_opponent(name: str, seed: int):
     raise ValueError(f'unknown opponent {name!r}')
 
 
+def engine_module(name: str):
+    from rt30 import tb_rt30_v1, tb_rt30_v2
+
+    return {'v1': tb_rt30_v1, 'v2': tb_rt30_v2}[name]
+
+
 def play_one(task: dict) -> dict:
-    from rt30 import fast, tb_rt30_v1
+    from rt30 import fast
     from rt30.deadline import Deadline
 
-    rt30 = tb_rt30_v1.make_agent(_WORKER['policy'], seed=derive_seed(task['seed'], 'v8'),
-                                 uniform_prior=_WORKER['uniform_prior'])
+    rt30 = engine_module(task.get('engine', 'v1')).make_agent(
+        _WORKER['policy'], seed=derive_seed(task['seed'], 'v8'), uniform_prior=_WORKER['uniform_prior'])
     fast.install_all()
     opponent = make_opponent(task['opponent'], derive_seed(task['seed'], 'v7'))
     rt_color = BLACK if task['rt30_color'] == 'black' else WHITE
@@ -118,7 +124,9 @@ def play_one(task: dict) -> dict:
             info, diag = rt30.rt_info, rt30.diagnostics
             rt_moves.append({'ply': len(game.history), 'seconds': round(seconds, 4), 'route': diag.v8_route,
                              'timeouts': list(info.timeouts), 'skipped': list(info.skipped),
-                             'rescued': info.rescued, 'move': [int(move[0]), int(move[1])]})
+                             'rescued': info.rescued, 'move': [int(move[0]), int(move[1])],
+                             **{k: getattr(info, k) for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_win')
+                                if hasattr(info, k)}})
         else:
             opp_seconds.append(round(seconds, 4))
         try:
@@ -146,7 +154,9 @@ def build_tasks(args) -> list[dict]:
                                    args.opening_radius)
             for color in (BLACK, WHITE):
                 name = 'black' if color == BLACK else 'white'
-                tasks.append({'key': f'rt30@{args.opponent}/{run_seed}/{pair}/{name}', 'run_seed': run_seed,
+                prefix = 'rt30' if args.engine == 'v1' else f'rt30{args.engine}'  # v1 keys as in A3's JSONL
+                tasks.append({'key': f'{prefix}@{args.opponent}/{run_seed}/{pair}/{name}', 'run_seed': run_seed,
+                              'engine': args.engine,
                               'pair': pair, 'seed': derive_seed(run_seed, 'game', pair, color),
                               'opponent': args.opponent, 'rt30_color': name,
                               'opening': [list(m) for m in opening], 'deadline': args.deadline,
@@ -268,6 +278,8 @@ def summarize(games: list[dict], reference: dict[tuple, dict] | None = None) -> 
         'rt30_timeouts': {p: sum(p in m['timeouts'] for m in moves) for p in ('attack', 'stage_vct', 'root', 'vct2')},
         'rt30_moves_with_timeout': sum(bool(m['timeouts'] or m['skipped']) for m in moves),
         'rt30_rescued': sum(m['rescued'] for m in moves),
+        **({k: sum(bool(m.get(k)) for m in moves) for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_win')}
+           if any('attack_retried' in m for m in moves) else {}),
         'rt30_routes': {r: sum(m['route'] == r for m in moves) for r in sorted({m['route'] for m in moves})},
         'mean_length': round(statistics.fmean(g['length'] for g in games), 1) if games else None,
         'game_minutes': round(sum(g['game_seconds'] for g in games) / 60, 1),
@@ -293,6 +305,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--checkpoint', type=Path, help='H3 policy checkpoint (TB-RT30-v1 and the tb1 opponent)')
     parser.add_argument('--uniform-prior', action='store_true', help='no checkpoint: smoke run, not TB-RT30-v1')
+    parser.add_argument('--engine', choices=('v1', 'v2'), default='v1', help='TB-RT30-v1 or the v2 candidate')
     parser.add_argument('--opponent', choices=OPPONENTS, default='e3')
     parser.add_argument('--seeds', type=int, nargs='+', default=[8415, 8416], help="run seeds (E3-A's by default)")
     parser.add_argument('--pairs', type=int, default=25, help='opening pairs per seed')
@@ -305,7 +318,9 @@ def main(argv=None):
     parser.add_argument('--games-jsonl', type=Path, help='finished games, one per line (resume)')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
-    from rt30.tb_rt30_v1 import NAME, TB_RT30_V1, config_hash
+    module = engine_module(args.engine)
+    NAME, config_hash = module.NAME, module.config_hash
+    config = module.TB_RT30_V1 if args.engine == 'v1' else module.TB_RT30_V2
 
     if args.checkpoint is None and not args.uniform_prior:
         parser.error('pass --checkpoint, or --uniform-prior for a smoke run')
@@ -313,7 +328,7 @@ def main(argv=None):
         parser.error('the tb1 opponent needs --checkpoint')
     if args.reference and args.opponent != 'e3':
         parser.error('--reference records are E3-A games: use --opponent e3')
-    args.deadline = args.deadline or TB_RT30_V1['deadline_seconds']
+    args.deadline = args.deadline or config['deadline_seconds']
     reference = load_reference(args.reference)
 
     tasks = build_tasks(args)

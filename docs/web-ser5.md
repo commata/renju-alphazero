@@ -376,6 +376,9 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | A1 | V8-B cap 4/6/8초 결정 | **완료: 8초** (§9.1) |
 | A2 | TB-RT30-v1 동결(설정 hash + 파일 lock) | **완료** (`rt30/tb_rt30_v1.py`, §9.2) |
 | A3 | E3-A 100판 짝 대국 gate | **HARM** (−0.06, §9.4) → A3.1 진단, TB-RT30-v2 설계 |
+| A3.1 | 34 분기 수를 게임 상태로 재생: tb1/v1/v2 × workers 4/1 | 사용자 실행 (§9.5) |
+| v2-A | TB-RT30-v2 후보: V8-B 남은 시간 재시도 (`rt30/engine_v2.py`) | **구현** → A1 gate, A3-v2A (§9.5) |
+| v2-C | V8-C 시간 분할 50% (필요할 때만) | 대기 (§9.5) |
 
 PUCT 시뮬레이션 수와 H3 policy는 이 단계에서 바꾸지 않는다(PUCT 최대 4.9초, NN 착수당 3ms).
 
@@ -751,7 +754,7 @@ python scripts/run_rt30_match.py --checkpoint runs/h3_policy_64x4/best.pt --work
 
 **34판 분기의 원인 (`docs/rt30-eval/a3-divergence-v1.json`).**
 
-- 34판 모두 분기 수는 TB-Engine-v1이 tree 수를 **바꾼** 수다(기록 `changed=True`). 평범한 tree 수에서 갈라진 판은 없다.
+- 34개의 첫 분기는 모두 **TB1의 전술 override(V8-B 증명된 WIN, V8-C SAFE 자식 선택)가 RT30의 시간 제한 때문에 재현되지 않은 수**다. 6개는 tree보다 앞에서 도는 V8-B의 WIN 누락이고, 28개는 V8-C의 SAFE 자식 선택 누락이다. 평범한 PUCT 수에서 deadline 사건 없이 갈라진 판은 0이다.
 - 원인은 두 가지뿐이다.
 
 | 원인 | 판 | 결과 바뀐 판 | 점수 |
@@ -781,47 +784,134 @@ python scripts/run_rt30_match.py --checkpoint runs/h3_policy_64x4/best.pt --work
   - 그래서 tree 수 검사가 끝나기도 전에 창이 닫힌다.
   - **workers=1의 이득(약 10%로 추정)으로는 이 차이(22초 + 7.5초 대 19초)를 메울 수 없다.**
 
-**A3.1: 진단 (SER5, 약 30분).** 34국면을 세 번 재생한다.
+A3.1 진단과 TB-RT30-v2 계획은 §9.5로 옮겼다. 처음 안의 "fresh seed 재생 3회"는 tree 수를 재현하지 못해 폐기했다(§9.5).
+
+### 9.5 A3 이후 계획, A3.1 진단, v2-A 구현 (2026-10-15)
+
+**흐름(확정).** 한 번에 한 변경만 넣고, 단계마다 gate를 본다.
+
+| 단계 | 내용 | 다음 조건 |
+|---|---|---|
+| A3 | TB-RT30-v1, workers 4 | **HARM 확정**(§9.4). 뒤의 결과로 번복하지 않는다 |
+| A3.1 | 34 분기 수, tb1/v1/v2 × workers 4/1 | 원인 진단만 한다 |
+| A3b (선택) | E3-A 100판, workers 1 = "엔진 동시 탐색 1개" 배포 조건 | 아래 A3.1 기준을 넘을 때만 돌린다. PASS면 v1 + worker 1로 배포 |
+| v2-A | **V8-B 남은 시간 재시도만** | 개발 세트 + A1 gate |
+| A3-v2A | E3-A 100판(같은 규칙) | PASS면 여기서 끝난다(v2-C 불필요) |
+| v2-C | 필요할 때만: V8-C 시간 분할 50% | 개발 세트 + control 세트 + A1 gate |
+| A3-v2 | E3-A 100판(같은 규칙) | PASS 필요 |
+| A2-v2 | v2 설정 hash + `tests/frozen_tb_rt30_v2.sha256` | 이후 변경 금지 |
+| B1/B2 | 멀티 세션 + polling (§8) | 시작 |
+
+이렇게 하면 결과를 단계별로 나눠 설명할 수 있다. 정확 고속화, cap 8, V8-B 재시도, V8-C 스케줄러가 각각 얼마를 바꿨는지가 따로 남는다.
+
+**버전 관리.**
+
+- TB-RT30-v1 파일(`tests/frozen_tb_rt30_v1.sha256`)은 **영구히 그대로 둔다.** v1 = A3에서 HARM이었던 바로 그 엔진이다.
+- v2는 새 파일이다.
+  - `src/rt30/engine_v2.py`: v1의 `rt30_search`를 복사하고 V8-B 재시도만 바꿨다. 나머지 helper는 v1 모듈(lock 대상)에서 import한다.
+  - `src/rt30/tb_rt30_v2.py`: v1 설정 + `attack_retry`, `timing.attack_retry_min` 1초. `STATUS = 'candidate'`, 설정 hash `9bccd7c2…`.
+- solver는 v1 것을 그대로 쓴다. 재시도에는 solver의 상태 필드를 되돌리는 것만 필요하다.
+- v2가 최종 gate를 통과한 뒤에만 `tests/frozen_tb_rt30_v2.sha256`을 만든다. `engine_v2.py`와 `tb_rt30_v2.py`에 더해, v2가 쓰는 v1 파일도 넣는다.
+
+**A3.1 설계 수정: fresh seed 재생은 tree 수를 재현하지 못한다.**
+
+- `run_rt30_replay.py`는 국면마다 새 agent(seed 42)로 탐색한다. 그런데 PUCT rollout(`_rollout_v321`)은 agent의 난수를 쓰고, 대국에서는 그 난수가 앞의 수들을 거치며 진행돼 있었다.
+- 그래서 V8-C 28국면에서는 tree 수 자체가 대국 때와 달라질 수 있다. V8-B 6국면은 tree 전에 돌아서 상관없다.
+- 새 도구 `scripts/run_rt30_divergence.py`:
+  - 대국을 오프닝부터 다시 둔다. 엔진은 A3/E3-A와 같은 seed를 받고, 자기 차례마다 탐색한다(대국과 같은 난수 흐름).
+  - 착수는 기록대로 둔다. 상대 엔진은 돌리지 않는다.
+  - 분기 수에서 엔진의 수가 TB1의 수와 같으면 `recovered`다.
+  - `prefix_mismatches`는 앞선 자기 수가 기록과 달랐던 수다. 달랐다면 난수 흐름이 달라졌을 수 있다.
+  - `tree_move_as_recorded`는 tree 수가 기록과 같은 V8-C 국면 수다.
+- 실행은 엔진 3개(tb1 = TB1 + 고속화, deadline 없음 / v1 / v2) × workers(4 = A3 부하, 1 = 엔진 하나)다. 처음 안의 fast w1을 포함한다.
+  - tb1 w4와 w1의 차이: CPU 경쟁이 TB1의 증명 시간을 몇 % 늘리는지.
+  - v1 w4와 w1의 차이: 같은 경쟁이 RT30의 결정을 몇 개 바꾸는지.
+  - v2 w4: v2-A 개발 세트 결과. v2 w1: 엔진 하나 조건에서의 v2.
+- 요약 집계:
+  - 원인별(`attack` 6 / `root` 28) 복원 수.
+  - 결과가 바뀐 13판, 그중 손해를 만든 10판(`loss_making`), 이득 3판(`gain_making`)의 복원 수.
+  - `points_if_recovered`: 복원된 판이 E3-A 결과로 돌아간다고 볼 때의 점수. 상한이다(복원된 판도 나중에 다시 갈라질 수 있다). 이득 판의 복원은 음수로 센다.
+
+**A3.1 판단 기준(실행 전에 고정).**
+
+- **A3b(100판 workers 1)는 v1 w1의 순 `points_if_recovered`(loss + gain)가 +3.0 이상일 때만 돌린다.**
+  -6점에서 1점만 되찾으면 −0.05가 돼도 구간 상한이 0을 넘지 못하기 때문이다.
+- 그렇지 않으면 바로 v2-A의 A1 gate로 간다.
+- 어느 경우든 v1 workers 4의 A3 HARM은 그대로다.
+
+**v2-A: V8-B 남은 시간 재시도 (`engine_v2.rt30_search_v2`).**
+
+- **soft cap과 hard deadline을 구분한다.** V8-B는 v1처럼 `min(시작 + 8초, deadline − final margin)`에서 멈춘다.
+  - 앞쪽(8초 cap)이 먼저 걸렸으면 `attack_cap_hit`다. 이때 잘린 탐색의 solver(VCF cache), statuses, 후보 순서를 그대로 보존한다.
+- **재시도 조건.**
+  - 시간으로 잘린 탐색만 재시도한다(`solver.timed_out`). WIN을 찾았거나 node/call 예산을 다 써서 끝난 탐색은 다시 돌리지 않는다.
+  - move deadline 자체가 V8-B를 자른 경우도 재시도하지 않는다.
+- **재시도 시점.** v1과 똑같이 나머지 단계(stage VCT / PUCT / V8-C / VCT2)가 끝나 착수가 정해진 뒤다.
+  - 그때 `deadline − final margin`까지 `attack_retry_min`(1초) 이상 남았으면 같은 solver로 이어서 돈다.
+  - solver의 `deadline`을 바꾸고, `timed_out`과 `exhausted`를 해제한다. 해제는 시간 cut일 때만 한다.
+  - 예산(200k 노드 / 10k 호출)은 처음 시도와 합쳐서 센다.
+- **결과.**
+  - WIN이 증명되면 그 수를 둔다(`own_vct`, best `own_vct_retry`).
+  - 아니면 v1의 수를 그대로 둔다. 그래서 착수가 바뀌는 경우는 증명된 승리뿐이다.
+- **TB1과의 차이.** 재시도는 남은 예산으로 공정 분배 라운드를 처음부터 다시 시작한다(`_first_proven`, 미판정·미검사 후보 대상, 끝난 하위 결과는 cache에서 가져온다).
+  그래서 찾은 승리는 증명된 것이지만, TB1의 단일 run이 먼저 찾는 승리와 다른 승리일 수 있다.
+- **로그.** soft cap은 실패가 아니라 스케줄링 사건이라 따로 남긴다(`RTInfoV2`).
+  - `attack_cap_hit`, `attack_retried`, `attack_retry_seconds`, `attack_retry_win`.
+  - `timeouts`의 'attack'은 착수 시점에 V8-B가 여전히 미완이었을 때만 남는다.
+  - `run_rt30_replay.py --arms rt2`, `run_rt30_match.py --engine v2`, `run_rt30_divergence.py --engine v2`가 이 값을 기록한다.
+- **테스트** (`tests/test_rt30_engine_v2.py`, 8개):
+  - deadline 없음 = TB1(모든 route, 진단 동일).
+  - 재시도 off = v1(같은 clock에서 착수·진단 동일).
+  - soft cap에 잘린 승리를 남은 시간에 되찾는다(새 frozen solver로 WIN 재증명, 게임 상태 원상).
+  - hard deadline cut, 남은 시간 부족, 예산 소진 시에는 재시도하지 않는다.
+  - 설정은 v1 + 재시도만이다.
+- **컨테이너 확인** (V8-B 6국면, deadline 27.5초, workers 4, uniform prior):
+  - 조건: 컨테이너는 SER5보다 약 1.45배 느리고, tree가 H3가 아니라 뒤 단계 시간이 다르다. V8-B 자체는 tree와 무관하다.
+  - v1: TB1 수 1/6(8416/4 백, tree가 우연히 같은 수).
+  - v2: 3/6. 재시도로 되찾은 것은 **8415/20 흑**(A3에서 승→패)과 **8415/1 백**이다(재시도 11.7초, 7.2초).
+  - 8416/22 흑은 재시도 5.9초로 모자랐다(TB1은 컨테이너에서 26.7초 필요).
+  - 27.5초 초과 0, 재시도 착수의 최대 26.0초.
+  - SER5에서는 남는 시간이 더 길어(손실 3판의 A3 착수가 10~17초에 끝났다) 1~2판을 더 기대한다. 확인은 A3.1의 v2 w4로 한다.
+- **v2-A만으로 통과할 수 있는 상한.** V8-B가 걸린 점수는 −2.5점이다. 모두 되찾아도 차이는 −0.035다.
+  그래서 A3-v2A PASS는 거의 다 되찾고 새 손실이 없을 때만 가능하다. 그래도 낮은 위험의 변경을 먼저 단독으로 재는 것이 순서다.
+- **A3-v2A 실행 조건.** A3.1 v2 w4의 `loss_making.points_if_recovered` ≥ 2.0이고, A1 gate(재검사 UNSAFE 0, 27.5초 초과 0, 지는 수 증가 없음)를 통과해야 한다.
+  아니면 A3-v2A를 건너뛰고 v2-C로 간다.
+
+**v2-C 설계(보류, v2-A 다음에 필요할 때만).**
+
+- **비율 고정.** `root_tree_time_share = 0.50`으로 고정하고 조정하지 않는다.
+  근거: TB1이 tree 수에 node·call 예산의 정확히 절반을 먼저 주므로, 시간 slice도 절반이다. 개발 세트를 보고 0.55, 0.60으로 맞추지 않는다.
+- **soft cut.**
+  - 처음 단계: root 창의 50%(v1과 같은 VCT2 reserve 적용) 동안 tree 수만 검사한다.
+    - SAFE면 tree 수 유지.
+    - UNSAFE면 기존 rescue.
+    - soft cut으로 미판정이면 solver·cache·statuses를 보존하고 soft 상태를 해제한다.
+  - 다음 단계: 남은 창에서 frozen `_search_root_children`를 돈다. **tree 수도 미판정 후보로 포함한다**(TB1 구조 그대로).
+- **로그.** `root_tree_soft_cut`, `root_tree_first_status`, `root_child_search_started`, `root_child_safe_found`.
+- **control 세트 `docs/rt30-eval/a3-root-control-v1.json`(26국면).**
+  - 기준: E3-A tree 수 중 V8-C가 tree 수를 데스크톱 60초 이상(SER5 약 12~26초) 걸려 SAFE로 증명한 수 전부.
+  - TB1은 여기서 tree 수를 유지한다. 시간 분할이 이 수를 괜히 바꾸는지 본다.
+  - 개발 세트(바꿔야 할 수를 몇 개 복원하는가)와 함께 본다.
+
+**SER5 실행(백그라운드).**
+
+- `scripts/ser5/start.sh`는 job을 새 session(`setsid nohup`, 터미널 없음)으로 띄운다. **SSH가 끊겨도 계속 돈다.**
+- job 여러 개를 주면 순서대로 돈다(앞 job이 실패하거나 중지되면 멈춘다). 측정이 섞이지 않도록 job은 한 번에 하나(체인)만 돌린다.
+- 로그·상태 파일은 `runs/rt30/bg/<job>.out`, `.pid`(실행 중), `.done`(끝남)이다.
+- 각 단계는 출력 파일이 있으면 건너뛴다. 대국·분기 러너는 jsonl로 단계 안에서도 이어간다. 그래서 재부팅이나 중지 후 **같은 명령으로 다시 시작하면 이어진다.**
 
 ```bash
-CK=runs/h3_policy_64x4/best.pt; SET=docs/rt30-eval/a3-divergence-v1.json
-python scripts/run_rt30_replay.py --checkpoint $CK --arms fast --keys-file $SET --workers 4 \
-    --output runs/rt30/a31_fast_w4.json 2>&1 | tee runs/rt30/a31_fast_w4.log
-python scripts/run_rt30_replay.py --checkpoint $CK --arms rt --deadline 27.5 --keys-file $SET --workers 4 \
-    --baseline runs/rt30/a31_fast_w4.json --output runs/rt30/a31_rt_w4.json 2>&1 | tee runs/rt30/a31_rt_w4.log
-python scripts/run_rt30_replay.py --checkpoint $CK --arms rt --deadline 27.5 --keys-file $SET --workers 1 \
-    --baseline runs/rt30/a31_fast_w4.json --output runs/rt30/a31_rt_w1.json 2>&1 | tee runs/rt30/a31_rt_w1.log
+cd ~/renju-alphazero && git pull
+scripts/ser5/start.sh a31 v2a_a1     # A3.1 (약 4.5시간) -> v2-A A1 gate (약 1시간), 연달아
+scripts/ser5/status.sh               # 상태와 마지막 로그 (SSH 다시 접속한 뒤)
+tail -f runs/rt30/bg/a31.out         # 진행 보기 (Ctrl-C는 보기만 멈춘다)
+scripts/ser5/stop.sh a31             # 중지 (체인 전체); 다시 start.sh a31 v2a_a1 이면 이어진다
+# A3.1·A1 결과가 위 기준을 넘으면:
+scripts/ser5/start.sh v2a_a3         # A3-v2A 100판 (약 2.5~3시간)
 ```
 
-1. `fast`는 TB1 자체다(deadline 없음). 다음을 확인한다.
-   - 각 국면에서 `tb1_move`를 그대로 두는지. 재생은 seed 42이고 대국은 판별 seed라, tree 수가 같은지도 함께 본다.
-   - SER5에서 실제로 쓰는 phase 시간. 위 환산이 맞는지 본다.
-2. `rt` w4와 w1의 비교: w1에서 TB1 수를 되찾는 국면 수가 CPU 경쟁의 몫이다.
-3. **판단.**
-   - w1에서 대부분(약 2/3 이상) 되찾는다면, 배포 조건을 정한다. 엔진 동시 탐색 1개(B1의 `AIJobQueue` worker 1, 나머지는 대기열)로 정하고, 그 조건으로 A3를 다시 gate로 돌린다. v1은 그대로다.
-   - 위 측정대로 거의 못 되찾는다면, TB-RT30-v2로 간다.
-
-**TB-RT30-v2 설계 방향 (A3.1 결과를 보고 확정).** 두 변경 모두 "TB1이 더 오래 생각해서 내렸을 결정에 시간 안에 도달한다"가 목표다. 판정 규칙(SAFE만 바꿈, 증명된 WIN만 둠)은 그대로다.
-
-1. **V8-B 이어 돌리기 (남은 시간 사용).**
-   - V8-B가 cap에 잘렸고 나머지 단계가 일찍 끝났다면, 같은 solver(증명이 끝난 하위 결과 cache 유지)로 V8-B를 다시 돈다. 기한은 deadline − final margin이다.
-   - WIN이 증명되면 그 수를 둔다. 증명된 승리이므로 안전하다. TB1이 찾았을 승리와 다른 승리일 수는 있다(cache 때문에 예산 계산이 달라진다).
-   - 대가: V8-B가 잘린 수(A3에서 102/2,878 = 3.5%)만 최대 26초까지 늘어난다.
-   - 기대 효과: −2.5점 중 1.5~2.5점.
-2. **V8-C 시간 분할.**
-   - TB1은 tree 수에 노드 예산의 절반을 먼저 준다. v2는 **시간**도 나눈다. tree 수 검사에 root 창의 일부(예: 50~60%)를 주고, 그 안에 판정이 안 나면 남은 시간에 자식 검사(tree 수 포함, TB1의 공정 분배 그대로)를 한다.
-   - 이후 규칙은 TB1과 같다. tree 수가 SAFE면 유지하고, 아니면 처음 SAFE로 증명된 자식을 두고, 없으면 tree 수를 둔다(UNSAFE면 rescue).
-   - 이득: TB1이 tree 수를 바꾸는 27수에서 같은 결정에 도달할 수 있다. 자식 검사에는 SER5 약 7.5초가 필요하다.
-   - 위험: TB1이 tree 수를 늦게(SER5 약 12~19초) SAFE로 증명하는 경우가 있다(분기 전 7수). 이때 v2는 더 아래의 SAFE 자식으로 바꿀 수 있다. 안전성은 같고(증명된 SAFE), tree 순위만 낮아진다.
-   - 분할 비율은 이 두 경우의 수를 보고 정한다.
-   - VCT2 reserve(4초)를 tree 수가 미판정일 때 자식 검사에 넘길지도 같은 세트로 본다.
-3. (선택) **V8-C 자식 병렬 검사**(§3.7). 동시 탐색이 1개일 때만 남는 코어를 쓴다. 배포 조건이 "엔진 1개"로 정해지면 2보다 이득이 클 수 있다.
-
-**v2 평가 순서.**
-
-1. `a3-divergence-v1`(개발 세트): TB1 수를 되찾은 수, 새로 생긴 다른 수.
-2. A1 gate 재확인: `slow-stratified-v1` + `critical-regressions-v1`. 재검사 UNSAFE 0, 27.5초 초과 0, 지는 수 증가 없음.
-3. 마지막으로 A3 100판 gate(같은 규칙).
-   - 개발 세트가 A3의 분기 국면이라 A3에 맞춘 조정이 될 위험이 있다. 그래서 두 변경은 국면별 예외 없이 구조로만 넣고, 조정 값은 분할 비율 하나로 제한한다.
-
-B1은 v2(또는 배포 조건 결정) 후 A3가 PASS한 다음에 시작한다.
+- 결과 커밋 대상:
+  - `runs/rt30/a31_*.json`·`.jsonl`·`.log`
+  - `v2a_h3_*.json`·`.log`, `recheck_v2a_*.json`, `v2a_compare_*.md`
+  - `a3_v2a_e3.*`
+- 위 파일을 `docs/rt30-results/`로 복사해 커밋한다. 모두 자체 엔진 기록이라 RenjuNet 파생 데이터가 아니다.

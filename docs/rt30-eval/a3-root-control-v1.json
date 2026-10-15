@@ -1,0 +1,609 @@
+{
+ "version": "a3-root-control-v1",
+ "kind": "rt30-eval-manifest",
+ "description": "Control for a V8-C time split (v2-C): every E3-A tree move whose V8-C check proved the tree move SAFE after at least 60 s on the desktop (about 12-26 s on SER5). TB-Engine-v1 keeps the tree move here; a split that gives the tree move less time may switch away from it. Paired with a3-divergence-v1 (the moves a split should change).",
+ "found_in": [
+  "docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl",
+  "docs/web-ser5.md \u00a79.5"
+ ],
+ "selection": "route tree, root.checked[0] SAFE, root.seconds >= 60",
+ "seed": 42,
+ "keys": [
+  "puct_policy_vct2_50k_8415/30/75",
+  "puct_policy_vct2_50k_8415/33/16",
+  "puct_policy_vct2_50k_8415/33/24",
+  "puct_policy_vct2_50k_8415/39/59",
+  "puct_policy_vct2_50k_8415/40/35",
+  "puct_policy_vct2_50k_8415/45/48",
+  "puct_policy_vct2_50k_8415/46/43",
+  "puct_policy_vct2_50k_8415/47/85",
+  "puct_policy_vct2_50k_8415/47/95",
+  "puct_policy_vct2_50k_8415/47/149",
+  "puct_policy_vct2_50k_8416/25/15",
+  "puct_policy_vct2_50k_8416/38/13",
+  "puct_policy_vct2_50k_8416/40/136",
+  "puct_policy_vct2_50k_8416/45/40",
+  "puct_policy_vct2_50k_8416/45/42",
+  "puct_policy_vct2_50k_8416/45/44",
+  "puct_policy_vct2_50k_8416/47/33",
+  "puct_policy_vct2_50k_8416/47/47",
+  "puct_policy_vct2_50k_8416/47/49",
+  "puct_policy_vct2_50k_8416/47/53",
+  "puct_policy_vct2_50k_8416/49/24",
+  "puct_policy_vct2_50k_8416/49/26",
+  "puct_policy_vct2_50k_8416/49/28",
+  "puct_policy_vct2_50k_8416/49/42",
+  "puct_policy_vct2_50k_8416/49/44",
+  "puct_policy_vct2_50k_8416/49/82"
+ ],
+ "cases": [
+  {
+   "key": "puct_policy_vct2_50k_8415/30/75",
+   "game": "8415/1/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    10,
+    4
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      10,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 77.931
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/33/16",
+   "game": "8415/13/black",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    12,
+    6
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      12,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 68.623
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/33/24",
+   "game": "8415/13/black",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    12,
+    8
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      12,
+      8
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 67.8598
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/59",
+   "game": "8415/12/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    14,
+    4
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      14,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 82.1224
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/40/35",
+   "game": "8415/23/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    5,
+    4
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      5,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 63.7487
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/45/48",
+   "game": "8415/14/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    4,
+    3
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      4,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 78.1469
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/46/43",
+   "game": "8415/22/white",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    7,
+    1
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      7,
+      1
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 93.7908
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/47/85",
+   "game": "8415/13/white",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    2,
+    7
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      2,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 61.2812
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/47/95",
+   "game": "8415/13/white",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    3,
+    6
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      3,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 79.4943
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/47/149",
+   "game": "8415/13/white",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    14,
+    6
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      14,
+      6
+     ],
+     "SAFE"
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      7,
+      11
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      14,
+      4
+     ],
+     "UNKNOWN"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 118.9755
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/25/15",
+   "game": "8416/1/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    3,
+    5
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      3,
+      5
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 79.6813
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/38/13",
+   "game": "8416/24/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    12,
+    6
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      12,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 70.6323
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/40/136",
+   "game": "8416/0/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    3,
+    11
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      3,
+      11
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 94.7297
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/45/40",
+   "game": "8416/10/black",
+   "kind": "control",
+   "result": "loss>loss",
+   "tb1_move": [
+    4,
+    9
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      4,
+      9
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 79.5337
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/45/42",
+   "game": "8416/10/black",
+   "kind": "control",
+   "result": "loss>loss",
+   "tb1_move": [
+    6,
+    11
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      6,
+      11
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 100.4958
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/45/44",
+   "game": "8416/10/black",
+   "kind": "control",
+   "result": "loss>loss",
+   "tb1_move": [
+    8,
+    11
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      8,
+      11
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 98.7474
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/33",
+   "game": "8416/2/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    5,
+    7
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      5,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 70.4569
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/47",
+   "game": "8416/2/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    2,
+    9
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      2,
+      9
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 65.8789
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/49",
+   "game": "8416/2/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    10,
+    7
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      10,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 134.0758
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/53",
+   "game": "8416/2/white",
+   "kind": "control",
+   "result": "win>win",
+   "tb1_move": [
+    10,
+    9
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      10,
+      9
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 79.0203
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/49/24",
+   "game": "8416/13/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    10,
+    10
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      10,
+      10
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 106.3645
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/49/26",
+   "game": "8416/13/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    8,
+    11
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      8,
+      11
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 109.8763
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/49/28",
+   "game": "8416/13/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    6,
+    11
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      6,
+      11
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 71.5091
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/49/42",
+   "game": "8416/13/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    4,
+    12
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      4,
+      12
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 86.2602
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/49/44",
+   "game": "8416/13/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    5,
+    12
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      5,
+      12
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 90.0351
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/49/82",
+   "game": "8416/13/black",
+   "kind": "control",
+   "result": "draw>draw",
+   "tb1_move": [
+    12,
+    10
+   ],
+   "tb1_route": "tree",
+   "tb1_root_checked": [
+    [
+     [
+      12,
+      10
+     ],
+     "SAFE"
+    ]
+   ],
+   "tb1_root_seconds_desktop": 65.2141
+  }
+ ]
+}

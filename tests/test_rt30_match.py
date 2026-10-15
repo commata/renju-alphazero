@@ -12,7 +12,7 @@ E3A = [ROOT / 'docs' / 'mcts-v8-results' / 'e3' / f'puct_policy_vct2_50k_{seed}.
 
 def args(**kw):
     base = dict(seeds=[8415, 8416], pairs=25, opening_random_plies=2, opening_radius=2, opponent='e3',
-                deadline=27.5, max_plies=None)
+                deadline=27.5, max_plies=None, engine='v1')
     return Namespace(**{**base, **kw})
 
 
@@ -37,6 +37,12 @@ class E3TasksTest(unittest.TestCase):
             self.assertEqual(task['seed'], record['seed'])
             self.assertEqual(record['moves'][:len(task['opening'])], task['opening'])
             self.assertEqual(record['opponent'], match.E3_OPPONENT)
+
+    def test_v1_keys_are_a3_s_and_v2_keys_differ(self):
+        v1 = [t['key'] for t in match.build_tasks(args(pairs=1))]
+        v2 = [t['key'] for t in match.build_tasks(args(pairs=1, engine='v2'))]
+        self.assertEqual(v1[0], 'rt30@e3/8415/0/black')  # docs/rt30-results/a3_e3.jsonl resumes as is
+        self.assertEqual(v2[0], 'rt30v2@e3/8415/0/black')
 
     def test_reference_scores_e3a(self):
         refs = list(match.load_reference(E3A).values())
