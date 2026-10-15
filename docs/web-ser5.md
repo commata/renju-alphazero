@@ -577,3 +577,57 @@ sqlite3 data/renju_web.db ".backup data/backup/renju_web_$(date +%F).db"
 
 외부에 공개하기 전에 알아둘 점이 있다. 현재 대국 API는 서버 전체에 게임이 하나뿐(`SESSION`)이고 인증이 없다.
 멀티 세션으로 바꾸기 전까지는 대국 화면도 인증(Nginx basic auth 등) 뒤에 둔다.
+
+## 8. B1/B2 설계: 멀티 세션 + polling (A3 이후 구현, 2026-10-15 확정 방향)
+
+**기본 구조(제안 채택).**
+
+- 세션마다 `PlaySession` 하나, 엔진은 전역 하나다.
+  - `SessionManager`가 쿠키 `renju_sid`로 세션을 찾는다. 세션 ID는 `secrets.token_urlsafe(32)`이고,
+    쿠키 속성은 `HttpOnly`, `SameSite=Lax`, `Path=/`, HTTPS에서는 `Secure`다.
+  - 전역 `AIJobQueue` 하나와 dispatcher가 `EngineSupervisor`를 쓴다.
+- 착수는 `202`로 즉시 응답하고, 클라이언트가 `/api/state`를 polling한다.
+  세션 상태는 `READY / QUEUED / THINKING / FINISHED`이고, 오류는 `last_error`에 담는다.
+- `QUEUED`·`THINKING` 중에는 move·undo·new가 `409`다. 서버가 막고, 클라이언트도 보드를 잠근다.
+  대기열이 차면 `503` + `Retry-After`다. 세션 정리는 lazy cleanup이고, 진행 중이던 게임은 DB에 `abandoned`로 남긴다.
+- 파일 구조: `src/webplay/sessions.py`, `src/webplay/jobs.py`. `PlaySession`은 우선 현재 파일에 둔다.
+
+**수정·보완 사항.**
+
+1. **엔진 탐색은 세션 lock 밖에서 한다(필수).**
+   - 지금 `play_human()`은 lock을 잡은 채 `_play_ai_locked()`에서 탐색까지 끝낸다. 그런데 `state()`도 같은 lock을 잡는다.
+   - 그래서 lock을 쥔 채 탐색하면 그 세션의 polling이 최대 29초 막힌다.
+   - 바꿀 흐름:
+     - `play_human()`은 사람 수를 반영하고, 착수 기록(history)의 사본과 `epoch`(게임 ID와 수 번호)를 job에 담아 `QUEUED`로 바꾼 뒤 lock을 놓는다.
+     - dispatcher가 lock 없이 탐색한다.
+     - 끝나면 lock을 잡고 epoch가 그대로인지 확인한 뒤 AI 수를 반영한다. epoch가 다르면 결과를 버린다.
+   - 사람이 백일 때 `/api/new` 직후 두는 AI 첫 수도 같은 경로로 처리한다.
+2. **대기열 자리는 사람 수를 반영하기 전에 확보한다.** 대기열이 차서 `503`을 줄 때 사람 수가 이미 반영돼 있으면 안 된다.
+   세션당 대기 중인 job은 최대 1개다(409 규칙과 같은 조건).
+3. **deadline 정책을 명시한다.** 엔진 하나로는 동시 요청 4개 모두에 "요청부터 30초"를 보장할 수 없다. 그래서 둘로 나눈다.
+   - 엔진 deadline: **탐색 시작 + 27.5초**(watchdog은 시작 + 29초). 탐색 품질은 대기열 길이와 관계없이 일정하다.
+     - 구현은 dispatcher가 job을 꺼낼 때 `supervisor.select(received_at=꺼낸 시각)`을 부르는 것이다(인자의 의미가 "탐색 시작"이 된다).
+   - 사용자 체감 시간: 대기 + 탐색. 대기열 길이로 상한을 정한다.
+     - `MAX_AI_QUEUE = 4`이면 최악 대기는 약 4 × 26초 ≈ 105초 + 탐색이다.
+     - 공개 SLA를 "탐색 30초 이내 + 대기 n명 표시"로 할지, 대기열을 줄일지는 B3 측정 뒤에 정한다.
+   - DB: `queue_seconds`는 웹 대기열에서, `engine_seconds`와 `deadline_seconds`는 supervisor에서 받는다.
+     `wall_seconds`는 사람 착수 요청부터 AI 수 반영까지다.
+4. **나간 세션의 job은 탐색하지 않는다.** dispatcher는 job을 꺼낼 때 세션이 살아 있는지, epoch가 맞는지부터 확인한다.
+   `QUEUED` 중 new는 job을 취소하고 바로 진행해도 된다. `THINKING` 중에는 409다.
+5. **worker의 agent 캐시 크기를 세션 수에 맞춘다.** supervisor worker는 게임별 agent(난수 흐름)를 최대 8개 둔다(`len(agents) >= 8`).
+   `MAX_SESSIONS = 16`이면 캐시가 밀려 같은 게임의 agent가 다시 만들어진다(동작은 안전하지만 난수 흐름이 다시 시작된다).
+   캐시를 `MAX_SESSIONS` 이상으로 두거나, 세션이 끝날 때 그 game_key를 정리한다.
+6. **DB 스키마 v2: `games.session_id`.** v1에는 이 컬럼이 없다.
+   원문 세션 ID가 아니라 **hash**(예: SHA-256 앞 16자)를 저장한다. DB나 로그 API로 세션이 노출돼 탈취되는 일을 막기 위해서다.
+   `user_version`을 2로 올려 migration한다.
+7. **CSRF와 요청 검증.** POST는 `Content-Type: application/json`만 받는다. 쿠키는 `SameSite=Lax`다. 베타 동안에는 Nginx Basic Auth 뒤에 둔다.
+8. **동시 worker 수는 설정값으로 둔다.** dispatcher가 thread N개, supervisor가 worker N개를 쓰는 구조로 두되, 처음 값은 N=1이다.
+   B3에서 N=2가 탐색 품질(nodes/s)을 얼마나 떨어뜨리는지 보고 정한다.
+9. **서버 재시작.** 메모리의 세션은 사라진다. DB에는 `in_progress`로 남는다. 베타에서는 이대로 받아들이고, 재접속 시 복원은 나중에 한다.
+10. **테스트.**
+    - fake 엔진(`tests/rt30_fake_agents.py` 방식)으로 확인할 것: 세션 격리, 202 → polling → READY, 409/503, epoch 불일치 시 결과 버림,
+      대기 중 취소, polling이 탐색 중에도 막히지 않는 것, TTL 정리.
+    - 그 뒤 B3의 HTTP 부하 클라이언트(세션 1/2/4개)로 측정한다.
+
+**구현 순서:** SessionManager와 API 세션 분리 → AIJobQueue와 dispatcher(탐색은 lock 밖, epoch 확인) → `/api/state` polling 필드 →
+UI(생각 중·대기 표시, 보드 잠금) → DB v2(`session_id` hash) → 테스트 → B3 부하 측정.
