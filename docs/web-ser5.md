@@ -375,7 +375,7 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | 10 | (선택) V8-C 자식 병렬 검사, incremental threat table | 대기 |
 | A1 | V8-B cap 4/6/8초 결정 | **완료: 8초** (§9.1) |
 | A2 | TB-RT30-v1 동결(설정 hash + 파일 lock) | **완료** (`rt30/tb_rt30_v1.py`, §9.2) |
-| A3 | E3-A 100판 짝 대국 gate | 사용자 실행 (§9.3) |
+| A3 | E3-A 100판 짝 대국 gate | **HARM** (−0.06, §9.4) → A3.1 진단, TB-RT30-v2 설계 |
 
 PUCT 시뮬레이션 수와 H3 policy는 이 단계에서 바꾸지 않는다(PUCT 최대 4.9초, NN 착수당 3ms).
 
@@ -733,3 +733,95 @@ python scripts/run_rt30_match.py --checkpoint runs/h3_policy_64x4/best.pt --work
 - 결과 파일(`a3_e3.json`·`.jsonl`·`.log`)은 RenjuNet 파생 데이터가 아니다(자체 대국 기록). 그래서 `docs/rt30-results/`로 옮겨 커밋해도 된다.
 - 먼저 짧게 확인하고 싶으면 `--seeds 8415 --pairs 2 --games-jsonl runs/rt30/a3_e3.jsonl`로 4판만 둔다.
   같은 jsonl을 쓰면 본 run이 그 4판을 이어받는다.
+
+### 9.4 A3 결과 (`66a3441`): 시간·재현성 통과, 기력 **HARM**
+
+**gate별 결과.**
+
+| gate | 결과 |
+|---|---|
+| 불법수 / 27.5초 초과 / 30초 이상 | 0 / 0 / 0 (2,878수, 최대 26.08초) |
+| 재현성 | `same` 66, `deadline` 34, `rt30_no_deadline` 0, `opponent` 0 |
+| 기력 | 71승 8무 21패, 0.75. E3-A 0.81 대비 **−0.06**, 쌍 bootstrap **[−0.11, −0.015]** |
+
+- 사전에 고정한 규칙(차이 < −0.05 또는 상한 < 0)의 두 조건에 모두 걸린다. 그래서 **TB-RT30-v1은 HARM**이다.
+- 이 판정은 뒤의 진단으로 바꾸지 않는다. workers=1에서 다시 돌려 통과하면 그것을 판정으로 삼는 식의 재판정은 하지 않는다.
+  배포 조건이 바뀌거나(동시 탐색 수) 엔진이 바뀌면(v2), 그 조건으로 A3를 새로 돌린다.
+- 통과선과의 거리: 같은 66판은 차이가 0이라 구간이 좁다. 그래서 1점(−0.05)으로는 부족하고, **약 2~3점을 되찾아야** 두 조건을 함께 넘는다.
+
+**34판 분기의 원인 (`docs/rt30-eval/a3-divergence-v1.json`).**
+
+- 34판 모두 분기 수는 TB-Engine-v1이 tree 수를 **바꾼** 수다(기록 `changed=True`). 평범한 tree 수에서 갈라진 판은 없다.
+- 원인은 두 가지뿐이다.
+
+| 원인 | 판 | 결과 바뀐 판 | 점수 |
+|---|---|---|---|
+| **V8-B cap**: TB1은 V8-B로 VCT 승리를 찾았는데, RT30은 8초 cap에서 잘렸다 | 6 | 3 (모두 흑: 승→패 2, 승→무 1) | **−2.5** |
+| **V8-C timeout**: TB1은 tree 수가 미판정(UNKNOWN)이라 아래 자식 중 SAFE로 증명된 수로 바꿨다(aggressive 규칙). RT30은 tree 수 검사 중에 시간이 다 돼 tree 수를 유지했다 | 28 | 10 (손실 7, 이득 3) | **−3.5** |
+
+- 색별 차이도 이것으로 설명된다. 흑 −0.09(E3-A 0.77 → 0.68)는 V8-B 손실 −2.5가 모두 흑이고 V8-C −2.0이다. 백은 −0.03이다.
+- V8-C 28판 중 1판(8415/2 흑)은 tree 수가 UNSAFE라 rescue가 돌았지만, 시간 안에 SAFE 자식을 못 찾았다. 결과는 패 → 패다.
+- 분기 전 구간의 root timeout 66수를 TB1 기록과 대조했다.
+  - TB1도 tree 수를 유지한 경우: 늦게 SAFE 7, UNKNOWN인데 SAFE 자식 없음 28. RT30도 tree 수를 유지하므로 같은 수다.
+  - TB1이 바꾼 경우 27: 모두 분기했다.
+  - 즉 지금의 "timeout이면 tree 수 유지"는 TB1이 tree 수를 유지할 때만 맞다.
+
+**TB1이 그 수에서 실제로 쓰는 시간 (컨테이너 측정, 고속화 설치, deadline 없음, 4 병렬).**
+
+- 컨테이너는 E3-A 데스크톱보다 약 3.5배 빠르다. SER5는 약 5.2배다(§3.10 동일성 run). 그래서 SER5 ≈ 컨테이너 ÷ 1.45로 환산한다.
+  SER5 실측은 A3.1에서 한다.
+- **V8-B**: TB1이 승리를 증명하는 시간은 SER5 환산 9~24초다. cap은 8초다.
+  - 손실 3판에서 RT30이 그 수에 쓴 시간은 10~17초였다. cap 이후 9~16초가 남았다.
+  - 그 남은 시간을 V8-B에 더 주었다면 2~3판은 시간 안에 들어온다(13.3초 필요 / 17.2초 가능, 18.4 / 18.1, 24.3 / 24.0).
+- **V8-C**: TB1의 기록 판정을 25/28국면에서 그대로 재현했다.
+  나머지 3개는 측정 스크립트가 head 자식 수를 기록된 자식만으로 줄여서 생긴 차이다. 엔진 차이가 아니다(frozen과 fast 모두 같은 UNKNOWN).
+  - tree 수 검사(노드 예산의 절반 200k를 다 쓰고 UNKNOWN): 컨테이너 median 32초 → **SER5 약 22초**.
+  - 이어지는 자식 검사(첫 SAFE까지): median 11초 → **SER5 약 7.5초**. 합계 약 30초다.
+  - 반면 RT30의 root 창은 약 19초다. 27.5초에서 final margin 1.5초, VCT2 reserve 4초, 앞 단계 약 3초를 뺀 값이다.
+  - 그래서 tree 수 검사가 끝나기도 전에 창이 닫힌다.
+  - **workers=1의 이득(약 10%로 추정)으로는 이 차이(22초 + 7.5초 대 19초)를 메울 수 없다.**
+
+**A3.1: 진단 (SER5, 약 30분).** 34국면을 세 번 재생한다.
+
+```bash
+CK=runs/h3_policy_64x4/best.pt; SET=docs/rt30-eval/a3-divergence-v1.json
+python scripts/run_rt30_replay.py --checkpoint $CK --arms fast --keys-file $SET --workers 4 \
+    --output runs/rt30/a31_fast_w4.json 2>&1 | tee runs/rt30/a31_fast_w4.log
+python scripts/run_rt30_replay.py --checkpoint $CK --arms rt --deadline 27.5 --keys-file $SET --workers 4 \
+    --baseline runs/rt30/a31_fast_w4.json --output runs/rt30/a31_rt_w4.json 2>&1 | tee runs/rt30/a31_rt_w4.log
+python scripts/run_rt30_replay.py --checkpoint $CK --arms rt --deadline 27.5 --keys-file $SET --workers 1 \
+    --baseline runs/rt30/a31_fast_w4.json --output runs/rt30/a31_rt_w1.json 2>&1 | tee runs/rt30/a31_rt_w1.log
+```
+
+1. `fast`는 TB1 자체다(deadline 없음). 다음을 확인한다.
+   - 각 국면에서 `tb1_move`를 그대로 두는지. 재생은 seed 42이고 대국은 판별 seed라, tree 수가 같은지도 함께 본다.
+   - SER5에서 실제로 쓰는 phase 시간. 위 환산이 맞는지 본다.
+2. `rt` w4와 w1의 비교: w1에서 TB1 수를 되찾는 국면 수가 CPU 경쟁의 몫이다.
+3. **판단.**
+   - w1에서 대부분(약 2/3 이상) 되찾는다면, 배포 조건을 정한다. 엔진 동시 탐색 1개(B1의 `AIJobQueue` worker 1, 나머지는 대기열)로 정하고, 그 조건으로 A3를 다시 gate로 돌린다. v1은 그대로다.
+   - 위 측정대로 거의 못 되찾는다면, TB-RT30-v2로 간다.
+
+**TB-RT30-v2 설계 방향 (A3.1 결과를 보고 확정).** 두 변경 모두 "TB1이 더 오래 생각해서 내렸을 결정에 시간 안에 도달한다"가 목표다. 판정 규칙(SAFE만 바꿈, 증명된 WIN만 둠)은 그대로다.
+
+1. **V8-B 이어 돌리기 (남은 시간 사용).**
+   - V8-B가 cap에 잘렸고 나머지 단계가 일찍 끝났다면, 같은 solver(증명이 끝난 하위 결과 cache 유지)로 V8-B를 다시 돈다. 기한은 deadline − final margin이다.
+   - WIN이 증명되면 그 수를 둔다. 증명된 승리이므로 안전하다. TB1이 찾았을 승리와 다른 승리일 수는 있다(cache 때문에 예산 계산이 달라진다).
+   - 대가: V8-B가 잘린 수(A3에서 102/2,878 = 3.5%)만 최대 26초까지 늘어난다.
+   - 기대 효과: −2.5점 중 1.5~2.5점.
+2. **V8-C 시간 분할.**
+   - TB1은 tree 수에 노드 예산의 절반을 먼저 준다. v2는 **시간**도 나눈다. tree 수 검사에 root 창의 일부(예: 50~60%)를 주고, 그 안에 판정이 안 나면 남은 시간에 자식 검사(tree 수 포함, TB1의 공정 분배 그대로)를 한다.
+   - 이후 규칙은 TB1과 같다. tree 수가 SAFE면 유지하고, 아니면 처음 SAFE로 증명된 자식을 두고, 없으면 tree 수를 둔다(UNSAFE면 rescue).
+   - 이득: TB1이 tree 수를 바꾸는 27수에서 같은 결정에 도달할 수 있다. 자식 검사에는 SER5 약 7.5초가 필요하다.
+   - 위험: TB1이 tree 수를 늦게(SER5 약 12~19초) SAFE로 증명하는 경우가 있다(분기 전 7수). 이때 v2는 더 아래의 SAFE 자식으로 바꿀 수 있다. 안전성은 같고(증명된 SAFE), tree 순위만 낮아진다.
+   - 분할 비율은 이 두 경우의 수를 보고 정한다.
+   - VCT2 reserve(4초)를 tree 수가 미판정일 때 자식 검사에 넘길지도 같은 세트로 본다.
+3. (선택) **V8-C 자식 병렬 검사**(§3.7). 동시 탐색이 1개일 때만 남는 코어를 쓴다. 배포 조건이 "엔진 1개"로 정해지면 2보다 이득이 클 수 있다.
+
+**v2 평가 순서.**
+
+1. `a3-divergence-v1`(개발 세트): TB1 수를 되찾은 수, 새로 생긴 다른 수.
+2. A1 gate 재확인: `slow-stratified-v1` + `critical-regressions-v1`. 재검사 UNSAFE 0, 27.5초 초과 0, 지는 수 증가 없음.
+3. 마지막으로 A3 100판 gate(같은 규칙).
+   - 개발 세트가 A3의 분기 국면이라 A3에 맞춘 조정이 될 위험이 있다. 그래서 두 변경은 국면별 예외 없이 구조로만 넣고, 조정 값은 분할 비율 하나로 제한한다.
+
+B1은 v2(또는 배포 조건 결정) 후 A3가 PASS한 다음에 시작한다.
