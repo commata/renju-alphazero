@@ -1,0 +1,517 @@
+TB-RT30-v1 vs e3: 100 games (99 already done), workers=4, deadline=27.5s, config 4bea6459d55e
+[rt30-match] 0/1 games  0.0%  1.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  2.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  3.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  4.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  5.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  6.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  7.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  8.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  9.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  10.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  11.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  12.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  13.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  14.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  15.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  16.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  17.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  18.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  19.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  20.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  21.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  22.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  23.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  24.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  25.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  26.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  27.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  28.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  29.0 min  ETA nan min  1 games running/pending
+[rt30-match] 0/1 games  0.0%  30.0 min  ETA nan min  1 games running/pending
+n  rt30@e3/8416/13/black loss, E3-A draw (deadline) (156 plies, 1859s); score 0.75
+{
+ "games": 100,
+ "finished": 100,
+ "unfinished": 0,
+ "wins": 71,
+ "draws": 8,
+ "losses": 21,
+ "score": 0.75,
+ "ci95_wilson": [
+  0.657,
+  0.825
+ ],
+ "ci95_pairs": [
+  0.67,
+  0.825
+ ],
+ "by_color": {
+  "black": 0.68,
+  "white": 0.82
+ },
+ "pairs_both_won": 24,
+ "pairs_both_lost": 2,
+ "rt30_moves": 2878,
+ "rt30_seconds": {
+  "median": 1.7649,
+  "p95": 26.0001,
+  "p99": 26.0027,
+  "max": 26.0759,
+  "over_27.5s": 0,
+  "over_30s": 0
+ },
+ "rt30_timeouts": {
+  "attack": 102,
+  "stage_vct": 9,
+  "root": 154,
+  "vct2": 129
+ },
+ "rt30_moves_with_timeout": 261,
+ "rt30_rescued": 19,
+ "rt30_routes": {
+  "own_vcf": 180,
+  "own_vct": 56,
+  "stage1": 71,
+  "stage2": 295,
+  "stage3": 71,
+  "stage4": 240,
+  "stage5": 55,
+  "tree": 1910
+ },
+ "mean_length": 60.3,
+ "game_minutes": 568.1
+}
+{
+ "games": 100,
+ "reference_score": 0.81,
+ "rt30_score": 0.75,
+ "diff": -0.06,
+ "diff_ci95_pairs": [
+  -0.11,
+  -0.015
+ ],
+ "divergence": {
+  "same": 66,
+  "deadline": 34,
+  "rt30_no_deadline": 0,
+  "opponent": 0
+ },
+ "result_changed": [
+  {
+   "key": "rt30@e3/8415/9/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 18
+  },
+  {
+   "key": "rt30@e3/8415/12/black",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 32
+  },
+  {
+   "key": "rt30@e3/8415/13/white",
+   "rt30": "win",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 25
+  },
+  {
+   "key": "rt30@e3/8415/14/black",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 66
+  },
+  {
+   "key": "rt30@e3/8415/17/white",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 25
+  },
+  {
+   "key": "rt30@e3/8415/20/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 14
+  },
+  {
+   "key": "rt30@e3/8415/22/white",
+   "rt30": "win",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 51
+  },
+  {
+   "key": "rt30@e3/8416/2/white",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 39
+  },
+  {
+   "key": "rt30@e3/8416/9/white",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 77
+  },
+  {
+   "key": "rt30@e3/8416/10/black",
+   "rt30": "draw",
+   "reference": "loss",
+   "kind": "deadline",
+   "ply": 48
+  },
+  {
+   "key": "rt30@e3/8416/13/black",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 132
+  },
+  {
+   "key": "rt30@e3/8416/20/black",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 64
+  },
+  {
+   "key": "rt30@e3/8416/22/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 28
+  }
+ ]
+}
+TB-RT30-v1 vs e3: 100 games (100 already done), workers=4, deadline=27.5s, config 4bea6459d55e
+{
+ "games": 100,
+ "finished": 100,
+ "unfinished": 0,
+ "wins": 71,
+ "draws": 8,
+ "losses": 21,
+ "score": 0.75,
+ "ci95_wilson": [
+  0.657,
+  0.825
+ ],
+ "ci95_pairs": [
+  0.67,
+  0.825
+ ],
+ "by_color": {
+  "black": 0.68,
+  "white": 0.82
+ },
+ "pairs_both_won": 24,
+ "pairs_both_lost": 2,
+ "rt30_moves": 2878,
+ "rt30_seconds": {
+  "median": 1.7649,
+  "p95": 26.0001,
+  "p99": 26.0027,
+  "max": 26.0759,
+  "over_27.5s": 0,
+  "over_30s": 0
+ },
+ "rt30_timeouts": {
+  "attack": 102,
+  "stage_vct": 9,
+  "root": 154,
+  "vct2": 129
+ },
+ "rt30_moves_with_timeout": 261,
+ "rt30_rescued": 19,
+ "rt30_routes": {
+  "own_vcf": 180,
+  "own_vct": 56,
+  "stage1": 71,
+  "stage2": 295,
+  "stage3": 71,
+  "stage4": 240,
+  "stage5": 55,
+  "tree": 1910
+ },
+ "mean_length": 60.3,
+ "game_minutes": 568.1
+}
+{
+ "games": 100,
+ "reference_score": 0.81,
+ "rt30_score": 0.75,
+ "diff": -0.06,
+ "diff_ci95_pairs": [
+  -0.11,
+  -0.015
+ ],
+ "divergence": {
+  "same": 66,
+  "deadline": 34,
+  "rt30_no_deadline": 0,
+  "opponent": 0
+ },
+ "result_changed": [
+  {
+   "key": "rt30@e3/8415/9/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 18
+  },
+  {
+   "key": "rt30@e3/8415/12/black",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 32
+  },
+  {
+   "key": "rt30@e3/8415/13/white",
+   "rt30": "win",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 25
+  },
+  {
+   "key": "rt30@e3/8415/14/black",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 66
+  },
+  {
+   "key": "rt30@e3/8415/17/white",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 25
+  },
+  {
+   "key": "rt30@e3/8415/20/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 14
+  },
+  {
+   "key": "rt30@e3/8415/22/white",
+   "rt30": "win",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 51
+  },
+  {
+   "key": "rt30@e3/8416/2/white",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 39
+  },
+  {
+   "key": "rt30@e3/8416/9/white",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 77
+  },
+  {
+   "key": "rt30@e3/8416/10/black",
+   "rt30": "draw",
+   "reference": "loss",
+   "kind": "deadline",
+   "ply": 48
+  },
+  {
+   "key": "rt30@e3/8416/13/black",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 132
+  },
+  {
+   "key": "rt30@e3/8416/20/black",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 64
+  },
+  {
+   "key": "rt30@e3/8416/22/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 28
+  }
+ ]
+}
+TB-RT30-v1 vs e3: 100 games (100 already done), workers=4, deadline=27.5s, config 4bea6459d55e
+{
+ "games": 100,
+ "finished": 100,
+ "unfinished": 0,
+ "wins": 71,
+ "draws": 8,
+ "losses": 21,
+ "score": 0.75,
+ "ci95_wilson": [
+  0.657,
+  0.825
+ ],
+ "ci95_pairs": [
+  0.67,
+  0.825
+ ],
+ "by_color": {
+  "black": 0.68,
+  "white": 0.82
+ },
+ "pairs_both_won": 24,
+ "pairs_both_lost": 2,
+ "rt30_moves": 2878,
+ "rt30_seconds": {
+  "median": 1.7649,
+  "p95": 26.0001,
+  "p99": 26.0027,
+  "max": 26.0759,
+  "over_27.5s": 0,
+  "over_30s": 0
+ },
+ "rt30_timeouts": {
+  "attack": 102,
+  "stage_vct": 9,
+  "root": 154,
+  "vct2": 129
+ },
+ "rt30_moves_with_timeout": 261,
+ "rt30_rescued": 19,
+ "rt30_routes": {
+  "own_vcf": 180,
+  "own_vct": 56,
+  "stage1": 71,
+  "stage2": 295,
+  "stage3": 71,
+  "stage4": 240,
+  "stage5": 55,
+  "tree": 1910
+ },
+ "mean_length": 60.3,
+ "game_minutes": 568.1
+}
+{
+ "games": 100,
+ "reference_score": 0.81,
+ "rt30_score": 0.75,
+ "diff": -0.06,
+ "diff_ci95_pairs": [
+  -0.11,
+  -0.015
+ ],
+ "divergence": {
+  "same": 66,
+  "deadline": 34,
+  "rt30_no_deadline": 0,
+  "opponent": 0
+ },
+ "result_changed": [
+  {
+   "key": "rt30@e3/8415/9/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 18
+  },
+  {
+   "key": "rt30@e3/8415/12/black",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 32
+  },
+  {
+   "key": "rt30@e3/8415/13/white",
+   "rt30": "win",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 25
+  },
+  {
+   "key": "rt30@e3/8415/14/black",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 66
+  },
+  {
+   "key": "rt30@e3/8415/17/white",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 25
+  },
+  {
+   "key": "rt30@e3/8415/20/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 14
+  },
+  {
+   "key": "rt30@e3/8415/22/white",
+   "rt30": "win",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 51
+  },
+  {
+   "key": "rt30@e3/8416/2/white",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 39
+  },
+  {
+   "key": "rt30@e3/8416/9/white",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 77
+  },
+  {
+   "key": "rt30@e3/8416/10/black",
+   "rt30": "draw",
+   "reference": "loss",
+   "kind": "deadline",
+   "ply": 48
+  },
+  {
+   "key": "rt30@e3/8416/13/black",
+   "rt30": "loss",
+   "reference": "draw",
+   "kind": "deadline",
+   "ply": 132
+  },
+  {
+   "key": "rt30@e3/8416/20/black",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 64
+  },
+  {
+   "key": "rt30@e3/8416/22/black",
+   "rt30": "loss",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 28
+  }
+ ]
+}
