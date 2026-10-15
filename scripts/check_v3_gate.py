@@ -2,12 +2,18 @@
 
     speedup  TB1's own time at the 34 A3 divergence moves, fast2 against fast3 (the native scan):
              the same moves (34/34 both) and the measured speed-up per phase.
-    gate     the A3-v3 entry gate on the v3_check / v3_dev / v3_a1 outputs in --out; exit 1 when a
-             row fails (then scripts/ser5/v3_a3.sh does not run the 100 games):
+    gate     the A3-v3 entry gate on the v3_check / v3_dev / v3_a1 outputs in --out. Exit 0 when every
+             row passes, 1 when one fails, 2 when none fails but one needs a review by hand;
+             scripts/ser5/v3_a3.sh runs the 100 games only on 0:
 
              equivalence   frozen = fast3 = v3 (no deadline) on the 8 H3 positions: 8/8 identical
+             X2 in use     no divergence, control or A1 move ran V8-B inline (``attack_helper_failed``):
+                           such a move is v1's timing, not the engine being gated
              divergence    v3, 4 searches at once: net points_if_recovered >= +3.0, none over 27.5 s
-             control       v3 keeps TB1's late-SAFE tree move on >= 23 of the 26 control moves
+             control       v3 keeps TB1's late-SAFE tree move on 26/26 control moves. v3 is the exact
+                           path, so a changed move is never tolerated silently: one with no timeout
+                           and no skipped phase is an exactness failure (FAIL); one cut by the
+                           deadline is listed for a review by hand (REVIEW)
              A1            slow60 and critical6: recheck UNSAFE 0 and none over 27.5 s
 
     python scripts/check_v3_gate.py speedup --fast2 docs/rt30-results/a31_tb1_w4.json --fast3 runs/rt30/a31_tb1f3_w4.json
@@ -22,7 +28,6 @@ import sys
 from pathlib import Path
 
 NET_POINTS = 3.0
-CONTROL_KEPT = 23
 
 
 def load(path: Path) -> dict:
@@ -48,34 +53,50 @@ def speedup(args) -> int:
 
 def gate(args) -> int:
     out = Path(args.out)
-    rows, ok = [], True
+    rows, notes, verdicts = [], [], []
 
-    def row(name, value, passed):
-        nonlocal ok
-        ok = ok and passed
-        rows.append(f"| {name} | {value} | {'PASS' if passed else 'FAIL'} |")
+    def row(name, value, verdict):
+        verdict = verdict if isinstance(verdict, str) else ('PASS' if verdict else 'FAIL')
+        verdicts.append(verdict)
+        rows.append(f"| {name} | {value} | {verdict} |")
 
     try:
         eq = load(out / 'v3_equivalence_h3_8.json')['summary']
         row('equivalence frozen = fast3 = v3', f"{eq['identical']}/{eq['positions']}", eq['identical'] == eq['positions'])
-        dv = load(out / 'a31_v3_w4.json')['summary']
+        dv_all = load(out / 'a31_v3_w4.json')
+        ct_all = load(out / 'ctrl_v3_w4.json')
+        inline = [r['key'] for r in dv_all['rows'] + ct_all['rows'] if r.get('attack_helper_failed')]
+        row('X2 in use: divergence + control moves with V8-B inline', len(inline), not inline)
+        notes += [f'- V8-B inline (helper not used): `{k}`' for k in inline]
+        dv = dv_all['summary']
         net = dv['loss_making']['points_if_recovered'] + dv['gain_making']['points_if_recovered']
         row('divergence w4: net points', f"{net:+.1f} (recovered {dv['recovered']}/{dv['cases']})", net >= NET_POINTS)
         row('divergence w4: over 27.5 s', dv['seconds']['over_27.5s'], dv['seconds']['over_27.5s'] == 0)
-        ct = load(out / 'ctrl_v3_w4.json')['summary']
-        row('control w4: tree move kept', f"{ct['recovered']}/{ct['cases']}", ct['recovered'] >= CONTROL_KEPT)
+        ct = ct_all['summary']
+        changed = [r for r in ct_all['rows'] if not r['recovered']]
+        unexplained = [r for r in changed if not (r.get('timeouts') or r.get('skipped'))]
+        row('control w4: tree move kept', f"{ct['recovered']}/{ct['cases']}",
+            'FAIL' if unexplained else ('REVIEW' if changed else 'PASS'))
+        notes += [f"- control changed: `{r['key']}` played {r['move']} (TB1 {r['tb1_move']}), "
+                  f"timeouts {r.get('timeouts') or '-'}, skipped {r.get('skipped') or '-'}"
+                  f"{'' if r.get('timeouts') or r.get('skipped') else ' -> no deadline cut: exactness failure'}"
+                  for r in changed]
         for name in ('s60', 'crit'):
             run = load(out / f'v3_h3_{name}.json')['summary']
             recheck = load(out / f'recheck_v3_h3_{name}.json')['summary']
             over = run['rt3']['seconds']['over_27.5s']
             row(f'A1 {name}: recheck UNSAFE / over 27.5 s', f"{recheck['changed_move_proven_unsafe']} / {over}",
                 recheck['changed_move_proven_unsafe'] == 0 and over == 0)
+            failed = run.get('rt_deadline', {}).get('attack_helper_failed', 0)
+            row(f'A1 {name}: moves with V8-B inline', failed, failed == 0)
     except FileNotFoundError as exc:
-        rows.append(f'| missing | {exc.filename} | FAIL |')
-        ok = False
+        row('missing', exc.filename, False)
+    verdict = 'FAIL' if 'FAIL' in verdicts else ('REVIEW' if 'REVIEW' in verdicts else 'PASS')
     print('| check | value | |\n|---|---|---|\n' + '\n'.join(rows))
-    print(f"\nA3-v3 gate: {'PASS' if ok else 'FAIL'}")
-    return 0 if ok else 1
+    if notes:
+        print('\n' + '\n'.join(notes))
+    print(f'\nA3-v3 gate: {verdict}')
+    return {'PASS': 0, 'FAIL': 1, 'REVIEW': 2}[verdict]
 
 
 def main(argv=None):

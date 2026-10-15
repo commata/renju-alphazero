@@ -381,7 +381,9 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | R0 | 예측기 정정: v1 시간 배분 / 순차 / X2 / X2+X3, A3 점수 | **완료** (§9.8) |
 | X1-A | native threat-window scan (`rt30/fast3*.py`, `rt30/native/`) | **구현**: 컨테이너 2.15~2.31배, 동일 (§9.8) |
 | X2 | V8-B 상주 helper 병렬 (`rt30/engine_v3.py`, `attack_helper.py`) | **구현**: 컨테이너 V8-B 6/6 (§9.8) → SER5 v3_check/v3_dev/v3_a1/v3_a3 |
-| X1-B | 금수 판정 가속 | 필요할 때만 (§9.8) |
+| X1-B | 금수 판정 가속 | 필요할 때만: A3-v3가 시간 부족으로 HARM일 때 v4 후보 (§9.9) |
+| W | 웹 B1/B2(멀티 세션, AI job queue, search slot) | **v3·native의 production 연결보다 먼저** (§8, §9.9) |
+| V3-web | v3를 웹 search slot(main + V8-B helper 형제 프로세스)으로 연결 | W 완료 + v3 동결 뒤 (§9.9) |
 | T1 (v3T) | V8-C 시간 분할 50% | fallback: A3-v3가 HARM일 때만 |
 
 PUCT 시뮬레이션 수와 H3 policy는 이 단계에서 바꾸지 않는다(PUCT 최대 4.9초, NN 착수당 3ms).
@@ -1141,8 +1143,10 @@ v2-A(V8-B 재시도)는 정상 동작하고 A1 gate도 통과했다. 그러나 A
   - 데몬 프로세스 안이라 자식 프로세스를 못 만드는 경우.
   - helper가 죽은 경우.
   - deadline이 테스트 시계인 경우.
-- **웹 연결 전 할 일.** `rt30.supervisor`의 worker가 `daemon=True`라 지금은 helper를 만들 수 없다(웹에서는 v1처럼 동작한다).
-  B1에서 worker를 non-daemon으로 바꾸고 정리 경로를 넣는다. 평가 스크립트의 ProcessPoolExecutor worker는 non-daemon이라 문제없다.
+- **웹 연결 전 할 일.** `rt30.supervisor`의 worker가 `daemon=True`라 지금은 helper를 만들 수 없다.
+  그래서 `tb_rt30_v3.make_agent`는 helper를 못 쓰는 프로세스에서 **거부한다**(`allow_inline_attack=True`일 때만 inline V8-B로 만든다).
+  v1 시간 배분으로 도는 엔진이 `TB-RT30-v3` 이름을 달지 않게 하기 위해서다. 웹 연결 구조는 §9.9의 search slot이다.
+  평가 스크립트의 ProcessPoolExecutor worker는 non-daemon이라 문제없다.
 - **테스트** (`tests/test_rt30_engine_v3.py`, 11개):
   - native scan 동일성·설치/해제.
   - deadline 없음 = TB1(모든 route, 진단 동일).
@@ -1164,13 +1168,15 @@ v2-A(V8-B 재시도)는 정상 동작하고 A1 gate도 통과했다. 그러나 A
 - v3가 gate를 통과하면 `tests/frozen_tb_rt30_v3.sha256`을 새로 만든다.
   `engine_v3.py`, `attack_helper.py`, `fast3*.py`, `native/threat_windows.c`, `tb_rt30_v3.py`와 v3가 쓰는 v1 파일이 대상이다.
 
-**gate (실행 전에 고정, `scripts/check_v3_gate.py gate`).** A3-v3는 아래가 모두 PASS일 때만 돈다(`v3_a3.sh`가 먼저 확인하고, FAIL이면 100판을 돌리지 않는다).
+**gate (실행 전에 고정, `scripts/check_v3_gate.py gate`).** A3-v3는 아래가 모두 PASS일 때만 돈다(`v3_a3.sh`가 먼저 확인하고, FAIL이나 REVIEW면 100판을 돌리지 않는다).
+종료 코드는 PASS 0, FAIL 1, REVIEW 2다. control 기준은 SER5 실행 전에 23/26에서 26/26으로 고쳤다(§9.9).
 
 | 항목 | 기준 |
 |---|---|
 | 동일성 (H3 8국면, deadline 없음) | frozen = fast3 = v3, 8/8 |
 | 분기 34국면, 동시 탐색 4 | 순 `points_if_recovered` ≥ +3.0, 27.5초 초과 0 |
-| control 26국면, 동시 탐색 4 | TB1의 tree 수 유지 ≥ 23/26 (정확 경로라 대부분 유지가 정상) |
+| X2 사용 | 분기·control·A1의 모든 수에서 helper가 쓰였다(`attack_helper_failed` 0). inline V8-B는 v1의 시간 배분이라 평가 대상이 아니다 |
+| control 26국면, 동시 탐색 4 | TB1의 tree 수 유지 **26/26**. 바뀐 수가 있으면: timeout·skip 없이 바뀐 수는 정확성 위반(FAIL), deadline에 잘려 바뀐 수는 수동 원인 분석(REVIEW, §9.9) |
 | A1 (slow60, critical6) | 재검사 UNSAFE 0, 27.5초 초과 0 |
 
 - 동시 탐색 2와 1(`a31_v3_w2`, `w1`)은 기록만 하고 gate로 쓰지 않는다. X2의 CPU 몫을 보는 진단이다.
@@ -1183,8 +1189,8 @@ v2-A(V8-B 재시도)는 정상 동작하고 A1 gate도 통과했다. 그러나 A
 
 ```bash
 cd ~/renju-alphazero && git pull
-# 한 번만: native scan 빌드 도구 (venv의 python 버전과 같은 헤더; 예: python3.12-dev)
-sudo apt install -y build-essential python3-dev
+# 한 번만: native scan 빌드 도구. 헤더는 .venv-ser5 Python(3.14.4)의 것이어야 한다(§9.9).
+.venv-ser5/bin/python -c 'import sysconfig, pathlib; p = pathlib.Path(sysconfig.get_paths()["include"], "Python.h"); print(p, p.exists())'
 scripts/ser5/start.sh v3_check v3_dev v3_a1 v3_a3   # 약 6.5시간, 순서대로; A3-v3는 gate PASS일 때만
 scripts/ser5/status.sh                               # 상태 (다시 접속한 뒤)
 tail -f runs/rt30/bg/v3_check.out                    # 진행 (v3_dev.out, v3_a1.out, v3_a3.out)
@@ -1194,16 +1200,95 @@ scripts/ser5/stop.sh v3_check                        # 중지 (체인 전체); �
 
 | job | 내용 | 예상 시간 |
 |---|---|---|
-| `v3_check` | native 빌드, H3 8국면 동일성, TB1 + fast3의 34국면 시간(배수), 예측 | 약 40분 |
+| `v3_check` | native 빌드(소스·Python이 바뀌었을 때만 다시, `native_build_info.json` 기록), H3 8국면 동일성, TB1 + fast3의 34국면 시간(배수), 예측 | 약 40분 |
 | `v3_dev` | v3의 34 분기 국면 × 동시 탐색 4/2/1, control 26국면 | 약 2.5시간 |
 | `v3_a1` | slow60 + critical6, 재검사, v1·v2A와 비교표 | 약 1시간 |
 | `v3_a3` | gate 확인 → E3-A 100판 | 약 2.5시간 |
 
 결과 파일은 `runs/rt30/`의 다음 파일이다.
 
-- `v3_equivalence_h3_8.*`, `a31_tb1f3_w4.*`, `predict_recovery_tb1f3_w4.json`, `v3_speedup.md`
+- `native_build_info.json`, `v3_equivalence_h3_8.*`, `a31_tb1f3_w4.*`, `predict_recovery_tb1f3_w4.json`, `v3_speedup.md`
 - `a31_v3_w{4,2,1}.*`, `ctrl_v3_w4.*`
 - `v3_h3_*`, `recheck_v3_*`, `v3_compare_*.md`
 - `v3_gate.md`, `a3_v3_e3.*`
 
 이 파일들을 `docs/rt30-results/`로 복사해 커밋한다.
+
+### 9.9 v3 검토 반영: 용어, control gate, 웹 통합 순서, native 범위 (2026-10-16)
+
+`4e6e9d3` 검토 결과를 반영한다. **v3 후보의 탐색 코드는 바꾸지 않는다.** 바꾼 것은 gate, `make_agent` 거부 조건, 빌드 기록이다.
+
+**용어.** X1-A와 X2는 종류가 다르다. 앞 절의 "정확"은 이 구분으로 읽는다.
+
+| 변경 | 종류 | deadline 없음 | deadline 아래 |
+|---|---|---|---|
+| X1-A native scan | **정확 계산 고속화**(exact computational speed-up) | TB1과 같다 | 같은 window·순서·노드, 더 빠를 뿐 |
+| X2 V8-B helper | **TB1 순서 보존 병렬 스케줄링**(TB1-order-preserving parallel scheduling) | TB1과 같다 | 시간 배분이 v1과 다르다(V8-B cap 8초 → 수 전체). 그래서 v1과 일부러 다른 수를 둘 수 있고, 그것이 A3 복원의 핵심이다 |
+
+공통 성질은 "끝까지 돈 phase의 결정은 TB1의 결정"이다. 그래서 v3의 기력 손실 상한은 시간 안에 못 끝난 수에만 있다.
+
+**control gate: 23/26 → 26/26.**
+
+- 23/26은 v2-C(T1)처럼 시간 분할로 수가 바뀔 수 있는 엔진의 허용치였다. v3에는 맞지 않는다.
+- v3가 control 수(TB1이 늦게 SAFE로 증명한 tree 수)를 바꾸는 길은 둘뿐이다.
+  - deadline이 어떤 phase를 잘랐다(`timeouts`·`skipped` 기록). 원인을 국면마다 본다 → **REVIEW**.
+  - 아무것도 잘리지 않았는데 바뀌었다. 정확성 위반이다 → **FAIL**.
+- REVIEW일 때 `v3_a3.sh`는 멈춘다. 바뀐 수를 모두 확인한 뒤 `V3_REVIEWED=1 scripts/ser5/start.sh v3_a3`로 다시 시작한다.
+- **X2 사용 확인을 gate에 추가했다.** 분기·control·A1의 어느 수라도 `attack_helper_failed`가 있으면 FAIL이다(그 수는 v1 시간 배분이다).
+
+**웹 통합 순서.** 멀티 웹대국(B1/B2, §8)을 먼저 끝낸다. native core의 추가 확장과 v3의 production 연결은 그 뒤다.
+
+- X1-A·X2 코드는 그대로 둔다. 지금은 benchmark·replay·A1·A3용 **후보 엔진**이다. 웹은 계속 v1만 등록한다.
+- `tb_rt30_v3.make_agent`는 helper를 만들 수 없는 프로세스(데몬 worker)에서 거부한다. 지금 웹 worker에 v3를 등록하면 바로 오류가 난다.
+- 웹 연결 구조는 nested process가 아니라 **형제(sibling) 구조**로 한다.
+
+```text
+Web → AIJobQueue → dispatcher
+                    ├─ Search slot 1: main worker + V8-B helper worker
+                    └─ Search slot 2: main worker + V8-B helper worker
+```
+
+- supervisor가 slot의 두 프로세스를 함께 만들고, watchdog 때 함께 끝낸다. 데몬 제한도 생기지 않는다.
+- 처음 값은 `MAX_AI_SEARCHES = 2`다(CPU를 많이 쓰는 프로세스 최대 4개). B3에서 3, 4로 올려 보고 deadline이 지켜지면 올린다.
+- **엔진 deadline은 탐색 시작부터다(§8의 3번에서 이미 정했다).** dispatcher가 job을 꺼낸 시각을 `received_at`으로 넘긴다.
+  대기열에서 기다린 시간은 27.5초에 들어가지 않는다. 지금 `select()`의 `received + 27.5`는 단일 worker 웹에서만 맞다.
+  대기열 대기가 탐색 시간을 깎으면 v3의 복원 효과가 다시 사라진다.
+
+**native 범위.** 이름도 "C++ native core"가 아니라 "native core"다.
+
+- 작고 상태 없는 kernel은 C로 쓴다(X1-A). C++로 다시 쓰지 않는다.
+- VCF 재귀 전체를 native로 옮기게 되면 그때만 C++17(Board, VCFState, 후보 vector, RAII placed/undo)을 쓴다.
+- 순서는 아래로 고정한다. 앞 단계로 충분하면 뒤 단계는 하지 않는다.
+
+| 순서 | 단계 | 조건 |
+|---|---|---|
+| 1 | v3_check: SER5 native 동일성 + 실측 배수 | 다음 |
+| 2 | v3_dev: 34 분기 + 26 control, 동시 탐색 4/2/1 | 다음 |
+| 3 | v3_a1: slow60 + critical6 + UNSAFE 재검사 | PASS 필요 |
+| 4 | A3-v3: E3-A 같은 100판 | 최종 기력 판정 |
+| 5 | v3 동결: lock 파일 + native provenance | A3 PASS일 때 |
+| 6 | 웹 연결: search slot 형제 구조 | 웹 B1/B2 완료 뒤 |
+| 7 | X1-B 금수 판정 native(v4 후보) | A3-v3가 **시간 부족**으로 HARM일 때만 |
+| 8 | VCF 전체 native(C++17) | X1-B까지 해도 부족할 때만 |
+| 9 | T1(v3T/v4-T1) | 시간은 충분한데 결정 손실이 남을 때만 |
+
+**버전.**
+
+```text
+TB-RT30-v1            동결 baseline (A3 HARM, 영구 보존)
+TB-RT30-v2A           V8-B 재시도 실험, 기록만
+TB-RT30-v3 candidate  v1 + X1-A + X2 (4e6e9d3, 탐색 코드 그대로)
+  A3 PASS → 그대로 v3 동결
+  A3 HARM ├ 시간 부족           → TB-RT30-v4 candidate = v3 + X1-B
+          └ 시간 충분, 결정 손실 → v4-T1 검토
+```
+
+v3의 의미는 동결 뒤에 바꾸지 않는다. 가속을 더하면 새 버전이다.
+
+**Python 3.14.4와 빌드 기록.**
+
+- SER5 production은 CPython 3.14.4(`.venv-ser5`)다. `apt install python3-dev`는 시스템 Python 버전의 헤더를 설치하므로, 3.14 헤더라는 보장이 없다.
+  기준은 **`.venv-ser5` Python의 `sysconfig` include 경로에 `Python.h`가 있는 것**이다. `rt30.native.build`가 이것을 확인하고, 없으면 설치할 패키지 이름(예: `python3.14-dev`)을 알려 준다.
+- `python -m rt30.native.build`는 `src/rt30/native/build_info.json`을 남긴다: Python 버전, SOABI, 컴파일러와 버전, 플래그(`-O2`), C 소스와 `.so`의 SHA256.
+  `--if-stale`은 소스·Python·플래그가 바뀌었을 때만 다시 빌드한다(`git pull` 뒤 낡은 `.so`를 쓰지 않는다). `ensure_native`가 이것을 쓰고 기록을 `runs/rt30/native_build_info.json`으로 복사한다.
+- v3를 동결할 때 이 기록을 lock과 함께 커밋한다.

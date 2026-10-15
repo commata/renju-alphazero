@@ -39,3 +39,4 @@ buffers/
 # native exact speed-ups, built locally (python -m rt30.native.build)
 src/rt30/native/*.so
 src/rt30/native/*.pyd
+src/rt30/native/build_info.json

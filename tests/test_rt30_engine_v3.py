@@ -154,5 +154,26 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(tb_rt30_v3.STATUS, 'candidate')
 
 
+class MakeAgentTest(unittest.TestCase):
+    """make_agent never returns an engine that would run as v1 under the v3 name."""
+
+    def setUp(self):
+        self._get_helper, self._reason = attack_helper.get_helper, attack_helper.unavailable_reason
+        attack_helper.get_helper = lambda: None
+        attack_helper.unavailable_reason = lambda: 'AssertionError: daemonic processes are not allowed to have children'
+
+    def tearDown(self):
+        attack_helper.get_helper, attack_helper.unavailable_reason = self._get_helper, self._reason
+        fast3.uninstall_all()
+
+    def test_refuses_without_the_helper(self):
+        with self.assertRaisesRegex(RuntimeError, 'V8-B helper'):
+            tb_rt30_v3.make_agent(None, seed=3, uniform_prior=True, allow_python=True)
+
+    def test_inline_attack_only_when_asked(self):
+        agent = tb_rt30_v3.make_agent(None, seed=3, uniform_prior=True, allow_python=True, allow_inline_attack=True)
+        self.assertTrue(agent.name.startswith(tb_rt30_v3.NAME))
+
+
 if __name__ == '__main__':
     unittest.main()

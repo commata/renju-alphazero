@@ -32,12 +32,14 @@ step() {
 
 finish() { echo "[$(stamp)] $JOB finished"; touch "$OUT/bg/$JOB.done"; }
 
-# The native scan of TB-RT30-v3 (X1-A); built once per machine (needs build-essential, python3-dev).
+# The native scan of TB-RT30-v3 (X1-A): built once per machine, rebuilt when the C source, the venv's
+# Python or the flags change (needs a C compiler and the headers of the venv's Python). The build
+# record (Python, SOABI, compiler, SHA256s) is copied into $OUT with the results.
 ensure_native() {
-    if python -c 'import sys; sys.path.insert(0, "src"); from rt30 import fast3_windows; sys.exit(0 if fast3_windows.available() else 1)'; then
-        echo "[$(stamp)] native scan: built"
-    else
-        echo "[$(stamp)] building the native scan"
-        PYTHONPATH=src python -m rt30.native.build || { echo "[$(stamp)] FAILED to build rt30.native"; exit 1; }
+    echo "[$(stamp)] native scan: $(python --version 2>&1), $(python -c 'import sysconfig; print(sysconfig.get_config_var("SOABI"))')"
+    PYTHONPATH=src python -m rt30.native.build --if-stale || { echo "[$(stamp)] FAILED to build rt30.native"; exit 1; }
+    if ! python -c 'import sys; sys.path.insert(0, "src"); from rt30 import fast3_windows; sys.exit(0 if fast3_windows.available() else 1)'; then
+        echo "[$(stamp)] FAILED: rt30.native built but not importable"; exit 1
     fi
+    cp src/rt30/native/build_info.json "$OUT/native_build_info.json"
 }
