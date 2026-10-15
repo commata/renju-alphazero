@@ -1,0 +1,253 @@
+{
+ "format": "rt30-replay-v1",
+ "engine": "tb1-uniform-prior",
+ "arms": [
+  "rt"
+ ],
+ "manifest": null,
+ "deadline": 27.5,
+ "root_rescue": true,
+ "timing": {
+  "final_margin": 1.5,
+  "attack_seconds": 4.0,
+  "puct_reserve": 6.0,
+  "vct2_reserve": 4.0,
+  "vct2_min": 2.0
+ },
+ "select": "sample",
+ "slow_seconds": 30.0,
+ "seed": 42,
+ "workers": 1,
+ "git_commit": "fab079ce3c5044c99c2bda9f0f984bd6aba03890",
+ "jsonl": [
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl"
+ ],
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "processor": "",
+  "cpu_count": 16,
+  "python": "3.14.4"
+ },
+ "summary": {
+  "positions": 1,
+  "rt": {
+   "seconds": {
+    "n": 1,
+    "median": 26.012,
+    "p95": 26.012,
+    "p99": 26.012,
+    "max": 26.012,
+    "sum": 26.0,
+    "over_27.5s": 0
+   },
+   "routes": {
+    "tree": 1
+   },
+   "phases": {
+    "attack": {
+     "n": 1,
+     "median": 1.458,
+     "p95": 1.458,
+     "p99": 1.458,
+     "max": 1.458,
+     "sum": 1.5,
+     "over_27.5s": 0
+    },
+    "stage_vct": {},
+    "tree": {
+     "n": 1,
+     "median": 1.839,
+     "p95": 1.839,
+     "p99": 1.839,
+     "max": 1.839,
+     "sum": 1.8,
+     "over_27.5s": 0
+    },
+    "root": {
+     "n": 1,
+     "median": 22.442,
+     "p95": 22.442,
+     "p99": 22.442,
+     "max": 22.442,
+     "sum": 22.4,
+     "over_27.5s": 0
+    },
+    "vct2": {},
+    "v7_modules": {
+     "n": 1,
+     "median": 1.716,
+     "p95": 1.716,
+     "p99": 1.716,
+     "max": 1.716,
+     "sum": 1.7,
+     "over_27.5s": 0
+    },
+    "v7_only": {
+     "n": 1,
+     "median": 0.258,
+     "p95": 0.258,
+     "p99": 0.258,
+     "max": 0.258,
+     "sum": 0.3,
+     "over_27.5s": 0
+    }
+   }
+  },
+  "rt_deadline": {
+   "timeouts": {
+    "attack": 0,
+    "stage_vct": 0,
+    "root": 1,
+    "vct2": 0
+   },
+   "skipped": {
+    "puct": 0,
+    "vct2": 0,
+    "vct2_root_rescue": 1
+   },
+   "root_rescued": 1,
+   "moves_with_timeout_or_skip": 1
+  },
+  "vs_baseline": {
+   "baseline": "docs/rt30-results/fast_uniform_40_v2.json",
+   "baseline_arm": "fast",
+   "positions": 1,
+   "missing": 0,
+   "same_move": 0,
+   "changed_kinds": {
+    "played_baseline_unsafe": 1
+   },
+   "changed": [
+    {
+     "key": "puct_policy_vct2_50k_8415/14/15",
+     "baseline": [
+      "tree",
+      [
+       5,
+       4
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       5,
+       6
+      ]
+     ],
+     "kind": "played_baseline_unsafe",
+     "played_in_baseline": "UNSAFE"
+    }
+   ],
+   "lost_own_vct": [],
+   "lost_own_vct_other_move": 0,
+   "played_baseline_unsafe": [
+    "puct_policy_vct2_50k_8415/14/15"
+   ]
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/14/15",
+   "recorded_seconds": 47.9912,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     5,
+     6
+    ],
+    "seconds": 26.0119,
+    "route": "tree",
+    "phases": {
+     "attack": 1.4579,
+     "stage_vct": 0.0,
+     "tree": 1.8386,
+     "root": 22.4416,
+     "vct2": 0.0,
+     "v7_modules": 1.7158,
+     "v7_only": 0.2579
+    },
+    "nodes": {
+     "attack": 11985,
+     "stage_vct": 0,
+     "root": 160834,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        8
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        5,
+        6
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        5,
+        9
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        5,
+        4
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": []
+    },
+    "tree_move": [
+     5,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "root"
+     ],
+     "skipped": [
+      "vct2_root_rescue"
+     ],
+     "emergency": [
+      5,
+      8
+     ],
+     "rescued": true,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  }
+ ]
+}

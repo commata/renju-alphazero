@@ -1,0 +1,145 @@
+{
+ "format": "rt30-recheck-v1",
+ "vct1_budget": {
+  "node_limit": 20000,
+  "call_limit": 20000,
+  "node_budget": 800000
+ },
+ "vct2_budget": {
+  "node_limit": 20000,
+  "call_limit": 20000,
+  "node_budget": 200000
+ },
+ "summary": {
+  "run": "runs/rt30/cap6_h3_slow-stratified-v1.json",
+  "manifest": {
+   "path": "docs/rt30-eval/slow-stratified-v1.json",
+   "version": "slow-stratified-v1",
+   "keys": 60
+  },
+  "engine": "TB-Engine-v1",
+  "changed_moves_checked": 4,
+  "changed_move_proven_unsafe": 0,
+  "unsafe_keys": [],
+  "changed_vct1": {
+   "SAFE": 3,
+   "UNKNOWN": 1,
+   "UNSAFE": 0
+  },
+  "gate_pass": true
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/46/49",
+   "who": "run",
+   "kind": "kept_tree_move",
+   "move": [
+    12,
+    3
+   ],
+   "vct1": "UNKNOWN",
+   "vct1_nodes": 800000,
+   "vct2": "UNKNOWN",
+   "vct2_nodes": 200000,
+   "seconds": 104.6
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/46/49",
+   "who": "baseline",
+   "kind": "kept_tree_move",
+   "move": [
+    10,
+    8
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 5699,
+   "vct2": "SAFE",
+   "vct2_nodes": 3433,
+   "seconds": 1.7
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/5/10",
+   "who": "run",
+   "kind": "kept_tree_move",
+   "move": [
+    9,
+    5
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 415647,
+   "vct2": "UNKNOWN",
+   "vct2_nodes": 200000,
+   "seconds": 67.6
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/5/10",
+   "who": "baseline",
+   "kind": "kept_tree_move",
+   "move": [
+    7,
+    6
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 197,
+   "vct2": "SAFE",
+   "vct2_nodes": 8238,
+   "seconds": 1.5
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/7/25",
+   "who": "run",
+   "kind": "kept_tree_move",
+   "move": [
+    8,
+    3
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 763052,
+   "vct2": "UNKNOWN",
+   "vct2_nodes": 200000,
+   "seconds": 125.2
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/7/25",
+   "who": "baseline",
+   "kind": "kept_tree_move",
+   "move": [
+    11,
+    6
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 359,
+   "vct2": "SAFE",
+   "vct2_nodes": 7888,
+   "seconds": 1.7
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/48/83",
+   "who": "run",
+   "kind": "kept_tree_move",
+   "move": [
+    9,
+    11
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 296793,
+   "vct2": "SAFE",
+   "vct2_nodes": 1414,
+   "seconds": 37.6
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/48/83",
+   "who": "baseline",
+   "kind": "kept_tree_move",
+   "move": [
+    4,
+    2
+   ],
+   "vct1": "SAFE",
+   "vct1_nodes": 12905,
+   "vct2": "SAFE",
+   "vct2_nodes": 62,
+   "seconds": 2.0
+  }
+ ]
+}

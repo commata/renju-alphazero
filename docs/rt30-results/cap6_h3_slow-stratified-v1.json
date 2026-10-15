@@ -1,0 +1,6098 @@
+{
+ "format": "rt30-replay-v1",
+ "engine": "TB-Engine-v1",
+ "arms": [
+  "rt"
+ ],
+ "manifest": {
+  "path": "docs/rt30-eval/slow-stratified-v1.json",
+  "version": "slow-stratified-v1",
+  "keys": 60
+ },
+ "deadline": 27.5,
+ "root_rescue": true,
+ "timing": {
+  "final_margin": 1.5,
+  "attack_seconds": 6.0,
+  "puct_reserve": 6.0,
+  "vct2_reserve": 4.0,
+  "vct2_min": 2.0
+ },
+ "select": "sample",
+ "slow_seconds": 30.0,
+ "seed": 42,
+ "workers": 1,
+ "git_commit": "fab079ce3c5044c99c2bda9f0f984bd6aba03890",
+ "jsonl": [
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl",
+  "/home/deploy/renju-alphazero/docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl"
+ ],
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "processor": "",
+  "cpu_count": 16,
+  "python": "3.14.4"
+ },
+ "summary": {
+  "positions": 60,
+  "rt": {
+   "seconds": {
+    "n": 60,
+    "median": 9.476,
+    "p95": 26.0,
+    "p99": 26.004,
+    "max": 26.004,
+    "sum": 763.2,
+    "over_27.5s": 0
+   },
+   "routes": {
+    "tree": 52,
+    "stage5": 1,
+    "stage4": 6,
+    "own_vct": 1
+   },
+   "phases": {
+    "attack": {
+     "n": 60,
+     "median": 0.199,
+     "p95": 6.0,
+     "p99": 6.0,
+     "max": 6.0,
+     "sum": 114.6,
+     "over_27.5s": 0
+    },
+    "stage_vct": {
+     "n": 7,
+     "median": 6.785,
+     "p95": 18.296,
+     "p99": 18.296,
+     "max": 18.296,
+     "sum": 65.2,
+     "over_27.5s": 0
+    },
+    "tree": {
+     "n": 52,
+     "median": 1.17,
+     "p95": 2.629,
+     "p99": 3.33,
+     "max": 3.33,
+     "sum": 81.1,
+     "over_27.5s": 0
+    },
+    "root": {
+     "n": 52,
+     "median": 0.769,
+     "p95": 20.501,
+     "p99": 20.78,
+     "max": 20.78,
+     "sum": 276.1,
+     "over_27.5s": 0
+    },
+    "vct2": {
+     "n": 51,
+     "median": 4.0,
+     "p95": 7.375,
+     "p99": 7.526,
+     "max": 7.526,
+     "sum": 216.2,
+     "over_27.5s": 0
+    },
+    "v7_modules": {
+     "n": 60,
+     "median": 0.302,
+     "p95": 6.584,
+     "p99": 6.766,
+     "max": 6.766,
+     "sum": 124.1,
+     "over_27.5s": 0
+    },
+    "v7_only": {
+     "n": 60,
+     "median": 0.047,
+     "p95": 0.835,
+     "p99": 1.025,
+     "max": 1.025,
+     "sum": 9.5,
+     "over_27.5s": 0
+    }
+   }
+  },
+  "rt_deadline": {
+   "timeouts": {
+    "attack": 15,
+    "stage_vct": 0,
+    "root": 11,
+    "vct2": 10
+   },
+   "skipped": {
+    "puct": 0,
+    "vct2": 0,
+    "vct2_root_rescue": 1
+   },
+   "root_rescued": 1,
+   "moves_with_timeout_or_skip": 25
+  },
+  "vs_baseline": {
+   "baseline": "runs/rt30/fast_h3_s60.json",
+   "baseline_arm": "fast",
+   "positions": 60,
+   "missing": 0,
+   "same_move": 51,
+   "changed_kinds": {
+    "lost_win": 6,
+    "kept_tree_move": 4
+   },
+   "changed": [
+    {
+     "key": "puct_policy_vct2_50k_8415/10/20",
+     "baseline": [
+      "own_vct",
+      [
+       10,
+       9
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       10,
+       6
+      ]
+     ],
+     "kind": "lost_win",
+     "played_in_baseline": null
+    },
+    {
+     "key": "puct_policy_vct2_50k_8415/28/14",
+     "baseline": [
+      "own_vct",
+      [
+       10,
+       4
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       9,
+       6
+      ]
+     ],
+     "kind": "lost_win",
+     "played_in_baseline": null
+    },
+    {
+     "key": "puct_policy_vct2_50k_8415/30/77",
+     "baseline": [
+      "own_vct",
+      [
+       1,
+       4
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       8,
+       4
+      ]
+     ],
+     "kind": "lost_win",
+     "played_in_baseline": null
+    },
+    {
+     "key": "puct_policy_vct2_50k_8415/46/49",
+     "baseline": [
+      "tree",
+      [
+       10,
+       8
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       12,
+       3
+      ]
+     ],
+     "kind": "kept_tree_move",
+     "played_in_baseline": "UNKNOWN"
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/4/16",
+     "baseline": [
+      "own_vct",
+      [
+       5,
+       2
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       6,
+       2
+      ]
+     ],
+     "kind": "lost_win",
+     "played_in_baseline": null
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/5/10",
+     "baseline": [
+      "tree",
+      [
+       7,
+       6
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       9,
+       5
+      ]
+     ],
+     "kind": "kept_tree_move",
+     "played_in_baseline": "UNKNOWN"
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/7/25",
+     "baseline": [
+      "tree",
+      [
+       11,
+       6
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       8,
+       3
+      ]
+     ],
+     "kind": "kept_tree_move",
+     "played_in_baseline": "UNKNOWN"
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/26/15",
+     "baseline": [
+      "own_vct",
+      [
+       5,
+       6
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       4,
+       8
+      ]
+     ],
+     "kind": "lost_win",
+     "played_in_baseline": null
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/37/17",
+     "baseline": [
+      "own_vct",
+      [
+       5,
+       8
+      ]
+     ],
+     "run": [
+      "stage4",
+      [
+       5,
+       8
+      ]
+     ],
+     "kind": "lost_win",
+     "played_in_baseline": null
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/48/83",
+     "baseline": [
+      "tree",
+      [
+       4,
+       2
+      ]
+     ],
+     "run": [
+      "tree",
+      [
+       9,
+       11
+      ]
+     ],
+     "kind": "kept_tree_move",
+     "played_in_baseline": "UNKNOWN"
+    }
+   ],
+   "lost_own_vct": [
+    {
+     "key": "puct_policy_vct2_50k_8415/10/20",
+     "win": [
+      10,
+      9
+     ],
+     "played": [
+      10,
+      6
+     ],
+     "same_move": false
+    },
+    {
+     "key": "puct_policy_vct2_50k_8415/28/14",
+     "win": [
+      10,
+      4
+     ],
+     "played": [
+      9,
+      6
+     ],
+     "same_move": false
+    },
+    {
+     "key": "puct_policy_vct2_50k_8415/30/77",
+     "win": [
+      1,
+      4
+     ],
+     "played": [
+      8,
+      4
+     ],
+     "same_move": false
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/4/16",
+     "win": [
+      5,
+      2
+     ],
+     "played": [
+      6,
+      2
+     ],
+     "same_move": false
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/26/15",
+     "win": [
+      5,
+      6
+     ],
+     "played": [
+      4,
+      8
+     ],
+     "same_move": false
+    },
+    {
+     "key": "puct_policy_vct2_50k_8416/37/17",
+     "win": [
+      5,
+      8
+     ],
+     "played": [
+      5,
+      8
+     ],
+     "same_move": true
+    }
+   ],
+   "lost_own_vct_other_move": 5,
+   "played_baseline_unsafe": []
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/2/14",
+   "recorded_seconds": 37.7564,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     10,
+     4
+    ],
+    "seconds": 5.3432,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0452,
+     "stage_vct": 0.0,
+     "tree": 0.9764,
+     "root": 0.2874,
+     "vct2": 3.9844,
+     "v7_modules": 0.0861,
+     "v7_only": 0.0409
+    },
+    "nodes": {
+     "attack": 72,
+     "stage_vct": 0,
+     "root": 312,
+     "vct2": 33968
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        10,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        10,
+        4
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     10,
+     4
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      10,
+      4
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        10,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        10,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        10,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/20",
+   "recorded_seconds": 57.1264,
+   "recorded_route": "own_vct",
+   "rt": {
+    "move": [
+     10,
+     6
+    ],
+    "seconds": 8.0534,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 1.0381,
+     "root": 0.7535,
+     "vct2": 0.1057,
+     "v7_modules": 6.148,
+     "v7_only": 0.1479
+    },
+    "nodes": {
+     "attack": 41295,
+     "stage_vct": 0,
+     "root": 4049,
+     "vct2": 20
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        10,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        10,
+        6
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     10,
+     6
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      10,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        10,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/11/11",
+   "recorded_seconds": 37.2661,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 4.7403,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0393,
+     "stage_vct": 0.0,
+     "tree": 1.047,
+     "root": 0.1987,
+     "vct2": 3.4035,
+     "v7_modules": 0.0849,
+     "v7_only": 0.0456
+    },
+    "nodes": {
+     "attack": 62,
+     "stage_vct": 0,
+     "root": 401,
+     "vct2": 20087
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        7
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/12/26",
+   "recorded_seconds": 42.3535,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     5,
+     8
+    ],
+    "seconds": 9.4303,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0889,
+     "stage_vct": 0.0,
+     "tree": 1.1839,
+     "root": 2.114,
+     "vct2": 5.9577,
+     "v7_modules": 0.1646,
+     "v7_only": 0.0757
+    },
+    "nodes": {
+     "attack": 380,
+     "stage_vct": 0,
+     "root": 14626,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      9,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/13/20",
+   "recorded_seconds": 129.3492,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     5,
+     4
+    ],
+    "seconds": 15.3431,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0002,
+     "stage_vct": 0.0,
+     "tree": 2.1234,
+     "root": 0.3666,
+     "vct2": 6.7576,
+     "v7_modules": 6.0874,
+     "v7_only": 0.0872
+    },
+    "nodes": {
+     "attack": 43123,
+     "stage_vct": 0,
+     "root": 621,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        4
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     4
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      6,
+      4
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/14/9",
+   "recorded_seconds": 37.8607,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     7,
+     5
+    ],
+    "seconds": 8.2463,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0437,
+     "stage_vct": 0.0,
+     "tree": 0.9944,
+     "root": 0.3633,
+     "vct2": 6.8081,
+     "v7_modules": 0.0739,
+     "v7_only": 0.0302
+    },
+    "nodes": {
+     "attack": 91,
+     "stage_vct": 0,
+     "root": 1696,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        5
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        7,
+        5
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     7,
+     5
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      7,
+      5
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        5
+       ]
+      ],
+      [
+       "root",
+       [
+        7,
+        5
+       ]
+      ],
+      [
+       "vct2",
+       [
+        7,
+        5
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/17/15",
+   "recorded_seconds": 65.3227,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     7,
+     8
+    ],
+    "seconds": 3.9635,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0764,
+     "stage_vct": 0.0,
+     "tree": 2.1294,
+     "root": 0.3615,
+     "vct2": 1.3425,
+     "v7_modules": 0.1235,
+     "v7_only": 0.0471
+    },
+    "nodes": {
+     "attack": 353,
+     "stage_vct": 0,
+     "root": 1301,
+     "vct2": 6304
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        7,
+        8
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     7,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      10
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        7,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        7,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/19/13",
+   "recorded_seconds": 35.1253,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     5,
+     9
+    ],
+    "seconds": 8.2292,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0472,
+     "stage_vct": 0.0,
+     "tree": 1.017,
+     "root": 0.228,
+     "vct2": 6.8768,
+     "v7_modules": 0.1011,
+     "v7_only": 0.0539
+    },
+    "nodes": {
+     "attack": 158,
+     "stage_vct": 0,
+     "root": 520,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        9
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     9
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      9
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/64",
+   "recorded_seconds": 199.2761,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     3,
+     9
+    ],
+    "seconds": 26.0003,
+    "route": "tree",
+    "phases": {
+     "attack": 0.6715,
+     "stage_vct": 0.0,
+     "tree": 1.0445,
+     "root": 19.4401,
+     "vct2": 3.9999,
+     "v7_modules": 1.5063,
+     "v7_only": 0.8348
+    },
+    "nodes": {
+     "attack": 4767,
+     "stage_vct": 0,
+     "root": 140000,
+     "vct2": 20000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        3,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        3,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     3,
+     9
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      3,
+      10
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        3,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        3,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        3,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/43",
+   "recorded_seconds": 95.8308,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     5,
+     10
+    ],
+    "seconds": 9.2429,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 2.287,
+     "root": 0.6369,
+     "vct2": 0.132,
+     "v7_modules": 6.1799,
+     "v7_only": 0.1798
+    },
+    "nodes": {
+     "attack": 48405,
+     "stage_vct": 0,
+     "root": 2952,
+     "vct2": 20
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        10
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        10
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     10
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      5,
+      10
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        10
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        10
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        10
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/25/20",
+   "recorded_seconds": 36.9199,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     6,
+     10
+    ],
+    "seconds": 8.271,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1087,
+     "stage_vct": 0.0,
+     "tree": 0.9183,
+     "root": 6.8892,
+     "vct2": 0.2945,
+     "v7_modules": 0.1485,
+     "v7_only": 0.0398
+    },
+    "nodes": {
+     "attack": 532,
+     "stage_vct": 0,
+     "root": 50460,
+     "vct2": 1469
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        11
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        6,
+        10
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        6,
+        10
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     11
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      4,
+      10
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        10
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        10
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/28/14",
+   "recorded_seconds": 68.1996,
+   "recorded_route": "own_vct",
+   "rt": {
+    "move": [
+     9,
+     6
+    ],
+    "seconds": 8.2691,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 1.0387,
+     "root": 0.3967,
+     "vct2": 0.7672,
+     "v7_modules": 6.0589,
+     "v7_only": 0.0588
+    },
+    "nodes": {
+     "attack": 41320,
+     "stage_vct": 0,
+     "root": 1103,
+     "vct2": 4445
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        6
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     6
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      9,
+      3
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/30/77",
+   "recorded_seconds": 58.5688,
+   "recorded_route": "own_vct",
+   "rt": {
+    "move": [
+     8,
+     4
+    ],
+    "seconds": 14.9341,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 1.828,
+     "root": 6.8653,
+     "vct2": 0.1574,
+     "v7_modules": 6.0755,
+     "v7_only": 0.0754
+    },
+    "nodes": {
+     "attack": 47999,
+     "stage_vct": 0,
+     "root": 46760,
+     "vct2": 180
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        4
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     4
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      8,
+      4
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/31/17",
+   "recorded_seconds": 46.3602,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     6
+    ],
+    "seconds": 10.5302,
+    "route": "tree",
+    "phases": {
+     "attack": 0.074,
+     "stage_vct": 0.0,
+     "tree": 1.7736,
+     "root": 1.5087,
+     "vct2": 7.0909,
+     "v7_modules": 0.1498,
+     "v7_only": 0.0758
+    },
+    "nodes": {
+     "attack": 312,
+     "stage_vct": 0,
+     "root": 9868,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/32/21",
+   "recorded_seconds": 38.5338,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     3,
+     8
+    ],
+    "seconds": 8.9239,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0404,
+     "stage_vct": 0.0,
+     "tree": 1.0843,
+     "root": 0.3782,
+     "vct2": 7.3748,
+     "v7_modules": 0.0795,
+     "v7_only": 0.0391
+    },
+    "nodes": {
+     "attack": 66,
+     "stage_vct": 0,
+     "root": 1319,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        3,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        3,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     3,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      2,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        2,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        3,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        3,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        3,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/33/18",
+   "recorded_seconds": 92.7616,
+   "recorded_route": "stage5",
+   "rt": {
+    "move": [
+     9,
+     4
+    ],
+    "seconds": 16.1525,
+    "route": "stage5",
+    "phases": {
+     "attack": 4.474,
+     "stage_vct": 11.66,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 4.4842,
+     "v7_only": 0.0102
+    },
+    "nodes": {
+     "attack": 33482,
+     "stage_vct": 97874,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        9,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     9,
+     4
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      10,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        8
+       ]
+      ],
+      [
+       "stage5_v7",
+       [
+        9,
+        4
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        9,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/34/24",
+   "recorded_seconds": 45.3753,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     11,
+     8
+    ],
+    "seconds": 11.9861,
+    "route": "tree",
+    "phases": {
+     "attack": 1.2046,
+     "stage_vct": 0.0,
+     "tree": 1.6703,
+     "root": 2.8961,
+     "vct2": 6.1635,
+     "v7_modules": 1.2467,
+     "v7_only": 0.0421
+    },
+    "nodes": {
+     "attack": 8851,
+     "stage_vct": 0,
+     "root": 20346,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        11,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        11,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     11,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      10,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        11,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        11,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        11,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/37/13",
+   "recorded_seconds": 40.5418,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     5,
+     3
+    ],
+    "seconds": 8.4621,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1152,
+     "stage_vct": 0.0,
+     "tree": 1.1132,
+     "root": 0.6424,
+     "vct2": 6.5416,
+     "v7_modules": 0.158,
+     "v7_only": 0.0428
+    },
+    "nodes": {
+     "attack": 727,
+     "stage_vct": 0,
+     "root": 3597,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        3
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     3
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      2
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        3
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        3
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/38/11",
+   "recorded_seconds": 194.2724,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 15.2297,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1219,
+     "stage_vct": 0.0,
+     "tree": 1.0162,
+     "root": 13.9684,
+     "vct2": 0.0,
+     "v7_modules": 0.2304,
+     "v7_only": 0.1085
+    },
+    "nodes": {
+     "attack": 680,
+     "stage_vct": 0,
+     "root": 98761,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        6
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        9,
+        3
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        8,
+        6
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        8,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": []
+    },
+    "tree_move": [
+     7,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [
+      "vct2_root_rescue"
+     ],
+     "emergency": [
+      10,
+      6
+     ],
+     "rescued": true,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/73",
+   "recorded_seconds": 69.161,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     4,
+     4
+    ],
+    "seconds": 7.3421,
+    "route": "tree",
+    "phases": {
+     "attack": 1.1186,
+     "stage_vct": 0.0,
+     "tree": 3.3305,
+     "root": 1.4598,
+     "vct2": 1.328,
+     "v7_modules": 1.2162,
+     "v7_only": 0.0976
+    },
+    "nodes": {
+     "attack": 8906,
+     "stage_vct": 0,
+     "root": 9228,
+     "vct2": 8032
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        4
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     4
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      7,
+      12
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        12
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/40/9",
+   "recorded_seconds": 31.8162,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     6
+    ],
+    "seconds": 8.4648,
+    "route": "tree",
+    "phases": {
+     "attack": 0.052,
+     "stage_vct": 0.0,
+     "tree": 0.9767,
+     "root": 0.1711,
+     "vct2": 7.2274,
+     "v7_modules": 0.0833,
+     "v7_only": 0.0313
+    },
+    "nodes": {
+     "attack": 160,
+     "stage_vct": 0,
+     "root": 182,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/41/39",
+   "recorded_seconds": 88.5665,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     7,
+     1
+    ],
+    "seconds": 11.6498,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 2.4686,
+     "root": 0.4198,
+     "vct2": 2.6463,
+     "v7_modules": 6.1077,
+     "v7_only": 0.1076
+    },
+    "nodes": {
+     "attack": 43832,
+     "stage_vct": 0,
+     "root": 1089,
+     "vct2": 17898
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        1
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        7,
+        1
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     7,
+     1
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      11,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        11,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        1
+       ]
+      ],
+      [
+       "root",
+       [
+        7,
+        1
+       ]
+      ],
+      [
+       "vct2",
+       [
+        7,
+        1
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/42/61",
+   "recorded_seconds": 52.6265,
+   "recorded_route": "stage4",
+   "rt": {
+    "move": [
+     2,
+     9
+    ],
+    "seconds": 17.1512,
+    "route": "stage4",
+    "phases": {
+     "attack": 0.6414,
+     "stage_vct": 15.8193,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 1.3218,
+     "v7_only": 0.6804
+    },
+    "nodes": {
+     "attack": 4363,
+     "stage_vct": 199999,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        2,
+        9
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        2,
+        5
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        2,
+        10
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        2,
+        4
+       ],
+       "UNSAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     2,
+     9
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      2,
+      9
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        2,
+        9
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        2,
+        9
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        2,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/43/31",
+   "recorded_seconds": 43.4334,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     12,
+     5
+    ],
+    "seconds": 10.03,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0751,
+     "stage_vct": 0.0,
+     "tree": 1.2969,
+     "root": 1.4816,
+     "vct2": 7.1299,
+     "v7_modules": 0.1145,
+     "v7_only": 0.0394
+    },
+    "nodes": {
+     "attack": 304,
+     "stage_vct": 0,
+     "root": 9252,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        12,
+        5
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        12,
+        5
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     12,
+     5
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      9,
+      4
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        12,
+        5
+       ]
+      ],
+      [
+       "root",
+       [
+        12,
+        5
+       ]
+      ],
+      [
+       "vct2",
+       [
+        12,
+        5
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/44/40",
+   "recorded_seconds": 31.6124,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     9,
+     8
+    ],
+    "seconds": 10.0652,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0773,
+     "stage_vct": 0.0,
+     "tree": 2.5217,
+     "root": 0.6933,
+     "vct2": 6.7218,
+     "v7_modules": 0.1196,
+     "v7_only": 0.0423
+    },
+    "nodes": {
+     "attack": 280,
+     "stage_vct": 0,
+     "root": 2811,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      9,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/45/20",
+   "recorded_seconds": 39.4803,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     7,
+     4
+    ],
+    "seconds": 8.8483,
+    "route": "tree",
+    "phases": {
+     "attack": 3.5621,
+     "stage_vct": 0.0,
+     "tree": 0.6466,
+     "root": 0.3552,
+     "vct2": 4.2158,
+     "v7_modules": 3.6227,
+     "v7_only": 0.0606
+    },
+    "nodes": {
+     "attack": 27389,
+     "stage_vct": 0,
+     "root": 610,
+     "vct2": 25206
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        7,
+        4
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     7,
+     4
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      7,
+      4
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        7,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        7,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/46/49",
+   "recorded_seconds": 217.5983,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     12,
+     3
+    ],
+    "seconds": 26.0006,
+    "route": "tree",
+    "phases": {
+     "attack": 0.3776,
+     "stage_vct": 0.0,
+     "tree": 2.3088,
+     "root": 18.9958,
+     "vct2": 3.9997,
+     "v7_modules": 0.6876,
+     "v7_only": 0.31
+    },
+    "nodes": {
+     "attack": 2550,
+     "stage_vct": 0,
+     "root": 151300,
+     "vct2": 13454
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        12,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        12,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     12,
+     3
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      12,
+      3
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        12,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        12,
+        3
+       ]
+      ],
+      [
+       "root",
+       [
+        12,
+        3
+       ]
+      ],
+      [
+       "vct2",
+       [
+        12,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/47/45",
+   "recorded_seconds": 33.7362,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     12,
+     3
+    ],
+    "seconds": 8.8252,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0484,
+     "stage_vct": 0.0,
+     "tree": 1.2288,
+     "root": 0.8854,
+     "vct2": 6.6169,
+     "v7_modules": 0.0862,
+     "v7_only": 0.0378
+    },
+    "nodes": {
+     "attack": 71,
+     "stage_vct": 0,
+     "root": 4951,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        12,
+        3
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        12,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     12,
+     3
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      10,
+      2
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        12,
+        3
+       ]
+      ],
+      [
+       "root",
+       [
+        12,
+        3
+       ]
+      ],
+      [
+       "vct2",
+       [
+        12,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/48/40",
+   "recorded_seconds": 47.253,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     2
+    ],
+    "seconds": 7.63,
+    "route": "tree",
+    "phases": {
+     "attack": 0.2731,
+     "stage_vct": 0.0,
+     "tree": 2.4116,
+     "root": 0.5183,
+     "vct2": 4.3703,
+     "v7_modules": 0.3206,
+     "v7_only": 0.0475
+    },
+    "nodes": {
+     "attack": 1779,
+     "stage_vct": 0,
+     "root": 1295,
+     "vct2": 32323
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        2
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        2
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     2
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        2
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        2
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        2
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/49/93",
+   "recorded_seconds": 36.0762,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     12,
+     11
+    ],
+    "seconds": 10.0577,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 2.5838,
+     "root": 0.7846,
+     "vct2": 0.0983,
+     "v7_modules": 6.5836,
+     "v7_only": 0.5835
+    },
+    "nodes": {
+     "attack": 55270,
+     "stage_vct": 0,
+     "root": 3981,
+     "vct2": 20
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        12,
+        11
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        12,
+        11
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     12,
+     11
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      12,
+      7
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        12,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        12,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        12,
+        11
+       ]
+      ],
+      [
+       "vct2",
+       [
+        12,
+        11
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/1/19",
+   "recorded_seconds": 32.3317,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     9,
+     4
+    ],
+    "seconds": 4.8219,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0465,
+     "stage_vct": 0.0,
+     "tree": 1.2564,
+     "root": 0.3885,
+     "vct2": 3.0876,
+     "v7_modules": 0.0827,
+     "v7_only": 0.0362
+    },
+    "nodes": {
+     "attack": 161,
+     "stage_vct": 0,
+     "root": 1544,
+     "vct2": 27777
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        4
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        4
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     4
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      7,
+      3
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        4
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        4
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        4
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/2/11",
+   "recorded_seconds": 34.5222,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     6
+    ],
+    "seconds": 1.3729,
+    "route": "tree",
+    "phases": {
+     "attack": 0.063,
+     "stage_vct": 0.0,
+     "tree": 1.0907,
+     "root": 0.1473,
+     "vct2": 0.0294,
+     "v7_modules": 0.0991,
+     "v7_only": 0.0361
+    },
+    "nodes": {
+     "attack": 248,
+     "stage_vct": 0,
+     "root": 44,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        6
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/4/16",
+   "recorded_seconds": 33.5461,
+   "recorded_route": "own_vct",
+   "rt": {
+    "move": [
+     6,
+     2
+    ],
+    "seconds": 13.2568,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 1.0742,
+     "root": 0.3804,
+     "vct2": 5.7479,
+     "v7_modules": 6.0469,
+     "v7_only": 0.0468
+    },
+    "nodes": {
+     "attack": 47751,
+     "stage_vct": 0,
+     "root": 1130,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        6,
+        2
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        6,
+        2
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     6,
+     2
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      5,
+      2
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        2
+       ]
+      ],
+      [
+       "puct",
+       [
+        6,
+        2
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        2
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        2
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/5/10",
+   "recorded_seconds": 164.0427,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     9,
+     5
+    ],
+    "seconds": 26.0043,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1449,
+     "stage_vct": 0.0,
+     "tree": 1.037,
+     "root": 20.7799,
+     "vct2": 3.9969,
+     "v7_modules": 0.1766,
+     "v7_only": 0.0317
+    },
+    "nodes": {
+     "attack": 764,
+     "stage_vct": 0,
+     "root": 176638,
+     "vct2": 30273
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        5
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        5
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     5
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      7,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        7,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        5
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        5
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        5
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/6/13",
+   "recorded_seconds": 30.6145,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     11,
+     8
+    ],
+    "seconds": 8.6396,
+    "route": "tree",
+    "phases": {
+     "attack": 0.072,
+     "stage_vct": 0.0,
+     "tree": 0.6604,
+     "root": 0.3192,
+     "vct2": 7.5259,
+     "v7_modules": 0.1275,
+     "v7_only": 0.0555
+    },
+    "nodes": {
+     "attack": 326,
+     "stage_vct": 0,
+     "root": 1117,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        11,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        11,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     11,
+     8
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      9,
+      5
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        11,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        11,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        11,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/7/25",
+   "recorded_seconds": 142.8152,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     3
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0775,
+     "stage_vct": 0.0,
+     "tree": 1.1083,
+     "root": 20.7674,
+     "vct2": 3.9932,
+     "v7_modules": 0.1181,
+     "v7_only": 0.0406
+    },
+    "nodes": {
+     "attack": 346,
+     "stage_vct": 0,
+     "root": 143262,
+     "vct2": 25178
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     3
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      8,
+      3
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        3
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        3
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        3
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/8/25",
+   "recorded_seconds": 222.8748,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     6,
+     6
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1971,
+     "stage_vct": 0.0,
+     "tree": 2.1599,
+     "root": 19.5721,
+     "vct2": 3.9774,
+     "v7_modules": 0.2612,
+     "v7_only": 0.0641
+    },
+    "nodes": {
+     "attack": 1398,
+     "stage_vct": 0,
+     "root": 133571,
+     "vct2": 20722
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        6,
+        6
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        9,
+        4
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        4,
+        5
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        5,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        6,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     6,
+     6
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      4,
+      5
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        6,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        6,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        6,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/10/38",
+   "recorded_seconds": 38.6348,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     10,
+     5
+    ],
+    "seconds": 3.9499,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0491,
+     "stage_vct": 0.0,
+     "tree": 2.9097,
+     "root": 0.4125,
+     "vct2": 0.5368,
+     "v7_modules": 0.0826,
+     "v7_only": 0.0335
+    },
+    "nodes": {
+     "attack": 98,
+     "stage_vct": 0,
+     "root": 72,
+     "vct2": 3050
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        10,
+        5
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        10,
+        5
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     10,
+     5
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        10,
+        5
+       ]
+      ],
+      [
+       "root",
+       [
+        10,
+        5
+       ]
+      ],
+      [
+       "vct2",
+       [
+        10,
+        5
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/13/16",
+   "recorded_seconds": 407.2884,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     4,
+     6
+    ],
+    "seconds": 15.5741,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 1.004,
+     "root": 0.9232,
+     "vct2": 7.0293,
+     "v7_modules": 6.6074,
+     "v7_only": 0.6073
+    },
+    "nodes": {
+     "attack": 45402,
+     "stage_vct": 0,
+     "root": 4636,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     6
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      4,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/14/39",
+   "recorded_seconds": 30.7713,
+   "recorded_route": "stage4",
+   "rt": {
+    "move": [
+     8,
+     10
+    ],
+    "seconds": 6.4592,
+    "route": "stage4",
+    "phases": {
+     "attack": 0.9983,
+     "stage_vct": 5.4272,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 1.0232,
+     "v7_only": 0.0249
+    },
+    "nodes": {
+     "attack": 6831,
+     "stage_vct": 36699,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        8,
+        7
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        8,
+        10
+       ],
+       "SAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     8,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      10
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        10
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        8,
+        10
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/15/13",
+   "recorded_seconds": 33.5657,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     3,
+     6
+    ],
+    "seconds": 5.0171,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0707,
+     "stage_vct": 0.0,
+     "tree": 1.138,
+     "root": 0.1774,
+     "vct2": 3.5863,
+     "v7_modules": 0.1089,
+     "v7_only": 0.0382
+    },
+    "nodes": {
+     "attack": 313,
+     "stage_vct": 0,
+     "root": 134,
+     "vct2": 22073
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        3,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        3,
+        6
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     3,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      7
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        3,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        3,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        3,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/18/52",
+   "recorded_seconds": 286.4509,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     9
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0447,
+     "stage_vct": 0.0,
+     "tree": 1.4022,
+     "root": 19.8071,
+     "vct2": 4.0,
+     "v7_modules": 0.7818,
+     "v7_only": 0.7371
+    },
+    "nodes": {
+     "attack": 179,
+     "stage_vct": 0,
+     "root": 150830,
+     "vct2": 29391
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        9
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     9
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      8,
+      9
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        9
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/26/15",
+   "recorded_seconds": 34.8781,
+   "recorded_route": "own_vct",
+   "rt": {
+    "move": [
+     4,
+     8
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 0.9291,
+     "root": 14.9792,
+     "vct2": 3.9952,
+     "v7_modules": 6.085,
+     "v7_only": 0.0849
+    },
+    "nodes": {
+     "attack": 48301,
+     "stage_vct": 0,
+     "root": 102736,
+     "vct2": 12414
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "attack",
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      4,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/27/13",
+   "recorded_seconds": 34.7076,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     5,
+     5
+    ],
+    "seconds": 8.7162,
+    "route": "tree",
+    "phases": {
+     "attack": 0.066,
+     "stage_vct": 0.0,
+     "tree": 1.1296,
+     "root": 0.2299,
+     "vct2": 7.2484,
+     "v7_modules": 0.1019,
+     "v7_only": 0.0359
+    },
+    "nodes": {
+     "attack": 300,
+     "stage_vct": 0,
+     "root": 539,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        5,
+        5
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        5,
+        5
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     5,
+     5
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      5
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        5,
+        5
+       ]
+      ],
+      [
+       "root",
+       [
+        5,
+        5
+       ]
+      ],
+      [
+       "vct2",
+       [
+        5,
+        5
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/30/39",
+   "recorded_seconds": 82.6977,
+   "recorded_route": "stage4",
+   "rt": {
+    "move": [
+     10,
+     9
+    ],
+    "seconds": 19.421,
+    "route": "stage4",
+    "phases": {
+     "attack": 1.0687,
+     "stage_vct": 18.2958,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 1.1152,
+     "v7_only": 0.0465
+    },
+    "nodes": {
+     "attack": 8480,
+     "stage_vct": 199997,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        5,
+        3
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        9,
+        3
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        4,
+        3
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        10,
+        3
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        7,
+        4
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        9,
+        4
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        6,
+        1
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        9,
+        2
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        10,
+        9
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        3,
+        7
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        12,
+        5
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        2,
+        7
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        11,
+        7
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        8,
+        10
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        12,
+        6
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        3,
+        5
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        7,
+        1
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        6,
+        8
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        4,
+        5
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        8,
+        4
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        9,
+        5
+       ],
+       "UNSAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     5,
+     3
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      3
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        3
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        5,
+        3
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        10,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/31/11",
+   "recorded_seconds": 36.9931,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     2
+    ],
+    "seconds": 8.4748,
+    "route": "tree",
+    "phases": {
+     "attack": 0.2519,
+     "stage_vct": 0.0,
+     "tree": 1.0197,
+     "root": 0.1778,
+     "vct2": 6.988,
+     "v7_modules": 0.283,
+     "v7_only": 0.0311
+    },
+    "nodes": {
+     "attack": 1859,
+     "stage_vct": 0,
+     "root": 199,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        2
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        2
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     2
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      5
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        5
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        2
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        2
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        2
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/33/16",
+   "recorded_seconds": 35.5448,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     9,
+     7
+    ],
+    "seconds": 7.4453,
+    "route": "tree",
+    "phases": {
+     "attack": 0.1717,
+     "stage_vct": 0.0,
+     "tree": 1.1568,
+     "root": 0.317,
+     "vct2": 5.7597,
+     "v7_modules": 0.204,
+     "v7_only": 0.0323
+    },
+    "nodes": {
+     "attack": 921,
+     "stage_vct": 0,
+     "root": 388,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      6,
+      4
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        6,
+        4
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/34/15",
+   "recorded_seconds": 32.2132,
+   "recorded_route": "own_vct",
+   "rt": {
+    "move": [
+     4,
+     9
+    ],
+    "seconds": 5.8926,
+    "route": "own_vct",
+    "phases": {
+     "attack": 5.8803,
+     "stage_vct": 0.0,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 5.8861,
+     "v7_only": 0.0058
+    },
+    "nodes": {
+     "attack": 46912,
+     "stage_vct": 0,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": null,
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      5,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "own_vct",
+       [
+        4,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/37/17",
+   "recorded_seconds": 37.7298,
+   "recorded_route": "own_vct",
+   "rt": {
+    "move": [
+     5,
+     8
+    ],
+    "seconds": 6.7869,
+    "route": "stage4",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.7693,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 6.0087,
+     "v7_only": 0.0086
+    },
+    "nodes": {
+     "attack": 46486,
+     "stage_vct": 4203,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        5,
+        8
+       ],
+       "SAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     5,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      5,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        5,
+        8
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        5,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/38/13",
+   "recorded_seconds": 107.9399,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     12,
+     6
+    ],
+    "seconds": 24.0325,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0563,
+     "stage_vct": 0.0,
+     "tree": 1.129,
+     "root": 15.3594,
+     "vct2": 7.4253,
+     "v7_modules": 0.1053,
+     "v7_only": 0.049
+    },
+    "nodes": {
+     "attack": 239,
+     "stage_vct": 0,
+     "root": 130943,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        12,
+        6
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        12,
+        6
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     12,
+     6
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      12,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        12,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        12,
+        6
+       ]
+      ],
+      [
+       "root",
+       [
+        12,
+        6
+       ]
+      ],
+      [
+       "vct2",
+       [
+        12,
+        6
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/39/18",
+   "recorded_seconds": 142.9286,
+   "recorded_route": "stage4",
+   "rt": {
+    "move": [
+     8,
+     9
+    ],
+    "seconds": 12.4458,
+    "route": "stage4",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 6.4235,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 6.0125,
+     "v7_only": 0.0124
+    },
+    "nodes": {
+     "attack": 43074,
+     "stage_vct": 53766,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        8,
+        5
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        8,
+        4
+       ],
+       "UNKNOWN"
+      ],
+      [
+       [
+        8,
+        9
+       ],
+       "SAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     8,
+     5
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      8,
+      5
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        5
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        8,
+        5
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        8,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/40/56",
+   "recorded_seconds": 275.9383,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     7,
+     11
+    ],
+    "seconds": 26.0004,
+    "route": "tree",
+    "phases": {
+     "attack": 0.0498,
+     "stage_vct": 0.0,
+     "tree": 2.2631,
+     "root": 18.7445,
+     "vct2": 3.9995,
+     "v7_modules": 0.9834,
+     "v7_only": 0.9336
+    },
+    "nodes": {
+     "attack": 108,
+     "stage_vct": 0,
+     "root": 146520,
+     "vct2": 31042
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        7,
+        11
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        7,
+        11
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     7,
+     11
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      10,
+      11
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        11
+       ]
+      ],
+      [
+       "puct",
+       [
+        7,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        7,
+        11
+       ]
+      ],
+      [
+       "vct2",
+       [
+        7,
+        11
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/41/32",
+   "recorded_seconds": 38.3559,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     4,
+     9
+    ],
+    "seconds": 9.1001,
+    "route": "tree",
+    "phases": {
+     "attack": 0.2012,
+     "stage_vct": 0.0,
+     "tree": 2.607,
+     "root": 1.7442,
+     "vct2": 4.4732,
+     "v7_modules": 0.2661,
+     "v7_only": 0.0649
+    },
+    "nodes": {
+     "attack": 1196,
+     "stage_vct": 0,
+     "root": 12571,
+     "vct2": 34837
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        4,
+        9
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        4,
+        9
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     4,
+     9
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      4,
+      9
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        4,
+        9
+       ]
+      ],
+      [
+       "puct",
+       [
+        4,
+        9
+       ]
+      ],
+      [
+       "root",
+       [
+        4,
+        9
+       ]
+      ],
+      [
+       "vct2",
+       [
+        4,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/42/48",
+   "recorded_seconds": 139.5498,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     2,
+     2
+    ],
+    "seconds": 10.0261,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 2.2188,
+     "root": 1.1615,
+     "vct2": 0.2216,
+     "v7_modules": 6.415,
+     "v7_only": 0.4149
+    },
+    "nodes": {
+     "attack": 42431,
+     "stage_vct": 0,
+     "root": 6568,
+     "vct2": 882
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        2,
+        2
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        2,
+        2
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     2,
+     2
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      2,
+      1
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        2,
+        1
+       ]
+      ],
+      [
+       "puct",
+       [
+        2,
+        2
+       ]
+      ],
+      [
+       "root",
+       [
+        2,
+        2
+       ]
+      ],
+      [
+       "vct2",
+       [
+        2,
+        2
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/43/42",
+   "recorded_seconds": 33.9536,
+   "recorded_route": "stage4",
+   "rt": {
+    "move": [
+     12,
+     9
+    ],
+    "seconds": 6.8559,
+    "route": "stage4",
+    "phases": {
+     "attack": 0.0314,
+     "stage_vct": 6.7854,
+     "tree": 0.0,
+     "root": 0.0,
+     "vct2": 0.0,
+     "v7_modules": 0.0606,
+     "v7_only": 0.0292
+    },
+    "nodes": {
+     "attack": 8,
+     "stage_vct": 54441,
+     "root": 0,
+     "vct2": 0
+    },
+    "checked": {
+     "stage_vct": [
+      [
+       [
+        12,
+        9
+       ],
+       "SAFE"
+      ],
+      [
+       [
+        8,
+        13
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        7,
+        14
+       ],
+       "UNSAFE"
+      ],
+      [
+       [
+        13,
+        8
+       ],
+       "UNSAFE"
+      ]
+     ],
+     "root": [],
+     "vct2": []
+    },
+    "tree_move": [
+     12,
+     9
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      12,
+      9
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        12,
+        9
+       ]
+      ],
+      [
+       "stage4_v7",
+       [
+        12,
+        9
+       ]
+      ],
+      [
+       "stage_vct",
+       [
+        12,
+        9
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/44/14",
+   "recorded_seconds": 43.2384,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     8,
+     7
+    ],
+    "seconds": 9.5215,
+    "route": "tree",
+    "phases": {
+     "attack": 0.4799,
+     "stage_vct": 0.0,
+     "tree": 2.1416,
+     "root": 0.3846,
+     "vct2": 6.4748,
+     "v7_modules": 0.5125,
+     "v7_only": 0.0326
+    },
+    "nodes": {
+     "attack": 3301,
+     "stage_vct": 0,
+     "root": 1276,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        8,
+        7
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        8,
+        7
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     8,
+     7
+    ],
+    "rt": {
+     "timeouts": [],
+     "skipped": [],
+     "emergency": [
+      8,
+      7
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "puct",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "root",
+       [
+        8,
+        7
+       ]
+      ],
+      [
+       "vct2",
+       [
+        8,
+        7
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/45/48",
+   "recorded_seconds": 160.5101,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     2,
+     8
+    ],
+    "seconds": 26.0005,
+    "route": "tree",
+    "phases": {
+     "attack": 0.082,
+     "stage_vct": 0.0,
+     "tree": 1.3652,
+     "root": 20.5008,
+     "vct2": 3.9991,
+     "v7_modules": 0.125,
+     "v7_only": 0.043
+    },
+    "nodes": {
+     "attack": 336,
+     "stage_vct": 0,
+     "root": 164924,
+     "vct2": 31010
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        2,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        2,
+        8
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     2,
+     8
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      1,
+      8
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        1,
+        8
+       ]
+      ],
+      [
+       "puct",
+       [
+        2,
+        8
+       ]
+      ],
+      [
+       "root",
+       [
+        2,
+        8
+       ]
+      ],
+      [
+       "vct2",
+       [
+        2,
+        8
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/46/59",
+   "recorded_seconds": 96.9717,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     9,
+     3
+    ],
+    "seconds": 17.6019,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 2.6292,
+     "root": 3.3278,
+     "vct2": 5.5753,
+     "v7_modules": 6.0611,
+     "v7_only": 0.061
+    },
+    "nodes": {
+     "attack": 37172,
+     "stage_vct": 0,
+     "root": 27203,
+     "vct2": 50000
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        3
+       ],
+       "SAFE"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        3
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     3
+    ],
+    "rt": {
+     "timeouts": [
+      "attack"
+     ],
+     "skipped": [],
+     "emergency": [
+      10,
+      6
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        10,
+        6
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        3
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        3
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        3
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/55",
+   "recorded_seconds": 238.3375,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     9,
+     10
+    ],
+    "seconds": 26.0004,
+    "route": "tree",
+    "phases": {
+     "attack": 1.1028,
+     "stage_vct": 0.0,
+     "tree": 1.144,
+     "root": 18.7199,
+     "vct2": 3.9992,
+     "v7_modules": 2.1279,
+     "v7_only": 1.0251
+    },
+    "nodes": {
+     "attack": 8371,
+     "stage_vct": 0,
+     "root": 137510,
+     "vct2": 8959
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        10
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        10
+       ],
+       "UNKNOWN"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     10
+    ],
+    "rt": {
+     "timeouts": [
+      "root",
+      "vct2"
+     ],
+     "skipped": [],
+     "emergency": [
+      9,
+      10
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        9,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        10
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        10
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        10
+       ]
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/48/83",
+   "recorded_seconds": 182.297,
+   "recorded_route": "tree",
+   "rt": {
+    "move": [
+     9,
+     11
+    ],
+    "seconds": 22.3752,
+    "route": "tree",
+    "phases": {
+     "attack": 6.0001,
+     "stage_vct": 0.0,
+     "tree": 2.4843,
+     "root": 12.7422,
+     "vct2": 0.3748,
+     "v7_modules": 6.7656,
+     "v7_only": 0.7655
+    },
+    "nodes": {
+     "attack": 45674,
+     "stage_vct": 0,
+     "root": 93579,
+     "vct2": 1414
+    },
+    "checked": {
+     "stage_vct": [],
+     "root": [
+      [
+       [
+        9,
+        11
+       ],
+       "UNKNOWN"
+      ]
+     ],
+     "vct2": [
+      [
+       [
+        9,
+        11
+       ],
+       "SAFE"
+      ]
+     ]
+    },
+    "tree_move": [
+     9,
+     11
+    ],
+    "rt": {
+     "timeouts": [
+      "attack",
+      "root"
+     ],
+     "skipped": [],
+     "emergency": [
+      3,
+      10
+     ],
+     "rescued": false,
+     "best": [
+      [
+       "emergency",
+       [
+        3,
+        10
+       ]
+      ],
+      [
+       "puct",
+       [
+        9,
+        11
+       ]
+      ],
+      [
+       "root",
+       [
+        9,
+        11
+       ]
+      ],
+      [
+       "vct2",
+       [
+        9,
+        11
+       ]
+      ]
+     ]
+    }
+   }
+  }
+ ]
+}

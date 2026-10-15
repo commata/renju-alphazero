@@ -1,0 +1,35 @@
+positives=67 negatives=0 combos=1 cap=6.0 workers=1
+[v8b-bench] 21/67 positions  31.3%  1.0 min  ETA 2 min  21/67 positions
+[v8b-bench] 45/67 positions  67.2%  2.0 min  ETA 1 min  45/67 positions
+[v8b-bench] 67/67 positions  100.0%  3.0 min  ETA 0 min  67/67 positions
+{
+ "positives": 67,
+ "negatives": 0,
+ "combos": {
+  "frozen/fair": {
+   "recall": "51/67",
+   "won": 51,
+   "same_move": 51,
+   "positive_seconds": {
+    "n": 67,
+    "median": 1.746,
+    "p95": 6.003,
+    "max": 6.008,
+    "sum": 178.2
+   },
+   "positive_seconds_when_won": {
+    "n": 51,
+    "median": 0.925,
+    "p95": 5.363,
+    "max": 5.93,
+    "sum": 82.2
+   },
+   "negative_seconds": {},
+   "timeouts": {
+    "positive": 16,
+    "negative": 0
+   },
+   "false_wins_on_negatives": 0
+  }
+ }
+}
