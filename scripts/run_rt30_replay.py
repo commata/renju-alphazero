@@ -8,6 +8,8 @@ agent with a fixed seed, once per arm:
     rt      the TB-RT30 search (``rt30.engine``) with the fast windows; ``--deadline S`` gives every
             move an absolute deadline S seconds after its start, else it runs without one
     rt2     the same with the TB-RT30-v2 search (``rt30.engine_v2``: V8-B slack retry)
+    fast3   ``fast`` with the native threat-window scan (``rt30.fast3``, built by ``python -m rt30.native.build``)
+    rt3     the TB-RT30-v3 search (``rt30.engine_v3``: V8-B in a helper process) with ``fast3``
     sup     TB-RT30 through ``rt30.supervisor`` (engine worker process, IPC, watchdog), as the web
             server runs it: ``seconds`` is the wall time from the request; needs ``--deadline`` and
             is the only arm of its run (``--watchdog``, default 29)
@@ -51,7 +53,7 @@ from hybrid.progress import Progress, run_chunks  # noqa: E402
 
 E3 = ROOT / 'docs' / 'mcts-v8-results' / 'e3'
 DEFAULT_JSONL = [E3 / 'puct_policy_vct2_50k_8415.jsonl', E3 / 'puct_policy_vct2_50k_8416.jsonl']
-ARMS = ('frozen', 'fast', 'rt', 'rt2', 'sup')
+ARMS = ('frozen', 'fast', 'fast3', 'rt', 'rt2', 'rt3', 'sup')
 PHASES = {'attack': 'v8_attack_seconds', 'stage_vct': 'v8_vct_seconds', 'tree': 'v8_tree_seconds',
           'root': 'v8_root_seconds', 'vct2': 'v8_vct2_seconds', 'v7_modules': 'v7_module_seconds'}
 # ``v7_module_seconds`` runs from before the own VCF to the end of the V7 root preparation, so it
@@ -111,17 +113,27 @@ def _search(moves, arm: str, seed: int):
     from rt30.deadline import Deadline
     from rt30.engine import RT30Agent
 
+    from rt30 import fast3
+
     if arm == 'frozen':
-        fast.uninstall_all()
+        fast3.uninstall_all()
+    elif arm in ('fast3', 'rt3'):
+        fast3.install_all()
     else:
+        fast3.uninstall_all()
         fast.install_all()
     game = Game()
     for move in moves:
         game.play(*move)
     started = perf_counter()
     extra = {}
-    if arm in ('rt', 'rt2'):
-        if arm == 'rt':
+    if arm in ('rt', 'rt2', 'rt3'):
+        if arm == 'rt3':
+            from rt30.engine_v3 import RT30AgentV3
+
+            agent = RT30AgentV3(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'],
+                                root_rescue=_WORKER['root_rescue'], **_WORKER['config'])
+        elif arm == 'rt':
             agent = RT30Agent(seed=seed, root_policy=_WORKER['policy'], timing=_WORKER['timing'],
                               root_rescue=_WORKER['root_rescue'], **_WORKER['config'])
         else:
@@ -137,7 +149,7 @@ def _search(moves, arm: str, seed: int):
                         'rescued': info.rescued,
                         'best': [[stage, list(m)] for stage, m in info.best],
                         **{k: getattr(info, k) for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_seconds',
-                                                          'attack_retry_win') if hasattr(info, k)}}}
+                                                          'attack_retry_win', *('attack_parallel', 'attack_helper_seconds', 'attack_wait_seconds', 'attack_win_early', 'attack_helper_failed')) if hasattr(info, k)}}}
     else:
         agent = MCTSV8Agent(seed=seed, root_policy=_WORKER['policy'], **_WORKER['config'])
         move = agent.select_move(game)
@@ -252,7 +264,7 @@ def summarize(rows, arms):
                                'over_30s': sum(x['seconds'] >= 30.0 for x in sup),
                                'ipc_overhead': _dist([x['seconds'] - x['engine_seconds'] for x in sup
                                                       if x['engine_seconds'] is not None])}
-    for arm in ('rt', 'rt2', 'sup'):
+    for arm in ('rt', 'rt2', 'rt3', 'sup'):
         if arm not in arms:
             continue
         rt = [r[arm]['rt'] for r in rows]
@@ -261,6 +273,9 @@ def summarize(rows, arms):
                          'skipped': {p: sum(p in x['skipped'] for x in rt) for p in ('puct', 'vct2', 'vct2_root_rescue')},
                          'root_rescued': sum(bool(x.get('rescued')) for x in rt),
                          'moves_with_timeout_or_skip': sum(bool(x['timeouts'] or x['skipped']) for x in rt)}
+        if arm == 'rt3':
+            summary['rt_deadline'].update({k: sum(bool(x.get(k)) for x in rt)
+                                           for k in ('attack_parallel', 'attack_win_early', 'attack_helper_failed')})
         if arm == 'rt2':
             summary['rt_deadline'].update({k: sum(bool(x.get(k)) for x in rt)
                                            for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_win')})
@@ -339,6 +354,12 @@ def _commit():
                               check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return None
+
+
+def _native() -> bool:
+    from rt30 import fast3_windows
+
+    return fast3_windows.available()
 
 
 def main(argv=None):
@@ -421,7 +442,7 @@ def main(argv=None):
     if args.baseline is not None:
         summary['vs_baseline'] = compare_baseline(rows, arms[-1], args.baseline, args.baseline_arm, args.seed)
     report = {'format': 'rt30-replay-v1', 'engine': 'TB-Engine-v1' if args.checkpoint else 'tb1-uniform-prior',
-              'arms': arms, 'manifest': manifest, 'deadline': args.deadline, 'root_rescue': not args.no_root_rescue, 'timing': {**(V2_TIMING if 'rt2' in arms else RT30_TIMING), **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
+              'arms': arms, 'native_scan': _native(), 'manifest': manifest, 'deadline': args.deadline, 'root_rescue': not args.no_root_rescue, 'timing': {**(V2_TIMING if 'rt2' in arms else RT30_TIMING), **timing}, 'select': args.select, 'slow_seconds': args.slow_seconds, 'seed': args.seed,
               'workers': args.workers, 'git_commit': _commit(), 'jsonl': [str(p) for p in args.jsonl],
               'machine': {'platform': platform.platform(), 'processor': platform.processor(),
                           'cpu_count': os.cpu_count(), 'python': platform.python_version()},

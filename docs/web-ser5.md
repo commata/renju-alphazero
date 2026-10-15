@@ -378,8 +378,11 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | A3 | E3-A 100판 짝 대국 gate | **HARM** (−0.06, §9.4) → A3.1 진단, TB-RT30-v2 설계 |
 | A3.1 | 34 분기 수를 게임 상태로 재생: tb1/v1/v2 × workers 4/1 | **완료**: CPU 경쟁 가설 기각, A3b 불필요 (§9.6) |
 | v2-A | TB-RT30-v2 후보: V8-B 남은 시간 재시도 (`rt30/engine_v2.py`) | A1 gate 통과, A3 복원 +1.0점 < 기준 2.0 → A3-v2A 생략 (§9.6) |
-| v2-C | V8-C 시간 분할 50% | 다음 구현 (§9.7 T1) |
-| X1 / X2 | 정확 경로: 3차 정확 고속화 / V8-B 병렬 실행 | 설계 초안 (§9.7) |
+| R0 | 예측기 정정: v1 시간 배분 / 순차 / X2 / X2+X3, A3 점수 | **완료** (§9.8) |
+| X1-A | native threat-window scan (`rt30/fast3*.py`, `rt30/native/`) | **구현**: 컨테이너 2.15~2.31배, 동일 (§9.8) |
+| X2 | V8-B 상주 helper 병렬 (`rt30/engine_v3.py`, `attack_helper.py`) | **구현**: 컨테이너 V8-B 6/6 (§9.8) → SER5 v3_check/v3_dev/v3_a1/v3_a3 |
+| X1-B | 금수 판정 가속 | 필요할 때만 (§9.8) |
+| T1 (v3T) | V8-C 시간 분할 50% | fallback: A3-v3가 HARM일 때만 |
 
 PUCT 시뮬레이션 수와 H3 policy는 이 단계에서 바꾸지 않는다(PUCT 최대 4.9초, NN 착수당 3ms).
 
@@ -983,6 +986,13 @@ v2-A(V8-B 재시도)는 정상 동작하고 A1 gate도 통과했다. 그러나 A
 
 ### 9.7 시간 제한 아래 기력 복구: 가능성 판단과 설계 초안
 
+> **§9.8에서 정정됨.** 이 절의 표는 첫 예측기 기준이고, 세 가지가 과장돼 있다.
+> 1. "병렬"이 V8-B 병렬(X2)에 VCT2 투기 실행(X3)을 섞어 셌다.
+> 2. "34/34 복원 = A3 차이 0"은 성립하지 않는다. 34개는 각 판의 *첫* 분기라, 복원된 판도 뒤에서 다시 갈라질 수 있다.
+> 3. "C/Cython이면 3배 이상"은 근거가 부족했다.
+>
+> 순서도 바뀌었다(T1은 fallback). 정정된 수치와 확정 순서는 §9.8에 있다.
+
 **가능성: 있다. 시간 제한 자체가 TB1의 기력을 막지는 않는다.**
 
 - E3-A 2,938수의 TB1 phase 시간을 SER5로 환산했다(데스크톱 ÷ 4.69, A3.1 34수의 실측 비율 median; `scripts/predict_rt30_recovery.py`).
@@ -1057,3 +1067,143 @@ v2-A(V8-B 재시도)는 정상 동작하고 A1 gate도 통과했다. 그러나 A
 
 - **상대 시간 활용(pondering).** 사람이 생각하는 동안 예상 응수에 대해 미리 탐색한다. 효과는 클 수 있지만, 예측이 맞을 때만 이득이다. 동시 사용자 수와 CPU를 다투고, A3(봇 상대)로는 평가할 수 없다. B 단계 이후 과제로 둔다.
 - **phase 간 VCF cache 공유**(§3.5). 노드 예산이 새 노드만 세기 때문에, cache가 따뜻해지면 같은 예산으로 더 멀리 탐색한다. 그래서 TB1과 다른 판정이 나온다(정확 변경이 아니다). X1이 끝난 뒤에도 필요하면 별도 gate로 본다.
+
+### 9.8 확정 방향: R0 → X2 → X1 → 분기·A1 → A3-v3 (T1은 fallback), 구현과 실행 (2026-10-16)
+
+**사실 검토(사용자 검토안 대조).**
+
+| 검토 항목 | 판정 | 근거 |
+|---|---|---|
+| A3 손실은 시간 문제다 | 맞다 | TB1 34/34, v1 0/34(w4·w1 모두). V8-B 17초 대 8초, V8-C 30.2초 대 19.7초 |
+| V8-B 병렬은 지금 속도로 6/6 가능 | 맞다, **컨테이너로 확인** | TB1 V8-B 10.5~25.0초. 컨테이너 v3 6/6(아래) |
+| X2는 동시 탐색 수를 늘린다(4판 × 2프로세스 = 8) | 맞다 | gate에 동시 탐색 1/2/4를 넣었다(`v3_dev`) |
+| 예측기 "parallel"에 X3(VCT2 투기)가 섞였다 | 맞다 | `side = other + tree + vct2`. R0에서 분리했다 |
+| A3 V8-C 28/28(2배)은 X3 덕분이 아니다 | 맞다 | 28국면 모두 TB1이 수를 바꿔(`switched`) VCT2가 본선에 있다. 분리 후에도 X2 2배에서 28/28 |
+| 34/34 복원이 A3 차이 0을 보장하지 않는다 | 맞다 | 첫 분기만 본 것이다. E3-A 전체에서 남는 초과 수(아래 `e3a_over_budget`)가 다시 갈라질 수 있는 곳이다 |
+| 3배는 근거 부족, 목표는 2배 | 맞다(목표 조정) | cProfile 비율로 Amdahl 상한은 1/0.32 = 3.1배다 |
+| 같은 단서: 실측은 프로파일 추정보다 좋았다 | 추가 | window scan 하나로 2.15~2.31배(아래). Amdahl 추정 1.6배보다 높다. cProfile이 작은 함수 호출 비용을 부풀려 window 몫을 낮게 보였다 |
+| 금수 판정을 함께 바꾸지 말 것 | 따랐다 | X1-A는 window scan만 바꾼다. 다음 병목이 금수 판정(fast3 기준 누적 약 40%)임은 확인만 했다 |
+| T1은 fallback으로 | 따랐다 | 정확 경로만으로 A3가 HARM일 때만 v3T로 넣는다 |
+
+**R0: 예측기 정정 (`scripts/predict_rt30_recovery.py`, `docs/rt30-results/predict_recovery_tb1_w4.json`).**
+
+일정(schedule)은 네 가지다.
+
+- `v1_timing`: v1의 시간 배분. V8-B cap 8초, V8-C는 22초 시점까지, VCT2 reserve. **X1 단독**이다.
+- `sequential`: TB1 순서에서 cap 없이 합만 본다. 참고용이다.
+- `x2`: V8-B 병렬.
+- `x2_x3`: X2에 VCT2 투기 실행을 더한다.
+
+각 일정에 대해 A3 첫 분기 34국면이 시간 안에 들어오는 수와 그 판들이 가진 점수(A3 −6.0점 중), E3-A 2,938수 중 26초 초과 수를 낸다.
+
+| 정확 고속화 | v1_timing (X1만) | x2 (X2) | x2_x3 | x2: V8-B / V8-C / 결과 바뀐 판 |
+|---|---|---|---|---|
+| 1.0 | 0점, 초과 225 | **2.5점**, 초과 125 | 2.5점, 121 | 6/6 / 1/28 / 3/13 |
+| 1.5 | 1.5점, 148 | 4.5점, 53 | 4.5점, 43 | 6/6 / 22/28 / 11/13 |
+| **2.0** | 4.5점, 92 | **6.0점, 초과 24 (0.8%)** | 6.0점, 13 | 6/6 / **28/28** / **13/13** |
+| 2.5 | 4.5점, 58 | 6.0점, 0 | 6.0점, 0 | 6/6 / 28/28 / 13/13 |
+
+- **X2 + 실측 약 2배가 목표다.** 2배에서 A3의 첫 분기 손실 −6.0점이 모두 시간 안에 들어오고, E3-A에서 26초를 넘는 수는 24수(0.8%)다.
+- X1 단독(v1 시간 배분)은 2배여도 4.5점이고 초과 92수다. 8초 cap이 V8-B 6국면 중 3개를 계속 막는다. 그래서 X2가 먼저다.
+- `v1_timing`의 1.0배 초과 225수는 A3에서 deadline 사건이 있던 261수와 비슷하다. 모델이 실측과 맞는다는 근거다.
+- x2가 1.5배에서 sequential보다 0.5점 낮은 것은 이득이었던 판(8415/22 백, 무→승)을 하나 더 TB1 수로 되돌리기 때문이다. 오류가 아니다.
+
+**X1-A: native threat-window scan (구현, `rt30/native/threat_windows.c`, `rt30/fast3_windows.py`, `rt30/fast3.py`).**
+
+- 판(파이썬 list of lists)을 그 자리에서 읽어 572개 window를 C로 훑고, frozen과 같은 순서의 window 목록을 돌려준다. 상태도 캐시도 없고 판에 쓰지 않는다.
+  frozen 보조 함수들이 판에 직접 쓰기 때문에 증분 상태는 두지 않았다. 그래서 정확성 검증이 단순하다.
+- 빌드는 `python -m rt30.native.build`다(C 컴파일러 + Python 헤더 필요). `.so`는 커밋하지 않는다.
+  CI의 두 테스트 job이 빌드 후 테스트한다. 빌드가 없으면 v3 `make_agent`가 거부한다(fast2로 돌면 평가 대상 엔진이 아니다).
+- **동일성.**
+  - 무작위 3,000국면 × 양측 × minimum 0~5에서 frozen과 같은 목록·순서다.
+  - V8-B 결과·statuses·노드·호출 수가 같다.
+  - replay frozen = fast3 = rt3(deadline 없음)이 같다(컨테이너 2국면, SER5 H3 8국면은 `v3_check`).
+- **속도(컨테이너, 단일 프로세스, 동일 결과·노드).**
+  - 호출당: fast2 39.5µs → **4.1µs**(frozen 247µs).
+  - V8-C tree 수 검사(8416/9 백, 200k 노드 UNKNOWN): 40.1초 → 18.6초, **2.15배**.
+  - V8-B(8415/20 흑, WIN, 101k 노드): 21.5초 → 9.3초, **2.31배**.
+  - SER5 배수는 `v3_check`가 TB1 자신의 시간으로 잰다(`a31_tb1f3_w4` 대 `a31_tb1_w4`, `v3_speedup.md`).
+- 다음 병목은 흑 금수 판정이다(`forbidden_reason` 누적 약 40%). **X1-B는 SER5 실측이 목표에 못 미칠 때만** 한다.
+
+**X2: V8-B 병렬 (구현, `rt30/attack_helper.py`, `rt30/engine_v3.py`).**
+
+- 엔진 프로세스마다 **상주 helper 프로세스** 하나를 둔다(spawn, 첫 사용 때 시작해 계속 쓴다).
+- 착수마다 수순, V8-B 예산, 절대 deadline을 보낸다(같은 기계의 `time.monotonic`은 프로세스 간 같은 시계다).
+  helper는 v1의 deadline V8-B(같은 후보·예산·공정 분배, fast3 설치)를 **cap 없이 deadline − final margin까지** 돈다.
+- 본 프로세스는 그동안 v1과 같은 나머지(stage VCT / PUCT / V8-C / VCT2)를 돈다.
+- 판정 순서(고정).
+  1. helper가 WIN을 증명했으면 그 수를 둔다. 이때 진단은 V8-B 이전 상태에 V8-B 것을 더한 상태로 되돌리고, 에이전트 난수(PUCT rollout이 썼다)도 V8-B 시작 시점으로 되돌린다.
+     그래서 **다음 수부터의 난수 흐름이 TB1과 같다**(테스트: own_vct → tree → own_vct → tree 연속에서 수와 난수 상태가 같다).
+  2. WIN 없이 끝났으면 본선의 수를 둔다(= TB1의 수).
+  3. deadline까지 미완이면 본선의 수를 두고 `timeouts`에 'attack'을 남긴다.
+- 본선이 진행 중에 WIN이 오면 다음 phase 경계에서 끝낸다(`attack_win_early`).
+- helper를 못 쓰는 경우에는 V8-B를 v1처럼 inline(cap 8초)으로 돈다(`attack_helper_failed`에 이유를 남긴다).
+  - 데몬 프로세스 안이라 자식 프로세스를 못 만드는 경우.
+  - helper가 죽은 경우.
+  - deadline이 테스트 시계인 경우.
+- **웹 연결 전 할 일.** `rt30.supervisor`의 worker가 `daemon=True`라 지금은 helper를 만들 수 없다(웹에서는 v1처럼 동작한다).
+  B1에서 worker를 non-daemon으로 바꾸고 정리 경로를 넣는다. 평가 스크립트의 ProcessPoolExecutor worker는 non-daemon이라 문제없다.
+- **테스트** (`tests/test_rt30_engine_v3.py`, 11개):
+  - native scan 동일성·설치/해제.
+  - deadline 없음 = TB1(모든 route, 진단 동일).
+  - V8-B 승리 후 난수 흐름 = TB1.
+  - 느린 V8-B가 deadline 안에 끝나거나 'attack' 미완으로 남는다.
+  - 빠른 승리.
+  - 테스트 시계 = v1, off = v1.
+  - 설정 = v1 + X1 + X2.
+- **컨테이너 확인** (A3 V8-B 6국면, uniform prior: V8-B는 tree와 무관, workers 2, deadline 27.5초):
+  - v3 **6/6**(+2.5점; v1 0/6, v2-A 2/6).
+  - 착수 median 16.1초, 최대 20.0초, 27.5초 초과 0.
+
+**버전.**
+
+- TB-RT30-v1은 동결이다(A3 HARM, 영구 보존).
+- TB-RT30-v2A(`tb_rt30_v2.py`, V8-B 재시도)는 실험 기록으로 남기고 동결하지 않는다.
+- **TB-RT30-v3 후보**(`tb_rt30_v3.py`, `STATUS = 'candidate'`, hash `f80d2348…`) = v1 + X2 + X1-A. 정확 복구 본선이다.
+- TB-RT30-v3T = v3 + T1(V8-C 50% 분할)은 A3-v3가 HARM일 때만 만든다.
+- v3가 gate를 통과하면 `tests/frozen_tb_rt30_v3.sha256`을 새로 만든다.
+  `engine_v3.py`, `attack_helper.py`, `fast3*.py`, `native/threat_windows.c`, `tb_rt30_v3.py`와 v3가 쓰는 v1 파일이 대상이다.
+
+**gate (실행 전에 고정, `scripts/check_v3_gate.py gate`).** A3-v3는 아래가 모두 PASS일 때만 돈다(`v3_a3.sh`가 먼저 확인하고, FAIL이면 100판을 돌리지 않는다).
+
+| 항목 | 기준 |
+|---|---|
+| 동일성 (H3 8국면, deadline 없음) | frozen = fast3 = v3, 8/8 |
+| 분기 34국면, 동시 탐색 4 | 순 `points_if_recovered` ≥ +3.0, 27.5초 초과 0 |
+| control 26국면, 동시 탐색 4 | TB1의 tree 수 유지 ≥ 23/26 (정확 경로라 대부분 유지가 정상) |
+| A1 (slow60, critical6) | 재검사 UNSAFE 0, 27.5초 초과 0 |
+
+- 동시 탐색 2와 1(`a31_v3_w2`, `w1`)은 기록만 하고 gate로 쓰지 않는다. X2의 CPU 몫을 보는 진단이다.
+- A3-v3 자체의 판정 규칙은 A3와 같다(차이 < −0.05 또는 구간 상한 < 0이면 HARM).
+- A3-v3가 HARM이면 다음을 본다.
+  - X1-B(금수 판정 가속)로 배수를 올리는 쪽: 예측기에서 남은 손실이 시간 초과 수에 있을 때.
+  - T1(v3T)을 넣는 쪽: 시간 안에 들어오는데도 다른 경우.
+
+**SER5 실행 (백그라운드, SSH가 끊겨도 계속).**
+
+```bash
+cd ~/renju-alphazero && git pull
+# 한 번만: native scan 빌드 도구 (venv의 python 버전과 같은 헤더; 예: python3.12-dev)
+sudo apt install -y build-essential python3-dev
+scripts/ser5/start.sh v3_check v3_dev v3_a1 v3_a3   # 약 6.5시간, 순서대로; A3-v3는 gate PASS일 때만
+scripts/ser5/status.sh                               # 상태 (다시 접속한 뒤)
+tail -f runs/rt30/bg/v3_check.out                    # 진행 (v3_dev.out, v3_a1.out, v3_a3.out)
+cat runs/rt30/v3_speedup.md runs/rt30/v3_gate.md     # SER5 배수, gate 결과
+scripts/ser5/stop.sh v3_check                        # 중지 (체인 전체); 같은 start 명령이면 이어진다
+```
+
+| job | 내용 | 예상 시간 |
+|---|---|---|
+| `v3_check` | native 빌드, H3 8국면 동일성, TB1 + fast3의 34국면 시간(배수), 예측 | 약 40분 |
+| `v3_dev` | v3의 34 분기 국면 × 동시 탐색 4/2/1, control 26국면 | 약 2.5시간 |
+| `v3_a1` | slow60 + critical6, 재검사, v1·v2A와 비교표 | 약 1시간 |
+| `v3_a3` | gate 확인 → E3-A 100판 | 약 2.5시간 |
+
+결과 파일은 `runs/rt30/`의 다음 파일이다.
+
+- `v3_equivalence_h3_8.*`, `a31_tb1f3_w4.*`, `predict_recovery_tb1f3_w4.json`, `v3_speedup.md`
+- `a31_v3_w{4,2,1}.*`, `ctrl_v3_w4.*`
+- `v3_h3_*`, `recheck_v3_*`, `v3_compare_*.md`
+- `v3_gate.md`, `a3_v3_e3.*`
+
+이 파일들을 `docs/rt30-results/`로 복사해 커밋한다.

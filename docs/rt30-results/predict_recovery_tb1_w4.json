@@ -2,84 +2,193 @@
  "budget": 26.0,
  "desktop_per_ser5": 4.69,
  "e3a_moves": 2938,
+ "a3_points_at_stake": 6.0,
  "rows": [
   {
    "speedup": 1.0,
-   "e3a_over_budget_sequential": 150,
-   "attack_fit_sequential": "6/6",
-   "attack_result_changed_fit_sequential": "3/3",
-   "root_fit_sequential": "1/28",
-   "root_result_changed_fit_sequential": "0/10",
-   "e3a_over_budget_parallel": 121,
-   "attack_fit_parallel": "6/6",
-   "attack_result_changed_fit_parallel": "3/3",
-   "root_fit_parallel": "1/28",
-   "root_result_changed_fit_parallel": "0/10"
+   "v1_timing": {
+    "e3a_over_budget": 225,
+    "attack_fit": "0/6",
+    "root_fit": "0/28",
+    "result_changed_fit": "0/13",
+    "points": 0
+   },
+   "sequential": {
+    "e3a_over_budget": 150,
+    "attack_fit": "6/6",
+    "root_fit": "1/28",
+    "result_changed_fit": "3/13",
+    "points": 2.5
+   },
+   "x2": {
+    "e3a_over_budget": 125,
+    "attack_fit": "6/6",
+    "root_fit": "1/28",
+    "result_changed_fit": "3/13",
+    "points": 2.5
+   },
+   "x2_x3": {
+    "e3a_over_budget": 121,
+    "attack_fit": "6/6",
+    "root_fit": "1/28",
+    "result_changed_fit": "3/13",
+    "points": 2.5
+   }
   },
   {
    "speedup": 1.25,
-   "e3a_over_budget_sequential": 99,
-   "attack_fit_sequential": "6/6",
-   "attack_result_changed_fit_sequential": "3/3",
-   "root_fit_sequential": "11/28",
-   "root_result_changed_fit_sequential": "3/10",
-   "e3a_over_budget_parallel": 72,
-   "attack_fit_parallel": "6/6",
-   "attack_result_changed_fit_parallel": "3/3",
-   "root_fit_parallel": "12/28",
-   "root_result_changed_fit_parallel": "4/10"
+   "v1_timing": {
+    "e3a_over_budget": 180,
+    "attack_fit": "0/6",
+    "root_fit": "3/28",
+    "result_changed_fit": "0/13",
+    "points": 0.0
+   },
+   "sequential": {
+    "e3a_over_budget": 99,
+    "attack_fit": "6/6",
+    "root_fit": "11/28",
+    "result_changed_fit": "6/13",
+    "points": 3.5
+   },
+   "x2": {
+    "e3a_over_budget": 81,
+    "attack_fit": "6/6",
+    "root_fit": "12/28",
+    "result_changed_fit": "7/13",
+    "points": 4.0
+   },
+   "x2_x3": {
+    "e3a_over_budget": 72,
+    "attack_fit": "6/6",
+    "root_fit": "12/28",
+    "result_changed_fit": "7/13",
+    "points": 4.0
+   }
   },
   {
    "speedup": 1.5,
-   "e3a_over_budget_sequential": 63,
-   "attack_fit_sequential": "6/6",
-   "attack_result_changed_fit_sequential": "3/3",
-   "root_fit_sequential": "21/28",
-   "root_result_changed_fit_sequential": "7/10",
-   "e3a_over_budget_parallel": 43,
-   "attack_fit_parallel": "6/6",
-   "attack_result_changed_fit_parallel": "3/3",
-   "root_fit_parallel": "22/28",
-   "root_result_changed_fit_parallel": "8/10"
+   "v1_timing": {
+    "e3a_over_budget": 148,
+    "attack_fit": "2/6",
+    "root_fit": "15/28",
+    "result_changed_fit": "5/13",
+    "points": 1.5
+   },
+   "sequential": {
+    "e3a_over_budget": 63,
+    "attack_fit": "6/6",
+    "root_fit": "21/28",
+    "result_changed_fit": "10/13",
+    "points": 5.0
+   },
+   "x2": {
+    "e3a_over_budget": 53,
+    "attack_fit": "6/6",
+    "root_fit": "22/28",
+    "result_changed_fit": "11/13",
+    "points": 4.5
+   },
+   "x2_x3": {
+    "e3a_over_budget": 43,
+    "attack_fit": "6/6",
+    "root_fit": "22/28",
+    "result_changed_fit": "11/13",
+    "points": 4.5
+   }
   },
   {
    "speedup": 2.0,
-   "e3a_over_budget_sequential": 29,
-   "attack_fit_sequential": "6/6",
-   "attack_result_changed_fit_sequential": "3/3",
-   "root_fit_sequential": "27/28",
-   "root_result_changed_fit_sequential": "10/10",
-   "e3a_over_budget_parallel": 13,
-   "attack_fit_parallel": "6/6",
-   "attack_result_changed_fit_parallel": "3/3",
-   "root_fit_parallel": "28/28",
-   "root_result_changed_fit_parallel": "10/10"
+   "v1_timing": {
+    "e3a_over_budget": 92,
+    "attack_fit": "3/6",
+    "root_fit": "27/28",
+    "result_changed_fit": "11/13",
+    "points": 4.5
+   },
+   "sequential": {
+    "e3a_over_budget": 29,
+    "attack_fit": "6/6",
+    "root_fit": "27/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   },
+   "x2": {
+    "e3a_over_budget": 24,
+    "attack_fit": "6/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   },
+   "x2_x3": {
+    "e3a_over_budget": 13,
+    "attack_fit": "6/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   }
   },
   {
    "speedup": 2.5,
-   "e3a_over_budget_sequential": 6,
-   "attack_fit_sequential": "6/6",
-   "attack_result_changed_fit_sequential": "3/3",
-   "root_fit_sequential": "27/28",
-   "root_result_changed_fit_sequential": "10/10",
-   "e3a_over_budget_parallel": 0,
-   "attack_fit_parallel": "6/6",
-   "attack_result_changed_fit_parallel": "3/3",
-   "root_fit_parallel": "28/28",
-   "root_result_changed_fit_parallel": "10/10"
+   "v1_timing": {
+    "e3a_over_budget": 58,
+    "attack_fit": "3/6",
+    "root_fit": "27/28",
+    "result_changed_fit": "11/13",
+    "points": 4.5
+   },
+   "sequential": {
+    "e3a_over_budget": 6,
+    "attack_fit": "6/6",
+    "root_fit": "27/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   },
+   "x2": {
+    "e3a_over_budget": 0,
+    "attack_fit": "6/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   },
+   "x2_x3": {
+    "e3a_over_budget": 0,
+    "attack_fit": "6/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   }
   },
   {
    "speedup": 3.0,
-   "e3a_over_budget_sequential": 3,
-   "attack_fit_sequential": "6/6",
-   "attack_result_changed_fit_sequential": "3/3",
-   "root_fit_sequential": "28/28",
-   "root_result_changed_fit_sequential": "10/10",
-   "e3a_over_budget_parallel": 0,
-   "attack_fit_parallel": "6/6",
-   "attack_result_changed_fit_parallel": "3/3",
-   "root_fit_parallel": "28/28",
-   "root_result_changed_fit_parallel": "10/10"
+   "v1_timing": {
+    "e3a_over_budget": 38,
+    "attack_fit": "5/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "12/13",
+    "points": 5.5
+   },
+   "sequential": {
+    "e3a_over_budget": 3,
+    "attack_fit": "6/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   },
+   "x2": {
+    "e3a_over_budget": 0,
+    "attack_fit": "6/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   },
+   "x2_x3": {
+    "e3a_over_budget": 0,
+    "attack_fit": "6/6",
+    "root_fit": "28/28",
+    "result_changed_fit": "13/13",
+    "points": 6.0
+   }
   }
  ]
 }

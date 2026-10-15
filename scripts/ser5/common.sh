@@ -31,3 +31,13 @@ step() {
 }
 
 finish() { echo "[$(stamp)] $JOB finished"; touch "$OUT/bg/$JOB.done"; }
+
+# The native scan of TB-RT30-v3 (X1-A); built once per machine (needs build-essential, python3-dev).
+ensure_native() {
+    if python -c 'import sys; sys.path.insert(0, "src"); from rt30 import fast3_windows; sys.exit(0 if fast3_windows.available() else 1)'; then
+        echo "[$(stamp)] native scan: built"
+    else
+        echo "[$(stamp)] building the native scan"
+        PYTHONPATH=src python -m rt30.native.build || { echo "[$(stamp)] FAILED to build rt30.native"; exit 1; }
+    fi
+}

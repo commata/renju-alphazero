@@ -36,3 +36,6 @@ buffers/
 # 작은 테스트 fixture는 예외로 유지
 !tests/fixtures/
 !tests/fixtures/**
+# native exact speed-ups, built locally (python -m rt30.native.build)
+src/rt30/native/*.so
+src/rt30/native/*.pyd

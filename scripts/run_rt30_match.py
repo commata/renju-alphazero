@@ -91,18 +91,18 @@ def make_opponent(name: str, seed: int):
 
 
 def engine_module(name: str):
-    from rt30 import tb_rt30_v1, tb_rt30_v2
+    from rt30 import tb_rt30_v1, tb_rt30_v2, tb_rt30_v3
 
-    return {'v1': tb_rt30_v1, 'v2': tb_rt30_v2}[name]
+    return {'v1': tb_rt30_v1, 'v2': tb_rt30_v2, 'v3': tb_rt30_v3}[name]
 
 
 def play_one(task: dict) -> dict:
-    from rt30 import fast
+    from rt30 import fast, fast3
     from rt30.deadline import Deadline
 
     rt30 = engine_module(task.get('engine', 'v1')).make_agent(
         _WORKER['policy'], seed=derive_seed(task['seed'], 'v8'), uniform_prior=_WORKER['uniform_prior'])
-    fast.install_all()
+    fast3.install_all() if task.get('engine') == 'v3' else fast.install_all()  # the opponent runs with the same scan
     opponent = make_opponent(task['opponent'], derive_seed(task['seed'], 'v7'))
     rt_color = BLACK if task['rt30_color'] == 'black' else WHITE
     game = Game()
@@ -125,8 +125,8 @@ def play_one(task: dict) -> dict:
             rt_moves.append({'ply': len(game.history), 'seconds': round(seconds, 4), 'route': diag.v8_route,
                              'timeouts': list(info.timeouts), 'skipped': list(info.skipped),
                              'rescued': info.rescued, 'move': [int(move[0]), int(move[1])],
-                             **{k: getattr(info, k) for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_win')
-                                if hasattr(info, k)}})
+                             **{k: getattr(info, k) for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_win',
+                                                              *('attack_parallel', 'attack_helper_seconds', 'attack_wait_seconds', 'attack_win_early', 'attack_helper_failed')) if hasattr(info, k)}})
         else:
             opp_seconds.append(round(seconds, 4))
         try:
@@ -280,6 +280,8 @@ def summarize(games: list[dict], reference: dict[tuple, dict] | None = None) -> 
         'rt30_rescued': sum(m['rescued'] for m in moves),
         **({k: sum(bool(m.get(k)) for m in moves) for k in ('attack_cap_hit', 'attack_retried', 'attack_retry_win')}
            if any('attack_retried' in m for m in moves) else {}),
+        **({k: sum(bool(m.get(k)) for m in moves) for k in ('attack_parallel', 'attack_win_early', 'attack_helper_failed')}
+           if any('attack_parallel' in m for m in moves) else {}),
         'rt30_routes': {r: sum(m['route'] == r for m in moves) for r in sorted({m['route'] for m in moves})},
         'mean_length': round(statistics.fmean(g['length'] for g in games), 1) if games else None,
         'game_minutes': round(sum(g['game_seconds'] for g in games) / 60, 1),
@@ -301,11 +303,17 @@ def load_finished(path: Path | None, keys: set[str]) -> dict:
     return done
 
 
+def _native() -> bool:
+    from rt30 import fast3_windows
+
+    return fast3_windows.available()
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--checkpoint', type=Path, help='H3 policy checkpoint (TB-RT30-v1 and the tb1 opponent)')
     parser.add_argument('--uniform-prior', action='store_true', help='no checkpoint: smoke run, not TB-RT30-v1')
-    parser.add_argument('--engine', choices=('v1', 'v2'), default='v1', help='TB-RT30-v1 or the v2 candidate')
+    parser.add_argument('--engine', choices=('v1', 'v2', 'v3'), default='v1', help='TB-RT30-v1 or a candidate')
     parser.add_argument('--opponent', choices=OPPONENTS, default='e3')
     parser.add_argument('--seeds', type=int, nargs='+', default=[8415, 8416], help="run seeds (E3-A's by default)")
     parser.add_argument('--pairs', type=int, default=25, help='opening pairs per seed')
@@ -320,7 +328,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     module = engine_module(args.engine)
     NAME, config_hash = module.NAME, module.config_hash
-    config = module.TB_RT30_V1 if args.engine == 'v1' else module.TB_RT30_V2
+    config = getattr(module, f'TB_RT30_{args.engine.upper()}')
 
     if args.checkpoint is None and not args.uniform_prior:
         parser.error('pass --checkpoint, or --uniform-prior for a smoke run')
@@ -368,7 +376,7 @@ def main(argv=None):
     games = sorted(list(done.values()) + results, key=game_id)
     summary = summarize(games, reference)
     report = {'format': 'rt30-match-v1', 'engine': NAME if args.checkpoint else f'{NAME} (uniform prior)',
-              'engine_config_hash': config_hash(),
+              'engine_config_hash': config_hash(), 'native_scan': _native(),
               'opponent': E3_OPPONENT if args.opponent == 'e3' else args.opponent,
               'seeds': args.seeds, 'pairs': args.pairs, 'deadline': args.deadline, 'workers': args.workers,
               'max_plies': args.max_plies, 'opening_random_plies': args.opening_random_plies,

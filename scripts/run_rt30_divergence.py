@@ -9,7 +9,8 @@ divergence ply is the game's and the engine's random stream is the game's as lon
 moves equal the record (``prefix_mismatches`` counts the ones that did not). The opponent is not run.
 
 Engines (``--engine``): ``tb1`` (TB-Engine-v1 with the exact speed-ups, no deadline: its real time on
-this machine), ``v1`` (TB-RT30-v1) and ``v2`` (the TB-RT30-v2 candidate), both with ``--deadline``
+this machine), ``v1`` (TB-RT30-v1), ``v2`` (the v2-A candidate) and ``v3`` (the v3 candidate: parallel
+V8-B + native scan; ``--speedups fast3`` gives tb1 the same scan), all but tb1 with ``--deadline``
 (default 27.5 s) on every move. ``--workers`` games run at once: 4 reproduces A3's CPU load, 1 a
 single engine search on the machine.
 
@@ -44,13 +45,13 @@ from scripts.run_mcts_v8_benchmark import derive_seed  # noqa: E402
 
 MANIFEST = ROOT / 'docs' / 'rt30-eval' / 'a3-divergence-v1.json'
 E3 = ROOT / 'docs' / 'mcts-v8-results' / 'e3'
-ENGINES = ('tb1', 'v1', 'v2')
+ENGINES = ('tb1', 'v1', 'v2', 'v3')
 SCORE = {'win': 1.0, 'draw': 0.5, 'loss': 0.0}
 PHASES = ('v8_attack_seconds', 'v8_vct_seconds', 'v8_tree_seconds', 'v8_root_seconds', 'v8_vct2_seconds')
 _WORKER: dict = {}
 
 
-def _init_worker(checkpoint, uniform_prior):
+def _init_worker(checkpoint, uniform_prior, speedups='fast2'):
     os.environ.update({k: '1' for k in ('OMP_NUM_THREADS', 'MKL_NUM_THREADS', 'OPENBLAS_NUM_THREADS')})
     policy = None
     if checkpoint:
@@ -59,11 +60,11 @@ def _init_worker(checkpoint, uniform_prior):
 
         check_checkpoint(checkpoint)
         policy = RootPolicy(checkpoint, threads=1)
-    _WORKER.update(policy=policy, uniform_prior=uniform_prior)
+    _WORKER.update(policy=policy, uniform_prior=uniform_prior, speedups=speedups)
 
 
 def make_engine(name: str, seed: int):
-    from rt30 import fast
+    from rt30 import fast, fast3
 
     policy, uniform = _WORKER['policy'], _WORKER['uniform_prior']
     if name == 'tb1':
@@ -80,9 +81,17 @@ def make_engine(name: str, seed: int):
         from rt30 import tb_rt30_v2
 
         agent = tb_rt30_v2.make_agent(policy, seed=seed, uniform_prior=uniform)
+    elif name == 'v3':
+        from rt30 import tb_rt30_v3
+
+        agent = tb_rt30_v3.make_agent(policy, seed=seed, uniform_prior=uniform)
+        return agent  # its own exact speed-ups (fast3) are installed
     else:
         raise ValueError(f'unknown engine {name!r}')
-    fast.install_all()
+    if _WORKER.get('speedups') == 'fast3':
+        fast3.install_all()
+    else:
+        fast.install_all()
     return agent
 
 
@@ -101,7 +110,8 @@ def rt_fields(agent) -> dict:
     if info is None:
         return {}
     out = {'timeouts': list(info.timeouts), 'skipped': list(info.skipped), 'rescued': info.rescued}
-    for name in ('attack_cap_hit', 'attack_retried', 'attack_retry_seconds', 'attack_retry_win'):
+    for name in ('attack_cap_hit', 'attack_retried', 'attack_retry_seconds', 'attack_retry_win',
+                 *('attack_parallel', 'attack_helper_seconds', 'attack_wait_seconds', 'attack_win_early', 'attack_helper_failed')):
         if hasattr(info, name):
             out[name] = getattr(info, name)
     return out
@@ -171,10 +181,16 @@ def summarize(rows: list[dict]) -> dict:
     for kind, phase in (('attack', 'attack'), ('root', 'root'), ('control', 'root')):
         values = [r['phases'][phase] for r in rows if r['kind'] == kind and r['phases'][phase] > 0]
         out['phase_median'][f'{kind}:{phase}'] = round(statistics.median(values), 2) if values else None
-    for name in ('attack_cap_hit', 'attack_retried', 'attack_retry_win'):
+    for name in ('attack_cap_hit', 'attack_retried', 'attack_retry_win', 'attack_parallel', 'attack_win_early'):
         if any(name in r for r in rows):
             out[name] = sum(bool(r.get(name)) for r in rows)
     return out
+
+
+def _native() -> bool:
+    from rt30 import fast3_windows
+
+    return fast3_windows.available()
 
 
 def main(argv=None):
@@ -186,6 +202,8 @@ def main(argv=None):
     parser.add_argument('--kinds', help='comma list of case kinds to run (default: all of the manifest)')
     parser.add_argument('--limit', type=int, help='first N cases (smoke)')
     parser.add_argument('--deadline', type=float, default=27.5, help='v1/v2: seconds per move')
+    parser.add_argument('--speedups', choices=('fast2', 'fast3'), default='fast2',
+                        help='tb1/v1/v2: exact speed-ups to install (v3 always uses fast3)')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--games-jsonl', type=Path, help='finished cases, one per line (resume)')
     parser.add_argument('--output', type=Path, required=True)
@@ -211,7 +229,7 @@ def main(argv=None):
     progress = Progress(f'divergence-{args.engine}', len(todo), 'cases')
     rows = []
     if todo:
-        init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior)
+        init = (str(args.checkpoint) if args.checkpoint else None, args.uniform_prior, args.speedups)
         with ProcessPoolExecutor(max_workers=args.workers, initializer=_init_worker, initargs=init) as pool:
             pending = {pool.submit(play_case, t) for t in todo}
             while pending:
@@ -231,6 +249,7 @@ def main(argv=None):
     rows = sorted(list(done.values()) + rows, key=lambda r: order.get(r['key'], len(order)))
     summary = summarize(rows)
     report = {'format': 'rt30-divergence-v1', 'engine': args.engine, 'manifest': manifest['version'],
+              'speedups': 'fast3' if args.engine == 'v3' else args.speedups, 'native_scan': _native(),
               'deadline': args.deadline if args.engine != 'tb1' else None, 'workers': args.workers,
               'uniform_prior': args.uniform_prior,
               'machine': {'platform': platform.platform(), 'cpu_count': os.cpu_count()},
