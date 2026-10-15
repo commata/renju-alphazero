@@ -1,0 +1,208 @@
+positions=60 arms=rt2 workers=1 engine=TB-Engine-v1
+[rt30-replay] 5/60 positions  8.3%  1.0 min  ETA 11 min  5/60 chunks
+[rt30-replay] 10/60 positions  16.7%  2.2 min  ETA 11 min  10/60 chunks
+[rt30-replay] 15/60 positions  25.0%  3.3 min  ETA 10 min  15/60 chunks
+[rt30-replay] 21/60 positions  35.0%  4.5 min  ETA 8 min  21/60 chunks
+[rt30-replay] 26/60 positions  43.3%  5.6 min  ETA 7 min  26/60 chunks
+[rt30-replay] 32/60 positions  53.3%  6.6 min  ETA 6 min  32/60 chunks
+[rt30-replay] 36/60 positions  60.0%  7.7 min  ETA 5 min  36/60 chunks
+[rt30-replay] 40/60 positions  66.7%  8.7 min  ETA 4 min  40/60 chunks
+[rt30-replay] 45/60 positions  75.0%  9.8 min  ETA 3 min  45/60 chunks
+[rt30-replay] 51/60 positions  85.0%  11.1 min  ETA 2 min  51/60 chunks
+[rt30-replay] 55/60 positions  91.7%  12.3 min  ETA 1 min  55/60 chunks
+[rt30-replay] 58/60 positions  96.7%  13.3 min  ETA 0 min  58/60 chunks
+[rt30-replay] 60/60 positions  100.0%  14.2 min  ETA 0 min  60/60 chunks
+{
+ "positions": 60,
+ "rt2": {
+  "seconds": {
+   "n": 60,
+   "median": 9.771,
+   "p95": 26.006,
+   "p99": 26.007,
+   "max": 26.007,
+   "sum": 846.9,
+   "over_27.5s": 0
+  },
+  "routes": {
+   "tree": 47,
+   "own_vct": 7,
+   "stage5": 1,
+   "stage4": 5
+  },
+  "phases": {
+   "attack": {
+    "n": 60,
+    "median": 0.199,
+    "p95": 25.94,
+    "p99": 25.985,
+    "max": 25.985,
+    "sum": 304.2,
+    "over_27.5s": 0
+   },
+   "stage_vct": {
+    "n": 6,
+    "median": 9.256,
+    "p95": 18.312,
+    "p99": 18.312,
+    "max": 18.312,
+    "sum": 64.5,
+    "over_27.5s": 0
+   },
+   "tree": {
+    "n": 50,
+    "median": 1.21,
+    "p95": 2.599,
+    "p99": 3.315,
+    "max": 3.315,
+    "sum": 79.1,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 50,
+    "median": 0.776,
+    "p95": 20.5,
+    "p99": 20.786,
+    "max": 20.786,
+    "sum": 259.0,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 49,
+    "median": 4.0,
+    "p95": 7.378,
+    "p99": 7.491,
+    "max": 7.491,
+    "sum": 206.5,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 60,
+    "median": 0.302,
+    "p95": 8.416,
+    "p99": 8.762,
+    "max": 8.762,
+    "sum": 150.1,
+    "over_27.5s": 0
+   },
+   "v7_only": {
+    "n": 49,
+    "median": 0.042,
+    "p95": 0.837,
+    "p99": 1.025,
+    "max": 1.025,
+    "sum": 6.9,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "rt_deadline": {
+  "timeouts": {
+   "attack": 5,
+   "stage_vct": 0,
+   "root": 10,
+   "vct2": 9
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0,
+   "vct2_root_rescue": 1
+  },
+  "root_rescued": 1,
+  "moves_with_timeout_or_skip": 15,
+  "attack_cap_hit": 11,
+  "attack_retried": 11,
+  "attack_retry_win": 3
+ },
+ "vs_baseline": {
+  "baseline": "docs/rt30-results/fast_h3_s60.json",
+  "baseline_arm": "fast",
+  "positions": 60,
+  "missing": 0,
+  "same_move": 56,
+  "changed_kinds": {
+   "kept_tree_move": 4
+  },
+  "changed": [
+   {
+    "key": "puct_policy_vct2_50k_8415/46/49",
+    "baseline": [
+     "tree",
+     [
+      10,
+      8
+     ]
+    ],
+    "run": [
+     "tree",
+     [
+      12,
+      3
+     ]
+    ],
+    "kind": "kept_tree_move",
+    "played_in_baseline": "UNKNOWN"
+   },
+   {
+    "key": "puct_policy_vct2_50k_8416/5/10",
+    "baseline": [
+     "tree",
+     [
+      7,
+      6
+     ]
+    ],
+    "run": [
+     "tree",
+     [
+      9,
+      5
+     ]
+    ],
+    "kind": "kept_tree_move",
+    "played_in_baseline": "UNKNOWN"
+   },
+   {
+    "key": "puct_policy_vct2_50k_8416/7/25",
+    "baseline": [
+     "tree",
+     [
+      11,
+      6
+     ]
+    ],
+    "run": [
+     "tree",
+     [
+      8,
+      3
+     ]
+    ],
+    "kind": "kept_tree_move",
+    "played_in_baseline": "UNKNOWN"
+   },
+   {
+    "key": "puct_policy_vct2_50k_8416/48/83",
+    "baseline": [
+     "tree",
+     [
+      4,
+      2
+     ]
+    ],
+    "run": [
+     "tree",
+     [
+      9,
+      11
+     ]
+    ],
+    "kind": "kept_tree_move",
+    "played_in_baseline": "UNKNOWN"
+   }
+  ],
+  "lost_own_vct": [],
+  "lost_own_vct_other_move": 0,
+  "played_baseline_unsafe": []
+ }
+}

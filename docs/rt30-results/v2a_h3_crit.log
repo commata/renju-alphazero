@@ -1,0 +1,163 @@
+positions=6 arms=rt2 workers=1 engine=TB-Engine-v1
+[rt30-replay] 4/6 positions  66.7%  1.1 min  ETA 1 min  4/6 chunks
+[rt30-replay] 6/6 positions  100.0%  2.0 min  ETA 0 min  6/6 chunks
+{
+ "positions": 6,
+ "rt2": {
+  "seconds": {
+   "n": 6,
+   "median": 20.822,
+   "p95": 26.013,
+   "p99": 26.013,
+   "max": 26.013,
+   "sum": 116.7,
+   "over_27.5s": 0
+  },
+  "routes": {
+   "own_vct": 2,
+   "tree": 4
+  },
+  "phases": {
+   "attack": {
+    "n": 6,
+    "median": 13.267,
+    "p95": 25.986,
+    "p99": 25.986,
+    "max": 25.986,
+    "sum": 80.0,
+    "over_27.5s": 0
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.105,
+    "p95": 2.226,
+    "p99": 2.226,
+    "max": 2.226,
+    "sum": 8.2,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 1.359,
+    "p95": 20.783,
+    "p99": 20.783,
+    "max": 20.783,
+    "sum": 30.3,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 2.231,
+    "p95": 6.443,
+    "p99": 6.443,
+    "max": 6.443,
+    "sum": 17.3,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 6,
+    "median": 8.079,
+    "p95": 8.361,
+    "p99": 8.361,
+    "max": 8.361,
+    "sum": 34.5,
+    "over_27.5s": 0
+   },
+   "v7_only": {
+    "n": 2,
+    "median": 0.152,
+    "p95": 0.259,
+    "p99": 0.259,
+    "max": 0.259,
+    "sum": 0.3,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "rt_deadline": {
+  "timeouts": {
+   "attack": 2,
+   "stage_vct": 0,
+   "root": 1,
+   "vct2": 1
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0,
+   "vct2_root_rescue": 0
+  },
+  "root_rescued": 0,
+  "moves_with_timeout_or_skip": 3,
+  "attack_cap_hit": 4,
+  "attack_retried": 4,
+  "attack_retry_win": 2
+ },
+ "vs_baseline": {
+  "baseline": "docs/rt30-results/fast_h3_crit.json",
+  "baseline_arm": "fast",
+  "positions": 6,
+  "missing": 0,
+  "same_move": 4,
+  "changed_kinds": {
+   "lost_win": 1,
+   "kept_tree_move": 1
+  },
+  "changed": [
+   {
+    "key": "puct_policy_vct2_50k_8415/15/32",
+    "baseline": [
+     "own_vct",
+     [
+      5,
+      11
+     ]
+    ],
+    "run": [
+     "tree",
+     [
+      6,
+      12
+     ]
+    ],
+    "kind": "lost_win",
+    "played_in_baseline": null
+   },
+   {
+    "key": "puct_policy_vct2_50k_8415/22/37",
+    "baseline": [
+     "tree",
+     [
+      4,
+      4
+     ]
+    ],
+    "run": [
+     "tree",
+     [
+      2,
+      7
+     ]
+    ],
+    "kind": "kept_tree_move",
+    "played_in_baseline": "UNKNOWN"
+   }
+  ],
+  "lost_own_vct": [
+   {
+    "key": "puct_policy_vct2_50k_8415/15/32",
+    "win": [
+     5,
+     11
+    ],
+    "played": [
+     6,
+     12
+    ],
+    "same_move": false
+   }
+  ],
+  "lost_own_vct_other_move": 1,
+  "played_baseline_unsafe": []
+ }
+}

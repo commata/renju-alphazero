@@ -1,0 +1,21 @@
+2 checks from runs/rt30/v2a_h3_crit.json (vct1 800,000 nodes, vct2 200,000)
+[rt30-recheck] 1/2 checks  50.0%  1.1 min  ETA 1 min  1/2 checks, 1 pending
+[rt30-recheck] 2/2 checks  100.0%  1.5 min  ETA 0 min  2/2 checks
+{
+ "run": "runs/rt30/v2a_h3_crit.json",
+ "manifest": {
+  "path": "docs/rt30-eval/critical-regressions-v1.json",
+  "version": "critical-regressions-v1",
+  "keys": 6
+ },
+ "engine": "TB-Engine-v1",
+ "changed_moves_checked": 1,
+ "changed_move_proven_unsafe": 0,
+ "unsafe_keys": [],
+ "changed_vct1": {
+  "SAFE": 1,
+  "UNKNOWN": 0,
+  "UNSAFE": 0
+ },
+ "gate_pass": true
+}

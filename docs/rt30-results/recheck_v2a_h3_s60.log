@@ -1,0 +1,21 @@
+8 checks from runs/rt30/v2a_h3_s60.json (vct1 800,000 nodes, vct2 200,000)
+[rt30-recheck] 6/8 checks  75.0%  1.1 min  ETA 0 min  6/8 checks
+[rt30-recheck] 8/8 checks  100.0%  2.1 min  ETA 0 min  8/8 checks
+{
+ "run": "runs/rt30/v2a_h3_s60.json",
+ "manifest": {
+  "path": "docs/rt30-eval/slow-stratified-v1.json",
+  "version": "slow-stratified-v1",
+  "keys": 60
+ },
+ "engine": "TB-Engine-v1",
+ "changed_moves_checked": 4,
+ "changed_move_proven_unsafe": 0,
+ "unsafe_keys": [],
+ "changed_vct1": {
+  "SAFE": 3,
+  "UNKNOWN": 1,
+  "UNSAFE": 0
+ },
+ "gate_pass": true
+}

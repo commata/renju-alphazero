@@ -1,0 +1,109 @@
+v1: 34 cases (0 already done), workers=1, deadline=27.5
+[divergence-v1] 2/34 cases  5.9%  1.1 min  ETA 17 min  8415/20/black attack not (17.0s, case 31s)
+[divergence-v1] 2/34 cases  5.9%  2.1 min  ETA 33 min  32 cases running/pending
+[divergence-v1] 2/34 cases  5.9%  3.1 min  ETA 49 min  32 cases running/pending
+[divergence-v1] 2/34 cases  5.9%  4.1 min  ETA 65 min  32 cases running/pending
+[divergence-v1] 3/34 cases  8.8%  5.1 min  ETA 52 min  31 cases running/pending
+[divergence-v1] 3/34 cases  8.8%  6.1 min  ETA 63 min  31 cases running/pending
+[divergence-v1] 5/34 cases  14.7%  7.8 min  ETA 45 min  29 cases running/pending
+[divergence-v1] 7/34 cases  20.6%  9.5 min  ETA 36 min  27 cases running/pending
+[divergence-v1] 7/34 cases  20.6%  10.5 min  ETA 40 min  27 cases running/pending
+[divergence-v1] 8/34 cases  23.5%  11.5 min  ETA 37 min  26 cases running/pending
+[divergence-v1] 9/34 cases  26.5%  12.7 min  ETA 35 min  25 cases running/pending
+[divergence-v1] 9/34 cases  26.5%  13.7 min  ETA 38 min  25 cases running/pending
+[divergence-v1] 10/34 cases  29.4%  15.6 min  ETA 37 min  24 cases running/pending
+[divergence-v1] 13/34 cases  38.2%  17.4 min  ETA 28 min  8415/12/white root not (26.0s, case 52s)
+[divergence-v1] 13/34 cases  38.2%  18.4 min  ETA 30 min  21 cases running/pending
+[divergence-v1] 13/34 cases  38.2%  19.4 min  ETA 31 min  21 cases running/pending
+[divergence-v1] 14/34 cases  41.2%  20.6 min  ETA 29 min  20 cases running/pending
+[divergence-v1] 15/34 cases  44.1%  21.7 min  ETA 27 min  19 cases running/pending
+[divergence-v1] 15/34 cases  44.1%  22.7 min  ETA 29 min  19 cases running/pending
+[divergence-v1] 15/34 cases  44.1%  23.7 min  ETA 30 min  19 cases running/pending
+[divergence-v1] 16/34 cases  47.1%  24.9 min  ETA 28 min  18 cases running/pending
+[divergence-v1] 16/34 cases  47.1%  25.9 min  ETA 29 min  18 cases running/pending
+[divergence-v1] 16/34 cases  47.1%  26.9 min  ETA 30 min  18 cases running/pending
+[divergence-v1] 17/34 cases  50.0%  28.8 min  ETA 29 min  17 cases running/pending
+[divergence-v1] 17/34 cases  50.0%  29.8 min  ETA 30 min  17 cases running/pending
+[divergence-v1] 17/34 cases  50.0%  30.8 min  ETA 31 min  17 cases running/pending
+[divergence-v1] 18/34 cases  52.9%  32.3 min  ETA 29 min  16 cases running/pending
+[divergence-v1] 19/34 cases  55.9%  33.6 min  ETA 27 min  15 cases running/pending
+[divergence-v1] 19/34 cases  55.9%  34.6 min  ETA 27 min  15 cases running/pending
+[divergence-v1] 19/34 cases  55.9%  35.6 min  ETA 28 min  15 cases running/pending
+[divergence-v1] 20/34 cases  58.8%  37.2 min  ETA 26 min  14 cases running/pending
+[divergence-v1] 21/34 cases  61.8%  38.3 min  ETA 24 min  13 cases running/pending
+[divergence-v1] 23/34 cases  67.6%  40.3 min  ETA 19 min  8416/1/black root not (26.0s, case 56s)
+[divergence-v1] 23/34 cases  67.6%  41.3 min  ETA 20 min  11 cases running/pending
+[divergence-v1] 23/34 cases  67.6%  42.3 min  ETA 20 min  11 cases running/pending
+[divergence-v1] 23/34 cases  67.6%  43.3 min  ETA 21 min  11 cases running/pending
+[divergence-v1] 24/34 cases  70.6%  44.4 min  ETA 18 min  10 cases running/pending
+[divergence-v1] 24/34 cases  70.6%  45.4 min  ETA 19 min  10 cases running/pending
+[divergence-v1] 25/34 cases  73.5%  46.7 min  ETA 17 min  9 cases running/pending
+[divergence-v1] 26/34 cases  76.5%  48.4 min  ETA 15 min  8 cases running/pending
+[divergence-v1] 27/34 cases  79.4%  50.1 min  ETA 13 min  7 cases running/pending
+[divergence-v1] 27/34 cases  79.4%  51.1 min  ETA 13 min  7 cases running/pending
+[divergence-v1] 27/34 cases  79.4%  52.1 min  ETA 14 min  7 cases running/pending
+[divergence-v1] 29/34 cases  85.3%  54.0 min  ETA 9 min  5 cases running/pending
+[divergence-v1] 29/34 cases  85.3%  55.0 min  ETA 9 min  5 cases running/pending
+[divergence-v1] 29/34 cases  85.3%  56.0 min  ETA 10 min  5 cases running/pending
+[divergence-v1] 30/34 cases  88.2%  57.1 min  ETA 8 min  4 cases running/pending
+[divergence-v1] 30/34 cases  88.2%  58.1 min  ETA 8 min  4 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  59.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  60.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  61.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  62.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  63.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  64.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  65.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  66.2 min  ETA 6 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  67.2 min  ETA 7 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  68.2 min  ETA 7 min  3 cases running/pending
+[divergence-v1] 31/34 cases  91.2%  69.2 min  ETA 7 min  3 cases running/pending
+[divergence-v1] 34/34 cases  100.0%  70.7 min  ETA 0 min  8416/8/white root not (26.0s, case 52s)
+{
+ "cases": 34,
+ "recovered": 0,
+ "by_kind": {
+  "attack": {
+   "cases": 6,
+   "recovered": 0,
+   "a3_points": -2.5,
+   "points_if_recovered": 0
+  },
+  "root": {
+   "cases": 28,
+   "recovered": 0,
+   "a3_points": -3.5,
+   "points_if_recovered": 0
+  }
+ },
+ "result_changed": {
+  "cases": 13,
+  "recovered": 0,
+  "a3_points": -6.0,
+  "points_if_recovered": 0
+ },
+ "loss_making": {
+  "cases": 10,
+  "recovered": 0,
+  "a3_points": -7.5,
+  "points_if_recovered": 0
+ },
+ "gain_making": {
+  "cases": 3,
+  "recovered": 0,
+  "a3_points": 1.5,
+  "points_if_recovered": 0
+ },
+ "prefix_mismatch_cases": 0,
+ "tree_move_as_recorded": 28,
+ "seconds": {
+  "median": 26.00025,
+  "max": 26.0165,
+  "over_27.5s": 0
+ },
+ "phase_median": {
+  "attack:attack": 8.0,
+  "root:root": 19.68,
+  "control:root": null
+ }
+}
