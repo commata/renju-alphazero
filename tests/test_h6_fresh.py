@@ -33,7 +33,7 @@ class FreshProbeTest(unittest.TestCase):
 
     def test_scan_finds_the_p94_kind(self):
         """P94 (every move loses at depth 1) is a parent-level deep loss."""
-        self.assertEqual(scan_game((WEB['moves'][:95], 94)), {'loss': 94})
+        self.assertEqual(scan_game((WEB['moves'][:95], 94))['found'], {'loss': 94})
 
     def test_select_one_per_game_balanced_and_deduplicated(self):
         moves = WEB['moves']
@@ -58,6 +58,17 @@ class FreshProbeTest(unittest.TestCase):
             Path(tmp, 'c.json').write_text(json.dumps({**good, 'arm': 'puct_policy_vct2'}), encoding='utf-8')
             with self.assertRaises(ValueError):
                 load_games([Path(tmp, 'c.json')])
+
+    def test_budget_skips_a_position_deterministically(self):
+        from scripts import make_h6_fresh_probes as maker
+        saved = maker.VCF_CALL_BUDGET
+        maker.VCF_CALL_BUDGET = 50  # P94 needs ~550 calls
+        try:
+            result = scan_game((WEB['moves'][:95], 94))
+        finally:
+            maker.VCF_CALL_BUDGET = saved
+        self.assertEqual(result['found'], {})
+        self.assertEqual(result['budget_cuts'], 1)
 
     def test_resume_skips_scanned_games(self):
         from scripts import make_h6_fresh_probes as maker

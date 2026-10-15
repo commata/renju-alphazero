@@ -26,6 +26,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / 'src') not in sys.path:
@@ -41,6 +42,26 @@ FORMAT = 'h6-fresh-probes-v1'
 SOLVER_NODE_LIMIT = 20_000
 VCT1_BUDGET = {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 200_000}  # V8-B's budget
 DEFENSE_MAX_CANDIDATES = 8
+# Per-position cap on uncached VCF calls (all checks of one position share it). A position over the cap is
+# skipped (no probe), deterministically; P94 needs ~550 calls. Without it one position could run for hours.
+VCF_CALL_BUDGET = 5_000
+SCAN_VERSION = 2  # resume rows from another version are rescanned (v1 had no budget)
+
+
+class _BudgetExceeded(Exception):
+    pass
+
+
+def _budgeted_solver():
+    from analysis.threats import ThreatSolver
+
+    class Budgeted(ThreatSolver):
+        def vcf(self, game, attacker):
+            if self.vcf_calls >= VCF_CALL_BUDGET:
+                raise _BudgetExceeded
+            return super().vcf(game, attacker)
+
+    return Budgeted(node_limit=SOLVER_NODE_LIMIT)
 DEPTH0_KINDS = ('immediate_win', 'unstoppable_four', 'vcf', 'forced_loss', 'vcf_loss')
 ENGINE_ARM = 'puct_policy_vct2_50k'  # TB-Engine-v1 (E3-A)
 
@@ -77,13 +98,19 @@ def _vcf_survivors(game: Game, solver, limit: int):
 
 def classify(moves) -> str | None:
     """'win' / 'loss' / None for the position after ``moves`` (side to move's view)."""
-    from analysis.tactical_labels import label_position
-    from analysis.threats import SAFE, UNKNOWN, ThreatSolver
-
     game = _game(moves)
     if game.done:
         return None
-    solver = ThreatSolver(node_limit=SOLVER_NODE_LIMIT)
+    try:
+        return _classify(game, moves, _budgeted_solver())
+    except _BudgetExceeded:
+        return 'budget'
+
+
+def _classify(game, moves, solver) -> str | None:
+    from analysis.tactical_labels import label_position
+    from analysis.threats import SAFE, UNKNOWN
+
     shallow = label_position(game, solver)
     if shallow is not None and shallow['kind'] in DEPTH0_KINDS:
         return None
@@ -103,16 +130,18 @@ def classify(moves) -> str | None:
 
 
 def scan_game(task) -> dict:
-    """Earliest deep win and earliest deep loss of one game."""
+    """Earliest deep win and earliest deep loss of one game, with the number of positions over budget."""
     moves, from_ply = task
-    found = {}
+    found, cuts, started = {}, 0, perf_counter()
     for ply in range(from_ply, len(moves)):
         if len(found) == 2:
             break
         sign = classify(moves[:ply])
-        if sign is not None and sign not in found:
+        if sign == 'budget':
+            cuts += 1
+        elif sign is not None and sign not in found:
             found[sign] = ply
-    return found
+    return {'found': found, 'budget_cuts': cuts, 'seconds': round(perf_counter() - started, 1)}
 
 
 def _scan_chunk(tasks):
@@ -175,19 +204,20 @@ def main(argv=None) -> int:
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
             if line.strip():
                 row = json.loads(line)
-                if row.get('from_ply') == args.from_ply:
-                    done[row['key']] = row['found']
+                if row.get('from_ply') == args.from_ply and row.get('scan_version') == SCAN_VERSION:
+                    done[row['key']] = row
     todo = [i for i, g in enumerate(games) if g['key'] not in done]
     print(f'[fresh probes] {len(games)} games, {len(games) - len(todo)} already scanned', flush=True)
     chunks = [[(games[i]['moves'], args.from_ply)] for i in todo]
 
     def record(j, result):
         key = games[todo[j]]['key']
-        done[key] = result[0]
+        row = {'key': key, 'from_ply': args.from_ply, 'scan_version': SCAN_VERSION, **result[0]}
+        done[key] = row
         if args.jsonl is not None:
             args.jsonl.parent.mkdir(parents=True, exist_ok=True)
             with args.jsonl.open('a', encoding='utf-8') as handle:
-                handle.write(json.dumps({'key': key, 'from_ply': args.from_ply, 'found': result[0]}) + '\n')
+                handle.write(json.dumps(row) + '\n')
 
     progress = Progress('fresh probes', len(todo), 'games')
     if args.workers > 1 and todo:
@@ -197,12 +227,14 @@ def main(argv=None) -> int:
         for j, c in enumerate(chunks):
             record(j, _scan_chunk(c))
             progress.update(1)
-    found = [{k: int(v) for k, v in done[g['key']].items()} for g in games]
+    found = [{k: int(v) for k, v in done[g['key']]['found'].items()} for g in games]
     exclude = probe_hashes(p for p in default_probe_files(ROOT) if Path(p).resolve() != args.output.resolve())
     probes = select(games, found, exclude)
     counts = {'win': sum(p['expected_sign'] == 1 for p in probes), 'loss': sum(p['expected_sign'] == -1 for p in probes),
               'games_scanned': len(games), 'games_with_win': sum('win' in f for f in found),
-              'games_with_loss': sum('loss' in f for f in found)}
+              'games_with_loss': sum('loss' in f for f in found),
+              'positions_over_budget': sum(done[g['key']]['budget_cuts'] for g in games),
+              'games_with_budget_cuts': sum(done[g['key']]['budget_cuts'] > 0 for g in games)}
     try:
         commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True,
                                 check=True).stdout.strip()
@@ -211,7 +243,8 @@ def main(argv=None) -> int:
     payload = {'format': FORMAT, 'sealed': True, 'git_commit': commit, 'sources': sources,
                'selection': {'from_ply': args.from_ply, 'one_probe_per_game': True, 'balance': 'fewer sign first',
                              'depth0_excluded': list(DEPTH0_KINDS), 'vct1_budget': VCT1_BUDGET,
-                             'defense_max_candidates': DEFENSE_MAX_CANDIDATES, 'solver_node_limit': SOLVER_NODE_LIMIT},
+                             'defense_max_candidates': DEFENSE_MAX_CANDIDATES, 'solver_node_limit': SOLVER_NODE_LIMIT,
+                             'vcf_call_budget_per_position': VCF_CALL_BUDGET, 'scan_version': SCAN_VERSION},
                'counts': counts, 'probes': probes}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=1) + '\n', encoding='utf-8')
