@@ -373,6 +373,9 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | 8 | 미니PC 포화 측정: workers 1/2/4/6/8 | 대기 |
 | 9 | 필요하면 결정적 예산 재보정(V8-C 첫 수 몫, VCT2 예산) → `deadline=None` 짝 대국 gate | 대기 |
 | 10 | (선택) V8-C 자식 병렬 검사, incremental threat table | 대기 |
+| A1 | V8-B cap 4/6/8초 결정 | **완료: 8초** (§9.1) |
+| A2 | TB-RT30-v1 동결(설정 hash + 파일 lock) | **완료** (`rt30/tb_rt30_v1.py`, §9.2) |
+| A3 | E3-A 100판 짝 대국 gate | 사용자 실행 (§9.3) |
 
 PUCT 시뮬레이션 수와 H3 policy는 이 단계에서 바꾸지 않는다(PUCT 최대 4.9초, NN 착수당 3ms).
 
@@ -631,3 +634,102 @@ sqlite3 data/renju_web.db ".backup data/backup/renju_web_$(date +%F).db"
 
 **구현 순서:** SessionManager와 API 세션 분리 → AIJobQueue와 dispatcher(탐색은 lock 밖, epoch 확인) → `/api/state` polling 필드 →
 UI(생각 중·대기 표시, 보드 잠금) → DB v2(`session_id` hash) → 테스트 → B3 부하 측정.
+
+## 9. 엔진 확정: A1 cap 결정, A2 TB-RT30-v1 동결, A3 대국 gate (2026-10-15)
+
+### 9.1 A1: V8-B cap 8초 채택 (`1ec0435`)
+
+| cap | median | max | >27.5 | timeout 수 | same | 승리 손실(다른 수) | tree 수 유지 | 재검사 UNSAFE | phase timeout (attack/stage/root/vct2) |
+|---|---|---|---|---|---|---|---|---|---|
+| 4초 | 9.06 | 26.004 | 0 | 27 | 50 | 7 (6) | 4 | 0 | 17/0/11/10 |
+| 6초 | 9.48 | 26.004 | 0 | 25 | 51 | 6 (5) | 4 | 0 | 15/0/11/10 |
+| **8초** | 9.80 | 26.004 | 0 | **21** | **53** | **3 (3)** | 4 | 0 | 11/0/10/9 |
+
+H3 `slow-stratified-v1` 60국면, baseline `fast_h3_s60`. 결정 기준(§3.10) 순서대로 본다.
+
+1. **안전·시간**: 세 cap 모두 재검사 UNSAFE 0, 27.5초 초과 0, 최대 26.004초다.
+2. **지는 수 증가 없음**: baseline_unsafe는 세 cap 모두 0이다.
+   - 예상했던 대가(V8-B가 길어지면 V8-C·VCT2 시간이 준다)는 나타나지 않았다.
+   - root·VCT2 timeout은 11/10 → 10/9로 오히려 줄었다. V8-B가 이기는 수를 찾으면 뒤 단계가 아예 돌지 않기 때문이다.
+3. **승리 손실**: 7 → 3. 그래서 **cap 8초**다. 초안의 결론과 같다.
+
+**초안에 보탠 확인.**
+
+- cap 4초 → 8초에서 착수가 바뀐 국면은 **3개뿐**이고, 모두 승리를 되찾은 경우다(4/16, 26/15, 34/15).
+  37/17은 착수는 같고 증명만 되찾았다. 나머지 56국면은 수가 같다.
+- 이 4개는 §3.10의 벤치 예측과 맞는다. "fast2 cap 8 벤치에서 5.9~7.2초에 증명되는 4개를 되찾는다"는 예측이었다.
+- critical 6국면은 세 cap에서 결과가 같다. 회귀 3개는 8초로도 못 찾는다(§3.10 예측대로). median만 9.0 → 11.0초로 늘었다.
+- V8-B 67개 벤치(fast2): cap 4초 46, 6초 51, 8초 57.
+
+**남은 비용(베타에서 볼 것).**
+
+- V8-B가 cap까지 돌고도 승리를 못 찾는 국면에서는, 착수가 최대 4초 늦어진다.
+  60국면 합계는 740.9초 → 760.0초로 약 +3%다.
+- 실제 대국에서 이런 국면이 얼마나 자주 나오는지는 A3 대국 기록과 E2 베타 로그(`route`, `timeouts.attack`)로 확인한다.
+- uniform `14/15`는 fast2 + rescue로도 여전히 `[5,6]`이다(root 22.4초, 160k 노드). A4 연구 항목이다.
+
+### 9.2 A2: TB-RT30-v1 동결
+
+- **정의**: `src/rt30/tb_rt30_v1.py`.
+  - TB-Engine-v1 설정 전체를 그대로 적어 넣었다(다른 곳의 기본값이 바뀌어도 이 엔진은 바뀌지 않는다).
+  - 그 위에 deadline 27.5초, watchdog 29초, timing(`final_margin` 1.5, `attack_seconds` **8.0**,
+    `puct_reserve` 6, `vct2_reserve` 4, `vct2_min` 2), attack order `frozen`, scheduler `fair`, root rescue on,
+    정확 고속화 2종을 둔다.
+- **설정 hash**: `4bea6459d55eef979894de924f79fd08c6a4bdbb317dbcd2f84cc9aac7a266cc`.
+  웹 서버는 대국마다 이 hash를 DB(`games.engine_config_hash`)와 `/api/state`에 남긴다.
+- **파일 lock**: `tests/frozen_tb_rt30_v1.sha256`가 착수를 정하는 파일 8개를 잠근다.
+  - 대상: `engine.py`, `solver.py`, `deadline.py`, `vcf.py`, `fast.py`, `fast_windows.py`, `fast_extensions.py`, `tb_rt30_v1.py`.
+  - CI(`frozen-baseline` job)가 검사한다. 하나라도 바꾸면 TB-RT30-v2다(CLAUDE.md).
+- **`tests/test_tb_rt30_v1.py`**가 확인하는 것:
+  - 기반 설정 == `TB_ENGINE_V1`, 고정된 hash.
+  - timing·deadline·rescue 값이 A1 cap 8초 run 파일에 기록된 값과 같다.
+  - A1 gate 수치(UNSAFE 0, 27.5초 초과 0)가 기록과 같다.
+  - agent 속성, 고속화 설치, supervisor factory.
+- **웹**: `run_web_play.py --rt30`은 이제 `make_tb_rt30_v1_agent`로 이 엔진을 띄운다.
+  - `--rt30-deadline`·`--rt30-watchdog`은 선택 override다.
+  - 쓰면 엔진 이름에 ` (deadline override)`가 붙어 기록이 섞이지 않는다.
+
+### 9.3 A3: E3-A 100판 짝 대국 gate (`scripts/run_rt30_match.py`)
+
+**설계.** TB-Engine-v1을 채택한 E3-A run과 같은 대국을 TB-RT30-v1로 다시 둔다.
+
+- 같은 것: 오프닝 50쌍(seed 8415·8416, 각 25쌍, 색 교환), 판별 seed, 상대 `v8:full+vct2atk`.
+- E3-A 기록: 76승 10무 14패, score 0.81 (Wilson 0.722~0.875).
+- 두 엔진 모두 결정적이다. 그리고 deadline 사건이 없으면 RT30 = TB-Engine-v1이다.
+  - 그래서 각 판은 **deadline이 바꾼 첫 RT30 수까지 E3-A 기록과 똑같이** 진행돼야 한다.
+  - `--reference`로 판마다 기록과 짝지어 갈라진 지점을 분류한다.
+    - `same`: 같은 판.
+    - `deadline`: timeout·skip이 있던 RT30 수에서 갈라졌다. 예상되는 경우다.
+    - `rt30_no_deadline`, `opponent`: deadline 사건 없이 갈라졌다. 원래 없어야 한다.
+      policy 평가 차이(Windows 데스크톱 ↔ SER5 torch)나 설정 오류를 뜻한다.
+- 컨테이너 smoke(uniform prior, 8415 쌍 0): 상대 수가 기록과 같았고(고속화 설치 상태), 오프닝·seed 검사를 통과했다.
+  `tests/test_rt30_match.py`는 100판의 오프닝·seed가 E3-A 기록과 같음을 확인한다.
+
+**gate(실행 전에 고정).**
+
+1. **시간·합법성**: 불법수 0(나오면 스크립트가 멈춘다). RT30 착수 27.5초 초과 0, 30초 이상 0.
+2. **재현성**: `rt30_no_deadline` + `opponent` 분기가 0이어야 정상이다.
+   - 5판을 넘으면 결과를 읽기 전에 원인부터 본다. 그 판들의 첫 분기 국면을 TB1(`deadline=None`)로 SER5에서 다시 둬 본다.
+3. **기력**(E3 판정 규칙과 같다): 짝 차이 = RT30 − E3-A, opening 쌍 bootstrap 95% 구간.
+   - **HARM**: 차이 < −0.05, 또는 구간 상한 < 0. 이 경우 TB-RT30-v1로 배포하지 않고 A4(엔진 연구)로 간다.
+   - 그 밖에는 **PASS**다. B1 구현으로 넘어간다.
+4. **보고(gate 아님)**:
+   - 상대 대비 score와 색별 score.
+   - RT30 착수 시간 분포(median/p95/p99/max), phase별 timeout, rescue.
+   - `result_changed` 목록. 특히 E3-A가 이겼는데 RT30이 진 판의 분기 수는 A4의 입력이다.
+
+**실행(SER5).** 다른 작업 없이, workers 4로 돌린다. 예상 시간은 3~5시간이다.
+E3-A 판 길이가 평균 63수이고, 상대 수는 고속화로 약 4배 빨라진다. 진행은 1분마다 출력되고, 중단돼도 같은 명령으로 이어진다.
+
+```bash
+cd ~/renju-alphazero && git pull && source .venv-ser5/bin/activate
+mkdir -p runs/rt30
+python scripts/run_rt30_match.py --checkpoint runs/h3_policy_64x4/best.pt --workers 4 \
+    --reference docs/mcts-v8-results/e3/puct_policy_vct2_50k_8415.jsonl \
+                docs/mcts-v8-results/e3/puct_policy_vct2_50k_8416.jsonl \
+    --games-jsonl runs/rt30/a3_e3.jsonl --output runs/rt30/a3_e3.json 2>&1 | tee runs/rt30/a3_e3.log
+```
+
+- 결과 파일(`a3_e3.json`·`.jsonl`·`.log`)은 RenjuNet 파생 데이터가 아니다(자체 대국 기록). 그래서 `docs/rt30-results/`로 옮겨 커밋해도 된다.
+- 먼저 짧게 확인하고 싶으면 `--seeds 8415 --pairs 2 --games-jsonl runs/rt30/a3_e3.jsonl`로 4판만 둔다.
+  같은 jsonl을 쓰면 본 run이 그 4판을 이어받는다.
