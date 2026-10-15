@@ -42,7 +42,7 @@ ATTACK_ORDERS = ('frozen', 'threes_first')
 ATTACK_SCHEDULERS = ('fair', 'widen', 'widen3')
 RT30_TIMING = {
     'final_margin': 1.5,    # kept free at the end of every phase: response, IPC, clock jitter
-    'attack_seconds': 4.0,  # V8-B cap from its own start
+    'attack_seconds': 8.0,  # V8-B cap from its own start (A1: 4 -> 8 s, docs/web-ser5.md §3.10, §9)
     'puct_reserve': 6.0,    # PUCT is entered only with this much left (set from the mini-PC p99)
     'vct2_reserve': 4.0,    # V8-C leaves this for VCT2
     'vct2_min': 2.0,        # VCT2 runs only with this much left

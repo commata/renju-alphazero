@@ -594,10 +594,9 @@ class PlaySession:
         from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty
 
         if self.agent_key == RT30_KEY:
-            from analysis.tb_engine_v1 import TB_ENGINE_V1, config_hash
+            from rt30.tb_rt30_v1 import TB_RT30_V1
 
-            return {**_RT30["info"], "base_engine_config_hash": config_hash(), "config": dict(TB_ENGINE_V1),
-                    "engine_commit": _git_commit(), "git_dirty": _git_dirty()}
+            return {**_RT30["info"], "config": TB_RT30_V1, "engine_commit": _git_commit(), "git_dirty": _git_dirty()}
         if self.agent_key == TB1_KEY:
             from analysis.tb_engine_v1 import FREEZE_EVIDENCE, NAME, TB_ENGINE_V1, config_hash
 
@@ -875,8 +874,8 @@ def main() -> None:
                         help="add the TB-RT30 opponent (engine worker process, 27.5 s deadline, 29 s watchdog)")
     parser.add_argument("--rt30-uniform-prior", action="store_true",
                         help="TB-RT30 without the H3 checkpoint (uniform PUCT prior; a test engine, not TB1)")
-    parser.add_argument("--rt30-deadline", type=float, default=27.5)
-    parser.add_argument("--rt30-watchdog", type=float, default=29.0)
+    parser.add_argument("--rt30-deadline", type=float, help="override TB-RT30-v1's 27.5 s (experiments only)")
+    parser.add_argument("--rt30-watchdog", type=float, help="override TB-RT30-v1's 29 s (experiments only)")
     parser.add_argument("--db", type=Path,
                         help="also log every game move by move to this SQLite file (e.g. data/renju_web.db)")
     args = parser.parse_args()
@@ -906,26 +905,30 @@ def main() -> None:
         print(f"S3-VCT2-v1 opponent off: {args.policy_checkpoint} not found")
     supervisor = None
     if args.rt30:
+        from rt30 import tb_rt30_v1
         from rt30.supervisor import AgentSpec, EngineSupervisor
 
         if args.policy_checkpoint.exists():
-            from analysis.tb_engine_v1 import check_checkpoint as check_tb1
-
-            kwargs, engine = {"checkpoint": str(args.policy_checkpoint)}, "TB-RT30"
-            extra = {"policy_checkpoint": str(args.policy_checkpoint), **check_tb1(args.policy_checkpoint)}
+            kwargs, engine = {"checkpoint": str(args.policy_checkpoint)}, tb_rt30_v1.NAME
+            extra = {"policy_checkpoint": str(args.policy_checkpoint),
+                     **tb_rt30_v1.check_checkpoint(args.policy_checkpoint)}
         elif args.rt30_uniform_prior:
-            kwargs, engine, extra = {"uniform_prior": True}, "TB-RT30 (uniform prior)", {}
+            kwargs, engine, extra = {"uniform_prior": True}, f"{tb_rt30_v1.NAME} (uniform prior)", {}
         else:
             parser.error("--rt30 needs --policy-checkpoint (found) or --rt30-uniform-prior")
+        deadline = args.rt30_deadline or tb_rt30_v1.TB_RT30_V1["deadline_seconds"]
+        watchdog = args.rt30_watchdog or tb_rt30_v1.TB_RT30_V1["watchdog_seconds"]
+        if (args.rt30_deadline, args.rt30_watchdog) != (None, None):
+            engine += " (deadline override)"
         print(f"{engine}: starting the engine worker ...", flush=True)
-        supervisor = EngineSupervisor(AgentSpec("rt30.supervisor:make_rt30_agent", kwargs),
-                                      engine_deadline=args.rt30_deadline, watchdog=args.rt30_watchdog)
-        from rt30.engine import RT30_TIMING
-
-        register_rt30(supervisor, f"{engine} (실시간 {args.rt30_deadline:g}초)",
-                      {"engine": engine, "deadline_seconds": args.rt30_deadline,
-                       "watchdog_seconds": args.rt30_watchdog, "timing": dict(RT30_TIMING), **extra})
-        print(f"{engine}: worker ready (deadline {args.rt30_deadline:g} s, watchdog {args.rt30_watchdog:g} s)")
+        supervisor = EngineSupervisor(AgentSpec("rt30.supervisor:make_tb_rt30_v1_agent", kwargs),
+                                      engine_deadline=deadline, watchdog=watchdog)
+        register_rt30(supervisor, f"{engine} (실시간 {deadline:g}초)",
+                      {"engine": engine, "engine_config_hash": tb_rt30_v1.config_hash(),
+                       "deadline_seconds": deadline, "watchdog_seconds": watchdog,
+                       "freeze_evidence": tb_rt30_v1.FREEZE_EVIDENCE, **extra})
+        print(f"{engine}: worker ready (deadline {deadline:g} s, watchdog {watchdog:g} s, "
+              f"config {tb_rt30_v1.config_hash()[:12]})")
     if args.az_checkpoint is not None:
         from agents.alphazero_agent import AlphaZeroAgent
 

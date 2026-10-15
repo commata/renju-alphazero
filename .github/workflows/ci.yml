@@ -119,6 +119,8 @@ jobs:
           python -m pip install -e .
       - name: Verify frozen implementation hashes
         run: python scripts/check_frozen_baseline.py
+      - name: TB-RT30-v1 frozen file lock
+        run: python scripts/check_frozen_baseline.py --lock-file tests/frozen_tb_rt30_v1.sha256
       - name: Verify low-budget V6 behavior fingerprint
         run: python scripts/ci_v6_behavior.py --expect-sha256 91bb91e55a8e73a3fa87dce6a839623170746a712abbad0669c63008b509bc44
       - name: Verify low-budget V7 behavior fingerprint

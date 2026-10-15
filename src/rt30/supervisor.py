@@ -367,6 +367,22 @@ def make_rt30_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_pr
     return agent
 
 
+def make_tb_rt30_v1_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_prior: bool = False):
+    """The frozen TB-RT30-v1 (``rt30.tb_rt30_v1``) for the web worker: the H3 policy from ``checkpoint``
+    (hash-checked), or ``uniform_prior=True`` without one (a test engine, named so)."""
+    from . import tb_rt30_v1
+
+    if checkpoint:
+        tb_rt30_v1.check_checkpoint(checkpoint)
+        agent = tb_rt30_v1.make_agent(_cached_policy(checkpoint), seed=seed)
+    elif uniform_prior:
+        agent = tb_rt30_v1.make_agent(None, seed=seed, uniform_prior=True)
+    else:
+        raise ValueError('make_tb_rt30_v1_agent needs checkpoint=... or uniform_prior=True')
+    agent.supports_deadline = True
+    return agent
+
+
 _POLICIES: dict[str, Any] = {}
 
 

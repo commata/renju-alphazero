@@ -1,0 +1,10 @@
+# TB-RT30-v1 (docs/web-ser5.md §9): the files that define its moves. Changing one makes TB-RT30-v2.
+# Do not update these hashes only to make CI green; review the behaviour change and re-run the A1 gates.
+b653d2a3d308976adf1e929e1e6c03932bf78c817483705912803e8308f9ad00  src/rt30/engine.py
+eb44b8298336a131c05d525a8aae17dcc1c140563423951ebaa097c2eebedd2e  src/rt30/solver.py
+7371a6b09bc71974cf433e9c962b7939d0dfb66c271d085bccdbad313b0e26f3  src/rt30/deadline.py
+3d43107e3b5cdcf2af6e898d533fadfb85d5a4e383b353ab4f7ba75321aa42a0  src/rt30/vcf.py
+7a3ce59f4abf9f4cc7fe8c7044b71a41632f6ead7caf04b209282263a630cfee  src/rt30/fast.py
+b82d55957f9a8ccbb4c18c7a42bddac56613b1c092db3781d9b2f4977405d609  src/rt30/fast_windows.py
+d935eb813db49d4c777ed20fc92f6723549c16ddafe63bb6b49ee9af6599662d  src/rt30/fast_extensions.py
+7865d87681da3e19ff7616959bff749006fa86ce55df10e666d967d41429a43b  src/rt30/tb_rt30_v1.py
