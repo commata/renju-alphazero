@@ -22,7 +22,7 @@ Environment=PYTHONPATH=src
 ExecStartPre=/home/deploy/renju-alphazero/.venv-ser5/bin/python -m rt30.native.build --if-stale
 ExecStart=/home/deploy/renju-alphazero/.venv-ser5/bin/python scripts/run_web_play.py \
     --host 127.0.0.1 --port 8000 --rt30 --db data/renju_web.db \
-    --ai-slots 2 --max-queue 4 --max-sessions 16 --session-ttl 3600 --secure-cookie
+    --ai-slots 2 --slot-spill 2 --max-queue 4 --max-sessions 16 --session-ttl 3600 --secure-cookie
 # SIGTERM takes the server's Ctrl+C path: queued replies cancelled, games marked abandoned,
 # engine workers and V8-B helpers closed. A running search may take up to the 29 s watchdog.
 KillSignal=SIGTERM
