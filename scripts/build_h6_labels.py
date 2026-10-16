@@ -43,8 +43,9 @@ from renju import BLACK, WHITE  # noqa: E402
 
 SOLVER_NODE_LIMIT = 20_000
 PROOF_CHUNK = 4  # games per pool task (results are collected as chunks finish; small for visible progress)
-# --prove-losses: per-position cap for the all-moves VCF check (same caps as the fresh-probe scan)
-LOSS_BUDGET = {'node_limit': 20_000, 'call_budget': 5_000, 'node_budget': 300_000}
+# --prove-losses: per-position cap for the all-moves VCF check (the solver runs ~1-2k nodes/s; P94-type
+# parent losses need ~20k nodes)
+LOSS_BUDGET = {'node_limit': 20_000, 'call_budget': 5_000, 'node_budget': 100_000}  # ~1 min worst case
 MAX_ROW_ONLY_PROBE_PLY = 3  # only standard 3-stone openings may keep their continuations in H6-v2
 VCT1_BUDGET = {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 200_000}  # V8-B's budget
 

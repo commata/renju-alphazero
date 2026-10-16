@@ -401,6 +401,14 @@ python -u scripts\make_h6_fresh_probes.py --games runs\h6_fresh\fresh_8601.json 
   - +1과 −1이 각각 10대국에 못 미치면 seed 8602, 8603… 대국을 추가한다. 그다음 **모든 seed 파일을 함께** 넣어 다시 추출한다.
   - 기준을 채우면 최종 추출 결과를 `docs/h6/h6_fresh_final_probes_v1.json`으로 출력해 커밋한다.
 
+**3단계 pilot 첫 실행 중단과 수정 (2026-10-16)**
+- 첫 실행: 3시간 반 동안 묶음이 하나도 끝나지 않았다.
+- 원인: `label_position(prove_losses=True)`가 국면마다 **모든 합법수**를 끝까지 검사했고, 국면 전체에 대한 상한이 없었다.
+- 수정(`6321d4d` 이후):
+  - 버티는 수가 하나 나오면 바로 멈춘다. 판정은 이전과 같다(합성 761행, P92–P94 대국 전 국면에서 일치).
+  - 국면당 상한: VCF 호출 5,000회, 노드 100,000. 이 solver는 초당 1–2천 노드를 처리하므로, 국면 하나가 최악이어도 약 1분이다. 상한에 걸린 국면은 라벨 없이 건너뛰고 `prove_losses_budget_cuts`로 보고한다. **v3 라벨도 같은 상한으로 만든다.**
+  - 진행률 묶음은 4판 단위로 줄였다.
+
 **실행 명령 (3단계: pilot, CPU)**
 ```powershell
 ..\renju-alphazero\.venv-cpu\Scripts\Activate.ps1
