@@ -39,6 +39,8 @@ jobs:
       - name: Assert torch is absent
         run: |
           python -c "import importlib.util,sys; spec=importlib.util.find_spec('torch'); print('torch spec:', spec); sys.exit(spec is not None)"
+      - name: Build the native exact speed-up (H6 --fast fast3)
+        run: PYTHONPATH=src python -m rt30.native.build
       - name: Run torch-free regression with strict skip policy
         run: python scripts/ci_run_tests.py --skip-policy torch-only
 
@@ -63,6 +65,8 @@ jobs:
           python -c "import torch; print('torch', torch.__version__); print('cuda', torch.cuda.is_available()); assert not torch.cuda.is_available()"
       - name: Renju rules contract
         run: python -m unittest tests.test_game -v
+      - name: Build the native exact speed-up (H6 --fast fast3)
+        run: PYTHONPATH=src python -m rt30.native.build
       - name: Run full regression with zero skips
         run: python scripts/ci_run_tests.py --skip-policy none
 
