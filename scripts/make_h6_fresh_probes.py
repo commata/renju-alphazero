@@ -49,7 +49,10 @@ VCF_CALL_BUDGET = 5_000
 # the time: one call may use up to SOLVER_NODE_LIMIT nodes and the solver runs ~1-2k nodes/s. P94 needs
 # ~20k nodes and ~550 calls. A position over either cap is skipped (no probe), deterministically.
 VCF_NODE_BUDGET = 300_000
-SCAN_VERSION = 3  # resume rows from another version are rescanned (v1: no budget, v2: call cap only)
+SCAN_VERSION = 3  # v1: no budget (rescanned), v2: call cap only, v3: call + node caps
+# v2 rows are kept: v3 differs from v2 only on positions over 300k nodes, and the scan is truth-only (no
+# model), so keeping 59 finished v2 games costs no validity. The versions used are recorded in the output.
+ACCEPTED_SCAN_VERSIONS = (2, 3)
 SLOW_POSITION_SECONDS = 60  # a position slower than this is logged by the worker
 
 
@@ -240,7 +243,7 @@ def main(argv=None) -> int:
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
             if line.strip():
                 row = json.loads(line)
-                if row.get('from_ply') == args.from_ply and row.get('scan_version') == SCAN_VERSION:
+                if row.get('from_ply') == args.from_ply and row.get('scan_version') in ACCEPTED_SCAN_VERSIONS:
                     done[row['key']] = row
     todo = [i for i, g in enumerate(games) if g['key'] not in done]
     print(f'[fresh probes] {len(games)} games, {len(games) - len(todo)} already scanned', flush=True)
@@ -270,7 +273,9 @@ def main(argv=None) -> int:
               'games_scanned': len(games), 'games_with_win': sum('win' in f for f in found),
               'games_with_loss': sum('loss' in f for f in found),
               'positions_over_budget': sum(done[g['key']]['budget_cuts'] for g in games),
-              'games_with_budget_cuts': sum(done[g['key']]['budget_cuts'] > 0 for g in games)}
+              'games_with_budget_cuts': sum(done[g['key']]['budget_cuts'] > 0 for g in games),
+              'games_by_scan_version': {str(v): sum(done[g['key']]['scan_version'] == v for g in games)
+                                        for v in ACCEPTED_SCAN_VERSIONS}}
     try:
         commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True,
                                 check=True).stdout.strip()
