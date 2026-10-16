@@ -116,7 +116,63 @@ def outcome_value(winner: int | None, ply: int, *, real_draw: bool) -> int | Non
 
 # -- proofs ----------------------------------------------------------------------
 
-def proof_label(moves, solver, *, prove_losses: bool = False, vct1_budget: dict | None = None) -> dict | None:
+class BudgetExceeded(Exception):
+    """A per-position solver budget ran out: no label (never a guess)."""
+
+
+def budgeted_solver(*, node_limit: int, call_budget: int, node_budget: int):
+    """``ThreatSolver`` whose uncached VCF calls and VCF nodes are capped for one position; a cut raises
+    ``BudgetExceeded`` and is never cached. Deterministic (counts, not wall-clock time)."""
+    from analysis.threats import (VCF_NONE, VCF_UNKNOWN, VCF_WIN, ThreatSolver, _board_key,
+                                  _find_vcf_with_stats, _unbounded_max_fours)
+
+    class Budgeted(ThreatSolver):
+        nodes_used = 0
+
+        def vcf(self, game, attacker):
+            key = (_board_key(game), attacker)
+            cached = self._vcf_cache.get(key)
+            if cached is not None:
+                return cached
+            remaining = node_budget - self.nodes_used
+            if self.vcf_calls >= call_budget or remaining < 1:
+                raise BudgetExceeded
+            limit = min(self.node_limit, remaining)
+            self.vcf_calls += 1
+            found, nodes, exhausted = _find_vcf_with_stats(
+                game, attacker, max_fours=_unbounded_max_fours(game), node_limit=limit)
+            self.nodes_used += nodes
+            if found is not None:
+                result = (VCF_WIN, tuple(found.attack_moves))
+            elif exhausted:
+                if limit < self.node_limit:
+                    raise BudgetExceeded
+                self.vcf_exhausted += 1
+                result = (VCF_UNKNOWN, ())
+            else:
+                result = (VCF_NONE, ())
+            self._vcf_cache[key] = result
+            return result
+
+    return Budgeted(node_limit=node_limit)
+
+
+def vcf_loss_status(game: Game, *, node_limit: int, call_budget: int, node_budget: int) -> str | None:
+    """``'loss'`` when every move of the side to move loses to the opponent's VCF (``vcf_loss``),
+    ``'budget'`` when the per-position budget ran out, else None. Stops at the first surviving move, so it
+    gives ``label_position(prove_losses=True)``'s verdict without classifying every legal move."""
+    from analysis.threats import UNSAFE, decision_status
+
+    solver = budgeted_solver(node_limit=node_limit, call_budget=call_budget, node_budget=node_budget)
+    try:
+        counts, _ = solver.decision(game, 0, stop_at_safe=True)
+    except BudgetExceeded:
+        return 'budget'
+    return 'loss' if decision_status(counts) == UNSAFE else None
+
+
+def proof_label(moves, solver, *, prove_losses: bool = False, vct1_budget: dict | None = None,
+                loss_budget: dict | None = None, stats: dict | None = None) -> dict | None:
     """``{'kind', 'value', 'depth'}`` for the position after ``moves``, or None (no proof).
 
     VCF-class proofs come from ``analysis.tactical_labels.label_position``; with ``vct1_budget`` a
@@ -130,9 +186,16 @@ def proof_label(moves, solver, *, prove_losses: bool = False, vct1_budget: dict 
         game.play(*move)
     if game.done:
         return None
-    label = label_position(game, solver, prove_losses=prove_losses)
+    label = label_position(game, solver, prove_losses=prove_losses and loss_budget is None)
     if label is not None and label['value'] is not None:
         return {'kind': label['kind'], 'value': label['value'], 'depth': PROOF_DEPTH[label['kind']]}
+    if prove_losses and loss_budget is not None and label is None:
+        # label_position checks vcf_loss only when it found nothing else (not after must_block): same here
+        status = vcf_loss_status(game, **loss_budget)
+        if status == 'loss':
+            return {'kind': 'vcf_loss', 'value': -1, 'depth': PROOF_DEPTH['vcf_loss']}
+        if status == 'budget' and stats is not None:
+            stats['loss_budget_cuts'] = stats.get('loss_budget_cuts', 0) + 1
     if vct1_budget is not None:
         from analysis.mcts_v8 import WIN, SearchDiagnostics, _own_vct_attack
         from search.mcts_v5 import _RootContext

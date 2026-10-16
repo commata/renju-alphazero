@@ -42,7 +42,9 @@ from hybrid.progress import Progress, run_chunks, stage  # noqa: E402
 from renju import BLACK, WHITE  # noqa: E402
 
 SOLVER_NODE_LIMIT = 20_000
-PROOF_CHUNK = 16  # games per pool task (results are collected as chunks finish)
+PROOF_CHUNK = 4  # games per pool task (results are collected as chunks finish; small for visible progress)
+# --prove-losses: per-position cap for the all-moves VCF check (same caps as the fresh-probe scan)
+LOSS_BUDGET = {'node_limit': 20_000, 'call_budget': 5_000, 'node_budget': 300_000}
 MAX_ROW_ONLY_PROBE_PLY = 3  # only standard 3-stone openings may keep their continuations in H6-v2
 VCT1_BUDGET = {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 200_000}  # V8-B's budget
 
@@ -63,13 +65,14 @@ def _proofs_task(task):
 
     moves, from_ply, prove_losses, vct1, last_n = task
     solver = ThreatSolver(node_limit=SOLVER_NODE_LIMIT)
-    out = {}
+    out, stats = {}, {}
     for ply in range(from_ply, len(moves)):
         losses = prove_losses and (not last_n or len(moves) - ply <= last_n)
-        label = proof_label(moves[:ply], solver, prove_losses=losses, vct1_budget=VCT1_BUDGET if vct1 else None)
+        label = proof_label(moves[:ply], solver, prove_losses=losses, vct1_budget=VCT1_BUDGET if vct1 else None,
+                            loss_budget=LOSS_BUDGET, stats=stats)
         if label is not None:
             out[ply] = label
-    return out
+    return out, stats.get('loss_budget_cuts', 0)
 
 
 def _proofs_chunk(tasks):
@@ -142,7 +145,8 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     else:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             parts = run_chunks(pool, _proofs_chunk, chunks, progress, positions)
-    proofs = [proof for part in parts for proof in part]
+    proofs = [proof for part in parts for proof, _ in part]
+    loss_budget_cuts = sum(cuts for part in parts for _, cuts in part)
     started = perf_counter()
     solver_class = 'vcf' + ('+vct1' if vct1 else '')
     budget = {'vcf_node_limit': SOLVER_NODE_LIMIT, **({'vct1': VCT1_BUDGET} if vct1 else {})}
@@ -178,6 +182,7 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     stage('cross-split mask + leakage check', started)
     return rows, {'games_in': len(games), 'games_kept': len(kept), 'dropped': dropped,
                   'cross_split_masked': cross, **report(rows),
+                  'prove_losses_budget_cuts': loss_budget_cuts, 'prove_losses_budget': LOSS_BUDGET if prove_losses else None,
                   'proof_by_distance_to_end': {k: dict(sorted(v.items(), key=lambda x: (len(x[0]), x[0])))
                                                for k, v in sorted(by_distance.items())}}
 
