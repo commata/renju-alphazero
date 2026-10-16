@@ -1159,6 +1159,12 @@ def main() -> None:
                         help="send the session cookie with Secure (behind HTTPS; X-Forwarded-Proto: https also does)")
     args = parser.parse_args()
     global APP
+    # Bind first: a port in use fails here, before the engine workers load the policy.
+    try:
+        server = ThreadingHTTPServer((args.host, args.port), Handler)
+    except OSError as exc:
+        parser.exit(1, f"{args.host}:{args.port} 에 바인드할 수 없습니다: {exc}\n"
+                       f"이미 떠 있는 서버가 있으면 먼저 끄세요 (확인: ss -ltnp 'sport = :{args.port}').\n")
     store = None
     if args.db is not None:
         from weblog.store import LogStore
@@ -1221,7 +1227,6 @@ def main() -> None:
         print(f"AlphaZero opponent: {probe.name}, {probe.config.to_dict()}")
     APP = WebApp(store=store, max_sessions=args.max_sessions, session_ttl=args.session_ttl,
                  max_queue=args.max_queue, ai_slots=args.ai_slots, secure_cookie=args.secure_cookie)
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
     print(f"sessions: up to {args.max_sessions} (idle {args.session_ttl:g} s), AI slots {args.ai_slots}, "
           f"queue {args.max_queue}")
     print(f"Renju local web: http://{args.host}:{args.port}")
