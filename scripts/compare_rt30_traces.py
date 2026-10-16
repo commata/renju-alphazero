@@ -42,7 +42,8 @@ def main(argv=None) -> int:
                 t = traces[n].get(ply)
                 if t is None:
                     cells.append('-'); continue
-                events = '/'.join(t['timeouts'] + [f'skip:{s}' for s in t['skipped']]) or '-'
+                # TB-Engine-v1 (no deadline) has no rt_info: no timeout or skip fields
+                events = '/'.join(t.get('timeouts', []) + [f'skip:{s}' for s in t.get('skipped', [])]) or '-'
                 cells.append(f"{t['move']} {t['route']} {t['seconds']:.1f}s {events} rng {t['rng_before'][:8]}")
             print(f'| {ply} | ' + ' | '.join(cells) + ' |')
             present = [traces[n][ply] for n in names if ply in traces[n]]
