@@ -117,6 +117,14 @@ def rt_fields(agent) -> dict:
     return out
 
 
+def rng_digest(agent) -> str:
+    """Short digest of the agent's random state (PUCT rollouts draw from it; ``--trace``)."""
+    import hashlib
+
+    random = getattr(agent, '_random', None)
+    return hashlib.sha256(repr(random.getstate()).encode()).hexdigest()[:16] if random is not None else ''
+
+
 def play_case(task: dict) -> dict:
     from renju import BLACK, Game
     from rt30.deadline import Deadline
@@ -130,14 +138,21 @@ def play_case(task: dict) -> dict:
     game = Game()
     for move in record['moves'][:opening]:
         game.play(*move)
-    mismatches, prefix_seconds, result = [], 0.0, None
+    mismatches, prefix_seconds, result, trace = [], 0.0, None, []
     started = perf_counter()
     for i in range(len(game.history), ply + 1):
         if game.to_play == color:
             deadline = Deadline.after(task['deadline']) if task['engine'] != 'tb1' else None
+            rng = rng_digest(agent)
             t = perf_counter()
             move = agent.select_move(game, deadline=deadline) if deadline else agent.select_move(game)
             seconds = perf_counter() - t
+            if task.get('trace'):
+                diag = agent.diagnostics
+                trace.append({'ply': i, 'move': [int(move[0]), int(move[1])], 'rng_before': rng,
+                              'rng_after': rng_digest(agent), 'seconds': round(seconds, 4), 'route': diag.v8_route,
+                              'tree_move': list(diag.v8_v7_move) if diag.v8_v7_move else None,
+                              'changed': diag.v8_changed, **rt_fields(agent)})
             if i < ply:
                 prefix_seconds += seconds
                 if list(move) != record['moves'][i]:
@@ -148,9 +163,12 @@ def play_case(task: dict) -> dict:
                           'tree_move': list(diag.v8_v7_move) if diag.v8_v7_move else None,
                           'root_checked': [[list(m), s] for m, s in diag.v8_root_checked or ()],
                           'phases': {p[3:-8]: round(getattr(diag, p), 4) for p in PHASES}, **rt_fields(agent)}
+                if task.get('trace'):
+                    result['root_visits'] = [[list(m), v, round(q, 6)] for m, v, q in diag.v8_root_visits or ()]
         game.play(*record['moves'][i])
     return {**{k: task[k] for k in ('key', 'game', 'kind', 'result', 'tb1_move', 'tree_move_rec')},
             **result, 'recovered': result['move'] == task['tb1_move'], 'prefix_mismatches': mismatches,
+            **({'trace': trace} if task.get('trace') else {}),
             'prefix_seconds': round(prefix_seconds, 2), 'case_seconds': round(perf_counter() - started, 2)}
 
 
@@ -205,6 +223,8 @@ def main(argv=None):
     parser.add_argument('--speedups', choices=('fast2', 'fast3'), default='fast2',
                         help='tb1/v1/v2: exact speed-ups to install (v3 always uses fast3)')
     parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--trace', action='store_true',
+                        help='per own move: move, route, deadline events and random-state digests; root visits at the case ply')
     parser.add_argument('--games-jsonl', type=Path, help='finished cases, one per line (resume)')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
@@ -216,7 +236,7 @@ def main(argv=None):
     cases = [c for c in manifest['cases'] if c['kind'] in kinds][:args.limit]
     tasks = [{'key': c['key'], 'game': c['game'], 'kind': c['kind'], 'result': c['result'], 'tb1_move': c['tb1_move'],
               'tree_move_rec': c['tb1_root_checked'][0][0] if c['tb1_root_checked'] else None,
-              'engine': args.engine, 'deadline': args.deadline} for c in cases]
+              'engine': args.engine, 'deadline': args.deadline, 'trace': args.trace} for c in cases]
     done = {}
     if args.games_jsonl is not None and args.games_jsonl.exists():
         for line in args.games_jsonl.read_text(encoding='utf-8').splitlines():

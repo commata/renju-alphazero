@@ -6,7 +6,7 @@
 # Each job writes $OUT/bg/JOB.out (log), JOB.pid while running, JOB.done when finished.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-[ $# -ge 1 ] || { echo "usage: scripts/ser5/start.sh JOB [JOB...]   (v3_check, v3_dev, v3_a1, v3_a3; a31, v2a_a1, v2a_a3)"; exit 1; }
+[ $# -ge 1 ] || { echo "usage: scripts/ser5/start.sh JOB [JOB...]   (v3_check, v3_dev, v3_a1, v3_a3, v3_nd; a31, v2a_a1, v2a_a3)"; exit 1; }
 OUT=${OUT:-runs/rt30}
 export OUT
 mkdir -p "$OUT/bg"

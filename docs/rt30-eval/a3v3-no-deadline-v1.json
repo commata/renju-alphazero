@@ -1,0 +1,12 @@
+{
+  "version": "a3v3-no-deadline-v1",
+  "kind": "rt30-eval-manifest",
+  "description": "The one A3-v3 move (SER5, workers 4) that left its E3-A game with no deadline event on that move: 8416/23 white, ply 21, a tree move (TB-Engine-v1 [7, 9] in 2.6 s, v3 [4, 6] in 1.5 s, both games won). Replayed with --trace to tell a SER5 policy evaluation difference (tb1 also differs), a v3 state bug (v3 with no time pressure differs) and a deadline effect on an earlier move (only v3 at 27.5 s differs; the random-state digests show the move).",
+  "found_in": ["docs/rt30-results/a3_v3_e3.json"],
+  "keys": ["puct_policy_vct2_50k_8416/46/21"],
+  "cases": [
+    {"key": "puct_policy_vct2_50k_8416/46/21", "game": "8416/23/white", "kind": "tree", "result": "win>win",
+     "tb1_move": [7, 9], "tb1_route": "tree", "tb1_root_checked": [], "rt30_move": [4, 6], "rt30_seconds": 1.5355,
+     "rt30_timeouts": [], "rt30_skipped": []}
+  ]
+}
