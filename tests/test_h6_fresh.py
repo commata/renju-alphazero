@@ -70,6 +70,16 @@ class FreshProbeTest(unittest.TestCase):
         self.assertEqual(result['found'], {})
         self.assertEqual(result['budget_cuts'], 1)
 
+    def test_node_budget_skips_a_position(self):
+        from scripts import make_h6_fresh_probes as maker
+        saved = maker.VCF_NODE_BUDGET
+        maker.VCF_NODE_BUDGET = 2_000  # P94 needs ~20k nodes
+        try:
+            result = scan_game((WEB['moves'][:95], 94))
+        finally:
+            maker.VCF_NODE_BUDGET = saved
+        self.assertEqual((result['found'], result['budget_cuts']), ({}, 1))
+
     def test_resume_skips_scanned_games(self):
         from scripts import make_h6_fresh_probes as maker
         with TemporaryDirectory() as tmp:

@@ -45,7 +45,12 @@ DEFENSE_MAX_CANDIDATES = 8
 # Per-position cap on uncached VCF calls (all checks of one position share it). A position over the cap is
 # skipped (no probe), deterministically; P94 needs ~550 calls. Without it one position could run for hours.
 VCF_CALL_BUDGET = 5_000
-SCAN_VERSION = 2  # resume rows from another version are rescanned (v1 had no budget)
+# Per-position cap on VCF search nodes (all checks of one position share it). The call cap alone did not bound
+# the time: one call may use up to SOLVER_NODE_LIMIT nodes and the solver runs ~1-2k nodes/s. P94 needs
+# ~20k nodes and ~550 calls. A position over either cap is skipped (no probe), deterministically.
+VCF_NODE_BUDGET = 300_000
+SCAN_VERSION = 3  # resume rows from another version are rescanned (v1: no budget, v2: call cap only)
+SLOW_POSITION_SECONDS = 60  # a position slower than this is logged by the worker
 
 
 class _BudgetExceeded(Exception):
@@ -53,15 +58,41 @@ class _BudgetExceeded(Exception):
 
 
 def _budgeted_solver():
-    from analysis.threats import ThreatSolver
+    from analysis.threats import (VCF_NONE, VCF_UNKNOWN, VCF_WIN, ThreatSolver, _board_key,
+                                  _find_vcf_with_stats, _unbounded_max_fours)
 
     class Budgeted(ThreatSolver):
+        nodes_used = 0
+
         def vcf(self, game, attacker):
-            if self.vcf_calls >= VCF_CALL_BUDGET:
+            """``ThreatSolver.vcf`` with the per-position call and node caps (a cap cut raises, never cached)."""
+            key = (_board_key(game), attacker)
+            cached = self._vcf_cache.get(key)
+            if cached is not None:
+                return cached
+            remaining = VCF_NODE_BUDGET - self.nodes_used
+            if self.vcf_calls >= VCF_CALL_BUDGET or remaining < 1:
                 raise _BudgetExceeded
-            return super().vcf(game, attacker)
+            limit = min(self.node_limit, remaining)
+            self.vcf_calls += 1
+            found, nodes, exhausted = _find_vcf_with_stats(
+                game, attacker, max_fours=_unbounded_max_fours(game), node_limit=limit)
+            self.nodes_used += nodes
+            if found is not None:
+                result = (VCF_WIN, tuple(found.attack_moves))
+            elif exhausted:
+                if limit < self.node_limit:
+                    raise _BudgetExceeded  # cut by the position budget, not by the per-call limit
+                self.vcf_exhausted += 1
+                result = (VCF_UNKNOWN, ())
+            else:
+                result = (VCF_NONE, ())
+            self._vcf_cache[key] = result
+            return result
 
     return Budgeted(node_limit=SOLVER_NODE_LIMIT)
+
+
 DEPTH0_KINDS = ('immediate_win', 'unstoppable_four', 'vcf', 'forced_loss', 'vcf_loss')
 ENGINE_ARM = 'puct_policy_vct2_50k'  # TB-Engine-v1 (E3-A)
 
@@ -131,12 +162,17 @@ def _classify(game, moves, solver) -> str | None:
 
 def scan_game(task) -> dict:
     """Earliest deep win and earliest deep loss of one game, with the number of positions over budget."""
-    moves, from_ply = task
+    moves, from_ply = task[:2]
+    name = task[2] if len(task) > 2 else '?'
     found, cuts, started = {}, 0, perf_counter()
     for ply in range(from_ply, len(moves)):
         if len(found) == 2:
             break
+        t0 = perf_counter()
         sign = classify(moves[:ply])
+        took = perf_counter() - t0
+        if took > SLOW_POSITION_SECONDS:
+            print(f'[slow position] {name} ply {ply}: {took:.0f}s -> {sign}', flush=True)
         if sign == 'budget':
             cuts += 1
         elif sign is not None and sign not in found:
@@ -208,7 +244,7 @@ def main(argv=None) -> int:
                     done[row['key']] = row
     todo = [i for i, g in enumerate(games) if g['key'] not in done]
     print(f'[fresh probes] {len(games)} games, {len(games) - len(todo)} already scanned', flush=True)
-    chunks = [[(games[i]['moves'], args.from_ply)] for i in todo]
+    chunks = [[(games[i]['moves'], args.from_ply, games[i]['key'])] for i in todo]
 
     def record(j, result):
         key = games[todo[j]]['key']
@@ -244,7 +280,8 @@ def main(argv=None) -> int:
                'selection': {'from_ply': args.from_ply, 'one_probe_per_game': True, 'balance': 'fewer sign first',
                              'depth0_excluded': list(DEPTH0_KINDS), 'vct1_budget': VCT1_BUDGET,
                              'defense_max_candidates': DEFENSE_MAX_CANDIDATES, 'solver_node_limit': SOLVER_NODE_LIMIT,
-                             'vcf_call_budget_per_position': VCF_CALL_BUDGET, 'scan_version': SCAN_VERSION},
+                             'vcf_call_budget_per_position': VCF_CALL_BUDGET,
+                             'vcf_node_budget_per_position': VCF_NODE_BUDGET, 'scan_version': SCAN_VERSION},
                'counts': counts, 'probes': probes}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload, indent=1) + '\n', encoding='utf-8')
