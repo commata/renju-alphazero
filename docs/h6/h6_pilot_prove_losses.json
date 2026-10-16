@@ -1,0 +1,206 @@
+{
+ "format": "h6-label-report-v1",
+ "row_format": "h6-value-row-v1",
+ "git_commit": "fa4de82371a89f1c800474fe3c345001dc6c322d",
+ "games": "..\\renju-alphazero\\data\\external\\renjunet\\games.jsonl.gz",
+ "restricted": true,
+ "settings": {
+  "splits": [
+   "train"
+  ],
+  "from_ply": 5,
+  "outcome_weight": 0.1,
+  "proof_weight": 1.0,
+  "prove_losses": true,
+  "vct1": false,
+  "probe_game_min_ply": 4,
+  "prove_losses_last_n": 0,
+  "sample_every": 50
+ },
+ "probe_files": [
+  "tests/fixtures/stage7_probes_defense_v1.json",
+  "tests/fixtures/stage7_probes_v1.json",
+  "tests/fixtures/v8_budget_probes_v1.json",
+  "tests/fixtures/v8c_divergence_probes_v1.json",
+  "tests/fixtures/v8c_root_probes_v1.json",
+  "tests/fixtures/vct_probes_v1.json",
+  "docs/mcts-v8-results/probe_web_v8_loss_20261007.json",
+  "docs/mcts-v8-results/e1/e1_manifest.json",
+  "docs/mcts-v8-results/e1h/e1h_manifest.json",
+  "docs/mcts-v8-results/e1s/e1s_manifest.json",
+  "docs/h6/h6_fresh_final_probes_v1.json"
+ ],
+ "summary": {
+  "games_in": 108011,
+  "games_kept": 1961,
+  "dropped": {
+   "probe_game": 10,
+   "other_split": 10913,
+   "probe_game_by_ply": {
+    "4": 8,
+    "8": 2
+   },
+   "not_sampled": 95127
+  },
+  "cross_split_masked": {
+   "train": 0,
+   "val": 0,
+   "test": 0
+  },
+  "rows": 64353,
+  "labelled": 54757,
+  "by_split": {
+   "train": 64353
+  },
+  "by_kind": {
+   "outcome": 51093,
+   "proof_vcf_loss": 587,
+   "proof_vcf": 1835,
+   "proof_unstoppable_four": 512,
+   "proof_forced_loss": 321,
+   "proof_immediate_win": 409
+  },
+  "by_depth": {
+   "0": 3664
+  },
+  "sign": {
+   "+1": 27897,
+   "-1": 26860
+  },
+  "sign_by_side": {
+   "white": {
+    "+1": 14374,
+    "-1": 13397
+   },
+   "black": {
+    "-1": 13463,
+    "+1": 13523
+   }
+  },
+  "masked_by_flag": {
+   "end_unknown": 42216,
+   "outcome_conflicts_proof": 964
+  },
+  "prove_losses_budget_cuts": 988,
+  "prove_losses_budget": {
+   "node_limit": 20000,
+   "call_budget": 5000,
+   "node_budget": 100000
+  },
+  "proof_by_distance_to_end": {
+   "forced_loss": {
+    "1": 9,
+    "2": 300,
+    "4": 5,
+    "6": 3,
+    "8": 1,
+    "10": 1,
+    "14": 1,
+    "37": 1
+   },
+   "immediate_win": {
+    "1": 372,
+    "2": 2,
+    "3": 8,
+    "5": 4,
+    "7": 4,
+    "8": 1,
+    "9": 3,
+    "11": 2,
+    "13": 3,
+    "15": 2,
+    "17": 2,
+    "19": 1,
+    "21": 1,
+    "23": 1,
+    "25": 1,
+    "27": 1,
+    "36": 1
+   },
+   "unstoppable_four": {
+    "1": 177,
+    "2": 9,
+    "3": 291,
+    "5": 7,
+    "7": 5,
+    "8": 4,
+    "9": 2,
+    "10": 1,
+    "11": 1,
+    "13": 2,
+    "14": 1,
+    "15": 3,
+    "17": 1,
+    "24": 1,
+    "28": 1,
+    "34": 1,
+    "38": 2,
+    "40+": 3
+   },
+   "vcf": {
+    "1": 438,
+    "2": 17,
+    "3": 396,
+    "4": 23,
+    "5": 420,
+    "6": 14,
+    "7": 219,
+    "8": 15,
+    "9": 110,
+    "10": 13,
+    "11": 41,
+    "12": 13,
+    "13": 21,
+    "14": 8,
+    "15": 10,
+    "16": 7,
+    "17": 3,
+    "18": 5,
+    "19": 4,
+    "20": 4,
+    "21": 3,
+    "22": 3,
+    "23": 1,
+    "24": 3,
+    "25": 4,
+    "26": 2,
+    "27": 2,
+    "28": 2,
+    "29": 2,
+    "31": 2,
+    "32": 1,
+    "33": 1,
+    "36": 2,
+    "37": 1,
+    "38": 2,
+    "39": 1,
+    "40+": 22
+   },
+   "vcf_loss": {
+    "1": 3,
+    "2": 147,
+    "3": 7,
+    "4": 141,
+    "5": 6,
+    "6": 142,
+    "7": 1,
+    "8": 69,
+    "9": 4,
+    "10": 27,
+    "11": 4,
+    "12": 9,
+    "13": 3,
+    "14": 11,
+    "15": 2,
+    "16": 4,
+    "17": 1,
+    "20": 1,
+    "22": 1,
+    "23": 1,
+    "28": 1,
+    "39": 1,
+    "40+": 1
+   }
+  }
+ }
+}
