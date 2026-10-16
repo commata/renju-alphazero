@@ -381,7 +381,8 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | R0 | 예측기 정정: v1 시간 배분 / 순차 / X2 / X2+X3, A3 점수 | **완료** (§9.8) |
 | X1-A | native threat-window scan (`rt30/fast3*.py`, `rt30/native/`) | **구현**: 컨테이너 2.15~2.31배, 동일 (§9.8) |
 | X2 | V8-B 상주 helper 병렬 (`rt30/engine_v3.py`, `attack_helper.py`) | **구현**: 컨테이너 V8-B 6/6 (§9.8) → SER5 v3_check/v3_dev/v3_a1/v3_a3 |
-| A3-v3 | SER5 gate + E3-A 100판 (`ed3d8cf`) | **PASS**: −0.01, CI95 [−0.025, 0.0] (§9.10). 동결 전 `rt30_no_deadline` 1건 확인(`v3_nd`) |
+| A3-v3 | SER5 gate + E3-A 100판 (`ed3d8cf`) | **PASS**: −0.01, CI95 [−0.025, 0.0] (§9.10). `rt30_no_deadline` 1건은 기준 기록의 환경 차이(`76cce57`) |
+| A4 | TB-RT30-v3 동결 (`tb_rt30_v3.py` `STATUS='frozen'`, `tests/frozen_tb_rt30_v3.sha256`) | **완료** (§9.10) |
 | X1-B | 금수 판정 가속 | 필요할 때만: A3-v3가 시간 부족으로 HARM일 때 v4 후보 (§9.9) |
 | W | 웹 B1/B2(멀티 세션, AI job queue, search slot) | **v3·native의 production 연결보다 먼저** (§8, §9.9) |
 | V3-web | v3를 웹 search slot(main + V8-B helper 형제 프로세스)으로 연결 | W 완료 + v3 동결 뒤 (§9.9) |
@@ -1377,3 +1378,45 @@ slow60의 phase timeout(attack/stage/root/vct2)은 v1 11/0/10/9에서 v3 0/0/3/0
 3. **추가 가속(X1-B, VCF 전체 native)과 T1은 보류한다.** 남은 손실 2판은 2배로도 닿지 않는 긴 증명이라, 이를 좇는 비용이 남은 0.01점보다 크다.
 4. **웹 B1/B2(§8)로 넘어간다.** 그 뒤 §9.9의 search slot(main + V8-B helper 형제 프로세스, 탐색 시작부터 deadline)으로 v3를 production에 연결하고,
    B3에서 `MAX_AI_SEARCHES` 2 → 3 → 4를 잰다(A3 workers 4가 착수 시간에 영향을 주지 않았다는 점은 좋은 출발점이지만, 웹 부하는 따로 잰다).
+
+**`rt30_no_deadline` 1건 판정 (`76cce57`, `nd_compare.md`).** 같은 SER5에서 같은 판 수순과 H3 policy로 세 번 재생했다.
+
+| 실행 | 조건 | ply 21 |
+|---|---|---|
+| `nd_tb1` | TB-Engine-v1 + fast3, deadline 없음 | [4, 6] |
+| `nd_v3_free` | v3, deadline 100000초 | [4, 6] |
+| `nd_v3_rt` | v3, 27.5초 | [4, 6] |
+
+- ply 3~21의 자체 착수 10수가 세 실행에서 모두 같다. 탐색 직전 난수 digest도 한 번도 갈라지지 않는다(`first different move: None; first different random state: None`).
+- ply 21의 root 방문 수도 같다: [4, 6] 15회(Q 0.2), [4, 7] 10회, [8, 5] 6회, [4, 9] 4회. E3-A 기록의 [7, 9]는 상위 4개에 없다.
+- ply 11도 세 실행이 [6, 7]로 같고 20.8~21.8초다. 기록의 187.5초는 E3-A 데스크톱 실행(14 workers)의 시간이다. SER5의 TB1 자신도 21초 안팎이므로, v3만 다른 경로를 탔다는 근거는 없다.
+
+| 가설 | 판정 | 근거 |
+|---|---|---|
+| H1. SER5의 TB1이 E3-A 기록의 수를 재현하지 못한다 | **채택** | `nd_tb1`도 [4, 6] |
+| H2. v3 상태 버그(난수 복원, helper) | 기각 | TB1 = v3(시간 압박 없음) = v3(27.5초): 수·난수·방문 수 모두 같다 |
+| H3. 앞선 수의 기록되지 않은 deadline 효과 | 기각 | v3 시간 압박 없음 = v3 27.5초 |
+
+- 결론: v3 회귀가 아니다. **기준 기록(E3-A, 데스크톱)과 지금 SER5 사이의 환경 의존 재현 차이**다.
+  세부 원인(policy 추론 수치, 라이브러리 버전 등)은 이 실험에서 나누지 않았다. 그래서 "부동소수점 차이"로 확정하지는 않는다.
+- 빈도는 낮다. A3.1의 34개 분기 국면에서 SER5 TB1은 기록 수를 34/34 재현했고, A3-v3 착수 3,013수 중 이런 경우는 이 1수다. 이 판은 양쪽 모두 승이라 점수에 영향이 없다.
+- A3 분기의 의미는 다음과 같다: 같은 판 97, deadline으로 갈라진 판 2(백 승→무 2판, 남은 −0.01의 전부), 기준 환경 차이 1.
+
+**최종 판정.** A3-v3에서 유일한 `rt30_no_deadline` 분기를 SER5에서 TB-Engine-v1, 시간 압박 없는 v3, 27.5초 v3로 재생했다.
+세 실행은 모든 자체 착수와 탐색 전 난수 상태가 같았고, ply 21에서 모두 [4, 6]을 골랐으며 root 방문 분포까지 같았다.
+E3-A 기록에는 [7, 9]가 있다. 따라서 이 차이는 v3의 deadline·X2 상태 버그가 아니라, 기준 기록을 만든 환경과 SER5 사이의 재현 차이로 판정한다.
+이 판은 양쪽 모두 승이라 A3 점수에도 영향이 없다. **TB-RT30-v3는 사전 정의한 A3 HARM 기준과 안전성·동일성 gate를 모두 만족했으므로 동결한다.**
+A3 100판은 다시 돌리지 않는다. 추가 native 가속(X1-B, VCF 전체)과 T1은 보류하고, 웹 B1/B2로 넘어간다.
+
+**동결 (A4).**
+
+- `rt30/tb_rt30_v3.py`: `STATUS = 'frozen'`, `FREEZE_EVIDENCE`(속도, 동일성, 분기 w4/w2/w1, control, A1과 재검사, gate, A3, no-deadline 재생, native 빌드 기록). 설정 hash는 그대로 `f80d2348…`다.
+- `tests/frozen_tb_rt30_v3.sha256`: v3가 쓰는 v1 파일 8개 + `engine_v3.py`, `attack_helper.py`, `fast3.py`, `fast3_windows.py`, `native/__init__.py`, `native/threat_windows.c`, `native/build.py`, `tb_rt30_v3.py`.
+- `tests/test_tb_rt30_v3.py`가 다음을 확인한다.
+  - 설정 hash, v1과의 차이(X1-A·X2뿐).
+  - 결과 파일이 이 설정으로 돌았다는 것: 엔진 이름, hash, native scan.
+  - gate와 A3 기준.
+  - no-deadline 재생 세 실행의 동일성.
+  - lock 파일 hash. v1의 lock 파일은 모두 포함된다.
+  - SER5 빌드의 C 소스 hash = 저장소의 C 소스 hash.
+- `.so`는 커밋하지 않는다(기계마다 빌드). SER5 빌드의 Python 3.14.4·GCC 15.2.0·`.so` SHA256은 `native_build_info.json`에 있다. 다른 기계에서 빌드한 `.so`는 hash가 달라도 같은 C 소스면 같은 엔진이다(동일성 테스트로 확인).

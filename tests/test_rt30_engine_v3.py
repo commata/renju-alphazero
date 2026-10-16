@@ -151,7 +151,7 @@ class ConfigTest(unittest.TestCase):
         v1, v3 = tb_rt30_v1.TB_RT30_V1, tb_rt30_v3.TB_RT30_V3
         self.assertEqual({k for k in v3 if v3[k] != v1.get(k)}, {'parallel_attack', 'exact_speedups'})
         self.assertEqual(v3['exact_speedups'][0], 'threat_windows_native')
-        self.assertEqual(tb_rt30_v3.STATUS, 'candidate')
+        self.assertEqual(tb_rt30_v3.STATUS, 'frozen')
 
 
 class MakeAgentTest(unittest.TestCase):

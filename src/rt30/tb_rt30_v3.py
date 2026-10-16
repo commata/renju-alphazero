@@ -11,16 +11,37 @@ v1's, read from v1's frozen configuration.
 scan (``python -m rt30.native.build``) unless ``allow_python=True`` (same moves, about half the
 speed), and without the V8-B helper process (for example inside a daemonic worker, which may not
 have children) unless ``allow_inline_attack=True`` (then V8-B runs inline with v1's cap: v1's
-timing, not X2). ``STATUS`` stays 'candidate' until v3 passes the gates of
-§9.8; it is then frozen with its own lock file, and v1's lock is never touched.
+timing, not X2).
+
+Frozen after the SER5 gates and A3-v3 (docs/web-ser5.md §9.10): ``FREEZE_EVIDENCE`` lists the
+results, ``tests/frozen_tb_rt30_v3.sha256`` locks the files that define its moves (v1's included)
+and ``tests/test_tb_rt30_v3.py`` checks both. v1's lock is untouched. Changing anything here, or in
+a locked file, makes a new engine (TB-RT30-v4).
 """
 from __future__ import annotations
 
 from .tb_rt30_v1 import TB_RT30_V1
 
 NAME = 'TB-RT30-v3'
-STATUS = 'candidate'
+STATUS = 'frozen'
 BASE_ENGINE = 'TB-RT30-v1'
+FREEZE_EVIDENCE = {
+    'speedup': 'docs/rt30-results/v3_speedup.md',                    # SER5 fast2 -> fast3: 2.07x, 34/34 same moves
+    'equivalence': 'docs/rt30-results/v3_equivalence_h3_8.json',     # frozen = fast3 = v3 (no deadline), 8/8
+    'divergence_w4': 'docs/rt30-results/a31_v3_w4.json',             # 34/34, +6.0
+    'divergence_w2': 'docs/rt30-results/a31_v3_w2.json',
+    'divergence_w1': 'docs/rt30-results/a31_v3_w1.json',
+    'control_w4': 'docs/rt30-results/ctrl_v3_w4.json',               # 26/26
+    'a1_s60': 'docs/rt30-results/v3_h3_s60.json',
+    'a1_s60_recheck': 'docs/rt30-results/recheck_v3_h3_s60.json',
+    'a1_crit': 'docs/rt30-results/v3_h3_crit.json',
+    'a1_crit_recheck': 'docs/rt30-results/recheck_v3_h3_crit.json',
+    'gate': 'docs/rt30-results/v3_gate.md',                          # A3-v3 entry gate: PASS
+    'a3': 'docs/rt30-results/a3_v3_e3.json',                         # 0.80 vs 0.81, CI95 [-0.025, 0.0]
+    'no_deadline_replay': ('docs/rt30-results/nd_tb1.json', 'docs/rt30-results/nd_v3_free.json',
+                           'docs/rt30-results/nd_v3_rt.json'),       # the one rt30_no_deadline move: TB1 = v3
+    'native_build': 'docs/rt30-results/native_build_info.json',      # SER5: CPython 3.14.4, GCC 15.2.0, -O2
+}
 TB_RT30_V3 = {
     **TB_RT30_V1,
     'parallel_attack': True,   # X2: V8-B in the resident helper, the whole move's time, no cap
