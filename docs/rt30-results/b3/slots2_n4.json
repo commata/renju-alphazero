@@ -1,0 +1,67 @@
+{
+  "sessions": 4,
+  "minutes": 15.0,
+  "agent": "rt30",
+  "human": "v5",
+  "think_seconds": 2.0,
+  "label": "slots2_n4",
+  "events": {
+    "busy_409": 0,
+    "full_503": 0,
+    "errors": 0,
+    "ai_errors": 0,
+    "games": 37,
+    "finished": 34
+  },
+  "failures": [],
+  "client_wait_seconds": {
+    "n": 529,
+    "median": 1.635,
+    "p95": 23.04,
+    "p99": 25.037,
+    "max": 25.997
+  },
+  "per_session_ai_moves": [
+    165,
+    101,
+    131,
+    132
+  ],
+  "human_engine_seconds": {
+    "n": 530,
+    "median": 0.006,
+    "p95": 2.355,
+    "p99": 3.268,
+    "max": 4.112
+  },
+  "server": {
+    "ai_moves": 548,
+    "queue_seconds": {
+      "n": 548,
+      "median": 0.007,
+      "p95": 10.141,
+      "p99": 23.245,
+      "max": 24.32
+    },
+    "engine_seconds": {
+      "n": 548,
+      "median": 1.311,
+      "p95": 12.062,
+      "p99": 24.817,
+      "max": 25.237
+    },
+    "wall_seconds": {
+      "n": 548,
+      "median": 1.446,
+      "p95": 22.214,
+      "p99": 24.953,
+      "max": 25.793
+    },
+    "engine_over_27.5s": 0,
+    "timed_out_moves": 17,
+    "emergency_moves": 0,
+    "watchdog_moves": 0,
+    "attack_parallel_moves": 365,
+    "attack_helper_failed_moves": 0
+  }
+}
