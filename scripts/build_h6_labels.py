@@ -38,6 +38,7 @@ from hybrid.h6_labels import (  # noqa: E402
     ROW_FORMAT, check_game_provenance, check_leakage, default_probe_files, game_rows, mask_cross_split,
     first_probe, probe_positions, proof_label, report,
 )
+from hybrid import h6_fast  # noqa: E402
 from hybrid.progress import Progress, run_chunks, stage  # noqa: E402
 from renju import BLACK, WHITE  # noqa: E402
 
@@ -77,7 +78,8 @@ def _proofs_task(task):
 
 
 def _proofs_chunk(tasks):
-    return [_proofs_task(t) for t in tasks]
+    # the worker's bound functions come back with its results, so a worker on another mode is caught
+    return h6_fast.state()['active'], [_proofs_task(t) for t in tasks]
 
 
 def _git_commit() -> str | None:
@@ -90,7 +92,7 @@ def _git_commit() -> str | None:
 
 def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, proof_weight: float,
           prove_losses: bool, vct1: bool, probes, workers: int = 1, probe_game_min_ply: int = 0,
-          prove_losses_last_n: int = 0, sample_every: int = 0,
+          prove_losses_last_n: int = 0, sample_every: int = 0, fast: str = 'off',
           progress_seconds: float = 60.0) -> tuple[list, dict]:
     """Build H6 rows while protecting probe/evaluation positions from continuation leakage.
 
@@ -99,6 +101,9 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     row-only treatment only for probes with at most ``MAX_ROW_ONLY_PROBE_PLY`` stones (the standard
     3-stone RIF opening controls). If a threshold would retain a 4+ stone probe, fail rather than
     silently train on its continuation. ``probe_game_min_ply=0`` preserves the strict v1 behaviour.
+
+    ``fast`` (``hybrid.h6_fast.MODES``) only changes the solver's speed: rows and summary are the same.
+    It is installed in this process and in every pool worker; a worker that runs anything else fails.
     """
     if not isinstance(probes, dict) and probe_game_min_ply > 0:
         raise ValueError('probe_game_min_ply needs probe_positions (hash -> ply); a bare hash set has no ply')
@@ -138,14 +143,24 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     progress.log(f"[proofs] {len(tasks):,} games, {progress.total:,} positions, {workers} worker(s)", flush=True)
     positions = lambda chunk: sum(max(0, len(t[0]) - from_ply) for t in chunk)  # noqa: E731
     chunks = [tasks[i:i + PROOF_CHUNK] for i in range(0, len(tasks), PROOF_CHUNK)]
-    if workers == 1:
-        parts = []
-        for chunk in chunks:
-            parts.append(_proofs_chunk(chunk))
-            progress.update(positions(chunk), extra=f'{len(parts):,}/{len(chunks):,} chunks')
-    else:
-        with ProcessPoolExecutor(max_workers=workers) as pool:
-            parts = run_chunks(pool, _proofs_chunk, chunks, progress, positions)
+    previous = h6_fast.installed_mode()
+    expected = h6_fast.install(fast)['active']
+    try:
+        if workers == 1:
+            parts = []
+            for chunk in chunks:
+                parts.append(_proofs_chunk(chunk))
+                progress.update(positions(chunk), extra=f'{len(parts):,}/{len(chunks):,} chunks')
+        else:
+            # spawn/forkserver workers do not inherit this process's rebinding: each installs on start
+            with ProcessPoolExecutor(max_workers=workers, initializer=h6_fast.install, initargs=(fast,)) as pool:
+                parts = run_chunks(pool, _proofs_chunk, chunks, progress, positions)
+    finally:
+        h6_fast.install(previous)
+    wrong = {str(active) for active, _ in parts if active != expected}
+    if wrong:
+        raise RuntimeError(f'--fast {fast}: a worker ran {sorted(wrong)}, expected {expected}')
+    parts = [part for _, part in parts]
     proofs = [proof for part in parts for proof, _ in part]
     loss_budget_cuts = sum(cuts for part in parts for _, cuts in part)
     started = perf_counter()
@@ -212,12 +227,21 @@ def main(argv=None) -> int:
                              'probes may be exempted (0 = strict v1, current H6-v2 recommendation = 4)')
     parser.add_argument('--limit', type=int, help='first N games (smoke tests)')
     parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--fast', choices=h6_fast.MODES, default='off',
+                        help='exact solver speed-up (same rows, only faster): off = frozen Python, fast2 = '
+                             'rt30.fast, fast3 = fast2 + native window scan (python -m rt30.native.build; '
+                             'fails when not built)')
     parser.add_argument('--output', type=Path, required=True, help='rows, .jsonl.gz (keep it out of git)')
     parser.add_argument('--report', type=Path)
     args = parser.parse_args(argv)
     if args.output.resolve().is_relative_to(ROOT) and not str(args.output.resolve().relative_to(ROOT)).startswith(
             ('data', 'runs')):
         parser.error('RenjuNet-derived rows go under data/ or runs/ (both ignored by git), never into the repo')
+    try:  # fail before the long run when the mode cannot be installed (e.g. fast3 not built)
+        h6_fast.install(args.fast)
+    except RuntimeError as error:
+        parser.error(str(error))
+    h6_fast.install('off')
     probe_files = default_probe_files(ROOT) if args.probe_files is None else args.probe_files
     games = read_games(args.games)[:args.limit]
     rows, summary = build(games, splits=set(args.splits), from_ply=args.from_ply,
@@ -225,7 +249,7 @@ def main(argv=None) -> int:
                           prove_losses=args.prove_losses, vct1=args.vct1,
                           probes=probe_positions(probe_files, ROOT), probe_game_min_ply=args.probe_game_min_ply,
                           prove_losses_last_n=args.prove_losses_last_n, sample_every=args.sample_every,
-                          workers=args.workers)
+                          workers=args.workers, fast=args.fast)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     started = perf_counter()
     with gzip.open(args.output, 'wt', encoding='utf-8') as handle:
@@ -237,6 +261,7 @@ def main(argv=None) -> int:
                'settings': {k: getattr(args, k) for k in ('splits', 'from_ply', 'outcome_weight', 'proof_weight',
                                                           'prove_losses', 'vct1', 'probe_game_min_ply',
                                                           'prove_losses_last_n', 'sample_every')},
+               'acceleration': h6_fast.provenance(args.fast),
                'probe_files': [str(Path(p).resolve().relative_to(ROOT)).replace('\\', '/')
                                if Path(p).resolve().is_relative_to(ROOT) else str(p) for p in probe_files], 'summary': summary}
     print(json.dumps(payload['summary'], indent=1), flush=True)

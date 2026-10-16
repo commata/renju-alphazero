@@ -417,6 +417,53 @@ python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --splits train 
 ```
 - 보고서는 개수만 담는다. `docs/h6/`에 복사해 커밋한다. 이것을 보고 N을 정한다.
 
+**solver 가속: `--fast off|fast2|fast3` (2026-10-16)**
+
+- 방향: native 확대 순서는 `web-ser5.md` §9.9를 따른다. 이미 검증된 정확 가속(fast2, X1-A)을 먼저 재사용한다.
+  그래도 부족하면 X1-B(금수 판정 native, C)로 가고, VCF 전체 C++17은 마지막이다. C++ Game/PUCT, Windows MSVC 빌드는 지금 하지 않는다.
+- `feat/Web_SER5`에서 정확 가속만 가져왔다(`src/rt30/fast*.py`, `src/rt30/native/`, 파일 내용 그대로). deadline, X2 helper, engine_v3, 웹 코드는 가져오지 않았다.
+- `hybrid.h6_fast`가 모드를 설치한다. frozen 파일은 고치지 않고, 이 프로세스의 이름만 바꿔 끼운다.
+  - `off`: frozen Python solver. 기본값이고, 지금 pilot과 같다.
+  - `fast2`: `rt30.fast`(numpy window scan + 4 연장 규칙). 컴파일러가 필요 없다.
+  - `fast3`: fast2 + C window scan. **엄격하다.** native가 빌드되지 않았거나 낡았으면(`build.stale()`) 시작 전에 오류로 멈춘다. fast2로 조용히 내려가지 않는다.
+- worker마다 설치한다(`ProcessPoolExecutor(initializer=h6_fast.install)`). Windows spawn과 Python 3.14 Linux forkserver worker는 부모의 바꿔 끼움을 물려받지 않기 때문이다.
+  묶음마다 worker가 실제로 쓴 함수를 함께 돌려보낸다. 하나라도 요청한 모드와 다르면 builder가 실패한다.
+- 보고서에 `acceleration`을 기록한다: 요청 모드, 실제 함수 이름, fast3면 native 빌드 기록(Python, SOABI, 컴파일러, 플래그, 소스·모듈 SHA256).
+  라벨 의미와 row 형식은 바뀌지 않으므로 라벨 버전도 바꾸지 않는다.
+- 동일성 테스트(`tests/test_h6_fast.py`):
+  - `_find_vcf_with_stats`의 결과·노드 수·exhausted 비교. 노드 상한 50과 3,000에서 잰다.
+  - `vcf_loss_status`의 loss/budget/None 비교. 국면 예산 300과 100k에서 잰다.
+  - builder 전체(작은 예산으로 budget cut이 실제로 나는 설정 포함)의 row와 summary 비교. summary에는 `prove_losses_budget_cuts`와 `proof_by_distance_to_end`가 들어 있다.
+  - pool worker와 spawn worker 설치, 다른 모드로 돈 worker의 거부.
+  - 이 모든 비교에서 세 모드가 같다.
+- 컨테이너 실측(E3-A 엔진 대국 12판, 마지막 8수 prove-losses, 4 workers, `scripts/check_h6_fast.py`):
+
+| 모드 | 시간 | 국면/초 | off 대비 | 결과 |
+|---|---|---|---|---|
+| off | 75.0초 | 3.7 | 1.0배 | 기준 |
+| fast2 | 17.4초 | 15.8 | 4.3배 | 같음 |
+| fast3 | 8.8초 | 31.4 | 8.6배 | 같음 |
+
+- 엔진 대국은 RenjuNet보다 전술 국면이 많다. 그래서 위 배수는 v3 시간 추정에 그대로 쓰지 않는다. 실제 RenjuNet 표본으로 다시 잰다(아래).
+
+**실측 명령 (pilot이 끝난 뒤. 같은 기계에서 pilot과 동시에 돌리지 않는다)**
+```powershell
+# Desktop (Windows): off, fast2
+python -u scripts\check_h6_fast.py --games $GAMES --modes off fast2 --sample-every 500 --workers 12 `
+  --report runs\h6\h6_fast_check_desktop.json 2>&1 | Tee-Object runs\h6\h6_fast_check_desktop.log
+```
+```bash
+# SER5 (Linux): native를 먼저 빌드한다 (.venv-ser5 Python의 헤더 필요, web-ser5.md §9.9)
+cd src && ../.venv-ser5/bin/python -m rt30.native.build --if-stale && cd ..
+.venv-ser5/bin/python -u scripts/check_h6_fast.py --games $GAMES --modes off fast2 fast3 --sample-every 500 \
+  --workers 8 --report runs/h6/h6_fast_check_ser5.json 2>&1 | tee runs/h6/h6_fast_check_ser5.log
+```
+- 판정:
+  - `same: true`가 아니면 그 모드는 쓰지 않는다(종료 코드 1).
+  - 기계 비교는 배수가 아니라 같은 표본의 **절대 국면/초**로 한다.
+  - pilot의 N이 정해지면 `--prove-losses-last-n N`을 붙여 다시 잰다. 그 국면/초로 v3 전체 시간을 다시 계산한다.
+- v3 생성: 위에서 고른 기계·모드로 기존 명령에 `--fast fast2` 또는 `--fast fast3`만 더한다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
