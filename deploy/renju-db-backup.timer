@@ -1,0 +1,10 @@
+# Daily backup of the Renju web database at 04:17 (and at the next boot if a run was missed).
+[Unit]
+Description=Daily Renju web database backup
+
+[Timer]
+OnCalendar=*-*-* 04:17:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

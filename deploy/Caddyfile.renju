@@ -1,0 +1,34 @@
+# Site block for /etc/caddy/Caddyfile (deploy/README.md §4). Merge it into the existing file;
+# do not replace the file: other sites in it stay as they are. If a block for this domain already
+# exists, change that block instead of adding a second one.
+#
+# HTTPS: Caddy's automatic HTTPS (certificate issue and renewal), as today. Nothing else issues
+# certificates (no Certbot). Caddy sends X-Forwarded-Proto/-For/-Host to the app by default, so
+# the session cookie gets Secure and the app sees the scheme.
+
+ser5tack.duckdns.org {
+	encode zstd gzip
+
+	# Beta: one shared login in front of everything (docs/web-ser5.md §8 7). Make the hash with
+	#   caddy hash-password --plaintext '<password>'
+	# and put it below (Caddy < 2.8 spells the directive "basicauth").
+	basic_auth {
+		renju <PASTE-HASH-HERE>
+	}
+
+	reverse_proxy 127.0.0.1:8000 {
+		# The page polls /api/state once a second; a search runs in the server, never in a request,
+		# so requests are short. A dead app answers 502 quickly instead of hanging.
+		transport http {
+			dial_timeout 5s
+			response_header_timeout 30s
+		}
+	}
+
+	log {
+		output file /var/log/caddy/renju-access.log {
+			roll_size 20MiB
+			roll_keep 10
+		}
+	}
+}

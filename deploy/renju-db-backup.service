@@ -1,0 +1,10 @@
+# One backup of data/renju_web.db (deploy/backup_db.py); started daily by renju-db-backup.timer.
+[Unit]
+Description=Renju web database backup
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/renju-alphazero
+ExecStart=/home/deploy/renju-alphazero/.venv-ser5/bin/python deploy/backup_db.py --db data/renju_web.db --dir data/backups --keep 14

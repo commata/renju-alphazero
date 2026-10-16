@@ -1,0 +1,41 @@
+# Renju web server (TB-RT30-v3) behind Caddy on SER5 (deploy/README.md).
+#   sudo cp deploy/renju-web.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#   sudo systemctl enable --now renju-web
+# Caddy (caddy.service) keeps HTTPS and certificates; this unit runs only the Python server,
+# on 127.0.0.1:8000 (never reachable from outside but through Caddy).
+[Unit]
+Description=Renju web server (TB-RT30-v3, ai-slots 2)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/renju-alphazero
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=src
+# The native threat-window scan of v3: rebuilt only when the C source, the venv's Python or the
+# flags changed (after a git pull); the server refuses to start with a stale one.
+ExecStartPre=/home/deploy/renju-alphazero/.venv-ser5/bin/python -m rt30.native.build --if-stale
+ExecStart=/home/deploy/renju-alphazero/.venv-ser5/bin/python scripts/run_web_play.py \
+    --host 127.0.0.1 --port 8000 --rt30 --db data/renju_web.db \
+    --ai-slots 2 --max-queue 4 --max-sessions 16 --session-ttl 3600 --secure-cookie
+# SIGTERM takes the server's Ctrl+C path: queued replies cancelled, games marked abandoned,
+# engine workers and V8-B helpers closed. A running search may take up to the 29 s watchdog.
+KillSignal=SIGTERM
+KillMode=mixed
+TimeoutStopSec=40
+# Loading the H3 policy in 2 engine workers + spares takes a while.
+TimeoutStartSec=300
+Restart=on-failure
+RestartSec=5
+# Light hardening that keeps the repository writable (data/, logs/, the native build).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
