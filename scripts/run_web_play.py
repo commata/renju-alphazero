@@ -167,6 +167,11 @@ def register_rt30(supervisors, label: str, info: dict[str, Any], config: dict[st
     VERSION_LABELS[RT30_KEY] = label
 
 
+def default_agent_key() -> str:
+    """The opponent a new browser starts with: the newest engine served, TB-RT30 when it runs, else V7."""
+    return RT30_KEY if _RT30 else "v7"
+
+
 def create_agent(version: str, *, seed: int = 42):
     """Build one of the frozen/versioned agents used by the benchmark scripts."""
     if version == ALPHAZERO_KEY and _ALPHAZERO_FACTORY is not None:
@@ -427,7 +432,7 @@ class PlaySession:
         self._received_at: float | None = None
         self.log_root = Path(log_root) if log_root is not None else LOG_ROOT
         self.game = Game()
-        self.agent_key = "v7"
+        self.agent_key = default_agent_key()
         self.agent = create_agent(self.agent_key)
         self.human_color = BLACK
         self.seed = 42
@@ -990,6 +995,7 @@ class PlaySession:
                 if self.last_log_dir is not None else None
             ),
             "versions": VERSION_LABELS,
+            "default_agent": default_agent_key(),
             "undo_count": self.undo_count,
             "veto_positions": self.veto_files,
         }
@@ -1080,7 +1086,7 @@ class Handler(BaseHTTPRequestHandler):
             if self.path == "/api/new":
                 color = str(payload.get("human_color", "BLACK")).upper()
                 human_color = BLACK if color == "BLACK" else WHITE if color == "WHITE" else 0
-                state = session.new_game_async(agent_key=str(payload.get("agent", "v7")), human_color=human_color,
+                state = session.new_game_async(agent_key=str(payload.get("agent") or default_agent_key()), human_color=human_color,
                                                seed=int(payload.get("seed", 42)), jobs=APP.jobs,
                                                received_at=received_at)
             elif self.path == "/api/undo":

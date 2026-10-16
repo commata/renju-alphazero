@@ -59,7 +59,7 @@
         <option value="v42">MCTS V4.2</option>
         <option value="v5">MCTS V5 FINAL</option>
         <option value="v6">MCTS V6</option>
-        <option value="v7" selected>MCTS V7 FINAL</option>
+        <option value="v7">MCTS V7 FINAL</option>
         <option value="v8">MCTS V8 (개발)</option>
       </select>
     </div>
@@ -282,10 +282,11 @@ function drawBoard() {
 }
 
 function syncVersions() {
-  // Versions registered by the server (e.g. an AlphaZero checkpoint) join the list.
+  // Versions registered by the server (e.g. an AlphaZero checkpoint) join the list; the server's
+  // default (the newest engine it serves, TB-RT30-v3 in production) goes first.
   for (const [key, label] of Object.entries(state.versions || {})) {
     if (![...agentSelect.options].some(option => option.value === key)) {
-      agentSelect.add(new Option(label, key));
+      agentSelect.add(new Option(label, key), key === state.default_agent ? 0 : undefined);
     }
   }
 }

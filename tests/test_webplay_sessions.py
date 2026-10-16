@@ -364,6 +364,16 @@ class HttpTest(_Gate):
         self.assertEqual((response.status, b'api/state' in response.read()), (200, True))
         conn.close()
 
+    def test_new_browser_starts_with_the_newest_engine(self):
+        saved = dict(web._RT30)
+        self.addCleanup(lambda: (web._RT30.clear(), web._RT30.update(saved)))
+        web._RT30.clear()
+        self.assertEqual(self.call('GET', '/api/state')[1]['agent_key'], 'v7')    # no TB-RT30 served
+        web._RT30.update(supervisors=[None], supervisor=None, label='TB-RT30-v3 (test)',
+                         info={'engine': 'TB-RT30-v3'}, config=None)
+        state = self.call('GET', '/api/state')[1]
+        self.assertEqual((state['agent_key'], state['default_agent']), ('rt30', 'rt30'))
+
     def test_only_json_posts(self):
         sid = self.call('GET', '/api/state')[2]
         status = self.call('POST', '/api/new', {'agent': 'v5'}, cookie=sid, content_type='text/plain')[0]
