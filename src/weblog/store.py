@@ -17,7 +17,9 @@ Conventions:
 - an undone move is kept with ``undone_at`` set; ``seq`` counts every recorded move of a game,
   ``ply`` is unique among the moves still on the board;
 - engine details stay in ``diagnostics_json`` / ``rt_json`` (SQLite's JSON functions read them);
-  only fields common to every engine are columns.
+  only fields common to every engine are columns;
+- ``games.session_hash`` (schema 2) is a hash of the browser session id, never the id itself, so a
+  database or log reader cannot take over a session (docs/web-ser5.md §8).
 
 Readers open the file with ``open_readonly`` (``mode=ro``) and never write.
 """
@@ -32,7 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 GAME_STATUSES = ('in_progress', 'finished', 'unfinished', 'abandoned')
 
 SCHEMA = """
@@ -60,10 +62,12 @@ CREATE TABLE IF NOT EXISTS games (
     policy_metadata_sha256 TEXT,
     agent_info_json TEXT,
     final_board_json TEXT,
-    raw_log_dir TEXT
+    raw_log_dir TEXT,
+    session_hash TEXT            -- schema 2: SHA-256 prefix of the browser session id (NULL: no session)
 );
 CREATE INDEX IF NOT EXISTS games_started ON games (started_at);
 CREATE INDEX IF NOT EXISTS games_agent ON games (agent_key, started_at);
+CREATE INDEX IF NOT EXISTS games_session ON games (session_hash, started_at);
 
 CREATE TABLE IF NOT EXISTS moves (
     id INTEGER PRIMARY KEY,
@@ -107,7 +111,7 @@ CREATE INDEX IF NOT EXISTS veto_game ON veto_positions (game_id, ply);
 """
 
 GAME_FIELDS = ('started_at', 'agent_key', 'agent_name', 'seed', 'human_color', 'engine', 'engine_config_hash',
-               'engine_commit', 'git_dirty', 'policy_checkpoint_sha256', 'policy_metadata_sha256')
+               'engine_commit', 'git_dirty', 'policy_checkpoint_sha256', 'policy_metadata_sha256', 'session_hash')
 FINISH_FIELDS = ('finished_at', 'status', 'result', 'winner', 'winner_actor', 'number_of_moves',
                  'ai_total_seconds', 'undo_count', 'raw_log_dir')
 MOVE_FIELDS = ('seq', 'ply', 'player', 'actor', 'row0', 'col0', 'board_hash', 'engine_seconds', 'queue_seconds',
@@ -141,15 +145,27 @@ def configure(conn: sqlite3.Connection) -> None:
     conn.execute('PRAGMA busy_timeout=5000')
 
 
+def _migrate_1_to_2(conn: sqlite3.Connection) -> None:
+    conn.execute('ALTER TABLE games ADD COLUMN session_hash TEXT')
+
+
+MIGRATIONS = {1: _migrate_1_to_2}  # from version -> step to version + 1
+
+
 def initialize(path: str | Path) -> None:
-    """Create the schema, or check the version of an existing database."""
+    """Create the schema, migrate an older database to this version, or refuse a newer one."""
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     try:
         configure(conn)
         version = conn.execute('PRAGMA user_version').fetchone()[0]
-        if version not in (0, SCHEMA_VERSION):
+        if version > SCHEMA_VERSION or (0 < version < SCHEMA_VERSION and version not in MIGRATIONS):
             raise SchemaVersionError(f'{path}: schema version {version}, this code writes {SCHEMA_VERSION}')
+        while 0 < version < SCHEMA_VERSION:
+            MIGRATIONS[version](conn)
+            version += 1
+            conn.execute(f'PRAGMA user_version={version}')
+            conn.commit()
         conn.executescript(SCHEMA)
         conn.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
         conn.commit()

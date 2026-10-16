@@ -383,6 +383,7 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | X2 | V8-B 상주 helper 병렬 (`rt30/engine_v3.py`, `attack_helper.py`) | **구현**: 컨테이너 V8-B 6/6 (§9.8) → SER5 v3_check/v3_dev/v3_a1/v3_a3 |
 | A3-v3 | SER5 gate + E3-A 100판 (`ed3d8cf`) | **PASS**: −0.01, CI95 [−0.025, 0.0] (§9.10). `rt30_no_deadline` 1건은 기준 기록의 환경 차이(`76cce57`) |
 | A4 | TB-RT30-v3 동결 (`tb_rt30_v3.py` `STATUS='frozen'`, `tests/frozen_tb_rt30_v3.sha256`) | **완료** (§9.10) |
+| B1/B2 | 멀티 세션 + AI job queue + polling (`src/webplay/`, `run_web_play.py`, `web/index.html`, DB v2) | **구현** (§8.1). 엔진은 아직 v1; v3 연결은 search slot 구조로 따로 |
 | X1-B | 금수 판정 가속 | 필요할 때만: A3-v3가 시간 부족으로 HARM일 때 v4 후보 (§9.9) |
 | W | 웹 B1/B2(멀티 세션, AI job queue, search slot) | **v3·native의 production 연결보다 먼저** (§8, §9.9) |
 | V3-web | v3를 웹 search slot(main + V8-B helper 형제 프로세스)으로 연결 | W 완료 + v3 동결 뒤 (§9.9) |
@@ -645,6 +646,35 @@ sqlite3 data/renju_web.db ".backup data/backup/renju_web_$(date +%F).db"
 
 **구현 순서:** SessionManager와 API 세션 분리 → AIJobQueue와 dispatcher(탐색은 lock 밖, epoch 확인) → `/api/state` polling 필드 →
 UI(생각 중·대기 표시, 보드 잠금) → DB v2(`session_id` hash) → 테스트 → B3 부하 측정.
+
+### 8.1 B1/B2 구현 (2026-10-16)
+
+§8의 설계를 그대로 구현했다. 엔진은 아직 TB-RT30-v1이다(v3 연결은 §9.9의 search slot 구조로 따로 한다).
+
+| 항목 | 구현 |
+|---|---|
+| 세션 | `webplay.sessions.SessionManager`: 쿠키 `renju_sid` = `secrets.token_urlsafe(32)`, `HttpOnly; SameSite=Lax; Path=/`, HTTPS면 `Secure`(`--secure-cookie` 또는 `X-Forwarded-Proto: https`). 최대 `--max-sessions`(16), 쉬는 세션은 `--session-ttl`(3600초) 뒤 lazy 정리. AI가 대기·탐색 중인 세션은 정리하지 않는다. 정리된 대국은 DB `abandoned`. 모르는 쿠키는 새 세션을 받는다 |
+| 대기열 | `webplay.jobs.AIJobQueue`: 자리를 **먼저** 확보(`reserve`)하고 사람 수를 반영한다. 자리가 없으면 `QueueFull` → 503 + `Retry-After: 10`이고 판은 그대로다. `--max-queue`(4) |
+| 탐색 | search slot 스레드(`--ai-slots`, 기본 1)가 **세션 lock 없이**, 판의 **사본**(`Game` 재생)에서 탐색한다. 끝나면 lock을 잡고 `epoch`가 그대로일 때만 수를 반영한다. polling이 탐색에 막히지 않는다(테스트: 탐색 중 `state()` < 0.5초) |
+| deadline | slot이 job을 꺼낸 시각을 `supervisor.select(received_at=...)`로 넘긴다. **27.5초는 탐색 시작부터**다. DB `queue_seconds` = 사람 요청 → 탐색 시작(+ worker 대기), `wall_seconds` = 사람 요청 → AI 수 반영 |
+| 상태 | `/api/state`에 `status`(READY / QUEUED / THINKING / FINISHED), `queue_position`, `thinking_seconds`, `last_error`, `epoch` |
+| 충돌 | QUEUED·THINKING 중 move·undo는 409. 새 게임은 QUEUED면 job을 취소하고 진행, THINKING이면 409. 탐색 오류는 `last_error`에 담고 READY로 돌아간다(무르기·새 게임 가능) |
+| 요청 검증 | POST는 `Content-Type: application/json`만(아니면 415). 동시 접속이 차면 503 + `Retry-After: 60` |
+| slot과 게임 | 게임은 첫 탐색을 한 slot에 묶인다. 엔진 worker가 게임별 agent(난수 흐름)를 갖고 있기 때문이다. slot이 하나면 단순 FIFO다 |
+| worker agent 캐시 | `EngineSupervisor(agent_cache=)`. 웹은 `max(8, --max-sessions)`로 띄워, 세션 수만큼 게임의 난수 흐름이 유지된다 |
+| DB v2 | `games.session_hash`(세션 ID SHA-256 앞 16자, 원문은 저장하지 않음), 색인 `games_session`. v1 DB는 열 때 자동 migration(`ALTER TABLE`, `user_version` 1 → 2) |
+| UI | 202 응답 뒤 0.25초, 이후 1초마다 `/api/state`. "AI 대기 중 (n번째)" / "AI 생각 중 (x초)" 표시. 그동안 보드·무르기를 잠그고, THINKING이면 새 게임도 잠근다 |
+| `/api/health` | 세션 수, 정리된 세션 수, 대기열(`queued` / `reserved` / `running` / `slots` / `done` / `failed`) |
+
+- 동기 경로(`reset` / `play_human`)는 그대로 둔다. 로컬 도구와 기존 테스트가 쓴다.
+- 테스트는 `tests/test_webplay_sessions.py`(16개)다.
+  - 대기열: 자리 확보·반납, FIFO·취소·순번, slot affinity, 실패한 job.
+  - 세션: 생성·재사용·한도·TTL(탐색 중이면 유지), 쿠키 속성.
+  - 비동기 세션: 202 → 탐색 중 polling, 409, 사람 백·흑 첫 수, 대기 중 새 게임이 job 취소, 대기열 가득 시 판 불변, 탐색 오류, epoch 불일치 결과 버림, 세션 종료 시 abandoned + session_hash.
+  - HTTP: 두 브라우저 = 두 대국, 202/409/503/415, `Retry-After`, Set-Cookie 속성, DB에는 hash만 저장.
+- 컨테이너 확인: `--rt30 --rt30-uniform-prior`로 브라우저 둘이 동시에 두면, 한쪽이 QUEUED(1번째) → THINKING으로 넘어간다. DB `queue_seconds`에 앞 탐색을 기다린 시간이 남는다.
+  Chromium(Playwright)으로 UI를 확인했다: 대기·생각 표시, 무르기 잠금, AI 수 반영 후 해제.
+- 남은 것(§8 10번의 B3): HTTP 부하 클라이언트(세션 1/2/4개)로 `--ai-slots` 1/2를 SER5에서 잰다. 그 다음이 v3 연결(§9.9 search slot: main + V8-B helper 형제 프로세스)이다.
 
 ## 9. 엔진 확정: A1 cap 결정, A2 TB-RT30-v1 동결, A3 대국 gate (2026-10-15)
 

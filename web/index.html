@@ -137,7 +137,30 @@ function notation(move) {
 }
 let humanColor = "BLACK";
 let state = null;
-let busy = false;
+let busy = false;        // a request is in flight
+let pollTimer = null;    // polling /api/state while the AI is queued or thinking
+const POLL_MS = 1000;
+
+function aiPending() {
+  return !!state && (state.status === "QUEUED" || state.status === "THINKING");
+}
+
+function schedulePoll(delay = POLL_MS) {
+  if (pollTimer !== null) { clearTimeout(pollTimer); pollTimer = null; }
+  if (!aiPending()) return;
+  pollTimer = setTimeout(async () => {
+    pollTimer = null;
+    try {
+      const response = await fetch("/api/state", {cache: "no-store"});
+      const payload = await response.json();
+      if (response.ok) { state = payload; render(); }
+    } catch (error) {
+      errorBox.textContent = "서버 연결 확인 중...";
+    }
+    updateControls();
+    schedulePoll();
+  }, delay);
+}
 
 document.querySelectorAll(".color-btn").forEach(button => {
   button.addEventListener("click", () => {
@@ -168,13 +191,15 @@ async function request(path, body) {
   } finally {
     busy = false;
     updateControls();
+    schedulePoll(250);  // the first look soon: a free slot takes the job at once
   }
 }
 
 function updateControls() {
-  newButton.disabled = busy;
-  undoButton.disabled = busy;
-  canvas.style.cursor = busy ? "wait" : "pointer";
+  const thinking = !!state && state.status === "THINKING";
+  newButton.disabled = busy || thinking;   // a queued reply is cancelled by a new game; a running one is not
+  undoButton.disabled = busy || aiPending();
+  canvas.style.cursor = busy || aiPending() ? "wait" : "pointer";
 }
 
 function geometry() {
@@ -277,8 +302,16 @@ function render() {
     turnBox.textContent = "대국 종료";
   } else {
     resultBox.textContent = `${state.agent_name} 상대 / 나는 ${human}`;
-    turnBox.textContent = `현재 차례: ${turn}`;
+    if (state.status === "QUEUED") {
+      turnBox.textContent = state.queue_position
+        ? `AI 대기 중 (${state.queue_position}번째)` : "AI 대기 중";
+    } else if (state.status === "THINKING") {
+      turnBox.textContent = `AI 생각 중 (${state.thinking_seconds ?? 0}초)`;
+    } else {
+      turnBox.textContent = `현재 차례: ${turn}`;
+    }
   }
+  if (state.last_error) errorBox.textContent = state.last_error;
   const aiTime = state.last_ai_seconds == null ? "-" : state.last_ai_seconds.toFixed(3) + "초";
   infoBox.textContent = `수: ${state.move_count} · AI 최근 계산: ${aiTime} · seed ${state.seed}`;
   logInfoBox.textContent = state.log_saved
@@ -313,7 +346,7 @@ function renderS3() {
 }
 
 canvas.addEventListener("click", async event => {
-  if (busy || !state || state.done || state.to_play !== state.human_color) return;
+  if (busy || aiPending() || !state || state.done || state.to_play !== state.human_color) return;
   const rect = canvas.getBoundingClientRect();
   const scaleX = canvas.width / rect.width;
   const scaleY = canvas.height / rect.height;

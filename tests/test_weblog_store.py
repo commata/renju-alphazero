@@ -7,7 +7,7 @@ import unittest
 
 from renju import BLACK, WHITE
 from scripts.run_web_play import PlaySession
-from weblog.store import SCHEMA_VERSION, LogStore, SchemaVersionError, initialize, open_readonly
+from weblog.store import SCHEMA, SCHEMA_VERSION, LogStore, SchemaVersionError, initialize, open_readonly
 
 
 class _Tmp(unittest.TestCase):
@@ -50,6 +50,25 @@ class SchemaTest(_Tmp):
         conn.close()
         with self.assertRaises(SchemaVersionError):
             LogStore(self.db)
+
+    def test_version_1_database_is_migrated(self):
+        Path(self.db).parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(self.db)
+        conn.executescript(SCHEMA.replace('    raw_log_dir TEXT,\n    session_hash TEXT', '    raw_log_dir TEXT')
+                           .replace('CREATE INDEX IF NOT EXISTS games_session ON games (session_hash, started_at);', ''))
+        conn.execute("INSERT INTO games (game_id, started_at, agent_key, agent_name, human_color) "
+                     "VALUES ('old', 't', 'v7', 'MCTS-v7', 'BLACK')")
+        conn.execute('PRAGMA user_version=1')
+        conn.commit()
+        conn.close()
+        store = LogStore(self.db)
+        store.start_game(game_id='new', agent_key='v7', agent_name='MCTS-v7', human_color='WHITE', session_hash='abc')
+        store.close()
+        conn = sqlite3.connect(self.db)
+        self.assertEqual(conn.execute('PRAGMA user_version').fetchone()[0], SCHEMA_VERSION)
+        self.assertEqual(dict(conn.execute('SELECT game_id, session_hash FROM games').fetchall()),
+                         {'old': None, 'new': 'abc'})
+        conn.close()
 
     def test_readonly_connection_cannot_write(self):
         self.store().close()

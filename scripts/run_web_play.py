@@ -20,8 +20,11 @@ VCT2 check proved the move lost is saved at once under ``logs/web_play/veto_posi
 The frozen TB-Engine-v1 (E3-A, §12.36; same checkpoint) is the "tb1" opponent and is logged the same way.
 "Undo" takes back the last human move (and the AI reply) for relaying games from elsewhere.
 
+Every browser gets its own game (cookie session); AI replies go through a queue and the page
+polls ``/api/state`` (docs/web-ser5.md §8: ``--max-sessions``, ``--max-queue``, ``--ai-slots``).
+
 With ``--rt30`` the "rt30" opponent is TB-RT30 (docs/web-ser5.md): searched in a separate engine
-worker process under an absolute deadline counted from the request (27.5 s) with a 29 s watchdog;
+worker process under an absolute deadline counted from the search start (27.5 s) with a 29 s watchdog;
 it uses the H3 checkpoint of ``--policy-checkpoint``, or ``--rt30-uniform-prior`` when there is none
 (a test engine, not TB1).
 
@@ -118,30 +121,48 @@ def register_tb1(factory, info: dict[str, Any]) -> None:
     VERSION_LABELS[TB1_KEY] = f"{NAME} (동결)"
 
 
+_EXTRA_FACTORIES: dict[str, Any] = {}  # register_agent
+
+
+def register_agent(key: str, label: str, factory) -> None:
+    """Add an opponent ``key``; ``factory(seed)`` returns a fresh agent (tests, experiments)."""
+    _EXTRA_FACTORIES[key] = factory
+    VERSION_LABELS[key] = label
+
+
 class SupervisedAgent:
     """An opponent searched by ``rt30.supervisor.EngineSupervisor`` in a worker process.
 
-    ``select_move(game, received_at=...)`` returns the move; ``last`` keeps the full result
-    (times, source, watchdog), ``diagnostics`` the worker's diagnostics (a dict)."""
+    ``select_move(game, received_at=..., slot=...)`` returns the move; ``last`` keeps the full result
+    (times, source, watchdog), ``diagnostics`` the worker's diagnostics (a dict). ``supervisors`` has
+    one supervisor per AI search slot (``AIJobQueue`` keeps a game on the slot of its first search,
+    because the worker keeps the game's agent and its random stream)."""
 
-    def __init__(self, supervisor, name: str, seed: int):
+    def __init__(self, supervisors, name: str, seed: int):
         import uuid
 
-        self.supervisor, self.name, self.seed = supervisor, name, seed
+        self.supervisors = supervisors if isinstance(supervisors, (list, tuple)) else [supervisors]
+        self.name, self.seed = name, seed
         self.game_key = uuid.uuid4().hex  # one engine agent (random stream) per game in the worker
         self.diagnostics: dict[str, Any] = {}
         self.last = None
 
-    def select_move(self, game: Game, received_at: float | None = None) -> tuple[int, int]:
-        result = self.supervisor.select(game_key=self.game_key, seed=self.seed, history=list(game.history),
-                                        received_at=received_at)
+    @property
+    def supervisor(self):
+        return self.supervisors[0]
+
+    def select_move(self, game: Game, received_at: float | None = None, slot: int | None = None) -> tuple[int, int]:
+        supervisor = self.supervisors[(slot or 0) % len(self.supervisors)]
+        result = supervisor.select(game_key=self.game_key, seed=self.seed, history=list(game.history),
+                                   received_at=received_at)
         self.diagnostics, self.last = result.diagnostics, result
         return result.move
 
 
-def register_rt30(supervisor, label: str, info: dict[str, Any]) -> None:
-    """Add the "rt30" opponent, searched by ``supervisor``."""
-    _RT30.update(supervisor=supervisor, label=label, info=info)
+def register_rt30(supervisors, label: str, info: dict[str, Any]) -> None:
+    """Add the "rt30" opponent, searched by ``supervisors`` (one per AI search slot, or a single one)."""
+    supervisors = list(supervisors) if isinstance(supervisors, (list, tuple)) else [supervisors]
+    _RT30.update(supervisor=supervisors[0], supervisors=supervisors, label=label, info=info)
     VERSION_LABELS[RT30_KEY] = label
 
 
@@ -154,7 +175,9 @@ def create_agent(version: str, *, seed: int = 42):
     if version == TB1_KEY and _TB1_FACTORY is not None:
         return _TB1_FACTORY(seed)
     if version == RT30_KEY and _RT30:
-        return SupervisedAgent(_RT30["supervisor"], _RT30["info"]["engine"], seed)
+        return SupervisedAgent(_RT30["supervisors"], _RT30["info"]["engine"], seed)
+    if version in _EXTRA_FACTORIES:
+        return _EXTRA_FACTORIES[version](seed)
     if version == "v321":
         return MCTSV321Agent(seed=seed)
     if version == "v41":
@@ -364,15 +387,37 @@ def _alphazero_csv(diagnostics: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-class PlaySession:
-    """Single local-browser game session.
+class SessionBusy(Exception):
+    """The AI is queued or searching for this session (HTTP 409)."""
 
-    The server intentionally keeps one game in memory. This is a developer tool,
-    not a multi-user service.
+
+class PlaySession:
+    """One browser's game (``webplay.sessions.SessionManager`` keeps one per cookie, docs/web-ser5.md §8).
+
+    Two ways to get the AI's reply:
+
+    - synchronous (``reset`` / ``play_human``): the search runs in the caller, as the local tool and
+      the tests use it;
+    - queued (``new_game_async`` / ``play_human_async``): the human move is applied, an ``AIJob`` is
+      queued and the call returns at once (``status`` QUEUED). A search slot runs the job with no
+      session lock held, on a copy of the game, and applies the move only if the game is still the
+      one it searched (``epoch``); ``state()`` (polling) never waits for a search.
+
+    While a job is queued or running, move / undo are refused (``SessionBusy``); a new game cancels
+    a job that has not started and is refused while one is running.
     """
 
-    def __init__(self, *, log_root: Path | None = None, store=None):
+    def __init__(self, *, log_root: Path | None = None, store=None, session_hash: str | None = None):
         self.lock = Lock()
+        self.session_hash = session_hash
+        self.status = "READY"            # READY / QUEUED / THINKING (FINISHED is ``done``)
+        self.epoch = 0                    # bumped by every change a queued AI reply must not outlive
+        self.job = None                   # the AIJob of this session, while QUEUED / THINKING
+        self.jobs = None                  # the AIJobQueue of that job
+        self.slot: int | None = None      # search slot of this game (engine worker affinity)
+        self.last_error: str | None = None
+        self.thinking_since: float | None = None
+        self._last_diagnostics: dict[str, Any] = {}
         self.store = store  # weblog.store.LogStore or None
         self.db_game_id: str | None = None
         self._db_seqs: list[int] = []  # seq of each entry of move_records
@@ -402,45 +447,59 @@ class PlaySession:
         if human_color not in (BLACK, WHITE):
             raise ValueError("human_color는 BLACK 또는 WHITE여야 합니다.")
         with self.lock:
-            if (self.agent_key in TRACKED_KEYS and not self.saved_game
-                    and any(r["actor"] not in ("HUMAN", "OPENING_RULE") for r in self.move_records)):
-                self._save_completed_game_locked(unfinished=True)  # relayed games: keep the record
-            self._db_leave_locked()
-            self._received_at = received_at
-            self.game = Game()
-            self.agent_key = agent_key
-            self.agent = create_agent(agent_key, seed=seed)
-            self.human_color = human_color
-            self.seed = seed
-            self.last_ai_move = None
-            self.last_ai_seconds = None
-            self.message = "새 게임을 시작했습니다."
-            self.started_at = datetime.now().astimezone()
-            self.move_records = []
-            self.last_log_dir = None
-            self.saved_game = False
-            self.undo_count = 0
-            self.veto_files = []
-            self._db_start_locked()
-
-            # Project opening rule: BLACK always starts at board center.
-            opening_player = self.game.to_play
-            self.game.play(*OPENING_MOVE)
-            self._record_move_locked(
-                opening_player,
-                "OPENING_RULE",
-                OPENING_MOVE,
-                seconds=None,
-                diagnostics={},
-            )
-            self.message = "흑 중앙 첫 수가 자동 배치되었습니다."
-
+            if self.busy():
+                raise SessionBusy("AI가 생각 중입니다.")
+            self._new_game_locked(agent_key, human_color, seed, received_at)
             if not self.game.done and self.game.to_play != self.human_color:
                 self._play_ai_locked()
             return self._state_locked()
 
+    def _leave_game_locked(self) -> None:
+        """The current game is replaced or its session closed before it ended."""
+        if (self.agent_key in TRACKED_KEYS and not self.saved_game
+                and any(r["actor"] not in ("HUMAN", "OPENING_RULE") for r in self.move_records)):
+            self._save_completed_game_locked(unfinished=True)  # relayed games: keep the record
+        self._db_leave_locked()
+
+    def _new_game_locked(self, agent_key: str, human_color: int, seed: int, received_at: float | None) -> None:
+        self._leave_game_locked()
+        self.epoch += 1
+        self.slot = None
+        self.last_error = None
+        self._last_diagnostics = {}
+        self._received_at = received_at
+        self.game = Game()
+        self.agent_key = agent_key
+        self.agent = create_agent(agent_key, seed=seed)
+        self.human_color = human_color
+        self.seed = seed
+        self.last_ai_move = None
+        self.last_ai_seconds = None
+        self.message = "새 게임을 시작했습니다."
+        self.started_at = datetime.now().astimezone()
+        self.move_records = []
+        self.last_log_dir = None
+        self.saved_game = False
+        self.undo_count = 0
+        self.veto_files = []
+        self._db_start_locked()
+
+        # Project opening rule: BLACK always starts at board center.
+        opening_player = self.game.to_play
+        self.game.play(*OPENING_MOVE)
+        self._record_move_locked(
+            opening_player,
+            "OPENING_RULE",
+            OPENING_MOVE,
+            seconds=None,
+            diagnostics={},
+        )
+        self.message = "흑 중앙 첫 수가 자동 배치되었습니다."
+
     def play_human(self, row: int, col: int, *, received_at: float | None = None) -> dict[str, Any]:
         with self.lock:
+            if self.busy():
+                raise SessionBusy("AI가 생각 중입니다.")
             self._received_at = received_at
             if self.game.done:
                 raise IllegalMove("이미 종료된 대국입니다.")
@@ -459,6 +518,8 @@ class PlaySession:
     def undo(self) -> dict[str, Any]:
         """Take back moves until the last human move is gone (the AI reply first)."""
         with self.lock:
+            if self.busy():
+                raise SessionBusy("AI가 생각 중입니다.")
             if self.game.done:
                 raise IllegalMove("종료된 대국은 되돌릴 수 없습니다.")
             if not any(r["actor"] == "HUMAN" for r in self.move_records):
@@ -472,6 +533,8 @@ class PlaySession:
                 if record["actor"] == "HUMAN":
                     break
             self.undo_count += 1
+            self.epoch += 1
+            self.last_error = None
             if self.store is not None and self.db_game_id is not None:
                 self.store.mark_undone(self.db_game_id, undone)
             ai = [r for r in self.move_records if r["actor"] not in ("HUMAN", "OPENING_RULE")]
@@ -483,6 +546,150 @@ class PlaySession:
     def state(self) -> dict[str, Any]:
         with self.lock:
             return self._state_locked()
+
+    # -- queued AI replies (docs/web-ser5.md §8) ---------------------------------------
+    def busy(self) -> bool:
+        return self.status in ("QUEUED", "THINKING")
+
+    def new_game_async(self, *, agent_key: str, human_color: int, seed: int, jobs,
+                       received_at: float | None = None) -> dict[str, Any]:
+        """``reset`` with the AI's first reply (human white) queued on ``jobs``."""
+        if agent_key not in VERSION_LABELS:
+            raise ValueError("지원하지 않는 MCTS 버전입니다.")
+        if human_color not in (BLACK, WHITE):
+            raise ValueError("human_color는 BLACK 또는 WHITE여야 합니다.")
+        with self.lock:
+            if self.status == "THINKING":
+                raise SessionBusy("AI가 생각 중입니다. 끝난 뒤에 새 게임을 시작하세요.")
+            if self.status == "QUEUED":
+                if not self.jobs.cancel(self.job):  # a slot took it just now
+                    raise SessionBusy("AI가 생각 중입니다. 끝난 뒤에 새 게임을 시작하세요.")
+                self.job, self.status = None, "READY"
+            # After the centre opening it is white's turn: the AI replies first when the human is black.
+            ticket = jobs.reserve() if human_color == BLACK else None  # room first (503 changes nothing)
+            try:
+                self._new_game_locked(agent_key, human_color, seed, received_at)
+            except Exception:
+                if ticket is not None:
+                    jobs.release(ticket)
+                raise
+            if ticket is not None:
+                try:
+                    if not self.game.done and self.game.to_play != self.human_color:
+                        self._enqueue_locked(jobs, ticket, received_at)
+                finally:
+                    jobs.release(ticket)  # no-op once submitted
+            return self._state_locked()
+
+    def play_human_async(self, row: int, col: int, *, jobs, received_at: float | None = None) -> dict[str, Any]:
+        """``play_human`` with the AI's reply queued on ``jobs`` (raises ``QueueFull`` before any change)."""
+        with self.lock:
+            if self.busy():
+                raise SessionBusy("AI가 생각 중입니다.")
+            if self.game.done:
+                raise IllegalMove("이미 종료된 대국입니다.")
+            if self.game.to_play != self.human_color:
+                raise IllegalMove("현재는 AI 차례입니다.")
+            ticket = jobs.reserve()
+            player = self.game.to_play
+            try:
+                self.game.play(row, col)
+            except Exception:
+                jobs.release(ticket)
+                raise
+            try:
+                self._received_at = received_at
+                self.last_error = None
+                self._record_move_locked(player, "HUMAN", (row, col), seconds=None, diagnostics={})
+                self.message = f"사람 착수: ({row + 1}, {col + 1})"
+                if self.game.done:
+                    jobs.release(ticket)
+                    self._save_completed_game_locked()
+                else:
+                    self._enqueue_locked(jobs, ticket, received_at)
+            finally:
+                jobs.release(ticket)  # no-op once submitted or released: never leak a queue place
+            return self._state_locked()
+
+    def close(self) -> None:
+        """The session expired or the server stops: cancel a queued reply, mark the game left."""
+        with self.lock:
+            if self.status == "QUEUED" and self.jobs is not None and self.jobs.cancel(self.job):
+                self.job, self.status = None, "READY"
+            self.epoch += 1
+            if not self.saved_game and not self.game.done:
+                self._leave_game_locked()
+
+    def _enqueue_locked(self, jobs, ticket, received_at: float | None) -> None:
+        from webplay.jobs import AIJob
+
+        self.epoch += 1
+        snapshot = {"epoch": self.epoch, "history": list(self.game.history), "agent": self.agent,
+                    "player": self.game.to_play, "received_at": monotonic() if received_at is None else received_at}
+        job = AIJob(run=lambda slot: self._run_job(job, snapshot, slot), session=self, slot=self.slot)
+        self.job, self.jobs, self.status = job, jobs, "QUEUED"
+        self.message = "AI 차례: 대기 중입니다."
+        jobs.submit(ticket, job)
+
+    def _run_job(self, job, snapshot: dict[str, Any], slot: int) -> None:
+        """In a search slot: search with no lock held, then apply the reply if the game is unchanged."""
+        with self.lock:
+            if self.job is not job or self.epoch != snapshot["epoch"]:
+                self._drop_job_locked(job)  # cancelled or replaced while queued
+                return
+            self.status, self.slot = "THINKING", slot
+            self.thinking_since = started = monotonic()
+            self.message = "AI가 생각 중입니다."
+        agent, received = snapshot["agent"], snapshot["received_at"]
+        try:
+            game = Game()  # a private copy: searches place probe stones on their board
+            for move in snapshot["history"]:
+                game.play(*move)
+            supervised = isinstance(agent, SupervisedAgent)
+            t = perf_counter()
+            if supervised:
+                move = agent.select_move(game, received_at=started, slot=slot)  # deadline from the search start
+            else:
+                move = agent.select_move(game)
+            elapsed = perf_counter() - t
+            diagnostics = _diagnostics(agent)
+        except Exception as exc:  # noqa: BLE001 - reported to the browser, the session stays usable
+            with self.lock:
+                if self.job is job:
+                    self.job, self.status, self.thinking_since = None, "READY", None
+                    self.last_error = f"AI 탐색 오류: {type(exc).__name__}: {exc}"
+                    self.message = self.last_error
+            print(f"[web] AI search failed: {type(exc).__name__}: {exc}", flush=True)
+            return
+        with self.lock:
+            if self.job is not job or self.epoch != snapshot["epoch"]:
+                self._drop_job_locked(job)  # the game changed meanwhile: drop the reply
+                return
+            self.job, self.status, self.thinking_since = None, "READY", None
+            now = monotonic()
+            timing: dict[str, Any] = {"queue_seconds": started - received, "wall_seconds": now - received}
+            if supervised:
+                result = agent.last
+                timing.update(self._supervised_timing(result))
+                timing["queue_seconds"] = started - received + (result.queue_seconds or 0.0)
+                timing["wall_seconds"] = now - received
+                if result.engine_seconds is not None:
+                    elapsed = result.engine_seconds
+            self._apply_ai_locked(snapshot["player"], move, elapsed, diagnostics, timing)
+
+    def _drop_job_locked(self, job) -> None:
+        """A reply that will not be applied: the session must not stay QUEUED / THINKING for it."""
+        if self.job is job:
+            self.job, self.status, self.thinking_since = None, "READY", None
+
+    @staticmethod
+    def _supervised_timing(result) -> dict[str, Any]:
+        rt = {**result.rt, "source": result.source, "watchdog": result.watchdog,
+              "worker_restarted": result.worker_restarted, "best": result.best, "error": result.error}
+        return {"queue_seconds": result.queue_seconds, "wall_seconds": result.wall_seconds,
+                "deadline_seconds": result.deadline_seconds, "rt": rt,
+                "timed_out": bool(result.rt.get("timeouts") or result.rt.get("skipped")) or result.watchdog,
+                "emergency_used": result.source != "engine"}
 
     def _play_ai_locked(self) -> None:
         if self.game.done or self.game.to_play == self.human_color:
@@ -498,18 +705,17 @@ class PlaySession:
         elapsed = perf_counter() - started
         if supervised:
             result = self.agent.last
-            rt = {**result.rt, "source": result.source, "watchdog": result.watchdog,
-                  "worker_restarted": result.worker_restarted, "best": result.best, "error": result.error}
-            timing = {"queue_seconds": result.queue_seconds, "wall_seconds": result.wall_seconds,
-                      "deadline_seconds": result.deadline_seconds, "rt": rt,
-                      "timed_out": bool(result.rt.get("timeouts") or result.rt.get("skipped")) or result.watchdog,
-                      "emergency_used": result.source != "engine"}
+            timing = self._supervised_timing(result)
             if result.engine_seconds is not None:
                 elapsed = result.engine_seconds
         else:
             timing = {} if received is None else {"queue_seconds": monotonic() - received - elapsed,
                                                   "wall_seconds": monotonic() - received}
-        diagnostics = _diagnostics(self.agent)
+        self._apply_ai_locked(player, move, elapsed, _diagnostics(self.agent), timing)
+
+    def _apply_ai_locked(self, player: int, move, elapsed: float, diagnostics: dict[str, Any],
+                         timing: dict[str, Any]) -> None:
+        self._last_diagnostics = diagnostics
         if self.agent_key in TRACKED_KEYS:
             checked = diagnostics.get("v8_vct2_checked") or []
             if checked and checked[0][1] == "UNSAFE":
@@ -578,7 +784,7 @@ class PlaySession:
             human_color="BLACK" if self.human_color == BLACK else "WHITE", engine=info.get("engine"),
             engine_config_hash=info.get("engine_config_hash"), engine_commit=info.get("engine_commit"),
             git_dirty=info.get("git_dirty"), policy_checkpoint_sha256=info.get("policy_checkpoint_sha256"),
-            policy_metadata_sha256=info.get("policy_metadata_sha256"))
+            policy_metadata_sha256=info.get("policy_metadata_sha256"), session_hash=self.session_hash)
         self._db_seqs, self._db_next_seq, self._db_finished = [], 0, False
 
     def _db_leave_locked(self) -> None:
@@ -766,8 +972,15 @@ class PlaySession:
             "seed": self.seed,
             "last_ai_move": list(self.last_ai_move) if self.last_ai_move else None,
             "last_ai_seconds": self.last_ai_seconds,
-            "diagnostics": _diagnostics(self.agent),
+            "diagnostics": self._last_diagnostics,
             "message": self.message,
+            "status": "FINISHED" if self.game.done and not self.busy() else self.status,
+            "queue_position": (self.jobs.position(self.job)
+                               if self.status == "QUEUED" and self.jobs is not None else None),
+            "thinking_seconds": (round(monotonic() - self.thinking_since, 1)
+                                 if self.status == "THINKING" and self.thinking_since is not None else None),
+            "last_error": self.last_error,
+            "epoch": self.epoch,
             "log_saved": self.saved_game,
             "log_directory": (
                 _display_path(self.last_log_dir)
@@ -779,13 +992,33 @@ class PlaySession:
         }
 
 
-SESSION = PlaySession()
+class WebApp:
+    """Sessions and the AI job queue of one server (docs/web-ser5.md §8)."""
+
+    def __init__(self, *, store=None, log_root: Path | None = None, max_sessions: int = 16,
+                 session_ttl: float = 3600.0, max_queue: int = 4, ai_slots: int = 1, secure_cookie: bool = False):
+        from webplay.jobs import AIJobQueue
+        from webplay.sessions import SessionManager
+
+        self.store, self.secure_cookie = store, secure_cookie
+        self.sessions = SessionManager(
+            lambda digest: PlaySession(store=store, log_root=log_root, session_hash=digest),
+            max_sessions=max_sessions, ttl_seconds=session_ttl)
+        self.jobs = AIJobQueue(max_queue=max_queue, slots=ai_slots)
+
+    def close(self) -> None:
+        self.jobs.close()
+        self.sessions.close_all()
+
+
+APP: WebApp | None = None
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "RenjuLocal/1.0"
+    server_version = "RenjuWeb/2.0"
 
     def do_GET(self):
+        self._cookie = None
         if self.path in ("/", "/index.html"):
             try:
                 content = (WEB / "index.html").read_bytes()
@@ -798,43 +1031,76 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(content)
             return
-        if self.path == "/api/state":
-            self._send_json(SESSION.state())
-            return
-        if self.path == "/api/health":
-            store = SESSION.store
-            db = None if store is None else {"path": _display_path(store.path), "written": store.written,
-                                             "failures": store.failures, "last_error": store.last_error}
-            self._send_json({"ok": True, "db": db})
+        try:
+            if self.path == "/api/state":
+                self._send_json(self._session().state())
+                return
+            if self.path == "/api/health":
+                store = APP.store
+                db = None if store is None else {"path": _display_path(store.path), "written": store.written,
+                                                 "failures": store.failures, "last_error": store.last_error}
+                self._send_json({"ok": True, "db": db, "sessions": len(APP.sessions),
+                                 "sessions_expired": APP.sessions.expired, "ai": APP.jobs.stats()})
+                return
+        except Exception as exc:  # noqa: BLE001
+            self._error(exc)
             return
         self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
 
     def do_POST(self):
-        received_at = monotonic()  # wall time and the RT30 deadline of an AI move count from here
+        received_at = monotonic()  # wall time of an AI move counts from here (its deadline from the search start)
+        self._cookie = None
+        if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
+            self._send_json({"error": "Content-Type: application/json 요청만 받습니다."},
+                            HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+            return
         try:
             payload = self._read_json()
+            session = self._session()
             if self.path == "/api/new":
                 color = str(payload.get("human_color", "BLACK")).upper()
                 human_color = BLACK if color == "BLACK" else WHITE if color == "WHITE" else 0
-                state = SESSION.reset(
-                    agent_key=str(payload.get("agent", "v7")),
-                    human_color=human_color,
-                    seed=int(payload.get("seed", 42)),
-                    received_at=received_at,
-                )
-                self._send_json(state)
+                state = session.new_game_async(agent_key=str(payload.get("agent", "v7")), human_color=human_color,
+                                               seed=int(payload.get("seed", 42)), jobs=APP.jobs,
+                                               received_at=received_at)
+            elif self.path == "/api/undo":
+                state = session.undo()
+            elif self.path == "/api/move":
+                state = session.play_human_async(int(payload["row"]), int(payload["col"]), jobs=APP.jobs,
+                                                 received_at=received_at)
+            else:
+                self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
                 return
-            if self.path == "/api/undo":
-                self._send_json(SESSION.undo())
-                return
-            if self.path == "/api/move":
-                state = SESSION.play_human(int(payload["row"]), int(payload["col"]), received_at=received_at)
-                self._send_json(state)
-                return
-            self._send_json({"error": "not found"}, HTTPStatus.NOT_FOUND)
-        except (ValueError, KeyError, TypeError, IllegalMove) as exc:
+            waiting = state.get("status") in ("QUEUED", "THINKING")
+            self._send_json(state, HTTPStatus.ACCEPTED if waiting else HTTPStatus.OK)
+        except Exception as exc:  # noqa: BLE001
+            self._error(exc)
+
+    def _session(self) -> PlaySession:
+        from webplay.sessions import cookie_header, session_id_from_cookie
+
+        sid = session_id_from_cookie(self.headers.get("Cookie"))
+        new_id, session, created = APP.sessions.get_or_create(sid)
+        if created:
+            secure = APP.secure_cookie or self.headers.get("X-Forwarded-Proto", "").lower() == "https"
+            self._cookie = cookie_header(new_id, secure=secure)
+        return session
+
+    def _error(self, exc: Exception) -> None:
+        from webplay.jobs import QueueFull
+        from webplay.sessions import SessionLimit
+
+        if isinstance(exc, SessionBusy):
+            self._send_json({"error": str(exc)}, HTTPStatus.CONFLICT)
+        elif isinstance(exc, QueueFull):
+            self._send_json({"error": f"AI 대기열이 가득 찼습니다. 잠시 뒤에 다시 두세요. ({exc})"},
+                            HTTPStatus.SERVICE_UNAVAILABLE, retry_after=10)
+        elif isinstance(exc, SessionLimit):
+            self._send_json({"error": f"동시 접속이 가득 찼습니다. 잠시 뒤에 다시 접속하세요. ({exc})"},
+                            HTTPStatus.SERVICE_UNAVAILABLE, retry_after=60)
+        elif isinstance(exc, (ValueError, KeyError, TypeError, IllegalMove)):
             self._send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
-        except Exception as exc:  # local developer tool: show useful error text
+        else:
             self._send_json({"error": f"{type(exc).__name__}: {exc}"}, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def _read_json(self) -> dict[str, Any]:
@@ -845,16 +1111,22 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("JSON object가 필요합니다.")
         return value
 
-    def _send_json(self, value: Any, status: HTTPStatus = HTTPStatus.OK):
+    def _send_json(self, value: Any, status: HTTPStatus = HTTPStatus.OK, retry_after: int | None = None):
         raw = json.dumps(value, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Length", str(len(raw)))
+        if getattr(self, "_cookie", None):
+            self.send_header("Set-Cookie", self._cookie)
+        if retry_after is not None:
+            self.send_header("Retry-After", str(retry_after))
         self.end_headers()
         self.wfile.write(raw)
 
     def log_message(self, fmt: str, *args):
+        if "/api/state" in (args[0] if args else ""):
+            return  # polling: one line a second per browser would drown the log
         print(f"[web] {self.address_string()} - {fmt % args}")
 
 
@@ -878,14 +1150,20 @@ def main() -> None:
     parser.add_argument("--rt30-watchdog", type=float, help="override TB-RT30-v1's 29 s (experiments only)")
     parser.add_argument("--db", type=Path,
                         help="also log every game move by move to this SQLite file (e.g. data/renju_web.db)")
+    parser.add_argument("--max-sessions", type=int, default=16, help="browser sessions kept at once")
+    parser.add_argument("--session-ttl", type=float, default=3600.0, help="seconds an idle session is kept")
+    parser.add_argument("--max-queue", type=int, default=4, help="AI moves waiting for a search slot (then 503)")
+    parser.add_argument("--ai-slots", type=int, default=1,
+                        help="AI searches at once (one TB-RT30 engine worker per slot; measure before raising, B3)")
+    parser.add_argument("--secure-cookie", action="store_true",
+                        help="send the session cookie with Secure (behind HTTPS; X-Forwarded-Proto: https also does)")
     args = parser.parse_args()
-    global SESSION
+    global APP
     store = None
     if args.db is not None:
         from weblog.store import LogStore
 
         store = LogStore(args.db)
-        SESSION = PlaySession(store=store)
         print(f"SQLite game log: {_display_path(store.path)}")
     if args.policy_checkpoint.exists():
         from analysis.s3_vct2_v1 import check_checkpoint, make_agent
@@ -903,7 +1181,7 @@ def main() -> None:
         print("TB-Engine-v1 opponent: same checkpoint")
     else:
         print(f"S3-VCT2-v1 opponent off: {args.policy_checkpoint} not found")
-    supervisor = None
+    supervisors = []
     if args.rt30:
         from rt30 import tb_rt30_v1
         from rt30.supervisor import AgentSpec, EngineSupervisor
@@ -920,10 +1198,12 @@ def main() -> None:
         watchdog = args.rt30_watchdog or tb_rt30_v1.TB_RT30_V1["watchdog_seconds"]
         if (args.rt30_deadline, args.rt30_watchdog) != (None, None):
             engine += " (deadline override)"
-        print(f"{engine}: starting the engine worker ...", flush=True)
-        supervisor = EngineSupervisor(AgentSpec("rt30.supervisor:make_tb_rt30_v1_agent", kwargs),
-                                      engine_deadline=deadline, watchdog=watchdog)
-        register_rt30(supervisor, f"{engine} (실시간 {deadline:g}초)",
+        print(f"{engine}: starting {args.ai_slots} engine worker(s) ...", flush=True)
+        supervisors = [EngineSupervisor(AgentSpec("rt30.supervisor:make_tb_rt30_v1_agent", kwargs),
+                                        engine_deadline=deadline, watchdog=watchdog,
+                                        agent_cache=max(8, args.max_sessions))
+                       for _ in range(args.ai_slots)]
+        register_rt30(supervisors, f"{engine} (실시간 {deadline:g}초)",
                       {"engine": engine, "engine_config_hash": tb_rt30_v1.config_hash(),
                        "deadline_seconds": deadline, "watchdog_seconds": watchdog,
                        "freeze_evidence": tb_rt30_v1.FREEZE_EVIDENCE, **extra})
@@ -939,7 +1219,11 @@ def main() -> None:
             lambda: AlphaZeroAgent(probe.evaluator, probe.config, name=probe.name, info=probe.info),
             f"{probe.name} ({probe.config.num_simulations} sims)")
         print(f"AlphaZero opponent: {probe.name}, {probe.config.to_dict()}")
+    APP = WebApp(store=store, max_sessions=args.max_sessions, session_ttl=args.session_ttl,
+                 max_queue=args.max_queue, ai_slots=args.ai_slots, secure_cookie=args.secure_cookie)
     server = ThreadingHTTPServer((args.host, args.port), Handler)
+    print(f"sessions: up to {args.max_sessions} (idle {args.session_ttl:g} s), AI slots {args.ai_slots}, "
+          f"queue {args.max_queue}")
     print(f"Renju local web: http://{args.host}:{args.port}")
     print("종료: Ctrl+C")
     try:
@@ -948,7 +1232,8 @@ def main() -> None:
         print("\n서버를 종료합니다.")
     finally:
         server.server_close()
-        if supervisor is not None:
+        APP.close()  # cancels queued replies; games in progress are marked abandoned
+        for supervisor in supervisors:
             supervisor.close()
         if store is not None:
             store.close()  # a game in progress stays 'in_progress' in the database

@@ -45,7 +45,23 @@ V5 FINAL과 V6는 현재 코드의 `V5_FINAL` 설정을, V7은 동결된 `V7_FIN
 - V5/V6/V7은 최근 forced stage, simulation mode, V6 threat reason 등 일부 diagnostics를 화면에 표시
 - V7은 자기 VCF 발견(M1), 상대 VCF 안전 필터(M2) 제거/판정 보류 수, 흑 자기 금수 감점(M3), Stage 4 동률 규칙(M4), 모듈 시간도 표시
 
-이 서버는 단일 로컬 브라우저 세션용입니다. 다중 사용자/배포 서버 용도가 아닙니다.
+## 여러 브라우저 (B1, `docs/web-ser5.md` §8)
+
+- 브라우저마다 대국이 따로 있습니다. 쿠키 `renju_sid`(HttpOnly, SameSite=Lax)로 구분합니다.
+  DB와 로그에는 세션 ID 원문이 아니라 hash(`games.session_hash`)만 남습니다.
+- 사람이 두면 서버는 바로 `202`로 답하고, AI 수는 대기열에서 차례로 탐색합니다. 화면은 `/api/state`를 1초마다 확인하며
+  "AI 대기 중 (n번째)" / "AI 생각 중 (x초)"를 보여 줍니다. 그동안 보드와 무르기는 잠깁니다.
+- AI가 생각 중일 때 착수·무르기·새 게임은 `409`입니다. 대기 중일 때 새 게임을 누르면 대기 중인 AI 수를 취소합니다.
+- 대기열이 차면 `503`(`Retry-After`)이고, 사람 수는 반영되지 않습니다. 동시 접속 수가 차도 `503`입니다.
+- TB-RT30의 27.5초는 **탐색이 시작될 때부터** 셉니다. 대기열에서 기다린 시간은 탐색 시간을 줄이지 않습니다.
+- 오래 쓰지 않은 세션은 정리되고(기본 1시간), 그 대국은 DB에 `abandoned`로 남습니다. 서버를 다시 시작하면 세션은 사라집니다.
+
+```bash
+python scripts/run_web_play.py --max-sessions 16 --session-ttl 3600 --max-queue 4 --ai-slots 1
+```
+
+`--ai-slots`는 동시에 도는 AI 탐색 수입니다(TB-RT30은 slot마다 엔진 worker가 하나). B3 측정 전에는 1로 둡니다.
+POST는 `Content-Type: application/json`만 받습니다. 베타 동안에는 Nginx Basic Auth 뒤에 둡니다(HTTPS면 `--secure-cookie`).
 
 ## 경기 로그
 

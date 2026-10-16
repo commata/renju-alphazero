@@ -71,7 +71,7 @@ def _json_value(value):
     return str(value)
 
 
-def _worker_main(conn, spec: AgentSpec, src_paths: list[str]) -> None:  # pragma: no cover - runs in a child
+def _worker_main(conn, spec: AgentSpec, src_paths: list[str], agent_cache: int = 8) -> None:  # pragma: no cover - runs in a child
     os.environ.update(THREAD_ENV)  # before torch / numpy are imported in this process
     import sys
 
@@ -102,7 +102,7 @@ def _worker_main(conn, spec: AgentSpec, src_paths: list[str]) -> None:  # pragma
         try:
             agent = agents.get(game_key)
             if agent is None:
-                if len(agents) >= 8:
+                if len(agents) >= agent_cache:
                     agents.pop(next(iter(agents)))
                 agent = agents[game_key] = factory(seed=seed, **spec.kwargs)
             game = Game()
@@ -132,9 +132,9 @@ def _worker_main(conn, spec: AgentSpec, src_paths: list[str]) -> None:  # pragma
 
 
 class _Worker:
-    def __init__(self, ctx, spec: AgentSpec, src_paths: list[str]):
+    def __init__(self, ctx, spec: AgentSpec, src_paths: list[str], agent_cache: int = 8):
         self.conn, child = ctx.Pipe()
-        self.process = ctx.Process(target=_worker_main, args=(child, spec, src_paths), daemon=True,
+        self.process = ctx.Process(target=_worker_main, args=(child, spec, src_paths, agent_cache), daemon=True,
                                    name='rt30-engine-worker')
         self.process.start()
         child.close()
@@ -180,11 +180,12 @@ class _Worker:
 class EngineSupervisor:
     def __init__(self, spec: AgentSpec, *, engine_deadline: float = 27.5, watchdog: float = 29.0,
                  spare: bool = True, load_timeout: float = 120.0, src_paths: list[str] | None = None,
-                 fallback=None, log=print):
+                 fallback=None, log=print, agent_cache: int = 8):
         if not 0 < engine_deadline < watchdog:
             raise ValueError('need 0 < engine_deadline < watchdog')
         self.spec, self.engine_deadline, self.watchdog = spec, engine_deadline, watchdog
         self.spare_enabled, self.load_timeout, self.log = spare, load_timeout, log
+        self.agent_cache = agent_cache  # games whose agent (random stream) a worker keeps: >= the web sessions
         self.fallback = fallback or fallback_move
         here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../src
         self.src_paths = src_paths or [here]
@@ -194,7 +195,7 @@ class EngineSupervisor:
         self._request = 0
         self.restarts = 0
         self.watchdogs = 0
-        self._worker = _Worker(self._ctx, spec, self.src_paths)
+        self._worker = _Worker(self._ctx, spec, self.src_paths, self.agent_cache)
         self._spare: _Worker | None = None
         self._spare_starting = False
         self._closed = False
@@ -213,7 +214,7 @@ class EngineSupervisor:
             self._spare_starting = True
 
         def start():
-            spare = _Worker(self._ctx, self.spec, self.src_paths)
+            spare = _Worker(self._ctx, self.spec, self.src_paths, self.agent_cache)
             ready = spare.wait_ready(self.load_timeout)
             with self._spare_lock:
                 self._spare_starting = False
@@ -232,7 +233,7 @@ class EngineSupervisor:
         if spare is not None and spare.alive():
             self._worker = spare
         else:
-            self._worker = _Worker(self._ctx, self.spec, self.src_paths)  # cold start: waits on next request
+            self._worker = _Worker(self._ctx, self.spec, self.src_paths, self.agent_cache)  # cold start: waits on next request
         self.restarts += 1
         self._ensure_spare()
 
