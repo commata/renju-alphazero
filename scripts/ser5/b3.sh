@@ -2,14 +2,14 @@
 # B3: web load test of TB-RT30-v3 (docs/web-ser5.md §9.11). For --ai-slots 1 and 2, a test server on
 # port 8100 (its own database under runs/b3/) and simulated browsers (scripts/web_load_test.py,
 # v5 "humans") for 15 minutes each: slots 1 x sessions 1/2/4, slots 2 x sessions 2/4. About 1.5 h.
-# Stop the production server's games first (it would share the CPU); its port 8000 is not touched.
+# SLOTS=2 runs only the 2-slot rows (B3.1: B3=runs/b3_1 SLOTS=2). Stop the production server's games first (it would share the CPU); its port 8000 is not touched.
 source "$(dirname "$0")/common.sh"
 ensure_native
 B3=${B3:-runs/b3}
 MINUTES=${MINUTES:-15}
 PORT=${PORT:-8100}
 mkdir -p "$B3"
-for slots in 1 2; do
+for slots in ${SLOTS:-1 2}; do
     if [ "$slots" = 1 ]; then counts="1 2 4"; else counts="2 4"; fi
     todo=""
     for n in $counts; do [ -s "$B3/slots${slots}_n${n}.json" ] || todo="$todo $n"; done

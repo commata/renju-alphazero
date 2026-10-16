@@ -16,8 +16,8 @@ def cell(block, key):
 
 def main(paths) -> int:
     print('| run | sessions | AI moves | wait median / p95 / max (s) | server queue p95 | engine p95 / max | '
-          '>27.5 s | watchdog | emergency | helper failed | 503 | errors |')
-    print('|---|---|---|---|---|---|---|---|---|---|---|---|')
+          '>27.5 s | watchdog | emergency | helper failed | slot moved | 503 | errors |')
+    print('|---|---|---|---|---|---|---|---|---|---|---|---|---|')
     for path in sorted(paths):
         run = json.loads(Path(path).read_text(encoding='utf-8'))
         wait, server = run['client_wait_seconds'], run.get('server', {})
@@ -28,7 +28,7 @@ def main(paths) -> int:
               f"{cell(wait, 'median')} / {cell(wait, 'p95')} / {cell(wait, 'max')} | "
               f"{cell(server.get('queue_seconds'), 'p95')} | {cell(engine, 'p95')} / {cell(engine, 'max')} | {over} | "
               f"{server.get('watchdog_moves', '-')} | {server.get('emergency_moves', '-')} | "
-              f"{server.get('attack_helper_failed_moves', '-')} | {events['full_503']} | "
+              f"{server.get('attack_helper_failed_moves', '-')} | {server.get('slot_moved_moves', '-')} | {events['full_503']} | "
               f"{events['errors'] + events['ai_errors'] + len(run['failures'])} |")
     return 0
 

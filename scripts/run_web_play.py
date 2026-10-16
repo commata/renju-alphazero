@@ -672,6 +672,7 @@ class PlaySession:
             if supervised:
                 result = agent.last
                 timing.update(self._supervised_timing(result))
+                timing["rt"].update({"slot": slot, "slot_moved_from": job.moved_from})
                 timing["queue_seconds"] = started - received + (result.queue_seconds or 0.0)
                 timing["wall_seconds"] = now - received
                 if result.engine_seconds is not None:
@@ -998,7 +999,8 @@ class WebApp:
     """Sessions and the AI job queue of one server (docs/web-ser5.md §8)."""
 
     def __init__(self, *, store=None, log_root: Path | None = None, max_sessions: int = 16,
-                 session_ttl: float = 3600.0, max_queue: int = 4, ai_slots: int = 1, secure_cookie: bool = False):
+                 session_ttl: float = 3600.0, max_queue: int = 4, ai_slots: int = 1, secure_cookie: bool = False,
+                 slot_spill: float = 2.0):
         from webplay.jobs import AIJobQueue
         from webplay.sessions import SessionManager
 
@@ -1006,7 +1008,7 @@ class WebApp:
         self.sessions = SessionManager(
             lambda digest: PlaySession(store=store, log_root=log_root, session_hash=digest),
             max_sessions=max_sessions, ttl_seconds=session_ttl)
-        self.jobs = AIJobQueue(max_queue=max_queue, slots=ai_slots)
+        self.jobs = AIJobQueue(max_queue=max_queue, slots=ai_slots, spill_after=slot_spill)
 
     def close(self) -> None:
         self.jobs.close()
@@ -1159,6 +1161,8 @@ def main() -> None:
     parser.add_argument("--max-queue", type=int, default=4, help="AI moves waiting for a search slot (then 503)")
     parser.add_argument("--ai-slots", type=int, default=1,
                         help="AI searches at once (one TB-RT30 engine worker per slot; measure before raising, B3)")
+    parser.add_argument("--slot-spill", type=float, default=2.0,
+                        help="seconds a game's reply waits for its busy slot before an idle slot takes it")
     parser.add_argument("--secure-cookie", action="store_true",
                         help="send the session cookie with Secure (behind HTTPS; X-Forwarded-Proto: https also does)")
     args = parser.parse_args()
@@ -1243,11 +1247,18 @@ def main() -> None:
             f"{probe.name} ({probe.config.num_simulations} sims)")
         print(f"AlphaZero opponent: {probe.name}, {probe.config.to_dict()}")
     APP = WebApp(store=store, max_sessions=args.max_sessions, session_ttl=args.session_ttl,
-                 max_queue=args.max_queue, ai_slots=args.ai_slots, secure_cookie=args.secure_cookie)
+                 max_queue=args.max_queue, ai_slots=args.ai_slots, secure_cookie=args.secure_cookie,
+                 slot_spill=args.slot_spill)
     print(f"sessions: up to {args.max_sessions} (idle {args.session_ttl:g} s), AI slots {args.ai_slots}, "
           f"queue {args.max_queue}")
     print(f"Renju local web: http://{args.host}:{args.port}")
     print("종료: Ctrl+C")
+    import signal
+
+    def stop(signum, frame):  # systemd / kill: the same clean stop as Ctrl+C (games marked, workers closed)
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, stop)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

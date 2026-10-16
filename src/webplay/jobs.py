@@ -9,9 +9,13 @@ not when the move arrived: waiting in the queue never shortens the search.
   ``QueueFull`` (HTTP 503) when there is none, so a refused request leaves the game as it was.
   The place is then filled with ``submit(ticket, job)`` or given back with ``release(ticket)``.
 - **One per session.** The session refuses a second request while it has a job (HTTP 409).
-- **Slot affinity.** A job may name a ``slot`` (the slot that searched the game's earlier moves:
-  an engine worker keeps one agent, and its random stream, per game). A slot takes the oldest job
-  that names it or no slot; with one slot (the default) this is plain FIFO.
+- **Slot affinity, with spill-over.** A job may name a ``slot`` (the slot that searched the game's
+  earlier moves: an engine worker keeps one agent, and its random stream, per game). A slot takes
+  the oldest job that names it or no slot. Two games can end up on one slot while another is idle
+  (B3: one browser then waits a whole search for nothing), so a job whose slot is busy is taken by
+  an idle slot once it has waited ``spill_after`` seconds; the game then stays on its new slot
+  (``moved_from`` records the move; the new worker starts that game's agent anew). With one slot
+  (the default) this is plain FIFO.
 - **Cancel.** ``cancel(job)`` removes a job that no slot has taken yet (a new game while queued).
 """
 from __future__ import annotations
@@ -35,6 +39,7 @@ class AIJob:
     slot: int | None = None
     created_at: float = field(default_factory=monotonic)
     started_at: float | None = None
+    moved_from: int | None = None   # the pinned slot was busy: an idle slot took the job
 
 
 class _Ticket:
@@ -45,10 +50,11 @@ class _Ticket:
 
 
 class AIJobQueue:
-    def __init__(self, *, max_queue: int = 4, slots: int = 1, log=print):
-        if max_queue < 1 or slots < 1:
-            raise ValueError('need max_queue >= 1 and slots >= 1')
-        self.max_queue, self.slots, self.log = max_queue, slots, log
+    def __init__(self, *, max_queue: int = 4, slots: int = 1, spill_after: float = 2.0, log=print):
+        if max_queue < 1 or slots < 1 or spill_after < 0:
+            raise ValueError('need max_queue >= 1, slots >= 1 and spill_after >= 0')
+        self.max_queue, self.slots, self.spill_after, self.log = max_queue, slots, spill_after, log
+        self.moved = 0
         self._cond = threading.Condition()
         self._jobs: deque[AIJob] = deque()
         self._reserved = 0
@@ -107,7 +113,8 @@ class AIJobQueue:
     def stats(self) -> dict:
         with self._cond:
             return {'queued': len(self._jobs), 'reserved': self._reserved, 'running': len(self._running),
-                    'slots': self.slots, 'max_queue': self.max_queue, 'done': self.done, 'failed': self.failed}
+                    'slots': self.slots, 'max_queue': self.max_queue, 'done': self.done, 'failed': self.failed,
+                    'moved': self.moved}
 
     def close(self, timeout: float = 5.0) -> None:
         with self._cond:
@@ -123,14 +130,24 @@ class AIJobQueue:
             while True:
                 if self._closed:
                     return None
+                now = monotonic()
+                spill_at = None  # when the oldest job pinned to a busy slot may move here
                 for job in self._jobs:
-                    if job.slot is None or job.slot == slot:
+                    mine = job.slot is None or job.slot == slot
+                    if not mine and job.slot in self._running:
+                        if now - job.created_at >= self.spill_after:
+                            job.moved_from = job.slot
+                            self.moved += 1
+                            mine = True
+                        elif spill_at is None:
+                            spill_at = job.created_at + self.spill_after
+                    if mine:
                         self._jobs.remove(job)
                         job.slot = slot
-                        job.started_at = monotonic()
+                        job.started_at = now
                         self._running[slot] = job
                         return job
-                self._cond.wait()
+                self._cond.wait(None if spill_at is None else max(0.01, spill_at - now))
 
     def _loop(self, slot: int) -> None:
         while True:

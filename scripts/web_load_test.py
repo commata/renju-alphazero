@@ -173,6 +173,7 @@ def server_side(db: Path, hashes: list[str], deadline: float) -> dict:
         'watchdog_moves': sum(bool(rt.get('watchdog')) for rt in rts),
         'attack_parallel_moves': sum(bool(rt.get('attack_parallel')) for rt in rts),
         'attack_helper_failed_moves': sum(bool(rt.get('attack_helper_failed')) for rt in rts),
+        'slot_moved_moves': sum(rt.get('slot_moved_from') is not None for rt in rts),
     }
 
 

@@ -102,6 +102,28 @@ class JobQueueTest(unittest.TestCase):
         self.assertTrue(wait_for(lambda: jobs.stats()['failed'] == 1))
 
 
+    def test_a_job_pinned_to_a_busy_slot_moves_to_an_idle_one(self):
+        jobs = self.queue(max_queue=4, slots=2, spill_after=0.2)
+        hold, ran = threading.Event(), {}
+        jobs.submit(jobs.reserve(), AIJob(run=lambda slot: hold.wait(5), slot=0))  # slot 0 busy
+        self.assertTrue(wait_for(lambda: jobs.stats()['running'] == 1))
+        pinned = AIJob(run=lambda slot: ran.setdefault('slot', slot), slot=0)
+        jobs.submit(jobs.reserve(), pinned)
+        sleep(0.1)
+        self.assertEqual(ran, {})                     # still waiting for its own slot
+        self.assertTrue(wait_for(lambda: ran.get('slot') == 1, timeout=3))
+        self.assertEqual((pinned.moved_from, jobs.stats()['moved']), (0, 1))
+        hold.set()
+
+    def test_a_pinned_job_waits_for_its_free_slot(self):
+        jobs = self.queue(max_queue=4, slots=2, spill_after=0.0)
+        ran = {}
+        jobs.submit(jobs.reserve(), AIJob(run=lambda slot: ran.setdefault('slot', slot), slot=1))
+        self.assertTrue(wait_for(lambda: 'slot' in ran))
+        self.assertEqual(ran['slot'], 1)              # its slot was idle: no move
+        self.assertEqual(jobs.stats()['moved'], 0)
+
+
 class SessionManagerTest(unittest.TestCase):
     class Session:
         def __init__(self, digest):
