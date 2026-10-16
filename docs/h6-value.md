@@ -354,6 +354,7 @@ provenance:
 3. **`--prove-losses-last-n`의 N을 train 표본 pilot으로 정한다.**
    - `--splits train --sample-every 50 --prove-losses`(모든 ply). 결과에 따라 고르지 않는 해시 표본, 약 1,900판이다.
    - 보고서의 `proof_by_distance_to_end.vcf_loss`에서 **`vcf_loss`의 95% 이상을 포함하는 가장 작은 N**을 고른다.
+   - **결과: N = 12** (2026-10-17, 아래 "3단계 pilot 결과").
    - N을 정할 때 val·test와 모델은 보지 않는다.
 4. **v3 라벨과 캐시를 만든다.** v2 설정에 `--prove-losses --prove-losses-last-n N`만 더한다(N = 4 probe 정책 그대로).
 5. **H6-2a′를 학습한다.**
@@ -463,6 +464,57 @@ cd src && ../.venv-ser5/bin/python -m rt30.native.build --if-stale && cd ..
   - 기계 비교는 배수가 아니라 같은 표본의 **절대 국면/초**로 한다.
   - pilot의 N이 정해지면 `--prove-losses-last-n N`을 붙여 다시 잰다. 그 국면/초로 v3 전체 시간을 다시 계산한다.
 - v3 생성: 위에서 고른 기계·모드로 기존 명령에 `--fast fast2` 또는 `--fast fast3`만 더한다.
+
+**3단계 pilot 결과 (2026-10-17, `docs/h6/h6_pilot_prove_losses.json`, 실행 코드 `fa4de82`, 결과 커밋 `ed5a2a8`): N = 12**
+
+- 표본 구성:
+  - 입력 108,011판 중 train·표본·probe 제외를 거쳐 1,961판, 64,353국면을 검사했다.
+  - `prove_losses_last_n = 0`이므로 표본 대국의 대상 ply를 모두 검사했다.
+  - 손실 증명 예산은 VCF 호출당 20,000 노드, 국면당 100,000 노드, 5,000 호출이다.
+- 라벨:
+  - 64,353행 중 54,757행이 value label을 가진다. 부호는 +1 27,897 · −1 26,860이다.
+  - proof는 `vcf_loss` 587, `vcf` 1,835, `unstoppable_four` 512, `immediate_win` 409, `forced_loss` 321개다.
+  - budget cut은 988국면이다(전체 국면의 1.54%).
+- `vcf_loss`의 종료까지 거리(`scripts/h6_last_n.py`로 계산):
+
+| N | 2 | 4 | 6 | 8 | 10 | **12** | 14 | 16 |
+|---|---|---|---|---|---|---|---|---|
+| N 이내 | 150 | 298 | 446 | 516 | 547 | **560** | 574 | 580 |
+| 비율 | 25.6% | 50.8% | 76.0% | 87.9% | 93.2% | **95.4%** | 97.8% | 98.8% |
+
+- **사전 규칙("관측 `vcf_loss`의 95% 이상을 포함하는 가장 작은 N")에 따라 N = 12로 정한다.**
+  `vcf_loss`는 종국에 강하게 몰려 있다. 따라서 모든 ply에 prove-losses를 돌릴 필요가 없다는 가설이 지지된다.
+- **budget cut은 N 결정을 바꾸지 않는다.**
+  - 규칙이 세는 것은 "100k 예산의 builder가 만드는 `vcf_loss` 라벨" 가운데 마지막 N수가 남기는 몫이다.
+  - v3도 같은 예산을 쓴다. cut 국면은 모든 ply를 돌려도, 마지막 N수만 돌려도 라벨이 없다. 그래서 N 밖의 cut이 사실은 패배였더라도, last-N이 v3에서 잃는 라벨 비율은 그대로다.
+  - cut이 답하는 질문은 따로 있다. **"예산 때문에 깊고 먼 패배가 학습 데이터에서 체계적으로 빠지는가"**이다. 이는 라벨 범위(coverage) 문제이고 N과는 무관하다.
+  - 더 높은 예산(300k, 1M)의 tail 감사로 N을 다시 고르면, v3 builder가 만들지도 않을 라벨에 N을 맞추는 셈이다. 그래서 감사는 N의 gate가 아니라 H6-3에서 −1 쪽을 해석할 때 쓰는 진단으로 둔다.
+- **N = 12의 진짜 불확실성은 표본 크기다.**
+  - 587개에서 95.4%다. 이항 표준오차가 약 0.9%p이고, 대국 단위로 묶여 있어 실제로는 더 크다. 그래서 여유 0.4%p는 표본 잡음 안에 있다.
+  - N = 14(97.8%)로 올리면 대국당 prove-losses 국면이 2개 늘어난다. 얻는 라벨은 `vcf_loss`의 약 2.4%다.
+  - 규칙은 결과를 보기 전에 정했으므로 그대로 12를 쓴다. 이 단서만 기록한다.
+- 참고: 이 보고서에는 cut의 종료 거리가 없었다. 지금 builder는 다음을 남긴다.
+  - 보고서: `prove_losses_budget_cuts_by_distance_to_end`
+  - row 파일 옆: `<output>.budget_cuts.jsonl` manifest(game_id, ply, distance_to_end). RenjuNet 파생이므로 `data/`·`runs/`에만 둔다.
+  - 각 증명 row의 `solver_budget`: `prove_losses` 예산과 `prove_losses_last_n`. 라벨 의미는 바뀌지 않는다.
+
+**다음 순서**
+
+1. 실제 RenjuNet 표본 속도 측정(위 `check_h6_fast.py`, Desktop off·fast2 / SER5 off·fast2·fast3). 실행 기계와 모드를 고른다.
+2. **같은 pilot을 fast로 재실행해 대조한다.** 실패한 실행의 재실행이 아니라, 64k 국면 규모의 정확성 검사다. cut 거리도 함께 얻는다.
+   `--expect`가 공통 summary 키(587 / 988 / 거리 분포 포함)와 설정이 모두 같다고(SAME) 해야 v3로 간다.
+
+```powershell
+python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --splits train --sample-every 50 --prove-losses `
+  --probe-game-min-ply 4 --fast fast2 --output data\tactical\h6\pilot_prove_losses_fast.jsonl.gz `
+  --report runs\h6\h6_pilot_prove_losses_fast.json 2>&1 | Tee-Object runs\h6\h6_pilot_fast.log
+python scripts\h6_last_n.py runs\h6\h6_pilot_prove_losses_fast.json --expect docs\h6\h6_pilot_prove_losses.json
+```
+
+   - 출력에는 N별 `cuts>N`과 최악의 경우 비율(N 밖 cut이 모두 패배일 때)도 나온다. 이 값은 기록만 한다(위 이유).
+3. N = 12로 last-N 속도를 잰다: `check_h6_fast.py --prove-losses-last-n 12 --modes <고른 모드>`. 이 값으로 v3 전체 시간을 계산한다.
+4. v3 라벨과 캐시를 만든다. v2 설정에 `--prove-losses --prove-losses-last-n 12 --fast <모드>`만 더한다.
+5. H6-2a′ 학습 → dev 비교 → 최종 gate(위 5–7단계).
 
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 

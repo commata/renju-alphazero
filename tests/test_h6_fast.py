@@ -117,6 +117,16 @@ class BuilderTest(unittest.TestCase):
         with mock.patch.dict(build_h6_labels.LOSS_BUDGET, node_budget=2_000):  # also some budget cuts
             out = {mode: self.build(mode) for mode in MODES}
         self.assertGreater(out['off'][1]['prove_losses_budget_cuts'], 0)
+        summary = out['off'][1]
+        cuts = summary['prove_losses_budget_cut_positions']
+        self.assertEqual(len(cuts), summary['prove_losses_budget_cuts'])
+        self.assertEqual(sum(summary['prove_losses_budget_cuts_by_distance_to_end'].values()), len(cuts))
+        self.assertTrue(all(c['distance_to_end'] <= 6 for c in cuts))  # prove_losses_last_n=6
+        labelled = {(r['game_id'], r['ply']) for r in out['off'][0] if r['label_kind'] == 'proof_vcf_loss'}
+        self.assertFalse(labelled & {(c['game_id'], c['ply']) for c in cuts})  # a cut never has a vcf_loss label
+        budgets = {json.dumps(r['solver_budget'], sort_keys=True) for r in out['off'][0] if r['solver_budget']}
+        self.assertEqual([json.loads(b)['prove_losses'] for b in budgets],  # the loss budget is on every proof row
+                         [{**build_h6_labels.LOSS_BUDGET, 'node_budget': 2_000}])
         self.assertIn('vcf_loss', out['off'][1]['proof_by_distance_to_end'])
         for mode in MODES:
             self.assertEqual(out[mode], out['off'], mode)
@@ -146,6 +156,48 @@ class BuilderTest(unittest.TestCase):
         with mock.patch.object(build_h6_labels, '_proofs_chunk', wrong):
             with self.assertRaisesRegex(RuntimeError, 'a worker ran'):
                 self.build('fast2')
+
+
+
+class CutReportTest(unittest.TestCase):
+    def test_main_writes_cut_manifest_and_report_counts_only(self):
+        import gzip
+        from tempfile import TemporaryDirectory
+
+        from scripts import build_h6_labels
+        from scripts.h6_last_n import choose_n, compare
+
+        with TemporaryDirectory() as tmp:
+            games = Path(tmp, 'games.jsonl')
+            games.write_text(''.join(json.dumps(g) + '\n' for g in engine_games(3)), encoding='utf-8')
+            output, report = Path(tmp, 'rows.jsonl.gz'), Path(tmp, 'report.json')
+            with mock.patch.dict(build_h6_labels.LOSS_BUDGET, node_budget=2_000):
+                build_h6_labels.main(['--games', str(games), '--splits', 'train', '--prove-losses',
+                                      '--prove-losses-last-n', '6', '--fast', MODES[-1], '--probe-files',
+                                      '--output', str(output), '--report', str(report)])
+            payload = json.loads(report.read_text(encoding='utf-8'))
+            cuts = [json.loads(line) for line in Path(tmp, 'rows.budget_cuts.jsonl').read_text().splitlines()]
+            with gzip.open(output, 'rt', encoding='utf-8') as handle:
+                self.assertTrue(handle.readline())
+        summary = payload['summary']
+        self.assertNotIn('prove_losses_budget_cut_positions', summary)  # game ids stay out of the report
+        self.assertNotIn('renjunet:', report.name + json.dumps(summary))
+        self.assertEqual(len(cuts), summary['prove_losses_budget_cuts'])
+        self.assertGreater(len(cuts), 0)
+        self.assertEqual(payload['acceleration']['requested'], MODES[-1])
+        self.assertEqual(compare(payload, payload), [])
+        self.assertEqual(choose_n(summary)['table'][-1]['cuts_beyond'], 0)
+
+    def test_choose_n_and_worst_case(self):
+        from scripts.h6_last_n import choose_n
+
+        summary = {'prove_losses_budget_cuts': 4, 'proof_by_distance_to_end': {'vcf_loss': {'2': 90, '6': 5, '14': 5}},
+                   'prove_losses_budget_cuts_by_distance_to_end': {'3': 1, '20': 2, '40+': 1}}
+        result = choose_n(summary)
+        self.assertEqual(result['n'], 6)  # 95 / 100
+        six = result['table'][5]
+        self.assertEqual((six['cuts_beyond'], round(six['worst_case_share'], 4)), (3, round(95 / 103, 4)))
+        self.assertEqual(result['table'][1]['share'], 0.9)
 
 
 if __name__ == '__main__':

@@ -67,14 +67,17 @@ def _proofs_task(task):
 
     moves, from_ply, prove_losses, vct1, last_n = task
     solver = ThreatSolver(node_limit=SOLVER_NODE_LIMIT)
-    out, stats = {}, {}
+    out, stats, cuts = {}, {}, []
     for ply in range(from_ply, len(moves)):
         losses = prove_losses and (not last_n or len(moves) - ply <= last_n)
+        before = stats.get('loss_budget_cuts', 0)
         label = proof_label(moves[:ply], solver, prove_losses=losses, vct1_budget=VCT1_BUDGET if vct1 else None,
                             loss_budget=LOSS_BUDGET, stats=stats)
         if label is not None:
             out[ply] = label
-    return out, stats.get('loss_budget_cuts', 0)
+        if stats.get('loss_budget_cuts', 0) > before:
+            cuts.append(ply)  # the all-moves VCF check ran out of budget: no vcf_loss label, never a guess
+    return out, cuts
 
 
 def _proofs_chunk(tasks):
@@ -162,14 +165,20 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
         raise RuntimeError(f'--fast {fast}: a worker ran {sorted(wrong)}, expected {expected}')
     parts = [part for _, part in parts]
     proofs = [proof for part in parts for proof, _ in part]
-    loss_budget_cuts = sum(cuts for part in parts for _, cuts in part)
+    cut_plies = [cuts for part in parts for _, cuts in part]
     started = perf_counter()
     solver_class = 'vcf' + ('+vct1' if vct1 else '')
-    budget = {'vcf_node_limit': SOLVER_NODE_LIMIT, **({'vct1': VCT1_BUDGET} if vct1 else {})}
+    budget = {'vcf_node_limit': SOLVER_NODE_LIMIT, **({'vct1': VCT1_BUDGET} if vct1 else {}),
+              **({'prove_losses': LOSS_BUDGET, 'prove_losses_last_n': prove_losses_last_n} if prove_losses else {})}
     provenance = {'git_commit': _git_commit(), 'engine_config_hash': None, 'model_hash': None}
     rows = []
-    by_distance = {}
-    for game, proof in zip(kept, proofs):
+    by_distance, cut_by_distance, cut_manifest = {}, {}, []
+    for game, proof, cuts in zip(kept, proofs, cut_plies):
+        for ply in cuts:  # where the budget censors vcf_loss (the N choice and its tail audit)
+            d = len(game['moves']) - ply
+            key = str(d) if d < 40 else '40+'
+            cut_by_distance[key] = cut_by_distance.get(key, 0) + 1
+            cut_manifest.append({'game_id': f"renjunet:{game['id']}", 'ply': ply, 'distance_to_end': d})
         for ply, label in proof.items():  # distance to the game end, for choosing --prove-losses-last-n
             d = len(game['moves']) - ply
             bucket = by_distance.setdefault(label['kind'], {})
@@ -198,9 +207,20 @@ def build(games: list[dict], *, splits, from_ply: int, outcome_weight: float, pr
     stage('cross-split mask + leakage check', started)
     return rows, {'games_in': len(games), 'games_kept': len(kept), 'dropped': dropped,
                   'cross_split_masked': cross, **report(rows),
-                  'prove_losses_budget_cuts': loss_budget_cuts, 'prove_losses_budget': LOSS_BUDGET if prove_losses else None,
-                  'proof_by_distance_to_end': {k: dict(sorted(v.items(), key=lambda x: (len(x[0]), x[0])))
-                                               for k, v in sorted(by_distance.items())}}
+                  'prove_losses_budget_cuts': len(cut_manifest), 'prove_losses_budget': LOSS_BUDGET if prove_losses else None,
+                  'prove_losses_budget_cuts_by_distance_to_end': _by_distance_key(cut_by_distance),
+                  'prove_losses_budget_cut_positions': cut_manifest,
+                  'proof_by_distance_to_end': {k: _by_distance_key(v) for k, v in sorted(by_distance.items())}}
+
+
+def _by_distance_key(counts: dict) -> dict:
+    return dict(sorted(counts.items(), key=lambda x: (len(x[0]), x[0])))
+
+
+def cut_manifest_path(output: Path) -> Path:
+    """``<output>.budget_cuts.jsonl`` (game_id, ply, distance_to_end of every --prove-losses budget cut)."""
+    name = output.name[:-len('.jsonl.gz')] if output.name.endswith('.jsonl.gz') else output.stem
+    return output.with_name(f'{name}.budget_cuts.jsonl')
 
 
 def in_sample(game_id, every: int) -> bool:
@@ -256,6 +276,14 @@ def main(argv=None) -> int:
         for row in rows:
             handle.write(json.dumps(row.to_dict(), separators=(',', ':')) + '\n')
     stage(f'write {len(rows):,} rows', started)
+    # game ids are RenjuNet-derived: the cut positions go next to the rows, the report keeps counts only
+    cut_positions = summary.pop('prove_losses_budget_cut_positions')
+    if args.prove_losses:
+        manifest = cut_manifest_path(args.output)
+        with manifest.open('w', encoding='utf-8') as handle:
+            for cut in cut_positions:
+                handle.write(json.dumps(cut, separators=(',', ':')) + '\n')
+        print(f'[cuts] {len(cut_positions):,} budget-cut positions -> {manifest}', flush=True)
     payload = {'format': 'h6-label-report-v1', 'row_format': ROW_FORMAT, 'git_commit': _git_commit(),
                'games': str(args.games), 'restricted': args.limit is not None or bool(args.sample_every),
                'settings': {k: getattr(args, k) for k in ('splits', 'from_ply', 'outcome_weight', 'proof_weight',
