@@ -1,0 +1,513 @@
+{
+ "format": "rt30-divergence-v1",
+ "engine": "v3",
+ "manifest": "a3v3-no-deadline-v1",
+ "speedups": "fast3",
+ "native_scan": true,
+ "deadline": 100000.0,
+ "workers": 1,
+ "uniform_prior": false,
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "cpu_count": 16
+ },
+ "summary": {
+  "cases": 1,
+  "recovered": 0,
+  "by_kind": {
+   "tree": {
+    "cases": 1,
+    "recovered": 0,
+    "a3_points": 0.0,
+    "points_if_recovered": 0
+   }
+  },
+  "result_changed": {
+   "cases": 0,
+   "recovered": 0,
+   "a3_points": 0,
+   "points_if_recovered": 0
+  },
+  "loss_making": {
+   "cases": 0,
+   "recovered": 0,
+   "a3_points": 0,
+   "points_if_recovered": 0
+  },
+  "gain_making": {
+   "cases": 0,
+   "recovered": 0,
+   "a3_points": 0,
+   "points_if_recovered": 0
+  },
+  "prefix_mismatch_cases": 0,
+  "tree_move_as_recorded": 0,
+  "seconds": {
+   "median": 1.5804,
+   "max": 1.5804,
+   "over_27.5s": 0
+  },
+  "phase_median": {
+   "attack:attack": null,
+   "root:root": null,
+   "control:root": null
+  },
+  "attack_parallel": 1,
+  "attack_win_early": 0
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8416/46/21",
+   "game": "8416/23/white",
+   "kind": "tree",
+   "result": "win>win",
+   "tb1_move": [
+    7,
+    9
+   ],
+   "tree_move_rec": null,
+   "move": [
+    4,
+    6
+   ],
+   "seconds": 1.5804,
+   "route": "tree",
+   "tree_move": [
+    4,
+    6
+   ],
+   "root_checked": [
+    [
+     [
+      4,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.024,
+    "vct": 0.0,
+    "tree": 1.2647,
+    "root": 0.1945,
+    "vct2": 0.0806
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0242,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "root_visits": [
+    [
+     [
+      3,
+      9
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      10,
+      5
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      4,
+      7
+     ],
+     10,
+     0.0
+    ],
+    [
+     [
+      4,
+      6
+     ],
+     15,
+     0.2
+    ],
+    [
+     [
+      9,
+      8
+     ],
+     3,
+     -0.333333
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      7,
+      9
+     ],
+     2,
+     0.0
+    ],
+    [
+     [
+      6,
+      5
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      8,
+      5
+     ],
+     6,
+     -0.333333
+    ],
+    [
+     [
+      5,
+      9
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      7,
+      10
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      9,
+      10
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      6,
+      4
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      9,
+      5
+     ],
+     2,
+     -1.0
+    ],
+    [
+     [
+      4,
+      9
+     ],
+     4,
+     -0.5
+    ],
+    [
+     [
+      5,
+      4
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      6,
+      10
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      10,
+      8
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "recovered": false,
+   "prefix_mismatches": [],
+   "trace": [
+    {
+     "ply": 3,
+     "move": [
+      7,
+      8
+     ],
+     "rng_before": "07bb9ec3f4ab06de",
+     "rng_after": "9c404f79d3ec4f3c",
+     "seconds": 1.3136,
+     "route": "tree",
+     "tree_move": [
+      7,
+      8
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0188,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 5,
+     "move": [
+      5,
+      6
+     ],
+     "rng_before": "9c404f79d3ec4f3c",
+     "rng_after": "94c96c0b4c39c6fd",
+     "seconds": 1.4478,
+     "route": "tree",
+     "tree_move": [
+      5,
+      6
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0249,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 7,
+     "move": [
+      5,
+      8
+     ],
+     "rng_before": "94c96c0b4c39c6fd",
+     "rng_after": "ecae0827ba94704a",
+     "seconds": 1.5328,
+     "route": "tree",
+     "tree_move": [
+      5,
+      8
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0304,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 9,
+     "move": [
+      5,
+      5
+     ],
+     "rng_before": "ecae0827ba94704a",
+     "rng_after": "ecae0827ba94704a",
+     "seconds": 0.4523,
+     "route": "stage4",
+     "tree_move": [
+      5,
+      5
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0347,
+     "attack_wait_seconds": 0.0001,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 11,
+     "move": [
+      6,
+      7
+     ],
+     "rng_before": "ecae0827ba94704a",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 21.7919,
+     "route": "tree",
+     "tree_move": [
+      4,
+      8
+     ],
+     "changed": true,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0283,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 13,
+     "move": [
+      8,
+      7
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 0.495,
+     "route": "stage4",
+     "tree_move": [
+      8,
+      7
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0244,
+     "attack_wait_seconds": 0.0001,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 15,
+     "move": [
+      9,
+      9
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 0.0003,
+     "route": "stage2",
+     "tree_move": [
+      9,
+      9
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": false,
+     "attack_helper_seconds": 0.0,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 17,
+     "move": [
+      7,
+      5
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 0.3301,
+     "route": "stage4",
+     "tree_move": [
+      7,
+      5
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0346,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 19,
+     "move": [
+      9,
+      6
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "5b23ab81c6d1a03a",
+     "seconds": 2.6443,
+     "route": "tree",
+     "tree_move": [
+      9,
+      6
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0266,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    },
+    {
+     "ply": 21,
+     "move": [
+      4,
+      6
+     ],
+     "rng_before": "5b23ab81c6d1a03a",
+     "rng_after": "62c60ce83fa5b77d",
+     "seconds": 1.5804,
+     "route": "tree",
+     "tree_move": [
+      4,
+      6
+     ],
+     "changed": false,
+     "timeouts": [],
+     "skipped": [],
+     "rescued": false,
+     "attack_parallel": true,
+     "attack_helper_seconds": 0.0242,
+     "attack_wait_seconds": 0.0,
+     "attack_win_early": false,
+     "attack_helper_failed": ""
+    }
+   ],
+   "prefix_seconds": 30.01,
+   "case_seconds": 31.59
+  }
+ ]
+}

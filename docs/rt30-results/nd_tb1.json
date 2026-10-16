@@ -1,0 +1,423 @@
+{
+ "format": "rt30-divergence-v1",
+ "engine": "tb1",
+ "manifest": "a3v3-no-deadline-v1",
+ "speedups": "fast3",
+ "native_scan": true,
+ "deadline": null,
+ "workers": 1,
+ "uniform_prior": false,
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "cpu_count": 16
+ },
+ "summary": {
+  "cases": 1,
+  "recovered": 0,
+  "by_kind": {
+   "tree": {
+    "cases": 1,
+    "recovered": 0,
+    "a3_points": 0.0,
+    "points_if_recovered": 0
+   }
+  },
+  "result_changed": {
+   "cases": 0,
+   "recovered": 0,
+   "a3_points": 0,
+   "points_if_recovered": 0
+  },
+  "loss_making": {
+   "cases": 0,
+   "recovered": 0,
+   "a3_points": 0,
+   "points_if_recovered": 0
+  },
+  "gain_making": {
+   "cases": 0,
+   "recovered": 0,
+   "a3_points": 0,
+   "points_if_recovered": 0
+  },
+  "prefix_mismatch_cases": 0,
+  "tree_move_as_recorded": 0,
+  "seconds": {
+   "median": 1.5997,
+   "max": 1.5997,
+   "over_27.5s": 0
+  },
+  "phase_median": {
+   "attack:attack": null,
+   "root:root": null,
+   "control:root": null
+  }
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8416/46/21",
+   "game": "8416/23/white",
+   "kind": "tree",
+   "result": "win>win",
+   "tb1_move": [
+    7,
+    9
+   ],
+   "tree_move_rec": null,
+   "move": [
+    4,
+    6
+   ],
+   "seconds": 1.5997,
+   "route": "tree",
+   "tree_move": [
+    4,
+    6
+   ],
+   "root_checked": [
+    [
+     [
+      4,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0246,
+    "vct": 0.0,
+    "tree": 1.2682,
+    "root": 0.1915,
+    "vct2": 0.0798
+   },
+   "root_visits": [
+    [
+     [
+      3,
+      9
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      10,
+      5
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      4,
+      7
+     ],
+     10,
+     0.0
+    ],
+    [
+     [
+      4,
+      6
+     ],
+     15,
+     0.2
+    ],
+    [
+     [
+      9,
+      8
+     ],
+     3,
+     -0.333333
+    ],
+    [
+     [
+      9,
+      7
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      7,
+      9
+     ],
+     2,
+     0.0
+    ],
+    [
+     [
+      6,
+      5
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      8,
+      5
+     ],
+     6,
+     -0.333333
+    ],
+    [
+     [
+      5,
+      9
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      7,
+      10
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      9,
+      10
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      8,
+      10
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      6,
+      4
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      9,
+      5
+     ],
+     2,
+     -1.0
+    ],
+    [
+     [
+      4,
+      9
+     ],
+     4,
+     -0.5
+    ],
+    [
+     [
+      5,
+      4
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      6,
+      10
+     ],
+     1,
+     -1.0
+    ],
+    [
+     [
+      10,
+      9
+     ],
+     0,
+     0.0
+    ],
+    [
+     [
+      10,
+      8
+     ],
+     1,
+     -1.0
+    ]
+   ],
+   "recovered": false,
+   "prefix_mismatches": [],
+   "trace": [
+    {
+     "ply": 3,
+     "move": [
+      7,
+      8
+     ],
+     "rng_before": "07bb9ec3f4ab06de",
+     "rng_after": "9c404f79d3ec4f3c",
+     "seconds": 1.3209,
+     "route": "tree",
+     "tree_move": [
+      7,
+      8
+     ],
+     "changed": false
+    },
+    {
+     "ply": 5,
+     "move": [
+      5,
+      6
+     ],
+     "rng_before": "9c404f79d3ec4f3c",
+     "rng_after": "94c96c0b4c39c6fd",
+     "seconds": 1.4631,
+     "route": "tree",
+     "tree_move": [
+      5,
+      6
+     ],
+     "changed": false
+    },
+    {
+     "ply": 7,
+     "move": [
+      5,
+      8
+     ],
+     "rng_before": "94c96c0b4c39c6fd",
+     "rng_after": "ecae0827ba94704a",
+     "seconds": 1.5472,
+     "route": "tree",
+     "tree_move": [
+      5,
+      8
+     ],
+     "changed": false
+    },
+    {
+     "ply": 9,
+     "move": [
+      5,
+      5
+     ],
+     "rng_before": "ecae0827ba94704a",
+     "rng_after": "ecae0827ba94704a",
+     "seconds": 0.4686,
+     "route": "stage4",
+     "tree_move": [
+      5,
+      5
+     ],
+     "changed": false
+    },
+    {
+     "ply": 11,
+     "move": [
+      6,
+      7
+     ],
+     "rng_before": "ecae0827ba94704a",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 20.8356,
+     "route": "tree",
+     "tree_move": [
+      4,
+      8
+     ],
+     "changed": true
+    },
+    {
+     "ply": 13,
+     "move": [
+      8,
+      7
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 0.4973,
+     "route": "stage4",
+     "tree_move": [
+      8,
+      7
+     ],
+     "changed": false
+    },
+    {
+     "ply": 15,
+     "move": [
+      9,
+      9
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 0.0002,
+     "route": "stage2",
+     "tree_move": [
+      9,
+      9
+     ],
+     "changed": false
+    },
+    {
+     "ply": 17,
+     "move": [
+      7,
+      5
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "f7c0aeba66c2efdb",
+     "seconds": 0.3496,
+     "route": "stage4",
+     "tree_move": [
+      7,
+      5
+     ],
+     "changed": false
+    },
+    {
+     "ply": 19,
+     "move": [
+      9,
+      6
+     ],
+     "rng_before": "f7c0aeba66c2efdb",
+     "rng_after": "5b23ab81c6d1a03a",
+     "seconds": 2.6662,
+     "route": "tree",
+     "tree_move": [
+      9,
+      6
+     ],
+     "changed": false
+    },
+    {
+     "ply": 21,
+     "move": [
+      4,
+      6
+     ],
+     "rng_before": "5b23ab81c6d1a03a",
+     "rng_after": "62c60ce83fa5b77d",
+     "seconds": 1.5997,
+     "route": "tree",
+     "tree_move": [
+      4,
+      6
+     ],
+     "changed": false
+    }
+   ],
+   "prefix_seconds": 29.15,
+   "case_seconds": 30.75
+  }
+ ]
+}
