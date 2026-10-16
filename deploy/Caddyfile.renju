@@ -16,6 +16,15 @@ ser5tack.duckdns.org {
 		renju <PASTE-HASH-HERE>
 	}
 
+	# The app at the site root (as below), or under a path next to other sites of this domain:
+	#     redir /renju /renju/
+	#     handle_path /renju/* {
+	#         reverse_proxy 127.0.0.1:8000 { ... }
+	#     }
+	#     handle {
+	#         reverse_proxy 127.0.0.1:8080        # the other site
+	#     }
+	# The page calls its API relative to itself, so both work (open it as /renju/, with the slash).
 	reverse_proxy 127.0.0.1:8000 {
 		# The page polls /api/state once a second; a search runs in the server, never in a request,
 		# so requests are short. A dead app answers 502 quickly instead of hanging.

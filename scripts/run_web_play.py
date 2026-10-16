@@ -1018,12 +1018,27 @@ class WebApp:
 APP: WebApp | None = None
 
 
+def _route(raw_path: str) -> str:
+    """The app's own path of a request: the query dropped, and any prefix a reverse proxy left in
+    front of it (Caddy ``handle /renju/*`` keeps it, ``handle_path`` strips it) ignored."""
+    from urllib.parse import urlsplit
+
+    path = urlsplit(raw_path).path or "/"
+    at = path.rfind("/api/")
+    if at > 0:
+        return path[at:]
+    if path.endswith("/") or path.endswith("/index.html"):
+        return "/"
+    return path
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "RenjuWeb/2.0"
 
     def do_GET(self):
         self._cookie = None
-        if self.path in ("/", "/index.html"):
+        self.path = _route(self.path)
+        if self.path == "/":
             try:
                 content = (WEB / "index.html").read_bytes()
             except OSError as exc:
@@ -1054,6 +1069,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         received_at = monotonic()  # wall time of an AI move counts from here (its deadline from the search start)
         self._cookie = None
+        self.path = _route(self.path)
         if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
             self._send_json({"error": "Content-Type: application/json 요청만 받습니다."},
                             HTTPStatus.UNSUPPORTED_MEDIA_TYPE)

@@ -87,6 +87,30 @@ deploy/check.sh --after
 
 `https://ser5tack.duckdns.org/`에 접속하면 브라우저가 아이디(`renju`)와 비밀번호를 묻는다. 그 뒤 대국 화면이 나와야 한다.
 
+**같은 도메인에 다른 사이트가 있을 때(경로로 나누기).** 예를 들어 `test-web`(Docker nginx, `127.0.0.1:8080`)이 루트를 쓰고 있다면, 렌주를 `/renju/` 아래에 둔다.
+
+```caddyfile
+ser5tack.duckdns.org {
+	encode zstd gzip
+	basic_auth /renju* {
+		renju <hash>
+	}
+	redir /renju /renju/
+	handle_path /renju/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+	handle {
+		reverse_proxy 127.0.0.1:8080
+	}
+}
+```
+
+- 페이지는 API를 자기 위치 기준 상대 경로로 부른다. 그래서 루트에서도, `/renju/` 아래에서도 동작한다.
+  - 앱은 `handle_path`(prefix 제거)도 `handle`(prefix 유지)도 받는다.
+  - 주소는 끝에 `/`를 붙여 `/renju/`로 연다. `redir`이 `/renju`를 `/renju/`로 보낸다.
+- `basic_auth /renju*`는 렌주 경로에만 로그인을 건다.
+- 점검: `BASE=/renju deploy/check.sh --after`.
+
 ### 4.2 Caddy가 Docker 컨테이너일 때
 
 컨테이너 안의 `127.0.0.1`은 이 서버가 아니다. 그래서 4.1의 `reverse_proxy 127.0.0.1:8000`이 닿지 않는다. 둘 중 하나로 한다.

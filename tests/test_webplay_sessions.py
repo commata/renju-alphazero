@@ -351,6 +351,19 @@ class HttpTest(_Gate):
         self.assertEqual((status, retry), (503, '60'))
         GateAgent.gate.set()
 
+    def test_works_under_a_proxy_path_prefix(self):
+        self.assertEqual(web._route('/renju/api/state?x=1'), '/api/state')   # Caddy "handle /renju/*"
+        self.assertEqual(web._route('/api/state'), '/api/state')             # "handle_path" or the root
+        self.assertEqual(web._route('/renju/'), '/')
+        sid = self.call('GET', '/renju/api/state')[2]
+        self.assertEqual(self.call('POST', '/renju/api/new', {'agent': 'v5', 'human_color': 'WHITE'}, cookie=sid)[0], 200)
+        self.assertEqual(self.call('GET', '/renju/api/state', cookie=sid)[1]['move_count'], 1)
+        conn = http.client.HTTPConnection('127.0.0.1', self.server.server_address[1], timeout=10)
+        conn.request('GET', '/renju/')
+        response = conn.getresponse()
+        self.assertEqual((response.status, b'api/state' in response.read()), (200, True))
+        conn.close()
+
     def test_only_json_posts(self):
         sid = self.call('GET', '/api/state')[2]
         status = self.call('POST', '/api/new', {'agent': 'v5'}, cookie=sid, content_type='text/plain')[0]

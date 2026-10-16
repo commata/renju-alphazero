@@ -5,6 +5,7 @@
 DOMAIN=${DOMAIN:-ser5tack.duckdns.org}
 PORT=${PORT:-8000}
 APP=${APP:-/home/deploy/renju-alphazero}
+BASE=${BASE:-}   # the app's path on the site: "" (root) or e.g. "/renju"
 after=0; [ "${1:-}" = "--after" ] && after=1
 ok() { printf '  [ok]   %s\n' "$*"; }
 warn() { printf '  [WARN] %s\n' "$*"; }
@@ -68,10 +69,12 @@ if [ "$after" = 1 ]; then
     systemctl is-active --quiet renju-web && ok "renju-web.service active" || warn "renju-web.service not active (journalctl -u renju-web -n 50)"
     health=$(curl -s --max-time 5 "http://127.0.0.1:$PORT/api/health")
     echo "$health" | grep -q '"ai"' && ok "local health: $health" || warn "local health failed: $health"
-    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "https://$DOMAIN/api/health")
+    url="https://$DOMAIN$BASE/api/health"
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$url")
     case "$code" in
-        200) ok "https://$DOMAIN/api/health -> 200" ;;
-        401) ok "https://$DOMAIN/api/health -> 401 (Basic Auth is on: expected)" ;;
-        *) warn "https://$DOMAIN/api/health -> $code" ;;
+        200) ok "$url -> 200" ;;
+        401) ok "$url -> 401 (Basic Auth is on: expected)" ;;
+        404) warn "$url -> 404: Caddy sends this path to another site (BASE=/renju deploy/check.sh --after if the app is under /renju)" ;;
+        *) warn "$url -> $code" ;;
     esac
 fi
