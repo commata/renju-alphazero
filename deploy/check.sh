@@ -51,7 +51,13 @@ else
 fi
 
 echo "== firewall =="
-$SUDO ufw status 2>/dev/null | sed 's/^/  [..]   /' || info "ufw status needs sudo"
+fw=$($SUDO ufw status 2>/dev/null)
+if [ -n "$fw" ]; then
+    echo "$fw" | sed 's/^/  [..]   /'
+    echo "$fw" | grep -qE '^8000(/tcp)? +ALLOW' && warn "UFW allows 8000 from anywhere: the app must only be reached through Caddy"
+else
+    info "ufw status needs sudo (sudo -v) or ufw is not installed"
+fi
 
 echo "== application =="
 [ -x "$APP/.venv-ser5/bin/python" ] && ok "venv $("$APP/.venv-ser5/bin/python" --version 2>&1)" || warn "no $APP/.venv-ser5"
