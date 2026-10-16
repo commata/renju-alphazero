@@ -1,0 +1,63 @@
+tb1: 34 cases (0 already done), workers=4, deadline=None
+[divergence-tb1] 4/34 cases  11.8%  1.0 min  ETA 8 min  8416/4/white attack recovered (4.2s, case 60s)
+[divergence-tb1] 7/34 cases  20.6%  2.1 min  ETA 8 min  8415/3/white root recovered (18.5s, case 52s)
+[divergence-tb1] 13/34 cases  38.2%  3.3 min  ETA 5 min  8415/12/white root recovered (13.9s, case 36s)
+[divergence-tb1] 16/34 cases  47.1%  5.0 min  ETA 6 min  8415/13/white root recovered (19.3s, case 51s)
+[divergence-tb1] 19/34 cases  55.9%  6.3 min  ETA 5 min  8415/8/white root recovered (20.8s, case 55s)
+[divergence-tb1] 23/34 cases  67.6%  8.2 min  ETA 4 min  11 cases running/pending
+[divergence-tb1] 28/34 cases  82.4%  9.5 min  ETA 2 min  8416/9/white root recovered (16.9s, case 145s)
+[divergence-tb1] 32/34 cases  94.1%  11.0 min  ETA 1 min  8416/2/white root recovered (21.4s, case 132s)
+[divergence-tb1] 33/34 cases  97.1%  12.0 min  ETA 0 min  1 cases running/pending
+[divergence-tb1] 33/34 cases  97.1%  13.0 min  ETA 0 min  1 cases running/pending
+[divergence-tb1] 33/34 cases  97.1%  14.0 min  ETA 0 min  1 cases running/pending
+[divergence-tb1] 33/34 cases  97.1%  15.0 min  ETA 0 min  1 cases running/pending
+[divergence-tb1] 33/34 cases  97.1%  16.0 min  ETA 0 min  1 cases running/pending
+[divergence-tb1] 34/34 cases  100.0%  16.3 min  ETA 0 min  8416/13/black root recovered (17.3s, case 410s)
+{
+ "cases": 34,
+ "recovered": 34,
+ "by_kind": {
+  "attack": {
+   "cases": 6,
+   "recovered": 6,
+   "a3_points": -2.5,
+   "points_if_recovered": 2.5
+  },
+  "root": {
+   "cases": 28,
+   "recovered": 28,
+   "a3_points": -3.5,
+   "points_if_recovered": 3.5
+  }
+ },
+ "result_changed": {
+  "cases": 13,
+  "recovered": 13,
+  "a3_points": -6.0,
+  "points_if_recovered": 6.0
+ },
+ "loss_making": {
+  "cases": 10,
+  "recovered": 10,
+  "a3_points": -7.5,
+  "points_if_recovered": 7.5
+ },
+ "gain_making": {
+  "cases": 3,
+  "recovered": 3,
+  "a3_points": 1.5,
+  "points_if_recovered": -1.5
+ },
+ "prefix_mismatch_cases": 0,
+ "tree_move_as_recorded": 28,
+ "seconds": {
+  "median": 16.1279,
+  "max": 30.7292,
+  "over_27.5s": 1
+ },
+ "phase_median": {
+  "attack:attack": 8.28,
+  "root:root": 13.73,
+  "control:root": null
+ }
+}

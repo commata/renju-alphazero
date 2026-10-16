@@ -1,0 +1,124 @@
+positions=60 arms=rt3 workers=1 engine=TB-Engine-v1
+[rt30-replay] 9/60 positions  15.0%  1.1 min  ETA 6 min  9/60 chunks
+[rt30-replay] 20/60 positions  33.3%  2.1 min  ETA 4 min  20/60 chunks
+[rt30-replay] 29/60 positions  48.3%  3.2 min  ETA 3 min  29/60 chunks
+[rt30-replay] 37/60 positions  61.7%  4.2 min  ETA 3 min  37/60 chunks
+[rt30-replay] 44/60 positions  73.3%  5.2 min  ETA 2 min  44/60 chunks
+[rt30-replay] 52/60 positions  86.7%  6.4 min  ETA 1 min  52/60 chunks
+[rt30-replay] 59/60 positions  98.3%  7.8 min  ETA 0 min  59/60 chunks
+[rt30-replay] 60/60 positions  100.0%  8.1 min  ETA 0 min  60/60 chunks
+{
+ "positions": 60,
+ "rt3": {
+  "seconds": {
+   "n": 60,
+   "median": 5.367,
+   "p95": 24.488,
+   "p99": 25.38,
+   "max": 25.38,
+   "sum": 484.8,
+   "over_27.5s": 0
+  },
+  "routes": {
+   "tree": 47,
+   "own_vct": 7,
+   "stage5": 1,
+   "stage4": 5
+  },
+  "phases": {
+   "attack": {
+    "n": 60,
+    "median": 0.104,
+    "p95": 11.867,
+    "p99": 12.535,
+    "max": 12.535,
+    "sum": 120.3,
+    "over_27.5s": 0
+   },
+   "stage_vct": {
+    "n": 6,
+    "median": 3.609,
+    "p95": 9.109,
+    "p99": 9.109,
+    "max": 9.109,
+    "sum": 29.1,
+    "over_27.5s": 0
+   },
+   "tree": {
+    "n": 47,
+    "median": 1.23,
+    "p95": 2.604,
+    "p99": 3.331,
+    "max": 3.331,
+    "sum": 75.2,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 47,
+    "median": 0.475,
+    "p95": 20.288,
+    "p99": 20.585,
+    "max": 20.585,
+    "sum": 201.3,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 46,
+    "median": 2.463,
+    "p95": 3.486,
+    "p99": 3.583,
+    "max": 3.583,
+    "sum": 97.6,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 53,
+    "median": 0.042,
+    "p95": 0.36,
+    "p99": 0.548,
+    "max": 0.548,
+    "sum": 5.0,
+    "over_27.5s": 0
+   },
+   "v7_only": {
+    "n": 13,
+    "median": 0.023,
+    "p95": 0.318,
+    "p99": 0.318,
+    "max": 0.318,
+    "sum": 0.8,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "rt_deadline": {
+  "timeouts": {
+   "attack": 0,
+   "stage_vct": 0,
+   "root": 3,
+   "vct2": 0
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0,
+   "vct2_root_rescue": 1
+  },
+  "root_rescued": 1,
+  "moves_with_timeout_or_skip": 4,
+  "attack_parallel": 60,
+  "attack_win_early": 1,
+  "attack_helper_failed": 0
+ },
+ "vs_baseline": {
+  "baseline": "docs/rt30-results/fast_h3_s60.json",
+  "baseline_arm": "fast",
+  "positions": 60,
+  "missing": 0,
+  "same_move": 60,
+  "changed_kinds": {},
+  "changed": [],
+  "lost_own_vct": [],
+  "lost_own_vct_other_move": 0,
+  "played_baseline_unsafe": []
+ }
+}

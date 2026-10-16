@@ -1,0 +1,64 @@
+v3: 34 cases (0 already done), workers=4, deadline=27.5
+[divergence-v3] 4/34 cases  11.8%  1.1 min  ETA 8 min  8416/4/white attack recovered (11.7s, case 64s)
+[divergence-v3] 9/34 cases  26.5%  2.5 min  ETA 7 min  8415/24/white root recovered (20.3s, case 26s)
+[divergence-v3] 14/34 cases  41.2%  3.6 min  ETA 5 min  8415/17/white root recovered (20.2s, case 47s)
+[divergence-v3] 16/34 cases  47.1%  4.8 min  ETA 5 min  8415/13/white root recovered (20.0s, case 49s)
+[divergence-v3] 19/34 cases  55.9%  5.8 min  ETA 5 min  8415/8/white root recovered (19.8s, case 49s)
+[divergence-v3] 23/34 cases  67.6%  6.8 min  ETA 3 min  8415/18/black root recovered (13.3s, case 122s)
+[divergence-v3] 23/34 cases  67.6%  7.8 min  ETA 4 min  11 cases running/pending
+[divergence-v3] 29/34 cases  85.3%  9.6 min  ETA 2 min  8416/14/white root recovered (21.3s, case 73s)
+[divergence-v3] 33/34 cases  97.1%  11.5 min  ETA 0 min  1 cases running/pending
+[divergence-v3] 33/34 cases  97.1%  12.5 min  ETA 0 min  1 cases running/pending
+[divergence-v3] 33/34 cases  97.1%  13.5 min  ETA 0 min  1 cases running/pending
+[divergence-v3] 33/34 cases  97.1%  14.5 min  ETA 0 min  1 cases running/pending
+[divergence-v3] 34/34 cases  100.0%  15.4 min  ETA 0 min  8416/13/black root recovered (14.1s, case 399s)
+{
+ "cases": 34,
+ "recovered": 34,
+ "by_kind": {
+  "attack": {
+   "cases": 6,
+   "recovered": 6,
+   "a3_points": -2.5,
+   "points_if_recovered": 2.5
+  },
+  "root": {
+   "cases": 28,
+   "recovered": 28,
+   "a3_points": -3.5,
+   "points_if_recovered": 3.5
+  }
+ },
+ "result_changed": {
+  "cases": 13,
+  "recovered": 13,
+  "a3_points": -6.0,
+  "points_if_recovered": 6.0
+ },
+ "loss_making": {
+  "cases": 10,
+  "recovered": 10,
+  "a3_points": -7.5,
+  "points_if_recovered": 7.5
+ },
+ "gain_making": {
+  "cases": 3,
+  "recovered": 3,
+  "a3_points": 1.5,
+  "points_if_recovered": -1.5
+ },
+ "prefix_mismatch_cases": 0,
+ "tree_move_as_recorded": 28,
+ "seconds": {
+  "median": 15.5531,
+  "max": 22.1053,
+  "over_27.5s": 0
+ },
+ "phase_median": {
+  "attack:attack": 8.47,
+  "root:root": 14.4,
+  "control:root": null
+ },
+ "attack_parallel": 34,
+ "attack_win_early": 2
+}

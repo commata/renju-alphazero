@@ -1,0 +1,32 @@
+{
+ "format": "rt30-recheck-v1",
+ "vct1_budget": {
+  "node_limit": 20000,
+  "call_limit": 20000,
+  "node_budget": 800000
+ },
+ "vct2_budget": {
+  "node_limit": 20000,
+  "call_limit": 20000,
+  "node_budget": 200000
+ },
+ "summary": {
+  "run": "runs/rt30/v3_h3_crit.json",
+  "manifest": {
+   "path": "docs/rt30-eval/critical-regressions-v1.json",
+   "version": "critical-regressions-v1",
+   "keys": 6
+  },
+  "engine": "TB-Engine-v1",
+  "changed_moves_checked": 0,
+  "changed_move_proven_unsafe": 0,
+  "unsafe_keys": [],
+  "changed_vct1": {
+   "SAFE": 0,
+   "UNKNOWN": 0,
+   "UNSAFE": 0
+  },
+  "gate_pass": true
+ },
+ "rows": []
+}

@@ -1,0 +1,72 @@
+v3: 34 cases (0 already done), workers=2, deadline=27.5
+[divergence-v3] 2/34 cases  5.9%  1.5 min  ETA 25 min  32 cases running/pending
+[divergence-v3] 6/34 cases  17.6%  2.7 min  ETA 13 min  8415/9/black root recovered (14.9s, case 25s)
+[divergence-v3] 8/34 cases  23.5%  3.7 min  ETA 12 min  8415/3/white root recovered (19.2s, case 52s)
+[divergence-v3] 10/34 cases  29.4%  5.2 min  ETA 12 min  8415/7/white root recovered (18.4s, case 54s)
+[divergence-v3] 14/34 cases  41.2%  6.7 min  ETA 10 min  8415/17/white root recovered (20.6s, case 48s)
+[divergence-v3] 15/34 cases  44.1%  7.9 min  ETA 10 min  19 cases running/pending
+[divergence-v3] 17/34 cases  50.0%  9.3 min  ETA 9 min  8415/14/black root recovered (19.3s, case 143s)
+[divergence-v3] 18/34 cases  52.9%  11.1 min  ETA 10 min  16 cases running/pending
+[divergence-v3] 20/34 cases  58.8%  12.2 min  ETA 9 min  8415/18/black root recovered (13.4s, case 122s)
+[divergence-v3] 23/34 cases  67.6%  13.5 min  ETA 6 min  8416/5/black root recovered (19.8s, case 80s)
+[divergence-v3] 23/34 cases  67.6%  14.5 min  ETA 7 min  11 cases running/pending
+[divergence-v3] 26/34 cases  76.5%  16.3 min  ETA 5 min  8416/9/black root recovered (12.1s, case 66s)
+[divergence-v3] 28/34 cases  82.4%  18.0 min  ETA 4 min  6 cases running/pending
+[divergence-v3] 30/34 cases  88.2%  19.0 min  ETA 3 min  8416/2/white root recovered (22.2s, case 121s)
+[divergence-v3] 33/34 cases  97.1%  20.5 min  ETA 1 min  8416/8/white root recovered (17.3s, case 39s)
+[divergence-v3] 33/34 cases  97.1%  21.5 min  ETA 1 min  1 cases running/pending
+[divergence-v3] 33/34 cases  97.1%  22.5 min  ETA 1 min  1 cases running/pending
+[divergence-v3] 33/34 cases  97.1%  23.5 min  ETA 1 min  1 cases running/pending
+[divergence-v3] 33/34 cases  97.1%  24.5 min  ETA 1 min  1 cases running/pending
+[divergence-v3] 33/34 cases  97.1%  25.5 min  ETA 1 min  1 cases running/pending
+[divergence-v3] 34/34 cases  100.0%  25.6 min  ETA 0 min  8416/13/black root recovered (14.0s, case 400s)
+{
+ "cases": 34,
+ "recovered": 34,
+ "by_kind": {
+  "attack": {
+   "cases": 6,
+   "recovered": 6,
+   "a3_points": -2.5,
+   "points_if_recovered": 2.5
+  },
+  "root": {
+   "cases": 28,
+   "recovered": 28,
+   "a3_points": -3.5,
+   "points_if_recovered": 3.5
+  }
+ },
+ "result_changed": {
+  "cases": 13,
+  "recovered": 13,
+  "a3_points": -6.0,
+  "points_if_recovered": 6.0
+ },
+ "loss_making": {
+  "cases": 10,
+  "recovered": 10,
+  "a3_points": -7.5,
+  "points_if_recovered": 7.5
+ },
+ "gain_making": {
+  "cases": 3,
+  "recovered": 3,
+  "a3_points": 1.5,
+  "points_if_recovered": -1.5
+ },
+ "prefix_mismatch_cases": 0,
+ "tree_move_as_recorded": 28,
+ "seconds": {
+  "median": 15.7178,
+  "max": 22.1968,
+  "over_27.5s": 0
+ },
+ "phase_median": {
+  "attack:attack": 8.48,
+  "root:root": 14.53,
+  "control:root": null
+ },
+ "attack_parallel": 34,
+ "attack_win_early": 2
+}

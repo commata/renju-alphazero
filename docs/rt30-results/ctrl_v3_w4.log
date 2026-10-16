@@ -1,0 +1,58 @@
+v3: 26 cases (0 already done), workers=4, deadline=27.5
+[divergence-v3] 3/26 cases  11.5%  1.1 min  ETA 8 min  8415/23/white control recovered (13.4s, case 48s)
+[divergence-v3] 6/26 cases  23.1%  2.4 min  ETA 8 min  8415/22/white control recovered (16.5s, case 76s)
+[divergence-v3] 9/26 cases  34.6%  4.2 min  ETA 8 min  17 cases running/pending
+[divergence-v3] 9/26 cases  34.6%  5.2 min  ETA 10 min  17 cases running/pending
+[divergence-v3] 11/26 cases  42.3%  6.3 min  ETA 9 min  8416/10/black control recovered (11.0s, case 59s)
+[divergence-v3] 14/26 cases  53.8%  7.5 min  ETA 6 min  8416/10/black control recovered (14.1s, case 73s)
+[divergence-v3] 16/26 cases  61.5%  9.0 min  ETA 6 min  10 cases running/pending
+[divergence-v3] 19/26 cases  73.1%  10.1 min  ETA 4 min  8416/13/black control recovered (10.6s, case 25s)
+[divergence-v3] 23/26 cases  88.5%  11.6 min  ETA 2 min  8416/2/white control recovered (17.7s, case 211s)
+[divergence-v3] 23/26 cases  88.5%  12.6 min  ETA 2 min  3 cases running/pending
+[divergence-v3] 25/26 cases  96.2%  13.6 min  ETA 1 min  8416/13/black control recovered (13.1s, case 173s)
+[divergence-v3] 25/26 cases  96.2%  14.6 min  ETA 1 min  1 cases running/pending
+[divergence-v3] 26/26 cases  100.0%  14.9 min  ETA 0 min  8416/13/black control recovered (13.6s, case 240s)
+{
+ "cases": 26,
+ "recovered": 26,
+ "by_kind": {
+  "control": {
+   "cases": 26,
+   "recovered": 26,
+   "a3_points": 0.0,
+   "points_if_recovered": -0.0
+  }
+ },
+ "result_changed": {
+  "cases": 0,
+  "recovered": 0,
+  "a3_points": 0,
+  "points_if_recovered": 0
+ },
+ "loss_making": {
+  "cases": 0,
+  "recovered": 0,
+  "a3_points": 0,
+  "points_if_recovered": 0
+ },
+ "gain_making": {
+  "cases": 0,
+  "recovered": 0,
+  "a3_points": 0,
+  "points_if_recovered": 0
+ },
+ "prefix_mismatch_cases": 0,
+ "tree_move_as_recorded": 26,
+ "seconds": {
+  "median": 12.83945,
+  "max": 22.4575,
+  "over_27.5s": 0
+ },
+ "phase_median": {
+  "attack:attack": null,
+  "root:root": null,
+  "control:root": 8.62
+ },
+ "attack_parallel": 26,
+ "attack_win_early": 0
+}

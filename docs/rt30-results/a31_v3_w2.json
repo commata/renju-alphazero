@@ -1,0 +1,2235 @@
+{
+ "format": "rt30-divergence-v1",
+ "engine": "v3",
+ "manifest": "a3-divergence-v1",
+ "speedups": "fast3",
+ "native_scan": true,
+ "deadline": 27.5,
+ "workers": 2,
+ "uniform_prior": false,
+ "machine": {
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "cpu_count": 16
+ },
+ "summary": {
+  "cases": 34,
+  "recovered": 34,
+  "by_kind": {
+   "attack": {
+    "cases": 6,
+    "recovered": 6,
+    "a3_points": -2.5,
+    "points_if_recovered": 2.5
+   },
+   "root": {
+    "cases": 28,
+    "recovered": 28,
+    "a3_points": -3.5,
+    "points_if_recovered": 3.5
+   }
+  },
+  "result_changed": {
+   "cases": 13,
+   "recovered": 13,
+   "a3_points": -6.0,
+   "points_if_recovered": 6.0
+  },
+  "loss_making": {
+   "cases": 10,
+   "recovered": 10,
+   "a3_points": -7.5,
+   "points_if_recovered": 7.5
+  },
+  "gain_making": {
+   "cases": 3,
+   "recovered": 3,
+   "a3_points": 1.5,
+   "points_if_recovered": -1.5
+  },
+  "prefix_mismatch_cases": 0,
+  "tree_move_as_recorded": 28,
+  "seconds": {
+   "median": 15.7178,
+   "max": 22.1968,
+   "over_27.5s": 0
+  },
+  "phase_median": {
+   "attack:attack": 8.48,
+   "root:root": 14.53,
+   "control:root": null
+  },
+  "attack_parallel": 34,
+  "attack_win_early": 2
+ },
+ "rows": [
+  {
+   "key": "puct_policy_vct2_50k_8415/15/32",
+   "game": "8415/12/black",
+   "kind": "attack",
+   "result": "win>draw",
+   "tb1_move": [
+    5,
+    11
+   ],
+   "tree_move_rec": null,
+   "move": [
+    5,
+    11
+   ],
+   "seconds": 12.3526,
+   "route": "own_vct",
+   "tree_move": null,
+   "root_checked": [],
+   "phases": {
+    "attack": 12.3079,
+    "vct": 0.0,
+    "tree": 0.0,
+    "root": 0.0,
+    "vct2": 0.0
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 12.3104,
+   "attack_wait_seconds": 10.4928,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 19.19,
+   "case_seconds": 31.54
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/28/14",
+   "game": "8415/20/black",
+   "kind": "attack",
+   "result": "win>loss",
+   "tb1_move": [
+    10,
+    4
+   ],
+   "tree_move_rec": null,
+   "move": [
+    10,
+    4
+   ],
+   "seconds": 6.3357,
+   "route": "own_vct",
+   "tree_move": null,
+   "root_checked": [],
+   "phases": {
+    "attack": 6.315,
+    "vct": 0.0,
+    "tree": 0.0,
+    "root": 0.0,
+    "vct2": 0.0
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 6.3176,
+   "attack_wait_seconds": 1.8522,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 8.96,
+   "case_seconds": 15.3
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/30/77",
+   "game": "8415/1/white",
+   "kind": "attack",
+   "result": "win>win",
+   "tb1_move": [
+    1,
+    4
+   ],
+   "tree_move_rec": null,
+   "move": [
+    1,
+    4
+   ],
+   "seconds": 5.7815,
+   "route": "own_vct",
+   "tree_move": null,
+   "root_checked": [],
+   "phases": {
+    "attack": 5.3629,
+    "vct": 0.0,
+    "tree": 0.0,
+    "root": 0.0,
+    "vct2": 0.0
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 5.3676,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": true,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 113.38,
+   "case_seconds": 119.16
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/22/37",
+   "game": "8416/4/white",
+   "kind": "attack",
+   "result": "win>win",
+   "tb1_move": [
+    7,
+    3
+   ],
+   "tree_move_rec": null,
+   "move": [
+    7,
+    3
+   ],
+   "seconds": 11.5042,
+   "route": "own_vct",
+   "tree_move": null,
+   "root_checked": [],
+   "phases": {
+    "attack": 4.395,
+    "vct": 0.0,
+    "tree": 0.0,
+    "root": 0.0,
+    "vct2": 0.0
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 4.3987,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": true,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 52.29,
+   "case_seconds": 63.8
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/36/28",
+   "game": "8416/22/black",
+   "kind": "attack",
+   "result": "win>loss",
+   "tb1_move": [
+    12,
+    7
+   ],
+   "tree_move_rec": null,
+   "move": [
+    12,
+    7
+   ],
+   "seconds": 11.0229,
+   "route": "own_vct",
+   "tree_move": null,
+   "root_checked": [],
+   "phases": {
+    "attack": 11.0062,
+    "vct": 0.0,
+    "tree": 0.0,
+    "root": 0.0,
+    "vct2": 0.0
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 11.0107,
+   "attack_wait_seconds": 6.8602,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 18.18,
+   "case_seconds": 29.21
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/39/20",
+   "game": "8416/23/black",
+   "kind": "attack",
+   "result": "win>win",
+   "tb1_move": [
+    9,
+    3
+   ],
+   "tree_move_rec": null,
+   "move": [
+    9,
+    3
+   ],
+   "seconds": 10.6713,
+   "route": "own_vct",
+   "tree_move": null,
+   "root_checked": [],
+   "phases": {
+    "attack": 10.639,
+    "vct": 0.0,
+    "tree": 0.0,
+    "root": 0.0,
+    "vct2": 0.0
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 10.643,
+   "attack_wait_seconds": 2.7746,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 34.54,
+   "case_seconds": 45.21
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/10/18",
+   "game": "8415/9/black",
+   "kind": "root",
+   "result": "win>loss",
+   "tb1_move": [
+    10,
+    8
+   ],
+   "tree_move_rec": [
+    9,
+    8
+   ],
+   "move": [
+    10,
+    8
+   ],
+   "seconds": 14.8996,
+   "route": "tree",
+   "tree_move": [
+    9,
+    8
+   ],
+   "root_checked": [
+    [
+     [
+      9,
+      8
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      10,
+      8
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.2279,
+    "vct": 0.0,
+    "tree": 1.1496,
+    "root": 13.2437,
+    "vct2": 0.4611
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.2287,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 9.98,
+   "case_seconds": 24.88
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/21/64",
+   "game": "8415/1/black",
+   "kind": "root",
+   "result": "draw>draw",
+   "tb1_move": [
+    10,
+    13
+   ],
+   "tree_move_rec": [
+    3,
+    9
+   ],
+   "move": [
+    10,
+    13
+   ],
+   "seconds": 17.1593,
+   "route": "tree",
+   "tree_move": [
+    3,
+    9
+   ],
+   "root_checked": [
+    [
+     [
+      3,
+      9
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      4,
+      11
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      11,
+      11
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      10,
+      13
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.3173,
+    "vct": 0.0,
+    "tree": 1.1153,
+    "root": 15.4216,
+    "vct2": 0.2594
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.3191,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 78.39,
+   "case_seconds": 95.55
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/22/37",
+   "game": "8415/3/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    4,
+    4
+   ],
+   "tree_move_rec": [
+    2,
+    7
+   ],
+   "move": [
+    4,
+    4
+   ],
+   "seconds": 19.2384,
+   "route": "tree",
+   "tree_move": [
+    2,
+    7
+   ],
+   "root_checked": [
+    [
+     [
+      2,
+      7
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      5,
+      4
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      4,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0441,
+    "vct": 0.0,
+    "tree": 1.1045,
+    "root": 17.1438,
+    "vct2": 0.9407
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0448,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 32.36,
+   "case_seconds": 51.6
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/25/56",
+   "game": "8415/2/black",
+   "kind": "root",
+   "result": "loss>loss",
+   "tb1_move": [
+    7,
+    6
+   ],
+   "tree_move_rec": [
+    9,
+    7
+   ],
+   "move": [
+    7,
+    6
+   ],
+   "seconds": 15.7429,
+   "route": "tree",
+   "tree_move": [
+    9,
+    7
+   ],
+   "root_checked": [
+    [
+     [
+      9,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      6,
+      4
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      7
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      8,
+      12
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      2,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      2,
+      11
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      2,
+      12
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      6
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      4,
+      14
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      6,
+      14
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      7,
+      6
+     ],
+     "SAFE"
+    ],
+    [
+     [
+      8,
+      5
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      8
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      9
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      9,
+      13
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      10
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      11,
+      11
+     ],
+     "UNSAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0176,
+    "vct": 0.0,
+    "tree": 1.32,
+    "root": 14.3735,
+    "vct2": 0.0
+   },
+   "timeouts": [],
+   "skipped": [
+    "vct2_root_rescue"
+   ],
+   "rescued": true,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0191,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 77.78,
+   "case_seconds": 93.53
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/37/29",
+   "game": "8415/7/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    8,
+    3
+   ],
+   "tree_move_rec": [
+    10,
+    5
+   ],
+   "move": [
+    8,
+    3
+   ],
+   "seconds": 18.4282,
+   "route": "tree",
+   "tree_move": [
+    10,
+    5
+   ],
+   "root_checked": [
+    [
+     [
+      10,
+      5
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      8,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0732,
+    "vct": 0.0,
+    "tree": 2.3712,
+    "root": 15.4617,
+    "vct2": 0.4876
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0737,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 35.92,
+   "case_seconds": 54.35
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/38/11",
+   "game": "8415/24/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    7,
+    4
+   ],
+   "tree_move_rec": [
+    8,
+    6
+   ],
+   "move": [
+    7,
+    4
+   ],
+   "seconds": 20.4995,
+   "route": "tree",
+   "tree_move": [
+    8,
+    6
+   ],
+   "root_checked": [
+    [
+     [
+      8,
+      6
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      3
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      6,
+      4
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      7,
+      4
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0715,
+    "vct": 0.0,
+    "tree": 1.0466,
+    "root": 17.0768,
+    "vct2": 2.2544
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0717,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 6.06,
+   "case_seconds": 26.56
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/39/29",
+   "game": "8415/12/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    9,
+    2
+   ],
+   "tree_move_rec": [
+    8,
+    2
+   ],
+   "move": [
+    9,
+    2
+   ],
+   "seconds": 14.5572,
+   "route": "tree",
+   "tree_move": [
+    8,
+    2
+   ],
+   "root_checked": [
+    [
+     [
+      8,
+      2
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      2
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0326,
+    "vct": 0.0,
+    "tree": 0.9061,
+    "root": 13.4457,
+    "vct2": 0.1476
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0331,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 21.61,
+   "case_seconds": 36.17
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/40/43",
+   "game": "8415/23/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    3,
+    3
+   ],
+   "tree_move_rec": [
+    9,
+    5
+   ],
+   "move": [
+    3,
+    3
+   ],
+   "seconds": 14.4682,
+   "route": "tree",
+   "tree_move": [
+    9,
+    5
+   ],
+   "root_checked": [
+    [
+     [
+      9,
+      5
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      7,
+      4
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      3,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0734,
+    "vct": 0.0,
+    "tree": 2.1873,
+    "root": 11.9006,
+    "vct2": 0.1626
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0741,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 62.47,
+   "case_seconds": 76.94
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/43/25",
+   "game": "8415/17/white",
+   "kind": "root",
+   "result": "win>loss",
+   "tb1_move": [
+    11,
+    6
+   ],
+   "tree_move_rec": [
+    11,
+    7
+   ],
+   "move": [
+    11,
+    6
+   ],
+   "seconds": 20.5605,
+   "route": "tree",
+   "tree_move": [
+    11,
+    7
+   ],
+   "root_checked": [
+    [
+     [
+      11,
+      7
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      11,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.1785,
+    "vct": 0.0,
+    "tree": 2.3624,
+    "root": 14.8447,
+    "vct2": 3.0026
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.179,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 27.05,
+   "case_seconds": 47.61
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/44/78",
+   "game": "8415/24/black",
+   "kind": "root",
+   "result": "draw>draw",
+   "tb1_move": [
+    1,
+    3
+   ],
+   "tree_move_rec": [
+    1,
+    1
+   ],
+   "move": [
+    1,
+    3
+   ],
+   "seconds": 14.2083,
+   "route": "tree",
+   "tree_move": [
+    1,
+    1
+   ],
+   "root_checked": [
+    [
+     [
+      1,
+      1
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      3,
+      1
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      1,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0214,
+    "vct": 0.0,
+    "tree": 1.2172,
+    "root": 12.6487,
+    "vct2": 0.0925
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0232,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 109.46,
+   "case_seconds": 123.67
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/45/66",
+   "game": "8415/14/black",
+   "kind": "root",
+   "result": "draw>loss",
+   "tb1_move": [
+    9,
+    11
+   ],
+   "tree_move_rec": [
+    8,
+    2
+   ],
+   "move": [
+    9,
+    11
+   ],
+   "seconds": 19.3102,
+   "route": "tree",
+   "tree_move": [
+    8,
+    2
+   ],
+   "root_checked": [
+    [
+     [
+      8,
+      2
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      11,
+      7
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      11,
+      3
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      11
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0504,
+    "vct": 0.0,
+    "tree": 2.9202,
+    "root": 13.6463,
+    "vct2": 2.6791
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0525,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 124.11,
+   "case_seconds": 143.42
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/46/51",
+   "game": "8415/22/white",
+   "kind": "root",
+   "result": "draw>win",
+   "tb1_move": [
+    10,
+    8
+   ],
+   "tree_move_rec": [
+    11,
+    3
+   ],
+   "move": [
+    10,
+    8
+   ],
+   "seconds": 21.108,
+   "route": "tree",
+   "tree_move": [
+    11,
+    3
+   ],
+   "root_checked": [
+    [
+     [
+      11,
+      3
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      1
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      10,
+      8
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.2622,
+    "vct": 0.0,
+    "tree": 1.921,
+    "root": 18.0706,
+    "vct2": 0.5137
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.263,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 152.35,
+   "case_seconds": 173.46
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/47/25",
+   "game": "8415/13/white",
+   "kind": "root",
+   "result": "draw>win",
+   "tb1_move": [
+    7,
+    6
+   ],
+   "tree_move_rec": [
+    12,
+    6
+   ],
+   "move": [
+    7,
+    6
+   ],
+   "seconds": 20.2755,
+   "route": "tree",
+   "tree_move": [
+    12,
+    6
+   ],
+   "root_checked": [
+    [
+     [
+      12,
+      6
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      7,
+      8
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      11,
+      4
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      7,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0569,
+    "vct": 0.0,
+    "tree": 2.3545,
+    "root": 17.2983,
+    "vct2": 0.5511
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0573,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 29.43,
+   "case_seconds": 49.71
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/48/66",
+   "game": "8415/18/black",
+   "kind": "root",
+   "result": "loss>loss",
+   "tb1_move": [
+    11,
+    5
+   ],
+   "tree_move_rec": [
+    8,
+    12
+   ],
+   "move": [
+    11,
+    5
+   ],
+   "seconds": 13.3768,
+   "route": "tree",
+   "tree_move": [
+    8,
+    12
+   ],
+   "root_checked": [
+    [
+     [
+      8,
+      12
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      11,
+      5
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.1568,
+    "vct": 0.0,
+    "tree": 1.4051,
+    "root": 11.739,
+    "vct2": 0.1746
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.1587,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 108.55,
+   "case_seconds": 121.93
+  },
+  {
+   "key": "puct_policy_vct2_50k_8415/49/27",
+   "game": "8415/8/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    8,
+    11
+   ],
+   "tree_move_rec": [
+    10,
+    8
+   ],
+   "move": [
+    8,
+    11
+   ],
+   "seconds": 19.7918,
+   "route": "tree",
+   "tree_move": [
+    10,
+    8
+   ],
+   "root_checked": [
+    [
+     [
+      10,
+      8
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      10,
+      11
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      8,
+      11
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 1.8891,
+    "vct": 0.0,
+    "tree": 1.107,
+    "root": 15.3168,
+    "vct2": 3.3058
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 1.8904,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 29.28,
+   "case_seconds": 49.07
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/10/50",
+   "game": "8416/5/black",
+   "kind": "root",
+   "result": "loss>loss",
+   "tb1_move": [
+    8,
+    12
+   ],
+   "tree_move_rec": [
+    8,
+    4
+   ],
+   "move": [
+    8,
+    12
+   ],
+   "seconds": 19.8354,
+   "route": "tree",
+   "tree_move": [
+    8,
+    4
+   ],
+   "root_checked": [
+    [
+     [
+      8,
+      4
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      6,
+      10
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      8,
+      12
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0293,
+    "vct": 0.0,
+    "tree": 2.5283,
+    "root": 14.686,
+    "vct2": 2.3671
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0309,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 59.69,
+   "case_seconds": 79.52
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/13/16",
+   "game": "8416/1/black",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    4,
+    6
+   ],
+   "tree_move_rec": [
+    6,
+    5
+   ],
+   "move": [
+    4,
+    6
+   ],
+   "seconds": 20.7261,
+   "route": "tree",
+   "tree_move": [
+    6,
+    5
+   ],
+   "root_checked": [
+    [
+     [
+      6,
+      5
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      4,
+      6
+     ],
+     "SAFE"
+    ],
+    [
+     [
+      3,
+      7
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      7,
+      5
+     ],
+     "UNKNOWN"
+    ]
+   ],
+   "phases": {
+    "attack": 11.512,
+    "vct": 0.0,
+    "tree": 1.0189,
+    "root": 16.4633,
+    "vct2": 2.9019
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 11.5131,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 20.52,
+   "case_seconds": 41.24
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/29/77",
+   "game": "8416/9/white",
+   "kind": "root",
+   "result": "draw>loss",
+   "tb1_move": [
+    9,
+    3
+   ],
+   "tree_move_rec": [
+    5,
+    3
+   ],
+   "move": [
+    9,
+    3
+   ],
+   "seconds": 17.4852,
+   "route": "tree",
+   "tree_move": [
+    5,
+    3
+   ],
+   "root_checked": [
+    [
+     [
+      5,
+      3
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      3
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0174,
+    "vct": 0.0,
+    "tree": 3.0154,
+    "root": 14.227,
+    "vct2": 0.171
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0184,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 120.68,
+   "case_seconds": 138.17
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/40/76",
+   "game": "8416/0/black",
+   "kind": "root",
+   "result": "draw>draw",
+   "tb1_move": [
+    4,
+    6
+   ],
+   "tree_move_rec": [
+    5,
+    9
+   ],
+   "move": [
+    4,
+    6
+   ],
+   "seconds": 13.3173,
+   "route": "tree",
+   "tree_move": [
+    5,
+    9
+   ],
+   "root_checked": [
+    [
+     [
+      5,
+      9
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      4,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0225,
+    "vct": 0.0,
+    "tree": 1.3314,
+    "root": 11.7014,
+    "vct2": 0.2464
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0243,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 89.09,
+   "case_seconds": 102.41
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/42/50",
+   "game": "8416/9/black",
+   "kind": "root",
+   "result": "draw>draw",
+   "tb1_move": [
+    2,
+    2
+   ],
+   "tree_move_rec": [
+    3,
+    1
+   ],
+   "move": [
+    2,
+    2
+   ],
+   "seconds": 12.1153,
+   "route": "tree",
+   "tree_move": [
+    3,
+    1
+   ],
+   "root_checked": [
+    [
+     [
+      3,
+      1
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      2,
+      2
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.9151,
+    "vct": 0.0,
+    "tree": 1.1278,
+    "root": 10.5168,
+    "vct2": 0.3024
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.9173,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 53.42,
+   "case_seconds": 65.54
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/43/64",
+   "game": "8416/20/black",
+   "kind": "root",
+   "result": "win>draw",
+   "tb1_move": [
+    4,
+    10
+   ],
+   "tree_move_rec": [
+    3,
+    6
+   ],
+   "move": [
+    4,
+    10
+   ],
+   "seconds": 15.6927,
+   "route": "tree",
+   "tree_move": [
+    3,
+    6
+   ],
+   "root_checked": [
+    [
+     [
+      3,
+      6
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      1,
+      7
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      4,
+      10
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.1452,
+    "vct": 0.0,
+    "tree": 0.816,
+    "root": 14.3441,
+    "vct2": 0.2519
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.1468,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 50.07,
+   "case_seconds": 65.76
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/45/48",
+   "game": "8416/10/black",
+   "kind": "root",
+   "result": "loss>draw",
+   "tb1_move": [
+    2,
+    9
+   ],
+   "tree_move_rec": [
+    2,
+    8
+   ],
+   "move": [
+    2,
+    9
+   ],
+   "seconds": 14.1941,
+   "route": "tree",
+   "tree_move": [
+    2,
+    8
+   ],
+   "root_checked": [
+    [
+     [
+      2,
+      8
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      6,
+      2
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      4,
+      5
+     ],
+     "UNSAFE"
+    ],
+    [
+     [
+      2,
+      9
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0583,
+    "vct": 0.0,
+    "tree": 1.3435,
+    "root": 12.4751,
+    "vct2": 0.3179
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0605,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 111.3,
+   "case_seconds": 125.5
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/46/11",
+   "game": "8416/23/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    6,
+    7
+   ],
+   "tree_move_rec": [
+    4,
+    8
+   ],
+   "move": [
+    6,
+    7
+   ],
+   "seconds": 21.7049,
+   "route": "tree",
+   "tree_move": [
+    4,
+    8
+   ],
+   "root_checked": [
+    [
+     [
+      4,
+      8
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      6
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      6,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0282,
+    "vct": 0.0,
+    "tree": 2.1523,
+    "root": 16.8035,
+    "vct2": 2.6852
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0284,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 4.61,
+   "case_seconds": 26.32
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/47/39",
+   "game": "8416/2/white",
+   "kind": "root",
+   "result": "win>loss",
+   "tb1_move": [
+    9,
+    6
+   ],
+   "tree_move_rec": [
+    3,
+    7
+   ],
+   "move": [
+    9,
+    6
+   ],
+   "seconds": 22.1968,
+   "route": "tree",
+   "tree_move": [
+    3,
+    7
+   ],
+   "root_checked": [
+    [
+     [
+      3,
+      7
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      3,
+      11
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      3,
+      8
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      9,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0738,
+    "vct": 0.0,
+    "tree": 2.053,
+    "root": 17.0944,
+    "vct2": 2.9373
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0744,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 98.52,
+   "case_seconds": 120.72
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/48/33",
+   "game": "8416/14/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    2,
+    7
+   ],
+   "tree_move_rec": [
+    7,
+    11
+   ],
+   "move": [
+    2,
+    7
+   ],
+   "seconds": 21.1115,
+   "route": "tree",
+   "tree_move": [
+    7,
+    11
+   ],
+   "root_checked": [
+    [
+     [
+      7,
+      11
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      3,
+      6
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      2,
+      7
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.025,
+    "vct": 0.0,
+    "tree": 1.5896,
+    "root": 16.0578,
+    "vct2": 3.2808
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0255,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 51.62,
+   "case_seconds": 72.74
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/49/132",
+   "game": "8416/13/black",
+   "kind": "root",
+   "result": "draw>loss",
+   "tb1_move": [
+    4,
+    2
+   ],
+   "tree_move_rec": [
+    6,
+    2
+   ],
+   "move": [
+    4,
+    2
+   ],
+   "seconds": 14.003,
+   "route": "tree",
+   "tree_move": [
+    6,
+    2
+   ],
+   "root_checked": [
+    [
+     [
+      6,
+      2
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      4,
+      2
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 3.8875,
+    "vct": 0.0,
+    "tree": 2.7408,
+    "root": 10.7857,
+    "vct2": 0.1689
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 3.8907,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 385.64,
+   "case_seconds": 399.65
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/5/10",
+   "game": "8416/4/black",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    7,
+    6
+   ],
+   "tree_move_rec": [
+    9,
+    5
+   ],
+   "move": [
+    7,
+    6
+   ],
+   "seconds": 11.563,
+   "route": "tree",
+   "tree_move": [
+    9,
+    5
+   ],
+   "root_checked": [
+    [
+     [
+      9,
+      5
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      7,
+      6
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.0812,
+    "vct": 0.0,
+    "tree": 1.0877,
+    "root": 9.7928,
+    "vct2": 0.6381
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0818,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 4.09,
+   "case_seconds": 15.65
+  },
+  {
+   "key": "puct_policy_vct2_50k_8416/7/25",
+   "game": "8416/8/white",
+   "kind": "root",
+   "result": "win>win",
+   "tb1_move": [
+    5,
+    5
+   ],
+   "tree_move_rec": [
+    8,
+    3
+   ],
+   "move": [
+    5,
+    5
+   ],
+   "seconds": 17.2955,
+   "route": "tree",
+   "tree_move": [
+    8,
+    3
+   ],
+   "root_checked": [
+    [
+     [
+      8,
+      3
+     ],
+     "UNKNOWN"
+    ],
+    [
+     [
+      5,
+      5
+     ],
+     "SAFE"
+    ]
+   ],
+   "phases": {
+    "attack": 0.048,
+    "vct": 0.0,
+    "tree": 1.1294,
+    "root": 15.5519,
+    "vct2": 0.5615
+   },
+   "timeouts": [],
+   "skipped": [],
+   "rescued": false,
+   "attack_parallel": true,
+   "attack_helper_seconds": 0.0484,
+   "attack_wait_seconds": 0.0,
+   "attack_win_early": false,
+   "attack_helper_failed": "",
+   "recovered": true,
+   "prefix_mismatches": [],
+   "prefix_seconds": 21.78,
+   "case_seconds": 39.07
+  }
+ ]
+}

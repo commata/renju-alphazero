@@ -1,0 +1,152 @@
+TB-RT30-v3 vs e3: 100 games (0 already done), workers=4, deadline=27.5s, config f80d2348a85b
+[rt30-match] 1/100 games  1.0%  1.3 min  ETA 131 min  99 games running/pending
+[rt30-match] 3/100 games  3.0%  2.7 min  ETA 88 min  rt30v3@e3/8415/2/white win, E3-A win (same) (32 plies, 28s); score 1.0
+[rt30-match] 5/100 games  5.0%  3.9 min  ETA 73 min  rt30v3@e3/8415/2/black loss, E3-A loss (same) (74 plies, 213s); score 0.8
+[rt30-match] 5/100 games  5.0%  4.9 min  ETA 92 min  95 games running/pending
+[rt30-match] 9/100 games  9.0%  6.1 min  ETA 62 min  rt30v3@e3/8415/5/white loss, E3-A loss (same) (29 plies, 31s); score 0.7778
+[rt30-match] 14/100 games  14.0%  7.2 min  ETA 45 min  rt30v3@e3/8415/8/black win, E3-A win (same) (37 plies, 25s); score 0.8571
+[rt30-match] 17/100 games  17.0%  8.8 min  ETA 43 min  rt30v3@e3/8415/9/black win, E3-A win (same) (35 plies, 74s); score 0.8529
+[rt30-match] 20/100 games  20.0%  10.3 min  ETA 41 min  rt30v3@e3/8415/10/white win, E3-A win (same) (20 plies, 67s); score 0.825
+[rt30-match] 20/100 games  20.0%  11.3 min  ETA 45 min  80 games running/pending
+[rt30-match] 22/100 games  22.0%  13.1 min  ETA 47 min  78 games running/pending
+[rt30-match] 23/100 games  23.0%  14.2 min  ETA 47 min  77 games running/pending
+[rt30-match] 23/100 games  23.0%  15.2 min  ETA 51 min  77 games running/pending
+[rt30-match] 24/100 games  24.0%  16.7 min  ETA 53 min  76 games running/pending
+[rt30-match] 24/100 games  24.0%  17.7 min  ETA 56 min  76 games running/pending
+[rt30-match] 27/100 games  27.0%  19.3 min  ETA 52 min  rt30v3@e3/8415/14/white win, E3-A win (same) (24 plies, 49s); score 0.7963
+[rt30-match] 30/100 games  30.0%  21.0 min  ETA 49 min  rt30v3@e3/8415/16/black win, E3-A win (same) (27 plies, 58s); score 0.7833
+[rt30-match] 31/100 games  31.0%  22.4 min  ETA 50 min  69 games running/pending
+[rt30-match] 33/100 games  33.0%  24.4 min  ETA 50 min  67 games running/pending
+[rt30-match] 33/100 games  33.0%  25.4 min  ETA 52 min  67 games running/pending
+[rt30-match] 33/100 games  33.0%  26.4 min  ETA 54 min  67 games running/pending
+[rt30-match] 33/100 games  33.0%  27.4 min  ETA 56 min  67 games running/pending
+[rt30-match] 33/100 games  33.0%  28.4 min  ETA 58 min  67 games running/pending
+[rt30-match] 33/100 games  33.0%  29.4 min  ETA 60 min  67 games running/pending
+[rt30-match] 37/100 games  37.0%  30.6 min  ETA 52 min  rt30v3@e3/8415/14/black draw, E3-A draw (same) (225 plies, 744s); score 0.7297
+[rt30-match] 42/100 games  42.0%  31.6 min  ETA 44 min  rt30v3@e3/8415/21/black win, E3-A win (same) (39 plies, 44s); score 0.7619
+[rt30-match] 44/100 games  44.0%  32.7 min  ETA 42 min  rt30v3@e3/8415/23/black win, E3-A win (same) (31 plies, 21s); score 0.7727
+[rt30-match] 45/100 games  45.0%  33.9 min  ETA 41 min  55 games running/pending
+[rt30-match] 46/100 games  46.0%  35.6 min  ETA 42 min  54 games running/pending
+[rt30-match] 47/100 games  47.0%  36.8 min  ETA 41 min  53 games running/pending
+[rt30-match] 49/100 games  49.0%  37.9 min  ETA 39 min  rt30v3@e3/8416/0/white win, E3-A win (same) (34 plies, 59s); score 0.7755
+[rt30-match] 49/100 games  49.0%  38.9 min  ETA 41 min  51 games running/pending
+[rt30-match] 50/100 games  50.0%  40.7 min  ETA 41 min  50 games running/pending
+[rt30-match] 50/100 games  50.0%  41.7 min  ETA 42 min  50 games running/pending
+[rt30-match] 52/100 games  52.0%  43.2 min  ETA 40 min  rt30v3@e3/8416/2/black win, E3-A win (same) (23 plies, 44s); score 0.7788
+[rt30-match] 55/100 games  55.0%  44.5 min  ETA 36 min  rt30v3@e3/8416/3/white win, E3-A win (same) (24 plies, 33s); score 0.7818
+[rt30-match] 56/100 games  56.0%  46.3 min  ETA 36 min  44 games running/pending
+[rt30-match] 57/100 games  57.0%  47.7 min  ETA 36 min  43 games running/pending
+[rt30-match] 57/100 games  57.0%  48.7 min  ETA 37 min  43 games running/pending
+[rt30-match] 60/100 games  60.0%  49.8 min  ETA 33 min  rt30v3@e3/8416/5/white win, E3-A win (same) (34 plies, 39s); score 0.775
+[rt30-match] 61/100 games  61.0%  51.0 min  ETA 33 min  39 games running/pending
+[rt30-match] 62/100 games  62.0%  52.9 min  ETA 32 min  38 games running/pending
+[rt30-match] 66/100 games  66.0%  54.5 min  ETA 28 min  rt30v3@e3/8416/3/black draw, E3-A draw (same) (225 plies, 678s); score 0.7727
+[rt30-match] 67/100 games  67.0%  55.9 min  ETA 28 min  33 games running/pending
+[rt30-match] 67/100 games  67.0%  56.9 min  ETA 28 min  33 games running/pending
+[rt30-match] 67/100 games  67.0%  57.9 min  ETA 29 min  33 games running/pending
+[rt30-match] 67/100 games  67.0%  58.9 min  ETA 29 min  33 games running/pending
+[rt30-match] 67/100 games  67.0%  59.9 min  ETA 29 min  33 games running/pending
+[rt30-match] 67/100 games  67.0%  60.9 min  ETA 30 min  33 games running/pending
+[rt30-match] 67/100 games  67.0%  61.9 min  ETA 30 min  33 games running/pending
+[rt30-match] 67/100 games  67.0%  62.9 min  ETA 31 min  33 games running/pending
+[rt30-match] 69/100 games  69.0%  64.4 min  ETA 29 min  rt30v3@e3/8416/10/black loss, E3-A loss (same) (100 plies, 569s); score 0.7609
+[rt30-match] 74/100 games  74.0%  65.9 min  ETA 23 min  rt30v3@e3/8416/12/white win, E3-A win (same) (48 plies, 65s); score 0.7635
+[rt30-match] 77/100 games  77.0%  67.0 min  ETA 20 min  rt30v3@e3/8416/14/black win, E3-A win (same) (31 plies, 53s); score 0.7727
+[rt30-match] 78/100 games  78.0%  68.2 min  ETA 19 min  22 games running/pending
+[rt30-match] 83/100 games  83.0%  69.8 min  ETA 14 min  rt30v3@e3/8416/17/white win, E3-A win (same) (20 plies, 44s); score 0.7771
+[rt30-match] 87/100 games  87.0%  71.5 min  ETA 11 min  rt30v3@e3/8416/19/white win, E3-A win (same) (30 plies, 55s); score 0.7874
+[rt30-match] 87/100 games  87.0%  72.5 min  ETA 11 min  13 games running/pending
+[rt30-match] 87/100 games  87.0%  73.5 min  ETA 11 min  13 games running/pending
+[rt30-match] 87/100 games  87.0%  74.5 min  ETA 11 min  13 games running/pending
+[rt30-match] 89/100 games  89.0%  75.8 min  ETA 9 min  rt30v3@e3/8416/20/black win, E3-A win (same) (83 plies, 255s); score 0.7809
+[rt30-match] 93/100 games  93.0%  77.2 min  ETA 6 min  rt30v3@e3/8416/22/white win, E3-A win (same) (36 plies, 32s); score 0.7903
+[rt30-match] 94/100 games  94.0%  78.5 min  ETA 5 min  6 games running/pending
+[rt30-match] 97/100 games  97.0%  80.0 min  ETA 2 min  3 games running/pending
+[rt30-match] 100/100 games  100.0%  81.3 min  ETA 0 min  rt30v3@e3/8416/13/black draw, E3-A draw (same) (225 plies, 985s); score 0.8
+{
+ "games": 100,
+ "finished": 100,
+ "unfinished": 0,
+ "wins": 74,
+ "draws": 12,
+ "losses": 14,
+ "score": 0.8,
+ "ci95_wilson": [
+  0.711,
+  0.867
+ ],
+ "ci95_pairs": [
+  0.725,
+  0.87
+ ],
+ "by_color": {
+  "black": 0.77,
+  "white": 0.83
+ },
+ "pairs_both_won": 27,
+ "pairs_both_lost": 2,
+ "rt30_moves": 3013,
+ "rt30_seconds": {
+  "median": 1.5904,
+  "p95": 12.5124,
+  "p99": 25.0032,
+  "max": 25.8949,
+  "over_27.5s": 0,
+  "over_30s": 0
+ },
+ "rt30_timeouts": {
+  "attack": 0,
+  "stage_vct": 0,
+  "root": 54,
+  "vct2": 0
+ },
+ "rt30_moves_with_timeout": 67,
+ "rt30_rescued": 13,
+ "attack_parallel": 2385,
+ "attack_win_early": 44,
+ "attack_helper_failed": 0,
+ "rt30_routes": {
+  "own_vcf": 198,
+  "own_vct": 66,
+  "stage1": 74,
+  "stage2": 283,
+  "stage3": 73,
+  "stage4": 251,
+  "stage5": 50,
+  "tree": 2018
+ },
+ "mean_length": 63.0,
+ "game_minutes": 321.6
+}
+{
+ "games": 100,
+ "reference_score": 0.81,
+ "rt30_score": 0.8,
+ "diff": -0.01,
+ "diff_ci95_pairs": [
+  -0.025,
+  0.0
+ ],
+ "divergence": {
+  "same": 97,
+  "deadline": 2,
+  "rt30_no_deadline": 1,
+  "opponent": 0
+ },
+ "result_changed": [
+  {
+   "key": "rt30v3@e3/8415/8/white",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 47
+  },
+  {
+   "key": "rt30v3@e3/8416/2/white",
+   "rt30": "draw",
+   "reference": "win",
+   "kind": "deadline",
+   "ply": 93
+  }
+ ]
+}

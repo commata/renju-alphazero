@@ -1,0 +1,19 @@
+0 checks from runs/rt30/v3_h3_s60.json (vct1 800,000 nodes, vct2 200,000)
+{
+ "run": "runs/rt30/v3_h3_s60.json",
+ "manifest": {
+  "path": "docs/rt30-eval/slow-stratified-v1.json",
+  "version": "slow-stratified-v1",
+  "keys": 60
+ },
+ "engine": "TB-Engine-v1",
+ "changed_moves_checked": 0,
+ "changed_move_proven_unsafe": 0,
+ "unsafe_keys": [],
+ "changed_vct1": {
+  "SAFE": 0,
+  "UNKNOWN": 0,
+  "UNSAFE": 0
+ },
+ "gate_pass": true
+}

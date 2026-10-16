@@ -1,0 +1,20 @@
+{
+  "python": "3.14.4",
+  "soabi": "cpython-314-x86_64-linux-gnu",
+  "ext_suffix": ".cpython-314-x86_64-linux-gnu.so",
+  "flags": [
+    "-O2",
+    "-shared",
+    "-fPIC"
+  ],
+  "sources": {
+    "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5"
+  },
+  "executable": "/home/deploy/renju-alphazero/.venv-ser5/bin/python",
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "compiler": "x86_64-linux-gnu-gcc",
+  "compiler_version": "x86_64-linux-gnu-gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "modules": {
+    "_threat_windows.cpython-314-x86_64-linux-gnu.so": "e1e691b797434822cd9f3cddb16e74cf7f400698790c31362b2e650f580366f2"
+  }
+}

@@ -1,0 +1,99 @@
+positions=6 arms=rt3 workers=1 engine=TB-Engine-v1
+[rt30-replay] 6/6 positions  100.0%  1.0 min  ETA 0 min  6/6 chunks
+{
+ "positions": 6,
+ "rt3": {
+  "seconds": {
+   "n": 6,
+   "median": 8.58,
+   "p95": 17.538,
+   "p99": 17.538,
+   "max": 17.538,
+   "sum": 57.3,
+   "over_27.5s": 0
+  },
+  "routes": {
+   "own_vct": 3,
+   "tree": 3
+  },
+  "phases": {
+   "attack": {
+    "n": 6,
+    "median": 4.961,
+    "p95": 12.351,
+    "p99": 12.351,
+    "max": 12.351,
+    "sum": 33.4,
+    "over_27.5s": 0
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 3,
+    "median": 1.752,
+    "p95": 2.204,
+    "p99": 2.204,
+    "max": 2.204,
+    "sum": 5.0,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 3,
+    "median": 2.972,
+    "p95": 15.475,
+    "p99": 15.475,
+    "max": 15.475,
+    "sum": 19.4,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 3,
+    "median": 3.276,
+    "p95": 3.326,
+    "p99": 3.326,
+    "max": 3.326,
+    "sum": 7.5,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 3,
+    "median": 0.123,
+    "p95": 0.18,
+    "p99": 0.18,
+    "max": 0.18,
+    "sum": 0.3,
+    "over_27.5s": 0
+   },
+   "v7_only": {}
+  }
+ },
+ "rt_deadline": {
+  "timeouts": {
+   "attack": 0,
+   "stage_vct": 0,
+   "root": 0,
+   "vct2": 0
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0,
+   "vct2_root_rescue": 0
+  },
+  "root_rescued": 0,
+  "moves_with_timeout_or_skip": 0,
+  "attack_parallel": 6,
+  "attack_win_early": 0,
+  "attack_helper_failed": 0
+ },
+ "vs_baseline": {
+  "baseline": "docs/rt30-results/fast_h3_crit.json",
+  "baseline_arm": "fast",
+  "positions": 6,
+  "missing": 0,
+  "same_move": 6,
+  "changed_kinds": {},
+  "changed": [],
+  "lost_own_vct": [],
+  "lost_own_vct_other_move": 0,
+  "played_baseline_unsafe": []
+ }
+}

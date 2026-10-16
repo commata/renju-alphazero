@@ -1,0 +1,246 @@
+positions=8 arms=frozen,fast3,rt3 workers=4 engine=TB-Engine-v1
+[rt30-replay] 4/8 positions  50.0%  1.1 min  ETA 1 min  4/8 chunks
+[rt30-replay] 8/8 positions  100.0%  2.3 min  ETA 0 min  8/8 chunks
+{
+ "positions": 8,
+ "frozen": {
+  "seconds": {
+   "n": 8,
+   "median": 30.342,
+   "p95": 110.896,
+   "p99": 110.896,
+   "max": 110.896,
+   "sum": 297.5,
+   "over_27.5s": 5
+  },
+  "routes": {
+   "tree": 6,
+   "own_vct": 2
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 1.227,
+    "p95": 108.527,
+    "p99": 108.527,
+    "max": 108.527,
+    "sum": 191.6,
+    "over_27.5s": 3
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.215,
+    "p95": 1.37,
+    "p99": 1.37,
+    "max": 1.37,
+    "sum": 7.3,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.736,
+    "p95": 2.165,
+    "p99": 2.165,
+    "max": 2.165,
+    "sum": 5.6,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 15.783,
+    "p95": 29.4,
+    "p99": 29.4,
+    "max": 29.4,
+    "sum": 91.9,
+    "over_27.5s": 1
+   },
+   "v7_modules": {
+    "n": 8,
+    "median": 1.359,
+    "p95": 108.808,
+    "p99": 108.808,
+    "max": 108.808,
+    "sum": 192.8,
+    "over_27.5s": 3
+   },
+   "v7_only": {
+    "n": 8,
+    "median": 0.099,
+    "p95": 0.399,
+    "p99": 0.399,
+    "max": 0.399,
+    "sum": 1.2,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "fast3": {
+  "seconds": {
+   "n": 8,
+   "median": 4.308,
+   "p95": 12.737,
+   "p99": 12.737,
+   "max": 12.737,
+   "sum": 39.1,
+   "over_27.5s": 0
+  },
+  "routes": {
+   "tree": 6,
+   "own_vct": 2
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 0.142,
+    "p95": 11.397,
+    "p99": 11.397,
+    "max": 11.397,
+    "sum": 21.2,
+    "over_27.5s": 0
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.04,
+    "p95": 1.205,
+    "p99": 1.205,
+    "max": 1.205,
+    "sum": 6.3,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.257,
+    "p95": 0.326,
+    "p99": 0.326,
+    "max": 0.326,
+    "sum": 1.4,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 1.716,
+    "p95": 3.007,
+    "p99": 3.007,
+    "max": 3.007,
+    "sum": 9.8,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 8,
+    "median": 0.2,
+    "p95": 11.454,
+    "p99": 11.454,
+    "max": 11.454,
+    "sum": 21.6,
+    "over_27.5s": 0
+   },
+   "v7_only": {
+    "n": 8,
+    "median": 0.042,
+    "p95": 0.083,
+    "p99": 0.083,
+    "max": 0.083,
+    "sum": 0.3,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "rt3": {
+  "seconds": {
+   "n": 8,
+   "median": 4.382,
+   "p95": 11.598,
+   "p99": 11.598,
+   "max": 11.598,
+   "sum": 37.9,
+   "over_27.5s": 0
+  },
+  "routes": {
+   "tree": 6,
+   "own_vct": 2
+  },
+  "phases": {
+   "attack": {
+    "n": 8,
+    "median": 0.143,
+    "p95": 11.359,
+    "p99": 11.359,
+    "max": 11.359,
+    "sum": 21.3,
+    "over_27.5s": 0
+   },
+   "stage_vct": {},
+   "tree": {
+    "n": 6,
+    "median": 1.041,
+    "p95": 1.204,
+    "p99": 1.204,
+    "max": 1.204,
+    "sum": 6.3,
+    "over_27.5s": 0
+   },
+   "root": {
+    "n": 6,
+    "median": 0.256,
+    "p95": 0.327,
+    "p99": 0.327,
+    "max": 0.327,
+    "sum": 1.4,
+    "over_27.5s": 0
+   },
+   "vct2": {
+    "n": 6,
+    "median": 1.724,
+    "p95": 3.024,
+    "p99": 3.024,
+    "max": 3.024,
+    "sum": 9.8,
+    "over_27.5s": 0
+   },
+   "v7_modules": {
+    "n": 6,
+    "median": 0.046,
+    "p95": 0.084,
+    "p99": 0.084,
+    "max": 0.084,
+    "sum": 0.3,
+    "over_27.5s": 0
+   },
+   "v7_only": {
+    "n": 3,
+    "median": 0.011,
+    "p95": 0.027,
+    "p99": 0.027,
+    "max": 0.027,
+    "sum": 0.0,
+    "over_27.5s": 0
+   }
+  }
+ },
+ "rt_deadline": {
+  "timeouts": {
+   "attack": 0,
+   "stage_vct": 0,
+   "root": 0,
+   "vct2": 0
+  },
+  "skipped": {
+   "puct": 0,
+   "vct2": 0,
+   "vct2_root_rescue": 0
+  },
+  "root_rescued": 0,
+  "moves_with_timeout_or_skip": 0,
+  "attack_parallel": 8,
+  "attack_win_early": 0,
+  "attack_helper_failed": 0
+ },
+ "identical": 8,
+ "different": [],
+ "speedup_vs_first": {
+  "fast3": 7.614,
+  "rt3": 7.845
+ }
+}
