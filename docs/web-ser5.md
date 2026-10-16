@@ -387,7 +387,7 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | V3-web | 웹 엔진을 TB-RT30-v3로 (`--rt30-engine v3` 기본, V8-B helper를 worker 옆에) | **구현** (§9.11) |
 | B3 | 부하 측정: slots 1 × 세션 1/2/4, slots 2 × 세션 2/4 (`scripts/ser5/b3.sh`) | **PASS** (`6d936b9`, §9.12): 안전 지표 모두 0, `--ai-slots 2` 채택 |
 | B3.1 | slot spill-over 수정 후 slots 2 × 세션 2/4 재측정 | **PASS** (`195ff3e`, §9.13): 대기열 꼬리 제거, 운영값 `--ai-slots 2 --slot-spill 2 --max-queue 4` |
-| D1 | 운영 배포: systemd + Caddy 자동 HTTPS + DB 백업 (`deploy/`) | 구성 완료, SER5 적용 대기 |
+| D1 | 운영 배포: systemd + Caddy 자동 HTTPS + DB 백업 (`deploy/`) | **적용** (§9.14): `https://ser5tack.duckdns.org/renju/` |
 | X1-B | 금수 판정 가속 | 필요할 때만: A3-v3가 시간 부족으로 HARM일 때 v4 후보 (§9.9) |
 | W | 웹 B1/B2(멀티 세션, AI job queue, search slot) | **v3·native의 production 연결보다 먼저** (§8, §9.9) |
 | V3-web | v3를 웹 search slot(main + V8-B helper 형제 프로세스)으로 연결 | W 완료 + v3 동결 뒤 (§9.9) |
@@ -1590,3 +1590,22 @@ web process ─ EngineSupervisor (slot 0)
 세션별 AI 수의 균등화는 확인되지 않았으므로 공정성 근거로 쓰지 않는다.
 **SER5 운영 구성은 `--ai-slots 2 --slot-spill 2 --max-queue 4`로 정한다**(`deploy/renju-web.service`, `--slot-spill`은 기본값 2).
 B3/B3.1로 성능 검증을 마치고 운영 배포(D1, `deploy/README.md`)로 넘어간다.
+
+### 9.14 운영 배포 D1 (2026-10-16)
+
+SER5에 `deploy/README.md` 구성을 적용했다. `deploy/check.sh --after` 결과는 모두 정상이다.
+
+| 항목 | 상태 |
+|---|---|
+| 주소 | `https://ser5tack.duckdns.org/renju/` (같은 도메인의 루트는 기존 `test-web`, Docker nginx `127.0.0.1:8080`) |
+| DNS | DuckDNS → 공인 IP 일치 |
+| HTTPS | 기존 `caddy.service`(v2.11.4)의 자동 HTTPS. 80/443은 Caddy가 잡는다 |
+| Caddy 블록 | `basic_auth /renju*`, `redir /renju /renju/`, `handle_path /renju/*` → `127.0.0.1:8000`, 나머지 `handle` → `127.0.0.1:8080` |
+| 앱 | `renju-web.service` 동작 중, `127.0.0.1:8000`에만 열림. TB-RT30-v3, `ai.slots` 2, `max_queue` 4 |
+| 공개 점검 | `/renju/api/health`: 로그인 없이 401, 로그인하면 200 |
+| 방화벽 | UFW: 80/443(`Nginx Full`), 22(LAN 허용, 외부 LIMIT). 8000은 닫혀 있다 |
+
+- 렌주를 경로 아래에 두기 위해 페이지가 API를 상대 경로로 부르게 바꿨다(`901eeed`). 서버는 `/<prefix>/api/...`도 받는다.
+- 남은 확인 사항:
+  - HTTPS로 실제 한 판을 두고 DB에 판이 쌓이는지(`written`, `session_hash`) 본다.
+  - 백업 타이머를 켠다.
