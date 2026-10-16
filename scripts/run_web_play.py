@@ -159,10 +159,11 @@ class SupervisedAgent:
         return result.move
 
 
-def register_rt30(supervisors, label: str, info: dict[str, Any]) -> None:
-    """Add the "rt30" opponent, searched by ``supervisors`` (one per AI search slot, or a single one)."""
+def register_rt30(supervisors, label: str, info: dict[str, Any], config: dict[str, Any] | None = None) -> None:
+    """Add the "rt30" opponent, searched by ``supervisors`` (one per AI search slot, or a single one);
+    ``config`` is the engine's frozen configuration, logged with every game (default: TB-RT30-v1's)."""
     supervisors = list(supervisors) if isinstance(supervisors, (list, tuple)) else [supervisors]
-    _RT30.update(supervisor=supervisors[0], supervisors=supervisors, label=label, info=info)
+    _RT30.update(supervisor=supervisors[0], supervisors=supervisors, label=label, info=info, config=config)
     VERSION_LABELS[RT30_KEY] = label
 
 
@@ -800,9 +801,10 @@ class PlaySession:
         from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty
 
         if self.agent_key == RT30_KEY:
-            from rt30.tb_rt30_v1 import TB_RT30_V1
-
-            return {**_RT30["info"], "config": TB_RT30_V1, "engine_commit": _git_commit(), "git_dirty": _git_dirty()}
+            config = _RT30.get("config")
+            if config is None:
+                from rt30.tb_rt30_v1 import TB_RT30_V1 as config
+            return {**_RT30["info"], "config": config, "engine_commit": _git_commit(), "git_dirty": _git_dirty()}
         if self.agent_key == TB1_KEY:
             from analysis.tb_engine_v1 import FREEZE_EVIDENCE, NAME, TB_ENGINE_V1, config_hash
 
@@ -1144,6 +1146,8 @@ def main() -> None:
                         help="H3 policy checkpoint of the frozen S3-VCT2-v1 opponent (needs torch)")
     parser.add_argument("--rt30", action="store_true",
                         help="add the TB-RT30 opponent (engine worker process, 27.5 s deadline, 29 s watchdog)")
+    parser.add_argument("--rt30-engine", choices=("v3", "v1"), default="v3",
+                        help="TB-RT30 version: v3 (frozen; native scan + V8-B helper beside each worker) or v1")
     parser.add_argument("--rt30-uniform-prior", action="store_true",
                         help="TB-RT30 without the H3 checkpoint (uniform PUCT prior; a test engine, not TB1)")
     parser.add_argument("--rt30-deadline", type=float, help="override TB-RT30-v1's 27.5 s (experiments only)")
@@ -1189,32 +1193,45 @@ def main() -> None:
         print(f"S3-VCT2-v1 opponent off: {args.policy_checkpoint} not found")
     supervisors = []
     if args.rt30:
-        from rt30 import tb_rt30_v1
+        from rt30 import tb_rt30_v1, tb_rt30_v3
         from rt30.supervisor import AgentSpec, EngineSupervisor
 
+        module = tb_rt30_v3 if args.rt30_engine == "v3" else tb_rt30_v1
+        config = tb_rt30_v3.TB_RT30_V3 if module is tb_rt30_v3 else tb_rt30_v1.TB_RT30_V1
+        extra: dict[str, Any] = {}
+        if module is tb_rt30_v3:
+            from rt30 import fast3_windows
+            from rt30.native import build as native_build
+
+            if not fast3_windows.available() or native_build.stale():
+                parser.error("TB-RT30-v3 needs the native scan built for this checkout and Python: "
+                             "PYTHONPATH=src python -m rt30.native.build --if-stale")
+            extra["native_build"] = native_build.build_info()
         if args.policy_checkpoint.exists():
-            kwargs, engine = {"checkpoint": str(args.policy_checkpoint)}, tb_rt30_v1.NAME
-            extra = {"policy_checkpoint": str(args.policy_checkpoint),
-                     **tb_rt30_v1.check_checkpoint(args.policy_checkpoint)}
+            kwargs, engine = {"checkpoint": str(args.policy_checkpoint)}, module.NAME
+            extra.update({"policy_checkpoint": str(args.policy_checkpoint),
+                          **tb_rt30_v1.check_checkpoint(args.policy_checkpoint)})
         elif args.rt30_uniform_prior:
-            kwargs, engine, extra = {"uniform_prior": True}, f"{tb_rt30_v1.NAME} (uniform prior)", {}
+            kwargs, engine = {"uniform_prior": True}, f"{module.NAME} (uniform prior)"
         else:
             parser.error("--rt30 needs --policy-checkpoint (found) or --rt30-uniform-prior")
-        deadline = args.rt30_deadline or tb_rt30_v1.TB_RT30_V1["deadline_seconds"]
-        watchdog = args.rt30_watchdog or tb_rt30_v1.TB_RT30_V1["watchdog_seconds"]
+        deadline = args.rt30_deadline or config["deadline_seconds"]
+        watchdog = args.rt30_watchdog or config["watchdog_seconds"]
         if (args.rt30_deadline, args.rt30_watchdog) != (None, None):
             engine += " (deadline override)"
-        print(f"{engine}: starting {args.ai_slots} engine worker(s) ...", flush=True)
-        supervisors = [EngineSupervisor(AgentSpec("rt30.supervisor:make_tb_rt30_v1_agent", kwargs),
+        helper = module is tb_rt30_v3
+        print(f"{engine}: starting {args.ai_slots} engine worker(s)"
+              f"{' + V8-B helper each' if helper else ''} ...", flush=True)
+        supervisors = [EngineSupervisor(AgentSpec(f"rt30.supervisor:make_tb_rt30_{args.rt30_engine}_agent", kwargs),
                                         engine_deadline=deadline, watchdog=watchdog,
-                                        agent_cache=max(8, args.max_sessions))
+                                        agent_cache=max(8, args.max_sessions), attack_helper=helper, preload=True)
                        for _ in range(args.ai_slots)]
         register_rt30(supervisors, f"{engine} (실시간 {deadline:g}초)",
-                      {"engine": engine, "engine_config_hash": tb_rt30_v1.config_hash(),
+                      {"engine": engine, "engine_config_hash": module.config_hash(),
                        "deadline_seconds": deadline, "watchdog_seconds": watchdog,
-                       "freeze_evidence": tb_rt30_v1.FREEZE_EVIDENCE, **extra})
+                       "freeze_evidence": module.FREEZE_EVIDENCE, **extra}, config=config)
         print(f"{engine}: worker ready (deadline {deadline:g} s, watchdog {watchdog:g} s, "
-              f"config {tb_rt30_v1.config_hash()[:12]})")
+              f"config {module.config_hash()[:12]})")
     if args.az_checkpoint is not None:
         from agents.alphazero_agent import AlphaZeroAgent
 

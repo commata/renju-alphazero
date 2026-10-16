@@ -71,7 +71,8 @@ def _json_value(value):
     return str(value)
 
 
-def _worker_main(conn, spec: AgentSpec, src_paths: list[str], agent_cache: int = 8) -> None:  # pragma: no cover - runs in a child
+def _worker_main(conn, spec: AgentSpec, src_paths: list[str], agent_cache: int = 8, helper=None,
+                 preload: bool = False) -> None:  # pragma: no cover - runs in a child
     os.environ.update(THREAD_ENV)  # before torch / numpy are imported in this process
     import sys
 
@@ -86,8 +87,18 @@ def _worker_main(conn, spec: AgentSpec, src_paths: list[str], agent_cache: int =
         torch.set_num_threads(1)
     except ImportError:
         pass
+    if helper is not None:  # X2: the V8-B helper the supervisor started beside this worker
+        from .web_slot import install
+
+        install(*helper)
     factory = _load_factory(spec.factory)
     agents: dict[str, Any] = {}  # one agent per game: its random stream continues across the moves
+    if preload:  # build one agent now: a bad engine (no native scan, no checkpoint) fails at start
+        try:
+            factory(seed=0, **spec.kwargs)
+        except Exception:  # noqa: BLE001 - reported to the supervisor, which refuses to start
+            conn.send(('failed', traceback.format_exc(limit=5)))
+            return
     conn.send(('ready', os.getpid()))
     while True:
         try:
@@ -132,13 +143,25 @@ def _worker_main(conn, spec: AgentSpec, src_paths: list[str], agent_cache: int =
 
 
 class _Worker:
-    def __init__(self, ctx, spec: AgentSpec, src_paths: list[str], agent_cache: int = 8):
+    def __init__(self, ctx, spec: AgentSpec, src_paths: list[str], agent_cache: int = 8,
+                 attack_helper: bool = False, preload: bool = False):
+        self.helper = None   # X2: the V8-B helper process beside this worker (rt30.web_slot)
+        helper_args = None
+        if attack_helper:
+            from .web_slot import start_helper
+
+            self.helper, helper_conn = start_helper(ctx, src_paths)
+            helper_args = (helper_conn, self.helper.pid)
         self.conn, child = ctx.Pipe()
-        self.process = ctx.Process(target=_worker_main, args=(child, spec, src_paths, agent_cache), daemon=True,
-                                   name='rt30-engine-worker')
+        self.process = ctx.Process(target=_worker_main,
+                                   args=(child, spec, src_paths, agent_cache, helper_args, preload),
+                                   daemon=True, name='rt30-engine-worker')
         self.process.start()
         child.close()
+        if helper_args is not None:
+            helper_args[0].close()  # the worker holds its own copy
         self.pid = None
+        self.failure: str | None = None
 
     def wait_ready(self, timeout: float) -> bool:
         if self.pid is not None:
@@ -151,18 +174,23 @@ class _Worker:
             if kind == 'ready':
                 self.pid = pid
                 return True
+            if kind == 'failed':
+                self.failure = pid  # the traceback
         return False
 
     def alive(self) -> bool:
-        return self.process.is_alive()
+        return self.process.is_alive() and (self.helper is None or self.helper.is_alive())
 
     def kill(self) -> None:
         try:
-            self.process.terminate()
-            self.process.join(1.0)
-            if self.process.is_alive():
-                self.process.kill()
-                self.process.join(1.0)
+            for process in (self.process, self.helper):
+                if process is None:
+                    continue
+                process.terminate()
+                process.join(1.0)
+                if process.is_alive():
+                    process.kill()
+                    process.join(1.0)
         finally:
             self.conn.close()
 
@@ -172,7 +200,10 @@ class _Worker:
         except (OSError, BrokenPipeError):
             pass
         self.process.join(2.0)
-        if self.process.is_alive():
+        if self.helper is not None and self.helper.is_alive():
+            self.helper.terminate()  # its pipe closed with the worker; nothing to finish
+            self.helper.join(1.0)
+        if self.process.is_alive() or (self.helper is not None and self.helper.is_alive()):
             self.kill()
 
 
@@ -180,12 +211,15 @@ class _Worker:
 class EngineSupervisor:
     def __init__(self, spec: AgentSpec, *, engine_deadline: float = 27.5, watchdog: float = 29.0,
                  spare: bool = True, load_timeout: float = 120.0, src_paths: list[str] | None = None,
-                 fallback=None, log=print, agent_cache: int = 8):
+                 fallback=None, log=print, agent_cache: int = 8, attack_helper: bool = False,
+                 preload: bool = False):
         if not 0 < engine_deadline < watchdog:
             raise ValueError('need 0 < engine_deadline < watchdog')
         self.spec, self.engine_deadline, self.watchdog = spec, engine_deadline, watchdog
         self.spare_enabled, self.load_timeout, self.log = spare, load_timeout, log
         self.agent_cache = agent_cache  # games whose agent (random stream) a worker keeps: >= the web sessions
+        self.attack_helper = attack_helper  # TB-RT30-v3 (X2): a V8-B helper process beside every worker
+        self.preload = preload              # build an agent at worker start (fails fast on a bad engine)
         self.fallback = fallback or fallback_move
         here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # .../src
         self.src_paths = src_paths or [here]
@@ -195,13 +229,18 @@ class EngineSupervisor:
         self._request = 0
         self.restarts = 0
         self.watchdogs = 0
-        self._worker = _Worker(self._ctx, spec, self.src_paths, self.agent_cache)
+        self._worker = self._new_worker()
         self._spare: _Worker | None = None
         self._spare_starting = False
         self._closed = False
         if not self._worker.wait_ready(load_timeout):
-            raise RuntimeError('engine worker did not start')
+            failure = self._worker.failure
+            self._worker.kill()
+            raise RuntimeError('engine worker did not start' + (f':\n{failure}' if failure else ''))
         self._ensure_spare()
+
+    def _new_worker(self) -> _Worker:
+        return _Worker(self._ctx, self.spec, self.src_paths, self.agent_cache, self.attack_helper, self.preload)
 
     # spares are started in the background so a restart never waits for a model load
     def _ensure_spare(self) -> None:
@@ -214,7 +253,7 @@ class EngineSupervisor:
             self._spare_starting = True
 
         def start():
-            spare = _Worker(self._ctx, self.spec, self.src_paths, self.agent_cache)
+            spare = self._new_worker()
             ready = spare.wait_ready(self.load_timeout)
             with self._spare_lock:
                 self._spare_starting = False
@@ -233,7 +272,7 @@ class EngineSupervisor:
         if spare is not None and spare.alive():
             self._worker = spare
         else:
-            self._worker = _Worker(self._ctx, self.spec, self.src_paths, self.agent_cache)  # cold start: waits on next request
+            self._worker = self._new_worker()  # cold start: waits on next request
         self.restarts += 1
         self._ensure_spare()
 
@@ -258,6 +297,9 @@ class EngineSupervisor:
             self._lock.release()
 
     def _run(self, game_key, seed, history, deadline_at, watchdog_at, received) -> MoveResult:
+        if self._worker.helper is not None and not self._worker.helper.is_alive():
+            self.log('[rt30] V8-B helper died: worker and helper replaced', flush=True)
+            self._replace_worker()  # never search v3 with V8-B inline (v1's timing) when a fresh pair can run
         worker = self._worker
         if not worker.wait_ready(max(0.0, watchdog_at - monotonic() - 0.5)):
             self._replace_worker()
@@ -365,6 +407,25 @@ def make_rt30_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_pr
                       attack_scheduler=attack_scheduler, root_rescue=root_rescue, **config)
     agent.supports_deadline = True
     agent.name = 'TB-RT30' if checkpoint else 'TB-RT30 (uniform prior)'
+    return agent
+
+
+def make_tb_rt30_v3_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_prior: bool = False):
+    """The frozen TB-RT30-v3 (``rt30.tb_rt30_v3``) for the web worker. Needs the native scan built on the
+    machine and the V8-B helper beside the worker (``EngineSupervisor(attack_helper=True)``): without
+    either ``tb_rt30_v3.make_agent`` refuses, so the web never plays v1's timing under v3's name."""
+    from . import tb_rt30_v3
+
+    if checkpoint:
+        from .tb_rt30_v1 import check_checkpoint  # the same H3 checkpoint (v3 = v1 + X1-A + X2)
+
+        check_checkpoint(checkpoint)
+        agent = tb_rt30_v3.make_agent(_cached_policy(checkpoint), seed=seed)
+    elif uniform_prior:
+        agent = tb_rt30_v3.make_agent(None, seed=seed, uniform_prior=True)
+    else:
+        raise ValueError('make_tb_rt30_v3_agent needs checkpoint=... or uniform_prior=True')
+    agent.supports_deadline = True
     return agent
 
 

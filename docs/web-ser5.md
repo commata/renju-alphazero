@@ -383,7 +383,9 @@ V8-B는 tree보다 먼저 돌고 난수와 policy를 쓰지 않는다. 그래서
 | X2 | V8-B 상주 helper 병렬 (`rt30/engine_v3.py`, `attack_helper.py`) | **구현**: 컨테이너 V8-B 6/6 (§9.8) → SER5 v3_check/v3_dev/v3_a1/v3_a3 |
 | A3-v3 | SER5 gate + E3-A 100판 (`ed3d8cf`) | **PASS**: −0.01, CI95 [−0.025, 0.0] (§9.10). `rt30_no_deadline` 1건은 기준 기록의 환경 차이(`76cce57`) |
 | A4 | TB-RT30-v3 동결 (`tb_rt30_v3.py` `STATUS='frozen'`, `tests/frozen_tb_rt30_v3.sha256`) | **완료** (§9.10) |
-| B1/B2 | 멀티 세션 + AI job queue + polling (`src/webplay/`, `run_web_play.py`, `web/index.html`, DB v2) | **구현** (§8.1). 엔진은 아직 v1; v3 연결은 search slot 구조로 따로 |
+| B1/B2 | 멀티 세션 + AI job queue + polling (`src/webplay/`, `run_web_play.py`, `web/index.html`, DB v2) | **구현** (§8.1), SER5 확인 |
+| V3-web | 웹 엔진을 TB-RT30-v3로 (`--rt30-engine v3` 기본, V8-B helper를 worker 옆에) | **구현** (§9.11) |
+| B3 | 부하 측정: slots 1 × 세션 1/2/4, slots 2 × 세션 2/4 (`scripts/ser5/b3.sh`) | 실행 대기 (§9.11) |
 | X1-B | 금수 판정 가속 | 필요할 때만: A3-v3가 시간 부족으로 HARM일 때 v4 후보 (§9.9) |
 | W | 웹 B1/B2(멀티 세션, AI job queue, search slot) | **v3·native의 production 연결보다 먼저** (§8, §9.9) |
 | V3-web | v3를 웹 search slot(main + V8-B helper 형제 프로세스)으로 연결 | W 완료 + v3 동결 뒤 (§9.9) |
@@ -1450,3 +1452,45 @@ A3 100판은 다시 돌리지 않는다. 추가 native 가속(X1-B, VCF 전체)�
   - lock 파일 hash. v1의 lock 파일은 모두 포함된다.
   - SER5 빌드의 C 소스 hash = 저장소의 C 소스 hash.
 - `.so`는 커밋하지 않는다(기계마다 빌드). SER5 빌드의 Python 3.14.4·GCC 15.2.0·`.so` SHA256은 `native_build_info.json`에 있다. 다른 기계에서 빌드한 `.so`는 hash가 달라도 같은 C 소스면 같은 엔진이다(동일성 테스트로 확인).
+
+### 9.11 v3 웹 연결과 B3 부하 측정 (2026-10-16)
+
+**구조.** §9.9의 형제(sibling) 구조다. supervisor(웹 프로세스)가 slot마다 엔진 worker와 V8-B helper를 **나란히** 띄운다.
+
+```text
+web process ─ EngineSupervisor (slot 0)
+               ├─ engine worker (daemon) ── pipe ─┐   TB-RT30-v3 (engine_v3, 동결 그대로)
+               ├─ V8-B helper   (daemon) ─────────┘   attack_helper._helper_main (동결 그대로)
+               └─ spare worker + spare helper         (watchdog 교체용)
+```
+
+- 데몬 worker는 자식 프로세스를 만들 수 없다. 그래서 helper는 웹 프로세스가 만들고, worker에는 pipe 끝만 넘긴다.
+  worker 안에서 `rt30.web_slot.install`이 `attack_helper.get_helper()`가 그 pipe 위의 `SiblingHelper`를 돌려주게 한다.
+  `SiblingHelper`는 `AttackHelper` 자체다(같은 메시지·request id). 다른 것은 프로세스를 확인하고 멈추는 방법뿐이다.
+- **v3 동결 파일은 하나도 바꾸지 않았다**(`tests/frozen_tb_rt30_v3.sha256` 그대로). helper는 평가 때와 같은 `_helper_main`을, worker는 같은 `engine_v3`를 돈다.
+- worker를 교체하면(watchdog, 사망) 짝인 helper도 함께 죽이고 새 짝을 쓴다. 탐색 전에 helper가 죽어 있으면 짝을 먼저 교체한다. v3가 V8-B를 inline(v1 시간 배분)으로 도는 일을 막기 위해서다.
+- `preload=True`: worker가 시작할 때 에이전트를 한 번 만들어 본다. native scan이나 helper가 없으면 `tb_rt30_v3.make_agent`가 거부하므로, 서버가 **시작 단계에서** 오류로 멈춘다. 첫 대국에서 fallback 수를 두며 조용히 실패하지 않는다.
+- 웹 시작 시 native scan이 이 checkout·Python에 맞게 빌드돼 있는지(`build.py --if-stale` 기준) 확인한다. 게임 로그의 엔진 정보에는 v3 설정, hash `f80d2348…`, 동결 근거, native 빌드 기록이 들어간다.
+- `--rt30-engine v3`가 기본이다. `--rt30-engine v1`이면 예전 엔진이다(helper 없음).
+- 테스트(`tests/test_rt30_web_slot.py`, 4개, 실제 프로세스):
+  - 데몬 worker 안의 v3가 helper로 V8-B 승리를 둔다(`attack_parallel`, `attack_helper_failed` 빈 값).
+  - helper 없이는 시작을 거부한다.
+  - worker를 교체하면 helper도 교체된다.
+  - 죽은 helper는 다음 탐색 전에 교체된다.
+- 컨테이너 확인: `--rt30 --rt30-uniform-prior` 서버의 프로세스는 웹 프로세스 아래에 worker·helper·spare worker·spare helper 4개다. 대국 수마다 DB `rt_json`에 `attack_parallel: true`, helper 실패 없음이 남는다.
+
+**B3 부하 측정 (`scripts/web_load_test.py`, `scripts/ser5/b3.sh`).**
+
+- 모의 브라우저(쿠키 세션) N개가 `--minutes` 동안 TB-RT30과 계속 둔다. 색은 판마다 바꾼다.
+- "사람" 수는 기본으로 v5 엔진이 둔다(수당 약 1.4초, 코어 하나). 그래야 TB-RT30이 실제로 탐색하는 국면이 나온다. 그 CPU는 `human_engine_seconds`로 따로 보고한다.
+  - `random`은 CPU를 쓰지 않지만, AI가 금방 이겨서 탐색을 거의 하지 않는다. 컨테이너에서 응답 0.03초였다.
+  - 수마다 `--think`(2초) 쉰 뒤 둔다.
+- 사람이 보는 시간은 클라이언트가 잰다: 사람 수 → AI 수가 보일 때까지(polling 0.25초 단위).
+- 서버 쪽 시간은 `--db`에서 이 세션들의 수만 골라 읽는다(세션 hash로 맞춘다): 대기열, 엔진, wall, 27.5초 초과, watchdog·비상수, helper 실패.
+- 컨테이너 smoke(v3 uniform prior, 1 slot, 세션 2, 2분): AI 43수, 사람이 본 대기 중앙값 1.77초, p95 6.05초, 최대 20.4초. 서버 대기열 p95 2.44초, 엔진 최대 20.3초, 27.5초 초과·watchdog·helper 실패·503·오류 0.
+- `b3.sh`는 시험 서버를 포트 8100에 따로 띄운다(DB는 `runs/b3/`). 운영 서버(8000)는 건드리지 않는다.
+  - 구성: slots 1 × 세션 1/2/4, slots 2 × 세션 2/4, 각 15분, 약 1.5시간. 결과는 `runs/b3/b3_report.md`.
+- 판단 기준(측정 후 `--ai-slots`를 정한다):
+  - 엔진 27.5초 초과 0, watchdog 0, helper 실패 0.
+  - slots 2에서 엔진 p95가 slots 1보다 크게 늘지 않을 것. 늘면 탐색이 CPU를 서로 빼앗는 것이다.
+  - 대기열 p95는 사용자 체감이다. "대기 n명" 표시로 감당할 수준인지 본다.
