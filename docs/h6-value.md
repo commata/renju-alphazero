@@ -516,6 +516,54 @@ python scripts\h6_last_n.py runs\h6\h6_pilot_prove_losses_fast.json --expect doc
 4. v3 라벨과 캐시를 만든다. v2 설정에 `--prove-losses --prove-losses-last-n 12 --fast <모드>`만 더한다.
 5. H6-2a′ 학습 → dev 비교 → 최종 gate(위 5–7단계).
 
+**v3 라벨 전체 생성 결과 (2026-10-17, `docs/h6/h6_1_report_v3.json`, 실행 코드 `4ec548e`, 결과 커밋 `f16292b`)**
+
+- 설정: v2와 같은 전체(train·val·test, `sample_every 0`)에 `--prove-losses --prove-losses-last-n 12 --fast fast3`만 더했다.
+  손실 증명 예산은 pilot과 같다(VCF 호출당 20,000 노드, 국면당 100,000 노드, 5,000 호출).
+- 실행: Desktop WSL2(Ubuntu 24.04, i5-12600K, Python 3.14.8, gcc 13.3, workers 16), **416.8분**.
+  - native 빌드의 C 소스 SHA256 `2a1e309c…`는 SER5와 같다. `.so` hash는 컴파일러가 달라 다르다.
+  - 같은 작업을 SER5(5800H, fast3)에서도 돌리고 있다. 631.3분에 85%이므로 끝나면 약 740분으로 본다. Desktop WSL2가 **약 1.7–1.8배** 빠르다.
+
+| | v2 | v3 | 차이 |
+|---|---|---|---|
+| 국면(rows) | 3,499,207 | 3,499,207 | 0 |
+| 라벨 있는 국면 | 2,893,475 | 2,894,077 | +602 |
+| outcome 라벨 | 2,725,718 | 2,696,327 | −29,391 |
+| proof `vcf` / `unstoppable_four` / `immediate_win` / `forced_loss` | 99,783 / 28,852 / 22,064 / 17,058 | 같음 | 0 |
+| **proof `vcf_loss`** | 0 | **29,993** | +29,993 |
+| 부호 +1 / −1 | 1,477,042 / 1,416,433 | 1,476,725 / 1,417,352 | −317 / +919 |
+| flag `end_unknown` / `outcome_conflicts_proof` / `h2_masked` | 2,314,848 / 41,622 / 86,065 | 2,297,449 / 41,055 / 86,065 | −17,399 / −567 / 0 |
+| budget cut | — | 33,342 | |
+
+- **v3는 의도한 것만 바꿨다.**
+  - 국면, split별 개수, 제외된 대국(probe 888판), 기존 proof 4종의 개수가 v2와 같다.
+  - 새로 생긴 것은 `vcf_loss` 29,993개뿐이다.
+  - 그중 29,391개는 원래 outcome 라벨(가중치 0.1)이 있던 국면이고, 증명 라벨(가중치 1.0)로 바뀌었다. 602개는 라벨이 없던 국면에 새로 생겼다.
+  - outcome이 증명과 부딪혀 가려지던 국면(`outcome_conflicts_proof`)도 567개 줄었다.
+- **pilot 예측과 맞는다.** pilot은 1,961판에서 모든 ply로 `vcf_loss` 587개였다.
+  전체 107,123판이면 54.6배로 약 32,100개이고, N = 12가 그중 95.4%를 담으므로 약 30,600개를 예상했다. 실제는 29,993개(98%)다.
+- `vcf_loss`는 종료까지 거리가 짝수인 곳에 몰려 있다(2, 4, 6수가 각각 7–8천). 패배하는 쪽이 둘 차례인 국면이다.
+  budget cut도 같은 패턴이다(짝수 거리 26,099 / 33,342). cut은 패배 증명이 예산을 넘은 국면에 생기기 때문이다.
+- `proof_by_distance_to_end`의 합(예: `vcf_loss` 30,116)은 `by_kind`(29,993)보다 조금 크다. 이 분포는 `from_ply` 5 미만을 포함한 모든 증명을 센다. 그래서 다섯 종류 모두 같은 방식으로 조금씩 크다. 오류가 아니다.
+- **남은 확인: 기계가 달라도 라벨이 같은가.** v3 builder는 모델 없이 규칙과 solver만 쓴다(`model_hash` None). 그래서 SER5와 Desktop WSL2의 결과는 같아야 한다.
+  SER5가 끝나면 아래로 확인한다. 같으면 앞으로 CPU 라벨 작업은 Desktop WSL2에서 돌린다.
+
+```bash
+# 두 기계 각각: 행 내용 hash (gzip 헤더의 시각·파일명은 빼고 압축을 푼 내용으로 잰다)
+zcat <v3 labels>.jsonl.gz | sha256sum
+zcat <v3 labels>.jsonl.gz.budget_cuts.jsonl 2>/dev/null | sha256sum || sha256sum <v3 labels>.jsonl.gz.budget_cuts.jsonl
+# summary 비교 (SER5 보고서를 Desktop으로 가져온 뒤)
+python - <<'PY'
+import json
+a = json.load(open('docs/h6/h6_1_report_v3.json'))['summary']
+b = json.load(open('runs/h6/h6_1_report_v3_ser5.json'))['summary']
+diff = [k for k in set(a) | set(b) if a.get(k) != b.get(k)]
+print('SAME' if not diff else f'DIFFERENT: {diff}')
+PY
+```
+
+- 다음: v3 value 캐시 → H6-2a′ 학습 → dev 비교 → 최종 gate(위 5–7단계). 캐시는 v2와 같은 명령에 v3 라벨과 `docs/h6/h6_1_report_v3.json`을 주고, 출력 폴더만 `value_cache_v3`로 바꾼다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
