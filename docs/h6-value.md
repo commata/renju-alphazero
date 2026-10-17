@@ -564,6 +564,48 @@ PY
 
 - 다음: v3 value 캐시 → H6-2a′ 학습 → dev 비교 → 최종 gate(위 5–7단계). 캐시는 v2와 같은 명령에 v3 라벨과 `docs/h6/h6_1_report_v3.json`을 주고, 출력 폴더만 `value_cache_v3`로 바꾼다.
 
+**v3 value 캐시 (2026-10-17, Desktop Windows `.venv-cpu`, 12 worker, 88.1초, `data/tactical/h6/value_cache_v3`)**
+
+- v2 캐시와 같은 환경·명령으로 만들었다. 라벨 파일과 보고서만 v3다(`labels_sha256` `b80f617f…`, `h6_report_sha256` `fc81b8ff…` = 커밋된 `docs/h6/h6_1_report_v3.json`).
+- 합계가 v3 보고서와 모두 맞는다.
+
+| | v2 캐시 | v3 캐시 | 차이 |
+|---|---|---|---|
+| 국면 train / val / test | 2,682,580 / 106,223 / 104,672 | 2,683,098 / 106,274 / 104,705 | +518 / +51 / +33 (합 +602 = 보고서 `labelled` 차이) |
+| 버린 mask 행 | 470,282 / 67,732 / 67,718 | 469,764 / 67,681 / 67,685 | 같은 수만큼 감소. 분할별 행(국면 + mask)은 그대로 |
+| 증명 +1 / −1 (합) | 150,699 / 17,058 | 150,699 / **47,051** | −1만 +29,993 (= `vcf_loss`) |
+| 결과 라벨 (합) | 2,725,718 | 2,696,327 | −29,391 |
+| 대국 수 | 98,993 | 98,996 | +3: 행이 모두 mask였던 대국에 `vcf_loss`가 생겼다 |
+
+| 분할 | 증명 weight 비중 v2 → v3 | 증명 중 −1 비율 v2 → v3 | 결과 +1 비율 v2 → v3 |
+|---|---|---|---|
+| train | 37.1% → 41.3% | 10.0% → 23.6% | 48.7% → 49.2% |
+| val | 50.0% → 54.3% | 12.3% → 25.1% | 48.1% → 48.9% |
+| test | 47.5% → 52.3% | 10.6% → 24.9% | 48.3% → 49.1% |
+
+- **바뀐 것은 계획한 변수 하나다.** 분할, 국면 집합, 기존 증명 라벨은 같다. `vcf_loss`가 결과 라벨(가중치 0.1)을 증명 라벨(1.0)로 바꿨다.
+  - 그래서 증명 −1이 2.8배가 되고, 증명 weight 비중이 4%p 안팎 오른다.
+  - 결과 +1 비율이 조금 오르는 것은, 바뀐 결과 라벨 대부분이 진 쪽(−1)의 국면이었기 때문이다.
+- **해석 주의: v2와 v3 모델을 val 손실로 비교하지 않는다.** val의 라벨 자체가 바뀌었다(증명 비중 50 → 54%, −1 증명 2.0배).
+  그래서 val weighted MSE는 두 실험 사이에 같은 잣대가 아니다. 각 실험 안에서 best를 고르는 데만 쓴다.
+  v2와 v3의 비교는 H6-3 gate(고정 probe, kind별·ply별 지표)로 한다.
+- 학습량: train 2,683,098국면, batch 1024면 epoch당 약 2,620 step, 3 epoch에 약 7,860 step이다(v2 7,857).
+
+H6-2a′ 실행(Desktop Windows, RTX 5070). 계획대로 캐시, 보고서, 출력 폴더만 바꾼다. 나머지는 `configs/hybrid/h6_value_head.yaml`(H6-2a와 같은 설정)이다.
+
+```powershell
+$H3 = "..\renju-alphazero\runs\h3_policy_64x4\best.pt"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+# smoke (GPU, 300 step, 결과는 쓰지 않음)
+python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml --h3-checkpoint $H3 `
+  --cache-dir data\tactical\h6\value_cache_v3 --h6-report docs\h6\h6_1_report_v3.json `
+  --out-dir runs\h6\value_v3_smoke --max-steps 300 --eval-every 100 --eval-max-states 50000 2>&1 | Tee-Object runs\h6\value_v3_smoke.log
+# 본 실행 (중단되면 같은 인자에 --resume)
+python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml --h3-checkpoint $H3 `
+  --cache-dir data\tactical\h6\value_cache_v3 --h6-report docs\h6\h6_1_report_v3.json `
+  --out-dir runs\h6_value_head_v3 2>&1 | Tee-Object runs\h6\value_v3.log
+```
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
