@@ -218,6 +218,14 @@ def select(games: list[dict], found: list[dict], exclude: set[str], per_sign: bo
     return probes
 
 
+def _is_dev_file(path) -> bool:
+    try:
+        data = json.loads(Path(path).read_text(encoding='utf-8'))
+    except (OSError, ValueError):
+        return False
+    return isinstance(data, dict) and data.get('purpose') == 'dev'
+
+
 def load_games(paths: list[Path], seeds: tuple = FRESH_PROBE_SEEDS) -> tuple[list[dict], dict]:
     games, sources = [], {}
     for path in paths:
@@ -277,7 +285,10 @@ def main(argv=None) -> int:
             record(j, _scan_chunk(c))
             progress.update(1)
     found = [{k: int(v) for k, v in done[g['key']]['found'].items()} for g in games]
-    exclude = probe_hashes(p for p in default_probe_files(ROOT) if Path(p).resolve() != args.output.resolve())
+    files = [p for p in default_probe_files(ROOT) if Path(p).resolve() != args.output.resolve()]
+    if args.dev:  # a rebuilt dev set (e.g. with the extension seeds) keeps the probes of an earlier dev set
+        files = [p for p in files if not _is_dev_file(p)]
+    exclude = probe_hashes(files)
     probes = select(games, found, exclude, per_sign=args.dev)
     counts = {'win': sum(p['expected_sign'] == 1 for p in probes), 'loss': sum(p['expected_sign'] == -1 for p in probes),
               'games_scanned': len(games), 'games_with_win': sum('win' in f for f in found),

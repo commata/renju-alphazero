@@ -61,6 +61,17 @@ class FreshProbeTest(unittest.TestCase):
             self.assertEqual((out['purpose'], out['sealed']), ('dev', False))
             self.assertTrue(out['selection']['one_probe_per_game_and_sign'])
 
+    def test_dev_rebuild_ignores_earlier_dev_sets(self):
+        from scripts import make_h6_fresh_probes as maker
+        with TemporaryDirectory() as tmp:
+            dev = Path(tmp, 'h6_fresh_dev_probes_v1.json')
+            dev.write_text(json.dumps({'purpose': 'dev', 'probes': []}), encoding='utf-8')
+            final = Path(tmp, 'h6_fresh_final_probes_v1.json')
+            final.write_text(json.dumps({'purpose': 'final', 'probes': []}), encoding='utf-8')
+            self.assertTrue(maker._is_dev_file(dev))
+            self.assertFalse(maker._is_dev_file(final))
+            self.assertFalse(maker._is_dev_file(Path(tmp, 'missing.json')))
+
     def test_dev_verdict_rule(self):
         from scripts.h6_dev_probe_eval import RULE, verdict
 
