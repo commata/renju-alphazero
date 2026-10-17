@@ -15,6 +15,14 @@ added to the default probe files, so a later label build drops every RenjuNet ga
 
     python scripts/make_h6_fresh_probes.py --games runs/h6_fresh/*.json --workers 12 \\
         --output docs/h6/h6_fresh_final_probes_v1.json
+
+``--dev`` (H6-2a' option B) makes the dev deep-probe set from the dev seeds 8611-8616 instead: same scan and
+truth, but each game gives at most one probe **per sign** (its earliest deep win and earliest deep loss), so
+each sign is still one probe per game and is judged on its own. The file is marked ``purpose: dev``, is not
+sealed, and the final gate refuses it. It also skips positions D4-equal to the final probes.
+
+    python scripts/make_h6_fresh_probes.py --dev --games "runs/h6_dev/dev_*.json" --workers 12 \\
+        --jsonl runs/h6_dev/scan.jsonl --output docs/h6/h6_fresh_dev_probes_v1.json
 """
 from __future__ import annotations
 
@@ -33,7 +41,7 @@ if str(ROOT / 'src') not in sys.path:
     sys.path.insert(0, str(ROOT / 'src'))
 
 from hybrid.h6_labels import (  # noqa: E402
-    FRESH_PROBE_SEEDS, canonical_hash, default_probe_files, probe_hashes, proof_label,
+    DEV_PROBE_EXTENSION_SEEDS, DEV_PROBE_SEEDS, FRESH_PROBE_SEEDS, canonical_hash, default_probe_files, probe_hashes, proof_label,
 )
 from hybrid.progress import Progress, run_chunks  # noqa: E402
 from renju import Game  # noqa: E402
@@ -187,9 +195,11 @@ def _scan_chunk(tasks):
     return [scan_game(t) for t in tasks]
 
 
-def select(games: list[dict], found: list[dict], exclude: set[str]) -> list[dict]:
-    """At most one probe per game, balancing the signs in game order."""
+def select(games: list[dict], found: list[dict], exclude: set[str], per_sign: bool = False) -> list[dict]:
+    """At most one probe per game, balancing the signs in game order; with ``per_sign`` (dev), at most one
+    probe per game and sign (no balancing)."""
     probes, taken, count = [], set(exclude), {'loss': 0, 'win': 0}
+    prefix = 'D' if per_sign else 'F'
     for game, hits in zip(games, found):
         options = []
         for sign in sorted(hits, key=lambda s: (count[s], s != 'loss')):
@@ -197,27 +207,25 @@ def select(games: list[dict], found: list[dict], exclude: set[str]) -> list[dict
             key = canonical_hash(game['moves'][:ply])
             if key not in taken:
                 options.append((sign, ply, key))
-        if not options:
-            continue
-        sign, ply, key = options[0]
-        taken.add(key)
-        count[sign] += 1
-        probes.append({'name': f"F{len(probes) + 1:02d}", 'game_key': game['key'], 'seed': game['seed'],
-                       'ply': ply, 'moves': game['moves'][:ply],
-                       'side_to_move': 'black' if ply % 2 == 0 else 'white',
-                       'expected_sign': 1 if sign == 'win' else -1,
-                       'kind': 'vct1_win' if sign == 'win' else 'vct_loss', 'canonical_hash': key})
+        for sign, ply, key in (options if per_sign else options[:1]):
+            taken.add(key)
+            count[sign] += 1
+            probes.append({'name': f"{prefix}{len(probes) + 1:02d}", 'game_key': game['key'], 'seed': game['seed'],
+                           'ply': ply, 'moves': game['moves'][:ply],
+                           'side_to_move': 'black' if ply % 2 == 0 else 'white',
+                           'expected_sign': 1 if sign == 'win' else -1,
+                           'kind': 'vct1_win' if sign == 'win' else 'vct_loss', 'canonical_hash': key})
     return probes
 
 
-def load_games(paths: list[Path]) -> tuple[list[dict], dict]:
+def load_games(paths: list[Path], seeds: tuple = FRESH_PROBE_SEEDS) -> tuple[list[dict], dict]:
     games, sources = [], {}
     for path in paths:
         data = json.loads(Path(path).read_text(encoding='utf-8'))
         if data.get('arm') != ENGINE_ARM:
             raise ValueError(f"{path}: arm {data.get('arm')!r} is not TB-Engine-v1 ({ENGINE_ARM})")
-        if int(data['seed']) not in FRESH_PROBE_SEEDS:
-            raise ValueError(f"{path}: seed {data['seed']} is not a fresh-probe seed {FRESH_PROBE_SEEDS}")
+        if int(data['seed']) not in seeds:
+            raise ValueError(f"{path}: seed {data['seed']} is not one of the probe seeds {seeds}")
         sources[str(path)] = {'sha256': hashlib.sha256(Path(path).read_bytes()).hexdigest(),
                               'seed': data['seed'], 'opponent': data['opponent'], 'git_commit': data.get('git_commit'),
                               'games': len(data['games'])}
@@ -232,12 +240,14 @@ def main(argv=None) -> int:
     parser.add_argument('--from-ply', type=int, default=10)
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--jsonl', type=Path, help='per-game scan results, appended as games finish (resume)')
+    parser.add_argument('--dev', action='store_true',
+                        help="dev deep probes from the dev seeds (H6-2a' option B), one probe per game and sign")
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     if args.output.exists():
         parser.error(f'{args.output} exists: the fresh probes are made once')
     paths = [Path(p) for pattern in args.games for p in (sorted(glob.glob(pattern)) or [pattern])]
-    games, sources = load_games(paths)
+    games, sources = load_games(paths, DEV_PROBE_SEEDS + DEV_PROBE_EXTENSION_SEEDS if args.dev else FRESH_PROBE_SEEDS)
     done = {}
     if args.jsonl is not None and args.jsonl.exists():
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
@@ -268,7 +278,7 @@ def main(argv=None) -> int:
             progress.update(1)
     found = [{k: int(v) for k, v in done[g['key']]['found'].items()} for g in games]
     exclude = probe_hashes(p for p in default_probe_files(ROOT) if Path(p).resolve() != args.output.resolve())
-    probes = select(games, found, exclude)
+    probes = select(games, found, exclude, per_sign=args.dev)
     counts = {'win': sum(p['expected_sign'] == 1 for p in probes), 'loss': sum(p['expected_sign'] == -1 for p in probes),
               'games_scanned': len(games), 'games_with_win': sum('win' in f for f in found),
               'games_with_loss': sum('loss' in f for f in found),
@@ -281,8 +291,11 @@ def main(argv=None) -> int:
                                 check=True).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         commit = None
-    payload = {'format': FORMAT, 'sealed': True, 'git_commit': commit, 'sources': sources,
-               'selection': {'from_ply': args.from_ply, 'one_probe_per_game': True, 'balance': 'fewer sign first',
+    payload = {'format': FORMAT, 'purpose': 'dev' if args.dev else 'final', 'sealed': not args.dev,
+               'git_commit': commit, 'sources': sources,
+               'selection': {'from_ply': args.from_ply, 'one_probe_per_game': not args.dev,
+                             'one_probe_per_game_and_sign': args.dev,
+                             'balance': None if args.dev else 'fewer sign first',
                              'depth0_excluded': list(DEPTH0_KINDS), 'vct1_budget': VCT1_BUDGET,
                              'defense_max_candidates': DEFENSE_MAX_CANDIDATES, 'solver_node_limit': SOLVER_NODE_LIMIT,
                              'vcf_call_budget_per_position': VCF_CALL_BUDGET,

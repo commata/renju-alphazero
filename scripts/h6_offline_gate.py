@@ -43,6 +43,9 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.part == 'B' and (args.fresh_probes is None or not args.d4_average):
         parser.error('part B is the final gate: it needs --fresh-probes and --d4-average (docs/h6-value.md)')
+    if args.fresh_probes is not None and \
+            json.loads(args.fresh_probes.read_text(encoding='utf-8')).get('purpose', 'final') != 'final':
+        parser.error(f'{args.fresh_probes} is a dev probe set, not the sealed final probes')
     if args.output.exists():
         parser.error(f'{args.output} exists: the gate runs once per part')
     commit, dirty = _git_provenance()

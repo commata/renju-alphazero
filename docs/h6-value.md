@@ -731,6 +731,84 @@ PUCT처럼 leaf를 하나씩 평가하면 GPU가 놀고 있으므로 D4 비용�
   - v2+D4와 v3+D4를 부호별로 잰다.
   - 규칙은 지금 정한다: **v3의 dev deep-win·deep-loss 정확도가 둘 다 0.80 이상이면 최종 gate로 간다.** 아니면 최종 집합을 쓰지 않고, 엔진 대국에서 나온 깊은 라벨(H6-2b/H7, §H6-3A의 4번)로 간다.
   - 비용: 엔진 대국 60판(8601–8603과 같은 규모)과 probe 추출. 모델 학습은 없다.
+- **결정(2026-10-17): B안.** 프로토콜과 판정 규칙은 아래 "H6-2a′ B안" 절에 결과 보기 전에 고정했다.
+
+## H6-2a′ B안: dev deep-probe 사전 점검 (2026-10-17, 결과 보기 전에 동결)
+
+사용자가 B안을 골랐다. 아래 프로토콜과 판정 규칙은 **dev probe 대국을 하나도 두기 전에** 이 커밋으로 고정한다. 결과를 본 뒤에는 바꾸지 않는다.
+
+**동결하는 것**
+
+- **모델:** v3 checkpoint를 지금 것으로 동결한다(`runs\h6_value_head_v3\best.pt`, sha256 `a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca`). 평가 스크립트가 sha256을 확인하고, 다르면 실행하지 않는다.
+- **재조정 금지:** 결과가 나빠도 LR, epoch, loss weight 등을 바꿔 같은 dev probe에 다시 맞추지 않는다. 통과하면 추가 튜닝 없이 바로 최종 gate로 간다.
+- **seed:** 기본 8611–8613, 확장 8614–8616(아래 확장 규칙으로만 사용). 여섯 개 모두 `RESERVED_SEEDS`에 넣었다(`DEV_PROBE_SEEDS`, `DEV_PROBE_EXTENSION_SEEDS`). 쓰든 안 쓰든 이 seed의 대국은 H6, H7, 자기대국 어떤 학습 데이터에도 **영구히** 넣지 않는다.
+- **대국:** 8601–8603과 같은 설정이다. TB-Engine-v1(`puct_policy_vct2_50k`, c 1.5) 대 `v8:full`, seed당 20판(`--pairs 10`).
+- **probe 생성:** `make_h6_fresh_probes.py --dev`. 탐색과 truth는 최종 fresh probe와 같다(scan v3, 같은 상한). from-ply 10.
+  - +1 = 깊이 0 라벨이 없고 `vct1_win`이 증명된 국면. −1 = `defense_label`이 `vct_loss`를 증명한 국면(P94 종류).
+  - 최종 probe와 다른 점은 하나다. 표본을 늘리려고 **대국마다 부호별로 하나씩**(가장 이른 깊은 승리, 가장 이른 깊은 패배) 뽑는다. 부호 안에서는 여전히 대국당 하나이므로, 부호별 판정의 독립성은 최종 probe와 같다.
+  - 최종 fresh probe와 D4로 같은 국면, 기존 probe·평가 국면은 뺀다.
+  - 출력 `docs/h6/h6_fresh_dev_probes_v1.json`은 `purpose: dev`, `sealed: false`로 표시된다. 최종 gate(`h6_offline_gate.py`)는 이 파일을 `--fresh-probes`로 받지 않는다. 기본 probe 파일 목록에는 들어가므로, 이후 라벨 생성에서 이 국면을 지나는 RenjuNet 대국이 빠진다.
+
+**확장 규칙 (개수만 보고 정한다. 모델은 아직 돌리지 않는다)**
+
+1. 8611–8613(60판)으로 추출해 `counts`의 win·loss 개수만 확인한다.
+2. 두 부호가 모두 50개 이상이면 그대로 평가한다.
+3. 어느 한 부호라도 50개 미만이면 8614–8616(60판)을 추가하고, **여섯 seed 파일을 함께** 넣어 다시 추출한다. 확장은 이 한 번뿐이다.
+4. 확장 뒤에도 어느 부호가 20개 미만이면 판정할 표본이 없는 것으로 보고 **FAIL**로 처리한다(최종 집합은 열지 않는다).
+- 참고: 최종 probe 추출(60판)에서 깊은 승리가 있는 대국은 52판, 깊은 패배가 있는 대국은 45판이었다. 그래서 기본 60판으로는 loss 쪽이 50개에 못 미쳐 확장될 가능성이 높다.
+
+**판정 규칙 (D4 평균 추론만, v3만 판정)**
+
+| 판정 | 조건 | 다음 단계 |
+|---|---|---|
+| **PASS** | deep-win 정확도 ≥ 0.80 **그리고** deep-loss 정확도 ≥ 0.80, 각 부호 20개 이상 | 추가 튜닝 없이 최종 gate(v3, part B + sealed fresh probe + D4) 한 번 |
+| **FAIL** | 어느 한 부호라도 0.80 미만, 또는 20개 미만 | 최종 집합(part B·fresh probe)은 열지 않는다. H6-2b/H7(더 좋은 깊은 라벨)로 간다 |
+
+- 정확도는 value와 기대 부호의 곱이 양수인 비율이다(`h6_gate.fresh_probes`와 같다. value 0은 오답).
+- 결과는 반드시 표본 수와 함께 적는다. 예: `48 / 57 = 84.2%`. 스크립트가 이 형식으로 출력한다.
+- v2+D4도 같은 probe로 재지만 **참고용**이다. 판정에는 쓰지 않는다.
+- 이 점검은 한 번만 돈다. 같은 출력 파일이 있으면 실행하지 않는다.
+
+**실행 명령 (Windows, 8601–8603 때와 같은 환경)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "$PWD\src"
+git pull --ff-only
+git status --short
+New-Item -ItemType Directory -Force runs\h6_dev | Out-Null
+
+# 1) 엔진 대국: 기본 seed 8611-8613 (seed당 20판)
+foreach ($seed in 8611, 8612, 8613) {
+  python -u scripts\run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full --seed $seed --pairs 10 `
+    --workers 6 --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt `
+    --games-jsonl runs\h6_dev\dev_$seed.jsonl --output runs\h6_dev\dev_$seed.json 2>&1 | Tee-Object runs\h6_dev\dev_$seed.log
+}
+
+# 2) 개수만 확인 (모델 없음). runs\ 아래 임시 출력
+python -u scripts\make_h6_fresh_probes.py --dev --games runs\h6_dev\dev_*.json --workers 12 `
+  --jsonl runs\h6_dev\scan.jsonl --output runs\h6_dev\count_base.json
+```
+
+- `count_base.json`의 `counts.win`, `counts.loss`가 둘 다 50 이상이면 3)으로 간다. 하나라도 50 미만이면 1)을 seed 8614, 8615, 8616으로 돌린 뒤 2)를 `--output runs\h6_dev\count_ext.json`으로 다시 돌려 개수를 확인한다(`dev_*.json`이 여섯 파일을 모두 잡고, 끝난 대국은 `scan.jsonl`에서 건너뛴다).
+
+```powershell
+# 3) 확정 probe 파일 (개수 확인과 같은 입력) -> 커밋
+python -u scripts\make_h6_fresh_probes.py --dev --games runs\h6_dev\dev_*.json --workers 12 `
+  --jsonl runs\h6_dev\scan.jsonl --output docs\h6\h6_fresh_dev_probes_v1.json
+git add docs\h6\h6_fresh_dev_probes_v1.json
+git commit -m "H6-2a' option B: dev deep probes (truth only)"
+
+# 4) 평가 (깨끗한 worktree에서 한 번)
+python -u scripts\h6_dev_probe_eval.py --model v3=runs\h6_value_head_v3\best.pt --model v2=runs\h6_value_head_v1\best.pt `
+  --probes docs\h6\h6_fresh_dev_probes_v1.json --device cuda `
+  --output docs\h6\h6_dev_probe_eval.json 2>&1 | Tee-Object runs\h6_dev\dev_eval.log
+```
+
+- 마지막 줄 `decision: PASS` 또는 `decision: FAIL`이 판정이다. PASS면 다음은 최종 gate 명령 하나다. FAIL이면 최종 집합을 열지 않고 H6-2b/H7 설계로 간다.
 
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 

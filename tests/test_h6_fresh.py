@@ -4,7 +4,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from hybrid.h6_labels import FRESH_PROBE_SEEDS, RESERVED_SEEDS, canonical_hash, check_reserved_seed, default_probe_files
+from hybrid.h6_labels import (DEV_PROBE_EXTENSION_SEEDS, DEV_PROBE_SEEDS, FRESH_PROBE_SEEDS, RESERVED_SEEDS,
+                               canonical_hash, check_reserved_seed, default_probe_files)
 from scripts.make_h6_fresh_probes import ENGINE_ARM, load_games, scan_game, select
 
 try:
@@ -24,6 +25,65 @@ class FreshProbeTest(unittest.TestCase):
         self.assertTrue(set(FRESH_PROBE_SEEDS) <= RESERVED_SEEDS)
         with self.assertRaises(ValueError):
             check_reserved_seed(8605)
+
+    def test_dev_seeds_are_reserved_and_disjoint(self):
+        self.assertEqual(DEV_PROBE_SEEDS, (8611, 8612, 8613))
+        self.assertEqual(DEV_PROBE_EXTENSION_SEEDS, (8614, 8615, 8616))
+        self.assertTrue(set(DEV_PROBE_SEEDS + DEV_PROBE_EXTENSION_SEEDS) <= RESERVED_SEEDS)
+        self.assertFalse(set(DEV_PROBE_SEEDS + DEV_PROBE_EXTENSION_SEEDS) & set(FRESH_PROBE_SEEDS))
+        with self.assertRaises(ValueError):
+            check_reserved_seed(8616)
+
+    def test_dev_select_one_per_game_and_sign(self):
+        moves = WEB['moves']
+        games = [{'key': f'g{i}', 'seed': 8611, 'moves': moves} for i in range(3)]
+        found = [{'loss': 90, 'win': 91}, {'loss': 92, 'win': 93}, {'win': 91}]
+        probes = select(games, found, exclude=set(), per_sign=True)
+        self.assertEqual([(p['game_key'], p['ply']) for p in probes],
+                         [('g0', 90), ('g0', 91), ('g1', 92), ('g1', 93)])  # g2's win is D4-equal to g0's
+        for sign in (1, -1):
+            keys = [p['game_key'] for p in probes if p['expected_sign'] == sign]
+            self.assertEqual(len(keys), len(set(keys)))
+        self.assertTrue(all(p['name'].startswith('D') for p in probes))
+
+    def test_dev_mode_takes_dev_seeds_only(self):
+        from scripts import make_h6_fresh_probes as maker
+        with TemporaryDirectory() as tmp:
+            games = {'arm': ENGINE_ARM, 'seed': 8601, 'opponent': 'v8:full', 'games': [{'key': 'g1', 'moves': []}]}
+            Path(tmp, 'f.json').write_text(json.dumps(games), encoding='utf-8')
+            with self.assertRaises(ValueError):
+                maker.main(['--dev', '--games', str(Path(tmp, 'f.json')), '--output', str(Path(tmp, 'x.json'))])
+            games = {**games, 'seed': 8611, 'games': [{'key': 'g1', 'moves': WEB['moves'][:96]}]}
+            Path(tmp, 'd.json').write_text(json.dumps(games), encoding='utf-8')
+            self.assertEqual(maker.main(['--dev', '--games', str(Path(tmp, 'd.json')), '--from-ply', '93',
+                                         '--output', str(Path(tmp, 'dev.json'))]), 0)
+            out = json.loads(Path(tmp, 'dev.json').read_text(encoding='utf-8'))
+            self.assertEqual((out['purpose'], out['sealed']), ('dev', False))
+            self.assertTrue(out['selection']['one_probe_per_game_and_sign'])
+
+    def test_dev_verdict_rule(self):
+        from scripts.h6_dev_probe_eval import RULE, verdict
+
+        def fresh(win, loss):
+            rows = [{'expected_sign': 1, 'correct': i < win[0]} for i in range(win[1])]
+            rows += [{'expected_sign': -1, 'correct': i < loss[0]} for i in range(loss[1])]
+            out = {'probes': rows}
+            for name, (c, n) in (('win', win), ('loss', loss)):
+                out[name] = {'probes': n, 'games': n, 'accuracy': c / n if n else None, 'mean_value': 0.0}
+            return out
+
+        self.assertEqual(RULE['sign_accuracy_min'], 0.80)
+        ok = verdict(fresh((48, 57), (40, 50)))
+        self.assertEqual(ok['verdict'], 'PASS')
+        self.assertEqual(ok['win']['text'], '48 / 57 = 84.2%')
+        self.assertEqual(verdict(fresh((48, 57), (39, 50)))['verdict'], 'FAIL')  # 78% loss
+        self.assertEqual(verdict(fresh((19, 19), (40, 50)))['verdict'], 'FAIL')  # too few wins
+        self.assertEqual(verdict(fresh((48, 57), (0, 0)))['verdict'], 'FAIL')
+
+    def test_dev_eval_refuses_the_final_probes(self):
+        from scripts.h6_dev_probe_eval import check_probe_file
+        with self.assertRaises(ValueError):
+            check_probe_file(ROOT / 'docs' / 'h6' / 'h6_fresh_final_probes_v1.json')
 
     def test_fresh_files_are_probe_files(self):
         with TemporaryDirectory() as tmp:
@@ -139,6 +199,50 @@ class FreshGateTest(unittest.TestCase):
         from scripts.h6_offline_gate import main
         with self.assertRaises(SystemExit):
             main(['--checkpoint', 'x.pt', '--cache-dir', 'c', '--part', 'B', '--output', 'o.json'])
+
+    def test_final_gate_refuses_dev_probes(self):
+        from scripts.h6_offline_gate import main
+        with TemporaryDirectory() as tmp:
+            dev = Path(tmp, 'dev.json')
+            dev.write_text(json.dumps({'format': 'h6-fresh-probes-v1', 'purpose': 'dev', 'sealed': False,
+                                       'probes': []}), encoding='utf-8')
+            with self.assertRaises(SystemExit):
+                main(['--checkpoint', 'x.pt', '--cache-dir', 'c', '--part', 'B', '--d4-average',
+                      '--fresh-probes', str(dev), '--output', str(Path(tmp, 'o.json'))])
+
+
+@unittest.skipIf(torch is None, 'torch is not installed')
+class DevEvalTest(unittest.TestCase):
+    def test_dev_eval_end_to_end(self):
+        from model.checkpoint import save_checkpoint
+        from scripts.h6_dev_probe_eval import main
+        from tests.test_h6_cross_eval import MODEL_CONFIG
+        from tests.test_h6_value import h3_model
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'v3').mkdir()
+            save_checkpoint(root / 'v3' / 'best.pt', h3_model(seed=12))
+            (root / 'v3' / 'best.json').write_text(json.dumps({'stage': 'H6-2a', 'labels_sha256': 'x',
+                                                               'model_config': MODEL_CONFIG}), encoding='utf-8')
+            probes = [{'name': 'D01', 'game_key': 'a', 'seed': 8611, 'expected_sign': 1, 'kind': 'vct1_win',
+                       'ply': 93, 'moves': WEB['moves'][:93]},
+                      {'name': 'D02', 'game_key': 'a', 'seed': 8611, 'expected_sign': -1, 'kind': 'vct_loss',
+                       'ply': 94, 'moves': WEB['moves'][:94]}]
+            dev = root / 'dev.json'
+            dev.write_text(json.dumps({'format': 'h6-fresh-probes-v1', 'purpose': 'dev', 'sealed': False,
+                                       'probes': probes}), encoding='utf-8')
+            args = ['--model', f"v3={root / 'v3' / 'best.pt'}", '--probes', str(dev), '--allow-dirty']
+            with self.assertRaises(SystemExit):  # not the frozen v3 checkpoint
+                main(args + ['--output', str(root / 'a.json')])
+            self.assertEqual(main(args + ['--allow-unfrozen', '--output', str(root / 'b.json')]), 0)
+            out = json.loads((root / 'b.json').read_text(encoding='utf-8'))
+            v3 = out['models']['v3']
+            self.assertEqual((v3['win']['probes'], v3['loss']['probes']), (1, 1))
+            self.assertEqual(out['decision'], 'FAIL')  # 1 probe per sign is below the minimum
+            final = ROOT / 'docs' / 'h6' / 'h6_fresh_final_probes_v1.json'
+            with self.assertRaises(SystemExit):
+                main(['--model', f"v3={root / 'v3' / 'best.pt'}", '--probes', str(final), '--allow-dirty',
+                      '--allow-unfrozen', '--output', str(root / 'c.json')])
 
 
 if __name__ == '__main__':
