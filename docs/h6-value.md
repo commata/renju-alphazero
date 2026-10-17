@@ -606,6 +606,55 @@ python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml -
   --out-dir runs\h6_value_head_v3 2>&1 | Tee-Object runs\h6\value_v3.log
 ```
 
+## H6-2a′ 학습 결과 (2026-10-17, `runs/h6_value_head_v3/best.json`, 커밋 `a5a3ea7`, `git_dirty false`)
+
+- 실행: RTX 5070, 7,860 step(2,620 × 3 epoch), 22,179 samples/s, 6.0분. best는 마지막 step이다(val weighted MSE 0.6227 → 0.5878 → 0.5766 → **0.5736**).
+- 통제: H6-2a(v2)와 같은 H3 부모(`efee4832…`), 같은 `frozen_state_sha256`(`c2fbaac3…`, trunk·policy head 고정), 같은 seed·optimizer·epoch·schedule이다. 바뀐 것은 라벨(`b80f617f…`)과 캐시뿐이다.
+
+**val 비교: 같은 잣대가 아닌 지표를 가려 읽는다.** v3는 val의 outcome −1 1,584행과 +1 18행을 `vcf_loss` 증명으로 바꿨다. 그래서 지표마다 비교 가능한 정도가 다르다.
+
+| 지표 | v2 | v3 | 비교 가능성 |
+|---|---|---|---|
+| 전체 sign acc / MSE (가중치 없음) | 65.56% / 0.8705 | 66.24% / 0.8593 | **거의 같은 국면·같은 목표값**: 바뀐 행도 목표 부호(−1)는 같다. 새 국면은 51개 |
+| 전체 평균 예측 − 평균 목표 | +0.130 | +0.082 | 같음. 낙관 편향이 줄었다 |
+| outcome −1 sign acc | 56.02% (50,106) | 61.22% (48,522) | **부분집합이 다르다.** 빠진 1,584행에서 v2가 모두 맞혔거나 모두 틀렸다고 해도, 남은 국면에서 v2는 54.6–57.9%다. 그래서 v3의 개선은 **+3.4–6.6%p**로 남는다 |
+| outcome +1 sign acc | 69.77% | 65.22% | 18행만 빠져 사실상 같다. **−4.5%p는 실제 손실이다** |
+| outcome 전체 | 62.63% / 0.9390 | 63.18% / 0.9288 | 위 두 가지가 섞인 값 |
+| proof −1 sign acc | 93.32% (1,182) | 87.20% (2,835) | **비교 불가.** v3에는 새 `vcf_loss` 1,653행이 더해졌다 |
+| proof +1 sign acc | 95.08% | 93.56% | 같은 8,462행. −1.5%p |
+| weighted MSE | 0.5620 | 0.5736 | **비교 불가.** 가중치(증명 비중 50 → 54%)와 목표가 다르다 |
+
+- 해석:
+  - value head의 균형점이 음수 쪽으로 옮겨 갔다. 결과 패배 쪽(+3.4–6.6%p)과 전체 편향은 좋아졌다. 결과 승리 쪽(−4.5%p)과 증명 승리 쪽(−1.5%p)은 대가를 치렀다.
+  - 전체 가중치 없는 지표는 소폭 좋아졌다.
+- `vcf_loss` 1,653행에서의 정확도는 best.json에 따로 없다.
+  forced_loss 1,182행에서 v2만큼(93%) 맞혔다고 가정하면, 남은 `vcf_loss`는 약 82%다. 추정일 뿐이다.
+  **v2가 같은 국면에서 몇 %였는지는 모른다.** 이것이 G4가 묻는 것이다.
+- ply별: 5–9수만 −1.47%p다. 2,797국면이라 표준오차가 약 0.9%p이므로 잡음 범위다. 10수 이후는 모든 구간에서 +0.5–0.85%p다.
+- side별: 백은 평균 예측이 목표와 거의 같아졌다(0.0767 대 0.0766). 흑은 낙관 편향이 남아 있다(+0.155 대 −0.010, v2 +0.194).
+- 포화(|v| > 0.95)는 3.39% → 3.48%로 같다.
+- **판정: 학습은 정상이고, 의도한 방향(패배 쪽 민감도)으로 움직였다. 우열은 아직 정하지 않는다.** epoch을 늘리는 등 설정은 바꾸지 않는다(H6-2a와 같은 조건 유지).
+
+**6단계 dev 비교 (같은 국면에서, part B·fresh probe는 열지 않는다)**
+
+1. `scripts/h6_cross_eval.py`: 두 모델을 **v3 캐시의 같은 국면**(val + test part A)에서 raw와 D4 평균으로 잰다.
+   - v3가 바꾼 것으로 나눈다: `new_loss`(v3가 더한 `vcf_loss`), `old_loss`(forced_loss), `proof_win`, `outcome_win`, `outcome_loss`, `all`.
+   - `new_loss`에서 v2와 v3를 직접 비교할 수 있다. G4와 같은 종류의 국면이다.
+2. `scripts/h6_diagnose.py`(v3 모델 + v3 캐시)를 돌린다. 기존 v2 결과 `docs/h6/h6_3d_diag.json`과 D2(엔진 대국의 깊은 패배)·P93·P94의 D4 평균을 비교한다. 이 셋은 라벨과 무관하므로 그대로 비교된다.
+
+```powershell
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONPATH = "$PWD\src"; $env:PYTHONIOENCODING = "utf-8"
+git pull --ff-only; git status --short
+python -u scripts\h6_cross_eval.py --model v2=runs\h6_value_head_v1\best.pt --model v3=runs\h6_value_head_v3\best.pt `
+  --v2-cache data\tactical\h6\value_cache_v2 --v3-cache data\tactical\h6\value_cache_v3 --device cuda `
+  --output docs\h6\h6_2a_prime_cross_eval.json 2>&1 | Tee-Object runs\h6\h6_cross_eval.log
+python -u scripts\h6_diagnose.py --checkpoint runs\h6_value_head_v3\best.pt `
+  --cache-dir data\tactical\h6\value_cache_v3 --device cuda --output docs\h6\h6_3d_diag_v3.json 2>&1 | Tee-Object runs\h6\h6_3d_diag_v3.log
+```
+
+- 7단계(최종 gate, 한 번)는 이 두 결과를 보고 후보 하나를 정한 뒤에만 한다. 후보는 part B + fresh probe + D4 평균으로 돈다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
