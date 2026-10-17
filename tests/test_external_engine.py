@@ -1,0 +1,184 @@
+"""External-engine adapter, anchor runner and summary (docs/external-engine.md), against the fake engine."""
+from contextlib import redirect_stderr
+import io
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+for path in (ROOT, ROOT / 'src'):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from agents.external_engine import (EngineConfig, EngineError, EngineIllegalMove, EngineTimeout,  # noqa: E402
+                                    ExternalEngineAgent, board_lines, from_piskvork, our_forbidden_points,
+                                    to_piskvork)
+from evaluation.external import EXTERNAL_SEEDS, elo, pair_bootstrap, summarize  # noqa: E402
+from hybrid.h6_labels import RESERVED_SEEDS  # noqa: E402
+from renju import BLACK, WHITE, Game  # noqa: E402
+
+FAKE = str(ROOT / 'scripts' / 'fake_piskvork_engine.py')
+# Black (7,7), (7,8), (8,6), (9,6): (7,6) makes two open threes, a double-three (forbidden).
+DOUBLE_THREE = [(7, 7), (0, 0), (7, 8), (0, 14), (8, 6), (14, 0), (9, 6), (14, 14)]
+
+
+def fake(*args, **kwargs) -> EngineConfig:
+    return EngineConfig(command=(sys.executable, FAKE, *args), name='fake', **kwargs)
+
+
+def position(moves) -> Game:
+    game = Game()
+    for move in moves:
+        game.play(*move)
+    return game
+
+
+class CoordinateTest(unittest.TestCase):
+    def test_round_trip_is_column_row(self):
+        self.assertEqual(to_piskvork((3, 11)), '11,3')
+        self.assertEqual(from_piskvork(' 11 , 3 '), (3, 11))
+        for move in [(0, 0), (14, 0), (0, 14), (7, 9)]:
+            self.assertEqual(from_piskvork(to_piskvork(move)), move)
+
+    def test_bad_reply(self):
+        with self.assertRaises(EngineError):
+            from_piskvork('SWAP')
+
+    def test_board_fields_are_side_to_move_relative(self):
+        game = position([(7, 7), (7, 8), (8, 8)])  # white to move
+        self.assertEqual(game.to_play, WHITE)
+        self.assertEqual(board_lines(game.history, game.to_play), ['7,7,2', '8,7,1', '8,8,2'])
+        self.assertEqual(board_lines(game.history, BLACK), ['7,7,1', '8,7,2', '8,8,1'])
+
+
+class AdapterTest(unittest.TestCase):
+    def test_protocol_and_legal_move(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / 'log.txt'
+            config = fake('--log', str(log), info=(('max_node', '1000'), ('thread_num', '1')))
+            self.assertEqual(config.label, 'fake[max_node=1000][thread_num=1]')
+            game = position([(7, 7), (6, 6)])
+            with ExternalEngineAgent(config) as agent:
+                self.assertIn('fake', agent.engine.about())
+                move = agent.select_move(game)
+                game.play(*move)  # legal under our rules
+                self.assertTrue(agent.engine.last_messages)
+            lines = log.read_text(encoding='utf-8').splitlines()
+        self.assertEqual(lines[:4], ['START 15', 'INFO rule 4', 'INFO max_node 1000', 'INFO thread_num 1'])
+        board = lines.index('BOARD')
+        self.assertEqual(lines[board + 1:board + 4], ['7,7,1', '6,6,2', 'DONE'])
+
+    def test_forbidden_reply_is_engine_illegal(self):
+        game = position(DOUBLE_THREE)
+        self.assertEqual(our_forbidden_points(game), {(7, 6)})
+        with ExternalEngineAgent(fake('--mode', 'forbidden')) as agent:
+            with self.assertRaises(EngineIllegalMove) as caught:
+                agent.select_move(game)
+        self.assertEqual(caught.exception.move, (7, 6))
+        self.assertIn('삼삼', caught.exception.reason)
+
+    def test_forbidden_points_query(self):
+        game = position(DOUBLE_THREE)
+        with ExternalEngineAgent(fake()) as agent:
+            self.assertEqual(agent.forbidden_points(game), {(7, 6)})
+        with ExternalEngineAgent(fake('--forbid-lie')) as agent:
+            self.assertEqual(agent.forbidden_points(game), set())
+
+    def test_timeout_crash_garbage(self):
+        game = position([(7, 7)])
+        with ExternalEngineAgent(fake('--mode', 'silent', move_timeout=1.0)) as agent:
+            with self.assertRaises(EngineTimeout):
+                agent.select_move(game)
+        for mode in ('crash', 'garbage'):
+            with self.subTest(mode=mode), ExternalEngineAgent(fake('--mode', mode)) as agent:
+                with self.assertRaises(EngineError):
+                    agent.select_move(game)
+
+    def test_missing_executable(self):
+        with self.assertRaises(EngineError):
+            ExternalEngineAgent(EngineConfig(command=(str(ROOT / 'no-such-engine'),)))
+
+
+def spec(*engine_args) -> dict:
+    return {'ours': 'random', 'overrides': {}, 'ours_label': 'random', 'engine_label': 'fake',
+            'engine_command': [sys.executable, FAKE, *engine_args], 'engine_name': 'fake',
+            'engine_info': [], 'move_timeout': 30.0}
+
+
+class RunnerTest(unittest.TestCase):
+    def setUp(self):
+        from scripts import run_external_match
+        self.runner = run_external_match
+
+    def task(self, *engine_args, color=BLACK, forbid_check=False) -> dict:
+        return {'key': 'k', 'pair': 0, 'seed': 5, 'ours_color': color, 'opening': [[7, 7]],
+                'forbid_check': forbid_check, 'spec': spec(*engine_args)}
+
+    def test_full_game(self):
+        record = self.runner.play_one(self.task(forbid_check=True))
+        self.assertIn(record['result'], ('win', 'loss', 'draw'))
+        replay = position(map(tuple, record['moves']))
+        self.assertTrue(replay.done)
+        self.assertEqual(record['forbid_mismatch'], [])
+        self.assertGreater(record['forbid_checked'], 0)
+        self.assertEqual(len(record['our_moves']) + len(record['engine_moves']), len(record['moves']) - 1)
+
+    def test_engine_illegal_and_error(self):
+        task = {**self.task('--mode', 'forbidden', color=WHITE), 'opening': [list(m) for m in DOUBLE_THREE]}
+        record = self.runner.play_one(task)
+        self.assertEqual(record['result'], 'engine_illegal')
+        self.assertEqual(record['illegal']['move'], [7, 6])
+        self.assertEqual(record['moves'], [list(m) for m in DOUBLE_THREE])  # the illegal move is not played
+        record = self.runner.play_one(self.task('--mode', 'crash'))
+        self.assertEqual(record['result'], 'engine_error')
+
+    def test_forbid_lie_is_reported(self):
+        record = self.runner.play_one(self.task('--forbid-lie', forbid_check=True))
+        for mismatch in record['forbid_mismatch']:
+            self.assertEqual(mismatch['engine_only'], [])
+            self.assertTrue(mismatch['ours_only'])
+
+    def test_parse_info_and_seed_guard(self):
+        self.assertEqual(self.runner.parse_info(['MAX_NODE=100']), [['max_node', '100']])
+        for bad in ('rule=1', 'max_node', '=3'):
+            with self.assertRaises(ValueError):
+                self.runner.parse_info([bad])
+        with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+            self.runner.main(['--ours', 'random', '--engine', sys.executable, '--seed', '1'])
+
+    def test_external_seeds_are_reserved(self):
+        self.assertTrue(EXTERNAL_SEEDS <= RESERVED_SEEDS)
+
+
+class SummaryTest(unittest.TestCase):
+    def game(self, pair, color, result, moves=None):
+        moves = moves or [[7, 7], [6, 6], [8, 8], [5, 5]]
+        return {'key': f'{pair}/{color}', 'pair': pair, 'ours_color': color, 'result': result, 'moves': moves,
+                'our_moves': [{'ply': 1}, {'ply': 3}] if color == 'white' else [{'ply': 2}]}
+
+    def test_counts_score_and_exclusions(self):
+        games = [self.game(0, 'black', 'win'), self.game(0, 'white', 'loss'),
+                 self.game(1, 'black', 'draw'), self.game(1, 'white', 'win'),
+                 {**self.game(2, 'black', 'engine_illegal'), 'illegal': {'ply': 2, 'move': [1, 1], 'reason': 'x'}},
+                 {**self.game(2, 'white', 'engine_error'), 'error': 'timeout'}]
+        summary = summarize(games, loss_window=2)
+        self.assertEqual((summary['scored'], summary['engine_illegal'], summary['engine_error']), (4, 1, 1))
+        self.assertEqual(summary['score'], 0.625)
+        self.assertEqual(summary['by_colour']['black'], {'games': 2, 'score': 0.75})
+        self.assertEqual(len(summary['illegal_games']), 1)
+        self.assertEqual([c['ply'] for c in summary['loss_candidates']], [3])  # last 2 plies of the lost game
+        self.assertEqual(summary['fingerprint'], summarize(list(reversed(games)))['fingerprint'])
+
+    def test_elo_and_bootstrap(self):
+        self.assertIsNone(elo(0.0))
+        self.assertAlmostEqual(elo(0.75), 190.8, places=1)
+        games = [self.game(p, c, r) for p, rs in enumerate([('win', 'win'), ('loss', 'loss'), ('win', 'loss')])
+                 for c, r in zip(('black', 'white'), rs)]
+        low, high = pair_bootstrap(games)
+        self.assertLessEqual(low, 0.5)
+        self.assertGreaterEqual(high, 0.5)
+
+
+if __name__ == '__main__':
+    unittest.main()
