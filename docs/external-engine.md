@@ -202,5 +202,6 @@ foreach ($n in 300, 1000, 3000, 10000, 30000, 100000, 300000) {
 | 새 테스트(`tests/test_external_engine.py`, 15개) | PASS |
 | frozen baseline 해시 | PASS |
 | Rapfi 실제 통합, 재현성, 금수 교차검사 | 완료(§7) |
-| 전체 회귀(패키지 설치 환경) | 진행 중 |
-| **merge** | **보류.** 전체 회귀 PASS(torch 필요 테스트는 CI `full-tests`) 후에 다음 단계로 합친다 |
+| 전체 회귀, torch 없는 환경(`pip install -e .` 후, 커밋 `5b40b22`) | 747개 실행, 572 PASS, 173 skip(torch 필요), **2 ERROR**. 두 ERROR는 모두 torch를 직접 import하는 기존 테스트(`test_h6_value` `_bounded_map`, `test_puct_v8` `h5_calibrate_puct`)이고, 이 브랜치가 바꾼 파일과 관련이 없다 |
+| 전체 회귀, torch 있는 환경(CI `full-tests`, skip 0) | **미실행.** 클라우드에서 torch를 받을 수 없었다. CI는 PR이나 수동 실행(`workflow_dispatch`)에서만 돈다 |
+| **merge** | **보류.** CI 네 job(`core-no-torch`, `full-tests`, `fake-smoke`, `frozen-baseline`)이 PASS한 뒤 다음 단계로 합친다 |
