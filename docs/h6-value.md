@@ -1227,6 +1227,73 @@ python scripts\summarize_h6_5.py --main runs\h6_5\value_vs_tb1_8403.json `
 - not-SAFE guard는 50대국에서 판별력이 낮다(D1). 다음 후보의 guard를 바꿀지(예: 대국 단위 구간 사용, 두 seed 합산 뒤 판정)는 D2·D3 결과로 정하고, **다음 후보의 대국 전에** 문서로 고정한다. 기준선에도 같은 정의를 적용한다.
 - D2·D3 도구는 이 설계를 확정한 뒤 구현한다. D2는 국면당 수 분, D3는 국면당 두 엔진 탐색이므로 둘 다 수 시간 규모다.
 
+## H6-5D 확정 (2026-10-19, D2·D3 실행 전)
+
+위 설계에 대한 사용자 검토 네 가지(D2는 UNKNOWN 90개가 본 표본, 4M 결과는 "V8-C@4M" 판정, D3 control 매칭, 수치 판정 규칙과 INCONCLUSIVE 가지)를 사실 확인 뒤 모두 반영했다. 구현은 `scripts/h6_5d.py`(`d2`, `d3`, `judge`)이고, 테스트는 `tests/test_h6_5d.py`다.
+
+**사실 확인과 보정**
+- 표본 구성: 후보 UNKNOWN 55 + UNSAFE 6, 기준선 UNKNOWN 35 + UNSAFE 3. **D2 본 표본은 UNKNOWN 90개**이고, UNSAFE 9개는 control이다. UNSAFE는 증명이므로 4M에서도 UNSAFE여야 한다. 그렇지 않으면 도구 이상으로 보고 INCONCLUSIVE로 처리한다.
+- **"400k UNKNOWN"은 정확하지 않다.** V8-C는 tree 수를 먼저 **예산의 절반**(VCF 노드 200k, 캐시 안 된 VCF 호출 5,000회)만으로 검사한다. 400k는 다른 자식까지 포함한 전체 예산이다.
+- **UNKNOWN의 원인은 셋이다.** 노드 몫 소진, 호출 몫 소진, VCF 호출 하나의 노드 상한(20k) 도달.
+  - 표본 확인 결과(재현 일치): 기준선 8403/14/black ply 10은 호출 몫 5,000회에서 멈췄다(노드 5,260개, 6초). 후보 8403/15/white ply 11은 노드 몫 200k에서 멈췄다(호출 177회 중 상한 도달 9회, 123초).
+  - 그래서 LARGE는 **세 상한을 모두 10배**로 둔다: 호출당 200k 노드, 호출 100k회, 노드 4M, 몫 없음. 노드만 늘리면 호출 몫으로 멈춘 UNKNOWN은 풀리지 않는다.
+  - 각 검사에 멈춘 원인(`cut_kind`: calls / nodes / per_call_limit)을 기록한다.
+- **결과 표기:** `V8-C@4M SAFE / UNSAFE / UNKNOWN`. V8-C 정의(VCT1, 상대의 깊이 1 공격)에서 그 예산 안의 판정이다. 게임 이론상 참값이 아니다. 4M에서도 UNKNOWN이면 미해결로 남긴다.
+- **D2 재현:** 먼저 V8-C와 똑같이(새 solver, 같은 몫) 다시 검사해 기록된 상태와 같은지 확인한다. 하나라도 다르면 INCONCLUSIVE다. 표본 4개(UNSAFE 2, UNKNOWN 2)는 모두 일치했다.
+- **D3 control 매칭:** not-SAFE 국면마다 같은 run·같은 대국에서 ply가 가장 가까운 SAFE tree 국면 하나를 쓴다(동률이면 이른 ply, 한 번만 사용). 없으면 같은 run·같은 대국 종류(승패 / 225수 무승부)에서 고른다.
+  - 8403에서는 99개 모두 같은 대국에서 매칭됐다. ply 차이 평균 5.1, ply 중앙값은 not-SAFE 76, control 81이다.
+- **D3 교차 검사:** 두 엔진이 고른 tree 수를 **같은 solver로** 모두 검사한다. 표준 몫으로 먼저 보고, SAFE가 아니면 LARGE로 본다. D2에서 이미 검사한 (국면, 수)는 재사용한다.
+  - 엔진별로 tree 수의 prior 순위, 방문 수, Q, 방문한 root 자식 수, root Q std, prior 1위 여부를 기록한다.
+
+**판정 규칙 (`RULES`, 이 순서로 적용, 실행 전에 고정)**
+
+| 순서 | 조건 | 원인 | 다음 후보 |
+|---|---|---|---|
+| 0 | D2 재현 불일치, 또는 control UNSAFE가 4M에서 UNSAFE가 아님 | INCONCLUSIVE | 도구 점검 |
+| 1 | D3 전체(198국면): (value의 tree 수 V8-C@4M UNSAFE) − (기준선의 같은 값), 대국 단위 bootstrap **95% 하한 > 0** | **A** value 오판 | 깊은 패배 라벨(`vct_loss`) 보강 → 새 value |
+| 2 | D2 본 표본(90개 합산): 4M에서도 UNKNOWN **> 1/3** | INCONCLUSIVE (미해결) | 억지로 분류하지 않음. 사용자와 다음 조치 결정 |
+| 3 | D2 본 표본: V8-C@4M SAFE **≥ 2/3** 그리고 UNSAFE **≤ 0.10** | **C** 증명 예산 | value는 그대로 둔다. V8-C 예산·종반 처리와 guard 정의를 두 엔진 공통으로 검토 |
+| 4 | D3 전체: 표준 몫 not-SAFE 차이(value − 기준선)의 95% 구간이 **0을 포함** | **B** 탐색 결합 | 새 arm 하나: **λ = 0.5**(value + rollout) |
+| 5 | 그 외 | INCONCLUSIVE | 사용자와 결정 |
+
+- bootstrap은 출처 대국 단위로 10,000회(seed 0)다. 같은 대국의 국면은 함께 뽑는다.
+- B의 대응은 c 재보정이 아니라 λ = 0.5로 미리 정한다. 로드맵에 이미 있는 대안(H6-3 λ 규칙의 0.5)이고, 데이터로 맞출 새 매개변수가 없다. c 재보정은 별도 보정 프로토콜이 필요하다.
+- 진단 결과는 8403 판정을 바꾸지 않는다.
+- 새 후보는 하나, 새 arm과 새 config hash로 만든다. seed는 8404·8405, 예비 8406이다. `summarize_h6_5.py`의 seed 목록은 새 후보 프로토콜과 함께 고친다.
+- C가 나와 guard를 다시 정의하는 경우, 그 정의는 다음 대국 전에 문서로 고정하고 기준선에도 같게 적용한다.
+
+**비용 추정**
+- solver 속도는 약 1.6k 노드/초다(위 표본).
+- D2: SAFE로 끝나면 빠르다. 4M을 다 쓰는 국면은 하나에 최대 약 40분이다. 99개를 12 worker로 돌리면 최악 3–4시간이다.
+- D3: 198국면 × 두 엔진 탐색(어려운 국면은 엔진당 약 140초) + D2에 없던 수의 검사다. 6 worker로 수 시간이다.
+
+**실행 명령 (Windows, D2 → D3 → judge)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"; $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONPATH = "$PWD\src"
+git pull --ff-only; git status --short
+New-Item -ItemType Directory -Force runs\h6_5d | Out-Null
+python -m unittest tests.test_h6_5d
+
+# D2: UNKNOWN 90 + UNSAFE control 9 (CPU만, torch 불필요)
+python -u scripts\h6_5d.py d2 --runs runs\h6_5\value_vs_full_8403.json runs\h6_5\tb1_vs_full_8403.json `
+  --workers 12 --jsonl runs\h6_5d\d2.jsonl --output docs\h6\h6_5d_d2.json 2>&1 | Tee-Object runs\h6_5d\d2.log
+
+# D3: not-SAFE 99 + 매칭 control 99, 두 엔진 같은 seed
+python -u scripts\h6_5d.py d3 --runs runs\h6_5\value_vs_full_8403.json runs\h6_5\tb1_vs_full_8403.json `
+  --d2 docs\h6\h6_5d_d2.json --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt `
+  --value-checkpoint runs\h6_value_head_v3\best.pt --value-device cuda --workers 6 `
+  --jsonl runs\h6_5d\d3.jsonl --output docs\h6\h6_5d_d3.json 2>&1 | Tee-Object runs\h6_5d\d3.log
+
+# 판정
+python scripts\h6_5d.py judge --d2 docs\h6\h6_5d_d2.json --d3 docs\h6\h6_5d_d3.json --output docs\h6\h6_5d_verdict.json
+```
+
+- 중단되면 같은 명령을 다시 실행한다. `--jsonl`에서 끝난 국면은 건너뛴다.
+- 결과 파일 세 개(`h6_5d_d2.json`, `h6_5d_d3.json`, `h6_5d_verdict.json`)를 커밋한다. 엔진 대국 국면과 판정만 들어 있다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
