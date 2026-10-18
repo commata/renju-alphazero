@@ -961,6 +961,84 @@ H6-2a′ B안의 공식 판정(PASS) 뒤, 튜닝 없이 봉인된 최종 gate를
 - raw 단일 추론, policy·value 한 번에 forward, batch leaf 평가 같은 속도 최적화.
 - H6-2b(trunk 미세조정), H7.
 
+## H6-4 확정 사항과 H6-4a 구현 (2026-10-18)
+
+위 "H6-4 설계 방향"의 세 질문을 사용자가 모두 승인했다. 아래는 **H6-5 대국 전에** 고정한 규칙이다.
+
+**1. H6-5 guard: P93·P94 → P92 non-regression**
+- 로드맵(§12.19)의 "P93·P94 부호 유지"는 **승격 guard에서 뺀다.** 결과표에는 계속 출력하고 `diagnostic_only`로 표시한다.
+- 대신 P92 guard를 쓴다: **같은 10 seed**(`run_s1_probes.py`, base seed 9201, c 1.5)에서 후보가 (3,4)를 고른 횟수 ≤ TB-Engine-v1이 고른 횟수.
+  - 판정: `PASS` / `FAIL`. TB-Engine-v1이 10 / 10을 고르면 판별력이 없으므로 `NOT_DISCRIMINATING`으로 기록하고 대국 결과를 따른다(통과 증거로 쓰지 않음).
+  - non-regression guard일 뿐, H6-4의 성공 증거가 아니다. P92 참값은 UNRESOLVED다.
+  - 참고: S1에서 `puct_policy`는 (3,4)를 0 / 10 골랐다. TB-Engine-v1도 0이면 후보도 0이어야 통과한다.
+- 나머지 guard는 로드맵 그대로: 안전 위반 0, tree not-SAFE ≤ 기준선 + 0.03, 시간 비율 ≤ 1.5, 흑·백 각 ≥ 0.45.
+
+**2. H6-5 상대와 seed**
+- 주 상대: **TB-Engine-v1**(`--opponent v8:puct_policy_vct2_50k --opponent-puct-c 1.5`). leaf만 다르므로 점수 차이는 value leaf의 효과로 읽는다(0.5 = 동등).
+- 보조 상대: `v8:full`(역사적 기준선에 대한 회귀 확인). 같은 seed로 TB-Engine-v1 대 `v8:full`도 돌려 쌍 비교와 tree not-SAFE 기준선으로 쓴다.
+- 각 25쌍. 공식 seed는 **8403, 8404**다.
+- **8405 사용 조건:** 로드맵 표의 INCONCLUSIVE(8403+8404 점수 ≥ 0.55이고 쌍 bootstrap 하한 ≤ 0.5)일 때만, 한 번. 8403에서 점수 < 0.50이면 8404 없이 REJECT, 8403+8404가 0.50–0.55이면 REJECT다. 결과를 본 뒤 다른 이유로 seed를 추가하지 않는다.
+- 시간 비율 guard는 value를 CUDA로 돌린 대국으로 판정한다. CPU 비용은 H6-4b에서 따로 기록한다(웹 반영 판단용).
+
+**3. 엔진 버전 단계(승인됨)**
+- `src/analysis/puct_v8.py`: 그대로(동결).
+- `src/analysis/puct_value_v1.py`(신규): `search_tree_puct_value`. `search_tree_puct`와 행동 집합·prior·선택 규칙·착수 선택이 같고 leaf만 다르다.
+  - 종국: 결과 그대로(±1, 무승부 0).
+  - 정확한 지름길(value보다 우선): 둘 차례가 5목을 만들 수 있으면 둘 차례 승, 아니면 상대의 5목 자리가 2개 이상이면 둘 차례 패. 상대 5목 자리가 1개면 막을 수 있으므로 value에 맡긴다.
+  - 그 외: v = V_D4(s)(둘 차례 관점), 노드 값 = **−v**. 실수 값 backup(`backup`).
+  - λ = 1.0: rollout 없음.
+- `src/analysis/mcts_v8.py`: `TREE_MODES`에 `"puct_value"`를 더하고 `leaf_value` 인자와 분기, 진단 필드(`v8_value_*`)만 추가했다. `V8_DEFAULTS`의 키는 바꾸지 않았다(새 값은 `tree_mode`의 허용값 하나).
+- `src/analysis/mcts_v8_agent.py`: `leaf_value` 인자. `puct_value`일 때만 받고, 그때는 반드시 받는다.
+- `src/analysis/tb_v1_value.py`: `TB_V1_VALUE` = TB-Engine-v1 설정에서 `tree_mode`만 `puct_value`. value checkpoint sha256, D4 평균, λ를 포함한 `config_hash`.
+- `src/hybrid/h6_value_leaf.py`: `ValueLeaf`. gate를 통과한 v3 checkpoint만 받는다(sha256 확인). D4 평균, 정확한 국면 단위 캐시(결과 불변).
+- 회귀: 고치기 **전에** TB-Engine-v1(`tree_mode="puct"`)의 결정값(착수, 경로, root 자식 방문·평균, NN 호출 수, V8-C·VCT2 상태)을 고정 국면 6개에서 기록했다(`tests/fixtures/tb_engine_v1_puct_regression.json`, 커밋 `60239c4`). 고친 뒤 같은지 테스트한다. 시간 값은 비교하지 않는다.
+
+**runner와 점검 도구**
+- `run_mcts_v8_benchmark.py`: arm `puct_value_vct2_50k`(c 1.5에서 `TB_V1_VALUE`와 같음). `--value-checkpoint`, `--value-device`. value arm은 상대로 쓸 수 없다. 수마다 `value` 기록(호출 수, 시간, 지름길·종국 leaf, 색별 leaf 평균)과 모든 tree 수의 `root_q`(C4: range, std, |Q| > 0.95 비율). 요약에 `root_q`, `value`, `distinct_games`(rollout이 없어 같은 대국이 반복되는지)를 넣었다.
+- `run_s1_probes.py`: value arm 지원. TB-Engine-v1과 후보를 함께 돌리면 요약에 `h6_5_p92_guard`가 나온다.
+- `scripts/h6_value_leaf_check.py`(H6-4b): TB-Engine-v1이 실제 대국에서 tree route로 둔 국면(E1-holdout 8417·8418 기록, 학습에 쓰지 않음)을 두 엔진으로 같은 seed에서 탐색한다. tree route 비율, 착수 변경 수, 수당 시간과 비율, root C4, 색별 leaf value 평균을 기록한다. 판정 없음(`verdict: null`).
+
+**테스트** (`tests/test_h6_value_leaf.py`)
+- 지름길: 자기 5목 → +1, 상대 5목 하나 → value에 맡김, 상대 열린 4(5목 자리 둘) → −1.
+- backup 부호(부모·자식, 무승부 0).
+- 탐색 부호: 상대에게 나쁜 leaf로 가는 수를 고른다. 같은 탐색에서 value 부호를 뒤집으면 다른 수를 고른다(부호 버그를 테스트가 잡는지 확인).
+- 즉시 승리는 value와 무관하게 고른다. value가 상수면 prior를 따른다. 범위 밖 value는 거부한다.
+- TB-Engine-v1 `puct` 경로 회귀 fixture 일치, 후보 설정은 `tree_mode`만 다름, runner arm = `TB_V1_VALUE`.
+- `ValueLeaf`: 다른 checkpoint 거부, D4 불변(좌우 반사·회전에서 같은 값), 캐시, 범위.
+- runner: value arm은 상대 불가, checkpoint 필수. P92 guard 판정(PASS / FAIL / NOT_DISCRIMINATING).
+
+**H6-4b 실행 명령 (Windows, 대국 없음)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"; $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONPATH = "$PWD\src"
+git pull --ff-only; git status --short
+New-Item -ItemType Directory -Force runs\h6_4 | Out-Null
+
+# 0) 테스트
+python -m unittest tests.test_h6_value_leaf tests.test_tb_engine_v1 tests.test_mcts_v8_benchmark
+
+# 1) P92 guard (TB-Engine-v1 vs 후보, 같은 10 seed). H6-5 guard 값으로 그대로 쓴다
+python -u scripts\run_s1_probes.py --arms puct_policy_vct2_50k puct_value_vct2_50k --seeds 10 --puct-c 1.5 `
+  --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt --value-checkpoint runs\h6_value_head_v3\best.pt `
+  --value-device cuda --output docs\h6\h6_4b_s1_probes.json 2>&1 | Tee-Object runs\h6_4\s1_probes.log
+
+# 2) 고정 국면 점검: CPU(SER5와 같은 조건)와 CUDA
+python -u scripts\h6_value_leaf_check.py --games docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8417.json `
+  docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8418.json --per-game 3 --workers 6 `
+  --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt --value-checkpoint runs\h6_value_head_v3\best.pt `
+  --value-device cpu --output docs\h6\h6_4b_check_cpu.json 2>&1 | Tee-Object runs\h6_4\check_cpu.log
+python -u scripts\h6_value_leaf_check.py --games docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8417.json `
+  docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8418.json --per-game 3 --workers 6 `
+  --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt --value-checkpoint runs\h6_value_head_v3\best.pt `
+  --value-device cuda --output docs\h6\h6_4b_check_cuda.json 2>&1 | Tee-Object runs\h6_4\check_cuda.log
+```
+
+- 결과 파일에는 국면(엔진 대국 수순)과 지표만 있고 RenjuNet 데이터는 없으므로 커밋한다.
+- H6-4b는 고장 확인이다. 여기서 설정을 바꾸지 않는다. 고장(부호 이상, 예외, 시간 폭증)이 보이면 고친 뒤 다시 돌리고, 그 사실을 기록한다.
+- H6-5 대국 명령은 H6-4b 결과를 본 뒤 정리한다(규칙은 위에서 이미 고정).
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**

@@ -13,6 +13,11 @@ lost at VCT1) are sanity probes: their routes and statuses are recorded, no valu
 
     python scripts/run_s1_probes.py --arms full puct_heur puct_policy --seeds 10 --puct-c 1.5 \\
         --policy-checkpoint runs/h3_policy_64x4/best.pt --output runs/s1/probes.json
+
+H6-4b / H6-5 P92 guard (docs/h6-value.md, H6-4): run TB-Engine-v1 (``puct_policy_vct2_50k``) and the value
+arm (``puct_value_vct2_50k``, ``--value-checkpoint``) on the same seeds. The summary's ``h6_5_p92_guard`` is
+a non-regression check: the value arm picks (3,4) at P92 no more often than TB-Engine-v1
+(``NOT_DISCRIMINATING`` when TB-Engine-v1 picks it in every run). P93 / P94 are diagnostics only.
 """
 from __future__ import annotations
 
@@ -31,7 +36,8 @@ from analysis.mcts_v8_agent import MCTSV8Agent  # noqa: E402
 from analysis.mcts_v8 import V8_DEFAULTS  # noqa: E402
 from renju import Game  # noqa: E402
 from scripts.run_mcts_v8_benchmark import (  # noqa: E402
-    ARMS, _git_commit, derive_seed, load_policy, needs_policy, provenance, v8_config,
+    ARMS, _git_commit, derive_seed, is_puct, load_policy, load_value, needs_policy, needs_value, provenance,
+    v8_config,
 )
 
 DEFAULT_PROBES = ROOT / 'docs' / 'mcts-v8-results' / 'probe_web_v8_loss_20261007.json'
@@ -109,9 +115,12 @@ def root_value_spread(children) -> dict:
             'saturated_visited': None if range_visited is None else range_visited <= SATURATION_EPS}
 
 
-def run_probe(name: str, spec: dict, moves, arm: str, seed: int, config: dict, policy) -> dict:
+BASELINE_ARM, VALUE_ARM = 'puct_policy_vct2_50k', 'puct_value_vct2_50k'
+
+
+def run_probe(name: str, spec: dict, moves, arm: str, seed: int, config: dict, policy, leaf=None) -> dict:
     game = replay(moves, spec['plies_played'])
-    agent = MCTSV8Agent(seed=derive_seed(seed, 's1', name, arm), root_policy=policy,
+    agent = MCTSV8Agent(seed=derive_seed(seed, 's1', name, arm), root_policy=policy, leaf_value=leaf,
                         **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     started = perf_counter()
     move = agent.select_move(game)
@@ -131,6 +140,11 @@ def run_probe(name: str, spec: dict, moves, arm: str, seed: int, config: dict, p
         'attack_status': d.v8_attack_status, 'attack_candidates': d.v8_attack_candidates,
         'tree_mode': d.v8_tree_mode,
     }
+    if d.v8_tree_mode == 'puct_value':
+        record['value'] = {'calls': d.v8_value_calls, 'seconds': round(d.v8_value_seconds, 4),
+                           'exact_leaves': d.v8_value_exact_leaves, 'terminal_leaves': d.v8_value_terminal_leaves}
+    if name in ('P93', 'P94'):
+        record['diagnostic_only'] = True
     if name == 'P92':
         record['p92'] = p92_metrics(children, move, priors)
     return record
@@ -178,6 +192,17 @@ def summarize(records: list[dict]) -> dict:
                                                 for r in runs)
             rows[name] = row
         out[arm] = rows
+    base, value = out.get(BASELINE_ARM, {}).get('P92'), out.get(VALUE_ARM, {}).get('P92')
+    if base and value:
+        if base['runs'] != value['runs']:
+            verdict = 'MISMATCHED_RUNS'
+        elif base['chose_far'] == base['runs']:
+            verdict = 'NOT_DISCRIMINATING'
+        else:
+            verdict = 'PASS' if value['chose_far'] <= base['chose_far'] else 'FAIL'
+        out['h6_5_p92_guard'] = {'baseline': BASELINE_ARM, 'candidate': VALUE_ARM, 'runs': value['runs'],
+                                 'baseline_chose_far': base['chose_far'], 'candidate_chose_far': value['chose_far'],
+                                 'verdict': verdict, 'p93_p94': 'diagnostic_only'}
     return out
 
 
@@ -190,6 +215,8 @@ def main(argv=None) -> int:
     parser.add_argument('--base-seed', type=int, default=9201)
     parser.add_argument('--puct-c', type=float, default=1.5, help='c_puct for puct_* arms (H5 fixed 1.5)')
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
+    parser.add_argument('--value-checkpoint', help="H6-2a' v3 best.pt for the value arm")
+    parser.add_argument('--value-device', default='cpu')
     parser.add_argument('--simulations', type=int, help='smoke tests only')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only')
     parser.add_argument('--output', type=Path)
@@ -206,22 +233,30 @@ def main(argv=None) -> int:
             policy = load_policy(args.policy_checkpoint)
         except (OSError, ValueError, ImportError) as exc:
             parser.error(f'policy arm: {exc}')
+    leaf = None
+    if any(needs_value(v8_config(arm)) for arm in args.arms):
+        try:
+            leaf = load_value(args.value_checkpoint, args.value_device)
+        except (OSError, ValueError, ImportError) as exc:
+            parser.error(f'value arm: {exc}')
     records = []
     for arm in args.arms:
         config = v8_config(arm, overrides)
-        if config.get('tree_mode') == 'puct':
+        if is_puct(config):
             config['puct_c'] = args.puct_c
         arm_policy = policy if needs_policy(config) else None
+        arm_leaf = leaf if needs_value(config) else None
         for name in args.names:
             for index in range(args.seeds):
                 record = run_probe(name, probe_file['probes'][name], moves, arm,
-                                   derive_seed(args.base_seed, index), config, arm_policy)
+                                   derive_seed(args.base_seed, index), config, arm_policy, arm_leaf)
                 records.append(record)
                 print(f"{arm} {name} seed#{index} route={record['route']} played={record['played']} "
                       f"{record['seconds']:.1f}s", flush=True)
     summary = summarize(records)
     payload = {'format': FORMAT, 'git_commit': _git_commit(),
-               'provenance': provenance(args.policy_checkpoint if policy is not None else None),
+               'provenance': provenance(args.policy_checkpoint if policy is not None else None,
+                                        args.value_checkpoint if leaf is not None else None),
                'probes': str(args.probes), 'arms': args.arms, 'seeds': args.seeds, 'base_seed': args.base_seed,
                'puct_c': args.puct_c, 'overrides': overrides, 'summary': summary, 'runs': records}
     print(json.dumps(summary, indent=1, ensure_ascii=False), flush=True)

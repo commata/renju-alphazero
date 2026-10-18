@@ -66,6 +66,7 @@ from search.mcts_v7 import (
 from search.threat_patterns import placed
 
 from .puct_v8 import PUCT_PRIORS, PUCTStats, prior_entropy, search_tree_puct
+from .puct_value_v1 import PUCTValueStats, search_tree_puct_value
 from .threats import (
     SAFE, UNKNOWN, UNSAFE, VCF_NONE, VCF_UNKNOWN, VCF_WIN, ThreatSolver, _board_key,
     _unbounded_max_fours, decision_status,
@@ -77,7 +78,7 @@ Move = tuple[int, int]
 # by a depth-1 VCT within the budget", an UNSAFE move is a proven loss in that class.
 NOT_REFUTED_VCT1, PROVEN_LOSS_VCT1 = SAFE, UNSAFE
 ROOT_VCT_MODES = ("aggressive", "veto")
-TREE_MODES = ("v5", "puct")
+TREE_MODES = ("v5", "puct", "puct_value")
 
 # V8-B attack statuses (the side to move attacks; kept apart from V8-A's SAFE/UNSAFE).
 WIN, REFUTED = 'WIN', 'REFUTED'
@@ -111,6 +112,8 @@ V8_DEFAULTS = {
     # H5 (§12.16): the tree route's tree. "v5" = the V5 widening tree (V7's search);
     # "puct" = analysis.puct_v8 on the same action sets and rollouts, prior ``puct_prior``
     # ("uniform" / "heuristic" / "policy"; "policy" needs the ``root_policy`` callable).
+    # H6-4: "puct_value" = analysis.puct_value_v1, the same PUCT tree with a value leaf instead of
+    # the rollout (needs the ``leaf_value`` callable).
     "tree_mode": "v5",
     "puct_prior": "uniform",
     "puct_c": 1.5,
@@ -176,6 +179,15 @@ class SearchDiagnostics(V7Diagnostics):
     v8_puct_prior_entropy: float = 0.0           # root prior, normalized (1 = uniform)
     v8_puct_prior_top: Move | None = None        # root child with the highest prior
     v8_puct_prior_top_prob: float = 0.0
+    # H6-4 value leaf only (tree_mode "puct_value").
+    v8_value_calls: int = 0
+    v8_value_seconds: float = 0.0
+    v8_value_exact_leaves: int = 0
+    v8_value_terminal_leaves: int = 0
+    v8_value_black_leaves: int = 0
+    v8_value_black_sum: float = 0.0
+    v8_value_white_leaves: int = 0
+    v8_value_white_sum: float = 0.0
     v8_vct2_checked: tuple[tuple[Move, str], ...] = ()  # S3-VCT2: selective depth-2 status per checked move
     v8_vct2_check_nodes: tuple[int, ...] = ()  # nodes of each check above, same order (diagnostics only)
     v8_vct2_switched: bool = False
@@ -325,7 +337,7 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
                         ("vct2_node_budget", vct2_node_budget), ("vct2_max_children", vct2_max_children)):
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError(f"{name} must be a positive integer")
-    if tree_mode == "puct" and (root_policy_order or root_policy_extra):
+    if tree_mode in ("puct", "puct_value") and (root_policy_order or root_policy_extra):
         # H5 keeps the action set fixed across priors (§12.16): no H4 options on PUCT.
         raise ValueError("tree_mode='puct' cannot be combined with root_policy_order / root_policy_extra")
 
@@ -714,6 +726,7 @@ def mcts_search_v8(
     root_vct2_check=False, vct2_node_limit=20_000, vct2_call_limit=20_000, vct2_node_budget=10_000,
     vct2_max_children=4,
     root_policy=None, random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
+    leaf_value=None,
 ) -> Move:
     """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules."""
     _validate_v5_config(
@@ -742,9 +755,11 @@ def mcts_search_v8(
                         vct2_call_limit=vct2_call_limit, vct2_node_budget=vct2_node_budget,
                         vct2_max_children=vct2_max_children)
     uses_policy = root_policy_order or root_policy_extra > 0
-    if (uses_policy or (tree_mode == "puct" and puct_prior == "policy")) and root_policy is None:
+    if (uses_policy or (tree_mode in ("puct", "puct_value") and puct_prior == "policy")) and root_policy is None:
         # Fail fast: a policy arm must never silently run as the baseline.
         raise ValueError("root_policy_order / root_policy_extra / puct_prior='policy' need a root_policy callable")
+    if tree_mode == "puct_value" and leaf_value is None:
+        raise ValueError("tree_mode='puct_value' needs a leaf_value callable")
     diag = diagnostics if diagnostics is not None else SearchDiagnostics()
     diag.__dict__.update(vars(SearchDiagnostics()))
     context = _RootContext(game.legal_moves(), diag)
@@ -853,6 +868,29 @@ def mcts_search_v8(
         diag.v8_puct_prior_entropy = prior_entropy([stats.root_prior[m] for m in moves])
         diag.v8_puct_prior_top = top
         diag.v8_puct_prior_top_prob = stats.root_prior[top]
+    elif tree_mode == "puct_value":
+        stats = PUCTValueStats()
+        chosen, children = search_tree_puct_value(
+            game, moves, budget, c_puct=puct_c, prior=puct_prior,
+            policy=root_policy if puct_prior == "policy" else None, leaf_value=leaf_value,
+            candidate_limit=candidate_limit, neighborhood_radius=neighborhood_radius,
+            priority_top_k=priority_top_k, random=random, stats=stats,
+        )
+        top = max(moves, key=lambda m: (stats.root_prior[m], -moves.index(m)))
+        diag.v8_puct_prior = puct_prior
+        diag.v8_puct_nn_calls = stats.nn_calls
+        diag.v8_puct_prior_fallbacks = stats.prior_fallbacks
+        diag.v8_puct_prior_entropy = prior_entropy([stats.root_prior[m] for m in moves])
+        diag.v8_puct_prior_top = top
+        diag.v8_puct_prior_top_prob = stats.root_prior[top]
+        diag.v8_value_calls = stats.value_calls
+        diag.v8_value_seconds = stats.value_seconds
+        diag.v8_value_exact_leaves = stats.exact_leaves
+        diag.v8_value_terminal_leaves = stats.terminal_leaves
+        diag.v8_value_black_leaves = stats.black_leaves
+        diag.v8_value_black_sum = stats.black_value_sum
+        diag.v8_value_white_leaves = stats.white_leaves
+        diag.v8_value_white_sum = stats.white_value_sum
     else:
         chosen, children = _search_tree_v8(
             game, moves, budget, exploration, candidate_limit,

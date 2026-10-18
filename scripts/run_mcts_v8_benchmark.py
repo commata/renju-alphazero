@@ -23,6 +23,13 @@ by ``scripts/h5_calibrate_puct.py``), which applies to the tested arm only.
     puct_policy_vct2_stage  E3-S (§12.32): puct_policy_vct2 + the same 10k check on Stage 4/5 moves
                             (``analysis.e3_arms.StageVCT2Agent``; recorded per move as ``stage_vct2``)
 
+H6-4 value arm (docs/h6-value.md, H6-4): TB-Engine-v1 with the tree leaf replaced by the H6-2a' value
+(``analysis.puct_value_v1``); with ``--puct-c 1.5`` it is ``analysis.tb_v1_value.TB_V1_VALUE``. It loads
+``--value-checkpoint`` (the gated v3 ``best.pt``, sha256 checked, D4-averaged) in every worker and fails
+if it cannot; it is a tested arm only, never an opponent. H6-5's main opponent is TB-Engine-v1 itself:
+``--opponent v8:puct_policy_vct2_50k --opponent-puct-c 1.5``.
+    puct_value_vct2_50k     puct_policy_vct2_50k with the value leaf (TB-V1-Value)
+
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
     ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
@@ -94,6 +101,8 @@ ARMS = {
     # 'stage_vct2' is not a V8 option: it selects the E3-S wrapper and records its budget.
     'puct_policy_vct2_stage': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True,
                                'stage_vct2': {'node_limit': 20_000, 'call_limit': 20_000, 'node_budget': 10_000}},
+    'puct_value_vct2_50k': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+                            'vct2_node_budget': 50_000},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -151,6 +160,8 @@ def parse_opponent(value: str) -> str:
     if kind != 'v8' or arm not in ARMS:
         raise ValueError(f"opponent must be 'v7', 'v8:<arm>' or 'v8:<arm>{VCT2_ATTACK_SUFFIX}[<N>k]' "
                          f"with arm in {sorted(ARMS)}")
+    if needs_value(v8_config(arm)):
+        raise ValueError(f'{arm} is a tested arm only, not an opponent')
     return value
 
 
@@ -177,7 +188,23 @@ def opponent_config(opponent: str, overrides: dict | None = None) -> dict | None
 
 def needs_policy(config: dict) -> bool:
     return bool(config.get('root_policy_order') or config.get('root_policy_extra')
-                or (config.get('tree_mode') == 'puct' and config.get('puct_prior') == 'policy'))
+                or (config.get('tree_mode') in ('puct', 'puct_value') and config.get('puct_prior') == 'policy'))
+
+
+def is_puct(config: dict) -> bool:
+    return config.get('tree_mode') in ('puct', 'puct_value')
+
+
+def needs_value(config: dict) -> bool:
+    return config.get('tree_mode') == 'puct_value'
+
+
+def load_value(checkpoint, device='cpu'):
+    """H6-4 value leaf (torch); raises if unavailable or not the gated checkpoint."""
+    if not checkpoint:
+        raise ValueError('this arm needs --value-checkpoint')
+    from hybrid.h6_value_leaf import ValueLeaf  # torch is imported only here
+    return ValueLeaf(checkpoint, device=device)
 
 
 def load_policy(checkpoint):
@@ -202,7 +229,36 @@ def make_opponent(opponent: str, seed: int, overrides: dict, policy_checkpoint=N
     return agent
 
 
+SATURATED = 0.95  # |mean value| above this counts as saturated (C4)
+
+
+def root_q(root_visits) -> dict | None:
+    """C4 of the visited root children's mean values: range, std, saturated share (None off the tree)."""
+    q = [v for _, n, v in root_visits if n > 0]
+    if not q:
+        return None
+    mean = sum(q) / len(q)
+    return {'children': len(q), 'range': round(max(q) - min(q), 4),
+            'std': round((sum((x - mean) ** 2 for x in q) / len(q)) ** 0.5, 4),
+            'saturated': round(sum(abs(x) > SATURATED for x in q) / len(q), 4)}
+
+
+def _value_record(diag) -> dict:
+    b, w = diag.v8_value_black_leaves, diag.v8_value_white_leaves
+    return {'calls': diag.v8_value_calls, 'seconds': round(diag.v8_value_seconds, 4),
+            'exact_leaves': diag.v8_value_exact_leaves, 'terminal_leaves': diag.v8_value_terminal_leaves,
+            'black_leaves': b, 'black_mean': round(diag.v8_value_black_sum / b, 4) if b else None,
+            'white_leaves': w, 'white_mean': round(diag.v8_value_white_sum / w, 4) if w else None}
+
+
 def _move_record(ply, seconds, diag) -> dict:
+    record = _move_record_base(ply, seconds, diag)
+    if diag.v8_tree_mode == 'puct_value':
+        record['value'] = _value_record(diag)
+    return record
+
+
+def _move_record_base(ply, seconds, diag) -> dict:
     return {
         'ply': ply, 'seconds': round(seconds, 4), 'route': diag.v8_route,
         'changed': diag.v8_changed,
@@ -239,6 +295,7 @@ def _move_record(ply, seconds, diag) -> dict:
             'prior_entropy': round(diag.v8_puct_prior_entropy, 4),
             'prior_top': list(diag.v8_puct_prior_top) if diag.v8_puct_prior_top is not None else None,
             'prior_top_prob': round(diag.v8_puct_prior_top_prob, 5),
+            'root_q': root_q(diag.v8_root_visits),
         },
         'vct2': {
             'checked': [[list(m), s] for m, s in diag.v8_vct2_checked], 'switched': diag.v8_vct2_switched,
@@ -267,7 +324,8 @@ def play_one(task: dict) -> dict:
     search = {k: config[k] for k in SEARCH_KEYS}
     seed, v8_color = task['seed'], task['v8_color']
     policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
-    v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy,
+    leaf = load_value(task.get('value_checkpoint'), task.get('value_device', 'cpu')) if needs_value(config) else None
+    v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy, leaf_value=leaf,
                      **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     if config.get('stage_vct2'):
         from analysis.e3_arms import StageVCT2Agent
@@ -339,6 +397,8 @@ def build_tasks(args) -> tuple[list[dict], list[dict]]:
                 'v8_overrides': {**args.search_overrides, **arm_overrides},
                 'v7_overrides': getattr(args, 'opponent_overrides', args.search_overrides),
                 'policy_checkpoint': args.policy_checkpoint,
+                **({'value_checkpoint': args.value_checkpoint, 'value_device': args.value_device}
+                   if getattr(args, 'value_checkpoint', None) else {}),
             })
     return tasks, openings
 
@@ -385,6 +445,13 @@ def _stage_vct2_summary(moves) -> dict | None:
     }
 
 
+def _weighted_mean(moves, colour) -> float | None:
+    n = sum(m['value'][f'{colour}_leaves'] for m in moves)
+    total = sum(m['value'][f'{colour}_mean'] * m['value'][f'{colour}_leaves'] for m in moves
+                if m['value'][f'{colour}_leaves'])
+    return round(total / n, 4) if n else None
+
+
 def summarize(games: list[dict]) -> dict:
     def score(subset):
         if not subset:
@@ -403,7 +470,9 @@ def summarize(games: list[dict]) -> dict:
     ran_root = [m for m in moves if m.get('root', {}).get('checked')]
     with_policy = [m for m in moves if m.get('policy', {}).get('root_order_rank')]
     with_tree = [m for m in moves if m.get('tree', {}).get('mode')]
-    with_puct = [m for m in with_tree if m['tree']['mode'] == 'puct']
+    with_puct = [m for m in with_tree if m['tree']['mode'] in ('puct', 'puct_value')]
+    with_value = [m for m in moves if 'value' in m]
+    with_q = [m['tree']['root_q'] for m in with_tree if m['tree'].get('root_q')]
     root_first = [m['root']['checked'][0][1] for m in ran_root]  # V7's move is always checked first
     opp_routes = {}
     for g in games:
@@ -484,6 +553,23 @@ def summarize(games: list[dict]) -> dict:
             'prior_entropy': _dist([m['tree']['prior_entropy'] for m in with_puct]),
             'tree_chose_prior_top': sum(m['v7_move'] == m['tree']['prior_top'] for m in with_puct),
         },
+        'root_q': {
+            'moves': len(with_q),
+            'range': _dist([q['range'] for q in with_q]),
+            'std': _dist([q['std'] for q in with_q]),
+            'saturated': _dist([q['saturated'] for q in with_q]),
+            'saturated_root_moves': sum(q['saturated'] == 1.0 for q in with_q),
+        } if with_q else None,
+        'value': {
+            'tree_moves': len(with_value),
+            'calls': sum(m['value']['calls'] for m in with_value),
+            'seconds_per_move': _dist([m['value']['seconds'] for m in with_value]),
+            'exact_leaves': sum(m['value']['exact_leaves'] for m in with_value),
+            'terminal_leaves': sum(m['value']['terminal_leaves'] for m in with_value),
+            'black_leaf_mean': _weighted_mean(with_value, 'black'),
+            'white_leaf_mean': _weighted_mean(with_value, 'white'),
+        } if with_value else None,
+        'distinct_games': len({json.dumps(g['moves']) for g in games}),
         'vct2': {
             'moves_checked': sum(bool(m.get('vct2', {}).get('checked')) for m in moves),
             'played_move_proven_lost': sum(bool(m.get('vct2', {}).get('checked'))
@@ -543,14 +629,20 @@ def file_sha256(path) -> str | None:
     return digest.hexdigest()
 
 
-def provenance(policy_checkpoint) -> dict:
+def provenance(policy_checkpoint, value_checkpoint=None) -> dict:
     """What a result depends on besides the code: tree state and the exact policy bytes (§12.19)."""
     checkpoint = Path(policy_checkpoint) if policy_checkpoint else None
-    return {
+    out = {
         'git_dirty': _git_dirty(),
         'policy_checkpoint_sha256': file_sha256(checkpoint) if checkpoint else None,
         'policy_metadata_sha256': file_sha256(checkpoint.with_suffix('.json')) if checkpoint else None,
     }
+    if value_checkpoint:
+        value = Path(value_checkpoint)
+        out.update({'value_checkpoint_sha256': file_sha256(value),
+                    'value_metadata_sha256': file_sha256(value.with_name('best.json')),
+                    'value_inference': 'd4_average'})
+    return out
 
 
 def load_finished(path: Path | None, keys: set[str]) -> dict[str, dict]:
@@ -599,6 +691,8 @@ def main(argv=None) -> int:
                         help='tested arm only: simulations (time-matched check, §12.16)')
     parser.add_argument('--arm-tactical-simulations', type=int,
                         help='tested arm only: tactical simulations (time-matched check, §12.16)')
+    parser.add_argument('--value-checkpoint', help="H6-2a' v3 best.pt for the value arm (best.json next to it)")
+    parser.add_argument('--value-device', default='cpu', help='device of the value leaf (cpu / cuda)')
     parser.add_argument('--simulations', type=int, help='smoke tests only: both engines')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only: both engines')
     args = parser.parse_args(argv)
@@ -614,13 +708,20 @@ def main(argv=None) -> int:
                 load_policy(args.policy_checkpoint)  # fail before any game starts
             except (OSError, ValueError, ImportError) as exc:
                 parser.error(f'policy arm {name}: {exc}')
+    if needs_value(v8_config(args.arm)):
+        try:
+            load_value(args.value_checkpoint, args.value_device)  # fail before any game starts
+        except (OSError, ValueError, ImportError) as exc:
+            parser.error(f'value arm {args.arm}: {exc}')
+    elif args.value_checkpoint:
+        parser.error('--value-checkpoint only applies to the value arm')
     args.search_overrides = {k: v for k, v in (('simulations', args.simulations),
                                                ('tactical_simulations', args.tactical_simulations))
                              if v is not None}
-    is_puct = v8_config(args.arm).get('tree_mode') == 'puct'
-    if is_puct and args.puct_c is None:
+    arm_is_puct = is_puct(v8_config(args.arm))
+    if arm_is_puct and args.puct_c is None:
         parser.error(f'{args.arm} needs --puct-c (the calibrated value, §12.16)')
-    if not is_puct and args.puct_c is not None:
+    if not arm_is_puct and args.puct_c is not None:
         parser.error('--puct-c only applies to the puct_* arms')
     opponent_is_puct = args.opponent != 'v7' and v8_config(opponent_arm(args.opponent)).get('tree_mode') == 'puct'
     if opponent_is_puct and args.opponent_puct_c is None:
@@ -671,7 +772,8 @@ def main(argv=None) -> int:
         'git_commit': _git_commit(), 'v8_config': v8_config(args.arm, {**args.search_overrides,
                                                                         **args.arm_overrides}),
         'policy_checkpoint': payload_checkpoint,
-        'provenance': provenance(payload_checkpoint),
+        'provenance': provenance(payload_checkpoint, args.value_checkpoint),
+        'value_checkpoint': args.value_checkpoint,
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': opponent_config(args.opponent, args.opponent_overrides),
         'opponent_puct_c': args.opponent_puct_c,
