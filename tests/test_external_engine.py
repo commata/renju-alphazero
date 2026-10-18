@@ -1,6 +1,8 @@
 """External-engine adapter, anchor runner and summary (docs/external-engine.md), against the fake engine."""
+from argparse import Namespace
 from contextlib import redirect_stderr
 import io
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -103,7 +105,7 @@ class AdapterTest(unittest.TestCase):
 def spec(*engine_args) -> dict:
     return {'ours': 'random', 'overrides': {}, 'ours_label': 'random', 'engine_label': 'fake',
             'engine_command': [sys.executable, FAKE, *engine_args], 'engine_name': 'fake',
-            'engine_info': [], 'move_timeout': 30.0}
+            'engine_info': [], 'move_timeout': 30.0, 'run_signature': 'sig'}
 
 
 class RunnerTest(unittest.TestCase):
@@ -147,6 +149,45 @@ class RunnerTest(unittest.TestCase):
         with self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
             self.runner.main(['--ours', 'random', '--engine', sys.executable, '--seed', '1'])
 
+    def test_resume_refuses_another_signature(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'games.jsonl'
+            path.write_text('\n'.join(json.dumps(r) for r in [
+                {'key': 'a', 'run_signature': 'old'}, {'key': 'b', 'run_signature': 'new'},
+                {'key': 'other', 'run_signature': 'old'}]) + '\n', encoding='utf-8')
+            self.assertEqual(list(self.runner.load_finished(path, {'b'}, 'new')), ['b'])
+            with self.assertRaises(ValueError):
+                self.runner.load_finished(path, {'a', 'b'}, 'new')
+            path.write_text(json.dumps({'key': 'a'}) + '\n', encoding='utf-8')  # no signature: never reused
+            with self.assertRaises(ValueError):
+                self.runner.load_finished(path, {'a'}, 'new')
+
+    def test_signature_covers_engine_bytes_and_openings(self):
+        args = Namespace(opening_random_plies=4, opening_radius=2, forbid_check=False)
+        engine = {'name': 'rapfi', 'command': ['/x/rapfi', '--x'], 'info': [['max_node', '1000']], 'rule': 4,
+                  'executable_sha256': 'aa', 'extra_files': {'/x/config.toml': 'cc'}}
+        ours = {'kind': 'tb1', 'policy_checkpoint_sha256': 'pp'}
+        base = self.runner.run_signature(engine, ours, args)
+        moved = {**engine, 'command': ['/elsewhere/rapfi', '--x'], 'extra_files': {'/y/config.toml': 'cc'}}
+        self.assertEqual(self.runner.run_signature(moved, ours, args), base)  # paths do not matter
+        changes = [({**engine, 'executable_sha256': 'ab'}, ours, args),
+                   ({**engine, 'extra_files': {'/x/config.toml': 'cd'}}, ours, args),
+                   ({**engine, 'info': [['max_node', '3000']]}, ours, args),
+                   (engine, {**ours, 'policy_checkpoint_sha256': 'pq'}, args),
+                   (engine, ours, Namespace(opening_random_plies=2, opening_radius=2, forbid_check=False)),
+                   (engine, ours, Namespace(opening_random_plies=4, opening_radius=3, forbid_check=False))]
+        for changed in changes:
+            self.assertNotEqual(self.runner.run_signature(*changed), base)
+
+    def test_identity_fail_fast(self):
+        engine = {'command': ['rapfi'], 'executable_sha256': None, 'extra_files': {'w.bin': None, 'c.toml': 'cc'}}
+        self.assertEqual(len(self.runner.check_identity(engine, strict=False)), 1)  # missing --engine-file
+        self.assertEqual(len(self.runner.check_identity(engine, strict=True)), 2)   # + unhashable executable
+        ok = {'command': ['rapfi'], 'executable_sha256': 'aa', 'extra_files': {}}
+        self.assertEqual(self.runner.check_identity(ok, strict=True), [])
+        resolved = EngineConfig(command=(Path(sys.executable).name,)).provenance()  # found on PATH
+        self.assertIsNotNone(resolved['executable_sha256'])
+
     def test_external_seeds_are_reserved(self):
         self.assertTrue(EXTERNAL_SEEDS <= RESERVED_SEEDS)
 
@@ -163,12 +204,28 @@ class SummaryTest(unittest.TestCase):
                  {**self.game(2, 'black', 'engine_illegal'), 'illegal': {'ply': 2, 'move': [1, 1], 'reason': 'x'}},
                  {**self.game(2, 'white', 'engine_error'), 'error': 'timeout'}]
         summary = summarize(games, loss_window=2)
-        self.assertEqual((summary['scored'], summary['engine_illegal'], summary['engine_error']), (4, 1, 1))
+        self.assertEqual((summary['raw_scored_games'], summary['engine_illegal'], summary['engine_error']), (4, 1, 1))
+        self.assertEqual((summary['complete_pairs'], summary['incomplete_pairs']), (2, [2]))
         self.assertEqual(summary['score'], 0.625)
         self.assertEqual(summary['by_colour']['black'], {'games': 2, 'score': 0.75})
         self.assertEqual(len(summary['illegal_games']), 1)
         self.assertEqual([c['ply'] for c in summary['loss_candidates']], [3])  # last 2 plies of the lost game
         self.assertEqual(summary['fingerprint'], summarize(list(reversed(games)))['fingerprint'])
+
+    def test_half_broken_pair_drops_out_of_every_main_number(self):
+        # Pair 1: we won as black, the engine crashed in the white game.
+        games = [self.game(0, 'black', 'win'), self.game(0, 'white', 'loss'),
+                 self.game(1, 'black', 'win'), {**self.game(1, 'white', 'engine_error'), 'error': 'crash'},
+                 self.game(2, 'black', 'draw'), self.game(2, 'white', 'loss')]
+        summary = summarize(games)
+        self.assertEqual((summary['complete_pairs'], summary['incomplete_pairs']), (2, [1]))
+        self.assertEqual(summary['score'], 0.375)  # (1 + 0 + 0.5 + 0) / 4: pairs 0 and 2 only
+        self.assertEqual(summary['elo'], round(elo(0.375), 1))
+        self.assertEqual(summary['by_colour'], {'black': {'games': 2, 'score': 0.75},
+                                                'white': {'games': 2, 'score': 0.0}})
+        self.assertEqual((summary['raw_scored_games'], summary['raw_score']), (5, 0.5))  # diagnostics only
+        low, high = summary['score_ci95_pairs']  # resamples the same two pairs
+        self.assertEqual((low, high), (0.25, 0.5))
 
     def test_elo_and_bootstrap(self):
         self.assertIsNone(elo(0.0))

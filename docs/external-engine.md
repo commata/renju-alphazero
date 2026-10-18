@@ -17,7 +17,7 @@ Rapfi에게 패배 → 패배 직전 국면(loss_candidates) → offline 참값(
 
 - Rapfi 착수는 **어느 트랙에서도 학습 샘플이 되지 않는다.** 외부 앵커 대국의 seed는 `RESERVED_SEEDS`에 넣었다(§4).
 - Rapfi 점수는 **승급 조건이 아니다.** 내부 Arena와 Final-1/2의 정의는 바꾸지 않는다.
-- 얻는 것: (1) 내부 상대가 공통으로 못 보는 전술 약점 발견, (2) 고정된 바깥 기준점(절대 기력), (3) 패배 사례 공급, (4) 렌주 금수 판정 교차검증.
+- 얻는 것: (1) 내부 상대가 공통으로 못 보는 전술 약점 발견, (2) 고정된 외부 기준점(내부 Arena 밖의 공통 상대, 외부 기력 앵커), (3) 패배 사례 공급, (4) 렌주 금수 판정 교차검증.
 
 ### 왜 학습 데이터로 쓰지 않나
 
@@ -46,7 +46,7 @@ Rapfi에게 패배 → 패배 직전 국면(loss_candidates) → offline 참값(
 | `scripts/run_external_match.py` | 우리 agent(`tb1`, `v7`, `v8:<arm>`, `az`, `random`) 대 외부 엔진. opening 쌍 × 색 교환, JSONL resume, 프로세스 병렬, 분당 진행 출력 |
 | `scripts/external_rule_crosscheck.py` | 무작위 근접 대국의 모든 흑 차례 국면에서 우리 금수점과 엔진 금수점을 비교 |
 | `scripts/fake_piskvork_engine.py` | 테스트·smoke용 가짜 엔진. 정상 착수 외에 금수 착수, 무응답, 크래시, 잘못된 응답, 금수점 거짓 보고 모드 |
-| `tests/test_external_engine.py` | 좌표, BOARD 필드, 프로토콜 순서, 금수 착수 → `engine_illegal`, timeout·크래시, 금수점 질의, runner 한 판, 요약, seed 예약 |
+| `tests/test_external_engine.py` | 좌표, BOARD 필드, 프로토콜 순서, 금수 착수 → `engine_illegal`, timeout·크래시, 금수점 질의, runner 한 판, 요약(한쪽만 깨진 쌍 포함), run signature와 resume 거부, 해시 fail-fast, seed 예약 (19개) |
 
 동결 엔진 파일(`tb_engine_v1.py` 등)은 건드리지 않았다. `hybrid/h6_labels.py`는 `RESERVED_SEEDS`에 외부 앵커 seed 블록만 추가했다.
 
@@ -73,6 +73,8 @@ Rapfi에게 패배 → 패배 직전 국면(loss_candidates) → offline 참값(
 
 - 세 블록 모두 `hybrid.h6_labels.RESERVED_SEEDS`에 있다. runner는 이 블록 밖의 seed를 거부한다(`--allow-unreserved-seed`는 가짜 엔진 smoke 전용).
 - opening은 중앙 + 무작위 4수(반경 2)다. Final 세트와 같은 생성 방식이라 D4 종류가 충분하다.
+- **기록(2026-10-18):** X0 resume 검사 중 클라우드에서 seed **8701 pair 0**을 한 번 썼다. `v7`(smoke, 50 simulations) 대 Rapfi `max_node=3000` 2판이며, 결과는 scratch에만 있고 커밋하지 않았다.
+  `tb1`은 두지 않았고 X1 선택(§8)은 `tb1` 점수로만 하므로 판정에는 영향이 없다. 이후 smoke는 예약 블록 밖 seed(`--allow-unreserved-seed`)만 쓴다.
 
 ## 5. 사전 고정 처리 규칙
 
@@ -81,7 +83,10 @@ Rapfi에게 패배 → 패배 직전 국면(loss_candidates) → offline 참값(
 | 엔진이 우리 규칙상 금수(또는 점유·범위 밖)를 둠 | `engine_illegal`. 판을 거기서 멈추고 **점수에서 뺀다**. `illegal_games`에 국면과 이유를 남기고 수동 규칙 검토(§6) |
 | 엔진 크래시, 응답 없음(`--move-timeout`, 기본 600초), 프로토콜 위반 | `engine_error`. 점수에서 빼고 `error_games`에 남긴다 |
 | 무승부 | 0.5점. 우리 엔진은 합법수가 없을 때만 무승부다 |
-| 점수 | 승 1, 무 0.5, 패 0. 95% 구간은 opening 쌍 bootstrap(두 판 모두 점수가 있는 쌍, 10,000회, RNG 고정) |
+| 점수 | 승 1, 무 0.5, 패 0 |
+| **표본: 완전한 opening 쌍** | 색을 바꾼 두 판이 모두 점수가 있는 쌍만 쓴다. `score`, `elo`, `by_colour`, 95% 구간(쌍 bootstrap 10,000회, RNG 고정)이 **모두 같은 표본**이다. 한 판만 `engine_illegal`/`engine_error`인 쌍은 통째로 빠지고 `incomplete_pairs`에 남는다. 모든 정상 판으로 낸 `raw_score`, `raw_scored_games`는 진단용이다 |
+| **resume** | 판마다 `run_signature`를 저장한다. 엔진 실행 파일과 `--engine-file`의 SHA-256, 엔진 인자·INFO, 우리 agent와 checkpoint 해시(`tb1`은 config hash 포함), opening 규칙(수, 반경), `--forbid-check`, 기록 형식의 해시다. 같은 key인데 signature가 다르면(또는 없으면) 이어 쓰지 않고 **실행을 멈춘다**. `--pairs`는 넣지 않아 같은 설정으로 쌍을 늘릴 수 있다. 경로, workers, timeout guard도 넣지 않는다 |
+| **신원 fail-fast** | `--engine-file`로 지정한 파일을 해시할 수 없으면 시작하지 않는다. 앵커 seed(8701–8725)에서는 엔진 실행 파일 해시도 필수다(PATH의 명령은 실제 파일로 찾아 해시한다) |
 | 제외 판 비율 | 한 실행에서 `engine_illegal + engine_error`가 10%를 넘으면 그 실행 점수는 보고만 하고 해석하지 않는다. 원인을 고친 뒤 **새 seed가 아니라 같은 seed**로 다시 돈다(엔진 쪽 고장은 우리 모델 결과를 보고 고르는 것이 아니다) |
 
 ## 6. 렌주 규칙 교차검증
@@ -199,7 +204,9 @@ foreach ($n in 300, 1000, 3000, 10000, 30000, 100000, 300000) {
 | 항목 | 상태 |
 |---|---|
 | X0 구현 커밋 | 완료 |
-| 새 테스트(`tests/test_external_engine.py`, 15개) | PASS |
+| 새 테스트(`tests/test_external_engine.py`, 19개) | PASS |
+| 검토 반영(2026-10-18): resume `run_signature`, 완전한 쌍 표본, 신원 fail-fast, "외부 기력 앵커" 표현 | 완료 |
+| base 동기화: `origin/feat/h6-value` `5894160` merge(문서·JSON 3개 파일, 충돌 없음) | 완료 |
 | frozen baseline 해시 | PASS |
 | Rapfi 실제 통합, 재현성, 금수 교차검사 | 완료(§7) |
 | 전체 회귀, torch 없는 환경(`pip install -e .` 후, 커밋 `5b40b22`) | 747개 실행, 572 PASS, 173 skip(torch 필요), **2 ERROR**. 두 ERROR는 모두 torch를 직접 import하는 기존 테스트(`test_h6_value` `_bounded_map`, `test_puct_v8` `h5_calibrate_puct`)이고, 이 브랜치가 바꾼 파일과 관련이 없다 |

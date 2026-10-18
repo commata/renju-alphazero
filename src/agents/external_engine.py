@@ -31,6 +31,7 @@ import hashlib
 from pathlib import Path
 from queue import Empty, Queue
 import re
+import shutil
 import subprocess
 from threading import Thread
 from time import perf_counter
@@ -107,8 +108,15 @@ class EngineConfig:
         settings = ''.join(f'[{k}={v}]' for k, v in self.info)
         return f'{self.name}{settings}'
 
-    def provenance(self) -> dict:
+    def executable(self) -> Path:
+        """The executable file: the command as given, else looked up on PATH."""
         exe = Path(self.command[0])
+        if not exe.is_file() and shutil.which(self.command[0]):
+            exe = Path(shutil.which(self.command[0]))
+        return exe
+
+    def provenance(self) -> dict:
+        exe = self.executable()
         return {
             'name': self.name, 'label': self.label, 'command': list(self.command),
             'info': [list(kv) for kv in self.info], 'rule': RENJU_RULE,
@@ -223,6 +231,11 @@ class PiskvorkEngine:
         if self.process.poll() is None:
             self.process.kill()
             self.process.wait()
+        for pipe in (self.process.stdin, self.process.stdout):
+            try:
+                pipe.close()
+            except OSError:
+                pass
 
     def __enter__(self) -> 'PiskvorkEngine':
         return self

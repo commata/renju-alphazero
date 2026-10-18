@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -107,7 +108,8 @@ def play_one(task: dict) -> dict:
     game = Game()
     for move in task['opening']:
         game.play(*move)
-    record = {'key': task['key'], 'pair': task['pair'], 'seed': task['seed'],
+    record = {'key': task['key'], 'run_signature': task['spec']['run_signature'], 'pair': task['pair'],
+              'seed': task['seed'],
               'ours_color': 'black' if color == BLACK else 'white', 'our_moves': [], 'engine_moves': [],
               'forbid_mismatch': [], 'forbid_checked': 0}
     started_game = perf_counter()
@@ -166,15 +168,64 @@ def build_tasks(args, spec: dict) -> tuple[list[dict], list[dict]]:
     return tasks, openings
 
 
-def load_finished(path: Path | None, keys: set[str]) -> dict[str, dict]:
-    finished = {}
+def ours_provenance(args, overrides: dict) -> dict:
+    uses_policy = args.ours == 'tb1' or args.ours.startswith('v8:')
+    policy = Path(args.policy_checkpoint) if uses_policy else None
+    return {
+        'kind': args.ours, 'label': ours_label(args), 'overrides': overrides,
+        'policy_checkpoint_sha256': file_sha256(policy) if policy else None,
+        'policy_metadata_sha256': file_sha256(policy.with_suffix('.json')) if policy else None,
+        'az_checkpoint_sha256': file_sha256(args.az_checkpoint) if args.az_checkpoint else None,
+        'az_simulations': args.az_simulations,
+        'tb_engine_config_hash': tb1_config_hash() if args.ours == 'tb1' else None,
+    }
+
+
+def run_signature(engine: dict, ours: dict, args) -> str:
+    """SHA-256 of everything a game's moves depend on besides seed and pair (§5).
+
+    Engine bytes (executable and ``--engine-file``s), engine arguments and INFO settings, our agent and
+    its checkpoint bytes, the opening rule, ``--forbid-check`` and the record format. Not ``--pairs``
+    (a run can be extended with more pairs), workers, the timeout guard or the paths of the files."""
+    payload = {
+        'format': FORMAT,
+        'engine': {'name': engine['name'], 'arguments': engine['command'][1:], 'info': engine['info'],
+                   'rule': engine['rule'], 'executable_sha256': engine['executable_sha256'],
+                   'extra_files': sorted(engine['extra_files'].values(), key=str)},
+        'ours': ours,
+        'opening_random_plies': args.opening_random_plies, 'opening_radius': args.opening_radius,
+        'forbid_check': args.forbid_check,
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def check_identity(engine: dict, *, strict: bool) -> list[str]:
+    """Problems with the engine's identity: a named ``--engine-file`` that cannot be hashed always,
+    an executable that cannot be hashed on an anchor seed (``strict``)."""
+    problems = [f'--engine-file {path} not found' for path, digest in engine['extra_files'].items() if digest is None]
+    if strict and engine['executable_sha256'] is None:
+        problems.append(f"engine executable {engine['command'][0]} cannot be hashed (give its file path)")
+    return problems
+
+
+def load_finished(path: Path | None, keys: set[str], signature: str) -> dict[str, dict]:
+    """Finished games of this run; ValueError if a line with one of ``keys`` has another signature
+    (a resume after the engine, our agent or the opening rule changed would mix two opponents)."""
+    finished, foreign = {}, []
     if path is None or not path.exists():
         return finished
     for line in path.read_text(encoding='utf-8').splitlines():
         if line.strip():
             record = json.loads(line)
-            if record['key'] in keys:
+            if record['key'] not in keys:
+                continue
+            if record.get('run_signature') != signature:
+                foreign.append(record['key'])
+            else:
                 finished[record['key']] = record
+    if foreign:
+        raise ValueError(f'{path}: {len(foreign)} finished games were played with another setup '
+                         f'(run_signature differs, e.g. {foreign[0]}); use a new --games-jsonl')
     return finished
 
 
@@ -254,11 +305,21 @@ def main(argv=None) -> int:
     except (EngineError, OSError, ValueError, ImportError) as exc:
         parser.error(f'setup failed: {exc}')
 
+    engine_provenance = config.provenance()
+    problems = check_identity(engine_provenance, strict=args.seed in EXTERNAL_SEEDS)
+    if problems:
+        parser.error('; '.join(problems))
+    ours_info = ours_provenance(args, overrides)
+    spec['run_signature'] = signature = run_signature(engine_provenance, ours_info, args)
     tasks, openings = build_tasks(args, spec)
-    finished = load_finished(args.games_jsonl, {t['key'] for t in tasks})
+    try:
+        finished = load_finished(args.games_jsonl, {t['key'] for t in tasks}, signature)
+    except ValueError as exc:
+        parser.error(str(exc))
     pending = [t for t in tasks if t['key'] not in finished]
     print(f"ours={spec['ours_label']} engine={config.label} ({about}) games={len(tasks)} "
-          f'finished={len(finished)} pending={len(pending)} workers={args.workers}', flush=True)
+          f'finished={len(finished)} pending={len(pending)} workers={args.workers} '
+          f'run_signature={signature[:12]}', flush=True)
     if args.games_jsonl is not None:
         args.games_jsonl.parent.mkdir(parents=True, exist_ok=True)
 
@@ -281,14 +342,9 @@ def main(argv=None) -> int:
         'format': FORMAT, 'ours': spec['ours_label'], 'seed': args.seed, 'pairs': args.pairs,
         'opening_random_plies': args.opening_random_plies, 'opening_radius': args.opening_radius,
         'forbid_check': args.forbid_check, 'git_commit': _git_commit(), 'git_dirty': _git_dirty(),
-        'engine': {**config.provenance(), 'about': about},
-        'ours_provenance': {
-            'policy_checkpoint_sha256': file_sha256(args.policy_checkpoint) if args.ours in ('tb1',) or
-            args.ours.startswith('v8:') else None,
-            'az_checkpoint_sha256': file_sha256(args.az_checkpoint) if args.az_checkpoint else None,
-            'overrides': overrides,
-            'tb_engine_config_hash': tb1_config_hash() if args.ours == 'tb1' else None,
-        },
+        'run_signature': signature,
+        'engine': {**engine_provenance, 'about': about},
+        'ours_provenance': ours_info,
         'openings': openings, 'summary': summary, 'games': games,
     }
     brief = {k: v for k, v in summary.items() if k not in ('loss_candidates',)}
