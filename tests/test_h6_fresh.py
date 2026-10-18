@@ -173,7 +173,7 @@ class FreshProbeTest(unittest.TestCase):
             self.assertEqual(a['counts']['games_with_loss'], 1)
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class FreshGateTest(unittest.TestCase):
     def test_fresh_gate_counts_games_and_signs(self):
         from hybrid.h6_gate import FRESH, d4_average, fresh_probes, judge
@@ -222,7 +222,7 @@ class FreshGateTest(unittest.TestCase):
                       '--fresh-probes', str(dev), '--output', str(Path(tmp, 'o.json'))])
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class DevEvalTest(unittest.TestCase):
     def test_dev_eval_end_to_end(self):
         from model.checkpoint import save_checkpoint

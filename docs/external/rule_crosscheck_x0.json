@@ -1,0 +1,87 @@
+{
+ "format": "external-rule-crosscheck-x0-v1",
+ "note": "docs/external-engine.md \u00a77; cloud Linux run, Rapfi built from source",
+ "runs": [
+  {
+   "label": "r1 seed 1 (300 games)",
+   "seed": 1,
+   "radius": 1,
+   "git_commit": "c0629887cdfb53d2d40ca2386be5e14c082bbcef",
+   "git_dirty": false,
+   "engine": {
+    "name": "rapfi",
+    "label": "rapfi",
+    "command": [
+     "/tmp/claude-0/-home-user-renju-alphazero/3c692abd-4abc-5202-bf43-cb5e2f53ebb2/scratchpad/ext/engine/pbrain-rapfi"
+    ],
+    "info": [],
+    "rule": 4,
+    "executable_sha256": "af5388229a769bdb0a4abb9de474e0dbbd256cfdffe408b1f138dba6f70b6b1e",
+    "extra_files": {},
+    "move_timeout": 600.0,
+    "about": "name=\"Rapfi\", version=\"0.43.02 (g++ 13.3.0 on Linux SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\""
+   },
+   "summary": {
+    "games": 300,
+    "positions": 8886,
+    "our_forbidden_points": 9517,
+    "mismatch_positions": 0
+   },
+   "mismatches": []
+  },
+  {
+   "label": "r1 seed 2",
+   "seed": 2,
+   "radius": 1,
+   "git_commit": "c0629887cdfb53d2d40ca2386be5e14c082bbcef",
+   "git_dirty": true,
+   "engine": {
+    "name": "rapfi",
+    "label": "rapfi",
+    "command": [
+     "/tmp/claude-0/-home-user-renju-alphazero/3c692abd-4abc-5202-bf43-cb5e2f53ebb2/scratchpad/ext/engine/pbrain-rapfi"
+    ],
+    "info": [],
+    "rule": 4,
+    "executable_sha256": "af5388229a769bdb0a4abb9de474e0dbbd256cfdffe408b1f138dba6f70b6b1e",
+    "extra_files": {},
+    "move_timeout": 600.0,
+    "about": "name=\"Rapfi\", version=\"0.43.02 (g++ 13.3.0 on Linux SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\""
+   },
+   "summary": {
+    "games": 3000,
+    "positions": 90612,
+    "our_forbidden_points": 92778,
+    "mismatch_positions": 0
+   },
+   "mismatches": []
+  },
+  {
+   "label": "r2 seed 3",
+   "seed": 3,
+   "radius": 2,
+   "git_commit": "c0629887cdfb53d2d40ca2386be5e14c082bbcef",
+   "git_dirty": true,
+   "engine": {
+    "name": "rapfi",
+    "label": "rapfi",
+    "command": [
+     "/tmp/claude-0/-home-user-renju-alphazero/3c692abd-4abc-5202-bf43-cb5e2f53ebb2/scratchpad/ext/engine/pbrain-rapfi"
+    ],
+    "info": [],
+    "rule": 4,
+    "executable_sha256": "af5388229a769bdb0a4abb9de474e0dbbd256cfdffe408b1f138dba6f70b6b1e",
+    "extra_files": {},
+    "move_timeout": 600.0,
+    "about": "name=\"Rapfi\", version=\"0.43.02 (g++ 13.3.0 on Linux SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\""
+   },
+   "summary": {
+    "games": 1500,
+    "positions": 74341,
+    "our_forbidden_points": 126160,
+    "mismatch_positions": 0
+   },
+   "mismatches": []
+  }
+ ]
+}

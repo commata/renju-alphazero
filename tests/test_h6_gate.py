@@ -31,7 +31,7 @@ def fake(v, t, kind, ply):
                              'kind': torch.tensor(kind, dtype=torch.int8), 'ply': torch.tensor(ply, dtype=torch.int16)}
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class PartitionTest(unittest.TestCase):
     def test_partition_is_deterministic_disjoint_and_whole_games(self):
         ids = [f'renjunet:{i}' for i in range(200)]
@@ -47,7 +47,7 @@ class PartitionTest(unittest.TestCase):
         self.assertTrue(all(part_of(ids[g]) == 'A' for g in a['game'].tolist()))
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class MetricTest(unittest.TestCase):
     def test_gates_from_metrics(self):
         # proof: +1 all right, -1 9/10 right; outcome: 0.7 / 0.6 by side, small errors
@@ -106,7 +106,7 @@ class MetricTest(unittest.TestCase):
         self.assertAlmostEqual(ece(torch.tensor([1.0, 1.0]), torch.tensor([-1.0, -1.0])), 1.0)
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class ProbeAndD4Test(unittest.TestCase):
     def test_probes_use_side_to_move(self):
         out = probes(side_value, PROBE_FILE, 'cpu')

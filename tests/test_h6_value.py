@@ -107,7 +107,7 @@ def replay(moves):
     return game
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class ValueCacheTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -191,7 +191,7 @@ class ValueCacheTest(unittest.TestCase):
             self.assertTrue(torch.equal(value, torch.full((8,), float(kept[i].value_target))))
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class TrainerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -367,6 +367,7 @@ class ProgressBlockingTest(unittest.TestCase):
         self.assertTrue(any('pending' in line for line in lines), lines)  # heartbeat while chunk 0 runs
         self.assertIn('8/8 positions  100.0%', lines[-1])
 
+    @unittest.skipIf(torch is None, 'requires torch')  # hybrid.h6_value_cache imports torch
     def test_bounded_map_heartbeats_while_oldest_runs(self):
         from concurrent.futures import ThreadPoolExecutor
         from hybrid.h6_value_cache import _bounded_map

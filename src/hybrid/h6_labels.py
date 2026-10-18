@@ -45,8 +45,9 @@ BOARD = 15
 # 8601-8610: H6 fresh-final probe games (docs/h6-value.md, H6-2a'); reserved before any of them was played.
 # 8611-8616: H6 dev deep-probe games (H6-2a' option B): 8611-8613 first, 8614-8616 only by the pre-declared
 # extension rule; all six reserved before any of them was played, whether used or not.
+# 8701-8725: external-engine anchor games (docs/external-engine.md §4, ``evaluation.external``), evaluation only.
 RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8411, 8412, 8413, 8414, 8415, 8416, 8417, 8418,
-                            *range(8601, 8611), *range(8611, 8617)})
+                            *range(8601, 8611), *range(8611, 8617), *range(8701, 8726)})
 FRESH_PROBE_SEEDS = tuple(range(8601, 8611))
 DEV_PROBE_SEEDS = tuple(range(8611, 8614))
 DEV_PROBE_EXTENSION_SEEDS = tuple(range(8614, 8617))
