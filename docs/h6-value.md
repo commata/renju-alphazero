@@ -878,7 +878,7 @@ H6-2a′ B안의 공식 판정(PASS) 뒤, 튜닝 없이 봉인된 최종 gate를
 | G1 proof (5,015국면) | balanced 91.94%, +1 94.77%, −1 89.10% (1,266국면), MSE 0.248 |
 | G2 outcome (46,134국면) | balanced 64.28%, +1 65.66%, −1 62.89%, MSE 0.906 |
 | G3 D4 (2,000국면) | 평균 std 4.2e−9, p95 3.0e−8, 확신 국면 부호 일치 100% |
-| G4 fresh probe | PASS (부호별 n / N은 `h6_final_gate.json`의 `fresh_probes`로 채운다) |
+| G4 fresh probe | deep win **28 / 28 = 100%**(평균 +0.807), deep loss **26 / 28 = 92.9%**(평균 −0.566, 오답 F29 +0.04, F38 +0.54) |
 | G5 색별 outcome | 흑 64.08%, 백 64.84% (차이 0.77%p) |
 | ECE / λ | 0.0495 → **λ = 1.0** (ECE ≤ 0.10, 사전 규칙: leaf는 value만, rollout 혼합 없음) |
 
@@ -1038,6 +1038,123 @@ python -u scripts\h6_value_leaf_check.py --games docs\mcts-v8-results\e1h\puct_p
 - 결과 파일에는 국면(엔진 대국 수순)과 지표만 있고 RenjuNet 데이터는 없으므로 커밋한다.
 - H6-4b는 고장 확인이다. 여기서 설정을 바꾸지 않는다. 고장(부호 이상, 예외, 시간 폭증)이 보이면 고친 뒤 다시 돌리고, 그 사실을 기록한다.
 - H6-5 대국 명령은 H6-4b 결과를 본 뒤 정리한다(규칙은 위에서 이미 고정).
+
+## H6-4b 결과: 고장 없음, H6-5로 진행 (2026-10-18, 커밋 `7c56033`)
+
+결과 파일: `docs/h6/h6_4b_s1_probes.json`, `h6_4b_check_cpu.json`, `h6_4b_check_cuda.json`. 모두 코드 `b6595d8`, `git_dirty: false`, value sha256 `a0fcccc4…`, D4 평균으로 실행했다. H6-4b는 판정 단계가 아니다(`verdict: null`).
+
+**1. P92 guard (H6-5 공식 기준값으로 고정)**
+
+| 엔진 | (3,4) 선택 | 최종 착수 | 방문한 root 자식 | root 포화 |
+|---|---|---|---|---|
+| TB-Engine-v1 | 0 / 10 | (1,5) 10 / 10 | 20 | 10 / 10 |
+| TB-V1-Value | **0 / 10** | (1,5) 10 / 10 | 2 | 0 / 10 |
+
+- `h6_5_p92_guard = PASS`(0 ≤ 0). 기준선이 10 / 10이 아니므로 `NOT_DISCRIMINATING`도 아니다. 이 값을 H6-5의 P92 guard로 쓴다.
+- 내부는 크게 다르다. rollout tree는 모든 자식이 Q = −1(흑 패)로 포화되어 20개에 방문이 흩어졌다. value tree는 50회 중 49회를 (4,4)에 쓰고 Q = +0.82로 봤다. 흑이 실제로 진 국면을 value는 흑에게 크게 유리하다고 본다(P93 ≈ 0, 흑 차례 bias +0.18과 같은 방향).
+- 최종 착수가 같은 것은 tree 뒤의 검증 단계가 같은 수를 골랐기 때문이다. value의 확신이 틀린 국면에서 전술 안전망이 실제로 막는 역할을 한다는 사례다. 진단으로만 기록한다.
+- P93 (13,11) 10 / 10, P94 stage4 10 / 10(모든 검사 수 UNSAFE)은 두 엔진이 같다(진단).
+
+**2. 고정 국면 298개 (E1-holdout 8417·8418, 100대국 1,890수)**
+
+| 항목 | TB-Engine-v1 | TB-V1-Value |
+|---|---|---|
+| tree route 비율(원 대국) | 55.2% | — |
+| 경로가 달라진 국면 | — | **0 / 298** |
+| 최종 착수 변경 | — | **157 / 298 (52.7%)** (tree 착수 158) |
+| root Q range / std (평균) | 1.156 / 0.454 | 0.335 / 0.125 |
+| root 자식 중 \|Q\| > 0.95 비율 | 39.1% | 1.0% |
+| 방문한 root 자식 수 평균 (2개 이하 국면) | 7.93 (14) | 5.39 (29) |
+| tree 시간 평균 CPU / CUDA | 1.25 s / 1.18 s | 1.44 s / 0.95 s |
+| 수당 시간 평균 CPU / CUDA | 9.98 s / 9.44 s | 10.56 s / 9.47 s |
+| 수당 시간 p95 CPU / CUDA | 34.6 s / 31.6 s | **50.9 s / 45.7 s** |
+| 전체 시간 비율 CPU / CUDA | — | 1.058 / 1.004 |
+| value 호출당 CPU / CUDA | — | 11.7 ms / 2.6 ms |
+
+- **고장 없음.** 경로 차이 0, 예외 0, 회귀 fixture 일치. value는 tree 안에서만 행동을 바꿨다.
+- **지름길 계약이 실제로 작동한다.** leaf 16,050개 중 지름길 1,411개, 종국 93개(합 9.4%), 망 호출 14,546개다(초안의 10.3%는 망 호출만 분모로 잡은 값).
+- **CPU와 CUDA의 최종 착수는 298개 국면 모두 같았다**(두 엔진 모두, 국면별 대조). root Q 값이 비트 단위로 같은 국면은 47개뿐이다(부동소수점 차이). 착수 수준에서는 장치 무관, 내부 값은 비트 동일이 아니다.
+- **색별 leaf 평균:** 흑 차례 +0.280, 백 차례 +0.135(CPU·CUDA 같음). 둘 다 양수다(leaf에서는 둘 차례가 유리하다고 보는 경향). 차이 0.144는 정답이 없는 예측 평균의 차이이지 bias 측정이 아니다. final gate의 흑 bias(+0.177 대 +0.013)와 방향은 같다.
+
+**3. 초안과 다르게 보는 점**
+- **시간: 평균은 같지만 꼬리가 45% 늘었다.** p95가 34.6 → 50.9 s(CPU), 31.6 → 45.7 s(CUDA)다.
+  - 원인은 tree가 아니다(tree는 CUDA에서 오히려 20% 빠름). **착수가 바뀐 157개 국면에서만** tree 밖 모듈 시간 p95가 32.7 → 48.5 s로 늘었다. 착수가 같은 141개 국면은 31.3 → 31.1 s로 그대로다.
+  - tree가 다른 수(또는 다른 root 순서)를 내면 V8-C·VCT2 검증이 더 많은 자식을 검사하게 된다. 최대 사례는 같은 최종 착수에서 16.8 → 138.8 s다.
+  - H6-5 시간 guard(평균 비율 ≤ 1.5)에는 영향이 작다. 하지만 시간 제한이 있는 웹(TB-RT30)에서는 꼬리가 중요하므로, 웹 반영은 H6-5 뒤 따로 잰다.
+- **52.7%를 전부 value의 정보로 읽을 수는 없다.**
+  - rollout 엔진은 seed마다 착수가 달라지는 확률적 탐색이다. 같은 TB-Engine-v1을 다른 seed로 돌렸을 때의 변경률(잡음 바닥)을 아직 모른다. value 엔진은 rollout이 없어 seed와 무관하게 결정적이다.
+  - value tree는 Q 차이가 작고(std 0.125 대 0.454) 덜 흔들리므로, c 1.5(rollout 기준으로 보정)에서는 prior를 더 따르고 소수 자식에 집중한다(방문 자식 7.9 → 5.4). 변경의 일부는 "value의 판단"이 아니라 "prior 쪽으로 기운 탐색"일 수 있다.
+  - 어느 쪽이든 판정은 H6-5 대국으로 한다. c와 λ는 바꾸지 않는다(사전 규칙).
+- **Q 포화 감소(39% → 1%)는 목적에 맞는 변화지만, 연속값이 맞는 값이라는 뜻은 아니다.** P92처럼 확신이 틀린 경우가 있다.
+
+**판정:** H6-4b에서 구조적 고장이나 즉시 멈출 시간 회귀는 없다. H6-5로 간다. λ = 1.0, c 1.5, D4 평균 그대로다.
+
+## H6-5 설계 (2026-10-18, 대국 전 고정)
+
+질문: 같은 TB-Engine-v1 tree에서 rollout leaf를 검증된 v3 + D4 value leaf로 바꾸면 대국에서 더 강한가, 그리고 전술 안전성을 지키는가.
+
+**대국 (seed마다 세 run, 각 25쌍 = 50대국, 같은 opening)**
+
+| run | 엔진 | 상대 | 쓰임 |
+|---|---|---|---|
+| A (main) | TB-V1-Value (`puct_value_vct2_50k`, c 1.5, value CUDA) | TB-Engine-v1 (`v8:puct_policy_vct2_50k`, c 1.5) | 점수 판정, 시간 비율, 색별 점수 |
+| B (aux) | TB-V1-Value | `v8:full` | tree not-SAFE, 안전 위반, 쌍 비교 보고 |
+| C (aux) | TB-Engine-v1 (`puct_policy_vct2_50k`, c 1.5) | `v8:full` | B의 기준선 |
+
+- seed: 8403 → (조건부) 8404 → (INCONCLUSIVE일 때만) 8405.
+
+**판정표 (`scripts/summarize_h6_5.py`, 로드맵 §12.19 + H6-4 확정 사항)**
+
+| 단계 | 조건 | 판정 |
+|---|---|---|
+| 8403 | guard 실패 또는 A 점수 < 0.50 | REJECT |
+| 8403 | A 점수 ≥ 0.50 | 8404 진행 |
+| 8403+8404 | 점수 ≥ 0.55, 쌍 bootstrap 하한 > 0.5 | **ADOPT** |
+| 8403+8404 | 점수 ≥ 0.55, 하한 ≤ 0.5 | INCONCLUSIVE → 8405 한 번, 세 seed에 같은 기준 |
+| 8403+8404 | 점수 < 0.55 | REJECT |
+
+- guard(모든 단계): 세 run 모두 안전 위반 0, B의 tree not-SAFE ≤ C + 0.03, A의 시간 비율(후보 / TB-Engine-v1, 같은 대국) ≤ 1.5, A의 흑·백 각 ≥ 0.45, P92 guard ≠ FAIL(H6-4b 값 PASS).
+- 보조 상대 쌍 비교(B − C)는 보고만 하고 점수 판정에 쓰지 않는다.
+- 보고(판정 무관): `distinct_games`(결정적 탐색이라 같은 대국이 반복되는지), 색별 leaf 평균, root 포화, 방문 자식 수, 수당 시간 p95, tree가 prior 1위를 고른 비율(B 대 C).
+- 결과가 나빠도 같은 seed로 λ, c, checkpoint를 바꿔 다시 돌리지 않는다. 바꾼 후보는 새 arm이고 새 seed가 필요하다.
+
+**H6-5 뒤**
+- ADOPT: H6 종료. TB-V1-Value를 value 엔진 후보로 기록하고, 웹(TB-RT30) 반영은 CPU 시간 꼬리를 따로 재서 정한다. 엔진 기준선 교체(TB-Engine-v2)는 track-b-post-e1.md §2 규칙대로 H7 주기 경계에서 한다.
+- REJECT: 원인 분석(시간 꼬리, 패배 국면에서 value의 확신, prior 쏠림, 색별 차이). 후속 후보(예: c 재보정, value와 rollout 혼합)는 새 arm과 새 seed로만 한다.
+
+**실행 명령 (Windows, 8403 먼저)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"; $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONPATH = "$PWD\src"
+git pull --ff-only; git status --short
+New-Item -ItemType Directory -Force runs\h6_5 | Out-Null
+$pol = "..\renju-alphazero\runs\h3_policy_64x4\best.pt"; $val = "runs\h6_value_head_v3\best.pt"; $seed = 8403
+
+# A: TB-V1-Value vs TB-Engine-v1
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:puct_policy_vct2_50k `
+  --opponent-puct-c 1.5 --seed $seed --pairs 25 --workers 6 --policy-checkpoint $pol --value-checkpoint $val --value-device cuda `
+  --games-jsonl runs\h6_5\value_vs_tb1_$seed.jsonl --output runs\h6_5\value_vs_tb1_$seed.json 2>&1 | Tee-Object runs\h6_5\value_vs_tb1_$seed.log
+# B: TB-V1-Value vs v8:full
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:full `
+  --seed $seed --pairs 25 --workers 6 --policy-checkpoint $pol --value-checkpoint $val --value-device cuda `
+  --games-jsonl runs\h6_5\value_vs_full_$seed.jsonl --output runs\h6_5\value_vs_full_$seed.json 2>&1 | Tee-Object runs\h6_5\value_vs_full_$seed.log
+# C: TB-Engine-v1 vs v8:full
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full `
+  --seed $seed --pairs 25 --workers 6 --policy-checkpoint $pol `
+  --games-jsonl runs\h6_5\tb1_vs_full_$seed.jsonl --output runs\h6_5\tb1_vs_full_$seed.json 2>&1 | Tee-Object runs\h6_5\tb1_vs_full_$seed.log
+
+# 판정 (8403 단계)
+python scripts\summarize_h6_5.py --main runs\h6_5\value_vs_tb1_8403.json `
+  --aux runs\h6_5\value_vs_full_8403.json runs\h6_5\tb1_vs_full_8403.json `
+  --p92 docs\h6\h6_4b_s1_probes.json --output docs\h6\h6_5_summary_8403.json
+```
+
+- 중단되면 같은 명령을 다시 실행한다. `--games-jsonl`에서 끝난 대국을 건너뛴다.
+- `RUN_8404`가 나오면 `$seed = 8404`로 A·B·C를 돌리고, 판정은 두 seed 파일을 모두 넣어 `--output docs\h6\h6_5_summary.json`으로 한다.
+- 대국 기록(run 파일)은 엔진끼리의 대국이라 RenjuNet 데이터가 아니므로 `docs/h6/h6_5/`로 옮겨 커밋해도 된다. 요약 파일은 반드시 커밋한다.
+- (선택, 판정 무관) 잡음 바닥: `h6_value_leaf_check.py`를 `--seed 20261019 --value-device cuda --output docs\h6\h6_4b_check_seed2.json`으로 한 번 더 돌리면, TB-Engine-v1이 seed만 바꿔 착수를 바꾸는 비율을 알 수 있다(value 엔진은 결정적이므로 같다). 52.7% 해석에 쓴다.
 
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
