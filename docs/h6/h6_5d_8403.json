@@ -1,0 +1,262 @@
+{
+ "format": "h6-5d-v1",
+ "report_only": true,
+ "candidate": {
+  "arm": "puct_value_vct2_50k",
+  "opponent": "v8:full",
+  "seed": 8403,
+  "tree_status": {
+   "SAFE": 830,
+   "UNKNOWN": 55,
+   "UNSAFE": 6
+  },
+  "all": {
+   "not_safe": 61,
+   "tree_moves": 891,
+   "rate": 0.0685
+  },
+  "by_game_kind": {
+   "decisive": {
+    "not_safe": 17,
+    "tree_moves": 332,
+    "rate": 0.0512
+   },
+   "draw_full_board": {
+    "not_safe": 44,
+    "tree_moves": 559,
+    "rate": 0.0787
+   },
+   "draw": {
+    "not_safe": 0,
+    "tree_moves": 0,
+    "rate": null
+   }
+  },
+  "by_ply": {
+   "0-19": {
+    "not_safe": 10,
+    "tree_moves": 300,
+    "rate": 0.0333
+   },
+   "20-39": {
+    "not_safe": 5,
+    "tree_moves": 83,
+    "rate": 0.0602
+   },
+   "40-59": {
+    "not_safe": 4,
+    "tree_moves": 69,
+    "rate": 0.058
+   },
+   "60-999": {
+    "not_safe": 42,
+    "tree_moves": 439,
+    "rate": 0.0957
+   }
+  },
+  "v8c_budget_exhausted": {
+   "not_safe": 30,
+   "tree_moves": 30
+  },
+  "played_status_of_not_safe": {
+   "SAFE": 26,
+   "UNKNOWN": 33,
+   "UNSAFE": 2
+  },
+  "v8c_switch_of_not_safe": {
+   "proven_loss": 4,
+   "unknown": 27,
+   "none": 30
+  },
+  "not_safe_per_game_top": [
+   18,
+   8,
+   6,
+   6,
+   5,
+   4,
+   2,
+   2
+  ],
+  "games_with_not_safe": 16,
+  "tree_prior_top_rate": 0.7508,
+  "not_safe_move_seconds_median": 141.0315,
+  "tree_move_seconds_median": 2.1228
+ },
+ "baseline": {
+  "arm": "puct_policy_vct2_50k",
+  "opponent": "v8:full",
+  "seed": 8403,
+  "tree_status": {
+   "SAFE": 1012,
+   "UNKNOWN": 35,
+   "UNSAFE": 3
+  },
+  "all": {
+   "not_safe": 38,
+   "tree_moves": 1050,
+   "rate": 0.0362
+  },
+  "by_game_kind": {
+   "decisive": {
+    "not_safe": 12,
+    "tree_moves": 377,
+    "rate": 0.0318
+   },
+   "draw_full_board": {
+    "not_safe": 26,
+    "tree_moves": 673,
+    "rate": 0.0386
+   },
+   "draw": {
+    "not_safe": 0,
+    "tree_moves": 0,
+    "rate": null
+   }
+  },
+  "by_ply": {
+   "0-19": {
+    "not_safe": 4,
+    "tree_moves": 300,
+    "rate": 0.0133
+   },
+   "20-39": {
+    "not_safe": 12,
+    "tree_moves": 134,
+    "rate": 0.0896
+   },
+   "40-59": {
+    "not_safe": 6,
+    "tree_moves": 88,
+    "rate": 0.0682
+   },
+   "60-999": {
+    "not_safe": 16,
+    "tree_moves": 528,
+    "rate": 0.0303
+   }
+  },
+  "v8c_budget_exhausted": {
+   "not_safe": 13,
+   "tree_moves": 13
+  },
+  "played_status_of_not_safe": {
+   "SAFE": 24,
+   "UNKNOWN": 13,
+   "UNSAFE": 1
+  },
+  "v8c_switch_of_not_safe": {
+   "proven_loss": 2,
+   "unknown": 23,
+   "none": 13
+  },
+  "not_safe_per_game_top": [
+   9,
+   8,
+   4,
+   4,
+   2,
+   2,
+   2,
+   1
+  ],
+  "games_with_not_safe": 14,
+  "tree_prior_top_rate": 0.6505,
+  "not_safe_move_seconds_median": 137.9833,
+  "tree_move_seconds_median": 2.2517
+ },
+ "paired_not_safe_diff": {
+  "games": 50,
+  "diff": 0.0323,
+  "ci95": [
+   -0.0051,
+   0.0734
+  ],
+  "share_above_margin": 0.522,
+  "margin": 0.03
+ },
+ "extra": [
+  {
+   "arm": "puct_value_vct2_50k",
+   "opponent": "v8:puct_policy_vct2_50k",
+   "seed": 8403,
+   "tree_status": {
+    "SAFE": 433,
+    "UNKNOWN": 35,
+    "UNSAFE": 9
+   },
+   "all": {
+    "not_safe": 44,
+    "tree_moves": 477,
+    "rate": 0.0922
+   },
+   "by_game_kind": {
+    "decisive": {
+     "not_safe": 44,
+     "tree_moves": 477,
+     "rate": 0.0922
+    },
+    "draw_full_board": {
+     "not_safe": 0,
+     "tree_moves": 0,
+     "rate": null
+    },
+    "draw": {
+     "not_safe": 0,
+     "tree_moves": 0,
+     "rate": null
+    }
+   },
+   "by_ply": {
+    "0-19": {
+     "not_safe": 5,
+     "tree_moves": 301,
+     "rate": 0.0166
+    },
+    "20-39": {
+     "not_safe": 18,
+     "tree_moves": 102,
+     "rate": 0.1765
+    },
+    "40-59": {
+     "not_safe": 4,
+     "tree_moves": 43,
+     "rate": 0.093
+    },
+    "60-999": {
+     "not_safe": 17,
+     "tree_moves": 31,
+     "rate": 0.5484
+    }
+   },
+   "v8c_budget_exhausted": {
+    "not_safe": 26,
+    "tree_moves": 26
+   },
+   "played_status_of_not_safe": {
+    "UNSAFE": 7,
+    "UNKNOWN": 26,
+    "SAFE": 11
+   },
+   "v8c_switch_of_not_safe": {
+    "proven_loss": 2,
+    "unknown": 11,
+    "none": 31
+   },
+   "not_safe_per_game_top": [
+    10,
+    7,
+    4,
+    3,
+    2,
+    2,
+    2,
+    2
+   ],
+   "games_with_not_safe": 17,
+   "tree_prior_top_rate": 0.7233,
+   "not_safe_move_seconds_median": 164.4453,
+   "tree_move_seconds_median": 2.6426
+  }
+ ]
+}

@@ -48,6 +48,11 @@ def _check_run(run: dict, arms: tuple, opponent: str) -> None:
         raise ValueError(f"{run['arm']} vs {opponent} seed {run['seed']}: c_puct must be 1.5 on every PUCT side")
 
 
+def _prior_top_rate(games: list[dict]) -> float | None:
+    tree = [m for g in games for m in g['v8_moves'] if m['route'] == 'tree' and m.get('tree', {}).get('prior_top')]
+    return round(sum(m['v7_move'] == m['tree']['prior_top'] for m in tree) / len(tree), 4) if tree else None
+
+
 def value_report(games: list[dict]) -> dict:
     moves = [m for g in games for m in g['v8_moves'] if 'value' in m]
     q = [m['tree']['root_q'] for g in games for m in g['v8_moves'] if m.get('tree', {}).get('root_q')]
@@ -66,6 +71,8 @@ def value_report(games: list[dict]) -> dict:
         'move_seconds_p95': seconds[min(len(seconds) - 1, int(0.95 * len(seconds)))] if seconds else None,
         'move_seconds_max': seconds[-1] if seconds else None,
         'distinct_games': len({json.dumps(g['moves']) for g in games}),
+        # summarize_h5 counts the prior top for tree mode 'puct' only; this covers 'puct_value' too
+        'tree_prior_top_rate': _prior_top_rate(games),
     }
 
 
