@@ -63,11 +63,11 @@ Rapfi에게 패배 → 패배 직전 국면(loss_candidates) → offline 참값(
 - **provenance.** 실행 파일 SHA-256, `--engine-file`로 지정한 config·가중치 SHA-256, `ABOUT` 응답, INFO 설정 전체, git commit/dirty, 우리 agent의 checkpoint 해시(`tb1`은 `config_hash`도).
   결과 key에 INFO 설정이 들어가므로(`rapfi[max_node=100000][thread_num=1]…`) 설정이 다른 판은 한 JSONL에서 섞이지 않는다.
 
-## 4. seed 블록 (고정, 아직 한 판도 두지 않음)
+## 4. seed 블록 (고정)
 
 | 블록 | seed | 용도 |
 |---|---|---|
-| X1 보정 | 8701–8705 | 8701 강도 사다리, 8702 확인 대국, 8703 재현성 재실행, 8704–8705 예비(§8의 규칙으로만 사용) |
+| X1 보정 | 8701–8705 | 8701 강도 사다리, 8702 확인 대국, 8703 재현성 재실행(**2026-10-18 사용 완료**, §8.1), 8704–8705 예비(쓰지 않음) |
 | X2 모니터링 | 8711–8720 | H7 주기 c에 seed 8710 + c(c = 1…10). 기록 전용 |
 | X3 최종 앵커 | 8721–8725 | H8 보고용. **H8 전에는 두지 않는다** |
 
@@ -136,6 +136,41 @@ Rapfi를 소스에서 빌드해(GPL-3.0, `dhbloo/rapfi` master, g++ 13.3, SSE4.1
 - **재현성:** L_mid에서 seed **8703** 2쌍을 두 번 → fingerprint가 같아야 한다. 다르면 "이 빌드는 재현 불가"로 기록하고, 이후 보고에는 기보 전체를 함께 남긴다.
 - **산출물:** `docs/external/x1_calibration.json`(단계별 점수, 선택 근거, L_mid·L_strong, 엔진 해시). 기보 JSONL은 `runs/external/`(git 제외).
 
+### 8.1 X1 결과 (2026-10-18, 데스크톱 i5-12600K, Windows) — **완료, 강도 동결**
+
+산출물: `docs/external/x1_calibration.json`(단계별 점수, 선택, 확인 대국 요약과 loss 후보), `docs/external/x1_provenance.json`(실행 10개의 `run_signature`, git commit/dirty, 엔진·우리 agent 해시, 데스크톱 규칙 교차검사).
+
+| `max_node` | 300 | 1k | 3k | 10k | 30k | 100k | 300k |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `tb1` score (seed 8701, 5쌍) | **0.20** | 0.20 | 0.10 | 0.00 | 0.00 | 0.00 | 0.00 |
+
+- 모든 단계에서 완전한 쌍 5/5, `engine_illegal` 0, `engine_error` 0, 금수점 불일치 0.
+- **선택(규칙 그대로):** 0.2와 0.8을 포함하는 구간으로 읽는다(규칙 3의 "0.2 미만"과 맞는 해석, 이 해석을 여기서 고정한다). 300과 1k가 둘 다 0.20으로 0.5에서 같은 거리라 동률 규칙(노드가 적은 쪽)으로 **L_mid = 300**. **L_strong = 1,000**(바로 위 단계). 300에서 0.2 "미만"이 아니므로 100·30 추가는 해당하지 않는다.
+- **확인(seed 8702, L_mid 25쌍 50판):** score **0.26**, 쌍 bootstrap 95% [0.16, 0.38], Elo −181.7, 흑 0.36 / 백 0.16, 금수점 검사 796국면 불일치 0, loss 후보 185개. 기준 기록이며 판정 조건이 아니다.
+- **재현성(seed 8703, 2쌍 × 2회):** fingerprint 동일(`1adbb7d3433bb330…`) → **재현 가능**.
+- **해석:** 가장 약한 단계에서도 `tb1`은 0.26이다. 앵커가 현재 모델보다 강한 쪽에 있어, H7 이후 기력이 오르는지 볼 여유가 크다. 결과를 보고 강도를 다시 고르지 않는다(§8 원칙).
+
+**provenance 확인 (`x1_provenance.json`):**
+- 10개 실행 모두 `git_dirty: false`. 사다리 7개는 커밋 `9105d39`, 확인·재현성 3개는 `2b5c0fa`에서 돌았다. 두 커밋 사이의 변경은 H6-5 스크립트·문서와 `h6_labels.py`의 seed 예약 한 줄뿐이고, 어댑터·runner·TB-Engine-v1·규칙 코드는 같다.
+- `ladder_n300`과 `confirm_n300`의 `run_signature`가 같다(`1016c25bbe8f…`).
+- 재현성 실행(`repro_a`, `repro_b`)은 서로 같은 signature(`7b7710808f4d…`)이고, 사다리 300과는 다르다. 재현성 명령에 `--forbid-check`를 넣지 않았고 signature에 `forbid_check`가 들어가기 때문이다. 금수점 질의는 착수에 영향을 주지 않으므로 재현성 판정은 유효하다.
+- 엔진: Rapfi `0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)`, `pbrain-rapfi-windows-avx2.exe` SHA-256 `1e02497433fb…`, `rapfi-networks` commit `918b757a`, config·가중치 6개 해시가 모든 실행에서 같다.
+- 우리 쪽: `tb1`, H3 checkpoint `efee483284df…`, metadata `5648b7fbe71d…`, `tb_engine_config_hash` `2959295e8a32…`.
+- 데스크톱 규칙 교차검사(seed 1, 300판): 8,886국면, 금수점 9,517개, 불일치 0. 클라우드 X0 예비 검증과 숫자가 같다.
+
+### 8.2 동결된 외부 앵커 설정 (X2·X3에서 그대로 사용)
+
+| 항목 | 값 |
+|---|---|
+| 엔진 | `pbrain-rapfi-windows-avx2.exe`(SHA-256 `1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e`), 같은 폴더의 config·가중치 6개(해시는 `x1_provenance.json`) |
+| L_mid | `max_node=300` |
+| L_strong | `max_node=1000` |
+| 공통 INFO | `thread_num=1`, `timeout_turn=600000`, `timeout_match=1000000000` |
+| runner 옵션 | `--forbid-check`, `--engine-file` 6개(X1과 같은 목록), opening 4수·반경 2(기본값) |
+
+- 엔진 파일을 바꾸면 같은 상대가 아니다. 그때는 새 앵커로 따로 등록하고 이전 곡선과 잇지 않는다.
+- X2·X3 실행의 `engine.executable_sha256`, `extra_files`, `info`가 위와 같은지 확인한다. 우리 agent가 바뀌면 `run_signature` 전체는 달라지는 것이 정상이다.
+
 ## 9. X2: H7 모니터링 상대 결정 (B1-Champion H7-c1 시작 전)
 
 - track-b-b1-b2.md §13에 따라 Monitoring Arena는 H7 시작 전에 고정된다. 외부 앵커를 넣을지 이때 정하고, 이후 바꾸지 않는다.
@@ -199,18 +234,14 @@ foreach ($n in 300, 1000, 3000, 10000, 30000, 100000, 300000) {
 | 2 | H7 외부 앵커 | **채택.** 기록용 monitoring 상대(§9). 승급·탈락 gate에는 쓰지 않는다 |
 | 3 | `B2-X`(외부 엔진 teacher arm) | **OFF.** "external teacher가 self-play-only보다 도움이 되는가"를 연구 확장으로 따로 실험할 때만 별도 트랙으로 켠다 |
 
-## 15. 진행 상태와 merge 조건
+## 15. 진행 상태
 
-| 항목 | 상태 |
+| 단계 | 상태 |
 |---|---|
-| X0 구현 커밋 | 완료 |
-| 새 테스트(`tests/test_external_engine.py`, 19개) | PASS |
-| 검토 반영(2026-10-18): resume `run_signature`, 완전한 쌍 표본, 신원 fail-fast, "외부 기력 앵커" 표현 | 완료 |
-| base 동기화: `origin/feat/h6-value` `5894160` merge(문서·JSON 3개 파일, 충돌 없음) | 완료 |
-| frozen baseline 해시 | PASS |
-| Rapfi 실제 통합, 재현성, 금수 교차검사 | 완료(§7) |
-| CI 호환 수정(커밋 `5988dd9`, 기존 테스트, external 코드와 무관) | torch skip 사유를 CI 계약 `requires torch`로 통일(`test_h3`, `test_h6_diag`, `test_h6_fresh`, `test_h6_gate`, `test_h6_value`), `_bounded_map` 테스트 하나만 torch 없을 때 skip, `h5_calibrate_puct`의 `sample_states` import를 `main()` 안으로 옮겨 `decide()` 테스트가 torch 없이 돈다. 제품 동작과 H6 결과는 바뀌지 않는다 |
-| core-no-torch 로컬 재현(native 빌드 후 `ci_run_tests.py --skip-policy torch-only`, 커밋 `5988dd9`) | **PASS**: 751개, skip 174개 모두 `requires torch`, `CI unittest gate PASS` |
-| fake-smoke, frozen-baseline 로컬 재현 | **PASS**: game SHA256 `7e1b04a0…`, V6 `91bb91e5…`, V7 `97cd4ec0…` 일치, 파일 해시 PASS |
-| full-tests(torch 2.14, skip 0) | PR CI에서 확인(클라우드에서는 torch를 받을 수 없음) |
-| **merge** | **보류.** CI 네 job(`core-no-torch`, `full-tests`, `fake-smoke`, `frozen-baseline`)이 PASS한 뒤 다음 단계로 합친다 |
+| X0 기반 구축(어댑터, runner, 규칙 교차검사, 재현성, resume·통계·provenance, 테스트 19개) | **완료.** PR #18 병합(`9105d39`), CI 4 job PASS(`core-no-torch` 22.6분 / 제한 30분, `full-tests` 17분 / 45분) |
+| X1 강도 보정 | **완료(2026-10-18).** L_mid = 300, L_strong = 1,000 동결(§8.1, §8.2) |
+| X2 H7 모니터링 | B1-Champion H7-c1부터. 주기 c마다 L_mid 25쌍, seed 8710 + c, 기록 전용(§9) |
+| X3 H8 앵커 | H8에서만. seed 8721(L_mid), 8722(L_strong), 각 50쌍(§10) |
+
+- X0 코드는 동결한다. 이후 변경은 버그 수정만 하고, 수정하면 `run_signature`의 `FORMAT`이 바뀌는지 확인한다.
+- 기술 부채: CI `core-no-torch`가 제한의 약 75%다. 25분을 넘기 시작하면 느린 테스트를 `core-fast` / `extended-regression`으로 나누는 것을 검토한다.
