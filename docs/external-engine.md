@@ -209,6 +209,6 @@ foreach ($n in 300, 1000, 3000, 10000, 30000, 100000, 300000) {
 | base 동기화: `origin/feat/h6-value` `5894160` merge(문서·JSON 3개 파일, 충돌 없음) | 완료 |
 | frozen baseline 해시 | PASS |
 | Rapfi 실제 통합, 재현성, 금수 교차검사 | 완료(§7) |
-| 전체 회귀, torch 없는 환경(`pip install -e .` 후, 커밋 `5b40b22`) | 747개 실행, 572 PASS, 173 skip(torch 필요), **2 ERROR**. 두 ERROR는 모두 torch를 직접 import하는 기존 테스트(`test_h6_value` `_bounded_map`, `test_puct_v8` `h5_calibrate_puct`)이고, 이 브랜치가 바꾼 파일과 관련이 없다 |
+| 전체 회귀, torch 없는 환경(`ci_run_tests.py --skip-policy torch-only`, merge 후 커밋 `f8e09e3`) | 751개 실행, 576 PASS, 173 skip(torch 필요), **2 ERROR**. 두 ERROR는 torch를 skip guard 없이 import하는 기존 테스트(`test_h6_value` `ProgressBlockingTest.test_bounded_map_heartbeats_while_oldest_runs`, `test_puct_v8` `ScriptsTest.test_calibration_rule`)이며 이 브랜치가 바꾼 파일과 관련이 없다. 같은 이유로 CI `core-no-torch`에서도 실패할 수 있다. frozen baseline PASS |
 | 전체 회귀, torch 있는 환경(CI `full-tests`, skip 0) | **미실행.** 클라우드에서 torch를 받을 수 없었다. CI는 PR이나 수동 실행(`workflow_dispatch`)에서만 돈다 |
 | **merge** | **보류.** CI 네 job(`core-no-torch`, `full-tests`, `fake-smoke`, `frozen-baseline`)이 PASS한 뒤 다음 단계로 합친다 |
