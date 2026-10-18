@@ -867,6 +867,100 @@ python -u scripts\h6_dev_probe_eval.py --model v3=runs\h6_value_head_v3\best.pt 
 - part B + 봉인된 fresh probe(`h6_fresh_final_probes_v1.json`) + D4 평균. 결과에 따라 모델·설정을 바꾸지 않는다.
 - PASS면 H6-4(Value → PUCT)로 간다. FAIL이면 실패한 gate의 `next_steps_if_failed`를 따르고, part B는 다시 쓰지 않는다.
 
+## H6-3 최종 gate: PASS (2026-10-18, `docs/h6/h6_final_gate.json`, v3 + D4 평균, part B 1회)
+
+H6-2a′ B안의 공식 판정(PASS) 뒤, 튜닝 없이 봉인된 최종 gate를 한 번 실행했다. 대상은 v3 checkpoint(`a0fcccc4…`) + D4 평균 추론이다. part B(test split 중 개발에 쓰지 않은 절반)와 봉인된 fresh probe를 처음 열었다.
+
+| 항목 | 결과 |
+|---|---|
+| 판정 | **PASS** (G1–G5 모두 통과) |
+| part B | 2,637대국, 51,149국면 (part A 2,795대국과 겹치지 않음) |
+| G1 proof (5,015국면) | balanced 91.94%, +1 94.77%, −1 89.10% (1,266국면), MSE 0.248 |
+| G2 outcome (46,134국면) | balanced 64.28%, +1 65.66%, −1 62.89%, MSE 0.906 |
+| G3 D4 (2,000국면) | 평균 std 4.2e−9, p95 3.0e−8, 확신 국면 부호 일치 100% |
+| G4 fresh probe | PASS (부호별 n / N은 `h6_final_gate.json`의 `fresh_probes`로 채운다) |
+| G5 색별 outcome | 흑 64.08%, 백 64.84% (차이 0.77%p) |
+| ECE / λ | 0.0495 → **λ = 1.0** (ECE ≤ 0.10, 사전 규칙: leaf는 value만, rollout 혼합 없음) |
+
+**1. held-out에서도 재현된다.**
+- dev(part A, D4)와 비교하면 proof balanced 91.6% → 91.9%, outcome balanced 65.2% → 64.3%, ECE 0.046 → 0.049다. 차이는 1%p 안팎이다. 개발 partition에 맞춰진 모델이라는 근거는 없다.
+- proof −1 89.1%는 **깊이 0 패배**(`forced_loss`, `vcf_loss`)의 정확도다. v3가 더한 `vcf_loss` 학습이 새 대국에도 일반화됐다는 뜻이다.
+  - 깊은 패배(부모 단위 `vct_loss`)는 학습 라벨에 없다. 이 능력의 근거는 G4(fresh probe)와 dev deep probe(78 / 81)뿐이다. proof −1 수치를 깊은 패배의 근거로 쓰지 않는다.
+
+**2. outcome 판별력은 중간 수준이다.**
+- 증명 국면에서는 강하지만(약 92%), 일반 국면의 승패 방향은 약 64%만 맞힌다.
+- 따라서 value는 solver나 전술 veto를 대신하지 않는다. 증명된 결과(V8 Stage, VCF/VCT 판정, PROVEN_LOSS veto)가 항상 우선이고, value는 tree leaf 평가만 맡는다.
+
+**3. G3는 구성상 통과한다. 망이 대칭에 불변해진 것은 아니다.**
+- D4 평균은 8개 대칭의 평균이므로 수학적으로 정확히 불변이다. std 1e−8은 부동소수점 오차다. 이 수치는 구현이 맞다는 확인이지, 망 자체가 개선됐다는 증거가 아니다.
+- 망의 raw 출력은 여전히 방향에 따라 흔들린다(v2 dev 기준 국면별 std 평균 0.136).
+- 그래서 검증된 것은 **"v3 + D4 평균" evaluator**다. raw 단일 추론은 다른 evaluator다. part B를 이미 썼으므로 raw로 바꾸면 offline gate로 다시 검증할 수 없고, 대국 평가로만 판단해야 한다. H6-4·H6-5는 D4 평균으로 고정한다.
+
+**4. P93·P94 실패는 G4를 뒤집지 않는다.**
+- P93 −0.010(기대 +, 사실상 0), P94 +0.983(기대 −, 확신 오답). dev 값과 같다.
+- 사전에 G4를 대국 하나(P93·P94)가 아니라 fresh probe로 판정하기로 바꿨고, 같은 종류 81개 dev probe에서 v3는 78개를 맞혔다. P93·P94는 회귀 관찰용 진단 국면으로 남긴다.
+
+**5. P92는 policy 순위가 아니라 value 순위다. 그리고 크게 좋아졌다.**
+- `h6_gate.probes`의 P92는 흑의 모든 합법수 뒤 국면을 value로 매긴 순위다(점수 = −v(child), 1위가 value의 최선). policy head와는 무관하다.
+- 실제 진 수 (3,4)의 순위는 v2에서 **6 / 133**(value가 거의 최선으로 봄)이었고, v3에서는 **126 / 133**이다. value는 이제 이 수를 최하위권으로 본다.
+- 단, (3,4) 뒤 국면이 P93이므로 그 점수(+0.010)는 P93 value(−0.010)의 부호만 바꾼 값이다. 순위가 낮은 이유는 "(3,4)가 진다"고 확신해서가 아니라, 다른 수 대부분을 흑에게 더 좋게 보기 때문이다. 또 P92의 참값은 아직 UNRESOLVED다(§12.20). 그래서 "개선 신호"로만 기록하고, 판정은 H6-4/5에서 search 단위로 한다.
+
+**6. 색별 bias.**
+- outcome bias(평균 v − 평균 t)는 흑 차례 +0.177, 백 차례 +0.013이다. 흑 차례 국면을 실제보다 낙관한다. balanced accuracy는 흑·백이 같아 G5는 통과했다.
+- PUCT에서 같은 부모의 자식들이 모두 같은 색 차례 leaf로 끝나면 일정한 offset은 형제 비교에서 상쇄된다. 하지만 leaf 깊이가 섞이면 상쇄되지 않고, Q와 탐색항(U)의 균형도 바뀐다. H6-4에서 leaf의 차례 색별 value 평균을 기록하고, H6-5의 색별 점수 guard(흑·백 각 ≥ 0.45)로 본다.
+
+**결론.**
+- H6-3은 PASS다. **"offline evaluator 검증 완료"이지 "value 모델 완성"이 아니다.** 다음은 search 단위의 효용 검증(H6-4, H6-5)이다.
+- H6 value head 자체의 추가 튜닝은 하지 않는다. H6-2b(trunk 미세조정)는 로드맵대로 H6-5 ADOPT 뒤에만 고려한다.
+- λ = 1.0로 고정한다(사전 규칙). 대국 후보는 하나(v3 + D4, value-only leaf)다.
+
+## H6-4 설계 방향 (2026-10-18, 초안)
+
+목표: TB-Engine-v1의 tree route에서 **leaf 평가 하나만** rollout → value로 바꾼다. 나머지(V8 Stage 1–5, own VCF, V8-A/B/C, VCT2 veto, H3 policy prior, c 1.5, 시뮬레이션 50/100)는 그대로 둔다.
+
+**1. 엔진 버전 단계로 진행한다(사용자 확인 필요).**
+- `mcts_v8.py`가 `puct_v8.search_tree_puct`를 직접 부르므로, 동결 파일을 건드리지 않고는 leaf를 바꿀 수 없다. 모듈 전역 함수를 바꿔치기하는 방식은 다중 slot·테스트에서 위험하므로 쓰지 않는다.
+- 제안:
+  - 새 파일 `src/analysis/puct_value_v1.py`: `search_tree_puct`를 복사하고 leaf만 바꾼 함수. `puct_v8.py`는 그대로 둔다.
+  - `mcts_v8.py`에 **추가만** 한다: `tree_mode="puct_value"` 분기와 `leaf_value` 인자. 기존 `tree_mode` 경로의 코드는 바꾸지 않는다.
+  - 새 설정 `TB_V1_VALUE`(TB-Engine-v1 설정 + `tree_mode: puct_value` + value checkpoint sha)로 별도 config hash를 갖는다. TB-Engine-v1 자체는 바뀌지 않는다.
+  - 회귀 증명: 기존 `tests/test_tb_engine_v1.py`와 고정 국면에서 TB-Engine-v1의 착수가 비트 단위로 같아야 한다.
+
+**2. leaf 계약(§12.18).**
+- 종국이면 기존과 같다(승자 기준 ±1, 무승부 0).
+- 아니면 leaf 국면 s에서 v = V_D4(s)(둘 차례 관점, [−1, 1])를 구하고, leaf 노드 값(그 노드로 둔 쪽 관점) = **−v**. 부호 변환은 한 함수(`leaf_value`)에서만 한다.
+- backup은 실수 값을 받는 별도 함수로 한다(기존 `_backpropagate`는 승자만 받는다). 부모 방향으로 부호를 바꿔 가며 더한다.
+- solver 우선: leaf에서 둘 차례가 즉시 5목을 만들 수 있으면 value 대신 확정값을 쓴다. 이 검사는 싸므로 넣는다. 그보다 깊은 증명은 leaf에서 하지 않는다(root 모듈이 이미 한다).
+- λ = 1.0이므로 rollout은 돌리지 않는다. 그러면 tree route는 seed와 무관하게 결정적이 된다. 다양성은 상대(rollout 사용)와 opening에서 나온다. H6-5에서 같은 대국이 반복되는 비율을 기록한다.
+
+**3. evaluator.**
+- `ValueLeaf`: H6-2a checkpoint 로더(`h4_policy.RootPolicy`는 value checkpoint를 거부하므로 따로 만든다). 기대 sha256을 확인하고, D4 평균, eval 모드, `torch.no_grad`로 동작한다.
+- policy prior는 기존 H3 `RootPolicy`를 그대로 쓴다. value 망과 trunk·policy head가 같으므로 한 번의 forward로 둘 다 얻을 수 있지만, 이것은 속도 최적화다. 정확성 검증 뒤 별도 단계로 한다(batch 구성이 바뀌면 policy 출력이 비트 단위로 같다는 보장이 깨질 수 있다).
+- 캐시: 같은 국면(정규화 hash)의 value를 수 단위로 재사용한다. 결과가 바뀌지 않으므로 넣어도 된다.
+
+**4. 부호 테스트(H6-4 통과 조건, 로드맵 그대로).**
+- 즉시 5목, 상대 5목 허용, 1·2수 강제승, 부모·자식 부호, 무승부.
+- 추가: `leaf_value`의 부호를 뒤집은 가짜 evaluator로는 1수 강제승을 놓치는지 확인한다(부호 버그가 테스트에 잡히는지 확인).
+- 추가: 값이 상수인 evaluator(v ≡ 0)에서는 탐색이 prior만 따르는지 확인한다.
+
+**5. 대국 전 오프라인 점검(H6-4b, 대국 없이).**
+- 고정 국면 집합(P92, e1 tree-route 국면, 웹 패배 국면)에서 TB-Engine-v1과 후보를 같은 seed로 돌려 다음을 기록한다.
+  - tree route를 타는 수의 비율. value는 tree route에서만 작용하므로, 이 비율이 효과의 상한이다.
+  - 착수 변경률, root visit 분포, C4 지표(root Q range, std, |Q| > 0.95 비율), leaf value의 차례 색별 평균.
+  - 수당 시간(value 호출 수 × 호출당 시간 vs rollout 시간). CPU와 CUDA 둘 다 잰다. SER5는 CPU뿐이다.
+  - P92: 10 seed에서 (3,4)를 고른 횟수(기준선 `puct_policy`의 S1 결과와 비교).
+- 이 점검은 판정이 아니라 고장 확인이다. 여기서 설정을 바꾸지 않는다.
+
+**6. H6-5 전에 고칠 사전 규칙.**
+- 로드맵의 H6-5 guard "P93·P94 부호 유지"는 그대로 적용하면 v3가 무조건 실패한다(offline 값이 이미 틀림). G4가 fresh probe로 바뀐 것과 맞춰, 대국 전에 다음으로 바꾸는 것을 제안한다: "P92에서 (3,4)를 고른 seed 수가 기준선 이하".
+- 주 상대: §12.19의 `v8:puct_policy`는 TB-Engine-v1 이전 기준이다. value 효과만 분리하려면 **TB-Engine-v1 자체**(rollout leaf)가 주 상대여야 한다(0.5 = 동등). 보조 상대는 `v8:full`. seed는 8403, 8404, 예비 8405로 한다(예약됨). 이 선택은 결과 전에 고정한다.
+- 시간 guard(≤ 1.5배)는 GPU 기준으로 판정하고, CPU 시간은 따로 기록한다(웹 반영 판단용).
+
+**7. 범위 밖(H6-5 ADOPT 뒤).**
+- 웹(TB-RT30-v3) 반영: 시간 제한 탐색이라 시뮬레이션 수가 고정되지 않는다. CPU에서 value 비용을 보고 따로 정한다. RenjuNet으로 학습한 망은 로컬 전용 제약(§12.1)이 있으므로 공개 범위도 같이 정한다.
+- raw 단일 추론, policy·value 한 번에 forward, batch leaf 평가 같은 속도 최적화.
+- H6-2b(trunk 미세조정), H7.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
