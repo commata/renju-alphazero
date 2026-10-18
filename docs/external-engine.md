@@ -209,6 +209,8 @@ foreach ($n in 300, 1000, 3000, 10000, 30000, 100000, 300000) {
 | base 동기화: `origin/feat/h6-value` `5894160` merge(문서·JSON 3개 파일, 충돌 없음) | 완료 |
 | frozen baseline 해시 | PASS |
 | Rapfi 실제 통합, 재현성, 금수 교차검사 | 완료(§7) |
-| 전체 회귀, torch 없는 환경(`ci_run_tests.py --skip-policy torch-only`, merge 후 커밋 `f8e09e3`) | 751개 실행, 576 PASS, 173 skip(torch 필요), **2 ERROR**. 두 ERROR는 torch를 skip guard 없이 import하는 기존 테스트(`test_h6_value` `ProgressBlockingTest.test_bounded_map_heartbeats_while_oldest_runs`, `test_puct_v8` `ScriptsTest.test_calibration_rule`)이며 이 브랜치가 바꾼 파일과 관련이 없다. 같은 이유로 CI `core-no-torch`에서도 실패할 수 있다. frozen baseline PASS |
-| 전체 회귀, torch 있는 환경(CI `full-tests`, skip 0) | **미실행.** 클라우드에서 torch를 받을 수 없었다. CI는 PR이나 수동 실행(`workflow_dispatch`)에서만 돈다 |
+| CI 호환 수정(커밋 `5988dd9`, 기존 테스트, external 코드와 무관) | torch skip 사유를 CI 계약 `requires torch`로 통일(`test_h3`, `test_h6_diag`, `test_h6_fresh`, `test_h6_gate`, `test_h6_value`), `_bounded_map` 테스트 하나만 torch 없을 때 skip, `h5_calibrate_puct`의 `sample_states` import를 `main()` 안으로 옮겨 `decide()` 테스트가 torch 없이 돈다. 제품 동작과 H6 결과는 바뀌지 않는다 |
+| core-no-torch 로컬 재현(native 빌드 후 `ci_run_tests.py --skip-policy torch-only`, 커밋 `5988dd9`) | **PASS**: 751개, skip 174개 모두 `requires torch`, `CI unittest gate PASS` |
+| fake-smoke, frozen-baseline 로컬 재현 | **PASS**: game SHA256 `7e1b04a0…`, V6 `91bb91e5…`, V7 `97cd4ec0…` 일치, 파일 해시 PASS |
+| full-tests(torch 2.14, skip 0) | PR CI에서 확인(클라우드에서는 torch를 받을 수 없음) |
 | **merge** | **보류.** CI 네 job(`core-no-torch`, `full-tests`, `fake-smoke`, `frozen-baseline`)이 PASS한 뒤 다음 단계로 합친다 |
