@@ -47,7 +47,7 @@ def write_games(path: Path, games):
     path.write_bytes(gzip.compress(payload))
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class CacheTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

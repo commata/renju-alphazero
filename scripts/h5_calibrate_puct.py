@@ -38,7 +38,6 @@ for path in (ROOT / 'src', ROOT / 'scripts'):
 
 from analysis.mcts_v8 import V8_DEFAULTS, SearchDiagnostics, prepare_root_moves  # noqa: E402
 from analysis.puct_v8 import PUCT_PRIORS, search_tree_puct  # noqa: E402
-from h4_offline_recall import sample_states  # noqa: E402
 from renju import Game  # noqa: E402
 from search.mcts_v5 import _RootContext, _forced_v5_move  # noqa: E402
 from search.mcts_v7 import _find_vcf_with_stats  # noqa: E402
@@ -129,6 +128,7 @@ def main(argv=None) -> int:
     parser.add_argument('--workers', type=int, default=4)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
+    from h4_offline_recall import sample_states  # torch (H3 policy) only on the run path, not for decide()
     # About half of the sampled states reach the tree route; sample enough and stop early.
     sampled, population = sample_states(args.games, 'val', args.positions * 4, args.seed)
     tasks = [(i, record['moves'][:ply], tuple(record['moves'][ply]), args.c_values)

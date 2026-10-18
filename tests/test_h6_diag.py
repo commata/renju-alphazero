@@ -31,7 +31,7 @@ def equivariant_model():
     return model.eval()
 
 
-@unittest.skipIf(torch is None, 'torch is not installed')
+@unittest.skipIf(torch is None, 'requires torch')
 class DiagTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
