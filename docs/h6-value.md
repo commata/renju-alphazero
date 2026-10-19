@@ -2169,6 +2169,97 @@ python scripts/summarize_h7_e2.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7
 - 8422 단계에서는 `SEED=8422`로 위 세 명령을 다시 돌리고, 요약은 두 seed의 run과 soundness 파일을 모두 넘겨 `docs/h7/h7_e2_summary_8421_8422.json`으로 쓴다.
 - 커밋할 것: `docs/h7/h7_e2_soundness_*.json`, `docs/h7/h7_e2_summary_*.json`. run 파일은 `runs/`에 둔다.
 
+## H7-E2 결과: ADOPT → TB-Engine-v2 (2026-10-19, `docs/h7/h7_e2_summary_8421_8422.json`, 커밋 `faf4ebc`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. ADOPT, 8423 미실행(두 seed에서 모든 gate PASS), "기력 상승이 아니라 비열등", H6-6 REJECT 유지에 동의한다. 해석 세 군데를 고치고, 초안에 없던 사실 세 가지를 더했다.
+
+**확인한 수치 (8421 + 8422, arm당 200국, 100 opening)**
+- 8421 단독: 건전성 PASS → `RUN_8422`. 두 seed: 모든 gate PASS → `ADOPT`.
+- 기력: 후보 0.887(171-13-16), 기준 0.880(169-14-17). 짝 차이 +0.0075, 95% [−0.015, +0.030] → PASS.
+- 빈도: 대국별 UNKNOWN 비율 차이 −0.0095, 95% [−0.0170, −0.0022]. seed별 8421 −0.0116, 8422 −0.0073 → PASS.
+  - 단순 합계로는 3.07%(92 / 2,998) 대 5.38%(168 / 3,123)다. 그러나 공식 수치는 대국별 짝 차이다.
+- 비용: 10,650.2초 / 11,921.7초 = 0.893 → PASS.
+- 건전성: 모순 0, UNSAFE 30개 모두 재생(line 실패 0), safety violation 0 / 0.
+- 전이(후보 국면, frozen 표준 → 후보 기록): SAFE → SAFE 2,763, UNKNOWN → SAFE 113, UNKNOWN → UNKNOWN 92, UNKNOWN → UNSAFE 7, UNSAFE → UNSAFE 23.
+- legacy frozen 4M(table이 결정한 120개): SAFE / 4M SAFE 103, SAFE / 4M UNKNOWN 10, UNSAFE / 4M UNSAFE 5, UNSAFE / 4M UNKNOWN 2.
+- 수순이 완전히 같은 대국: 172 / 200.
+- 시간: V8-C 검사 합 67.9분 → 48.4분.
+
+  | V8-C 검사 시간 | p50 | p90 | p95 | p99 | 최대 |
+  |---|---:|---:|---:|---:|---:|
+  | 기준 | 0.221 | 2.445 | 9.999 | 18.754 | 23.634 |
+  | 후보 | 0.225 | 1.085 | 4.075 | 18.794 | 31.850 |
+
+  | 수당 착수 시간 | p50 | p90 | p95 | p99 | 최대 |
+  |---|---:|---:|---:|---:|---:|
+  | 기준 | 1.165 | 5.726 | 11.058 | 22.393 | 36.345 |
+  | 후보 | 1.187 | 5.126 | 9.340 | 21.620 | 43.667 |
+
+**해석 수정**
+1. **"4M frozen보다 더 풀었다"의 SAFE 10개는 독립 확인이 없다.** E1 해석 3과 같은 단서다.
+   - frozen 4M이 UNKNOWN이므로 비교할 결정 상태가 없다. 근거는 no_win 가지치기의 정확성과 E1의 호출 동일성(382,682개)이다.
+   - UNSAFE 2개는 VCF line을 재생해 확인했다.
+   - 또 12개는 독립 표본이 아니다. 대국 6개에 몰려 있다(8422/35/white 5개, 8421/1/white 3개 등).
+   - 그래서 "중복 제거가 4M 예산보다 효율적인 국면이 있다"는 E1의 관찰을 다시 본 것이다. 새로운 크기의 증거는 아니다.
+2. **"table이 UNKNOWN을 단순히 SAFE로 밀지 않았다"의 근거는 전이표가 아니라 모순 0과 UNSAFE 재생이다.**
+   - 전이표는 후보가 무엇을 결정했는지 보여 줄 뿐이다.
+   - 그 결정이 맞다는 근거는 두 가지다. 하나는 frozen의 결정 상태와 반대인 경우가 0이라는 것, 다른 하나는 UNSAFE 30개의 VCF line이 모두 재생된 것이다.
+   - SAFE 113개 중 103개는 frozen 4M도 SAFE였다. 이것이 SAFE 쪽의 독립 확인이다.
+3. **최대 시간 증가는 표본 하나의 값이다.**
+   - 두 엔진은 28국에서 갈라져 서로 다른 국면을 검사한다. 그래서 최대값은 같은 국면 비교가 아니다.
+   - 다만 방향은 E1과 맞다. 끝까지 UNKNOWN인 검사는 table이 있어도 예산을 다 쓰고(E1: 1,089초 대 1,100초), table이 노드를 줄여 같은 노드 예산 안에서 호출을 더 하면 시간이 늘 수도 있다.
+   - 결론은 초안과 같다. 넓은 꼬리(p90–p95)는 줄었고, 극단 꼬리(p99, 최대)는 그대로다.
+
+**추가 사실**
+1. **V8-C 교체가 바뀌었다.** "UNKNOWN이라 교체"는 73 → 48로 줄고, "증명된 패배 veto"는 21 → 29로 늘었다.
+   - aggressive 모드는 tree 수가 UNKNOWN이면 증명된 SAFE 자식으로 바꾼다. table로 tree 수가 SAFE로 증명되면 tree가 고른 수를 그대로 둔다.
+   - 기력이 떨어지지 않은 이유 중 하나로 볼 수 있다. 다만 인과는 검정하지 않았다(보고용).
+2. **웹 30초 deadline은 두 엔진 모두 이미 넘는다.** 데스크톱에서도 최대 착수 시간이 기준 36.3초, 후보 43.7초다. p99는 21–22초다. 로드맵의 착수 시간 최적화와 웹 deadline 판은 이 극단 꼬리를 다뤄야 한다.
+3. **PUCT 자체 속도는 같다**(초당 시뮬레이션 54.2 대 56.0, tree 중앙값 0.987초 대 0.947초). 시간 이득은 V8-C 검사에서만 나왔다. 엔진 차이가 `root_vcf_table` 하나뿐이라는 설계와 맞는다.
+
+**결론:** TB-Engine-v1-T를 **TB-Engine-v2**로 채택한다. 동결 절차와 E3는 아래 설계를 따른다. H6-6 REJECT는 그대로다.
+
+## TB-Engine-v2 동결과 H7-E3 설계 방향 (2026-10-19, 초안, 승인 대기)
+
+**1. TB-Engine-v2 동결 (E3 전에)**
+- `src/analysis/tb_engine_v2.py`를 만든다.
+  - TB-Engine-v1처럼 설정을 모두 적는다: `TB_ENGINE_V1` 그대로에 `ENGINE_OPTIONS = {'root_vcf_table': True}`.
+  - `config_hash`, `FREEZE_EVIDENCE`(E2 summary), `make_agent`를 둔다.
+- `analysis/vcf_tt_v1.py`의 해시를 테스트로 잠근다(예: `tests/test_tb_engine_v2.py`). 이 파일이 바뀌면 TB-Engine-v2가 바뀌기 때문이다.
+- CLAUDE.md의 frozen 목록에 `tb_engine_v2.py`, `vcf_tt_v1.py`를 더한다.
+- 웹 로그용 `run_web_play.py`의 엔진 등록은 웹 단계에서 한다. 지금은 하지 않는다.
+
+**2. E3: value v3를 TB-Engine-v2 위에서 다시 평가 (guard v2 그대로)**
+- 후보: **TB-V2-Value** = TB-Engine-v2 + value leaf v3(`tree_mode="puct_value"`, λ 1.0, D4 평균). 새 arm은 `puct_value_vct2_50k_tt`다.
+- 기준과 주 상대: **TB-Engine-v2.** 그러려면 `v8:puct_policy_vct2_50k_tt`를 상대로 쓸 수 있게 해야 한다(지금은 시험 arm 전용). 상대 agent에도 `root_vcf_table`을 넘긴다.
+- run 구성: H6-6과 같다.
+  - A: 후보 대 TB-Engine-v2
+  - B: 후보 대 `v8:full`
+  - C: TB-Engine-v2 대 `v8:full`
+  - seed마다 25 pair, `--fast fast3`, `--puct-c 1.5`
+- **guard v2는 숫자와 논리를 하나도 바꾸지 않는다.**
+  - hard: safety violation 0
+  - basic: A의 흑·백 각각 ≥ 0.45, 시간 비 ≤ 1.5, P92 guard가 FAIL이 아님
+  - proof: 4M UNSAFE와 4M UNKNOWN 비율 차이(B − C), opening 짝 bootstrap. 상한 ≤ +3%p면 PASS, 하한 > +3%p면 REJECT, 나머지는 INCONCLUSIVE
+  - 단계: H6-6과 같은 형식이다.
+    - 8407에서 score < 0.50이면 REJECT
+    - 8407 + 8408에서 score ≥ 0.55, 짝 하한 > 0.5, proof PASS면 ADOPT
+    - 결론이 안 나면 8409를 한 번 돌린다. 세 seed에서도 INCONCLUSIVE면 REJECT
+- **공식 4M 재검사는 4M + table이다.** d2 도구에 `--table`을 더한다.
+  - d2의 표준 재현 검사(`replay_kind`)도 table로 한다. 기록 상태가 table solver에서 나왔기 때문이다.
+  - legacy frozen 4M도 같은 수에 대해 돌려서 보고만 한다(판정에는 쓰지 않음).
+- P92 guard는 후보(TB-V2-Value)로 다시 잰다. `run_s1_probes.py`에 새 arm을 더한다.
+- seed 8407, 8408, 8409를 지금 `RESERVED_SEEDS`에 넣는다. 지금은 들어 있지 않다(사실 확인).
+- **기대치:**
+  - E1 참고값으로는 4M UNKNOWN 차이가 +2.61%p에서 약 +1%p로 줄어든다.
+  - 그러나 H6-6의 구간 폭(약 ±2%p)이면 상한이 +3%p 근처일 수 있다. 남은 꼬리 17개 중 15개가 value 쪽이었다.
+  - 그래서 통과를 기대하지 않는다. 이 실험은 table로 개선된 엔진에서 같은 guard를 통과하는지 보는 판정이다.
+
+**3. 이후 (변경 없음)**
+- E3 결과로 B-engine + B-net 조합을 정한다.
+  - ADOPT면 TB-V2-Value, REJECT면 TB-Engine-v2(rollout).
+- 그다음 같은 착수 시간 단축 최적화(정확 가속만), 동결, 웹 deadline 판(미니 PC 30초)과 H7-c1 self-play를 병행한다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
