@@ -1981,6 +1981,94 @@ python -u scripts/h7_e1_vcf_table.py \
 - ordering 변경을 같은 후보에 섞기
 - 예산 변경
 
+## H7-E1 결과: go (2026-10-19, `docs/h7/h7_e1_vcf_table.json`, 커밋 `ad92838`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 판정 `go`와 "E2로 진행, H6-6 REJECT 유지"에 동의한다. 해석 네 군데를 고치고, 초안에 없던 사실 두 가지를 더했다.
+
+**확인한 수치**
+- A 호출 동일성: frozen이 잘리지 않고 끝낸 VCF 호출 382,682개가 모두 같았다(불일치 0).
+- B 건전성:
+  - 상태 모순 0, VCF line 재생 실패 0(표준과 4M 모두)
+  - deep 재풀이: 확인 183, 미확인 97, 모순 0
+- C off 재현: d2와 다른 것 0, `shadow`와 `on`이 다른 것 0
+- D 1차 효과: **78 / 176 = 44.32%** → `go`
+  - value arm 47 / 104 = 45.19%, baseline arm 31 / 72 = 43.06%
+  - 묶음별: resolved_safe 62 / 104(59.62%, 모두 SAFE), unknown4m 14 / 66(21.21%, 모두 SAFE), unsafe4m 2 / 6(모두 UNSAFE)
+- E 비용: on 1,707.0초 / off 2,624.7초 = **0.65**
+- cut 이동: nodes → resolved 78, nodes → nodes 65, nodes → calls 7, calls → calls 26. 남은 not-SAFE UNKNOWN 98개는 노드 cut 65개, 호출 cut 33개다.
+- 4M + table (unknown4m 66개): SAFE 42, UNSAFE 7, UNKNOWN 17. 판정 49 / 66 = 74.24%.
+- control: SAFE 189개는 모두 SAFE로 남았다. off에서 결정된 상태가 on에서 UNKNOWN이 된 경우는 0이다.
+
+**해석 수정**
+1. **"value 특화가 아니다"는 표준 판정률에만 맞다. 남은 꼬리는 value 쪽에 몰려 있다.**
+   - 표준 판정률은 value 45.19%, baseline 43.06%로 비슷하다. 그래서 VCF 중복은 solver 자체의 구조적 비효율이라는 해석은 맞다.
+   - 그러나 4M + table 뒤에도 UNKNOWN인 17개 중 **15개가 value arm**이다.
+     - value: unknown4m 48개 중 15개 남음(31%)
+     - baseline: 18개 중 2개 남음(11%)
+   - 즉 value가 고르는 수 중에는 table로도 풀리지 않는 더 어려운 수가 상대적으로 많다. "value는 기존 병목을 더 자주 드러냈을 뿐"이라는 설명은 남은 꼬리에는 그대로 적용되지 않는다.
+   - **E3에 주는 의미:** guard v2의 4M UNKNOWN 검사가 table로 자동 통과된다고 볼 수 없다.
+     - H6-6 기록에 대략 대입하면 4M UNKNOWN 차이는 +2.61%p에서 약 +1%p로 줄어든다(value 15 / 약 1,420수, baseline 2 / 약 2,400수).
+     - 이것은 frozen 엔진의 대국을 다시 검사한 참고값일 뿐이다. table 엔진에서는 대국 자체가 달라진다. 판정은 E3에서 새 seed로 한다.
+2. **시간 35% 감소는 판정된 국면과 SAFE 국면에서만 나왔다. 여전히 UNKNOWN인 국면은 시간이 그대로다.**
+
+   | off → on | 국면 | off 초 | on 초 | off 노드 | on 노드 |
+   |---|---:|---:|---:|---:|---:|
+   | UNKNOWN → UNKNOWN | 99 | 1,089 | 1,100 | 16.48M | 15.62M |
+   | UNKNOWN → SAFE / UNSAFE | 79 | 1,062 | 410 | 15.80M | 5.41M |
+   | SAFE → SAFE | 189 | 433 | 178 | 5.20M | 1.34M |
+   | UNSAFE → UNSAFE | 15 | 41 | 19 | 0.54M | 0.22M |
+
+   - 초안의 설명(새 가지 탐색, lookup 비용, VCT 논리 비용)보다 단순한 이유가 크다. 끝까지 풀리지 않는 검사는 table이 있든 없든 예산(200k)을 다 쓴다. 그래서 그 국면의 시간은 같다.
+   - 웹 대국에서 가장 오래 걸리는 어려운 수의 시간은 줄지 않는다. 평균 시간만 줄어든다.
+   - 호출 단위 노드 81% 감소(119.95M → 22.59M)는 table 경로의 각 호출을 frozen으로 다시 돌린 반사실 비교다. 검사 전체의 노드 감소가 아니다.
+3. **4M + table의 SAFE 42개는 독립 확인이 없다.**
+   - 4M에는 비교할 frozen 결정 상태가 없다(66개 모두 frozen 4M UNKNOWN). deep 재풀이도 표준 `shadow`에서만 했다.
+   - 이 판정의 근거는 두 가지다. 하나는 정확한 no_win 가지치기의 성질, 다른 하나는 표준에서 이를 대규모로 확인한 A 검사(382,682개 일치)다. 이것은 충분히 강한 근거지만 독립 확인은 아니다.
+   - UNSAFE 7개는 그 근거가 된 VCF line을 모두 재생해 확인했다.
+4. **deep 미확인 97개는 건전성의 증거가 아니다.**
+   - frozen에 호출당 노드 10배를 줘도 끝나지 않은 호출이다. table이 그 호출에서 10배 이상 효율적이었다는 뜻이지, 결과가 독립적으로 확인됐다는 뜻은 아니다.
+   - deep 재풀이는 검사당 3개 상한이라, frozen이 cut했고 table이 "없음"으로 끝낸 호출 912개 중 280개만 봤다. 모순은 0이다.
+   - frozen이 cut했고 table이 VCF를 찾은 호출 1,847개는 모두 line 재생을 통과했다.
+
+**추가 사실**
+1. **새로 증명된 UNSAFE 7개는 즉각 공격 검사로는 보이지 않던 패배다.**
+   - H6-6D의 공격 검사(상대의 five / VCF / V8-B, VCT2)는 이 7개에서 모두 승리를 찾지 못했다.
+   - 7개는 value 3개, baseline 4개로 양쪽에 다 있다(8404 / 8405 / 8406 모두 포함). value 특화가 아니다.
+   - 그래서 H6-6D `proof_hard`의 단서("NOT_FOUND는 SAFE가 아니다")가 실제로 확인됐다. `proof_hard`는 "안전하지만 증명이 어려움"이 아니라 "그때의 증명 능력으로는 어느 쪽인지 판정하기 어려움"으로 읽어야 한다.
+2. **4M + table 뒤 남은 17개의 cut 원인:** 노드 16개, 호출 1개. 4M에서는 여전히 노드가 병목이다. 표준에서 호출 상한이 다음 병목 후보로 보이는 것(33개)과 다르다. 호출 상한 조정은 기록만 하고 E1 후보에 섞지 않는다(초안과 같음).
+
+**결론**
+- E1 `go`. table 단독 후보는 E2(§2.3 gate, 새 holdout)로 간다.
+- H6-6 REJECT는 그대로 둔다. H6-6은 당시 frozen 엔진과 guard v2에서 정당한 판정이었다.
+- H6 실패 원인의 상당 부분이 VCF 중복이었다는 해석은 강해졌다. 그러나 남은 꼬리(17개 중 value 15개)는 table로 설명되지 않는다. 그래서 E3에서 value v3가 통과한다고 미리 기대하지 않는다.
+
+## H7-E2 설계 방향: table 엔진 후보 판정 (2026-10-19, 초안, 승인 대기)
+
+**엔진 버전 단계 (승인 필요)**
+- `analysis.mcts_v8`에 기본 off 옵션 `root_vcf_table`을 더한다. on이면 V8-C 루트 solver(`_verify_root_choice`가 만드는 `_BudgetedSolver`)만 `analysis.vcf_tt_v1`의 VCF를 쓴다.
+- V8-A / V8-B solver, `own_vcf`, `threats.py`는 그대로다.
+- off는 지금 코드 경로 그대로여야 한다. TB-Engine-v1 회귀 fixture로 결정 필드가 비트 단위로 같은지 확인하고, `mcts_v7.py` 해시는 바꾸지 않는다. H6-4의 `puct_value` 추가와 같은 방식이다.
+- 후보 엔진 이름은 `TB-Engine-v1-T`(TB-Engine-v1 + `root_vcf_table`), arm은 `puct_policy_vct2_50k_tt`.
+
+**§2.3 gate 대응 (실행 전 고정)**
+
+| §2.3 | E2에서 |
+|---|---|
+| 1. 건전성 | 대국 중 V8-C가 낸 UNSAFE의 VCF line 재생 실패 0. aux run의 tree 수를 off 4M(frozen)으로 다시 검사했을 때 결정 상태 모순 0 |
+| 2. holdout | 새 seed 8421, 8422, 8423. 프로토콜 고정 때 `RESERVED_SEEDS`에 넣는다 |
+| 3. 빈도 | 목표 실패 유형은 "V8-C가 tree 수를 판정하지 못함"(기록 상태 UNKNOWN). aux run(후보와 기준이 각각 v8:full 상대)에서 후보의 tree UNKNOWN 비율이 기준보다 낮아야 한다. 대국 단위 짝 bootstrap 95% 상한 < 0이고 seed마다 같은 방향이어야 한다 |
+| 4. 기력 | 후보 대 TB-Engine-v1, 짝 지은 opening의 양 색. 점수 차 95% 하한 ≥ −0.05(비열등) |
+| 5. 비용 | 대국 전체 착수 시간 비 ≤ 1.5 |
+| 6. 격리 | 기본 off, off 동일성(위 회귀 fixture) |
+
+- 단계 규칙은 H6-6과 같은 형식을 제안한다. 8421에서 기본 조건(건전성, 비용)을 보고, 8421 + 8422에서 전부 판정한다. 결론이 나지 않으면 8423을 한 번 더 돌린다. 세 seed에서도 결론이 나지 않으면 REJECT다.
+- 기력은 개선을 기대하는 검사가 아니다. 비열등만 본다. table은 UNSAFE veto를 늘리고 SAFE 확인을 빠르게 하므로 착수가 바뀔 수 있다.
+- 보고 항목(판정 아님): tree SAFE / UNSAFE / UNKNOWN 비율, UNSAFE veto 수, 착수 교체 수, 수당 시간의 분포(p50 / p90 / 최대). 시간 분포는 위 해석 2 때문에 넣는다.
+
+**E2 이후 (변경 없음)**
+- E3: TB-Engine-v1-T 채택 시 value v3를 그 위에서 guard v2 그대로, seed 8407–8409로 다시 평가한다. 4M 재검사는 4M + table로 한다.
+- 호출 상한 조정, E1b(단조 키), proof 재사용, ordering, selective VCT2는 각각 따로 판정한다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
