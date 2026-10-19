@@ -1637,6 +1637,68 @@ python scripts/summarize_h6_6.py --main runs/h6_6/value_vs_tb1_8404.json runs/h6
 
 **하지 않는 것:** H6-6 판정 변경, 8404–8406 재사용, guard v2 margin 사후 조정, value 재학습(근거 없음), 4M 예산을 그대로 엔진 기본값으로 쓰는 것(국면당 수 분).
 
+## H6-6D 확정 프로토콜 (2026-10-19, 실행 전 고정)
+
+사용자 검토를 사실 확인 뒤 반영했다. 구현은 `scripts/h6_6d.py`, 테스트는 `tests/test_h6_6d.py`다.
+
+**사실 확인**
+- **맞음: selective VCT2 공격은 이미 예정된 H7 B-engine 후보다.** track-b-post-e1.md §3에 "H7 B-engine에 selective VCT2 공격(증명된 WIN만)을 넣는다. E2 상대와 같은 모듈"이 있다. 모듈은 `analysis.vct2_attack.own_vct2_attack`(E2 예산)다. 사후 아이디어가 아니므로 H6-6D의 세 번째 지표와 다음 엔진 후보로 쓴다.
+- **맞음: "4M = 예산 10배 엔진"은 근사다.** d2는 이미 고른 수 하나를 새 solver로 검사한다. 실제 V8-C는 자식 사이에 예산을 나누고 solver를 이어 쓰며, 고르는 수 자체도 달라질 수 있다. 정확한 표현: "고정된 선택 수에 대해 예산을 10배로 해도 UNKNOWN 차이가 닫히지 않았다. 그래서 예산만 키우는 변경은 기대가 낮다. 엔진 전체를 10배로 돌린 경우까지 증명된 것은 아니다."
+- **보정: 12수 내 패배는 실제로 둔 수에 대한 것이다.** V8-C가 tree 수를 다른 수로 바꾸면, tree 수의 상태와 대국 결과가 서로 다른 수에 대한 정보가 된다. 그래서 loss12는 V8-C가 바꾸지 않은 tree 수에만 매기고, 바뀐 수는 따로 센다. 공격 검사(아래 2·3)는 tree 수 자체에 대한 가정 검사이므로 모든 tree 수에 매긴다.
+- **확인한 사례:** 웹 대국 P92에서 흑의 (3,4)(ply 92) 뒤, V8-B는 백의 승리를 찾지 못하고 VCT2 공격은 찾는다(테스트로 고정). V8-B만으로는 VCT2 패배수를 "위험 없음"으로 잘못 읽을 수 있다는 검토 지적과 맞다.
+
+**지표 (tree 수마다, B·C 세 seed)**
+
+| 지표 | 질문 | 정의 |
+|---|---|---|
+| `loss12` | 기록된 상대가 실제로 응징했나 | 그 수를 둔 쪽이 12수 안에 졌다(마지막 5목이 그 수 뒤 12수 이내). V8-C가 바꾸지 않은 수만. 관측값이지 참값이 아니다 |
+| `v8_win` | TB-Engine-v1의 공격층이 지금 응징할 수 있나 | 그 수 뒤 상대가 5목, V8 own VCF(TB-Engine-v1 한도), 또는 V8-B 증명 VCT1 공격 중 하나를 가진다 |
+| `vct2_win` | 예정된 H7 공격층이면 응징할 수 있나 | `v8_win` 또는 E2 selective VCT2 공격 |
+
+- 찾은 WIN은 증명이다(방어자 응수를 전부 둔다). **못 찾은 것은 SAFE가 아니다**(두 공격 모두 선택적 탐색이다).
+- **상태 묶음:** `safe`(표준 SAFE), 4M 재검사로 `resolved_safe` / `unknown4m` / `unsafe4m`.
+- **공격 검사 대상:** 표준 not-SAFE tree 수 전부와, 그 수마다 매칭한 SAFE control 하나(같은 run·같은 대국에서 ply가 가장 가까운 수, `h6_5d.match_controls`).
+- **통계:** 묶음별 비율과 95% 구간(대국 단위 bootstrap). 판독은 `unknown4m`과 매칭 control의 짝 차이(국면 짝, 대국 단위 bootstrap)로 한다.
+
+**판독 규칙 (후보 arm 기준, 미리 고정)**
+- 후보 arm으로 판독하는 이유는 guard를 넘은 것이 후보의 초과 UNKNOWN이기 때문이다. 기준선과 합산도 함께 보고한다.
+
+| 판독 | 조건 | 다음 |
+|---|---|---|
+| `danger` | `loss12`와 `vct2_win` 모두 control보다 높음(95% 하한 > 0) | 실제 전술 위험이 섞여 있다. E2 selective VCT2 공격(예정 후보)을 1순위 TB-Engine-v2 후보로 |
+| `proof_hard` | `loss12`와 `vct2_win` 모두 control과 구분되지 않음(95% 구간이 0 포함) | 주로 증명 난이도다. 같은 노드로 더 증명하는 후보(transposition → proof 재사용 → ordering) 하나 |
+| `mixed` | 그 외, 또는 짝 < 20 | 엔진을 승격하지 않는다. 최소 후보 하나만 오프라인 비교 |
+
+- `unsafe4m`은 표본이 작다(세 seed B·C 표준 UNSAFE 17개). 비율 하나로 "UNKNOWN이 UNSAFE와 비슷하다"고 판정하지 않고, n과 구간을 함께 본다.
+- H6-6D는 보고용이다. H6-6 REJECT를 바꾸지 않는다. 8404–8406은 진단에만 쓰고, 엔진 승격 판정에는 쓰지 않는다.
+
+**이후 순서 (검토 반영)**
+1. H6-6D 결과로 UNKNOWN의 성격을 판독한다.
+2. **E2 selective VCT2 공격**을 먼저 §2.3 관점에서 다시 검토한다(이미 예정된 후보, E2 비용·품질 측정이 있다). `danger`면 1순위다.
+3. 필요할 때만 증명 효율 후보를 하나 추가한다(`proof_hard`일 때).
+4. 후보 하나를 새 holdout seed에서 §2.3 gate로 TB-Engine-v2 승격을 판정한다.
+5. 승격된 엔진(또는 v1) 위에서 value v3를 새 seed(8407–8409, 프로토콜 고정 때 예약)와 미리 고정한 guard v3로 다시 평가한다.
+6. 그 조합(B-engine + B-net)을 고정하고 H7-c1을 시작한다.
+- **value v3의 상태:** "강한 기력 이득이 확인된 보존 후보, 새 B-engine과 guard v3에서 재평가 대기". 안전한 기본값으로 선언하지 않는다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python -m unittest tests.test_h6_6d
+python -u scripts/h6_6d.py \
+  --runs runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+         runs/h6_6/value_vs_full_8405.json runs/h6_6/tb1_vs_full_8405.json \
+         runs/h6_6/value_vs_full_8406.json runs/h6_6/tb1_vs_full_8406.json \
+  --d2 docs/h6/h6_6_d2_8404.json docs/h6/h6_6_d2_8405.json docs/h6/h6_6_d2_8406.json \
+  --fast fast3 --workers 12 --jsonl runs/h6_6/h6_6d.jsonl --output docs/h6/h6_6d.json 2>&1 | tee runs/h6_6/h6_6d.log
+```
+
+- 공격 검사는 약 380개(표준 not-SAFE 약 190 + control 같은 수)다. fast3로 국면당 수 초 수준이므로 12 worker로 수십 분 안쪽으로 본다. 중단되면 같은 명령을 다시 실행한다(`--jsonl`).
+- 커밋할 것: `docs/h6/h6_6d.json`.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
