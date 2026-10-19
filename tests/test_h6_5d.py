@@ -44,8 +44,41 @@ class StatusTest(unittest.TestCase):
                 'moves': WEB['moves'][:94], 'tree_move': WEB['moves'][94], 'recorded_status': 'UNKNOWN',
                 'standard': TINY, 'large': ENOUGH}
         row = d.d2_task(task)
-        self.assertTrue(row['replay_matches'])
+        self.assertEqual(row['replay'], 'exact')
         self.assertEqual(row['large']['status'], 'UNSAFE')
+
+    def test_replay_kind(self):
+        self.assertEqual(d.replay_kind('UNKNOWN', 'UNKNOWN', 'SAFE'), 'exact')
+        self.assertEqual(d.replay_kind('UNSAFE', 'UNSAFE', 'UNSAFE'), 'exact')
+        self.assertEqual(d.replay_kind('UNSAFE', 'UNKNOWN', 'UNSAFE'), 'continued')
+        self.assertEqual(d.replay_kind('UNSAFE', 'UNKNOWN', 'UNKNOWN'), 'mismatch')  # 4M must agree
+        self.assertEqual(d.replay_kind('UNSAFE', 'UNKNOWN', 'SAFE'), 'mismatch')
+        self.assertEqual(d.replay_kind('UNKNOWN', 'UNSAFE', 'UNSAFE'), 'mismatch')  # a decided first check
+        self.assertEqual(d.replay_kind('UNSAFE', 'SAFE', 'SAFE'), 'mismatch')
+
+    def test_v8c_continues_an_unknown_first_check(self):
+        """V8-C keeps an UNKNOWN tree move pending and finishes it with the same solver: the recorded
+        status can be decided although a fresh first-share check is UNKNOWN (the 8406 d2 mismatches)."""
+        from types import SimpleNamespace
+        from analysis.mcts_v8 import SearchDiagnostics, _verify_root_choice
+        moves, chosen = WEB['moves'][:94], tuple(WEB['moves'][94])
+        game = d.replay(moves)
+        others = [m for m in game.legal_moves() if m != chosen][:3]
+        children = [SimpleNamespace(move=chosen, visits=10, mean_value=0.0)] + [
+            SimpleNamespace(move=m, visits=5 - i, mean_value=0.0) for i, m in enumerate(others)]
+        diag = SearchDiagnostics()
+        _verify_root_choice(game, chosen, children, diag, node_limit=20_000, call_limit=10_000, node_budget=800,
+                            max_children=4)
+        recorded = dict(diag.v8_root_checked)[chosen]
+        first = {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 800, 'share': 400, 'call_share': 5_000}
+        task = {'id': 'x', 'arm': 'a', 'set': 'control', 'game_key': 'g', 'game_kind': 'decisive', 'ply': 94,
+                'moves': moves, 'tree_move': list(chosen), 'recorded_status': recorded,
+                'standard': first, 'large': ENOUGH}
+        row = d.d2_task(task)
+        self.assertEqual((recorded, row['standard']['status'], row['large']['status']), ('UNSAFE', 'UNKNOWN', 'UNSAFE'))
+        self.assertEqual(row['replay'], 'continued')
+        summary = d.summarize_d2([row])
+        self.assertEqual((summary['replay_mismatches'], summary['replay_continued']), ([], ['x']))
 
     def test_budgets(self):
         self.assertEqual(d.STANDARD, {'node_limit': 20_000, 'call_limit': 10_000, 'node_budget': 400_000,

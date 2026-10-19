@@ -32,6 +32,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from h6_5d import replay_kind  # noqa: E402
 from summarize_h5 import merge, summarize  # noqa: E402
 
 CANDIDATE, BASELINE = 'puct_value_vct2_50k', 'puct_policy_vct2_50k'
@@ -62,8 +63,11 @@ def proof_status(runs: list[dict], d2_files: list[dict]) -> dict[str, dict[str, 
     not-SAFE tree move has no 4M recheck or d2 did not reproduce a recorded status."""
     large = {}
     for d2 in d2_files:
-        if d2['summary']['replay_mismatches']:
-            raise ValueError(f"d2 did not reproduce: {d2['summary']['replay_mismatches'][:3]}")
+        # recomputed from the rows with h6_5d.replay_kind (a stored summary may predate it)
+        bad = [r['id'] for r in d2['rows']
+               if replay_kind(r['recorded_status'], r['standard']['status'], r['large']['status']) == 'mismatch']
+        if bad:
+            raise ValueError(f'd2 is not consistent with the recorded statuses: {bad[:3]}')
         if d2.get('fast', {}).get('requested') != RULES['fast']:
             raise ValueError('every d2 recheck must run with --fast fast3')
         for r in d2['rows']:

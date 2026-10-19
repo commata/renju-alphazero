@@ -14,7 +14,8 @@ v8:full); no game is played.
         not SAFE), so each engine's move is compared with the other's on the same board. Also recorded per
         engine: prior rank of its tree move, its visits and Q, visited root children, root Q spread.
 ``judge``  The decision rule fixed before d2 / d3 ran (``RULES``), in this order:
-        (sanity: d2 must reproduce every recorded status, and the 9 UNSAFE controls must stay UNSAFE)
+        (sanity: d2 must be consistent with every recorded status (``replay_kind``), and the UNSAFE controls
+        must stay UNSAFE)
         A  same positions (d3): value's tree move is V8-C@4M UNSAFE more often than the baseline's,
            paired game-cluster bootstrap 95% lower bound of (value - baseline) > 0
         UNRESOLVED  d2 main: still UNKNOWN at 4M > 1/3                       -> INCONCLUSIVE
@@ -141,6 +142,26 @@ def _ensure_fast(mode: str) -> None:
             install(mode)
 
 
+def replay_kind(recorded: str, standard: str, large: str) -> str:
+    """How the fresh first-share check (``STANDARD``) relates to the status V8-C recorded.
+
+    The standard check is exactly V8-C's first check of the tree move (fresh solver, half the budget),
+    but V8-C does not stop there: a move left UNKNOWN stays pending in ``_proven`` and is checked again
+    in later rounds with the same solver and cache, so the recorded status can be decided after an
+    UNKNOWN first check. Hence:
+        exact      the first check gives the recorded status
+        continued  the first check is UNKNOWN, the recorded status is decided (V8-C went on) and the
+                   4M recheck agrees with it
+        mismatch   anything else (a decided first check that differs, a recorded UNKNOWN the first
+                   check decides, or a continued status the 4M recheck contradicts)
+    """
+    if standard == recorded:
+        return 'exact'
+    if standard == 'UNKNOWN' and recorded in ('SAFE', 'UNSAFE') and large == recorded:
+        return 'continued'
+    return 'mismatch'
+
+
 def d2_task(task: dict) -> dict:
     _ensure_fast(task.get('fast', 'off'))
     std = check_status(task['moves'], task['tree_move'], task['standard'])
@@ -148,7 +169,7 @@ def d2_task(task: dict) -> dict:
     return {'id': task['id'], 'arm': task['arm'], 'set': task['set'], 'game_key': task['game_key'],
             'game_kind': task['game_kind'], 'ply': task['ply'], 'tree_move': task['tree_move'],
             'recorded_status': task['recorded_status'], 'standard': std,
-            'replay_matches': std['status'] == task['recorded_status'], 'large': large}
+            'replay': replay_kind(task['recorded_status'], std['status'], large['status']), 'large': large}
 
 
 # ---------- d3 ----------
@@ -272,7 +293,10 @@ def _share(rows, key, value):
 
 
 def summarize_d2(rows: list[dict]) -> dict:
-    out = {'replay_mismatches': [r['id'] for r in rows if not r['replay_matches']]}
+    # recomputed from the statuses, so files written before ``replay_kind`` read the same way
+    kinds = {r['id']: replay_kind(r['recorded_status'], r['standard']['status'], r['large']['status']) for r in rows}
+    out = {'replay_mismatches': [i for i, k in kinds.items() if k == 'mismatch'],
+           'replay_continued': [i for i, k in kinds.items() if k == 'continued']}
     for name in ('main', 'control'):
         part = [r for r in rows if r['set'] == name]
         by = {}

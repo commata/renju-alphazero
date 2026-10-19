@@ -23,7 +23,8 @@ def d2_for(runs, large):
             for m in g['v8_moves']:
                 st = m['root']['checked'][0][1]
                 if st != 'SAFE':
-                    rows.append({'id': f"{r['arm']}|{g['key']}|{m['ply']}", 'large': {'status': large(r['arm'], st)}})
+                    rows.append({'id': f"{r['arm']}|{g['key']}|{m['ply']}", 'recorded_status': st,
+                                 'standard': {'status': st}, 'large': {'status': large(r['arm'], st)}})
     return {'summary': {'replay_mismatches': []}, 'fast': {'requested': 'fast3'}, 'rows': rows}
 
 
@@ -33,6 +34,13 @@ class ProofTest(unittest.TestCase):
         statuses = s.proof_status(runs, [d2_for(runs, lambda arm, st: 'SAFE' if st == 'UNKNOWN' else st)])
         self.assertEqual(statuses[s.CANDIDATE]['8404/0/black'], ['SAFE', 'SAFE'])
         self.assertEqual(statuses[s.BASELINE]['8404/0/black'], ['UNSAFE', 'SAFE'])
+        stale = d2_for(runs, lambda arm, st: 'SAFE' if st == 'UNKNOWN' else st)
+        stale['summary'] = {'replay_mismatches': ['written by the old one-shot rule']}
+        self.assertEqual(s.proof_status(runs, [stale])[s.BASELINE]['8404/0/black'], ['UNSAFE', 'SAFE'])
+        broken = d2_for(runs, lambda arm, st: 'SAFE' if st == 'UNKNOWN' else st)
+        broken['rows'][0]['standard'] = {'status': 'SAFE'}  # a decided first check that differs
+        with self.assertRaises(ValueError):
+            s.proof_status(runs, [broken])
         empty = {'summary': {'replay_mismatches': []}, 'fast': {'requested': 'fast3'}, 'rows': []}
         with self.assertRaises(ValueError):
             s.proof_status(runs, [empty])

@@ -1560,6 +1560,29 @@ python scripts/summarize_h6_6.py --main runs/h6_6/value_vs_tb1_8404.json runs/h6
   --output docs/h6/h6_6_summary_8404_8405.json
 ```
 
+## H6-6 d2 재현 검사 수정 (2026-10-19, 8406 d2의 mismatch 2건)
+
+**현상:** 8406 d2에서 재현 불일치 2건이 나왔고, 다시 돌려도 같은 2건이 나왔다. 둘 다 control(기록이 UNSAFE)이다. `puct_value…/8406/10/black` ply 28, `puct_policy…/8406/2/white` ply 41.
+- summary상 두 control 집합에서 표준 검사가 예산에서 멈춘 수가 각각 1개(호출 몫)이고, 4M에서는 모두 UNSAFE다.
+
+**원인 (사용자 분석이 맞음, 코드와 재현으로 확인):**
+- V8-C(`_verify_root_choice`)는 tree 수를 먼저 새 solver, 절반 예산으로 검사한다. UNKNOWN이면 그 수는 `_search_root_children` → `_proven`의 대기 목록에 그대로 남는다. 그리고 **같은 solver와 캐시로** 다음 라운드에서 추가 몫을 받아 다시 검사된다. 그래서 기록된 최종 상태는 첫 검사보다 진전될 수 있다(UNKNOWN → UNSAFE 또는 SAFE).
+- d2의 표준 검사는 그 첫 검사만 재현한다. 그런데 결과를 기록된 최종 상태와 같아야 한다고 비교했다. 이 전제가 틀렸다.
+- 재현: P94 국면에서 노드 예산 800이면 절반(400) 단발 검사는 UNKNOWN이고, V8-C 본 절차는 같은 수를 UNSAFE로 끝낸다(`tests/test_h6_5d.py::test_v8c_continues_an_unknown_first_check`).
+- 대국 결과, 4M 재검사 결과, 비결정성 문제가 아니다. 대국은 다시 돌릴 필요가 없다.
+
+**수정 (`h6_5d.replay_kind`):** 표준 검사는 V8-C 첫 검사의 정확한 재현이므로, 기록과의 관계를 셋으로 나눈다.
+
+| 종류 | 조건 |
+|---|---|
+| exact | 첫 검사 = 기록 |
+| continued | 첫 검사 UNKNOWN, 기록은 SAFE 또는 UNSAFE(V8-C가 이어서 판정), **4M 재검사가 기록과 같음** |
+| mismatch | 그 외(결정된 첫 검사가 기록과 다름, 기록 UNKNOWN을 첫 검사가 결정함, continued인데 4M이 기록과 다름) |
+
+- mismatch가 하나라도 있으면 지금처럼 판정하지 않는다. 검사를 약하게 만든 것이 아니라, 원래 의도한 sanity("d2가 기록과 모순되지 않는다")를 V8-C의 실제 절차에 맞게 고친 것이다. 첫 검사가 기록과 다르게 결정되면 여전히 걸린다.
+- `summarize_d2`와 `summarize_h6_6.py`는 저장된 `replay_mismatches`를 믿지 않고 행(기록, 표준, 4M 상태)에서 다시 계산한다. 그래서 8404·8405·8406 모두 같은 규칙과 같은 코드로 판정된다. 상태 계산 자체는 바뀌지 않았으므로 d2 검사를 다시 할 필요는 없다.
+- 기존 파일 확인: H6-5D d2(8403) 99행, H6-6 d2 8404 84행은 새 규칙에서도 모두 exact다. H6-5D 판정과 8404 판정은 영향이 없다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
