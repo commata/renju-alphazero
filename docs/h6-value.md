@@ -1837,6 +1837,102 @@ python -u scripts/h7_e0_vcf_transpositions.py \
 - `--large`(4M 계측)는 판정에 쓰지 않는다. 국면당 수 분이므로 필요할 때만 따로 돌린다(출력 파일 이름을 바꿔서).
 - 끝나면 `docs/h7/h7_e0_vcf_transpositions.json`을 커밋한다. 마지막 줄의 `identical`이 true가 아니면 결과를 보여 달라.
 
+## H7-E0 결과: strong_go (2026-10-19, `docs/h7/h7_e0_vcf_transpositions.json`, 커밋 `05ed888`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 해석 두 가지를 고치고, 초안에 없던 사실 세 가지를 더했다.
+
+**확인한 수치 (call 범위, 표준 검사)**
+- `identical` true: 382개 국면 모두에서 계측본과 원본의 상태, 노드, 호출 수, cut이 같았다.
+- unknown4m(66개, 22국)의 재사용 가능 노드 비율은 **85.97%**다(value 86.29%, 기준 85.12%). 중복률은 92.19%이고, 중복은 모두 첫 방문이 `no_win`이었다(`win` 0, `cut` 0).
+- 다른 묶음: resolved_safe 75.39%(104개), safe_control 74.21%(191개), unsafe4m 60.43%(21개).
+- control과의 짝 차이(대국 단위 bootstrap):
+  - unknown4m +35.91%p [25.54, 44.85], 22국
+  - resolved_safe +31.80%p [22.94, 39.62], 53국
+  - unsafe4m −2.0%p [−23.9, +19.4], 18국
+- check 범위 절약(86.19%)은 call 범위와 거의 같다. 따라서 call 단위 table로 충분하다.
+- 판정은 `strong_go`다: 비율 ≥ 20%, 짝 차이 하한 > 0.
+
+**해석 수정**
+1. **"86% 절약"은 속도 예측이 아니다.** 재사용 가능 노드는 가장 바깥 중복의 노드만 센 값이다. table이 있으면 아낀 노드는 더 깊은 새 탐색에 쓰이고, 그 탐색에도 중복이 생긴다.
+   - 그래서 같은 200k 예산이 frozen 기준 몇 배의 예산이 되는지는 이 값으로 정해지지 않는다. 단순 환산(1 / (1 − 0.86) ≈ 7배)은 참고값일 뿐이다.
+   - 이 효과는 E1에서 판정 수로 직접 잰다.
+2. **unknown4m 비율이 높다는 것이 "unknown4m이 풀린다"는 뜻은 아니다.** unknown4m은 frozen 4M(노드 20배, 호출 20배, 호출당 10배)에서도 UNKNOWN이었다. 4M 검사도 같은 중복을 안고 있다.
+   - 표준 + table의 실효 예산이 4M frozen보다 작으면, 표준에서 unknown4m이 풀리는 비율은 낮을 수 있다.
+   - 그래서 E1의 1차 지표는 "표준 UNKNOWN 전체 중 판정되는 비율"로 잡는다. unknown4m은 4M + table로 따로 본다(아래).
+   - 같은 이유로 resolved_safe(4M에서 SAFE)가 표준 + table의 주된 수혜 묶음일 것으로 예상한다. 이것은 예상일 뿐 기준이 아니다.
+
+**추가 사실 (결과 파일과 코드에서 확인)**
+1. **표준 UNKNOWN의 cut 원인이 섞여 있다.** E0의 not-SAFE 191개 중 표준 UNKNOWN은 176개다. 그 가운데 150개는 노드 예산(200k)에, 26개는 호출 상한(5k)에 잘렸다.
+   - 묶음별 호출 상한 cut: resolved_safe 23/104, unknown4m 1/66, unsafe4m 2/6.
+   - call 단위 table은 호출 하나의 노드만 줄이고 호출 수는 줄이지 않는다. 그래서 호출 상한에 잘린 26개는 table로 풀 수 없다(같은 대국 안의 다른 결정은 E1 범위 밖이다).
+   - 반대로, table이 노드를 줄이면 같은 노드 예산 안에서 호출이 더 많이 일어나므로 병목이 호출 상한으로 옮겨갈 수 있다. E1은 cut 원인 분포를 on/off로 함께 기록한다.
+2. **no_win 전용 table은 순수한 가지치기다.** 정확히 끝난 `no_win` 키를 다시 만나면, frozen 재귀는 그 하위에서 반드시 None을 돌려준다.
+   - 그 하위를 건너뛰어도 깊이 우선 순서와 처음 찾는 VCF는 바뀌지 않고, 노드 수만 줄어든다.
+   - 따라서 **frozen 호출이 노드 상한에 잘리지 않고 끝난 경우, table 호출은 결과·witness가 똑같고 노드는 같거나 적다.** 결과가 달라질 수 있는 곳은 frozen 호출이 잘린 곳뿐이다.
+   - 이 성질은 호출 단위로 정확하게 시험할 수 있다. E1 건전성 검사의 핵심이다.
+   - 조건: `no_win`을 저장한 키의 남은 four 수 r에 대해, 다시 만난 방문의 남은 four 수가 r 이하일 때만 재사용한다. 첫 방문 하위에 노드 상한 cut(`exhausted`)이 한 번도 없었어야 한다.
+   - VCF 보조 함수(`_window_candidates`, `_winning_moves`, `_is_legal_for_player`, `_wins_for_player`, `_legal_completions`, `_placed_completions`)는 history와 to_play를 쓰지 않는다(`inspect`로 확인). 그래서 키 (국면, 공격 측, 남은 four 수)로 충분하다.
+   - 중복 중 `win`이 0이므로, 첫 버전은 `win`을 저장하지 않는다. 저장하면 witness 재조립이 필요한데 얻는 것이 없다.
+3. **VCF 호출 지점이 둘이다.** `analysis.mcts_v8`의 `_find_vcf_with_stats`는 V8-C solver(`_BudgetedSolver.vcf`)와 루트의 자기 VCF(V8-B 앞, `own_vcf`)에서 함께 쓰인다.
+   - 모듈 이름을 통째로 바꿔 끼우면 착수 선택도 바뀐다(자기 VCF가 cut 대신 찾아질 수 있음).
+   - E0가 잰 것은 V8-C 검사뿐이다. 그래서 **E1 범위는 V8-C solver 하나로 한정**한다. 한 번에 한 변경만 보기 위해서다.
+
+## H7-E1 설계: V8-C solver의 VCF no_win table (2026-10-19, 초안, 승인 대기)
+
+**후보:** TB-Engine-v1의 V8-C 검사(`_BudgetedSolver.vcf`)에서만, VCF 호출 하나 안에 table을 둔다.
+- table은 `(국면 bytes, 공격 측) → 정확히 끝난 no_win의 최대 남은 four 수`다.
+- table hit은 노드를 0개 쓴다. 노드 상한에 잘린 하위 결과는 저장하지 않는다.
+- 결정성: table은 호출마다 새로 만든다. worker, 대국, 결정 사이에서 공유하지 않는다.
+- 다른 예산(200k 노드, 5k 호출, 호출당 20k)과 다른 규칙은 그대로다.
+
+**구현 위치**
+- 새 모듈 `src/analysis/vcf_tt_v1.py`: frozen 재귀와 같은 순서의 복사본에 table만 더한다.
+- frozen 파일(`mcts_v7.py`, `mcts_v8.py`, `threats.py`, `tb_engine_v1.py`)은 E1 오프라인 검증에서 고치지 않는다. E0처럼 검사 동안 solver의 VCF 함수만 바꿔 끼운다.
+- **대국에 쓰려면(E2) 엔진 연결이 필요하다.** 이것은 결과가 바뀌는 변경이므로 `--fast`가 아니라 엔진 버전 단계다. 연결 방식은 E1 통과 뒤 따로 승인받는다.
+  - 예: `mcts_v8`에 `v8c_vcf` 옵션을 추가한다. 기본 off이고, off일 때는 지금 코드 경로 그대로다. H6-4의 `puct_value` 추가와 같은 방식이다.
+
+**E1 오프라인 검증 (실행 전 고정)**
+- **표본:** E0와 같다. H6-6 B·C 세 seed의 표준 not-SAFE tree 수 191개와 매칭 SAFE control 191개.
+- **비교:** 국면마다 표준 검사를 off / on으로 돌린다. unknown4m 66개와 unsafe4m 중 4M UNKNOWN은 4M 검사도 on으로 돌린다(off 4M은 d2 기록을 쓴다).
+- 관찰 항목 (판정에 쓰지 않음):
+  - 상태 전이표(off → on)
+  - cut 원인 분포(노드 / 호출 / 호출당)
+  - 노드 수, 호출 수
+  - 검사 시간(fast3 기준 on/off 비)
+
+| 검사 | 기준 | 실패 시 |
+|---|---|---|
+| A. 호출 동일성 | off 호출이 노드 상한에 잘리지 않고 끝난 모든 VCF 호출에서, on의 결과·witness가 같고 노드가 같거나 적음. 100% | `tool_error` (구현 결함) |
+| B. 판정 모순 | off에서 결정된 상태(표준 SAFE / UNSAFE, d2의 4M SAFE / UNSAFE)와 on의 결정된 상태가 다른 경우 0. on의 UNSAFE는 witness를 재검증 | `unsound`, E1 기각 |
+| C. off 동일성 | 옵션 off에서 TB-Engine-v1 회귀 fixture와 결정 필드가 비트 단위로 같음 | `tool_error` |
+| D. 1차 효과 | 표준 UNKNOWN 176개 중 on 표준에서 SAFE / UNSAFE로 판정되는 비율 | 아래 표 |
+| E. 비용 | on/off 검사 시간 비 ≤ 1.5 (fast3, 같은 기계, 같은 worker 수) | `cost_fail`, E1 기각 |
+
+| 판정 | 조건 (A–C, E 통과 전제) |
+|---|---|
+| `go` | D ≥ 30% → E2로 |
+| `weak` | 10% ≤ D < 30% → E2로 가되, E2 빈도 조건을 더 엄격하게 확인 |
+| `no_go` | D < 10% → proof 재사용(같은 대국의 이전 결정) E0로 |
+
+- **보조 지표 (보고용, 판정 아님):**
+  - unknown4m 66개 중 on 표준에서 판정되는 수와 on 4M에서 판정되는 수. 4M + table로도 거의 안 풀리면, 그 66개는 VCF 예산 문제가 아니라 다른 원인(VCT2급 방어, 탐색 깊이 밖)이다. 이것은 H6-6D의 `proof_hard`와 함께 읽는다.
+  - 호출 상한 cut 비율이 on에서 늘었는지.
+- **설명:**
+  - D의 분모는 4M 결과로 고르지 않은 전체다. 4M 결과로 표본을 골라 기준을 정하면 효과를 과대평가하기 쉽기 때문이다.
+  - 기준(30%, 10%)은 E0의 선형 환산(약 7배)보다 일부러 보수적으로 잡았다. 26개(15%)는 호출 상한 cut이므로 D의 사실상 최대는 85%다.
+
+**E2 이후 (E1 통과 시, 변경 없음)**
+- E2: TB-Engine-v1 + table 대 TB-Engine-v1을 §2.3 gate(6개 모두)로 비교한다. 새 holdout seed를 쓰고, seed는 프로토콜 고정 때 예약한다(예: 8421–8423).
+- E3: 채택 시 그 위에서 value v3를 guard v2 그대로, seed 8407–8409로 다시 평가한다.
+- selective VCT2는 따로 판정한다.
+
+**하지 않는 것**
+- `win` 저장
+- 대국·결정 사이 table 공유
+- 자기 VCF(`own_vcf`)와 `threats.py`에 table 적용
+- ordering 변경을 같은 후보에 섞기
+- 예산 변경
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
