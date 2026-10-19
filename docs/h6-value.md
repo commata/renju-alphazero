@@ -1774,6 +1774,69 @@ python -u scripts/h6_6d.py \
 
 **하지 않는 것:** H6-6 판정 변경, guard v2 margin 변경, value 재학습, VCT2와 PE를 한 후보로 묶는 것, 노드 예산만 늘리는 것.
 
+## H7-E0 확정: VCF 중복 작업 계측 (2026-10-19, 실행 전 고정)
+
+사용자 검토(키 정의, 노드 절약량, `resolved_safe` 추가, 결과 불변, 재사용 가능 여부 분리, go / no-go 기준)를 사실 확인 뒤 모두 반영했다. 구현은 `scripts/h7_e0_vcf_transpositions.py`, 테스트는 `tests/test_h7_e0.py`다. 보고용이다.
+
+**사실 확인**
+- frozen `search.mcts_v7._find_vcf_recursive`는 깊이 우선 재귀다. `_VCFState`에는 `node_limit / nodes / exhausted`만 있고 방문 기록이 없다.
+- 결과는 `(국면, 공격 측, max_fours − fours_used)`에 의존한다. 그래서 키를 이 셋으로 잡는다. 정확한 국면만 쓰고 D4는 쓰지 않는다.
+- 재귀는 매번 돌을 더 놓으므로 순환이 없다. 그래서 같은 키를 다시 만나면 첫 방문은 이미 끝나 있고 결과를 알 수 있다.
+- `mcts_v7.py`는 frozen baseline 해시 잠금 대상이다. 그래서 계측본은 별도 스크립트 안의 복사본이다. V8-C solver가 부르는 `analysis.mcts_v8._find_vcf_with_stats` 이름만 검사 동안 바꿔 끼운다(fast3와 같은 방식). frozen 파일은 고치지 않는다.
+
+**측정 정의**
+- **첫 방문 결과:** `win`(VCF 찾음), `no_win`(노드 상한에 잘리지 않고 끝남, 그 키에서 완전 탐색), `cut`(노드 상한에 잘림). 앞의 둘만 재사용 가능하다.
+- **재사용 가능 노드:** 재사용 가능한 키를 다시 방문했을 때 그 방문이 쓴 노드다. 가장 바깥 중복에서만 센다(안쪽 중복을 두 번 세지 않음).
+  - 아낀 노드는 다른 곳에 쓰이므로, 이 값은 상한 성격의 추정이지 예측이 아니다.
+- **범위 두 가지:**
+  - `call`: VCF 호출 하나 안. E1 후보의 범위다.
+  - `check`: V8-C 검사 하나의 모든 VCF 호출. 참고용이다.
+- **결과 불변:** 국면마다 계측 없는 검사와 계측 검사를 둘 다 돌린다. 상태, 노드 수, 호출 수, cut 여부와 종류가 모두 같아야 한다(`identical`). 하나라도 다르면 판정은 `tool_error`다.
+- **기록 항목:** VCF 호출 수, 재귀 진입 수, 고유 상태, 중복 진입, 중복률, 총 노드, 재사용 가능 노드와 비율(call / check), 첫 방문 결과별 중복 수, 중복의 남은 four 수(중앙값, p90, 최대).
+
+**표본**
+- H6-6 B·C 세 seed의 표준 not-SAFE tree 수를 4M 상태로 묶는다: `resolved_safe`, `unknown4m`, `unsafe4m`(`unsafe4m`은 보고용).
+- 각 수마다 매칭 SAFE control 하나를 붙인다(같은 run·대국, 가장 가까운 ply).
+- 표준 검사는 V8-C가 tree 수를 처음 검사할 때와 같다(`h6_5d.STANDARD`). `--large`를 주면 not-SAFE 묶음에 4M 검사도 잰다.
+
+**E1 진입 판정 (call 범위, 표준 검사 기준, 실행 전 고정. E1 채택 기준은 E1 측정 전에 따로 고정)**
+
+| 판정 | 조건 |
+|---|---|
+| `strong_go` | unknown4m 재사용 가능 노드 비율 ≥ 20%, 그리고 매칭 control보다 높음(국면 짝 차이, 대국 단위 95% 하한 > 0) |
+| `weak_go` | 10% ≤ 비율 < 20%, 그리고 control보다 높음 → 시제품만 |
+| `no_go` | 10% 미만, 또는 control보다 높지 않음 → proof 재사용 / ordering 쪽 E0로 |
+
+- 해석은 세 묶음(unknown4m, resolved_safe, safe_control)을 함께 본다.
+  - unknown4m > resolved_safe > control이면 transposition이 병목과 직접 맞는다.
+  - 셋이 비슷하면 핵심 병목이 아니다.
+  - resolved_safe만 높으면 가장 어려운 수는 다른 원인일 수 있다.
+
+**사전 점검 (판정 아님):**
+- WEB 국면 4개와 8403 기록 UNKNOWN 3개에서 계측본과 원본이 모두 같았다.
+- 8403 UNKNOWN 3개에서는 표준 검사 노드 200k 중 **84–93%**가 이미 `no_win`으로 끝난 상태의 재방문이었다(중복률 90–97%).
+- 8403은 E0 표본(8404–8406)이 아니므로 판정에 쓰지 않는다. 신호의 크기만 미리 본 것이다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python -m unittest tests.test_h7_e0
+mkdir -p runs/h7 docs/h7
+python -u scripts/h7_e0_vcf_transpositions.py \
+  --runs runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+         runs/h6_6/value_vs_full_8405.json runs/h6_6/tb1_vs_full_8405.json \
+         runs/h6_6/value_vs_full_8406.json runs/h6_6/tb1_vs_full_8406.json \
+  --d2 docs/h6/h6_6_d2_8404.json docs/h6/h6_6_d2_8405.json docs/h6/h6_6_d2_8406.json \
+  --fast fast3 --workers 12 --jsonl runs/h7/e0.jsonl --output docs/h7/h7_e0_vcf_transpositions.json 2>&1 | tee runs/h7/e0.log
+```
+
+- 국면은 약 380개다(not-SAFE 약 190 + control). 국면마다 계측 없는 검사와 계측 검사를 둘 다 하므로, UNKNOWN 국면은 하나에 수십 초다. 12 worker로 수십 분 안쪽으로 본다.
+- `--large`(4M 계측)는 판정에 쓰지 않는다. 국면당 수 분이므로 필요할 때만 따로 돌린다(출력 파일 이름을 바꿔서).
+- 끝나면 `docs/h7/h7_e0_vcf_transpositions.json`을 커밋한다. 마지막 줄의 `identical`이 true가 아니면 결과를 보여 달라.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
