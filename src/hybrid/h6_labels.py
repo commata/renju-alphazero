@@ -48,7 +48,8 @@ BOARD = 15
 # 8701-8725: external-engine anchor games (docs/external-engine.md §4, ``evaluation.external``), evaluation only.
 # 8406: reserve H6-5 seed of the next value candidate (8404 / 8405 official), added after the 8403 REJECT.
 RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8406, 8411, 8412, 8413, 8414, 8415, 8416, 8417, 8418,
-                            *range(8601, 8611), *range(8611, 8617), *range(8701, 8726)})
+                            *range(8601, 8611), *range(8611, 8617), *range(8701, 8726),
+                            8421, 8422, 8423})  # H7-E2 holdout (docs/h6-value.md)
 FRESH_PROBE_SEEDS = tuple(range(8601, 8611))
 DEV_PROBE_SEEDS = tuple(range(8611, 8614))
 DEV_PROBE_EXTENSION_SEEDS = tuple(range(8614, 8617))

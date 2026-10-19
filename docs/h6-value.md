@@ -2042,7 +2042,7 @@ python -u scripts/h7_e1_vcf_table.py \
 - H6-6 REJECT는 그대로 둔다. H6-6은 당시 frozen 엔진과 guard v2에서 정당한 판정이었다.
 - H6 실패 원인의 상당 부분이 VCF 중복이었다는 해석은 강해졌다. 그러나 남은 꼬리(17개 중 value 15개)는 table로 설명되지 않는다. 그래서 E3에서 value v3가 통과한다고 미리 기대하지 않는다.
 
-## H7-E2 설계 방향: table 엔진 후보 판정 (2026-10-19, 초안, 승인 대기)
+## H7-E2 설계 방향: table 엔진 후보 판정 (2026-10-19, 초안 → 아래 "H7-E2 확정"으로 대체)
 
 **엔진 버전 단계 (승인 필요)**
 - `analysis.mcts_v8`에 기본 off 옵션 `root_vcf_table`을 더한다. on이면 V8-C 루트 solver(`_verify_root_choice`가 만드는 `_BudgetedSolver`)만 `analysis.vcf_tt_v1`의 VCF를 쓴다.
@@ -2068,6 +2068,141 @@ python -u scripts/h7_e1_vcf_table.py \
 **E2 이후 (변경 없음)**
 - E3: TB-Engine-v1-T 채택 시 value v3를 그 위에서 guard v2 그대로, seed 8407–8409로 다시 평가한다. 4M 재검사는 4M + table로 한다.
 - 호출 상한 조정, E1b(단조 키), proof 재사용, ordering, selective VCT2는 각각 따로 판정한다.
+
+## H7-E2 확정: TB-Engine-v1-T 판정 (2026-10-19, 실행 전 고정)
+
+사용자 검토에서 후보, 범위, seed, 빈도 지표, 기력·비용 기준, E3 방식이 승인됐다. 실행 전에 고정하라고 한 세 가지(UNKNOWN 비교 단위, 모순 정의, seed 단계 규칙)와 추천 항목을 사실 확인 뒤 반영했다.
+- 엔진: `src/analysis/tb_engine_v1_t.py`, `analysis.mcts_v8`(엔진 버전 단계, 추가만), `analysis.mcts_v8_agent`
+- arm: `scripts/run_mcts_v8_benchmark.py`의 `puct_policy_vct2_50k_tt`
+- 판정 도구: `scripts/h7_e2_soundness.py`, `scripts/summarize_h7_e2.py`
+- 테스트: `tests/test_h7_e2.py`
+- seed: 8421–8423을 `RESERVED_SEEDS`에 넣었다.
+
+**엔진 (`TB-Engine-v1-T`)**
+- TB-Engine-v1에 `root_vcf_table`만 켠다. V8-C 루트 solver(`_verify_root_choice`가 만드는 `_BudgetedSolver`)의 VCF 호출만 `analysis.vcf_tt_v1`을 쓴다.
+- 그대로인 것: V8-A / V8-B solver, `own_vcf`, `threats.py`, PUCT, H3 policy, 예산(value 없음).
+- **연결 방식 (사실 확인 결과):**
+  - `root_vcf_table`을 `V8_DEFAULTS`에 넣으면 frozen 검사가 깨진다. 넣으면 `set(TB_ENGINE_V1) == set(V8_DEFAULTS)`와 E3 / E1-holdout run의 `v8_config` 비교가 실패하고, TB-Engine-v1의 설정 해시도 바뀐다.
+  - 그래서 `leaf_value`처럼 설정 밖 인자로 넣었다(`mcts_search_v8(root_vcf_table=...)`, `MCTSV8Agent(root_vcf_table=...)`, `_BudgetedSolver.vcf_search`).
+  - TB-Engine-v1의 설정과 해시는 바뀌지 않는다. `TB-Engine-v1-T`의 `config_hash`는 설정, `ENGINE_OPTIONS`, table 모듈을 함께 덮는다.
+  - run 파일의 `v8_config`에는 후보만 `root_vcf_table: true`가 들어간다.
+- **off 동일성:** off일 때 `vcf_search`는 None이고, solver는 지금처럼 모듈의 `_find_vcf_with_stats`를 부른다(E0 / E1 도구의 바꿔 끼우기도 그대로 동작한다).
+  - TB-Engine-v1 회귀 fixture(`tests.test_h6_value_leaf`), `tests.test_tb_engine_v1`, `tests.test_mcts_v8`이 그대로 통과한다.
+  - 후보도 fixture 6국면에서 착수와 V8-C 판정이 fixture와 같았다. 그 국면의 검사는 frozen 예산 안에서 끝나므로 table은 노드 수만 바꾼다.
+- 기록: tree 수마다 `root.table`(hit, store)을 남긴다. `TB-Engine-v1-T`는 시험 arm일 뿐이고, 상대(opponent)로는 쓸 수 없다.
+
+**실행 (seed마다, 같은 opening)**
+- `puct_policy_vct2_50k_tt` 대 `v8:full`, `puct_policy_vct2_50k` 대 `v8:full`. 둘 다 `--puct-c 1.5 --fast fast3`이고 **opening pair는 50개(100국)**다.
+- H6-6의 25 pair에서 늘렸다. 이유는 아래 기력 항목에 있다.
+- 후보 대 TB-Engine-v1 직접 대국은 하지 않는다(사용자 검토 4).
+
+**gate (`scripts/summarize_h7_e2.py`)**
+
+| §2.3 | 정의 | PASS | 명확한 FAIL |
+|---|---|---|---|
+| 1. 건전성 (hard) | `h7_e2_soundness.py`: 후보의 tree 수 전부를 frozen 표준으로 다시 검사한다. 기록이 결정됐는데 frozen 표준이 UNKNOWN이면 frozen 4M으로도 검사한다. 기록 UNSAFE는 table로 재생한다(표준, UNKNOWN이면 4M). 모든 VCF line을 `verify_line`으로 검증한다. 양 arm의 safety violation도 본다 | 모순 0, UNSAFE 재생 100%(line 실패 0), safety violation 0 | 하나라도 어긋나면 REJECT(어느 단계든) |
+| 2. holdout | seed 8421, 8422, 8423 | — | — |
+| 3. 빈도 | 대국마다 tree 수 중 UNKNOWN(기록) 비율. 같은 opening·색의 후보 − 기준 차이(양쪽 다 tree 수가 있는 대국만). opening(seed, pair) 단위 bootstrap | 95% 상한 < 0, 그리고 seed마다 반올림 전 평균 차이 < 0 | pooled 또는 어느 seed든 차이 ≥ 0 |
+| 4. 기력 | 같은 상대(`v8:full`), 같은 opening·색. opening(양 색) 단위 점수 차 후보 − 기준, bootstrap | 95% 하한 ≥ −0.05 | 점수 차 < −0.05 |
+| 5. 비용 | 짝 대국의 V8 착수 시간 합, 후보 / 기준 | ≤ 1.5 | > 1.5 |
+| 6. 격리 | 기본 off. off = frozen 경로(위 테스트). 기준 run의 설정이 TB-Engine-v1과 같고 table 기록이 없음, 후보는 반대(도구가 검사) | — | 어긋나면 도구가 판정을 거부 |
+
+- **모순 정의:** 결정된 상태끼리 반대일 때만이다(SAFE ↔ UNSAFE).
+  - frozen UNKNOWN 대 후보 SAFE / UNSAFE는 모순이 아니다. table이 더 판정한 것이기 때문이다.
+  - UNKNOWN은 어느 쪽에 있어도 모순이 아니다.
+- **단계 규칙**
+
+| seed | 결과 |
+|---|---|
+| 8421 | 건전성 FAIL → REJECT. 그 밖에는 무조건 8422를 돌린다(나머지 gate는 보고만) |
+| 8421 + 8422 | 건전성 FAIL 또는 명확한 FAIL 하나 → REJECT. 모든 gate PASS → ADOPT. 그 밖(OPEN) → 8423 |
+| 8421 + 8422 + 8423 | 모든 gate PASS → ADOPT(TB-Engine-v2로 승격). 그 밖 → REJECT |
+
+  - 빈도의 "seed마다 차이 < 0"은 seed를 더해도 되돌릴 수 없다. 그래서 두 seed에서 어느 하나라도 차이 ≥ 0이면 바로 REJECT다.
+- **보고 항목 (판정 아님)**
+  - 수당 시간 p50 / p90 / p95 / p99 / 최대: 모든 V8 수, tree 수, V8-C 검사
+  - tree 상태 분포, V8-C 교체(proven_loss / unknown), table hit
+  - 같은 opening에서 두 엔진의 수순이 완전히 같은 대국 수
+  - 후보 tree 수의 상태 전이(frozen 표준 → 후보 기록): UNKNOWN → SAFE / UNKNOWN → UNSAFE / UNKNOWN → UNKNOWN / SAFE → SAFE / UNSAFE → UNSAFE
+  - legacy frozen 4M 결과(table이 결정한 수)
+  - 전이표 설명: 두 엔진의 대국은 첫 차이 이후 갈라진다. 그래서 같은 국면의 비교는 후보 국면을 frozen으로 다시 검사해서 얻는다.
+
+**기력 검정력 (사실 확인 결과, 25 → 50 pair의 이유)**
+- H6-6 aux에서 TB-Engine-v1의 `v8:full` 상대 점수는 0.887이었다(150국, 25 pair × 3 seed). 상한에 가까워 대부분의 짝 차이는 0이고, 지는 대국 몇 개가 분산을 만든다.
+- 대략 계산하면 짝 점수 차의 표준편차는 0.2–0.3이다.
+  - 25 pair × 2 seed(50 opening): 95% 구간 반폭이 0.06–0.08이다. 실제 차이가 0인 같은 기력의 엔진도 하한 ≥ −0.05를 넘기 어렵다.
+  - 50 pair × 2 seed(100 opening): 반폭 0.04–0.06
+  - 50 pair × 3 seed: 반폭 0.03–0.05
+- 그래서 같은 기력이면 대개 2–3 seed에서 판정이 나도록 50 pair로 정했다. 실행 전 고정이다. 수순이 같은 대국은 차이가 정확히 0이라 실제 분산은 이보다 작을 수 있다.
+- 비용: H6-6 기준 대국당 약 1.8분(게임 시간 합)이다. arm·seed당 100국 ≈ 180분이고, 8 worker로 약 25–30분이다.
+
+**E3 (E2 ADOPT 시, 사용자 검토 8)**
+- guard v2의 통계 기준과 판정 논리(margin 3%p, 상한 판정, bootstrap, seed 단계, 기력·시간 기준)는 그대로다.
+- 공식 4M 재검사는 채택된 TB-Engine-v2의 solver(4M + table)로 한다. legacy frozen 4M 결과도 함께 보고한다. guard를 느슨하게 바꾼 것이 아니라 새 frozen B-engine을 평가하는 것이다.
+- 이를 위해 E3 때 d2 도구에 4M + table 옵션을 더한다. 지금은 구현하지 않는다.
+- E1 결과의 참고값(4M UNKNOWN 차이 약 +1%p, 남은 꼬리 17개 중 value 15개) 때문에 E3 통과를 미리 기대하지 않는다.
+
+**하지 않는 것:** selective VCT2, 호출 상한 증가, ordering, 결정 사이 proof 재사용, E1b(단조 키)를 E2에 섞는 것. 각각 따로 판정한다.
+
+**실행 명령 (데스크톱 Ubuntu, seed마다)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e2 tests.test_h7_e1 tests.test_tb_engine_v1 tests.test_h6_value_leaf tests.test_mcts_v8
+mkdir -p runs/h7_e2 docs/h7
+POL=runs/h3_policy_64x4/best.pt; SEED=8421; W=8
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h7_e2/tt_vs_full_$SEED.jsonl --output runs/h7_e2/tt_vs_full_$SEED.json 2>&1 | tee runs/h7_e2/tt_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h7_e2/tb1_vs_full_$SEED.jsonl --output runs/h7_e2/tb1_vs_full_$SEED.json 2>&1 | tee runs/h7_e2/tb1_vs_full_$SEED.log
+python -u scripts/h7_e2_soundness.py --runs runs/h7_e2/tt_vs_full_$SEED.json --fast fast3 --workers 12 \
+  --jsonl runs/h7_e2/sound_$SEED.jsonl --output docs/h7/h7_e2_soundness_$SEED.json 2>&1 | tee runs/h7_e2/sound_$SEED.log
+python scripts/summarize_h7_e2.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7_e2/tb1_vs_full_8421.json \
+  --soundness docs/h7/h7_e2_soundness_8421.json --output docs/h7/h7_e2_summary_8421.json
+```
+
+- 두 arm의 시간을 비교하므로, 두 run은 같은 기계에서 같은 worker 수로 **차례로** 돌린다(동시에 돌리지 않는다).
+- 8422 단계에서는 `SEED=8422`로 위 세 명령을 다시 돌리고, 요약은 두 seed의 run과 soundness 파일을 모두 넘겨 `docs/h7/h7_e2_summary_8421_8422.json`으로 쓴다.
+- 커밋할 것: `docs/h7/h7_e2_soundness_*.json`, `docs/h7/h7_e2_summary_*.json`. run 파일은 `runs/`에 둔다.
+
+## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
+
+```
+E2  TB-Engine-v1-T 판정 → ADOPT 시 TB-Engine-v2
+ ↓
+E3  value v3 재평가 (guard v2, 4M + table, legacy 4M 병행 보고)
+ ↓
+엔진 완성 (B-engine + B-net 고정)
+ ↓
+같은 기력 착수 시간 단축 최적화
+ ↓
+동결
+ ├─→ 미니 PC 서버에 웹 대국 모델 추가 (착수 30초 deadline 그대로)
+ └─→ H7-c1 self-play 강화학습 (병행 가능)
+```
+
+**검토 의견**
+1. **"같은 기력"은 "같은 착수"(정확 가속)로 정의하기를 권한다.**
+   - fast3처럼 deadline이 없을 때 착수·진단·노드·호출이 같은 최적화는 gate가 필요 없다(동일성 테스트만).
+   - 착수가 바뀌는 최적화(예산 조정, 가지치기 규칙)는 기력이 비슷해 보여도 새 엔진이다. §2.3 gate를 다시 거쳐야 한다.
+   - 이렇게 정하면 최적화 단계가 판정 단계로 번지지 않는다.
+2. **최적화 목표는 평균이 아니라 꼬리다.**
+   - E1에서 끝까지 UNKNOWN인 검사는 table이 있어도 시간이 같았다(1,089초 대 1,100초). 예산을 다 쓰기 때문이다.
+   - 30초 deadline에 걸리는 것은 이 꼬리다. E2에서 남기는 p95 / p99 / 최대가 최적화 단계의 기준선이 된다.
+3. **웹 경로에는 table을 다시 옮겨야 한다.**
+   - 웹 서버 코드(`feat/Web_SER5`)는 deadline을 검사하는 VCF(`rt30.vcf`, native core)를 쓴다. `analysis.vcf_tt_v1`은 deadline 검사가 없다.
+   - TB-Engine-v2를 웹에 올리려면 같은 table을 그 VCF에 넣고, deadline이 없을 때 `vcf_tt_v1`과 결과·노드가 같음을 확인해야 한다(native-core-plan의 G3 방식).
+   - deadline이 있으면 결과가 시간에 따라 달라진다. 그래서 웹 모델은 "동결 엔진의 deadline 판"으로 기록한다. 대국 로그에는 deadline cut 여부를 남긴다.
+4. **미니 PC에서 30초를 다시 잰다.** 데스크톱(i5-12600K)의 p99가 미니 PC에서 그대로 나오지 않는다. 동결 직후 미니 PC에서 고정 국면 세트(예: E2 tree 수 중 p99 국면)의 착수 시간을 재고, 30초 안에 드는 비율을 기록한다.
+5. **self-play와 병행은 가능하다.**
+   - 기계가 다르고(데스크톱 GPU / 미니 PC), 웹 모델은 동결 엔진 그대로이기 때문이다.
+   - 두 가지만 지킨다.
+     - H7-c 주기가 새 망을 만들어도 웹 모델은 바꾸지 않는다. 바꾸는 것은 주기 경계의 별도 단계다.
+     - 웹 대국 기록은 학습 데이터에 섞지 않는다. 쓰려면 RenjuNet 데이터처럼 출처와 누출 규칙을 정한 뒤에만 쓴다.
 
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 

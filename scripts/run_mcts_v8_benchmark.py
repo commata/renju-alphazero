@@ -30,6 +30,11 @@ if it cannot; it is a tested arm only, never an opponent. H6-5's main opponent i
 ``--opponent v8:puct_policy_vct2_50k --opponent-puct-c 1.5``.
     puct_value_vct2_50k     puct_policy_vct2_50k with the value leaf (TB-V1-Value)
 
+H7-E2 table arm (docs/h6-value.md, H7-E2): TB-Engine-v1 with V8-C's root solver on the call-local VCF
+no-win table (``root_vcf_table``, not a ``V8_DEFAULTS`` option; recorded in ``v8_config`` and per tree
+move as ``root.table``). With ``--puct-c 1.5`` it is ``analysis.tb_engine_v1_t``. A tested arm only.
+    puct_policy_vct2_50k_tt puct_policy_vct2_50k with root_vcf_table (TB-Engine-v1-T)
+
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
     ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
@@ -108,6 +113,9 @@ ARMS = {
                                'stage_vct2': {'node_limit': 20_000, 'call_limit': 20_000, 'node_budget': 10_000}},
     'puct_value_vct2_50k': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
                             'vct2_node_budget': 50_000},
+    # 'root_vcf_table' is not a V8_DEFAULTS option: it is passed to MCTSV8Agent on its own (H7-E2).
+    'puct_policy_vct2_50k_tt': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True,
+                                'vct2_node_budget': 50_000, 'root_vcf_table': True},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -165,7 +173,7 @@ def parse_opponent(value: str) -> str:
     if kind != 'v8' or arm not in ARMS:
         raise ValueError(f"opponent must be 'v7', 'v8:<arm>' or 'v8:<arm>{VCT2_ATTACK_SUFFIX}[<N>k]' "
                          f"with arm in {sorted(ARMS)}")
-    if needs_value(v8_config(arm)):
+    if needs_value(v8_config(arm)) or v8_config(arm).get('root_vcf_table'):
         raise ValueError(f'{arm} is a tested arm only, not an opponent')
     return value
 
@@ -285,6 +293,8 @@ def _move_record_base(ply, seconds, diag) -> dict:
             'calls': diag.v8_root_calls, 'nodes': diag.v8_root_nodes,
             'exhausted': diag.v8_root_budget_exhausted, 'seconds': round(diag.v8_root_seconds, 4),
             'switch': diag.v8_root_switch,
+            **({'table': {'hits': diag.v8_root_table_hits, 'stores': diag.v8_root_table_stores}}
+               if diag.v8_root_vcf_table else {}),
         },
         'policy': {
             'seconds': round(diag.v8_policy_seconds, 4), 'added': [list(m) for m in diag.v8_policy_added],
@@ -334,6 +344,7 @@ def play_one(task: dict) -> dict:
     policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
     leaf = load_value(task.get('value_checkpoint'), task.get('value_device', 'cpu')) if needs_value(config) else None
     v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy, leaf_value=leaf,
+                     root_vcf_table=bool(config.get('root_vcf_table')),
                      **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     if config.get('stage_vct2'):
         from analysis.e3_arms import StageVCT2Agent
