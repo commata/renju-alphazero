@@ -1488,6 +1488,78 @@ python scripts/summarize_h6_6.py --main runs/h6_6/value_vs_tb1_8404.json \
 - `W=8`은 i5-12600K(6P + 4E, 16스레드) 기준 제안이다. 각 worker가 CUDA로 value를 올리므로 GPU 메모리가 부족하면 줄인다.
 - 커밋할 것: `docs/h6/h6_6a_fast_check.json`, `docs/h6/h6_6_d2_*.json`, `docs/h6/h6_6_summary*.json`. run 파일은 `runs/`에 두고, 요약에 sha256을 남긴다.
 
+## H6-6 8404 결과: RUN_8405 (2026-10-19, `docs/h6/h6_6_summary_8404.json`, `h6_6_d2_8404.json`, `h6_6a_fast_check.json`, 커밋 `d8e1bba`)
+
+**H6-6a 동일성 검증 (데스크톱 Ubuntu, Python 3.12.3, fast3): 통과**
+- fixture 6 / 6 같음, V8-C 102 / 102 같음.
+- **두 엔진 착수 6국면 × 2엔진 모두 같음**(tree 수, 최종 수, 방문, Q, 방문 자식). 컨테이너에서는 못 돌렸던 부분이다.
+- 시간은 off 기록(Windows) 대비 표준 13.5배, 4M 19.8배다. OS·기계 차이가 섞인 참고값이다.
+
+**대국 결과 (모두 fast3)**
+
+| run | W/D/L | 점수 (쌍 95%) | 흑 / 백 | 시간 비율 | 안전 위반 |
+|---|---|---|---|---|---|
+| A 후보 대 TB-Engine-v1 | 32 / 2 / 16 | **0.66** (0.53–0.79) | 0.76 / 0.56 | 1.182 | 0 |
+| B 후보 대 `v8:full` | 47 / 1 / 2 | 0.95 | 0.96 / 0.94 | 1.378 | 0 |
+| C TB-Engine-v1 대 `v8:full` | 46 / 3 / 1 | 0.95 | 0.90 / 1.00 | 1.136 | 0 |
+
+- 판정: **RUN_8405**(사전 규칙: 8404는 기본 guard만 적용). P92 PASS.
+
+**4M 재검사와 guard v2 (보고용, 8404+8405부터 적용)**
+
+| | 후보(B) | 기준선(C) | 차이 (95%) | 8404 단독이었다면 |
+|---|---|---|---|---|
+| 표준 not-SAFE | 48 / 443 (10.8%) | 36 / 777 (4.6%) | — | — |
+| 표준 UNKNOWN → 4M | 47 → SAFE 25 / UNSAFE 0 / UNKNOWN 22 | 30 → 25 / 0 / 5 | — | — |
+| 4M UNSAFE 비율 | 0.23% | 0.77% | −0.55%p (−1.34 – +0.08) | PASS |
+| 4M UNKNOWN 비율 | 4.97% | 0.64% | **+4.32%p (−0.23 – +7.92)** | INCONCLUSIVE |
+
+- UNSAFE control 7 / 7 유지, 재현 불일치 0. 4M에서 남은 UNKNOWN은 모두 노드 소진이다.
+
+**초안 검토**
+- 수치와 판정은 모두 맞다. 해석(실제 위험 증가가 아니라 증명 난이도 증가, H6-5D 원인의 재현)도 데이터와 맞다.
+- **8403과 8404의 점수 차이(0.52 → 0.66)는 seed 분산이다.** 엔진과 모델이 같고, fast3는 결과를 바꾸지 않는다(위 검증). 그래서 초안의 "개선됐다고 말하면 안 된다"가 맞다. 판단은 두 seed 합산으로 한다.
+- **보조 대국의 tree 수 수가 다르다**(443 대 777, 대국 시간 60분 대 92분). 비율의 분모가 다르므로, 비율 차이는 "같은 대국 수에서 몇 번"이 아니라 "tree 수 하나당"으로 읽는다.
+
+**초안에 없는 중요한 예측: 4M UNKNOWN guard는 통과하기 어렵다**
+- 8404 단독(50 opening)의 구간 반폭은 약 4.1%p다. 8404+8405(100 opening)이면 약 2.9%p, 세 seed(150)면 약 2.4%p로 본다(√n 축소 가정, 근사).
+- 상한 ≤ +3%p로 PASS하려면 합산 점추정이 대략 **0%p(두 seed) / +0.6%p(세 seed) 이하**여야 한다.
+- 지금까지의 점추정은 +4.3%p(8404)다. 8403에서도 같은 방향이었다(+2.4%p, off 실행, 같은 엔진). 따라서 8405에서 차이가 크게 뒤집히지 않는 한 PASS는 어렵다.
+- REJECT(하한 > +3%p)도 합산 점추정이 약 +6%p 이상이어야 나온다. 그래서 가장 가능성 높은 경로는 **8405 INCONCLUSIVE → 8406 → 세 seed에서도 구간이 열려 있으면 REJECT**다.
+- 이것은 규칙을 바꿀 이유가 아니다. 8404를 본 뒤에 margin이나 지표를 바꾸면 사후 조정이 된다. 규칙은 그대로 두고, 이 예측을 지금 기록해 둔다.
+- 의미: 4M UNKNOWN guard는 "증명 난이도·비용"의 guard다. value leaf가 강하더라도, V8-C가 그 수들을 증명하지 못하는 한 이 guard로 막힌다. 이것을 풀려면 엔진 쪽 변경(V8-C 예산 escalation, 노드 절감)이 필요하고, 그것은 H7 엔진 후보 작업이다.
+
+**다음 단계**
+1. 프로토콜대로 **8405**를 같은 설정으로 돌린다(A·B·C + d2). 아무것도 바꾸지 않는다.
+2. 두 seed로 판정한다. INCONCLUSIVE면 8406을 한 번 돌린다.
+3. 결과와 무관하게 남는 가치: 같은 엔진 위에서 value leaf의 기력 효과를 2–3 seed로 추정한 값. REJECT로 끝나더라도, 그 사유가 4M UNKNOWN 하나뿐이라면 다음 작업은 H7 엔진 후보(V8-C 증명 예산)다. value v3는 바꾸지 않는다.
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; SEED=8405; W=8
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:puct_policy_vct2_50k \
+  --opponent-puct-c 1.5 --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --value-checkpoint $VAL --value-device cuda --games-jsonl runs/h6_6/value_vs_tb1_$SEED.jsonl \
+  --output runs/h6_6/value_vs_tb1_$SEED.json 2>&1 | tee runs/h6_6/value_vs_tb1_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h6_6/value_vs_full_$SEED.jsonl --output runs/h6_6/value_vs_full_$SEED.json 2>&1 | tee runs/h6_6/value_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h6_6/tb1_vs_full_$SEED.jsonl --output runs/h6_6/tb1_vs_full_$SEED.json 2>&1 | tee runs/h6_6/tb1_vs_full_$SEED.log
+python -u scripts/h6_5d.py d2 --runs runs/h6_6/value_vs_full_$SEED.json runs/h6_6/tb1_vs_full_$SEED.json \
+  --fast fast3 --workers 12 --jsonl runs/h6_6/d2_$SEED.jsonl --output docs/h6/h6_6_d2_$SEED.json 2>&1 | tee runs/h6_6/d2_$SEED.log
+
+# 두 seed 판정
+python scripts/summarize_h6_6.py --main runs/h6_6/value_vs_tb1_8404.json runs/h6_6/value_vs_tb1_8405.json \
+  --aux runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+        runs/h6_6/value_vs_full_8405.json runs/h6_6/tb1_vs_full_8405.json \
+  --d2 docs/h6/h6_6_d2_8404.json docs/h6/h6_6_d2_8405.json --p92 docs/h6/h6_4b_s1_probes.json \
+  --output docs/h6/h6_6_summary_8404_8405.json
+```
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**
