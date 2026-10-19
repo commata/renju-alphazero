@@ -1,0 +1,231 @@
+{
+ "format": "h7-e2-summary-v1",
+ "rules": {
+  "strength_low_min": -0.05,
+  "cost_max": 1.5,
+  "fast": "fast3",
+  "bootstrap": 10000,
+  "seed": 0,
+  "pairs_per_seed": 50
+ },
+ "seeds": [
+  8421,
+  8422
+ ],
+ "arms": {
+  "puct_policy_vct2_50k_tt": {
+   "arm": "puct_policy_vct2_50k_tt",
+   "seeds": [
+    8421,
+    8422
+   ],
+   "games": 200,
+   "wins": 171,
+   "draws": 13,
+   "losses": 16,
+   "score": 0.887,
+   "ci95_wilson": [
+    0.836,
+    0.924
+   ],
+   "ci95_pairs": [
+    0.848,
+    0.925
+   ],
+   "by_colour": {
+    "black": 0.89,
+    "white": 0.885
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0048,
+   "losses_with_opponent_vct": 14,
+   "tree_moves": 2998,
+   "tree_status": {
+    "SAFE": 2876,
+    "UNKNOWN": 92,
+    "UNSAFE": 30,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0407,
+   "v8c_changed": 82,
+   "root_check_minutes": 48.4,
+   "tree_seconds_median": 0.987,
+   "tree_simulations_per_second": 54.2,
+   "nn_calls_per_tree_move": 61.3,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.532,
+   "tree_chose_prior_top_rate": 0.572,
+   "time_ratio": 1.175,
+   "total_game_minutes": 328.6
+  },
+  "puct_policy_vct2_50k": {
+   "arm": "puct_policy_vct2_50k",
+   "seeds": [
+    8421,
+    8422
+   ],
+   "games": 200,
+   "wins": 169,
+   "draws": 14,
+   "losses": 17,
+   "score": 0.88,
+   "ci95_wilson": [
+    0.828,
+    0.918
+   ],
+   "ci95_pairs": [
+    0.84,
+    0.917
+   ],
+   "by_colour": {
+    "black": 0.895,
+    "white": 0.865
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0051,
+   "losses_with_opponent_vct": 16,
+   "tree_moves": 3123,
+   "tree_status": {
+    "SAFE": 2933,
+    "UNKNOWN": 168,
+    "UNSAFE": 22,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0608,
+   "v8c_changed": 99,
+   "root_check_minutes": 67.9,
+   "tree_seconds_median": 0.947,
+   "tree_simulations_per_second": 56.0,
+   "nn_calls_per_tree_move": 61.9,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.529,
+   "tree_chose_prior_top_rate": 0.574,
+   "time_ratio": 1.298,
+   "total_game_minutes": 351.8
+  }
+ },
+ "gates": {
+  "strength": {
+   "n": 200,
+   "openings": 100,
+   "diff": 0.0075,
+   "ci95": [
+    -0.015,
+    0.03
+   ],
+   "verdict": "PASS"
+  },
+  "frequency": {
+   "n": 200,
+   "openings": 100,
+   "diff": -0.0095,
+   "ci95": [
+    -0.017,
+    -0.0022
+   ],
+   "per_seed": {
+    "8421": -0.011637307287607297,
+    "8422": -0.007328848322442949
+   },
+   "verdict": "PASS"
+  },
+  "cost": {
+   "candidate_seconds": 10650.2,
+   "baseline_seconds": 11921.7,
+   "ratio": 0.893,
+   "verdict": "PASS"
+  }
+ },
+ "soundness": {
+  "contradictions": [],
+  "unsafe_not_replayed": [],
+  "line_fail": 0,
+  "unsafe": 30,
+  "transitions": {
+   "SAFE->SAFE": 2763,
+   "UNKNOWN->SAFE": 113,
+   "UNKNOWN->UNKNOWN": 92,
+   "UNKNOWN->UNSAFE": 7,
+   "UNSAFE->UNSAFE": 23
+  },
+  "legacy_4m": {
+   "SAFE:frozen4M_SAFE": 103,
+   "SAFE:frozen4M_UNKNOWN": 10,
+   "UNSAFE:frozen4M_UNSAFE": 5,
+   "UNSAFE:frozen4M_UNKNOWN": 2
+  },
+  "tool": []
+ },
+ "report": {
+  "puct_policy_vct2_50k_tt": {
+   "move_seconds": {
+    "moves": 4763,
+    "p50": 1.187,
+    "p90": 5.126,
+    "p95": 9.34,
+    "p99": 21.62,
+    "max": 43.667
+   },
+   "tree_move_seconds": {
+    "moves": 2998,
+    "p50": 1.568,
+    "p90": 6.056,
+    "p95": 12.662,
+    "p99": 23.583,
+    "max": 43.667
+   },
+   "root_check_seconds": {
+    "moves": 2998,
+    "p50": 0.225,
+    "p90": 1.085,
+    "p95": 4.075,
+    "p99": 18.794,
+    "max": 31.85
+   },
+   "v8c_switches": {
+    "proven_loss": 29,
+    "unknown": 48
+   },
+   "table_hits": 20115426
+  },
+  "puct_policy_vct2_50k": {
+   "move_seconds": {
+    "moves": 4915,
+    "p50": 1.165,
+    "p90": 5.726,
+    "p95": 11.058,
+    "p99": 22.393,
+    "max": 36.345
+   },
+   "tree_move_seconds": {
+    "moves": 3123,
+    "p50": 1.528,
+    "p90": 8.377,
+    "p95": 14.323,
+    "p99": 24.764,
+    "max": 36.345
+   },
+   "root_check_seconds": {
+    "moves": 3123,
+    "p50": 0.221,
+    "p90": 2.445,
+    "p95": 9.999,
+    "p99": 18.754,
+    "max": 23.634
+   },
+   "v8c_switches": {
+    "proven_loss": 21,
+    "unknown": 73
+   },
+   "table_hits": 0
+  },
+  "identical_games": 172,
+  "games": 200
+ },
+ "verdict": {
+  "decision": "ADOPT",
+  "reasons": [
+   "TB-Engine-v1-T becomes TB-Engine-v2"
+  ]
+ }
+}

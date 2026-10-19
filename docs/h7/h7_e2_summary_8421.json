@@ -1,0 +1,226 @@
+{
+ "format": "h7-e2-summary-v1",
+ "rules": {
+  "strength_low_min": -0.05,
+  "cost_max": 1.5,
+  "fast": "fast3",
+  "bootstrap": 10000,
+  "seed": 0,
+  "pairs_per_seed": 50
+ },
+ "seeds": [
+  8421
+ ],
+ "arms": {
+  "puct_policy_vct2_50k_tt": {
+   "arm": "puct_policy_vct2_50k_tt",
+   "seeds": [
+    8421
+   ],
+   "games": 100,
+   "wins": 83,
+   "draws": 9,
+   "losses": 8,
+   "score": 0.875,
+   "ci95_wilson": [
+    0.796,
+    0.926
+   ],
+   "ci95_pairs": [
+    0.815,
+    0.93
+   ],
+   "by_colour": {
+    "black": 0.9,
+    "white": 0.85
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0045,
+   "losses_with_opponent_vct": 7,
+   "tree_moves": 1726,
+   "tree_status": {
+    "SAFE": 1668,
+    "UNKNOWN": 44,
+    "UNSAFE": 14,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0336,
+   "v8c_changed": 45,
+   "root_check_minutes": 25.4,
+   "tree_seconds_median": 1.051,
+   "tree_simulations_per_second": 51.0,
+   "nn_calls_per_tree_move": 61.3,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.526,
+   "tree_chose_prior_top_rate": 0.583,
+   "time_ratio": 1.166,
+   "total_game_minutes": 188.1
+  },
+  "puct_policy_vct2_50k": {
+   "arm": "puct_policy_vct2_50k",
+   "seeds": [
+    8421
+   ],
+   "games": 100,
+   "wins": 82,
+   "draws": 8,
+   "losses": 10,
+   "score": 0.86,
+   "ci95_wilson": [
+    0.779,
+    0.915
+   ],
+   "ci95_pairs": [
+    0.8,
+    0.915
+   ],
+   "by_colour": {
+    "black": 0.9,
+    "white": 0.82
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0053,
+   "losses_with_opponent_vct": 10,
+   "tree_moves": 1694,
+   "tree_status": {
+    "SAFE": 1576,
+    "UNKNOWN": 106,
+    "UNSAFE": 12,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0697,
+   "v8c_changed": 62,
+   "root_check_minutes": 40.8,
+   "tree_seconds_median": 0.978,
+   "tree_simulations_per_second": 54.7,
+   "nn_calls_per_tree_move": 63.1,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.527,
+   "tree_chose_prior_top_rate": 0.566,
+   "time_ratio": 1.299,
+   "total_game_minutes": 204.8
+  }
+ },
+ "gates": {
+  "strength": {
+   "n": 100,
+   "openings": 50,
+   "diff": 0.015,
+   "ci95": [
+    -0.02,
+    0.05
+   ],
+   "verdict": "PASS"
+  },
+  "frequency": {
+   "n": 100,
+   "openings": 50,
+   "diff": -0.0116,
+   "ci95": [
+    -0.023,
+    -0.0007
+   ],
+   "per_seed": {
+    "8421": -0.011637307287607297
+   },
+   "verdict": "PASS"
+  },
+  "cost": {
+   "candidate_seconds": 6074.3,
+   "baseline_seconds": 6941.3,
+   "ratio": 0.875,
+   "verdict": "PASS"
+  }
+ },
+ "soundness": {
+  "contradictions": [],
+  "unsafe_not_replayed": [],
+  "line_fail": 0,
+  "unsafe": 14,
+  "transitions": {
+   "SAFE->SAFE": 1602,
+   "UNKNOWN->SAFE": 66,
+   "UNKNOWN->UNKNOWN": 44,
+   "UNKNOWN->UNSAFE": 2,
+   "UNSAFE->UNSAFE": 12
+  },
+  "legacy_4m": {
+   "SAFE:frozen4M_SAFE": 60,
+   "SAFE:frozen4M_UNKNOWN": 6,
+   "UNSAFE:frozen4M_UNSAFE": 2
+  },
+  "tool": []
+ },
+ "report": {
+  "puct_policy_vct2_50k_tt": {
+   "move_seconds": {
+    "moves": 2644,
+    "p50": 1.294,
+    "p90": 5.249,
+    "p95": 9.259,
+    "p99": 20.455,
+    "max": 35.252
+   },
+   "tree_move_seconds": {
+    "moves": 1726,
+    "p50": 1.674,
+    "p90": 6.101,
+    "p95": 12.673,
+    "p99": 22.579,
+    "max": 35.252
+   },
+   "root_check_seconds": {
+    "moves": 1726,
+    "p50": 0.238,
+    "p90": 1.034,
+    "p95": 3.015,
+    "p99": 17.981,
+    "max": 24.162
+   },
+   "v8c_switches": {
+    "proven_loss": 14,
+    "unknown": 29
+   },
+   "table_hits": 10403726
+  },
+  "puct_policy_vct2_50k": {
+   "move_seconds": {
+    "moves": 2646,
+    "p50": 1.223,
+    "p90": 6.391,
+    "p95": 12.243,
+    "p99": 23.541,
+    "max": 36.345
+   },
+   "tree_move_seconds": {
+    "moves": 1694,
+    "p50": 1.623,
+    "p90": 10.198,
+    "p95": 15.403,
+    "p99": 26.004,
+    "max": 36.345
+   },
+   "root_check_seconds": {
+    "moves": 1694,
+    "p50": 0.232,
+    "p90": 3.048,
+    "p95": 11.328,
+    "p99": 19.113,
+    "max": 23.634
+   },
+   "v8c_switches": {
+    "proven_loss": 11,
+    "unknown": 49
+   },
+   "table_hits": 0
+  },
+  "identical_games": 83,
+  "games": 100
+ },
+ "verdict": {
+  "decision": "RUN_8422",
+  "reasons": [
+   "soundness PASS; the other gates are reported, applied from 8421+8422"
+  ]
+ }
+}
