@@ -68,6 +68,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import get_context
 import hashlib
 import json
 from pathlib import Path
@@ -775,7 +776,9 @@ def main(argv=None) -> int:
         for task in pending:
             keep(play_one(task))
     else:
-        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        # spawn, not Linux's default fork: the parent may already hold a CUDA context (value check above),
+        # which a forked worker cannot re-initialize; spawn is also what Windows always used
+        with ProcessPoolExecutor(max_workers=args.workers, mp_context=get_context('spawn')) as pool:
             for future in as_completed([pool.submit(play_one, t) for t in pending]):
                 keep(future.result())
 

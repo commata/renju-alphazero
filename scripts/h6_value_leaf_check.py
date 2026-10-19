@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 import json
 from pathlib import Path
 from statistics import median
@@ -183,7 +184,9 @@ def main(argv=None, factories=None) -> int:
     print(f'[h6-4b] {len(games)} games, {len(tasks)} positions, workers {args.workers}', flush=True)
     progress = Progress('h6-4b', len(tasks), 'positions')
     if args.workers > 1:
-        with ProcessPoolExecutor(max_workers=args.workers, initializer=_init, initargs=init) as pool:
+        # spawn: a forked worker cannot use CUDA once the parent has (and Windows spawns anyway)
+        with ProcessPoolExecutor(max_workers=args.workers, initializer=_init, initargs=init,
+                                 mp_context=get_context('spawn')) as pool:
             rows = [r for c in run_chunks(pool, _chunk, [[t] for t in tasks], progress, len, unit_name='positions')
                     for r in c]
     else:

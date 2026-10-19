@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 import json
 from pathlib import Path
 import sys
@@ -75,7 +76,9 @@ def _pool(fn, tasks, workers, init, label):
     progress = Progress(label, len(tasks), 'checks')
     chunks = [[t] for t in tasks]
     if workers > 1 and tasks:
-        with ProcessPoolExecutor(max_workers=workers, initializer=_init, initargs=init) as pool:
+        # spawn: a forked worker cannot use CUDA once the parent has (and Windows spawns anyway)
+        with ProcessPoolExecutor(max_workers=workers, initializer=_init, initargs=init,
+                                 mp_context=get_context('spawn')) as pool:
             return [r for c in run_chunks(pool, fn, chunks, progress, len, unit_name='checks') for r in c]
     _init(*init)
     out = []

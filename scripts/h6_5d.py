@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import get_context
 import json
 from pathlib import Path
 from random import Random
@@ -246,7 +247,8 @@ def _run(tasks, fn, workers, jsonl: Path | None, label, init=None) -> list[dict]
     chunks = [[t] for t in todo]
     if workers > 1 and todo:
         kwargs = {'initializer': _init, 'initargs': init} if init else {}
-        with ProcessPoolExecutor(max_workers=workers, **kwargs) as pool:
+        # spawn: a forked worker cannot use CUDA once the parent has (and Windows spawns anyway)
+        with ProcessPoolExecutor(max_workers=workers, mp_context=get_context('spawn'), **kwargs) as pool:
             run_chunks(pool, fn, chunks, progress, len, unit_name='positions', on_result=keep)
     else:
         if init:
