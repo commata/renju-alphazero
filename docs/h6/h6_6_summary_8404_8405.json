@@ -1,0 +1,187 @@
+{
+ "format": "h6-6-summary-v1",
+ "rules": {
+  "stage1_min": 0.5,
+  "adopt_min": 0.55,
+  "pair_low_above": 0.5,
+  "proof_margin": 0.03,
+  "time_ratio_max": 1.5,
+  "colour_min": 0.45,
+  "fast": "fast3",
+  "bootstrap": 10000,
+  "seed": 0
+ },
+ "main": {
+  "arm": "puct_value_vct2_50k",
+  "seeds": [
+   8404,
+   8405
+  ],
+  "games": 100,
+  "wins": 63,
+  "draws": 8,
+  "losses": 29,
+  "score": 0.67,
+  "ci95_wilson": [
+   0.573,
+   0.754
+  ],
+  "ci95_pairs": [
+   0.575,
+   0.76
+  ],
+  "by_colour": {
+   "black": 0.73,
+   "white": 0.61
+  },
+  "safety_violations": [],
+  "proven_loss_in_lost_position_per_move": 0.0163,
+  "losses_with_opponent_vct": 21,
+  "tree_moves": 1578,
+  "tree_status": {
+   "SAFE": 1390,
+   "UNKNOWN": 171,
+   "UNSAFE": 17,
+   "UNCHECKED": 0
+  },
+  "tree_not_safe_rate": 0.1191,
+  "v8c_changed": 69,
+  "root_check_minutes": 67.7,
+  "tree_seconds_median": 0.766,
+  "tree_simulations_per_second": 80.3,
+  "nn_calls_per_tree_move": 0,
+  "prior_fallbacks": 0,
+  "prior_entropy_mean": null,
+  "tree_chose_prior_top_rate": null,
+  "time_ratio": 1.155,
+  "total_game_minutes": 285.7
+ },
+ "aux": {
+  "puct_value_vct2_50k": {
+   "arm": "puct_value_vct2_50k",
+   "seeds": [
+    8404,
+    8405
+   ],
+   "games": 100,
+   "wins": 96,
+   "draws": 2,
+   "losses": 2,
+   "score": 0.97,
+   "ci95_wilson": [
+    0.915,
+    0.99
+   ],
+   "ci95_pairs": [
+    0.94,
+    0.995
+   ],
+   "by_colour": {
+    "black": 0.97,
+    "white": 0.97
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0013,
+   "losses_with_opponent_vct": 2,
+   "tree_moves": 827,
+   "tree_status": {
+    "SAFE": 772,
+    "UNKNOWN": 53,
+    "UNSAFE": 2,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0665,
+   "v8c_changed": 24,
+   "root_check_minutes": 17.2,
+   "tree_seconds_median": 0.784,
+   "tree_simulations_per_second": 75.0,
+   "nn_calls_per_tree_move": 0,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": null,
+   "tree_chose_prior_top_rate": null,
+   "time_ratio": 1.225,
+   "total_game_minutes": 93.1
+  },
+  "puct_policy_vct2_50k": {
+   "arm": "puct_policy_vct2_50k",
+   "seeds": [
+    8404,
+    8405
+   ],
+   "games": 100,
+   "wins": 90,
+   "draws": 5,
+   "losses": 5,
+   "score": 0.925,
+   "ci95_wilson": [
+    0.856,
+    0.962
+   ],
+   "ci95_pairs": [
+    0.875,
+    0.97
+   ],
+   "by_colour": {
+    "black": 0.88,
+    "white": 0.97
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0041,
+   "losses_with_opponent_vct": 4,
+   "tree_moves": 1349,
+   "tree_status": {
+    "SAFE": 1300,
+    "UNKNOWN": 42,
+    "UNSAFE": 7,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0363,
+   "v8c_changed": 44,
+   "root_check_minutes": 17.9,
+   "tree_seconds_median": 1.048,
+   "tree_simulations_per_second": 52.2,
+   "nn_calls_per_tree_move": 61.7,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.528,
+   "tree_chose_prior_top_rate": 0.592,
+   "time_ratio": 1.129,
+   "total_game_minutes": 150.9
+  }
+ },
+ "proof_4m": {
+  "UNSAFE": {
+   "target": "UNSAFE",
+   "openings": 100,
+   "candidate_rate": 0.0024,
+   "baseline_rate": 0.0059,
+   "diff": -0.0035,
+   "ci95": [
+    -0.0087,
+    0.001
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  },
+  "UNKNOWN": {
+   "target": "UNKNOWN",
+   "openings": 100,
+   "candidate_rate": 0.029,
+   "baseline_rate": 0.0059,
+   "diff": 0.0231,
+   "ci95": [
+    -0.0024,
+    0.0494
+   ],
+   "margin": 0.03,
+   "verdict": "INCONCLUSIVE"
+  }
+ },
+ "p92_guard": "PASS",
+ "verdict": {
+  "decision": "INCONCLUSIVE",
+  "reasons": [
+   "4M UNKNOWN interval [-0.0024, 0.0494] not below +0.03",
+   "run 8406 once"
+  ]
+ }
+}
