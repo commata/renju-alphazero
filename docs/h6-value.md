@@ -1383,6 +1383,111 @@ python scripts\h6_5d.py judge --d2 docs\h6\h6_5d_d2.json --d3 docs\h6\h6_5d_d3.j
 - transposition·ordering 같은 노드 절감 변경을 H6 안에서 하는 것(엔진 변경, H7 후보).
 - λ = 0.5, value v4(H6-5D 판정 C의 사전 대응에 따라 보류).
 
+## H6-6 확정 프로토콜 (2026-10-19, 8404 대국 전에 고정)
+
+사용자 결정: **(b) 엔진은 그대로 + fast3 정확 가속 + guard v2로 새 seed 재평가.** 후보는 그대로다(v3 + D4, λ = 1.0, c 1.5, 기존 V8-C 예산). 두 엔진 모두 fast3로 돌린다. 실행 환경은 데스크톱 Ubuntu(WSL2)다.
+
+**사용자 검토 반영과 보정**
+- **guard v2 통계 기준 수정(사용자 지적이 맞음).** 앞 초안의 "95% 하한 ≤ 0"은 비열등 판정에 맞지 않는다. 후보가 얼마나 더 나쁠 수 있는지를 봐야 하므로 **상한**을 쓴다.
+  - 상한 ≤ +3%p면 PASS, 하한 > +3%p면 REJECT, 그 사이는 INCONCLUSIVE.
+  - margin은 H6-5에서 쓰던 3%p를 그대로 옮긴다(새로 맞추지 않음).
+- **4M UNSAFE와 4M UNKNOWN을 따로 판정한다.** UNKNOWN은 위험이 아니라 증명 난이도·비용이다.
+- **첫 seed에서는 4M guard로 탈락시키지 않는다.** 8403에서 50대국 구간이 너무 넓었기 때문이다. 8404에서는 계산·보고만 하고, 8404 + 8405(100대국)부터 적용한다.
+- **H6-6b(예산 2× / 5× / 10× 표)는 H6에서 뺀다.** 엔진 변경 설계 자료이므로 H7 엔진 후보 작업으로 넘긴다. H6-6b는 guard v2를 고정하는 단계로 바꾼다.
+- **fast3 가속 배수는 엔진마다 다를 수 있다**(value 쪽이 어려운 V8-C 검사를 더 만난다). 그래서 시간 비교는 H6-6 안에서 fast3 대 fast3로만 한다. H6-5(Windows, off)의 절대 시간과 비교해 판정하지 않는다.
+- **확인하지 못한 전제:** "같은 데스크톱에서 Ubuntu fast3가 Windows보다 빠르다"는 이 저장소에 측정 기록이 없다(기록된 1.7–1.8배는 데스크톱 대 SER5). 판정에는 영향이 없으므로 따로 재지 않는다. OS 비교 실험은 하지 않는다.
+
+**H6-6a 구현과 검증 (이 커밋)**
+- `--fast off|fast2|fast3`(기본 off)을 `run_mcts_v8_benchmark.py`, `run_s1_probes.py`, `h6_value_leaf_check.py`, `h6_5d.py`(`d2`, `d3`)에 넣었다.
+  - 모든 worker에서 `hybrid.h6_fast.install`을 실행한다. native 빌드가 없거나 낡았으면 시작 전에 멈춘다.
+  - 결과 파일에 `fast`(요청 모드, 실제로 바인딩된 함수, fast3면 native 빌드 기록: Python, SOABI, 컴파일러, 플래그, 소스·모듈 SHA256)를 남긴다.
+  - off로 돈 결과 파일은 바뀌지 않는다(게임 기록에도 off면 아무것도 더하지 않음).
+- 동일성 검증 도구: `scripts/h6_6_fast_check.py`. 세 부분이 모두 같아야 통과한다.
+  - TB-Engine-v1 회귀 fixture
+  - H6-5D d2의 V8-C 재검사 전부(표준 99개 + 4M 일부): 상태, 노드 수, 호출 수, cut 여부와 종류, 호출당 상한 횟수
+  - H6-5D d3 국면에서 두 엔진의 tree 수·최종 수·방문·Q(checkpoint 필요)
+- **컨테이너(Linux, Python 3.13, gcc -O2) 결과 `docs/h6/h6_6a_fast_check_container.json`: 통과.**
+  - fixture 6 / 6 같음, V8-C 102 / 102 같음(표준 99 + 4M 3).
+  - 시간: 표준 1,065초 대 off 기록 9,465초(8.9배), 4M 51초 대 549초(10.8배). off 기록은 사용자 데스크톱(Windows)에서 쟀으므로 기계 차이가 섞여 있다.
+  - engines 부분은 checkpoint가 없어 여기서 돌리지 않았다. 데스크톱에서 돌린다.
+- 테스트: `tests/test_h6_6_fast.py`(off와 fast2·fast3의 V8-C 결과 동일, native가 없으면 fast3는 건너뜀).
+
+**H6-6b guard v2 (`scripts/summarize_h6_6.py`, 테스트 `tests/test_h6_6_summary.py`)**
+
+| 단계 | 조건 | 판정 |
+|---|---|---|
+| 모든 단계 | 안전 위반 > 0(A·B·C), A의 흑 또는 백 < 0.45, A 시간 비율 > 1.5, P92 guard FAIL | REJECT |
+| 8404 | A 점수 < 0.50 | REJECT |
+| 8404 | A 점수 ≥ 0.50 | 8405 진행. 4M guard는 계산·보고만 |
+| 8404+8405 | 점수 < 0.55, 또는 4M guard 중 하나라도 REJECT | REJECT |
+| 8404+8405 | 점수 ≥ 0.55, 쌍 bootstrap 하한 > 0.5, 4M guard 둘 다 PASS | **ADOPT** |
+| 8404+8405 | 그 외(하한 ≤ 0.5 또는 4M guard INCONCLUSIVE) | INCONCLUSIVE → 8406 한 번 |
+| +8406 | 같은 기준, INCONCLUSIVE면 | REJECT |
+
+- **4M guard:** B·C의 표준 not-SAFE tree 수를 모두 `h6_5d.py d2 --fast fast3`로 4M 재검사한다. 표준에서 SAFE였던 수는 SAFE로 둔다.
+  - 4M UNSAFE 비율과 4M UNKNOWN 비율 각각에 대해 차이(B − C)를 같은 opening(seed / pair / 색) 단위로 bootstrap한다(10,000회, seed 0).
+  - 재검사가 빠진 수가 있거나, d2가 기록된 상태를 재현하지 못하거나, fast3가 아니면 판정하지 않는다.
+- 모든 run과 d2가 `--fast fast3`인지 확인한다. P92 guard는 H6-4b 값(PASS, 0 / 10 대 0 / 10)을 쓴다. 결과가 fast 모드와 무관하므로 다시 재지 않는다.
+- 이 규칙은 8403과 H6-5D 결과를 본 뒤 만들었다. 그래서 8403에는 쓰지 않고 8404부터만 적용한다.
+
+**하지 않는 것:** λ = 0.5, value v4, c 변경, V8-C 예산 변경, transposition·ordering·proof 재사용·종반 solver. 탐색 결과를 바꾸는 V8-C 개선은 모두 H7 엔진 후보로 넘긴다.
+
+**실행 명령 (데스크톱 Ubuntu / WSL2, bash)**
+
+```bash
+cd ~/renju-h6                     # WSL 쪽 checkout (경로는 환경에 맞게)
+git pull --ff-only && git status --short
+source .venv/bin/activate         # Linux venv (Windows .venv-cuda는 쓰지 않는다)
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+python -c "import torch; print(torch.__version__, torch.cuda.is_available())"   # True여야 함
+(cd src && CC=gcc python -m rt30.native.build --if-stale)                      # Ubuntu용 fast3 빌드
+
+# checkpoint와 8403 run 파일을 Windows에서 복사 (경로는 환경에 맞게)
+W="/mnt/c/오목 강화학습"
+mkdir -p runs/h3_policy_64x4 runs/h6_value_head_v3 runs/h6_5 runs/h6_6
+cp "$W/renju-alphazero/runs/h3_policy_64x4/best.pt" "$W/renju-alphazero/runs/h3_policy_64x4/best.json" runs/h3_policy_64x4/
+cp "$W/renju-h6/runs/h6_value_head_v3/best.pt" "$W/renju-h6/runs/h6_value_head_v3/best.json" runs/h6_value_head_v3/
+cp "$W/renju-h6/runs/h6_5/"*_8403.json runs/h6_5/
+sha256sum runs/h6_value_head_v3/best.pt   # a0fcccc4… 이어야 함
+
+# H6-6a: 테스트와 동일성 검증 (짧다)
+python -m unittest tests.test_h6_6_fast tests.test_h6_6_summary tests.test_h6_value_leaf tests.test_tb_engine_v1
+python -u scripts/h6_6_fast_check.py --runs runs/h6_5/value_vs_full_8403.json runs/h6_5/tb1_vs_full_8403.json \
+  --d2 docs/h6/h6_5d_d2.json --d3 docs/h6/h6_5d_d3.json --policy-checkpoint runs/h3_policy_64x4/best.pt \
+  --value-checkpoint runs/h6_value_head_v3/best.pt --value-device cuda --workers 8 \
+  --output docs/h6/h6_6a_fast_check.json 2>&1 | tee runs/h6_6/fast_check.log
+# "pass": true 가 아니면 멈추고 결과를 보여준다
+```
+
+```bash
+# H6-6c: seed 8404 (A, B, C 모두 fast3)
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; SEED=8404; W=8
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:puct_policy_vct2_50k \
+  --opponent-puct-c 1.5 --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --value-checkpoint $VAL --value-device cuda --games-jsonl runs/h6_6/value_vs_tb1_$SEED.jsonl \
+  --output runs/h6_6/value_vs_tb1_$SEED.json 2>&1 | tee runs/h6_6/value_vs_tb1_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h6_6/value_vs_full_$SEED.jsonl --output runs/h6_6/value_vs_full_$SEED.json 2>&1 | tee runs/h6_6/value_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h6_6/tb1_vs_full_$SEED.jsonl --output runs/h6_6/tb1_vs_full_$SEED.json 2>&1 | tee runs/h6_6/tb1_vs_full_$SEED.log
+
+# 4M 재검사 (B, C의 표준 not-SAFE tree 수)
+python -u scripts/h6_5d.py d2 --runs runs/h6_6/value_vs_full_$SEED.json runs/h6_6/tb1_vs_full_$SEED.json \
+  --fast fast3 --workers 12 --jsonl runs/h6_6/d2_$SEED.jsonl --output docs/h6/h6_6_d2_$SEED.json 2>&1 | tee runs/h6_6/d2_$SEED.log
+
+# 판정 (8404 단계)
+python scripts/summarize_h6_6.py --main runs/h6_6/value_vs_tb1_8404.json \
+  --aux runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+  --d2 docs/h6/h6_6_d2_8404.json --p92 docs/h6/h6_4b_s1_probes.json --output docs/h6/h6_6_summary_8404.json
+```
+
+- `RUN_8405`가 나오면 `SEED=8405`로 A·B·C와 d2를 돌린다. 판정은 두 seed를 모두 넣는다(`--main …8404.json …8405.json`, `--aux` 네 파일, `--d2` 두 파일, `--output docs/h6/h6_6_summary.json`).
+- 중단되면 같은 명령을 다시 실행한다. `--games-jsonl`과 `--jsonl`에서 끝난 것은 건너뛴다.
+- `W=8`은 i5-12600K(6P + 4E, 16스레드) 기준 제안이다. 각 worker가 CUDA로 value를 올리므로 GPU 메모리가 부족하면 줄인다.
+- 커밋할 것: `docs/h6/h6_6a_fast_check.json`, `docs/h6/h6_6_d2_*.json`, `docs/h6/h6_6_summary*.json`. run 파일은 `runs/`에 두고, 요약에 sha256을 남긴다.
+
 ## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
 
 **D1 D4 분해**

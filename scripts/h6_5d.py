@@ -132,7 +132,16 @@ def check_status(moves, move, budget: dict) -> dict:
             'per_call_limit_hits': solver.vcf_exhausted, 'seconds': round(perf_counter() - started, 2)}
 
 
+def _ensure_fast(mode: str) -> None:
+    """Install the exact solver speed-up in this worker (idempotent; same statuses, nodes and cuts)."""
+    if mode != 'off':
+        from hybrid.h6_fast import install, installed_mode
+        if installed_mode() != mode:
+            install(mode)
+
+
 def d2_task(task: dict) -> dict:
+    _ensure_fast(task.get('fast', 'off'))
     std = check_status(task['moves'], task['tree_move'], task['standard'])
     large = check_status(task['moves'], task['tree_move'], task['large']) if std['status'] != 'SAFE' else std
     return {'id': task['id'], 'arm': task['arm'], 'set': task['set'], 'game_key': task['game_key'],
@@ -180,6 +189,7 @@ def _search(engine: str, game: Game, seed: int) -> dict:
 
 
 def d3_task(task: dict) -> dict:
+    _ensure_fast(task.get('fast', 'off'))
     from scripts.run_mcts_v8_benchmark import derive_seed
     game = replay(task['moves'])
     seed = derive_seed(20261019, 'h6-5d', task['id'])
@@ -367,6 +377,8 @@ def main(argv=None, factories=None) -> int:
         p.add_argument('--workers', type=int, default=1)
         p.add_argument('--jsonl', type=Path, help='per-position results, appended as they finish (resume)')
         p.add_argument('--limit', type=int, help='first N positions (smoke runs)')
+        p.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off',
+                       help='exact solver speed-up in every worker (hybrid.h6_fast); results are the same')
         p.add_argument('--output', type=Path, required=True)
     p3.add_argument('--d2', type=Path, help='d2 output: statuses of the same (position, move) are reused')
     p3.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
@@ -386,9 +398,14 @@ def main(argv=None, factories=None) -> int:
         runs = load_runs(args.runs)
         positions = [p for r in runs for p in tree_positions(r)]
         sources = {str(p): r['arm'] for p, r in zip(args.runs, runs)}
+        if args.fast != 'off':
+            try:
+                _ensure_fast(args.fast)  # fail before any task (native build missing or stale)
+            except RuntimeError as exc:
+                parser.error(str(exc))
         if args.step == 'd2':
             tasks = [{**p, 'set': 'main' if p['recorded_status'] == 'UNKNOWN' else 'control',
-                      'standard': STANDARD, 'large': LARGE}
+                      'standard': STANDARD, 'large': LARGE, 'fast': args.fast}
                      for p in positions if p['recorded_status'] in ('UNKNOWN', 'UNSAFE')][:args.limit]
             rows = _run(tasks, _chunk_d2, args.workers, args.jsonl, 'h6-5d d2')
             summary = summarize_d2(rows)
@@ -403,12 +420,14 @@ def main(argv=None, factories=None) -> int:
                         'standard_nodes': r['standard']['nodes'], 'large_nodes': r['large']['nodes']}
             bad = [{**p, 'kind': 'not_safe'} for p in positions if p['recorded_status'] in ('UNKNOWN', 'UNSAFE')]
             controls = [{**p, 'kind': 'control'} for p in match_controls(positions)]
-            tasks = [{**p, 'standard': STANDARD, 'large': LARGE, 'known': known.get(p['id'], {})}
+            tasks = [{**p, 'standard': STANDARD, 'large': LARGE, 'known': known.get(p['id'], {}), 'fast': args.fast}
                      for p in bad + controls][:args.limit]
             init = (args.policy_checkpoint, args.value_checkpoint, args.value_device, factories)
             rows = _run(tasks, _chunk_d3, args.workers, args.jsonl, 'h6-5d d3', init)
             summary = summarize_d3(rows)
+        from scripts.run_mcts_v8_benchmark import _fast_provenance
         result = {'format': FORMAT, 'step': args.step, 'standard': STANDARD, 'large': LARGE, 'sources': sources,
+                  'fast': _fast_provenance(args.fast),
                   'summary': summary, 'rows': rows}
     text = json.dumps(result, indent=1) + '\n'
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -36,7 +36,7 @@ from analysis.mcts_v8_agent import MCTSV8Agent  # noqa: E402
 from analysis.mcts_v8 import V8_DEFAULTS  # noqa: E402
 from renju import Game  # noqa: E402
 from scripts.run_mcts_v8_benchmark import (  # noqa: E402
-    ARMS, _git_commit, derive_seed, is_puct, load_policy, load_value, needs_policy, needs_value, provenance,
+    ARMS, _fast_provenance, _git_commit, derive_seed, is_puct, load_policy, load_value, needs_policy, needs_value, provenance,
     v8_config,
 )
 
@@ -217,12 +217,20 @@ def main(argv=None) -> int:
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     parser.add_argument('--value-checkpoint', help="H6-2a' v3 best.pt for the value arm")
     parser.add_argument('--value-device', default='cpu')
+    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off',
+                        help='exact solver speed-up (hybrid.h6_fast); results are the same')
     parser.add_argument('--simulations', type=int, help='smoke tests only')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
     if args.seeds < 1:
         parser.error('--seeds must be positive')
+    if args.fast != 'off':
+        from hybrid.h6_fast import install
+        try:
+            install(args.fast)
+        except RuntimeError as exc:
+            parser.error(str(exc))
     probe_file = json.loads(args.probes.read_text(encoding='utf-8'))
     moves = [tuple(m) for m in probe_file['moves']]
     overrides = {k: v for k, v in (('simulations', args.simulations),
@@ -258,7 +266,8 @@ def main(argv=None) -> int:
                'provenance': provenance(args.policy_checkpoint if policy is not None else None,
                                         args.value_checkpoint if leaf is not None else None),
                'probes': str(args.probes), 'arms': args.arms, 'seeds': args.seeds, 'base_seed': args.base_seed,
-               'puct_c': args.puct_c, 'overrides': overrides, 'summary': summary, 'runs': records}
+               'puct_c': args.puct_c, 'overrides': overrides, 'fast': _fast_provenance(args.fast),
+               'summary': summary, 'runs': records}
     print(json.dumps(summary, indent=1, ensure_ascii=False), flush=True)
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

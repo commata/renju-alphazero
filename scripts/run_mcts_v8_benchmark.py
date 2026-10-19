@@ -53,6 +53,10 @@ Every V8 move records its route, time and module diagnostics. With
 would have played there (a separate random stream, so the game itself does not
 change) and whether that V7 move is itself a proven VCT1 attack.
 
+``--fast fast2|fast3`` installs the exact solver speed-ups of ``hybrid.h6_fast`` in every worker (same
+moves, node counts and budget cuts; only the time differs). The mode is recorded in the output and in each
+game line (off adds nothing, so older files are unchanged).
+
 Games are written one JSON line each to ``--games-jsonl`` as they finish; a rerun
 with the same file skips finished games (resume). ``--workers`` plays games in
 parallel processes. The summary (``--output``) is built from every matching line.
@@ -320,6 +324,9 @@ def _counterfactual(game: Game, seed: int, ply: int, config: dict) -> dict:
 
 def play_one(task: dict) -> dict:
     """One game; ``task`` is a plain dict so it can cross process boundaries."""
+    if task.get('fast', 'off') != 'off':  # exact solver speed-up (hybrid.h6_fast): same moves, nodes and cuts
+        from hybrid.h6_fast import install
+        install(task['fast'])
     config = v8_config(task['arm'], task.get('v8_overrides'))
     search = {k: config[k] for k in SEARCH_KEYS}
     seed, v8_color = task['seed'], task['v8_color']
@@ -373,6 +380,7 @@ def play_one(task: dict) -> dict:
         'v8_moves': v8_moves, 'opponent_move_seconds': opp_seconds, 'opponent_routes': opp_routes,
         **({'opponent_vct2_attack': opp_attack2} if opponent_attack_budget(opponent) is not None else {}),
         'game_seconds': round(perf_counter() - started_game, 2),
+        **({'fast': task['fast']} if task.get('fast', 'off') != 'off' else {}),
     }
 
 
@@ -397,6 +405,7 @@ def build_tasks(args) -> tuple[list[dict], list[dict]]:
                 'v8_overrides': {**args.search_overrides, **arm_overrides},
                 'v7_overrides': getattr(args, 'opponent_overrides', args.search_overrides),
                 'policy_checkpoint': args.policy_checkpoint,
+                **({'fast': args.fast} if getattr(args, 'fast', 'off') != 'off' else {}),
                 **({'value_checkpoint': args.value_checkpoint, 'value_device': args.value_device}
                    if getattr(args, 'value_checkpoint', None) else {}),
             })
@@ -629,6 +638,11 @@ def file_sha256(path) -> str | None:
     return digest.hexdigest()
 
 
+def _fast_provenance(mode: str) -> dict:
+    from hybrid.h6_fast import provenance as fast_provenance
+    return fast_provenance(mode)
+
+
 def provenance(policy_checkpoint, value_checkpoint=None) -> dict:
     """What a result depends on besides the code: tree state and the exact policy bytes (§12.19)."""
     checkpoint = Path(policy_checkpoint) if policy_checkpoint else None
@@ -693,6 +707,8 @@ def main(argv=None) -> int:
                         help='tested arm only: tactical simulations (time-matched check, §12.16)')
     parser.add_argument('--value-checkpoint', help="H6-2a' v3 best.pt for the value arm (best.json next to it)")
     parser.add_argument('--value-device', default='cpu', help='device of the value leaf (cpu / cuda)')
+    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off',
+                        help='exact solver speed-up in every worker (hybrid.h6_fast); results are the same')
     parser.add_argument('--simulations', type=int, help='smoke tests only: both engines')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only: both engines')
     args = parser.parse_args(argv)
@@ -734,6 +750,12 @@ def main(argv=None) -> int:
                                             ('tactical_simulations', args.arm_tactical_simulations))
                           if v is not None}
 
+    if args.fast != 'off':
+        from hybrid.h6_fast import install
+        try:
+            install(args.fast)  # fail before any game starts (e.g. native build missing or stale)
+        except RuntimeError as exc:
+            parser.error(str(exc))
     tasks, openings = build_tasks(args)
     finished = load_finished(args.games_jsonl, {t['key'] for t in tasks})
     pending = [t for t in tasks if t['key'] not in finished]
@@ -773,6 +795,7 @@ def main(argv=None) -> int:
                                                                         **args.arm_overrides}),
         'policy_checkpoint': payload_checkpoint,
         'provenance': provenance(payload_checkpoint, args.value_checkpoint),
+        'fast': _fast_provenance(args.fast),
         'value_checkpoint': args.value_checkpoint,
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': opponent_config(args.opponent, args.opponent_overrides),

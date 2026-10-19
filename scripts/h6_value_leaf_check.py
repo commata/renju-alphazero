@@ -36,7 +36,7 @@ for path in (ROOT / 'src', ROOT):
 from hybrid.progress import Progress, run_chunks  # noqa: E402
 from renju import Game  # noqa: E402
 from scripts.run_mcts_v8_benchmark import (  # noqa: E402
-    _git_commit, _git_dirty, derive_seed, file_sha256, root_q,
+    _fast_provenance, _git_commit, _git_dirty, derive_seed, file_sha256, root_q,
 )
 
 FORMAT = 'h6-4b-check-v1'
@@ -57,7 +57,10 @@ def sample_positions(games: list[dict], per_game: int) -> list[dict]:
     return out
 
 
-def _init(policy_checkpoint, value_checkpoint, value_device, allow_unfrozen, factories=None):
+def _init(policy_checkpoint, value_checkpoint, value_device, allow_unfrozen, factories=None, fast='off'):
+    if fast != 'off':  # exact solver speed-up, installed in every worker (hybrid.h6_fast)
+        from hybrid.h6_fast import install
+        install(fast)
     if factories is not None:  # tests: torch-free stand-ins
         _WORKER.update(factories)
         return
@@ -156,6 +159,8 @@ def main(argv=None, factories=None) -> int:
     parser.add_argument('--value-checkpoint', required=factories is None)
     parser.add_argument('--value-device', default='cpu')
     parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off',
+                        help='exact solver speed-up (hybrid.h6_fast); results are the same')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--allow-dirty', action='store_true', help='tests / smoke only, recorded')
     parser.add_argument('--allow-unfrozen', action='store_true', help='tests only: skip the value sha check')
@@ -174,7 +179,7 @@ def main(argv=None, factories=None) -> int:
         sources[str(path)] = {'sha256': file_sha256(path), 'seed': data.get('seed'), 'games': len(data['games'])}
     positions = sample_positions(games, args.per_game)[:args.limit]
     tasks = [{**p, 'seed': args.seed} for p in positions]
-    init = (args.policy_checkpoint, args.value_checkpoint, args.value_device, args.allow_unfrozen, factories)
+    init = (args.policy_checkpoint, args.value_checkpoint, args.value_device, args.allow_unfrozen, factories, args.fast)
     print(f'[h6-4b] {len(games)} games, {len(tasks)} positions, workers {args.workers}', flush=True)
     progress = Progress('h6-4b', len(tasks), 'positions')
     if args.workers > 1:
@@ -189,7 +194,7 @@ def main(argv=None, factories=None) -> int:
             progress.update(1)
     summary = summarize(rows, games)
     payload = {'format': FORMAT, 'verdict': None, 'git_commit': _git_commit(), 'git_dirty': dirty,
-               'sources': sources, 'per_game': args.per_game, 'seed': args.seed, 'value_device': args.value_device,
+               'sources': sources, 'fast': _fast_provenance(args.fast), 'per_game': args.per_game, 'seed': args.seed, 'value_device': args.value_device,
                'policy_checkpoint_sha256': file_sha256(args.policy_checkpoint) if factories is None else None,
                'value_checkpoint_sha256': file_sha256(args.value_checkpoint) if args.value_checkpoint else None,
                'summary': summary, 'positions': rows}
