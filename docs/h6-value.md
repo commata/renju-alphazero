@@ -2219,7 +2219,7 @@ python scripts/summarize_h7_e2.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7
 
 **결론:** TB-Engine-v1-T를 **TB-Engine-v2**로 채택한다. 동결 절차와 E3는 아래 설계를 따른다. H6-6 REJECT는 그대로다.
 
-## TB-Engine-v2 동결과 H7-E3 설계 방향 (2026-10-19, 초안, 승인 대기)
+## TB-Engine-v2 동결과 H7-E3 설계 방향 (2026-10-19, 초안 → 아래 확정으로 대체)
 
 **1. TB-Engine-v2 동결 (E3 전에)**
 - `src/analysis/tb_engine_v2.py`를 만든다.
@@ -2259,6 +2259,106 @@ python scripts/summarize_h7_e2.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7
 - E3 결과로 B-engine + B-net 조합을 정한다.
   - ADOPT면 TB-V2-Value, REJECT면 TB-Engine-v2(rollout).
 - 그다음 같은 착수 시간 단축 최적화(정확 가속만), 동결, 웹 deadline 판(미니 PC 30초)과 H7-c1 self-play를 병행한다.
+
+## TB-Engine-v2 동결 (2026-10-19, 커밋 `2e25a5f`)
+
+사용자 검토의 잠금 조건 셋을 반영했다.
+- **설정을 모두 적었다.** `src/analysis/tb_engine_v2.py`의 `TB_ENGINE_V2`는 TB-Engine-v1과 같은 방식으로 모든 값을 문자 그대로 적었다. `TB_ENGINE_V1`에서 파생하지 않는다. `ENGINE_OPTIONS = {'root_vcf_table': True}`.
+- **table 구현이 엔진 identity에 들어간다.**
+  - `VCF_TABLE_SHA256`은 `src/analysis/vcf_tt_v1.py`의 SHA-256이다(`68937a5f…`).
+  - `config_hash`는 설정, `ENGINE_OPTIONS`, table 모듈 이름, table SHA를 함께 덮는다.
+  - `tests/test_tb_engine_v2.py`가 실제 파일 SHA와 상수가 같은지 검사한다.
+- 같은 테스트가 다음도 검사한다.
+  - 설정이 TB-Engine-v1 / TB-Engine-v1-T와 같은지, 키가 `V8_DEFAULTS`와 같은지
+  - 근거 파일(E1 `go`, E2 `ADOPT` 8421 + 8422)
+  - agent 설정
+  - fixture 국면의 착수
+- CLAUDE.md의 frozen 목록에 `tb_engine_v2.py`, `vcf_tt_v1.py`를 더했다.
+- 동결 커밋은 E3 도구 커밋과 분리했다. 이후 E3에 필요한 기능은 runner와 진단 도구에만 넣는다(frozen 파일 미수정).
+
+## H7-E3 확정: value v3를 TB-Engine-v2 위에서 (2026-10-19, 실행 전 고정)
+
+사용자 검토에서 동결 절차와 E3 프로토콜이 승인됐다. 추가 잠금 조건(d2 `--table`은 실제 엔진과 같은 call-local 의미)을 반영했다.
+- 도구: `scripts/summarize_h7_e3.py`, `h6_5d.py d2 --table --legacy-frozen`, `run_mcts_v8_benchmark.py`(arm과 상대), `run_s1_probes.py`(`h7_e3_p92_guard`)
+- 테스트: `tests/test_h7_e3.py`
+- seed: 8407, 8408, 8409를 `RESERVED_SEEDS`에 넣었다.
+
+**엔진**
+- 후보 **TB-V2-Value**(`puct_value_vct2_50k_tt`) = TB-Engine-v2 + value leaf v3
+  - `tree_mode="puct_value"`, λ 1.0, D4 평균, v3 checkpoint SHA 검사
+  - H3 policy, c 1.5, VCT2 50k, `root_vcf_table` on
+- 기준과 주 상대 **TB-Engine-v2**(`puct_policy_vct2_50k_tt`, `--opponent v8:puct_policy_vct2_50k_tt --opponent-puct-c 1.5`)
+  - 상대 agent에도 `root_vcf_table`이 넘어간다.
+  - value arm은 여전히 상대로 쓸 수 없다.
+
+**run (seed마다)**
+- A: 후보 대 TB-Engine-v2
+- B: 후보 대 `v8:full`
+- C: TB-Engine-v2 대 `v8:full`
+- 모두 25 pair, `--fast fast3`, `--puct-c 1.5`. H6-6과 같다.
+
+**guard v2 (숫자와 논리 그대로)**
+- `summarize_h7_e3.py`는 `summarize_h6_6`의 `RULES`를 그대로 가져온다.
+- 판정은 `summarize_h6_6.decide`를 같은 입력으로 부른 결과다. seed 8407 / 8408 / 8409를 8404 / 8405 / 8406 자리에 둔다.
+- 테스트가 H6-6 판정 사례 전부에서 두 결과가 같은지 확인한다.
+
+| 항목 | 기준 |
+|---|---|
+| hard | safety violation 0(모든 run) |
+| basic | A의 흑·백 각각 ≥ 0.45, 시간 비 ≤ 1.5, P92 guard가 FAIL이 아님 |
+| proof | 4M UNSAFE와 4M UNKNOWN 각각, 비율 차이 B − C, opening 짝 bootstrap. 상한 ≤ +3%p PASS, 하한 > +3%p REJECT, 그 사이 INCONCLUSIVE |
+| 8407 | hard / basic FAIL 또는 score < 0.50 → REJECT, 아니면 8408(proof는 보고만) |
+| 8407 + 8408 | hard / basic FAIL, score < 0.55, proof REJECT → REJECT. score ≥ 0.55, 짝 하한 > 0.50, 두 proof PASS → ADOPT. 그 밖 → 8409 한 번 |
+| 세 seed | 같은 ADOPT 조건, 그 밖 → REJECT |
+
+**엔진을 따라 바뀌는 것 두 가지 (그 밖은 그대로)**
+1. **공식 4M 재검사 = TB-Engine-v2의 solver at 4M.** `h6_5d.py d2 --table`이다.
+   - 국면마다 새 solver를 만들고, VCF 호출마다 새 table을 쓴다(`make_find()`). 국면, 수, 결정 사이에 아무것도 공유하지 않는다. 대국 중 V8-C 루트 solver와 같은 call-local 의미다.
+   - 예산(STANDARD, LARGE)은 그대로다.
+   - 표준 재현 검사(`replay_kind`)도 table로 한다. 기록 상태가 table solver에서 나왔기 때문이다.
+2. **legacy frozen 4M**(`--legacy-frozen`)도 같은 수를 table 없이 다시 검사한다. 같은 두 proof guard를 계산하되 보고만 한다(`proof_4m_legacy_frozen`).
+- P92 guard: 같은 규칙으로 TB-V2-Value 대 TB-Engine-v2를 본다(`h7_e3_p92_guard`, 10 seed, c 1.5).
+- 요약 도구는 거부 조건을 검사한다: run이 TB-Engine-v2(`root_vcf_table`)가 아님, c ≠ 1.5, fast3가 아님, d2가 `--table --legacy-frozen`이 아님, d2 재현 불일치. 하나라도 걸리면 판정하지 않는다.
+
+**기대치:** E1 참고값(4M UNKNOWN 차이 약 +1%p)은 예측이 아니다. value가 다른 수를 고르면 증명 분포 자체가 달라질 수 있다. 남은 꼬리 17개 중 15개가 value 쪽이었다. 통과를 기대하지 않는다.
+
+**실행 명령 (데스크톱 Ubuntu, 8407)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_tb_engine_v2 tests.test_h7_e3 tests.test_h7_e2 tests.test_tb_engine_v1 tests.test_h6_value_leaf
+mkdir -p runs/h7_e3 docs/h7
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; SEED=8407; W=8
+# P92 guard (한 번만)
+python -u scripts/run_s1_probes.py --arms puct_policy_vct2_50k_tt puct_value_vct2_50k_tt --seeds 10 --puct-c 1.5 \
+  --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda --fast fast3 \
+  --output docs/h7/h7_e3_p92.json 2>&1 | tee runs/h7_e3/p92.log
+# A, B, C
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k_tt --puct-c 1.5 --opponent v8:puct_policy_vct2_50k_tt \
+  --opponent-puct-c 1.5 --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --value-checkpoint $VAL --value-device cuda --games-jsonl runs/h7_e3/value_vs_tb2_$SEED.jsonl \
+  --output runs/h7_e3/value_vs_tb2_$SEED.json 2>&1 | tee runs/h7_e3/value_vs_tb2_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h7_e3/value_vs_full_$SEED.jsonl --output runs/h7_e3/value_vs_full_$SEED.json 2>&1 | tee runs/h7_e3/value_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h7_e3/tb2_vs_full_$SEED.jsonl --output runs/h7_e3/tb2_vs_full_$SEED.json 2>&1 | tee runs/h7_e3/tb2_vs_full_$SEED.log
+# 4M 재검사 (공식: table, 보고: frozen)
+python -u scripts/h6_5d.py d2 --runs runs/h7_e3/value_vs_full_$SEED.json runs/h7_e3/tb2_vs_full_$SEED.json \
+  --table --legacy-frozen --fast fast3 --workers 12 --jsonl runs/h7_e3/d2_$SEED.jsonl \
+  --output docs/h7/h7_e3_d2_$SEED.json 2>&1 | tee runs/h7_e3/d2_$SEED.log
+python scripts/summarize_h7_e3.py --main runs/h7_e3/value_vs_tb2_$SEED.json \
+  --aux runs/h7_e3/value_vs_full_$SEED.json runs/h7_e3/tb2_vs_full_$SEED.json \
+  --d2 docs/h7/h7_e3_d2_$SEED.json --p92 docs/h7/h7_e3_p92.json --output docs/h7/h7_e3_summary_$SEED.json
+```
+
+- A·B·C는 H6-6처럼 차례로 돌린다. 시간 비는 A에서 상대와 비교한다.
+- d2는 H6-6보다 약 두 배 걸린다(not-SAFE 수마다 4M을 table과 frozen으로 두 번).
+- 커밋할 것: `docs/h7/h7_e3_p92.json`, `docs/h7/h7_e3_d2_8407.json`, `docs/h7/h7_e3_summary_8407.json`
+- 판정이 `RUN_8408`이면 `SEED=8408`로 A·B·C·d2를 돌린다(P92는 다시 돌리지 않음). 그다음 요약에 두 seed의 파일을 모두 넘겨 `docs/h7/h7_e3_summary_8407_8408.json`으로 쓴다.
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 

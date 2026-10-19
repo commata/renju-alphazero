@@ -115,11 +115,17 @@ def replay(moves) -> Game:
 
 # ---------- V8-C status ----------
 
-def check_status(moves, move, budget: dict) -> dict:
+def check_status(moves, move, budget: dict, table: bool = False) -> dict:
+    """V8-C check of ``move`` with a fresh solver. ``table``: the solver's VCF calls use the call-local no-win
+    table of TB-Engine-v2 (``analysis.vcf_tt_v1``), as its root solver does (H7-E3); nothing is shared
+    between checks."""
     from analysis.mcts_v8 import _BudgetedSolver
     game = replay(moves)
     solver = _BudgetedSolver(node_limit=budget['node_limit'], call_limit=budget['call_limit'],
                              node_budget=budget['node_budget'])
+    if table:
+        from analysis.vcf_tt_v1 import make_find
+        solver.vcf_search = make_find()
     started = perf_counter()
     status = solver.status_after(game, tuple(move), budget['share'], budget['call_share'])
     node_cap = budget['node_budget'] if budget['share'] is None else budget['share']
@@ -164,12 +170,16 @@ def replay_kind(recorded: str, standard: str, large: str) -> str:
 
 def d2_task(task: dict) -> dict:
     _ensure_fast(task.get('fast', 'off'))
-    std = check_status(task['moves'], task['tree_move'], task['standard'])
-    large = check_status(task['moves'], task['tree_move'], task['large']) if std['status'] != 'SAFE' else std
-    return {'id': task['id'], 'arm': task['arm'], 'set': task['set'], 'game_key': task['game_key'],
-            'game_kind': task['game_kind'], 'ply': task['ply'], 'tree_move': task['tree_move'],
-            'recorded_status': task['recorded_status'], 'standard': std,
-            'replay': replay_kind(task['recorded_status'], std['status'], large['status']), 'large': large}
+    table = task.get('table', False)
+    std = check_status(task['moves'], task['tree_move'], task['standard'], table)
+    large = check_status(task['moves'], task['tree_move'], task['large'], table) if std['status'] != 'SAFE' else std
+    row = {'id': task['id'], 'arm': task['arm'], 'set': task['set'], 'game_key': task['game_key'],
+           'game_kind': task['game_kind'], 'ply': task['ply'], 'tree_move': task['tree_move'],
+           'recorded_status': task['recorded_status'], 'table': table, 'standard': std,
+           'replay': replay_kind(task['recorded_status'], std['status'], large['status']), 'large': large}
+    if task.get('legacy'):  # H7-E3: the frozen 4M recheck of the same move, reported only
+        row['legacy_large'] = check_status(task['moves'], task['tree_move'], task['large'])
+    return row
 
 
 # ---------- d3 ----------
@@ -406,6 +416,9 @@ def main(argv=None, factories=None) -> int:
         p.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off',
                        help='exact solver speed-up in every worker (hybrid.h6_fast); results are the same')
         p.add_argument('--output', type=Path, required=True)
+    p2.add_argument('--table', action='store_true',
+                    help="H7-E3: recheck with TB-Engine-v2's call-local VCF no-win table (runs of TB-Engine-v2 arms)")
+    p2.add_argument('--legacy-frozen', action='store_true', help='H7-E3: also the frozen 4M recheck (reported only)')
     p3.add_argument('--d2', type=Path, help='d2 output: statuses of the same (position, move) are reused')
     p3.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     p3.add_argument('--value-checkpoint')
@@ -431,7 +444,8 @@ def main(argv=None, factories=None) -> int:
                 parser.error(str(exc))
         if args.step == 'd2':
             tasks = [{**p, 'set': 'main' if p['recorded_status'] == 'UNKNOWN' else 'control',
-                      'standard': STANDARD, 'large': LARGE, 'fast': args.fast}
+                      'standard': STANDARD, 'large': LARGE, 'fast': args.fast,
+                      'table': args.table, 'legacy': args.legacy_frozen}
                      for p in positions if p['recorded_status'] in ('UNKNOWN', 'UNSAFE')][:args.limit]
             rows = _run(tasks, _chunk_d2, args.workers, args.jsonl, 'h6-5d d2')
             summary = summarize_d2(rows)
@@ -454,6 +468,7 @@ def main(argv=None, factories=None) -> int:
         from scripts.run_mcts_v8_benchmark import _fast_provenance
         result = {'format': FORMAT, 'step': args.step, 'standard': STANDARD, 'large': LARGE, 'sources': sources,
                   'fast': _fast_provenance(args.fast),
+                  **({'table': args.table, 'legacy_frozen': args.legacy_frozen} if args.step == 'd2' else {}),
                   'summary': summary, 'rows': rows}
     text = json.dumps(result, indent=1) + '\n'
     args.output.parent.mkdir(parents=True, exist_ok=True)

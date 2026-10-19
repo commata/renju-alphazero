@@ -34,8 +34,7 @@ class EngineTest(unittest.TestCase):
         self.assertNotEqual(config_hash(), tb1_hash())
         agent = make_agent(hashed_policy, seed=3)
         self.assertEqual((agent.name, agent.root_vcf_table), (NAME, True))
-        with self.assertRaises(ValueError):
-            parse_opponent('v8:puct_policy_vct2_50k_tt')
+        self.assertEqual(parse_opponent('v8:puct_policy_vct2_50k_tt'), 'v8:puct_policy_vct2_50k_tt')  # TB-Engine-v2 (E3)
         with self.assertRaises(ValueError):
             mcts_v8.mcts_search_v8(game_at(8), root_vcf_table=1)
 

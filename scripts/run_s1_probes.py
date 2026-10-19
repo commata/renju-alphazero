@@ -18,6 +18,8 @@ H6-4b / H6-5 P92 guard (docs/h6-value.md, H6-4): run TB-Engine-v1 (``puct_policy
 arm (``puct_value_vct2_50k``, ``--value-checkpoint``) on the same seeds. The summary's ``h6_5_p92_guard`` is
 a non-regression check: the value arm picks (3,4) at P92 no more often than TB-Engine-v1
 (``NOT_DISCRIMINATING`` when TB-Engine-v1 picks it in every run). P93 / P94 are diagnostics only.
+H7-E3: the same rule for TB-Engine-v2 (``puct_policy_vct2_50k_tt``) and TB-V2-Value (``puct_value_vct2_50k_tt``)
+gives ``h7_e3_p92_guard``.
 """
 from __future__ import annotations
 
@@ -116,11 +118,15 @@ def root_value_spread(children) -> dict:
 
 
 BASELINE_ARM, VALUE_ARM = 'puct_policy_vct2_50k', 'puct_value_vct2_50k'
+# The P92 non-regression guard per engine pair: H6 (TB-Engine-v1) and H7-E3 (TB-Engine-v2, the same rule).
+P92_GUARDS = {'h6_5_p92_guard': (BASELINE_ARM, VALUE_ARM),
+              'h7_e3_p92_guard': ('puct_policy_vct2_50k_tt', 'puct_value_vct2_50k_tt')}
 
 
 def run_probe(name: str, spec: dict, moves, arm: str, seed: int, config: dict, policy, leaf=None) -> dict:
     game = replay(moves, spec['plies_played'])
     agent = MCTSV8Agent(seed=derive_seed(seed, 's1', name, arm), root_policy=policy, leaf_value=leaf,
+                        root_vcf_table=bool(config.get('root_vcf_table')),
                         **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     started = perf_counter()
     move = agent.select_move(game)
@@ -192,17 +198,19 @@ def summarize(records: list[dict]) -> dict:
                                                 for r in runs)
             rows[name] = row
         out[arm] = rows
-    base, value = out.get(BASELINE_ARM, {}).get('P92'), out.get(VALUE_ARM, {}).get('P92')
-    if base and value:
+    for key, (base_arm, value_arm) in P92_GUARDS.items():
+        base, value = out.get(base_arm, {}).get('P92'), out.get(value_arm, {}).get('P92')
+        if not (base and value):
+            continue
         if base['runs'] != value['runs']:
             verdict = 'MISMATCHED_RUNS'
         elif base['chose_far'] == base['runs']:
             verdict = 'NOT_DISCRIMINATING'
         else:
             verdict = 'PASS' if value['chose_far'] <= base['chose_far'] else 'FAIL'
-        out['h6_5_p92_guard'] = {'baseline': BASELINE_ARM, 'candidate': VALUE_ARM, 'runs': value['runs'],
-                                 'baseline_chose_far': base['chose_far'], 'candidate_chose_far': value['chose_far'],
-                                 'verdict': verdict, 'p93_p94': 'diagnostic_only'}
+        out[key] = {'baseline': base_arm, 'candidate': value_arm, 'runs': value['runs'],
+                    'baseline_chose_far': base['chose_far'], 'candidate_chose_far': value['chose_far'],
+                    'verdict': verdict, 'p93_p94': 'diagnostic_only'}
     return out
 
 
