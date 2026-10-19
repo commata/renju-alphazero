@@ -48,6 +48,47 @@ class D2Test(unittest.TestCase):
         self.assertNotIn('legacy_large', h6_5d.d2_task({**task, 'legacy': False}))
 
 
+class D2CliTest(unittest.TestCase):
+    """``h6_5d.py d2 --table`` through ``main``: the TB-Engine-v2 arm pair is accepted, the H6 pair refused."""
+
+    def write_runs(self, tmp, arms):
+        paths = []
+        for arm in arms:
+            key = f'{arm}[c]@v8:full/8407/0/black'
+            move = list(MOVES[94])
+            run = {'arm': arm, 'seed': 8407, 'opponent': 'v8:full', 'games': [
+                {'key': key, 'result': 'loss', 'length': 100, 'moves': MOVES[:100],
+                 'v8_moves': [{'route': 'tree', 'ply': 94, 'v7_move': move, 'played': move,
+                               'root': {'checked': [[move, 'UNSAFE']]}}]}]}
+            path = tmp / f'{arm}.json'
+            path.write_text(json.dumps(run), encoding='utf-8')
+            paths.append(str(path))
+        return paths
+
+    def test_table_d2_on_e3_arms(self):
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            e3_runs = self.write_runs(tmp, (h6_5d.E3_CANDIDATE_ARM, h6_5d.E3_BASELINE_ARM))
+            out = tmp / 'd2.json'
+            self.assertEqual(h6_5d.main(['d2', '--runs', *e3_runs, '--table', '--legacy-frozen', '--output', str(out)]), 0)
+            d2 = json.loads(out.read_text(encoding='utf-8'))
+            self.assertEqual((d2['table'], d2['legacy_frozen'], len(d2['rows'])), (True, True, 2))
+            self.assertEqual(set(d2['summary']['control']), {e3.CANDIDATE, e3.BASELINE, 'pooled'})
+            self.assertEqual(d2['summary']['replay_mismatches'], [])
+            self.assertTrue(all(r['table'] and r['legacy_large']['status'] == 'UNSAFE' for r in d2['rows']))
+            statuses = e3.proof_status([json.loads(Path(p).read_text(encoding='utf-8')) for p in e3_runs],
+                                       [{**d2, 'fast': {'requested': 'fast3'}}])
+            self.assertEqual(statuses[e3.CANDIDATE], {'8407/0/black': ['UNSAFE']})
+            with self.assertRaises(SystemExit):  # TB-Engine-v2 runs are never rechecked without the table
+                h6_5d.main(['d2', '--runs', *e3_runs, '--output', str(tmp / 'off.json')])
+            h6_runs = self.write_runs(tmp, (h6_5d.CANDIDATE_ARM, h6_5d.BASELINE_ARM))
+            with self.assertRaises(SystemExit):  # and TB-Engine-v1 runs never with it
+                h6_5d.main(['d2', '--runs', *h6_runs, '--table', '--output', str(tmp / 'on.json')])
+
+
 def p92(far):
     return {'chose_far': far, 'chose_region': not far, 'root_has_region': True, 'region_beats_far_rank': not far,
             'region_beats_far_visits': not far, 'both_present': True, 'far_absent': False,

@@ -63,6 +63,8 @@ RULES = {'a_lower_bound_above': 0.0, 'unresolved_max': 1 / 3, 'c_safe_min': 2 / 
          'bootstrap': 10_000, 'seed': 0}
 ENGINES = ('TB-Engine-v1', 'TB-V1-Value')
 CANDIDATE_ARM, BASELINE_ARM = 'puct_value_vct2_50k', 'puct_policy_vct2_50k'
+# H7-E3 (``d2 --table``): the same pair on TB-Engine-v2 (TB-V2-Value, TB-Engine-v2).
+E3_CANDIDATE_ARM, E3_BASELINE_ARM = 'puct_value_vct2_50k_tt', 'puct_policy_vct2_50k_tt'
 _WORKER: dict = {}
 
 
@@ -290,11 +292,11 @@ def _run(tasks, fn, workers, jsonl: Path | None, label, init=None) -> list[dict]
     return [done[t['id']] for t in tasks]
 
 
-def load_runs(paths) -> list[dict]:
+def load_runs(paths, arms: tuple = (CANDIDATE_ARM, BASELINE_ARM)) -> list[dict]:
+    """Runs B and C of one seed and opponent: exactly the two ``arms`` (candidate, baseline)."""
     runs = [json.loads(Path(p).read_text(encoding='utf-8')) for p in paths]
-    arms = sorted(r['arm'] for r in runs)
-    if arms != sorted([CANDIDATE_ARM, BASELINE_ARM]) or len({(r['seed'], r['opponent']) for r in runs}) != 1:
-        raise ValueError(f'need {CANDIDATE_ARM} and {BASELINE_ARM} runs on the same seed and opponent')
+    if sorted(r['arm'] for r in runs) != sorted(arms) or len({(r['seed'], r['opponent']) for r in runs}) != 1:
+        raise ValueError(f'need {arms[0]} and {arms[1]} runs on the same seed and opponent')
     return runs
 
 
@@ -302,7 +304,7 @@ def _share(rows, key, value):
     return round(sum(r[key] == value for r in rows) / len(rows), 4) if rows else None
 
 
-def summarize_d2(rows: list[dict]) -> dict:
+def summarize_d2(rows: list[dict], arms: tuple = (CANDIDATE_ARM, BASELINE_ARM)) -> dict:
     # recomputed from the statuses, so files written before ``replay_kind`` read the same way
     kinds = {r['id']: replay_kind(r['recorded_status'], r['standard']['status'], r['large']['status']) for r in rows}
     out = {'replay_mismatches': [i for i, k in kinds.items() if k == 'mismatch'],
@@ -310,7 +312,7 @@ def summarize_d2(rows: list[dict]) -> dict:
     for name in ('main', 'control'):
         part = [r for r in rows if r['set'] == name]
         by = {}
-        for arm in (CANDIDATE_ARM, BASELINE_ARM, 'pooled'):
+        for arm in (*arms, 'pooled'):
             sub = [r for r in part if arm in ('pooled', r['arm'])]
             large = [{'s': r['large']['status']} for r in sub]
             by[arm] = {'n': len(sub), **{f'large_{s.lower()}': sum(x['s'] == s for x in large)
@@ -434,7 +436,13 @@ def main(argv=None, factories=None) -> int:
         d3 = json.loads(args.d3.read_text(encoding='utf-8'))['summary']
         result = {'format': FORMAT, 'step': 'judge', 'rules': RULES, 'verdict': judge(d2, d3)}
     else:
-        runs = load_runs(args.runs)
+        # d2 --table rechecks TB-Engine-v2 runs (H7-E3); everything else the H6 pair on TB-Engine-v1
+        arms = ((E3_CANDIDATE_ARM, E3_BASELINE_ARM) if args.step == 'd2' and args.table
+                else (CANDIDATE_ARM, BASELINE_ARM))
+        try:
+            runs = load_runs(args.runs, arms)
+        except ValueError as exc:
+            parser.error(str(exc))
         positions = [p for r in runs for p in tree_positions(r)]
         sources = {str(p): r['arm'] for p, r in zip(args.runs, runs)}
         if args.fast != 'off':
@@ -448,7 +456,7 @@ def main(argv=None, factories=None) -> int:
                       'table': args.table, 'legacy': args.legacy_frozen}
                      for p in positions if p['recorded_status'] in ('UNKNOWN', 'UNSAFE')][:args.limit]
             rows = _run(tasks, _chunk_d2, args.workers, args.jsonl, 'h6-5d d2')
-            summary = summarize_d2(rows)
+            summary = summarize_d2(rows, arms)
         else:
             if factories is None and not args.value_checkpoint:
                 parser.error('d3 needs --value-checkpoint')
