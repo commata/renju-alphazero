@@ -2417,7 +2417,7 @@ python scripts/summarize_h7_e3.py --main runs/h7_e3/value_vs_tb2_$SEED.json \
 
 **결론:** TB-V2-Value를 Track-B의 B-engine + B-net 조합으로 채택한다. H6-6 REJECT는 그대로다.
 
-## 다음 단계 설계 방향 (2026-10-20, 초안, 승인 대기)
+## 다음 단계 설계 방향 (2026-10-20, 초안 → 아래 동결·최적화 정의로 확정)
 
 **1. TB-V2-Value 동결 (먼저, 별도 커밋)**
 - `src/analysis/tb_v2_value.py`를 만든다. TB-Engine-v2처럼 설정을 모두 적는다(`tree_mode='puct_value'` 포함). 함께 고정하는 것:
@@ -2456,6 +2456,97 @@ for seed in (8407, 8408):
     print(seed, 'TB-Engine-v2', pct(opp), 'over30', sum(x > 30 for x in opp))
 PY
 ```
+
+## TB-V2-Value 동결 (2026-10-20, 커밋 `9c94676`)
+
+- `src/analysis/tb_v2_value.py`: 설정을 문자 그대로 적었다. TB-Engine-v2와 `tree_mode='puct_value'`만 다르다.
+- `config_hash`가 덮는 것:
+  - 설정과 `ENGINE_OPTIONS = {'root_vcf_table': True}`
+  - `VCF_TABLE_SHA256`(`68937a5f…`)
+  - `VALUE_CHECKPOINT_SHA256`(`a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca`)
+  - `VALUE_INFERENCE='d4_average'`, `VALUE_LAMBDA=1.0`
+- `FREEZE_EVIDENCE`: E2 ADOPT, E3 ADOPT
+- `make_agent`는 다른 checkpoint의 value leaf를 거부한다.
+- `tests/test_tb_v2_value.py`가 검사하는 것:
+  - 설정과 benchmark arm의 일치
+  - table SHA, value SHA·추론·λ(TB-V1-Value와 같음)
+  - 근거 파일, agent
+- value 경로의 코드(`puct_value_v1.py`, `hybrid/h6_value_leaf.py`)는 `config_hash`에 넣지 않았다. 대신 테스트에서 SHA로 잠그고, CLAUDE.md frozen 목록에 `tb_v2_value.py`와 함께 더했다. 이 두 파일이 바뀌어도 엔진이 바뀌기 때문이다.
+
+## 같은 착수 시간 단축 최적화: 정의와 도구 (2026-10-20, 실행 전 고정)
+
+사용자 검토에서 확정한 정의다. 이름은 "기력이 같음의 증명"이 아니라 **행동 동일성 gate**(semantics-preserving 최적화로 인정하는 조건)다.
+
+| 계층 | 해당 변경 | 기준 |
+|---|---|---|
+| 탐색·전술 (VCF, threat, V8-A / B / C, VCT2, PUCT 탐색 코드) | 정확 가속(fast3 방식), 자료구조, 캐시 | **비트 단위 동일:** 착수, route, tree 수, root 방문·Q, V8-C / VCT2 / V8-A / V8-B 상태, VCF·V8 노드와 호출 수 |
+| value 추론 (FP32 그대로) | 장치(CPU / CUDA), 스레드, 추론 백엔드, batch 실행 방식 | **equivalence corpus에서 최종 착수 100% 동일.** 하나라도 다르면 semantics-preserving이 아니다 |
+| 정밀도·모델 함수 변경 | fp16, int8, 양자화, 모델 구조, pruning | 처음부터 새 엔진 후보 → §2.3 gate |
+
+- 원칙: `tb_v2_value.py`와 그 identity를 이루는 frozen 파일은 최적화를 위해 고치지 않는다.
+- 최적화는 별도 runtime / 구현 후보로 만든다. 순서는 다음과 같다.
+  1. equivalence gate 통과
+  2. 최적화 판을 새로 동결
+  3. 그 판으로 웹 deadline 판과 H7-c1로 간다
+
+**도구: `scripts/h7_timing.py`** (테스트 `tests/test_h7_timing.py`)
+1. `positions`: 기본 국면 집합을 만든다.
+   - E3 A run에서 TB-V2-Value가 둔 모든 수(모든 route)
+   - 웹 probe P92 / P93 / P94
+   - H6-4b의 298국면(E1-holdout 대국, 저장소에 있음)
+   - 엔진 대국과 웹 probe에서 나온 국면이므로 RenjuNet 파생 데이터가 아니다. 커밋해도 된다.
+2. `measure`: 동결 TB-V2-Value로 국면마다 한 번 둔다.
+   - 국면마다 새 agent를 만들고, seed는 국면 id로 고정한다.
+   - value cache는 국면마다 비운다(cold). 그래서 국면 순서가 시간에 영향을 주지 않는다.
+   - 기록: 착수, 모든 결정 필드, 시간(전체 / tree / V8-C / VCT2 / value)
+   - 장치, 스레드, worker, fast, 기계 정보도 남긴다.
+   - **지연 측정은 `--workers 1`로 한다.** worker를 늘리는 것은 결정만 보는 run에서만이다.
+   - 요약: p50 / p90 / p95 / p99 / 최대, 30초 초과 수(출처별, tree route별, 구성 시간별)
+3. `corpus`: 기준선 measure 하나에서 equivalence corpus를 고정한다. 규칙은 지금 고정한다(`RULES['corpus']`).
+   - near_tie: tree route에서 1·2위 방문 비 ≥ 0.9 또는 Q 차이 ≤ 0.02
+   - V8-C의 tree 수가 UNKNOWN / UNSAFE이거나 교체가 일어난 국면
+   - VCT2가 교체한 국면
+   - probe 전부, H6-4b 전부
+   - 시간 상위 5%
+   - 위에 들지 않은 E3 A 국면 중 무작위 200개(seed 0)
+   - H6-4b 298국면이 CPU / CUDA에서 Q 값이 달랐던 국면 묶음 역할을 한다. 그때 기록에는 자식별 Q가 없어서 "Q 차이가 큰 국면"만 골라낼 수 없다. 그래서 전부 넣었다.
+4. `compare --mode search|value`: 기준선과 후보 measure를 corpus에서 비교한다.
+   - 차이가 하나도 없을 때만 PASS다.
+   - 엔진 identity(`config_hash`)가 다르면 비교하지 않는다.
+   - 시간 분포와 합의 비를 보고한다.
+
+**기준선 측정 순서**
+1. 데스크톱 CPU 전용(`--device cpu --threads 1 --workers 1`): 공식 기준선이다. corpus는 이 결과로 고정한다.
+2. 데스크톱 CUDA(`--device cuda`, corpus 국면만 해도 됨): 같은 FP32 value를 장치만 바꾼 것이다.
+   - `compare --mode value`로 CPU 대 CUDA를 비교하면 **gate 자체의 점검**이 된다.
+   - H6-4b에서는 298 / 298 착수가 같았다. 여기서 FAIL이 나면 "착수 100% 동일" 기준이 장치 차이에도 너무 엄격하다는 뜻이다. 그때는 최적화 전에 다시 논의한다.
+3. 미니 PC(웹 서버 기계) CPU: 30초 deadline 판단의 기준선이다. deadline 없이 잰다.
+   - 전체가 오래 걸리면 corpus 국면만 잰다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_tb_v2_value tests.test_h7_timing
+mkdir -p runs/h7_timing docs/h7
+python scripts/h7_timing.py positions --runs runs/h7_e3/value_vs_tb2_8407.json runs/h7_e3/value_vs_tb2_8408.json \
+  --output docs/h7/h7_timing_positions.json
+# 1) 공식 기준선: CPU, 1 worker (수 시간; 1분마다 진행 출력, --jsonl로 이어서 돌 수 있음)
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --device cpu --threads 1 \
+  --workers 1 --fast fast3 --jsonl runs/h7_timing/base_cpu.jsonl --output runs/h7_timing/base_cpu.json 2>&1 | tee runs/h7_timing/base_cpu.log
+python scripts/h7_timing.py corpus --measure runs/h7_timing/base_cpu.json --output docs/h7/h7_equiv_corpus.json
+# 2) CUDA (corpus 국면) + gate 점검
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cuda --workers 1 --fast fast3 --jsonl runs/h7_timing/base_cuda.jsonl --output runs/h7_timing/base_cuda.json 2>&1 | tee runs/h7_timing/base_cuda.log
+python scripts/h7_timing.py compare --mode value --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --candidate runs/h7_timing/base_cuda.json --output docs/h7/h7_equiv_cpu_vs_cuda.json
+```
+
+- 커밋할 것: `docs/h7/h7_timing_positions.json`, `docs/h7/h7_equiv_corpus.json`, `docs/h7/h7_equiv_cpu_vs_cuda.json`
+- 측정 요약도 커밋한다. `runs/h7_timing/base_cpu.json`은 크므로 `summary`와 `settings`만 `docs/h7/h7_timing_base_cpu_summary.json`으로 옮겨 커밋한다.
+- 미니 PC는 같은 positions / corpus 파일과 checkpoint로 `measure --corpus …`를 돌린다(`--fast fast3`이면 native를 먼저 빌드한다).
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
