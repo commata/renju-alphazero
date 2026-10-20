@@ -1,0 +1,1594 @@
+{
+ "format": "h6-5d-v1",
+ "step": "d2",
+ "standard": {
+  "node_limit": 20000,
+  "call_limit": 10000,
+  "node_budget": 400000,
+  "share": 200000,
+  "call_share": 5000
+ },
+ "large": {
+  "node_limit": 200000,
+  "call_limit": 100000,
+  "node_budget": 4000000,
+  "share": null,
+  "call_share": null
+ },
+ "sources": {
+  "runs/h7_e3/value_vs_full_8408.json": "puct_value_vct2_50k_tt",
+  "runs/h7_e3/tb2_vs_full_8408.json": "puct_policy_vct2_50k_tt"
+ },
+ "fast": {
+  "requested": "fast3",
+  "active": {
+   "threat_windows": "threat_windows_native",
+   "winning_extensions": "winning_extensions_in_direction"
+  },
+  "native_build": {
+   "python": "3.12.3",
+   "soabi": "cpython-312-x86_64-linux-gnu",
+   "ext_suffix": ".cpython-312-x86_64-linux-gnu.so",
+   "flags": [
+    "-O2",
+    "-shared",
+    "-fPIC"
+   ],
+   "sources": {
+    "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5"
+   },
+   "executable": "/home/tack/renju-h6/.venv/bin/python",
+   "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+   "compiler": "gcc",
+   "compiler_version": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+   "modules": {
+    "_threat_windows.cpython-312-x86_64-linux-gnu.so": "2c855e2ac4f15b729bc8c1088da73acaecd8e283da67938cab1421de73b3942b"
+   }
+  }
+ },
+ "table": true,
+ "legacy_frozen": true,
+ "summary": {
+  "replay_mismatches": [],
+  "replay_continued": [],
+  "main": {
+   "puct_value_vct2_50k_tt": {
+    "n": 10,
+    "large_safe": 9,
+    "large_unsafe": 0,
+    "large_unknown": 1,
+    "share_safe": 0.9,
+    "share_unsafe": 0.0,
+    "share_unknown": 0.1,
+    "standard_budget_cut": 10,
+    "standard_cut_kind": {
+     "calls": 3,
+     "nodes": 7,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 1,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 1
+   },
+   "puct_policy_vct2_50k_tt": {
+    "n": 19,
+    "large_safe": 16,
+    "large_unsafe": 0,
+    "large_unknown": 3,
+    "share_safe": 0.8421,
+    "share_unsafe": 0.0,
+    "share_unknown": 0.1579,
+    "standard_budget_cut": 19,
+    "standard_cut_kind": {
+     "calls": 10,
+     "nodes": 9,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 3,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 2
+   },
+   "pooled": {
+    "n": 29,
+    "large_safe": 25,
+    "large_unsafe": 0,
+    "large_unknown": 4,
+    "share_safe": 0.8621,
+    "share_unsafe": 0.0,
+    "share_unknown": 0.1379,
+    "standard_budget_cut": 29,
+    "standard_cut_kind": {
+     "calls": 13,
+     "nodes": 16,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 4,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 3
+   }
+  },
+  "control": {
+   "puct_value_vct2_50k_tt": {
+    "n": 0,
+    "large_safe": 0,
+    "large_unsafe": 0,
+    "large_unknown": 0,
+    "share_safe": null,
+    "share_unsafe": null,
+    "share_unknown": null,
+    "standard_budget_cut": 0,
+    "standard_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 0
+   },
+   "puct_policy_vct2_50k_tt": {
+    "n": 2,
+    "large_safe": 0,
+    "large_unsafe": 2,
+    "large_unknown": 0,
+    "share_safe": 0.0,
+    "share_unsafe": 1.0,
+    "share_unknown": 0.0,
+    "standard_budget_cut": 0,
+    "standard_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 0
+   },
+   "pooled": {
+    "n": 2,
+    "large_safe": 0,
+    "large_unsafe": 2,
+    "large_unknown": 0,
+    "share_safe": 0.0,
+    "share_unsafe": 1.0,
+    "share_unknown": 0.0,
+    "standard_budget_cut": 0,
+    "standard_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white|43",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white",
+   "game_kind": "draw_full_board",
+   "ply": 43,
+   "tree_move": [
+    10,
+    9
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 185168,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 16.25
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 228604,
+    "calls": 9489,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 20.97
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 2729,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 17,
+    "seconds": 294.45
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white|45",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white",
+   "game_kind": "draw_full_board",
+   "ply": 45,
+   "tree_move": [
+    11,
+    9
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 3304,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 3,
+    "seconds": 17.14
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 756397,
+    "calls": 17839,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 65.02
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 3599,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 13,
+    "seconds": 312.59
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white|49",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white",
+   "game_kind": "draw_full_board",
+   "ply": 49,
+   "tree_move": [
+    10,
+    1
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 311,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.39
+   },
+   "replay": "exact",
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 11355,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 0,
+    "seconds": 307.3
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 392,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 7,
+    "seconds": 192.12
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/14/white|15",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/14/white",
+   "game_kind": "decisive",
+   "ply": 15,
+   "tree_move": [
+    3,
+    8
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 67289,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.97
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 74341,
+    "calls": 5978,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 6.9
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 184181,
+    "calls": 5978,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 14.07
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/16/black|26",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/16/black",
+   "game_kind": "decisive",
+   "ply": 26,
+   "tree_move": [
+    3,
+    7
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 2180,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 11.71
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 396947,
+    "calls": 4685,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 23.2
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 2493877,
+    "calls": 4685,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 1,
+    "seconds": 135.46
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/18/white|13",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/18/white",
+   "game_kind": "decisive",
+   "ply": 13,
+   "tree_move": [
+    5,
+    11
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 77198,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 6.82
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 128562,
+    "calls": 10888,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 11.65
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 261591,
+    "calls": 10888,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 20.75
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white|69",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white",
+   "game_kind": "draw_full_board",
+   "ply": 69,
+   "tree_move": [
+    10,
+    12
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 1445,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.3
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 799234,
+    "calls": 6683,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 60.35
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 2588905,
+    "calls": 6684,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 1,
+    "seconds": 187.61
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white|71",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white",
+   "game_kind": "draw_full_board",
+   "ply": 71,
+   "tree_move": [
+    10,
+    12
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 2853,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 17.13
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 3783990,
+    "calls": 41398,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 297.49
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 3256,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 13,
+    "seconds": 226.27
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white|81",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white",
+   "game_kind": "draw_full_board",
+   "ply": 81,
+   "tree_move": [
+    1,
+    13
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 524,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 16.4
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 1380668,
+    "calls": 3702,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 104.6
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 875,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 10,
+    "seconds": 286.56
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k_tt|puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/9/black|22",
+   "arm": "puct_value_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k_tt[puct_c=1.5]@v8:full/8408/9/black",
+   "game_kind": "decisive",
+   "ply": 22,
+   "tree_move": [
+    3,
+    5
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 3984,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 10.52
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 309507,
+    "calls": 9097,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 17.1
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 1043673,
+    "calls": 9097,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 54.91
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/0/white|27",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/0/white",
+   "game_kind": "decisive",
+   "ply": 27,
+   "tree_move": [
+    4,
+    6
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 139367,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 13.35
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 182899,
+    "calls": 6152,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 17.17
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 275260,
+    "calls": 6152,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 23.69
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white|43",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white",
+   "game_kind": "decisive",
+   "ply": 43,
+   "tree_move": [
+    6,
+    7
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 512,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 1,
+    "seconds": 14.96
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 1371298,
+    "calls": 1015,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 100.72
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 497,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 10,
+    "seconds": 276.32
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white|45",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white",
+   "game_kind": "decisive",
+   "ply": 45,
+   "tree_move": [
+    12,
+    8
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 117,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 14.49
+   },
+   "replay": "exact",
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 441,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 0,
+    "seconds": 426.66
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 102,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 9,
+    "seconds": 162.83
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white|47",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white",
+   "game_kind": "decisive",
+   "ply": 47,
+   "tree_move": [
+    12,
+    9
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 155,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 17.03
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 1689249,
+    "calls": 1203,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 178.26
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 100,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 12,
+    "seconds": 260.93
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white|49",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/1/white",
+   "game_kind": "decisive",
+   "ply": 49,
+   "tree_move": [
+    13,
+    8
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 129,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.23
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 1128893,
+    "calls": 526,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 89.42
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 99,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 10,
+    "seconds": 287.56
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/11/white|15",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/11/white",
+   "game_kind": "decisive",
+   "ply": 15,
+   "tree_move": [
+    5,
+    3
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 58600,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.76
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 188161,
+    "calls": 10960,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 16.44
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 228049,
+    "calls": 10960,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 18.13
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/13/white|9",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "control",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/13/white",
+   "game_kind": "decisive",
+   "ply": 9,
+   "tree_move": [
+    5,
+    8
+   ],
+   "recorded_status": "UNSAFE",
+   "table": true,
+   "standard": {
+    "status": "UNSAFE",
+    "nodes": 1294,
+    "calls": 248,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.11
+   },
+   "replay": "exact",
+   "large": {
+    "status": "UNSAFE",
+    "nodes": 1294,
+    "calls": 248,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.12
+   },
+   "legacy_large": {
+    "status": "UNSAFE",
+    "nodes": 1304,
+    "calls": 248,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.11
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/14/white|21",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/14/white",
+   "game_kind": "draw_full_board",
+   "ply": 21,
+   "tree_move": [
+    9,
+    11
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 103015,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 8.52
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 186285,
+    "calls": 8648,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.55
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 251933,
+    "calls": 8648,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 19.85
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white|17",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "control",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/2/white",
+   "game_kind": "decisive",
+   "ply": 17,
+   "tree_move": [
+    8,
+    5
+   ],
+   "recorded_status": "UNSAFE",
+   "table": true,
+   "standard": {
+    "status": "UNSAFE",
+    "nodes": 2034,
+    "calls": 232,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.21
+   },
+   "replay": "exact",
+   "large": {
+    "status": "UNSAFE",
+    "nodes": 2034,
+    "calls": 232,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.21
+   },
+   "legacy_large": {
+    "status": "UNSAFE",
+    "nodes": 2056,
+    "calls": 232,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.2
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white|43",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white",
+   "game_kind": "draw_full_board",
+   "ply": 43,
+   "tree_move": [
+    5,
+    10
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 546,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.21
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 797803,
+    "calls": 1254,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 61.04
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 288,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 14,
+    "seconds": 292.12
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white|51",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white",
+   "game_kind": "draw_full_board",
+   "ply": 51,
+   "tree_move": [
+    8,
+    7
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 142,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 5,
+    "seconds": 14.24
+   },
+   "replay": "exact",
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 13769,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 0,
+    "seconds": 277.12
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 148,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 17,
+    "seconds": 193.38
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white|79",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white",
+   "game_kind": "draw_full_board",
+   "ply": 79,
+   "tree_move": [
+    8,
+    8
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 2349,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.32
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 887279,
+    "calls": 5331,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 66.53
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 2373,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 0,
+    "seconds": 273.3
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white|91",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/22/white",
+   "game_kind": "draw_full_board",
+   "ply": 91,
+   "tree_move": [
+    6,
+    9
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 49,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 14.59
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 303088,
+    "calls": 228,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 22.52
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 39,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 19,
+    "seconds": 299.87
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/4/black|12",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/4/black",
+   "game_kind": "decisive",
+   "ply": 12,
+   "tree_move": [
+    8,
+    4
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 76271,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.52
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 214029,
+    "calls": 15863,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 16.86
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 417893,
+    "calls": 15863,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 29.7
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/4/black|14",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/4/black",
+   "game_kind": "decisive",
+   "ply": 14,
+   "tree_move": [
+    9,
+    5
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 62343,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.32
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 78353,
+    "calls": 6044,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 6.78
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 137935,
+    "calls": 6044,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 10.54
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/4/white|45",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/4/white",
+   "game_kind": "decisive",
+   "ply": 45,
+   "tree_move": [
+    4,
+    4
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 205,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.19
+   },
+   "replay": "exact",
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 4319,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 0,
+    "seconds": 272.12
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 201,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 4,
+    "seconds": 171.2
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/7/black|34",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/7/black",
+   "game_kind": "draw_full_board",
+   "ply": 34,
+   "tree_move": [
+    6,
+    4
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 71932,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 4.94
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 96070,
+    "calls": 6656,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 7.0
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 108848,
+    "calls": 6656,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 7.3
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/7/black|36",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/7/black",
+   "game_kind": "draw_full_board",
+   "ply": 36,
+   "tree_move": [
+    2,
+    8
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 117022,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 7.93
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 218992,
+    "calls": 9347,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.51
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 260572,
+    "calls": 9347,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 17.47
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/7/black|76",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/7/black",
+   "game_kind": "draw_full_board",
+   "ply": 76,
+   "tree_move": [
+    12,
+    5
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 45046,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 4.25
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 50137,
+    "calls": 5799,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.37
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 50545,
+    "calls": 5799,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.14
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/9/black|22",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/9/black",
+   "game_kind": "decisive",
+   "ply": 22,
+   "tree_move": [
+    9,
+    11
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 51554,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 4.04
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 2779204,
+    "calls": 15985,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 142.31
+   },
+   "legacy_large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 14631,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 8,
+    "seconds": 141.41
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k_tt|puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/9/black|24",
+   "arm": "puct_policy_vct2_50k_tt",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k_tt[puct_c=1.5]@v8:full/8408/9/black",
+   "game_kind": "decisive",
+   "ply": 24,
+   "tree_move": [
+    10,
+    10
+   ],
+   "recorded_status": "UNKNOWN",
+   "table": true,
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 35703,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 2.66
+   },
+   "replay": "exact",
+   "large": {
+    "status": "SAFE",
+    "nodes": 115913,
+    "calls": 14164,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 8.84
+   },
+   "legacy_large": {
+    "status": "SAFE",
+    "nodes": 135897,
+    "calls": 14164,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 9.61
+   }
+  }
+ ]
+}
