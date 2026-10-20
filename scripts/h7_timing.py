@@ -231,6 +231,37 @@ def compare(corpus: dict, base: dict, cand: dict, mode: str) -> dict:
             'settings': {'baseline': base.get('settings'), 'candidate': cand.get('settings')}}
 
 
+def _top(visits, k=5):
+    return sorted(visits, key=lambda x: (-x[1], -x[2]))[:k]
+
+
+def explain(base: dict, cand: dict, ids: list[str]) -> dict:
+    """Side by side, per position: which decision fields differ, the root's top children (visits, Q), the
+    top1-top2 gaps and the checked statuses. Report only (the cause of a ``compare`` difference)."""
+    b, c = {r['id']: r for r in base['rows']}, {r['id']: r for r in cand['rows']}
+    out = {}
+    for i in ids:
+        if i not in b or i not in c:
+            out[i] = {'missing': True}
+            continue
+        db, dc = b[i]['decision'], c[i]['decision']
+        side = {}
+        for name, d in (('baseline', db), ('candidate', dc)):
+            top = _top(d['root_visits'])
+            gap = ({'visits': top[0][1] - top[1][1], 'q': round(top[0][2] - top[1][2], 9)} if len(top) >= 2 else None)
+            side[name] = {'move': d['move'], 'route': d['route'], 'tree_move': d['tree_move'], 'changed': d['changed'],
+                          'root_switch': d['root_switch'], 'top_children': top, 'top1_top2_gap': gap,
+                          'root_checked': d['root_checked'], 'vct2_checked': d['vct2_checked'],
+                          'root_nodes': d['root_nodes'], 'root_calls': d['root_calls'], 'value_calls': d['value_calls']}
+        same_children = {tuple(m) for m, _, _ in db['root_visits']} == {tuple(m) for m, _, _ in dc['root_visits']}
+        qb = {tuple(m): q for m, _, q in db['root_visits']}
+        qd = [abs(qb[tuple(m)] - q) for m, _, q in dc['root_visits'] if tuple(m) in qb]
+        out[i] = {'differing_fields': sorted(k for k in db if db[k] != dc[k]), 'same_root_children': same_children,
+                  'max_abs_q_diff_common_children': round(max(qd), 9) if qd else None,
+                  'tree_move_same': db['tree_move'] == dc['tree_move'], **side}
+    return {'format': FORMAT, 'step': 'explain', 'positions': out}
+
+
 def main(argv=None, factories=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest='step', required=True)
@@ -255,7 +286,11 @@ def main(argv=None, factories=None) -> int:
     pq.add_argument('--corpus', type=Path, required=True)
     pq.add_argument('--baseline', type=Path, required=True)
     pq.add_argument('--candidate', type=Path, required=True)
-    for p in (pp, pm, pc, pq):
+    pe = sub.add_parser('explain')
+    pe.add_argument('--baseline', type=Path, required=True)
+    pe.add_argument('--candidate', type=Path, required=True)
+    pe.add_argument('--compare', type=Path, required=True, help='a compare output: its first_differences are explained')
+    for p in (pp, pm, pc, pq, pe):
         p.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     if args.output.exists():
@@ -286,12 +321,16 @@ def main(argv=None, factories=None) -> int:
                   'summary': summarize_measure(rows), 'rows': rows}
     elif args.step == 'corpus':
         result = build_corpus(load(args.measure))
+    elif args.step == 'explain':
+        result = explain(load(args.baseline), load(args.candidate), load(args.compare)['first_differences'])
     else:
         result = compare(load(args.corpus), load(args.baseline), load(args.candidate), args.mode)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=1) + '\n', encoding='utf-8')
     shown = {k: v for k, v in result.items() if k not in ('positions', 'rows', 'ids')}
-    print(json.dumps(shown, indent=1)[:4000], flush=True)
+    if args.step == 'explain':
+        shown = result['positions']
+    print(json.dumps(shown, indent=1)[:12000], flush=True)
     return 0 if result.get('verdict', 'PASS') != 'FAIL' else 1
 
 

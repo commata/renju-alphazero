@@ -76,6 +76,11 @@ class EndToEndTest(unittest.TestCase):
             self.assertEqual(t.compare(c, a, b, 'value')['verdict'], 'PASS')
             b['rows'][0]['move'] = [0, 0]
             self.assertEqual(t.compare(c, a, b, 'value')['verdict'], 'FAIL')
+            first = a['rows'][0]['id']
+            e = t.explain(a, b, [first])['positions'][first]
+            self.assertEqual(e['differing_fields'], ['root_nodes'])
+            self.assertTrue(e['same_root_children'])
+            self.assertEqual(e['max_abs_q_diff_common_children'] or 0.0, 0.0)
 
 
 class CorpusRulesTest(unittest.TestCase):

@@ -2413,6 +2413,10 @@ python scripts/summarize_h7_e3.py --main runs/h7_e3/value_vs_tb2_$SEED.json \
 - 시간 비 1.032는 GPU(CUDA) value로 잰 것이다.
 - H6-4b의 고정 국면 점검(CPU, SER5 조건)에서 value leaf는 평균 시간을 거의 바꾸지 않았다. 그러나 **p95를 34.6초에서 50.9초로 45% 늘렸다**(value 호출당 CPU 11.7 ms, CUDA 2.6 ms).
 - 미니 PC의 30초 deadline에서는 이 꼬리가 1순위 위험이다. E3 요약에는 수당 시간 분포가 없으므로 A run에서 따로 뽑아 둔다(아래 명령).
+- **(2026-10-20 정정)** 위 두 줄의 해석은 틀렸다.
+  - H6-4b는 데스크톱(fast 없음)에서 CPU와 CUDA로 잰 것이다. "SER5 조건"은 CPU 전용이라는 뜻일 뿐이다.
+  - p95 증가는 CUDA에서도 같았다(31.6 → 45.7초). 원인은 tree 밖(V8-C / VCT2 검사)이었다. 그때 기록에 이미 "원인은 tree가 아니다"라고 적혀 있다.
+  - 그래서 그 꼬리는 value 추론 비용이 아니다. 아래 기준선 측정도 같은 결론이다.
 - **배포 제약:** value v3와 H3 policy는 RenjuNet으로 학습한 망이라 로컬 전용이다(track-b-post-e1 §2, mcts-v8-teacher §12.1). 미니 PC 웹 대국은 지금까지처럼 로컬 범위에서만 연다. 공개 배포에는 RenjuNet 없이 학습한 변형이 따로 필요하다.
 
 **결론:** TB-V2-Value를 Track-B의 B-engine + B-net 조합으로 채택한다. H6-6 REJECT는 그대로다.
@@ -2436,6 +2440,7 @@ python scripts/summarize_h7_e3.py --main runs/h7_e3/value_vs_tb2_$SEED.json \
   - 탐색 부분(VCF, threat, V8): 착수·진단·노드·호출이 비트 단위로 같아야 한다. fast3와 같은 방식이다.
   - value 망 부분(추론 백엔드, 스레드, 정밀도): 비트 단위 동일은 불가능하다. H6-4b에서 CPU와 CUDA도 Q 값이 비트 단위로 같지 않았다(298국면 중 47국면). 대신 **고정 국면 세트에서 착수 100% 동일**을 기준으로 제안한다. 정밀도를 바꾸는 최적화(fp16, int8)는 착수가 달라질 수 있으므로 새 엔진으로 보고 §2.3 gate를 거친다.
 - 대상 후보(예상 효과 순): value 추론의 꼬리(CPU), V8-C 검사의 UNKNOWN 꼬리. 어느 것이든 착수를 바꾸면 이 단계가 아니다.
+  - (2026-10-20 정정) 기준선 측정 결과로는 순서가 반대다. 데스크톱 CPU의 극단 꼬리는 V8-C(root) 검사다(아래 결과).
 
 **3. 동결 → 웹 deadline 판(미니 PC 30초)과 H7-c1 self-play 병행:** 로드맵 그대로.
 
@@ -2547,6 +2552,88 @@ python scripts/h7_timing.py compare --mode value --corpus docs/h7/h7_equiv_corpu
 - 커밋할 것: `docs/h7/h7_timing_positions.json`, `docs/h7/h7_equiv_corpus.json`, `docs/h7/h7_equiv_cpu_vs_cuda.json`
 - 측정 요약도 커밋한다. `runs/h7_timing/base_cpu.json`은 크므로 `summary`와 `settings`만 `docs/h7/h7_timing_base_cpu_summary.json`으로 옮겨 커밋한다.
 - 미니 PC는 같은 positions / corpus 파일과 checkpoint로 `measure --corpus …`를 돌린다(`--fast fast3`이면 native를 먼저 빌드한다).
+
+## 기준선 시간 측정과 CPU ↔ CUDA 행동 동일성 결과 (2026-10-20, 커밋 `17c1a53`)
+
+**파일:** `docs/h7/h7_timing_base_cpu_summary.json`, `docs/h7/h7_equiv_corpus.json`, `docs/h7/h7_equiv_cpu_vs_cuda.json`
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 다음 네 가지에 동의한다.
+- CPU ↔ CUDA gate는 FAIL이다. 결과를 본 뒤 100% 기준을 완화하지 않는다.
+- FAIL이어도 E3 ADOPT와 동결은 유효하다.
+- 착수가 다른 3개를 먼저 분석한다.
+- 극단 꼬리의 주원인은 V8-C다.
+
+해석 두 군데를 고치고, 빠진 점검 하나를 더했다.
+
+**확인한 수치**
+- 공식 기준선(i5-12600K, WSL2, CPU, threads 1, workers 1, fast3): 2,594국면.
+  - mean 1.952초, p50 1.083, p90 4.897, p95 8.674, p99 18.575, 최대 26.208. 30초 초과 0.
+- E3 A 2,293국면: p95 9.014, p99 18.768, 최대 26.208.
+- tree route 1,590국면: p99 19.557.
+  - 구성 시간 p99: tree 2.436, root(V8-C) 15.938, VCT2 2.923, value 1.347.
+- corpus 827국면. 그룹 수(겹침 포함): near_tie 233, V8-C 75, VCT2 4, probe 3, H6-4b 298, slow 131(기준 8.665초 이상), random 200.
+- CPU ↔ CUDA(value 모드): 차이 3 / 827 → **FAIL.** 세 국면 모두 `near_tie` 그룹 하나에만 속하고, 모두 E3 A 국면이다.
+  - 시간 합의 비 0.830. p50 1.213 → 0.743, p99 20.599 → 20.448, 최대 26.208 → 26.406.
+
+**해석 수정**
+1. **구성 시간은 더하는 값이 아니다.** value 시간은 tree 시간 안에 들어 있다(leaf 평가는 tree 탐색 중에 일어남). 그래서 "tree 1.04 + value 0.55"처럼 합치면 안 된다.
+   - 결론은 그대로다. p99에서 V8-C 15.9초가 tree 전체(value 포함) 2.4초보다 훨씬 크다.
+2. **H6-4b와의 관계는 "모순되지 않는다"가 아니라 "같은 결론"이다.**
+   - H6-4b의 꼬리 증가(+45%)는 CPU와 CUDA에서 똑같이 나타났고, 원인은 tree 밖 검사였다.
+   - E3 결과 검토에서 이를 "CPU value 비용"으로 읽은 것은 내 잘못이다. 정정을 그 절에 적었다.
+   - 미니 PC에서 value 비용이 커질 가능성은 남지만, 지금까지 그것을 가리키는 측정은 없다.
+   - 참고: 같은 H6-4b 298국면의 p95가 50.9초(TB-V1-Value, Windows, fast 없음)에서 4.6초(TB-V2-Value, WSL2, fast3)로 줄었다. OS, fast3, table, 측정 방식이 모두 달라 원인을 나눌 수 없다.
+
+**빠진 점검: 같은 장치 반복 동일성**
+- gate는 "같은 장치에서 두 번 돌리면 착수가 같다"는 전제 위에 있다. 이 전제를 아직 재지 않았다.
+  - CUDA는 커널 선택이나 원자 연산 때문에 실행마다 값이 조금 달라질 수 있다. CPU도 스레드 수가 바뀌면 합산 순서가 바뀐다.
+- 그래서 3개 차이를 해석하기 전에 **CPU 대 CPU, CUDA 대 CUDA**를 corpus에서 한 번씩 더 잰다.
+  - 둘 다 0이면: 3개는 장치 차이다(초안의 가설과 맞음).
+  - CUDA 대 CUDA에서도 차이가 나면: CUDA 실행 자체가 비결정적이다. 그러면 "장치 A 대 장치 B 착수 100% 동일"이라는 gate는 정의부터 다시 봐야 한다. 기준 완화가 아니라, 반복 잡음 위에서 무엇을 비교할지의 문제다.
+- 비용: corpus 827국면을 두 번, CPU 약 50분, CUDA 약 40분.
+
+**canonical backend (사실 확인)**
+- E3의 A·B run은 `--value-device cuda`였다. 채택 근거가 된 대국은 CUDA value로 둔 것이다.
+- 그래서 TB-V2-Value의 canonical backend는 CUDA로 기록하는 것이 맞다(초안 방안 A).
+- 반면 지금 equivalence corpus의 공식 기준선은 CPU다. 이것은 웹(CPU) 쪽 기준선으로 의미가 있다. 다만 이후 최적화 비교는 **같은 backend끼리**(CPU 후보 대 CPU 기준선, CUDA 후보 대 CUDA 기준선) 한다.
+- 웹 CPU backend는 strict-equivalent가 아니다. 그래서 반복 점검과 3국면 분석 뒤 아래 중 하나로 정한다(지금 정하지 않음).
+  - **(a) CPU backend 변형 판정:** CPU value 대 CUDA value를 같은 상대, 같은 opening으로 짝 대국해 비열등을 본다(E2 방식).
+    - 99.6%가 같은 착수이므로 대부분의 대국이 수순까지 같다. 그런 대국은 짝 차이가 정확히 0이라 구간이 좁고, 적은 대국으로 판정이 난다.
+  - **(b) 웹 대국을 CUDA 기계에서 연다:** 미니 PC 대신 데스크톱이다. 웹 단계의 기계 계획이 바뀐다.
+- 기준을 99%로 낮추는 안(초안 방안 C)은 하지 않는다(동의).
+
+**3국면 분석 도구:** `h7_timing.py explain`을 더했다(보고용). 국면마다 다음을 나란히 보여 준다.
+- 달라진 결정 필드 목록
+- root 자식 집합이 같은지, 공통 자식 Q의 최대 차이
+- tree 수가 같은지
+- 상위 5자식(방문, Q)과 1·2위 차이
+- V8-C / VCT2 상태, 노드·호출 수
+
+판정 기준(사전): route, V8-C / VCT2 상태, 노드·호출이 같고 root 방문 순위만 바뀌었으면 "FP32 차이가 near-tie에서 뒤집힘"으로 본다. 그 밖이면 더 깊게 본다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+python -m unittest tests.test_h7_timing
+# 1) 3국면 분석 (로컬 측정 파일 사용)
+python scripts/h7_timing.py explain --baseline runs/h7_timing/base_cpu.json --candidate runs/h7_timing/base_cuda.json \
+  --compare docs/h7/h7_equiv_cpu_vs_cuda.json --output docs/h7/h7_equiv_cpu_vs_cuda_explain.json
+# 2) 같은 장치 반복 (corpus만, workers 1)
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cpu --threads 1 --workers 1 --fast fast3 --jsonl runs/h7_timing/rep_cpu.jsonl --output runs/h7_timing/rep_cpu.json 2>&1 | tee runs/h7_timing/rep_cpu.log
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cuda --workers 1 --fast fast3 --jsonl runs/h7_timing/rep_cuda.jsonl --output runs/h7_timing/rep_cuda.json 2>&1 | tee runs/h7_timing/rep_cuda.log
+python scripts/h7_timing.py compare --mode search --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --candidate runs/h7_timing/rep_cpu.json --output docs/h7/h7_equiv_cpu_vs_cpu.json
+python scripts/h7_timing.py compare --mode search --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cuda.json --candidate runs/h7_timing/rep_cuda.json --output docs/h7/h7_equiv_cuda_vs_cuda.json
+```
+
+- 반복 비교는 `search` 모드(모든 결정 필드)로 한다. 같은 장치라면 착수뿐 아니라 Q 값까지 같아야 결정적이라고 말할 수 있다.
+- 커밋할 것: `docs/h7/h7_equiv_cpu_vs_cuda_explain.json`, `docs/h7/h7_equiv_cpu_vs_cpu.json`, `docs/h7/h7_equiv_cuda_vs_cuda.json`
+- 미니 PC 측정은 그대로 필요하다. 이 점검과 상관없이 돌려도 된다.
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
