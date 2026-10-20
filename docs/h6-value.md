@@ -2675,7 +2675,7 @@ python scripts/h7_timing.py compare --mode search --corpus docs/h7/h7_equiv_corp
   - 그래서 search-equivalence gate가 아니라 새 엔진 후보(§2.3)다. E0 수치로는 얻을 것도 작다. 우선순위에서 뺀다.
 - 정확 가속 후보는 노드 수와 결과를 바꾸지 않는 것만이다. 예: native 구현, 같은 결과의 helper cache.
 
-## 다음 단계 설계 방향: V8-C 꼬리 profiling과 정확 가속 (2026-10-20, 초안, 승인 대기)
+## 다음 단계 설계 방향: V8-C 꼬리 profiling과 정확 가속 (2026-10-20, 초안 → 아래 P0–P2 확정)
 
 **목표:** 착수와 결정 필드가 비트 단위로 같으면서 V8-C 검사의 p95 / p99 / 최대를 줄인다. 대상은 canonical CUDA와 웹 CPU 둘 다다. V8-C는 CPU 계산이라 장치와 무관하다.
 
@@ -2707,6 +2707,61 @@ python scripts/h7_timing.py compare --mode search --corpus docs/h7/h7_equiv_corp
 - 정확 가속 판으로 동결(optimized pre-RL freeze)한다.
 - 미니 PC에서 CPU 기준선과 30초 초과를 측정한다. 이 측정은 P0–P2와 상관없이 지금 돌려도 된다. 측정 명령은 위 기준선 절과 같고 `--corpus`를 붙인다.
 - 그다음 웹 CPU backend 결정(CPU 대 CUDA 짝 비열등, 또는 CUDA 기계)과 H7-c1 병행으로 간다.
+
+## P0–P2 확정 (2026-10-20, 실행 전 고정)
+
+사용자 검토에서 P0 범위, P1 원칙, P2 채택 기준이 승인됐다. 추가 규칙을 반영했다.
+
+**P0 (`scripts/h7_p0_profile.py`, 테스트 `tests/test_h7_p0.py`, 보고용)**
+- 표본: corpus의 `slow` 131 + `v8c_not_safe_or_switch` 75(겹침 제외), 그리고 `random` 묶음에서 50(seed 0).
+- 국면마다 동결 TB-V2-Value로 두 번 둔다(`h7_timing.decide`: 새 agent, 고정 seed, cold value cache).
+  - **coarse:** V8-C(`_verify_root_with`)와 그 solver의 VCF 호출마다 타이머를 둔다. 호출당 타이머 둘이라 부담이 작다. **분기는 이 결과로 정한다.**
+  - **fine:** helper에도 타이머를 둔다. VCF 호출 중인지로 나눈다.
+    - VCF 안: table key, five / 후보 / 합법성 / four helper. 나머지는 재귀 자체다.
+    - VCF 밖: `threats._winning_moves`, `ordered_moves`(방어 후보), `_board_key`, `Game.legal_moves / play / undo`(금수와 합법성은 여기 있다). 나머지는 solver 논리(cache, 상태 결합)다.
+    - 각 helper는 자기 시간(자식 helper 시간을 뺀 값)으로 센다. 그래서 겹쳐 세지 않는다.
+    - fine은 해석용이다. 타이머 부담 비(`timer_overhead_ratio`)도 보고한다.
+- 타이머는 실행 중에 이름을 바꿔 끼운다. frozen 파일은 고치지 않는다.
+  - coarse와 fine의 결정 필드가 같아야 한다(`timers_transparent`).
+  - `--baseline`을 주면 기준선 measure와 같은 국면 수를 보고한다.
+- 국면별 기록: V8-C의 VCF 요청 수(solver cache hit = 요청 − 호출), 호출 수, 노드, 호출당 최대 노드, cut 호출, table hit / store, tree 수 상태
+- **분기 (사전):** coarse의 VCF 안 시간 합 / V8-C 시간 합 ≥ 0.6이면 P1a(table을 포함한 native VCF core), 아니면 P1b(VCF 밖: 금수, 방어 후보). 국면별 중앙값 / p75 / p90과 묶음별 값은 해석용으로만 보고한다.
+- 한 프로세스, 한 worker로 돈다. 시간 비율을 재기 때문이다. 약 256국면 × 2회로, 1–2시간을 본다(1분마다 진행 출력, `--jsonl`로 이어서 돌 수 있음).
+
+**P1 (P0 결과로 하나)**
+- frozen 파일(`tb_v2_value.py`, `vcf_tt_v1.py` 등)은 고치지 않는다. fast3처럼 바꿔 끼우는 후보다.
+- P1a의 기준은 Python `vcf_tt_v1`이 oracle이다. 다음이 같아야 한다.
+  - 결과, witness, 노드, 호출, cut 종류
+  - table 의미(정확한 키, no_win만, 호출 단위)
+- 같은 노드를 더 빨리 계산하는 최적화여야 한다. 탐색량을 줄이는 최적화가 아니다. P1b(helper cache / native)도 같다.
+
+**P2 판정**
+
+| 구분 | 기준 |
+|---|---|
+| HARD 의미 | `h7_timing.py compare --mode search`, corpus 827국면, 차이 0. 같은 backend 기준선과 비교한다(CPU끼리, CUDA끼리) |
+| HARD 속도 | 같은 backend, 같은 프로세스, 국면별 짝. 순서는 국면 id의 SHA-256 첫 바이트가 짝수면 A B B A, 홀수면 B A A B다. 실행마다 같은 seed, 새 agent, cold value cache, 후보 정의에 맞는 새 VCF / table 상태로 시작한다. 독립 측정 2회. 회마다 국면별 시간 비(후보 / 기준, 각 두 번의 평균)의 중앙값을 내고, 국면 bootstrap 95% 상한 < 1.0이어야 한다. **두 회 모두** 만족하면 PASS |
+| 주 지표 | 전체 착수 시간(사용자 체감). V8-C(root) 시간 비는 보조 지표다. V8-C가 빨라져도 전체 착수가 느려지면 채택하지 않는다 |
+| 보고만 | mean, p50 / p90 / p95 / p99 / 최대, 30초 초과 수, 구성 시간 |
+
+- 최대값 하나가 커졌다고 정확 가속을 기각하지 않는다. 같은 결정에서도 wall-clock이 6–12% 흔들렸기 때문이다.
+- P2 도구(ABBA 짝 측정)는 P1 후보가 생기면 함께 만든다. 후보를 실행 중에 바꿔 끼울 수 있어야 같은 프로세스 짝 측정이 가능하다.
+
+**실행 명령 (데스크톱 Ubuntu, CPU 기준선과 같은 조건)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_p0 tests.test_h7_timing tests.test_tb_v2_value
+python -u scripts/h7_p0_profile.py --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --device cpu --threads 1 --fast fast3 \
+  --jsonl runs/h7_timing/p0.jsonl --output docs/h7/h7_p0_profile.json 2>&1 | tee runs/h7_timing/p0.log
+```
+
+- 다른 무거운 작업과 동시에 돌리지 않는다(시간 비율 측정).
+- 커밋할 것: `docs/h7/h7_p0_profile.json`. 마지막 출력의 `timers_transparent`가 true가 아니면 결과를 보여 달라.
+- 미니 PC 기준선 측정은 이와 별개로 병행해도 된다.
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
