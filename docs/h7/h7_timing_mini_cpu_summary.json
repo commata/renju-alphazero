@@ -1,0 +1,135 @@
+{
+  "format": "h7-timing-mini-cpu-summary-v1",
+  "source": "runs/h7_timing/mini_cpu.json",
+  "settings": {
+    "device": "cpu",
+    "threads": 1,
+    "workers": 1,
+    "fast": {
+      "requested": "fast3",
+      "active": {
+        "threat_windows": "threat_windows_native",
+        "winning_extensions": "winning_extensions_in_direction"
+      },
+      "native_build": {
+        "python": "3.14.4",
+        "soabi": "cpython-314-x86_64-linux-gnu",
+        "ext_suffix": ".cpython-314-x86_64-linux-gnu.so",
+        "flags": [
+          "-O2",
+          "-shared",
+          "-fPIC"
+        ],
+        "sources": {
+          "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5"
+        },
+        "executable": "/home/deploy/renju-alphazero/.venv-ser5/bin/python",
+        "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+        "compiler": "gcc",
+        "compiler_version": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+        "modules": {
+          "_threat_windows.cpython-314-x86_64-linux-gnu.so": "46376708805575136816bb139b3e0eeaa64e8310f50c60913478c4146c01a2f3"
+        }
+      }
+    },
+    "machine": {
+      "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+      "cpu": "AMD Ryzen 7 5800H with Radeon Graphics",
+      "python": "3.14.4"
+    }
+  },
+  "summary": {
+    "all": {
+      "n": 827,
+      "mean": 4.935,
+      "p50": 1.806,
+      "p90": 15.497,
+      "p95": 20.996,
+      "p99": 29.777,
+      "max": 38.473,
+      "over_deadline": 8
+    },
+    "e3a": {
+      "n": 526,
+      "mean": 6.252,
+      "p50": 1.954,
+      "p90": 17.483,
+      "p95": 26.254,
+      "p99": 32.652,
+      "max": 38.473,
+      "over_deadline": 8
+    },
+    "h6_4b": {
+      "n": 298,
+      "mean": 2.632,
+      "p50": 1.759,
+      "p90": 4.567,
+      "p95": 6.341,
+      "p99": 17.078,
+      "max": 22.967,
+      "over_deadline": 0
+    },
+    "probe": {
+      "n": 3,
+      "mean": 2.941,
+      "p50": 1.616,
+      "p90": 6.23,
+      "p95": 6.23,
+      "p99": 6.23,
+      "max": 6.23,
+      "over_deadline": 0
+    },
+    "tree_route": {
+      "n": 705,
+      "mean": 5.161,
+      "p50": 1.858,
+      "p90": 15.725,
+      "p95": 21.079,
+      "p99": 30.865,
+      "max": 38.473,
+      "over_deadline": 8
+    },
+    "tree_route_parts": {
+      "tree": {
+        "n": 705,
+        "mean": 1.561,
+        "p50": 1.474,
+        "p90": 2.459,
+        "p95": 2.621,
+        "p99": 2.837,
+        "max": 2.951,
+        "over_deadline": 0
+      },
+      "root": {
+        "n": 705,
+        "mean": 2.009,
+        "p50": 0.169,
+        "p90": 6.771,
+        "p95": 15.046,
+        "p99": 23.808,
+        "max": 27.655,
+        "over_deadline": 0
+      },
+      "vct2": {
+        "n": 705,
+        "mean": 0.808,
+        "p50": 0.134,
+        "p90": 2.932,
+        "p95": 3.215,
+        "p99": 3.559,
+        "max": 5.101,
+        "over_deadline": 0
+      },
+      "value": {
+        "n": 705,
+        "mean": 0.759,
+        "p50": 0.733,
+        "p90": 1.228,
+        "p95": 1.378,
+        "p99": 1.474,
+        "max": 1.501,
+        "over_deadline": 0
+      }
+    }
+  }
+}
