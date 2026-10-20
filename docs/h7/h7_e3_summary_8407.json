@@ -1,0 +1,211 @@
+{
+ "format": "h7-e3-summary-v1",
+ "rules": {
+  "stage1_min": 0.5,
+  "adopt_min": 0.55,
+  "pair_low_above": 0.5,
+  "proof_margin": 0.03,
+  "time_ratio_max": 1.5,
+  "colour_min": 0.45,
+  "fast": "fast3",
+  "bootstrap": 10000,
+  "seed": 0
+ },
+ "main": {
+  "arm": "puct_value_vct2_50k_tt",
+  "seeds": [
+   8407
+  ],
+  "games": 50,
+  "wins": 33,
+  "draws": 3,
+  "losses": 14,
+  "score": 0.69,
+  "ci95_wilson": [
+   0.552,
+   0.801
+  ],
+  "ci95_pairs": [
+   0.57,
+   0.8
+  ],
+  "by_colour": {
+   "black": 0.84,
+   "white": 0.54
+  },
+  "safety_violations": [],
+  "proven_loss_in_lost_position_per_move": 0.0192,
+  "losses_with_opponent_vct": 10,
+  "tree_moves": 565,
+  "tree_status": {
+   "SAFE": 531,
+   "UNKNOWN": 28,
+   "UNSAFE": 6,
+   "UNCHECKED": 0
+  },
+  "tree_not_safe_rate": 0.0602,
+  "v8c_changed": 13,
+  "root_check_minutes": 10.2,
+  "tree_seconds_median": 0.644,
+  "tree_simulations_per_second": 96.9,
+  "nn_calls_per_tree_move": 0,
+  "prior_fallbacks": 0,
+  "prior_entropy_mean": null,
+  "tree_chose_prior_top_rate": null,
+  "time_ratio": 1.046,
+  "total_game_minutes": 66.9
+ },
+ "aux": {
+  "puct_value_vct2_50k_tt": {
+   "arm": "puct_value_vct2_50k_tt",
+   "seeds": [
+    8407
+   ],
+   "games": 50,
+   "wins": 49,
+   "draws": 1,
+   "losses": 0,
+   "score": 0.99,
+   "ci95_wilson": [
+    0.911,
+    0.999
+   ],
+   "ci95_pairs": [
+    0.97,
+    1.0
+   ],
+   "by_colour": {
+    "black": 0.98,
+    "white": 1.0
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0,
+   "losses_with_opponent_vct": 0,
+   "tree_moves": 443,
+   "tree_status": {
+    "SAFE": 431,
+    "UNKNOWN": 9,
+    "UNSAFE": 3,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0271,
+   "v8c_changed": 8,
+   "root_check_minutes": 3.8,
+   "tree_seconds_median": 0.669,
+   "tree_simulations_per_second": 87.8,
+   "nn_calls_per_tree_move": 0,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": null,
+   "tree_chose_prior_top_rate": null,
+   "time_ratio": 1.156,
+   "total_game_minutes": 39.0
+  },
+  "puct_policy_vct2_50k_tt": {
+   "arm": "puct_policy_vct2_50k_tt",
+   "seeds": [
+    8407
+   ],
+   "games": 50,
+   "wins": 43,
+   "draws": 1,
+   "losses": 6,
+   "score": 0.87,
+   "ci95_wilson": [
+    0.75,
+    0.937
+   ],
+   "ci95_pairs": [
+    0.76,
+    0.96
+   ],
+   "by_colour": {
+    "black": 0.88,
+    "white": 0.86
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0082,
+   "losses_with_opponent_vct": 5,
+   "tree_moves": 532,
+   "tree_status": {
+    "SAFE": 500,
+    "UNKNOWN": 18,
+    "UNSAFE": 14,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0602,
+   "v8c_changed": 23,
+   "root_check_minutes": 8.3,
+   "tree_seconds_median": 0.87,
+   "tree_simulations_per_second": 63.7,
+   "nn_calls_per_tree_move": 62.4,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.542,
+   "tree_chose_prior_top_rate": 0.515,
+   "time_ratio": 1.155,
+   "total_game_minutes": 59.6
+  }
+ },
+ "proof_4m_table": {
+  "UNSAFE": {
+   "target": "UNSAFE",
+   "openings": 50,
+   "candidate_rate": 0.0068,
+   "baseline_rate": 0.0282,
+   "diff": -0.0214,
+   "ci95": [
+    -0.048,
+    -0.0009
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  },
+  "UNKNOWN": {
+   "target": "UNKNOWN",
+   "openings": 50,
+   "candidate_rate": 0.0023,
+   "baseline_rate": 0.0038,
+   "diff": -0.0015,
+   "ci95": [
+    -0.0084,
+    0.0058
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  }
+ },
+ "proof_4m_legacy_frozen": {
+  "UNSAFE": {
+   "target": "UNSAFE",
+   "openings": 50,
+   "candidate_rate": 0.0068,
+   "baseline_rate": 0.0282,
+   "diff": -0.0214,
+   "ci95": [
+    -0.048,
+    -0.0009
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  },
+  "UNKNOWN": {
+   "target": "UNKNOWN",
+   "openings": 50,
+   "candidate_rate": 0.009,
+   "baseline_rate": 0.0188,
+   "diff": -0.0098,
+   "ci95": [
+    -0.0359,
+    0.0098
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  }
+ },
+ "p92_guard": "PASS",
+ "verdict": {
+  "decision": "RUN_8408",
+  "reasons": [
+   "proof guards are reported, applied from 8407+8408 on"
+  ]
+ }
+}
