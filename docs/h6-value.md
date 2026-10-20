@@ -2360,6 +2360,103 @@ python scripts/summarize_h7_e3.py --main runs/h7_e3/value_vs_tb2_$SEED.json \
 - 커밋할 것: `docs/h7/h7_e3_p92.json`, `docs/h7/h7_e3_d2_8407.json`, `docs/h7/h7_e3_summary_8407.json`
 - 판정이 `RUN_8408`이면 `SEED=8408`로 A·B·C·d2를 돌린다(P92는 다시 돌리지 않음). 그다음 요약에 두 seed의 파일을 모두 넘겨 `docs/h7/h7_e3_summary_8407_8408.json`으로 쓴다.
 
+## H7-E3 결과: ADOPT → TB-V2-Value (2026-10-20, `docs/h7/h7_e3_summary_8407_8408.json`, 커밋 `f3e9691`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. ADOPT, 8409 미실행(두 seed에서 ADOPT 조건 충족), H6-6 REJECT 유지, "table이 H6-6 실패를 해결했다고 인과적으로 단정하지 않는다"에 동의한다. 해석 두 군데를 고치고, 초안에 없던 사실 네 가지를 더했다.
+
+**확인한 수치**
+- 8407 단독 → `RUN_8408`(score 0.69, 짝 95% [0.57, 0.80]). 8407 + 8408 → `ADOPT`, 남은 사유 없음.
+- A(후보 대 TB-Engine-v2, 100국):
+  - 67-6-27, score **0.700**, 짝 95% [0.620, 0.775]
+  - 흑 0.800, 백 0.600
+  - 시간 비 1.032(상대 대비), safety violation 0
+- B / C(`v8:full` 상대, 각 100국):
+  - B(TB-V2-Value) 96-3-1, 0.975, tree UNKNOWN 19 / 994
+  - C(TB-Engine-v2) 81-6-13, 0.840, tree UNKNOWN 37 / 1,394
+  - safety violation 0 / 0
+- proof (공식 4M + table, opening 100개):
+  - UNSAFE 0.30% 대 1.22%, 차이 −0.92%p [−2.11, −0.07] → PASS
+  - UNKNOWN 0.20% 대 0.36%, 차이 −0.16%p [−0.51, +0.18] → PASS
+- legacy frozen 4M (보고만):
+  - UNSAFE 같음
+  - UNKNOWN 0.91% 대 1.43%, 차이 −0.53%p [−1.76, +0.47]
+- P92: TB-Engine-v2 0 / 10, 후보 0 / 10 → PASS
+- d2: 75행(8407 44행, 8408 31행), 재현 불일치 0, continued 1, `--table --legacy-frozen`, fast3
+
+**해석 수정**
+1. **UNKNOWN guard 통과는 공식 재검사를 4M + table로 바꾼 덕분이 아니다.** legacy frozen 4M으로 판정했어도 상한 +0.47%p로 PASS였다. 큰 변화는 재검사가 아니라 **대국 중 기록된 UNKNOWN**에 있다.
+
+   | aux tree 수 기록 UNKNOWN | H6-6 (TB-Engine-v1 위) | E3 (TB-Engine-v2 위) |
+   |---|---:|---:|
+   | value arm | 103 / 1,425 = 7.2% | 19 / 994 = 1.9% |
+   | 기준 arm | 71 / 2,385 = 3.0% | 37 / 1,394 = 2.7% |
+
+   - value arm에서 −74%다. E1 오프라인에서 table이 value arm 표준 UNKNOWN의 45%를 풀었던 것보다 크다. 그래서 대국 중 table만으로는 다 설명되지 않는다.
+   - seed(새 opening)와 대국 경로 차이도 섞여 있다. 두 요인을 이 데이터로는 나눌 수 없다.
+   - 결론은 초안과 같다. table 도입 뒤 H6-6의 실패 양상이 holdout에서 **재현되지 않았다**는 것이지, 원인을 분리해 보인 것은 아니다.
+2. **proof 수치는 사건 수가 매우 적다.**
+   - 4M + table UNKNOWN은 후보 2개, 기준 5개(d2 main), UNSAFE는 후보 3개, 기준 17개다.
+   - 구간이 좁은 것은 비율이 0 근처라서다. +3%p margin의 비열등 판정에는 충분하다. 그러나 "후보가 더 안전하다"(UNSAFE −0.92%p)를 기력과 무관한 성질로 읽으면 안 된다.
+   - B는 `v8:full`을 0.975로 이겨 불리한 국면 자체가 적다. 상대를 압도하는 쪽은 증명된 패배 수를 만날 일도 적다. 선택 효과일 수 있다.
+
+**추가 사실**
+1. **기력 효과가 그대로 재현됐다.** H6-6(TB-Engine-v1 위, 150국)의 A는 0.700 [0.630, 0.767], 흑 0.78 / 백 0.62였다. E3(TB-Engine-v2 위, 100국)는 0.700 [0.620, 0.775], 흑 0.80 / 백 0.60이다. 엔진이 바뀌어도 value v3의 이득 크기가 같다.
+2. **E1의 걱정(남은 꼬리가 value 쪽)은 E3에서 보이지 않았다.**
+   - E1에서는 4M + table 뒤 남은 UNKNOWN 17개 중 15개가 value arm이었다.
+   - E3에서는 4M + table UNKNOWN이 후보 2개, 기준 5개다. 다만 둘 다 사건 수가 작다.
+3. **table과 frozen 4M 사이에 모순이 없다.**
+   - d2 75행에서 table 4M과 frozen 4M이 SAFE ↔ UNSAFE로 갈린 경우는 0이다.
+   - table만 SAFE로 결정한 수가 22개(frozen 4M UNKNOWN) 있다. 이 22개는 E1·E2와 같은 단서를 갖는다. 근거는 정확한 가지치기이고, 독립 확인은 없다.
+4. **P92 PASS는 약한 증거다.** 두 엔진 모두 0 / 10이라 "후보가 기준보다 나빠지지 않았다"는 뜻일 뿐이다. 판별력 있는 통과가 아니다(기준이 10 / 10이었다면 NOT_DISCRIMINATING).
+
+**남은 위험 (웹 단계로 넘김)**
+- 시간 비 1.032는 GPU(CUDA) value로 잰 것이다.
+- H6-4b의 고정 국면 점검(CPU, SER5 조건)에서 value leaf는 평균 시간을 거의 바꾸지 않았다. 그러나 **p95를 34.6초에서 50.9초로 45% 늘렸다**(value 호출당 CPU 11.7 ms, CUDA 2.6 ms).
+- 미니 PC의 30초 deadline에서는 이 꼬리가 1순위 위험이다. E3 요약에는 수당 시간 분포가 없으므로 A run에서 따로 뽑아 둔다(아래 명령).
+- **배포 제약:** value v3와 H3 policy는 RenjuNet으로 학습한 망이라 로컬 전용이다(track-b-post-e1 §2, mcts-v8-teacher §12.1). 미니 PC 웹 대국은 지금까지처럼 로컬 범위에서만 연다. 공개 배포에는 RenjuNet 없이 학습한 변형이 따로 필요하다.
+
+**결론:** TB-V2-Value를 Track-B의 B-engine + B-net 조합으로 채택한다. H6-6 REJECT는 그대로다.
+
+## 다음 단계 설계 방향 (2026-10-20, 초안, 승인 대기)
+
+**1. TB-V2-Value 동결 (먼저, 별도 커밋)**
+- `src/analysis/tb_v2_value.py`를 만든다. TB-Engine-v2처럼 설정을 모두 적는다(`tree_mode='puct_value'` 포함). 함께 고정하는 것:
+  - `ENGINE_OPTIONS = {'root_vcf_table': True}`
+  - `VCF_TABLE_SHA256`, `VALUE_CHECKPOINT_SHA256`(v3 `a0fcccc4…`), `VALUE_INFERENCE='d4_average'`, `VALUE_LAMBDA=1.0`
+  - `FREEZE_EVIDENCE`(E3 summary)
+- `config_hash`는 위 전부를 덮는다. 테스트는 설정, table SHA, 근거 파일, agent를 검사한다.
+- CLAUDE.md frozen 목록에 더한다.
+
+**2. 같은 착수 시간 단축 최적화 (로드맵 단계, 실행 전 정의 고정)**
+- **기준선 측정 (먼저):** 동결 엔진으로 고정 국면 세트의 수당 시간 분포(p50 / p90 / p95 / p99 / 최대)를 잰다.
+  - 국면 세트: E3 A의 tree 수 중 시간이 긴 국면과 무작위 표본
+  - 조건: 데스크톱 CPU 전용, CUDA, 미니 PC CPU
+  - 30초를 넘는 비율도 기록한다.
+- **"같은 기력" 정의 (승인 필요):**
+  - 탐색 부분(VCF, threat, V8): 착수·진단·노드·호출이 비트 단위로 같아야 한다. fast3와 같은 방식이다.
+  - value 망 부분(추론 백엔드, 스레드, 정밀도): 비트 단위 동일은 불가능하다. H6-4b에서 CPU와 CUDA도 Q 값이 비트 단위로 같지 않았다(298국면 중 47국면). 대신 **고정 국면 세트에서 착수 100% 동일**을 기준으로 제안한다. 정밀도를 바꾸는 최적화(fp16, int8)는 착수가 달라질 수 있으므로 새 엔진으로 보고 §2.3 gate를 거친다.
+- 대상 후보(예상 효과 순): value 추론의 꼬리(CPU), V8-C 검사의 UNKNOWN 꼬리. 어느 것이든 착수를 바꾸면 이 단계가 아니다.
+
+**3. 동결 → 웹 deadline 판(미니 PC 30초)과 H7-c1 self-play 병행:** 로드맵 그대로.
+
+**바로 할 수 있는 측정 (판정 아님): E3 A run의 수당 시간 분포**
+
+```bash
+cd ~/renju-h6 && source .venv/bin/activate
+python - <<'PY'
+import json
+def pct(v):
+    v = sorted(v); n = len(v)
+    return {q: round(v[min(n - 1, int(f * n))], 2) for q, f in (('p50', .5), ('p90', .9), ('p95', .95), ('p99', .99))} | {'max': round(v[-1], 2), 'n': n}
+for seed in (8407, 8408):
+    r = json.load(open(f'runs/h7_e3/value_vs_tb2_{seed}.json', encoding='utf-8'))
+    cand = [m['seconds'] for g in r['games'] for m in g['v8_moves']]
+    opp = [s for g in r['games'] for s in g['opponent_move_seconds']]
+    print(seed, 'TB-V2-Value', pct(cand), 'over30', sum(x > 30 for x in cand))
+    print(seed, 'TB-Engine-v2', pct(opp), 'over30', sum(x > 30 for x in opp))
+PY
+```
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
