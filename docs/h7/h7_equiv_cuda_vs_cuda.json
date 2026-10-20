@@ -1,0 +1,106 @@
+{
+ "verdict": "PASS",
+ "mode": "search",
+ "positions": 827,
+ "differences": 0,
+ "first_differences": [],
+ "times": {
+  "baseline": {
+   "n": 827,
+   "mean": 2.852,
+   "p50": 0.743,
+   "p90": 9.496,
+   "p95": 13.301,
+   "p99": 20.448,
+   "max": 26.406,
+   "over_deadline": 0
+  },
+  "candidate": {
+   "n": 827,
+   "mean": 2.681,
+   "p50": 0.73,
+   "p90": 9.095,
+   "p95": 12.265,
+   "p99": 18.194,
+   "max": 23.233,
+   "over_deadline": 0
+  },
+  "total_ratio": 0.9403
+ },
+ "settings": {
+  "baseline": {
+   "device": "cuda",
+   "threads": 1,
+   "workers": 1,
+   "fast": {
+    "requested": "fast3",
+    "active": {
+     "threat_windows": "threat_windows_native",
+     "winning_extensions": "winning_extensions_in_direction"
+    },
+    "native_build": {
+     "python": "3.12.3",
+     "soabi": "cpython-312-x86_64-linux-gnu",
+     "ext_suffix": ".cpython-312-x86_64-linux-gnu.so",
+     "flags": [
+      "-O2",
+      "-shared",
+      "-fPIC"
+     ],
+     "sources": {
+      "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5"
+     },
+     "executable": "/home/tack/renju-h6/.venv/bin/python",
+     "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+     "compiler": "gcc",
+     "compiler_version": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+     "modules": {
+      "_threat_windows.cpython-312-x86_64-linux-gnu.so": "2c855e2ac4f15b729bc8c1088da73acaecd8e283da67938cab1421de73b3942b"
+     }
+    }
+   },
+   "machine": {
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+    "python": "3.12.3"
+   }
+  },
+  "candidate": {
+   "device": "cuda",
+   "threads": 1,
+   "workers": 1,
+   "fast": {
+    "requested": "fast3",
+    "active": {
+     "threat_windows": "threat_windows_native",
+     "winning_extensions": "winning_extensions_in_direction"
+    },
+    "native_build": {
+     "python": "3.12.3",
+     "soabi": "cpython-312-x86_64-linux-gnu",
+     "ext_suffix": ".cpython-312-x86_64-linux-gnu.so",
+     "flags": [
+      "-O2",
+      "-shared",
+      "-fPIC"
+     ],
+     "sources": {
+      "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5"
+     },
+     "executable": "/home/tack/renju-h6/.venv/bin/python",
+     "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+     "compiler": "gcc",
+     "compiler_version": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+     "modules": {
+      "_threat_windows.cpython-312-x86_64-linux-gnu.so": "2c855e2ac4f15b729bc8c1088da73acaecd8e283da67938cab1421de73b3942b"
+     }
+    }
+   },
+   "machine": {
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "cpu": "12th Gen Intel(R) Core(TM) i5-12600K",
+    "python": "3.12.3"
+   }
+  }
+ }
+}
