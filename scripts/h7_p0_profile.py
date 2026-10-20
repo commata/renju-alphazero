@@ -264,6 +264,30 @@ def select(positions: list[dict], corpus: dict) -> list[dict]:
     return [{**by_id[i], 'groups': sorted(g)} for i, g in sorted(picked.items())]
 
 
+def _profile_rows(args, tasks) -> list[dict]:
+    """Rows in one process (timing), resumable from ``--jsonl``; progress every minute."""
+    from hybrid.progress import Progress
+
+    done = {}
+    if args.jsonl is not None and args.jsonl.exists():
+        for line in args.jsonl.read_text(encoding='utf-8').splitlines():
+            if line.strip():
+                row = json.loads(line)
+                done[row['id']] = row
+    todo = [t for t in tasks if t['id'] not in done]
+    print(f'[h7-p0] {len(tasks)} positions, {len(tasks) - len(todo)} already done (one process: timing)', flush=True)
+    progress = Progress('h7-p0', len(todo), 'positions')
+    for task in todo:
+        row = p0_task(task)
+        done[row['id']] = row
+        if args.jsonl is not None:
+            args.jsonl.parent.mkdir(parents=True, exist_ok=True)
+            with args.jsonl.open('a', encoding='utf-8') as handle:
+                handle.write(json.dumps(row) + '\n')
+        progress.update(1)
+    return [done[t['id']] for t in tasks]
+
+
 def main(argv=None, factories=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--positions', type=Path, required=True)
@@ -282,26 +306,9 @@ def main(argv=None, factories=None) -> int:
         parser.error(f'{args.output} exists')
     load = (lambda p: json.loads(Path(p).read_text(encoding='utf-8')))
     tasks = select(load(args.positions)['positions'], load(args.corpus))[:args.limit]
-    h7_timing._init(args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, args.fast, factories)
-    from hybrid.progress import Progress
-    done = {}
-    if args.jsonl is not None and args.jsonl.exists():
-        for line in args.jsonl.read_text(encoding='utf-8').splitlines():
-            if line.strip():
-                row = json.loads(line)
-                done[row['id']] = row
-    todo = [t for t in tasks if t['id'] not in done]
-    print(f'[h7-p0] {len(tasks)} positions, {len(tasks) - len(todo)} already done (one process: timing)', flush=True)
-    progress = Progress('h7-p0', len(todo), 'positions')
-    for task in todo:
-        row = p0_task(task)
-        done[row['id']] = row
-        if args.jsonl is not None:
-            args.jsonl.parent.mkdir(parents=True, exist_ok=True)
-            with args.jsonl.open('a', encoding='utf-8') as handle:
-                handle.write(json.dumps(row) + '\n')
-        progress.update(1)
-    rows = [done[t['id']] for t in tasks]
+    with h7_timing.restore_fast_mode():
+        h7_timing._init(args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, args.fast, factories)
+        rows = _profile_rows(args, tasks)
     from analysis.tb_v2_value import config_hash
     summary = summarize(rows, load(args.baseline) if args.baseline else None)
     result = {'format': FORMAT, 'report_only': True, 'rules': RULES, 'engine': config_hash(),

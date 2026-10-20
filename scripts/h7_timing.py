@@ -26,6 +26,7 @@ Four steps, the corpus rules fixed before any measurement:
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import platform
@@ -77,6 +78,18 @@ def build_positions(runs: list[dict]) -> list[dict]:
 
 
 # ---------- measure ----------
+
+@contextmanager
+def restore_fast_mode():
+    """Put this process back on the fast mode it had before (the runs here rebind names process-wide)."""
+    from hybrid.h6_fast import install, installed_mode
+
+    previous = installed_mode()
+    try:
+        yield
+    finally:
+        install(previous)
+
 
 def _init(policy_checkpoint, value_checkpoint, device, threads, fast, factories=None):
     if fast != 'off':
@@ -286,12 +299,12 @@ def paired_task(task: dict, modes: dict) -> dict:
     order = order_of(task['id'])
     runs = {'A': [], 'B': []}
     decisions = []
-    for slot in order:
-        install(modes[slot])
-        out = decide(task['moves'], seed)
-        runs[slot].append({'seconds': out['seconds'], 'root': out['times']['root']})
-        decisions.append(out['decision'])
-    install(modes['A'])
+    with restore_fast_mode():
+        for slot in order:
+            install(modes[slot])
+            out = decide(task['moves'], seed)
+            runs[slot].append({'seconds': out['seconds'], 'root': out['times']['root']})
+            decisions.append(out['decision'])
     mean = (lambda xs: sum(xs) / len(xs))
     a, b = mean([r['seconds'] for r in runs['A']]), mean([r['seconds'] for r in runs['B']])
     ar, br = mean([r['root'] for r in runs['A']]), mean([r['root'] for r in runs['B']])
@@ -443,7 +456,19 @@ def _paired(args, load, factories) -> dict:
     keep = set(load(args.corpus)['ids'])
     tasks = [t for t in load(args.positions)['positions'] if t['id'] in keep][:args.limit]
     modes = {'A': args.baseline_mode, 'B': args.candidate_mode}
-    _init(args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, modes['A'], factories)
+    with restore_fast_mode():
+        _init(args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, modes['A'], factories)
+        rows = _paired_rows(args, tasks, modes)
+    fast = ({m: _fast_provenance(m) for m in set(modes.values())} if factories is None else dict(modes))
+    return {'format': FORMAT, 'step': 'paired', 'round': args.round, 'rules': PAIRED_RULES, 'engine': config_hash(),
+            'modes': modes, 'settings': {'device': args.device, 'threads': args.threads, 'fast': fast,
+                                         'machine': machine()},
+            'summary': summarize_paired(rows), 'rows': rows}
+
+
+def _paired_rows(args, tasks, modes) -> list[dict]:
+    from hybrid.progress import Progress
+
     done = {}
     if args.jsonl is not None and args.jsonl.exists():
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
@@ -462,12 +487,7 @@ def _paired(args, load, factories) -> dict:
             with args.jsonl.open('a', encoding='utf-8') as handle:
                 handle.write(json.dumps(row) + '\n')
         progress.update(1)
-    rows = [done[t['id']] for t in tasks]
-    fast = ({m: _fast_provenance(m) for m in set(modes.values())} if factories is None else dict(modes))
-    return {'format': FORMAT, 'step': 'paired', 'round': args.round, 'rules': PAIRED_RULES, 'engine': config_hash(),
-            'modes': modes, 'settings': {'device': args.device, 'threads': args.threads, 'fast': fast,
-                                         'machine': machine()},
-            'summary': summarize_paired(rows), 'rows': rows}
+    return [done[t['id']] for t in tasks]
 
 
 def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
@@ -501,10 +521,11 @@ def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
                                  initargs=init) as pool:
             run_chunks(pool, _chunk, chunks, progress, len, unit_name='positions', on_result=keep)
     else:
-        _init(*init)
-        for i, c in enumerate(chunks):
-            keep(i, _chunk(c))
-            progress.update(1)
+        with restore_fast_mode():  # one process: do not leave the measured mode installed
+            _init(*init)
+            for i, c in enumerate(chunks):
+                keep(i, _chunk(c))
+                progress.update(1)
     return [done[t['id']] for t in tasks]
 
 

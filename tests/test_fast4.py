@@ -88,6 +88,45 @@ class InstallTest(unittest.TestCase):
 
 @NATIVE
 class PairedTest(unittest.TestCase):
+    def tearDown(self):
+        from hybrid.h6_fast import install
+        install('off')
+
+    def assert_mode(self, mode):
+        from hybrid import h6_fast
+        self.assertEqual(h6_fast.installed_mode(), mode)
+        self.assertEqual(h6_fast.state()['active'], h6_fast.expected_active(mode))
+
+    def test_runs_leave_the_mode_they_found(self):
+        """paired, an in-process measure and P0 rebind names process-wide; each restores the caller's mode."""
+        from hybrid.h6_fast import install
+        from scripts import h7_p0_profile as p0
+        from scripts import h7_timing as t
+        from tests.test_h7_timing import FACTORIES, MOVES
+
+        modes = {'A': 'fast3', 'B': 'fast4'}
+        task = {'id': 'e3a|k|20', 'source': 'e3a', 'moves': MOVES[:20]}
+        t._init(None, None, 'cpu', 1, 'off', FACTORIES)
+        for before in ('off', 'fast4', 'fast2'):
+            install(before)
+            t.paired_task(task, modes)
+            self.assert_mode(before)
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            (tmp / 'pos.json').write_text(json.dumps({'positions': [task]}), encoding='utf-8')
+            (tmp / 'corpus.json').write_text(json.dumps({'ids': {task['id']: ['slow']}}), encoding='utf-8')
+            install('off')
+            t.main(['paired', '--positions', str(tmp / 'pos.json'), '--corpus', str(tmp / 'corpus.json'),
+                    '--baseline-mode', 'fast3', '--candidate-mode', 'fast4', '--round', '1',
+                    '--output', str(tmp / 'p.json')], factories=FACTORIES)
+            self.assert_mode('off')
+            t.main(['measure', '--positions', str(tmp / 'pos.json'), '--fast', 'fast4', '--output', str(tmp / 'm.json')],
+                   factories=FACTORIES)
+            self.assert_mode('off')
+            p0.main(['--positions', str(tmp / 'pos.json'), '--corpus', str(tmp / 'corpus.json'), '--fast', 'fast3',
+                     '--output', str(tmp / 'p0.json')], factories=FACTORIES)
+            self.assert_mode('off')
+
     def test_paired_round_and_judge(self):
         from scripts import h7_timing as t
         from tests.test_h7_timing import FACTORIES, e3_run
