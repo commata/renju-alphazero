@@ -262,6 +262,84 @@ def explain(base: dict, cand: dict, ids: list[str]) -> dict:
     return {'format': FORMAT, 'step': 'explain', 'positions': out}
 
 
+# ---------- paired (P2 speed and semantics in one process) ----------
+
+PAIRED_RULES = {'orders': {'even': 'ABBA', 'odd': 'BAAB'}, 'order_key': 'first byte of sha256(position id)',
+                'statistic': 'median over positions of mean(candidate total move s) / mean(baseline total move s)',
+                'speed_pass': 'bootstrap 95% upper < 1.0', 'bootstrap': 10_000, 'seed': 0,
+                'semantics_pass': 'every run of every position has the same decision fields', 'rounds': 2}
+
+
+def order_of(position_id: str) -> str:
+    import hashlib
+
+    return PAIRED_RULES['orders']['even' if hashlib.sha256(position_id.encode()).digest()[0] % 2 == 0 else 'odd']
+
+
+def paired_task(task: dict, modes: dict) -> dict:
+    """Four runs of one position, ``A`` = baseline mode and ``B`` = candidate mode, in the position's order;
+    each run starts from a fresh agent, the same seed and a cold value cache (``decide``)."""
+    from hybrid.h6_fast import install
+    from scripts.run_mcts_v8_benchmark import derive_seed
+
+    seed = derive_seed(SEED, 'h7-timing', task['id'])
+    order = order_of(task['id'])
+    runs = {'A': [], 'B': []}
+    decisions = []
+    for slot in order:
+        install(modes[slot])
+        out = decide(task['moves'], seed)
+        runs[slot].append({'seconds': out['seconds'], 'root': out['times']['root']})
+        decisions.append(out['decision'])
+    install(modes['A'])
+    mean = (lambda xs: sum(xs) / len(xs))
+    a, b = mean([r['seconds'] for r in runs['A']]), mean([r['seconds'] for r in runs['B']])
+    ar, br = mean([r['root'] for r in runs['A']]), mean([r['root'] for r in runs['B']])
+    return {'id': task['id'], 'source': task['source'], 'order': order, 'runs': runs, 'baseline_seconds': round(a, 4),
+            'candidate_seconds': round(b, 4), 'ratio': round(b / a, 6) if a else None,
+            'root_ratio': round(br / ar, 6) if ar else None,
+            'identical': all(d == decisions[0] for d in decisions), 'decision': decisions[0]}
+
+
+def _median_ci(values: list[float]) -> dict:
+    from statistics import median
+
+    if not values:
+        return {'n': 0}
+    rng, b = Random(PAIRED_RULES['seed']), PAIRED_RULES['bootstrap']
+    draws = sorted(median(rng.choice(values) for _ in values) for _ in range(b))
+    return {'n': len(values), 'median': round(median(values), 4),
+            'ci95': [round(draws[int(0.025 * b)], 4), round(draws[int(0.975 * b) - 1], 4)]}
+
+
+def summarize_paired(rows: list[dict]) -> dict:
+    total = _median_ci([r['ratio'] for r in rows if r['ratio'] is not None])
+    root = _median_ci([r['root_ratio'] for r in rows if r['root_ratio'] is not None])
+    different = [r['id'] for r in rows if not r['identical']]
+    speed = 'PASS' if total.get('ci95') and total['ci95'][1] < 1.0 else 'FAIL'
+    return {'positions': len(rows), 'semantics': 'PASS' if not different else 'FAIL', 'differences': len(different),
+            'first_differences': different[:20], 'total_ratio': total, 'root_ratio_secondary': root, 'speed': speed,
+            'times': {'baseline': percentiles([r['baseline_seconds'] for r in rows]),
+                      'candidate': percentiles([r['candidate_seconds'] for r in rows]),
+                      'sum_ratio': round(sum(r['candidate_seconds'] for r in rows) /
+                                         sum(r['baseline_seconds'] for r in rows), 4) if rows else None},
+            'orders': {o: sum(r['order'] == o for r in rows) for o in ('ABBA', 'BAAB')}}
+
+
+def judge_rounds(rounds: list[dict]) -> dict:
+    """P2: semantics and speed PASS in every one of the (two) independent rounds, same engine and modes."""
+    keys = {(r['engine'], json.dumps(r['modes'], sort_keys=True), r['settings']['device']) for r in rounds}
+    if len(rounds) != PAIRED_RULES['rounds'] or len(keys) != 1 or len({r['round'] for r in rounds}) != len(rounds):
+        return {'verdict': 'INCOMPLETE', 'reason': 'two rounds (distinct labels) of the same engine, modes and device'}
+    s = [r['summary'] for r in rounds]
+    semantics = all(x['semantics'] == 'PASS' for x in s)
+    speed = all(x['speed'] == 'PASS' for x in s)
+    verdict = 'PASS' if semantics and speed else 'SEMANTICS_FAIL' if not semantics else 'SPEED_FAIL'
+    return {'verdict': verdict, 'semantics': semantics, 'speed': speed,
+            'rounds': {r['round']: {'semantics': x['semantics'], 'speed': x['speed'], 'total_ratio': x['total_ratio'],
+                                    'root_ratio_secondary': x['root_ratio_secondary']} for r, x in zip(rounds, s)}}
+
+
 def main(argv=None, factories=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest='step', required=True)
@@ -273,7 +351,7 @@ def main(argv=None, factories=None) -> int:
     pm.add_argument('--device', default='cpu')
     pm.add_argument('--threads', type=int, default=1, help='torch threads per worker')
     pm.add_argument('--workers', type=int, default=1, help='1 for latency; more only for decision-only runs')
-    pm.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off')
+    pm.add_argument('--fast', choices=('off', 'fast2', 'fast3', 'fast4'), default='off')
     pm.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     pm.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
     pm.add_argument('--label', default='frozen', help='what runs: frozen, or the optimization candidate name')
@@ -290,7 +368,21 @@ def main(argv=None, factories=None) -> int:
     pe.add_argument('--baseline', type=Path, required=True)
     pe.add_argument('--candidate', type=Path, required=True)
     pe.add_argument('--compare', type=Path, required=True, help='a compare output: its first_differences are explained')
-    for p in (pp, pm, pc, pq, pe):
+    pr = sub.add_parser('paired')
+    pr.add_argument('--positions', type=Path, required=True)
+    pr.add_argument('--corpus', type=Path, required=True)
+    pr.add_argument('--baseline-mode', choices=('off', 'fast2', 'fast3', 'fast4'), required=True)
+    pr.add_argument('--candidate-mode', choices=('off', 'fast2', 'fast3', 'fast4'), required=True)
+    pr.add_argument('--round', required=True, help='label of this independent round (1, 2)')
+    pr.add_argument('--device', default='cpu')
+    pr.add_argument('--threads', type=int, default=1)
+    pr.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
+    pr.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
+    pr.add_argument('--jsonl', type=Path)
+    pr.add_argument('--limit', type=int)
+    pj = sub.add_parser('judge')
+    pj.add_argument('--rounds', nargs='+', type=Path, required=True)
+    for p in (pp, pm, pc, pq, pe, pr, pj):
         p.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     if args.output.exists():
@@ -321,6 +413,10 @@ def main(argv=None, factories=None) -> int:
                   'summary': summarize_measure(rows), 'rows': rows}
     elif args.step == 'corpus':
         result = build_corpus(load(args.measure))
+    elif args.step == 'paired':
+        result = _paired(args, load, factories)
+    elif args.step == 'judge':
+        result = judge_rounds([load(p) for p in args.rounds])
     elif args.step == 'explain':
         result = explain(load(args.baseline), load(args.candidate), load(args.compare)['first_differences'])
     else:
@@ -330,8 +426,48 @@ def main(argv=None, factories=None) -> int:
     shown = {k: v for k, v in result.items() if k not in ('positions', 'rows', 'ids')}
     if args.step == 'explain':
         shown = result['positions']
+    elif args.step == 'paired':
+        shown = result['summary']
     print(json.dumps(shown, indent=1)[:12000], flush=True)
-    return 0 if result.get('verdict', 'PASS') != 'FAIL' else 1
+    if args.step == 'paired':
+        return 0 if result['summary']['semantics'] == 'PASS' else 1
+    return 0 if result.get('verdict', 'PASS') not in ('FAIL', 'SEMANTICS_FAIL', 'SPEED_FAIL') else 1
+
+
+def _paired(args, load, factories) -> dict:
+    """One independent round: every corpus position, both modes, in one process (no pool: timing)."""
+    from analysis.tb_v2_value import config_hash
+    from hybrid.progress import Progress
+    from scripts.run_mcts_v8_benchmark import _fast_provenance
+
+    keep = set(load(args.corpus)['ids'])
+    tasks = [t for t in load(args.positions)['positions'] if t['id'] in keep][:args.limit]
+    modes = {'A': args.baseline_mode, 'B': args.candidate_mode}
+    _init(args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, modes['A'], factories)
+    done = {}
+    if args.jsonl is not None and args.jsonl.exists():
+        for line in args.jsonl.read_text(encoding='utf-8').splitlines():
+            if line.strip():
+                row = json.loads(line)
+                done[row['id']] = row
+    todo = [t for t in tasks if t['id'] not in done]
+    print(f"[h7-paired round {args.round}] {len(tasks)} positions, {len(tasks) - len(todo)} already done, "
+          f"A={modes['A']} B={modes['B']}", flush=True)
+    progress = Progress(f'h7-paired-{args.round}', len(todo), 'positions')
+    for task in todo:
+        row = paired_task(task, modes)
+        done[row['id']] = row
+        if args.jsonl is not None:
+            args.jsonl.parent.mkdir(parents=True, exist_ok=True)
+            with args.jsonl.open('a', encoding='utf-8') as handle:
+                handle.write(json.dumps(row) + '\n')
+        progress.update(1)
+    rows = [done[t['id']] for t in tasks]
+    fast = ({m: _fast_provenance(m) for m in set(modes.values())} if factories is None else dict(modes))
+    return {'format': FORMAT, 'step': 'paired', 'round': args.round, 'rules': PAIRED_RULES, 'engine': config_hash(),
+            'modes': modes, 'settings': {'device': args.device, 'threads': args.threads, 'fast': fast,
+                                         'machine': machine()},
+            'summary': summarize_paired(rows), 'rows': rows}
 
 
 def _run_measure(tasks, workers, jsonl, init) -> list[dict]:

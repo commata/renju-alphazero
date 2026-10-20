@@ -7,6 +7,7 @@ The modes reuse the TB-RT30 exact speed-ups (docs/web-ser5.md §3.9, §9.8) and 
   and the two-cell winning-extension rule);
 - ``fast3``: fast2 with the native C threat-window scan (X1-A). Strict: if the native module is not
   built (``python -m rt30.native.build``) or is stale, installing fails; there is no silent fallback.
+- ``fast4``: fast3 with black forbidden points in C (``rt30.fast4_forbidden``, H7 P1a-1). Strict as fast3.
 
 Each replacement returns the frozen function's result for every input (same windows in the same
 order, same extension sets), so the VCF search visits the same nodes: results, node counts and
@@ -17,7 +18,7 @@ do not inherit the parent's rebinding).
 """
 from __future__ import annotations
 
-MODES = ('off', 'fast2', 'fast3')
+MODES = ('off', 'fast2', 'fast3', 'fast4')
 
 # Every engine module the builder reaches (proof_label, label_position, the budgeted VCF check,
 # --vct1's _own_vct_attack). They must be imported before installing: install rebinds the names
@@ -42,22 +43,25 @@ def install(mode: str) -> dict:
     if mode not in MODES:
         raise ValueError(f'unknown fast mode {mode!r} (one of {", ".join(MODES)})')
     _import_engine()
-    from rt30 import fast, fast3, fast3_windows
+    from rt30 import fast, fast3, fast3_windows, fast4_forbidden
 
-    if mode == 'fast3':
+    if mode in ('fast3', 'fast4'):
         from rt30.native import build
 
-        if not fast3_windows.available():
-            raise RuntimeError('--fast fast3 needs the native scan: python -m rt30.native.build (run in src/)')
+        if not fast3_windows.available() or (mode == 'fast4' and not fast4_forbidden.available()):
+            raise RuntimeError(f'--fast {mode} needs the native modules: python -m rt30.native.build (run in src/)')
         reason = build.stale()
         if reason is not None:
-            raise RuntimeError(f'--fast fast3: the native build is stale ({reason}); '
+            raise RuntimeError(f'--fast {mode}: the native build is stale ({reason}); '
                                'rebuild with python -m rt30.native.build --if-stale (run in src/)')
+    fast4_forbidden.uninstall()
     fast3.uninstall_all()
     if mode == 'fast2':
         fast.install_all()
-    elif mode == 'fast3':
+    elif mode in ('fast3', 'fast4'):
         fast3.install_all()
+    if mode == 'fast4':
+        fast4_forbidden.install()
     _installed_mode = mode
     current = state()
     if current['active'] != expected_active(mode):
@@ -66,6 +70,10 @@ def install(mode: str) -> dict:
 
     if mode != 'off' and (fast_windows._bindings(fast_windows.FROZEN) or fast_extensions._bindings(fast_extensions.FROZEN)):
         raise RuntimeError(f'--fast {mode}: a loaded module still binds a frozen function')
+    from rt30 import fast4_forbidden
+
+    if mode == 'fast4' and fast4_forbidden._bindings(fast4_forbidden.FROZEN):
+        raise RuntimeError('--fast fast4: a loaded module still binds the Python forbidden_reason')
     return current
 
 
@@ -77,21 +85,29 @@ def expected_active(mode: str) -> dict:
     from rt30 import fast_extensions, fast_windows
 
     windows = {'off': fast_windows.FROZEN.__name__, 'fast2': fast_windows.threat_windows.__name__,
-               'fast3': 'threat_windows_native'}[mode]
+               'fast3': 'threat_windows_native', 'fast4': 'threat_windows_native'}[mode]
     extensions = fast_extensions.FROZEN.__name__ if mode == 'off' else 'winning_extensions_in_direction'
-    return {'threat_windows': windows, 'winning_extensions': extensions}
+    out = {'threat_windows': windows, 'winning_extensions': extensions}
+    if mode == 'fast4':  # the key exists only when the native forbidden points are bound
+        out['forbidden'] = 'forbidden'
+    return out
 
 
 def state() -> dict:
     """What this process runs: the functions actually bound in the frozen modules (not the request)."""
-    from search import mcts_v5, mcts_v7, mcts_v321
+    from renju import game, rules
+    from search import mcts, mcts_v5, mcts_v7, mcts_v321
 
     windows = {mcts_v5._threat_windows, mcts_v7._threat_windows}
     extensions = {mcts_v321._fast_winning_extensions_in_direction, mcts_v5._fast_winning_extensions_in_direction}
-    if len(windows) != 1 or len(extensions) != 1:
+    forbidden = {mcts.forbidden_reason, mcts_v7.forbidden_reason, game.forbidden_reason}
+    if len(windows) != 1 or len(extensions) != 1 or len(forbidden) != 1:
         raise RuntimeError('fast speed-ups are only partly installed')
-    return {'mode': _installed_mode,
-            'active': {'threat_windows': windows.pop().__name__, 'winning_extensions': extensions.pop().__name__}}
+    active = {'threat_windows': windows.pop().__name__, 'winning_extensions': extensions.pop().__name__}
+    bound = forbidden.pop()
+    if bound is not rules.forbidden_reason:
+        active['forbidden'] = bound.__name__
+    return {'mode': _installed_mode, 'active': active}
 
 
 def provenance(mode: str) -> dict:
@@ -99,7 +115,7 @@ def provenance(mode: str) -> dict:
     these) and, for fast3, the native build record (Python, SOABI, compiler, flags, source and module
     SHA256)."""
     out = {'requested': mode, 'active': expected_active(mode)}
-    if mode == 'fast3':
+    if mode in ('fast3', 'fast4'):
         from rt30.native import build
 
         out['native_build'] = build.build_info()

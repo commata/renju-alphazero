@@ -59,7 +59,7 @@ class InstallTest(unittest.TestCase):
         self.assertEqual(h6_fast.install('off')['active'], {'threat_windows': '_threat_windows',
                                                             'winning_extensions': '_fast_winning_extensions_in_direction'})
         with self.assertRaises(ValueError):
-            h6_fast.install('fast4')
+            h6_fast.install('fast5')
 
     def test_fast3_is_strict(self):
         with mock.patch.object(fast3_windows, '_native', None):  # not built: an error, never fast2

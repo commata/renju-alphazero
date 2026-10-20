@@ -2824,6 +2824,98 @@ python -u scripts/h7_p0_profile.py --positions docs/h7/h7_timing_positions.json 
   - 25초는 웹 서버 동시 부하와 측정 흔들림(6–12%)을 감안한 여유다.
 - 판정 gate(P2)는 바꾸지 않는다. 최종 확인은 SER5에서 같은 corpus로 다시 잰다.
 
+## P1a-1 확정과 구현: 금수 판정 native (`fast4`) (2026-10-20, 실행 전 고정)
+
+사용자 검토에서 P1a 단계 분할과 P1a-1 시작이 승인됐다. 추가 규칙 셋을 반영했다.
+1. SER5 종료 기준은 독립 2회다.
+2. 실패 분기를 둔다.
+3. 1.4–1.6×는 예상치일 뿐 gate가 아니다. SER5 계산(VCF 2× → 약 26초, 3× → 약 21초)도 구성 시간이 선형으로 줄어든다는 근사다.
+
+**구현 (frozen 파일 미수정)**
+- `src/rt30/native/forbidden.c`: `renju.rules.forbidden_reason`을 단계마다 그대로 옮겼다.
+  - 같은 quiet 판정(축별 ±3 / ±4 개수)과 같은 정확 분류기를 쓴다. 분류기는 축별 5 / 장목, four는 서로 다른 4돌 집합, 열린 삼은 straight-four 연장의 재귀 합법성까지 본다.
+  - 검사 순서가 같으므로 여러 금수가 겹칠 때도 같은 이유를 낸다.
+  - 둔 곳이 이미 차 있거나 판 밖이면 같은 ValueError(같은 메시지)를 낸다. 판은 쓰지 않는다.
+  - quiet 판정은 Python 판 list에서 ±4 칸만 읽는다. 정확 분류가 필요할 때만 판을 복사한다.
+- `src/rt30/fast4_forbidden.py`: 로드된 모든 모듈의 `forbidden_reason` 이름을 native로 바꿔 끼운다.
+  - `renju.rules` 자신은 바꾸지 않는다. 그래서 `rules.forbidden_reason`은 Python oracle로 남고, `legal_black_points`는 자기 분류기를 그대로 쓴다.
+- `hybrid.h6_fast`: 모드 `fast4` = fast3 + native 금수. fast3처럼 엄격하다(native가 없거나 stale이면 설치 실패, fast3로 조용히 내려가지 않음).
+  - `state()`는 실제로 묶인 함수를 확인한다. 금수 키는 native가 묶였을 때만 있다.
+  - provenance에는 native 빌드 기록이 들어간다.
+- `rt30/native/build.py`에 `_forbidden`을 더했다. 소스가 바뀌었으므로 **모든 기계에서 다시 빌드한다**(`--if-stale`).
+- **컨테이너 사전 점검(판정 아님):** 공용 rule corpus 3,000국면의 빈 칸 491,799개에서 native와 Python 결과가 모두 같았다(`장목` 6,949, `사사` 6,299, `삼삼` 2,771). 호출당 약 10배 빨랐다(타이머 포함).
+
+**함수 단위 점검 (`scripts/h7_p1a_check.py`)**
+- `cells`: timing positions(E3 A, probe, H6-4b) 판 전부와 공용 rule corpus 판 전부에서, 빈 칸마다 Python과 native를 비교한다. rule corpus에는 손으로 만든 5 / 장목 / 44 / 33 / 재귀 삼 fixture가 회전 4개씩 들어 있다.
+- `trace`: corpus 국면마다 기준선의 tree 수를 V8-C 검사(fast3 + table)로 다시 확인한다. 이때 `forbidden_reason` 호출마다 둘 다 계산하고 Python 결과를 쓴다. 엔진이 실제로 묻는 판을 그대로 본다.
+- 차이가 하나라도 있으면 FAIL이다.
+
+**엔진 단위 의미 + 속도 (`h7_timing.py paired` / `judge`, P2)**
+- 한 프로세스에서 국면마다 A = fast3, B = fast4를 4번 돈다. 순서는 국면 id SHA-256 첫 바이트가 짝수면 ABBA, 홀수면 BAAB다.
+- 실행마다 새 agent, 같은 seed, cold value cache, 호출 단위 새 table로 시작한다.
+- 의미: 네 실행의 결정 필드(착수, route, 방문·Q, V8-C / VCT2 / V8-A / V8-B 상태, 노드·호출)가 모두 같아야 한다. 827국면 전부에서 차이 0이어야 한다. 같은 프로세스 비교라 search 모드 compare보다 엄격하다.
+- 속도: 국면별 (B 평균 / A 평균) 전체 착수 시간 비의 중앙값, 국면 bootstrap 95% 상한 < 1.0. V8-C 시간 비는 보조 지표다.
+- 독립 2회(`--round 1`, `--round 2`)를 돌리고 `judge`가 둘 다 의미·속도 PASS인지 본다.
+- backend: 공식 판정은 CPU(웹 대상, 기준선과 같은 조건)다. canonical CUDA는 의미 확인을 1회 한다. 금수 판정은 CPU 계산이라 장치와 무관하지만, CUDA backend의 결정도 확인해 둔다.
+
+**종료 / 분기 규칙 (사전)**
+
+| 결과 | 다음 |
+|---|---|
+| 함수 단위 FAIL 또는 P2 의미 FAIL | 최적화 버그다. P1a-2로 넘어가지 않고 원인부터 고친다 |
+| 의미 PASS, 속도 FAIL | P1a-1을 채택하지 않는다. P1a-2를 진행할 수 있다 |
+| P2 PASS, SER5 목표 FAIL | P1a-2를 진행한다 |
+| P2 PASS, SER5 목표 PASS | P1a-1을 동결하고 P1a-2는 하지 않는다 |
+
+- **SER5 목표:** 같은 827 corpus, CPU, threads 1, workers 1, fast4로 독립 2회 잰다. **두 회 모두** 30초 초과 0이고 최대 ≤ 25초여야 한다.
+  - p50 / p90 / p95 / p99 / 최대와 구성 시간(tree / V8-C / VCT2 / value)을 모두 기록한다.
+- 동결: 엔진 identity(`tb_v2_value.config_hash`)는 바뀌지 않는다. "TB-V2-Value + fast4 runtime"으로, 실행 모드와 native 빌드 기록을 함께 남긴다.
+
+**실행 명령 — 데스크톱 Ubuntu**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_fast4 tests.test_h6_fast tests.test_h7_timing tests.test_tb_v2_value
+# 1) 함수 단위 (수십 분)
+python -u scripts/h7_p1a_check.py --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --workers 12 --output docs/h7/h7_p1a_check.json 2>&1 | tee runs/h7_timing/p1a_check.log
+# 2) P2: CPU 2회 (각 약 3시간, 다른 작업 없이) + 판정
+for R in 1 2; do
+python -u scripts/h7_timing.py paired --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline-mode fast3 --candidate-mode fast4 --round $R --device cpu --threads 1 \
+  --jsonl runs/h7_timing/p1a_cpu_r$R.jsonl --output docs/h7/h7_p1a_paired_cpu_r$R.json 2>&1 | tee runs/h7_timing/p1a_cpu_r$R.log
+done
+python scripts/h7_timing.py judge --rounds docs/h7/h7_p1a_paired_cpu_r1.json docs/h7/h7_p1a_paired_cpu_r2.json \
+  --output docs/h7/h7_p1a_p2_cpu.json
+# 3) CUDA 의미 확인 1회
+python -u scripts/h7_timing.py paired --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline-mode fast3 --candidate-mode fast4 --round cuda1 --device cuda \
+  --jsonl runs/h7_timing/p1a_cuda.jsonl --output docs/h7/h7_p1a_paired_cuda.json 2>&1 | tee runs/h7_timing/p1a_cuda.log
+```
+
+**실행 명령 — SER5 (P2 PASS 뒤, 2회)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate   # SER5의 저장소 경로에 맞춘다
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python -m unittest tests.test_fast4
+for R in 1 2; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cpu --threads 1 --workers 1 --fast fast4 --label fast4_r$R \
+  --jsonl runs/h7_timing/mini_fast4_r$R.jsonl --output runs/h7_timing/mini_fast4_r$R.json 2>&1 | tee runs/h7_timing/mini_fast4_r$R.log
+done
+```
+
+- 커밋할 것:
+  - `docs/h7/h7_p1a_check.json`
+  - `docs/h7/h7_p1a_paired_cpu_r1.json`, `docs/h7/h7_p1a_paired_cpu_r2.json`, `docs/h7/h7_p1a_p2_cpu.json`
+  - `docs/h7/h7_p1a_paired_cuda.json`
+  - SER5 두 회의 요약: `summary`, `settings`, `engine`, `label`만 담은 `docs/h7/h7_timing_mini_fast4_r1_summary.json`, `…_r2_summary.json`
+- paired 출력 파일은 국면 행을 포함해 크다(수 MB). 크기가 문제면 `summary`와 `settings`만 옮겨 커밋한다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

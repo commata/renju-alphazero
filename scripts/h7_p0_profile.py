@@ -271,7 +271,7 @@ def main(argv=None, factories=None) -> int:
     parser.add_argument('--baseline', type=Path, help='an h7_timing measure of the same engine: decisions must match')
     parser.add_argument('--device', default='cpu')
     parser.add_argument('--threads', type=int, default=1)
-    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off')
+    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3', 'fast4'), default='off')
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     parser.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
     parser.add_argument('--jsonl', type=Path)
