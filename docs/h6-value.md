@@ -3252,6 +3252,90 @@ python scripts/summarize_h7_cpu_cert.py --cpu runs/h7_cert/cpu_8431.json runs/h7
 3. CPU 인증을 E4 뒤로 미룰지(제안)
 4. 참값 예산(제안: 국면당 10M 노드, 1,191국면이면 데스크톱에서 수 시간 – 하루)
 
+## H7-E4 확정: 프로토콜과 첫 도구 세 개 (2026-10-21, 결과 전 고정)
+
+위 설계의 8가지 수정과 결정 1–4가 모두 승인됐다. 사용자가 더한 결정은 아래와 같다.
+
+**목표와 순서**
+- 목표는 최강 기력이다. 순서는 E4 → H7-c1이고, self-play는 policy와 value를 함께 학습한다.
+- E4는 E2 모듈(`own_vct2_attack`)에서 시작한다. 목표는 상대가 둔 "VCT2에서만 지는 수"를 응징하는 것이다.
+- 웹 데이터는 개발과 probe에만 쓴다. 학습에는 쓰지 않는다.
+
+**참값 (`scripts/h7_e4_truth.py`)**
+- 전폭 VCT2: 공격자의 quiet 수는 합법 수 전부, 방어자의 응수도 전부다(`ThreatSolver` 의미).
+- 예산은 국면 하나에 하나다. 개수로만 센다(시간 제한 없음).
+  - VCF 노드 합계 10M (`node_budget`)
+  - VCF 호출 1M (`call_limit`). 노드 합계가 먼저 닿도록 크게 잡았다.
+  - VCF 한 번에 100k 노드 (`node_limit`, `ThreatSolver` 기본값)
+- 분류
+  - `PROVEN_WIN`: 어느 깊이에서 사람 수가 UNSAFE다. AI의 첫 수 witness를 남긴다.
+  - `NOT_FOUND`: depth 2까지 SAFE로 끝났다. "탐색 범위 안에 승리 없음"이지 "승리 없음"이 아니다.
+  - `UNKNOWN`: 예산이나 VCF 한 번의 노드 한도에 잘렸다. **negative로 쓰지 않는다.**
+- 깊이 등급
+  - `WIN_5`: 바로 5목
+  - `WIN_VCF`: depth 0
+  - `WIN_VCT1`: depth 0이 SAFE로 끝나고 depth 1에서 승리
+  - `WIN_VCT2_ONLY`: depth 0과 1이 모두 SAFE로 끝나고 depth 2에서 승리. **E4 목표는 이것뿐이다.**
+  - 더 얕은 깊이가 UNKNOWN이면 가장 작은 깊이를 모른다. 그때는 `WIN_VCT1_OR_LESS` / `WIN_VCT2_OR_LESS`로 두고 목표에 넣지 않는다.
+- 공격자 quiet 수의 순서: 위협수(4, 열린 삼·띈 삼, `selective_vct.threat_moves`)를 먼저 두고 나머지 합법 수를 뒤에 둔다(`TruthSolver`).
+  - 수 집합이 같으므로 SAFE와 UNSAFE의 뜻은 바뀌지 않는다.
+  - 순서는 예산 안에서 승리를 먼저 찾게 할 뿐이다. 측정은 아래에 있다.
+- 깊이 0, 1, 2는 solver cache를 공유한다. 같은 판(돌 + 둘 차례)은 한 번만 탐색한다.
+- resume용 jsonl의 줄마다 예산을 적는다. 예산이 다른 줄은 거부한다.
+
+**응징 (`scripts/h7_e4_baseline.py`)**
+- witness와 같은 수인지 보지 않는다. 둔 수 뒤 사람의 모든 응수가 depth 1 안에서 지는지(VCT2 범위의 승리를 유지하는지) 참값 solver와 같은 예산으로 확인한다. 5목도 응징이다.
+  - `PUNISH`: 모든 응수가 진다
+  - `MISS`: 어떤 응수가 SAFE로 끝났다
+  - `UNCLEAR`: 예산에 잘렸다. MISS로 세지 않는다.
+- 기준 엔진: 동결 실행판 TB-V2-Value + fast4 (`tb_v2_runtime.check_bound`). value는 CUDA(canonical)다.
+  - 국면마다 seed는 `derive_seed(8440, 'h7-e4', 국면 id)`로 고정한다.
+- 웹에서 실제로 둔 AI 수(대부분 TB-RT30-v3)도 같은 검사를 한다. 참고용이다.
+- `WIN_5` / `WIN_VCF` / `WIN_VCT1` 국면에서 B가 응징하지 못하면 회귀 flag로 보고한다. B에는 own VCF와 V8-B가 있으므로 0개가 기대값이다.
+
+**corpus와 분할 (`scripts/h7_e4_web_corpus.py`, 실행 결과 `docs/h7/h7_e4_web_corpus.json`)**
+- 기록된 모든 수(무른 수 포함)를 "그 수가 기록될 때 판에 있던 수"로 다시 세운다.
+  - `ply`, `board_hash`, 둘 차례를 기록과 맞추고, `renju.Game`으로 합법성과 금수를 검사한다.
+  - 하나라도 어긋나면 그 대국 전체를 뺀다.
+  - 결과: 2,755수 전부 일치했고, 빠진 대국은 0이다.
+- 묶음
+  - `main`: 무르지 않은 사람 수 뒤에 무르지 않은 AI 수가 이어진 국면이다. **1,191국면**
+  - `undone`: 나중에 무른 사람 수 뒤 AI 차례 국면이다. **DEV 보조 묶음 100국면**
+    - HOLDOUT 대국의 무른 국면 13개는 뺐다. session 분할을 깨끗하게 두기 위해서다.
+    - main 국면이나 앞의 undone 국면과 판이 같은 11개도 뺐다.
+- 분할(결과 전 고정): session을 `sha256(session_hash)` 순서로 늘어놓고, main 국면이 25% 이상이 될 때까지 HOLDOUT에 통째로 넣는다.
+  - 결과: HOLDOUT 20판 / 320국면(26.9%), DEV 69판 / 871국면
+  - HOLDOUT 판 중 DEV에도 있는 판은 19개다. 대부분 초반 공통 국면이다.
+- 커밋하는 파일: 대국마다 split, 실제 수순, 사람 색, 웹 엔진 이름, 결과. 국면마다 사람 수와 웹 AI의 응수(수, route)
+  - 넣지 않는 것: `session_hash`, 시각, 로그 경로, diagnostics
+  - 원본 DB는 `data/web/`에 둔다(gitignore).
+
+**E4 gate (DEV 전에 고정)**
+- DEV 매개변수 격자: 최대 8조합. DEV에서 하나를 고른 뒤 동결하고, HOLDOUT을 본 뒤에는 다시 조정하지 않는다.
+  - 예산: 200k / 400k
+  - route: tree만 / tree + stage4·5
+  - 발동: 모든 해당 국면 / 상대의 직전 수가 전술 위협을 만들었을 때만
+  - DEV 선택 순서: VCT2 전용 응징률 → 기력·안전 → 비용
+- 판정
+  - 건전성: 거짓 증명 0. E4가 둔 모든 공격 수를 참값 solver로 다시 검증한다.
+  - 빈도: 새 seed **8441, 8442**(각 50 pair, `v8:full` 상대)에서 응징 비율이 오른다. 이것이 주 근거다.
+  - 기력: 같은 대국에서 점수 차 짝 비교 95% 하한 ≥ −0.05
+  - 비용 ≤ 1.5
+  - 격리: off이면 기존과 같다.
+  - 웹 HOLDOUT: VCT2 전용 사건이 10개 이상이면 비회귀 판정(E 응징 수 ≥ B 응징 수)이다. 10개 미만이면 보고만 한다(`HOLDOUT_MIN_EVENTS`).
+- PASS 뒤
+  - 새 B-engine identity(예: TB-Engine-v3 + Value)를 만든다. 엔진 해시와 runtime 해시도 새로 만든다.
+  - SER5에서 2회 다시 잰다(30초 초과 0, 최대 ≤ 25초). SER5 실패는 웹 배포만 막는다. E4 엔진 채택은 그대로다.
+  - CPU 인증은 새 seed **8451, 8452**로 E4 엔진에 대해 한다. 8431/8432 결과가 나오면 E4 전 엔진의 기록으로만 커밋한다. 그 뒤 Web_SER5로 간다.
+- seed 예약: `RESERVED_SEEDS`에 8441, 8442, 8451, 8452를 더했다.
+
+**H7-c1 policy target 계약 (E4와 함께 고정)**
+- 보통 국면: root 방문 분포를 정규화한 것
+- PROVEN_WIN 덮어쓰기(own VCF, V8-B, E4): 실제로 둔 증명된 승리 수 one-hot
+- PROVEN_LOSS인 root 후보: 확률 0으로 두고 나머지를 다시 정규화
+- one-hot은 적어도 c1이 끝날 때까지 고정한다. "증명된 승리 수 전체에 분포"는 c2 이후 cycle 경계에서 검토할 후보다.
+- 웹 국면은 probe 목록에 올린다. 그 국면이 든 self-play 대국(D4 기준)은 학습에서 뺀다. 무른 국면은 DEV 보조 묶음에만 쓴다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
