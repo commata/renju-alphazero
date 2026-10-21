@@ -244,3 +244,81 @@ class BaselineTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class E4AttackTest(unittest.TestCase):
+    def test_trigger_and_vcf_threat_candidates(self):
+        from analysis import e4_attack as e4
+        game = Game()
+        for m in VCF:
+            game.play(*m)
+        self.assertFalse(e4.opponent_threat(game))  # Black's (12, 3) made nothing
+        self.assertEqual(game.history[-1], VCF[-1])  # the game is restored
+        three = Game()
+        for m in [(7, 7), (0, 0), (7, 8), (0, 2), (7, 9)]:
+            three.play(*m)
+        self.assertTrue(e4.opponent_threat(three))  # an open three
+        self.assertEqual(len(e4.GRID), 8)
+        self.assertEqual({c['name'] for c in e4.GRID}, {f'{b}/{c}/{t}' for b in ('200k', '400k')
+                                                        for c in e4.CANDIDATES for t in e4.TRIGGERS})
+
+    def test_attack_proves_a_win_and_is_checked(self):
+        from analysis import e4_attack as e4
+        game = Game()
+        for m in VCF:
+            game.play(*m)
+        for candidates in e4.CANDIDATES:
+            move, info = e4.e4_attack(game, {'budget': '200k', 'candidates': candidates})
+            self.assertIsNotNone(move)
+            self.assertEqual(base.check_move(VCF, move, truth.DEFAULT_BUDGET)['outcome'], 'PUNISH')
+        self.assertEqual(game.history, VCF)
+
+
+class DevSelectionTest(unittest.TestCase):
+    def score(self, name, punish, shallow=0, false=0, nodes=10.0):
+        return {'config': {'name': name}, 'punish': punish, 'eligible': not (shallow or false),
+                'cost': {'nodes_per_position': nodes}}
+
+    def test_rule(self):
+        from scripts import h7_e4_dev as dev
+        scores = [self.score('a', 5, nodes=50), self.score('b', 6, false=1, nodes=1), self.score('c', 4, nodes=20),
+                  self.score('d', 3, nodes=1)]
+        out = dev.select(scores)
+        self.assertEqual(out['selected']['name'], 'c')  # b has a false proof; c ties a (within 1) and is cheaper
+        self.assertEqual(out['tied'], ['a', 'c'])
+        self.assertIsNone(dev.select([self.score('x', 3, shallow=1)])['selected'])
+
+    def test_holdout_never_reaches_the_score(self):
+        from scripts import h7_e4_dev as dev
+        with self.assertRaises(AssertionError):
+            dev.dev_only({'id': 'g:3', 'split': 'HOLDOUT'})
+        p = {'id': 'g:3', 'split': 'HOLDOUT', 'key': 'k'}
+        with self.assertRaises(AssertionError):
+            dev.score({'name': 'n', 'budget': '200k', 'candidates': 'four_three', 'trigger': 'all'}, [p],
+                      {'k': {'grade': None, 'class': 'NOT_FOUND'}}, {}, {})
+
+    def test_end_to_end(self):
+        from scripts import h7_e4_dev as dev
+        from scripts.run_mcts_v8_benchmark import file_sha256
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            path = corpus_of(tmp, GAMES[:2])
+            corpus = web.load(path)
+            boards = {p['key']: {'key': p['key'], 'class': 'NOT_FOUND', 'grade': None} for p in corpus['positions']}
+            last = next(p for p in corpus['positions'] if p['id'] == f'g2:{len(VCF)}')
+            boards[last['key']] = {'key': last['key'], 'class': 'PROVEN_WIN', 'grade': 'WIN_VCF'}
+            (tmp / 't.json').write_text(json.dumps({'format': truth.FORMAT, 'corpus_sha256': file_sha256(path),
+                                                    'budget': truth.DEFAULT_BUDGET, 'boards': boards}))
+            b_row = {'id': last['id'], 'b': {'move': [5, 8], 'route': 'own_vcf', 'outcome': 'PUNISH'}, 'web_ai': None}
+            (tmp / 'b.json').write_text(json.dumps({'format': base.FORMAT, 'truth_sha256': file_sha256(tmp / 't.json'),
+                                                    'positions': {last['id']: b_row}}))
+            dev_positions = [p for p in corpus['positions'] if p['split'] == 'DEV']
+            out = tmp / 'dev.json'
+            self.assertEqual(dev.main(['--corpus', str(path), '--truth', str(tmp / 't.json'), '--baseline',
+                                       str(tmp / 'b.json'), '--limit', '2', '--output', str(out)]), 0)
+            result = json.loads(out.read_text(encoding='utf-8'))
+        self.assertEqual(result['split'], 'DEV')
+        self.assertEqual(result['positions'], min(2, len(dev_positions)))
+        self.assertTrue(all(a['id'] in {p['id'] for p in dev_positions} for a in result['attacks']))
+        self.assertEqual(len(result['scores']), 8)
+        self.assertIsNotNone(result['selection']['selected'])

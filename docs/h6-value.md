@@ -3609,6 +3609,79 @@ E4는 아직 채택된 것이 아니다. 여기까지는 truth와 baseline의 �
 4. arena 빈도: 기준 solver 방식과 opening 단위 bootstrap
 5. DEV 기력 확인을 생략하고 arena에서만 볼지, 동결 전에 짧은 DEV arena(새 seed 8443, 25 pair)를 둘지(제안: 생략)
 
+## H7-E4 DEV 확정과 도구 (2026-10-21, DEV 실행 전 고정)
+
+위 수정안의 결정 1–5가 모두 승인됐다. 사용자 보완 두 가지를 더해 아래처럼 고정한다.
+
+**보완 1: arena 빈도 통계**
+- opening별 비율을 먼저 내서 평균하지 않는다. 한 arm의 사건이 0인 opening이 생길 수 있기 때문이다.
+- opening(양 색)을 cluster(복원추출 단위)로만 쓴다. bootstrap 표본마다 다음을 다시 계산한다.
+  - `rate_B = Σ punish_B / Σ event_B`
+  - `rate_E = Σ punish_E / Σ event_E`
+  - `diff = rate_E − rate_B`
+- 판정: diff의 95% 하한 > 0. 사건 0인 opening도 버리지 않는다.
+
+**보완 2: 기준 solver는 arena 전에 동결**
+- 정의: selective VCT2, 첫 수 후보 (b), depth 1 quiet 수도 VCF 위협수까지, 노드 2M
+- 먼저 웹 DEV의 WIN_VCT2_ONLY 41개(main 40 + undone 1)에서 재현율을 잰다(예: 34 / 41).
+- 재현율이 낮아 예산을 바꾸더라도(2M → 4M 등) 그 변경은 DEV에서 끝낸다. 8441 / 8442를 보기 전이다.
+
+**고정한 E4 흐름**
+1. DEV 8조합 비교 → 1개 선택(아래 규칙). 짧은 DEV arena(8443)는 두지 않는다.
+2. 새 E4 엔진 동결
+3. 기준 solver DEV 재현율 측정 → 기준 solver 동결
+4. seed 8441 / 8442, 총 100 pair
+5. 판정: 빈도(opening cluster bootstrap), 기력 비열등(짝 비교 하한 ≥ −0.05), 건전성, 비용 ≤ 1.5, 격리 → ADOPT / REJECT
+- 8441 / 8442가 실패하면 결과를 보고 고치지 않는다. 다음 실험(E4-v2)으로 따로 간다.
+
+**구현 (이번 커밋)**
+- `src/analysis/e4_attack.py`(개발 모듈, 엔진 아님)
+  - `GRID`: 예산(200k / 20k, 400k / 40k) × 첫 수 후보(`four_three`, `vcf_threat`) × 발동(`all`, `threat`) = 8
+  - `ROUTES` = E2의 `ATTACK_ROUTES`(stage4, stage5, tree)
+  - `vcf_threat_moves`: 돌에서 체비쇼프 거리 2 이내, 기존 후보에 없는 합법 수 중에서, 상대가 쉰다고 할 때 VCF가 있는 수. V3.2.1 priority 순서로 기존 후보 뒤에 붙인다. 판별 비용은 공격 예산에서 낸다.
+  - `opponent_threat`: 상대의 직전 수가 4 또는 열린 삼을 만들었는가
+  - `e4_attack`: E2 `own_vct2_attack`과 같은 증명(`_depth2_attack_check`, 방어자 응수 전부)과 공정 분배(`_first_proven`)를 쓴다. 바뀌는 것은 첫 수 집합뿐이다.
+  - `vct2_attack.py`(E2)와 V8-B는 바꾸지 않았다.
+- `scripts/h7_e4_dev.py`
+  - **DEV만 읽는다.** 국면이 처리·채점·순위 경로에 들어갈 때마다 `dev_only`가 `split == 'DEV'`를 검사한다. HOLDOUT 국면이 들어오면 AssertionError로 멈춘다. 테스트로 확인했다.
+  - 공격은 (예산, 후보) 쌍마다 국면당 한 번 돌린다. 발동 조건은 채점할 때 적용한다.
+  - 증명된 승리 국면에서 기록된 B route가 `ROUTES` 밖이면 공격을 돌리지 않는다. E4도 B의 수를 둔다.
+  - B route가 기록되지 않은 국면(증명된 승리가 아닌 국면)은 공격을 돌린다고 가정한다. 비용 상한과 더 넓은 건전성 검사가 된다.
+  - 공격이 WIN이면 그 수를 `check_move` v2로 바로 검사한다.
+  - 조합마다 보는 것
+    - 응징 수(DEV WIN_VCT2_ONLY 41개)
+    - 얕은 회귀
+    - 거짓 증명: 공격 WIN인데 MISS
+    - 모순: truth NOT_FOUND 국면에서 WIN
+    - 미검증: 검사가 UNCLEAR
+    - 비용: 공격한 국면의 노드 / 호출 / 초. 평균, p95, 최대, 그리고 DEV 국면당 노드
+  - 선택 규칙(고정)
+    1. 거짓 증명 0, 모순 0, 얕은 회귀 0인 조합만 남긴다.
+    2. 응징 수가 최대인 조합, 그리고 최대와 1국면 이내인 조합을 동률로 본다.
+    3. 동률 안에서 **DEV 국면당 공격 VCF 노드**가 가장 적은 조합을 고른다(그다음 격자 순서).
+    - 노드를 쓰는 이유: 기계와 worker 부하에 따라 초가 흔들리기 때문이다. 초는 보고한다.
+  - resume용 jsonl, 진행 출력(`run_chunks`)
+- 표본(컨테이너, DEV MISS 국면 2개)
+  - 공격 1회는 0.5–15초였다.
+  - 한 국면에서는 400k / `four_three`만 승리 수를 증명했고, 그 수의 `check_move`는 PUNISH였다.
+  - 데스크톱 12 worker로 DEV 전체(약 1,050국면 × 4쌍)는 1시간 안팎으로 본다.
+
+**실행 명령 — E4 DEV (데스크톱, 모델 불필요)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4
+python -u scripts/h7_e4_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \
+  --baseline docs/h7/h7_e4_baseline_v2.json --workers 12 --fast fast4 \
+  --jsonl runs/h7_e4/dev.jsonl --output docs/h7/h7_e4_dev.json 2>&1 | tee -a runs/h7_e4/dev.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4_dev.json`
+- 먼저 볼 것: `selection`과, 조합별 응징 수 / 거짓 증명 / 모순 / 얕은 회귀 / DEV 국면당 노드
+- 다음 도구(DEV 선택 뒤): E4 엔진 동결 파일, 기준 solver와 그 DEV 재현율, arena 사건 추출과 cluster bootstrap
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
