@@ -656,6 +656,11 @@ def file_sha256(path) -> str | None:
     return digest.hexdigest()
 
 
+def _runtime_provenance(device: str) -> dict:
+    from analysis.tb_v2_runtime import provenance as runtime_provenance
+    return runtime_provenance(device)
+
+
 def _fast_provenance(mode: str) -> dict:
     from hybrid.h6_fast import provenance as fast_provenance
     return fast_provenance(mode)
@@ -725,7 +730,7 @@ def main(argv=None) -> int:
                         help='tested arm only: tactical simulations (time-matched check, §12.16)')
     parser.add_argument('--value-checkpoint', help="H6-2a' v3 best.pt for the value arm (best.json next to it)")
     parser.add_argument('--value-device', default='cpu', help='device of the value leaf (cpu / cuda)')
-    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3'), default='off',
+    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3', 'fast4'), default='off',
                         help='exact solver speed-up in every worker (hybrid.h6_fast); results are the same')
     parser.add_argument('--simulations', type=int, help='smoke tests only: both engines')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only: both engines')
@@ -817,6 +822,10 @@ def main(argv=None) -> int:
         'provenance': provenance(payload_checkpoint, args.value_checkpoint),
         'fast': _fast_provenance(args.fast),
         'value_checkpoint': args.value_checkpoint,
+        'value_device': args.value_device if args.value_checkpoint else None,
+        # the frozen runtime profile's identities, when this run is it (TB-V2-Value + fast4)
+        **({'runtime': _runtime_provenance(args.value_device)}
+           if args.fast == 'fast4' and args.arm == 'puct_value_vct2_50k_tt' else {}),
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': opponent_config(args.opponent, args.opponent_overrides),
         'opponent_puct_c': args.opponent_puct_c,

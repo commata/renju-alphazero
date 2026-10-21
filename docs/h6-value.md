@@ -2968,7 +2968,7 @@ done
 - P2 순서 배치는 ABBA 401 / BAAB 426이다(국면 id SHA 기준, 의도대로 거의 반반).
 - 데스크톱 CPU 대 CUDA에서 fast4의 효과(시간 합 비 0.71 / 0.68)가 같은 방향이다. 금수 판정은 CPU 계산이라 장치와 무관하다는 예상과 맞다.
 
-## 다음 단계 설계 방향: 실행판 동결, 웹 CPU backend, 웹 연결 (2026-10-21, 초안, 승인 대기)
+## 다음 단계 설계 방향: 실행판 동결, 웹 CPU backend, 웹 연결 (2026-10-21, 초안 → 아래 P3 확정)
 
 **1. 실행판 동결: "TB-V2-Value + fast4" (먼저, 별도 커밋)**
 - 엔진 identity(`tb_v2_value.config_hash`, `256e5abe…`)는 그대로다. 바뀐 것은 실행 경로뿐이다. 그래서 엔진 파일은 고치지 않고 새 파일 `src/analysis/tb_v2_runtime.py`에 실행판을 적는다.
@@ -3011,6 +3011,133 @@ done
 2. 웹 CPU backend: 비열등 짝 판정(seed 예약) 또는 CUDA 기계
 3. 웹 deadline 방식: (a) 감시 + 대체 수(권장) 또는 (b) deadline 판 재포팅
 4. H7-c1 설계를 다음 단계로 시작할지
+
+## P3 확정: 실행판 동결, CPU backend 인증, 웹 감시 방식 (2026-10-21)
+
+사용자 검토에서 네 가지가 승인됐다.
+- 실행판 동결: runtime hash를 따로 두고, dispatcher를 잠그거나 바인딩을 검사한다. `.so`는 provenance로만 남긴다.
+- CPU backend 비열등 판정: seed 8431–8432를 미리 예약한다.
+- 웹: (a)를 택하되 **30초 soft monitor**로 한다. 강제 대체 수는 두지 않는다.
+- H7-c1 설계를 시작한다.
+
+P1a-1 성능 결론의 표현도 고정한다: "쉬운 국면은 거의 같고, 전체 계산량은 약 29% 줄고, 어려운 꼬리는 약 1.7배 빨라진다." "중앙값 4% 개선"으로 요약하지 않는다.
+
+**1. 실행판 동결 (커밋 `46ebcf7`, `src/analysis/tb_v2_runtime.py`, 테스트 `tests/test_tb_v2_runtime.py`)**
+- 두 identity를 나눈다.
+  - 엔진: `tb_v2_value.config_hash` = `256e5abe…`. P1a-1로 바뀌지 않았다.
+  - 실행판: `runtime_hash(device)` = 엔진 해시 + `fast4` + native C 소스 SHA + 바인딩 Python 모듈 SHA + value 장치를 함께 해시한 값이다.
+- 바인딩 Python 모듈 SHA: `rt30/fast.py`, `fast_windows.py`, `fast_extensions.py`, `fast3.py`, `fast3_windows.py`, `fast4_forbidden.py`
+- 같은 엔진이라도 CUDA(self-play, canonical)와 CPU(웹)는 runtime hash가 다른 두 실행판이다.
+- `install()`은 fast4를 설치한 뒤 실제 바인딩을 검사한다.
+  - 엔진 모듈(`mcts_v5`, `mcts_v7`, `mcts`)이 native threat window와 native 금수를 묶었는가
+  - native 빌드가 stale이 아니고, 빌드 기록의 소스 SHA가 동결값과 같은가
+  - `make_agent`는 이것이 아니면 agent를 만들지 않는다. 그래서 `h6_fast`의 fast4 매핑이 나중에 바뀌어도 잘못된 실행판으로는 돌 수 없다.
+- `.so` SHA, 빌드 Python, 컴파일러는 기계마다 다르므로 gate가 아니라 `provenance(device)`로 기록한다.
+- `CERTIFICATION`: CUDA는 canonical(E3가 CUDA value로 둠), CPU는 인증 전(None)이다.
+- CLAUDE.md에 실행판 잠금(`src/rt30/native/*.c`, `src/rt30/fast*.py`)을 적었다.
+- 벤치마크 run 파일에 `value_device`와, TB-V2-Value + fast4 run이면 `runtime` provenance(엔진 해시, runtime 해시, native 기록)가 들어간다.
+- P1a-2 보류. 다시 꺼낼 조건: 웹 실측 30초 초과, 또는 탐색 예산을 늘리는 엔진 후보
+
+**2. CPU backend 인증 (실행 전 고정, `scripts/summarize_h7_cpu_cert.py`, 테스트 `tests/test_h7_cpu_cert.py`)**
+- 질문은 "value를 CPU로 돌리면 CUDA(canonical)보다 기력을 잃는가" 하나다. 엔진 채택이 아니라, 같은 B-engine의 웹용 실행판 인증이다.
+- run: TB-V2-Value + fast4(`puct_value_vct2_50k_tt`, `--puct-c 1.5 --fast fast4`) 대 `v8:full`, 50 pair
+  - seed **8431, 8432** 둘 다(지금 `RESERVED_SEEDS`에 넣음, 실행 뒤 seed 추가 없음)
+  - `--value-device cpu`와 `cuda`로 같은 opening·색
+- PASS 조건: 점수 차(CPU − CUDA), opening(양 색) 단위 bootstrap 95% 하한 ≥ −0.05, 그리고 두 backend 모두 safety violation 0
+- PASS 뒤 기록: `CERTIFICATION['cpu']`를 갱신하는 커밋을 따로 한다. 표현은 "web-certified runtime: TB-V2-Value + fast4 / CPU"다.
+- FAIL이면 CPU는 인증되지 않는다. 웹은 CUDA 기계에서 연다.
+- 보고: 수순이 완전히 같은 대국 수, 색별 점수, 대국 시간
+- 요약 도구가 거부하는 것:
+  - 동결 설정과 다른 run
+  - fast4가 아닌 run
+  - value 장치가 맞지 않는 run
+  - runtime 해시가 동결값과 다른 run
+  - pair 수가 50이 아닌 run
+  - seed가 빠지거나 opening이 어긋난 경우
+
+**3. 웹 (Web_SER5) 방식: 30초 soft monitor**
+- 동결 실행판(TB-V2-Value + fast4)을 deadline 없이 그대로 돌린다. 30초는 감시 기준일 뿐이다.
+  - 30초를 넘으면 `over_30` 표시만 남기고 계산을 끝까지 한다. 정상 착수를 돌려준다.
+  - 그래서 웹 대국은 벤치마크 엔진과 행동이 같다.
+  - 동기 계산 중에는 30초에 대체 수를 둘 수 없다(사용자 지적). 강제 대체 수는 두지 않는다.
+- `over_30`이 한 번이라도 생기면: 국면과 실행판 로그를 저장하고 재현한다. 그다음 P1a-2 또는 hard-timeout 실행판을 다시 검토한다.
+  - "반드시 30초 안에 착수"가 서비스 요구가 되면 그때 따로 설계한다. VCF 안 deadline을 다시 포팅하기 전에, 엔진 프로세스 바깥의 hard watchdog과 그 대체 수의 안전성 검증을 먼저 본다.
+- AI 착수 계산은 **worker 1개로 직렬화**한다(적어도 초기 검증 동안). SER5 측정이 threads 1, workers 1이었기 때문이다. 여러 대국을 동시에 CPU에 넣으면 22초 최대를 기대할 수 없다.
+- 웹 로그 필드: `engine_hash`, `runtime_hash`, `fast_mode`, native 소스 SHA, native 바이너리 SHA, `value_device`, 수당 시간, `over_30`. `tb_v2_runtime.provenance(device)`가 앞의 여섯을 준다.
+- 웹 연결 작업은 `feat/Web_SER5` 쪽에서 한다. CPU 인증 PASS 뒤에 시작한다. 로컬 전용 배포 제약은 그대로다.
+
+**실행 명령 — CPU backend 인증 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_tb_v2_runtime tests.test_h7_cpu_cert tests.test_fast4
+mkdir -p runs/h7_cert docs/h7
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; W=8
+for SEED in 8431 8432; do
+for DEV in cuda cpu; do
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast4 --policy-checkpoint $POL --value-checkpoint $VAL --value-device $DEV \
+  --games-jsonl runs/h7_cert/${DEV}_$SEED.jsonl --output runs/h7_cert/${DEV}_$SEED.json 2>&1 | tee runs/h7_cert/${DEV}_$SEED.log
+done; done
+python scripts/summarize_h7_cpu_cert.py --cpu runs/h7_cert/cpu_8431.json runs/h7_cert/cpu_8432.json \
+  --cuda runs/h7_cert/cuda_8431.json runs/h7_cert/cuda_8432.json --output docs/h7/h7_cpu_cert.json
+```
+
+- 이 판정은 시간을 재지 않는다. 그래서 worker 수를 늘려도 된다.
+  - CPU run에서 worker마다 torch 스레드는 1개다(`ValueLeaf` 기본값).
+  - 400국 × 대국당 약 1.5–2분이므로, 8 worker로 run당 수십 분 정도다.
+- 커밋할 것: `docs/h7/h7_cpu_cert.json`. run 파일은 `runs/`에 둔다.
+
+## H7-c1 설계 방향 (2026-10-21, 초안, 승인 대기)
+
+**이미 고정된 것** (track-b-b1-b2 §13, track-b-post-e1 §2, mcts-v8-teacher §12.18, external-engine §9)
+- 1주기 = self-play 1,000판이다. 최소 3주기다.
+- 승급: 직전 checkpoint와 50쌍
+- 수렴: 연속 2주기 동안 직전 checkpoint 대비 향상 하한 ≤ 0, 그리고 전술 회귀 없음
+- Monitoring Arena: 상대 3종 × 25쌍 + 직전 checkpoint 50쌍. 여기에 Rapfi L_mid 25쌍(seed 8710 + c, 기록만)
+- 주기 안에서는 B-engine을 바꾸지 않는다. 바꾸는 것은 주기 경계에서 §2.3 gate를 거친 것만이다.
+- 라벨 계약:
+  - value는 둘 차례 관점이다.
+  - 증명된 결과가 대국 결과보다 우선한다.
+  - 행마다 `game_id`, `canonical_hash`, `engine_config_hash`, `model_hash`를 남긴다.
+  - probe가 든 대국은 통째로 뺀다.
+  - 한 대국 안에서는 model / config가 고정이다.
+- 엔진·실행판: TB-V2-Value + fast4 / CUDA(canonical). 행에는 `runtime_hash`도 남긴다.
+
+**결정이 필요한 것 (제안 포함)**
+1. **selective VCT2 공격을 c1 엔진에 넣을지 (track-b-post-e1 §3, §8 질문 2. 아직 열려 있음)**
+   - 근거:
+     - 같은 엔진끼리의 self-play에서는 VCT2 패배수를 둬도 상대가 응징하지 못한다(8411 p22, 웹 `161802`).
+     - 그 국면이 대국 결과 라벨로는 반대 부호가 된다.
+     - TB-V2-Value에는 VCT2 **방어** veto는 있지만 **공격**(E2 모듈 `analysis.vct2_attack.own_vct2_attack`, 증명된 WIN만)은 없다.
+   - **제안:** c1 전에 E4로 판정한다. TB-V2-Value + VCT2 공격 대 TB-V2-Value, §2.3 gate 6개, 새 holdout seed.
+     - 주기 안에서는 엔진을 바꿀 수 없다. c1 데이터 품질에 바로 영향을 주는 변경이라서다.
+     - 이 판정은 기력 비열등, 비용 ≤ 1.5, 건전성(거짓 WIN 0)을 본다. 빈도 지표는 "상대의 증명된 VCT2 패배를 응징한 수"다.
+   - 대안: c1을 지금 시작하고, VCT2 공격은 c1 → c2 경계 후보로 둔다. 더 빠르지만, c1 데이터에 미응징 라벨 오류가 남는다. 증명 라벨이 일부를 덮어 줄 뿐이다.
+2. **self-play 기반 코드 (새로 만든다)**
+   - 지금 있는 self-play 코드(`src/training/self_play.py` 등)는 Track A(AlphaZero)용이라 solver와 RenjuNet 금지 규칙이 다르다. Track B용은 새로 만든다.
+   - 구성:
+     - self-play 생성기: 양쪽 같은 엔진·같은 checkpoint, opening 프로토콜, 대국마다 provenance
+     - 증명 라벨러: H6 label builder 재사용, 예산 고정
+     - replay buffer: 허용 세대 범위를 명시
+     - 학습: policy와 value를 함께 학습할지, H6처럼 value만 학습할지
+     - 승급 Arena, Monitoring Arena
+   - 이 중 "policy도 학습하는가"는 큰 결정이다. 지금 B-net은 H3 policy(RenjuNet)와 H6 value다.
+3. **self-play의 탐색 설정**
+   - 대국용 실행판(50 simulation, VCT2 veto 등)을 그대로 쓸지
+   - 탐색 다양성(root noise, 온도, opening 무작위)을 어떻게 줄지. 엔진 동결 원칙과 맞추려면 이것들은 "self-play 프로토콜" 설정으로 고정하고, 엔진 identity에는 넣지 않는다.
+4. **처리량**
+   - 1,000판 × 대국당 약 1.5–2분 ÷ worker 수로 계산한다. 데스크톱 12코어면 주기당 수 시간이다.
+   - 학습과 Arena를 더하면 주기 하나가 하루 안쪽이다. c1 전에 짧은 시험 run(예: 20판)으로 확인한다.
+
+**순서 제안**
+1. CPU 인증 run과 H7-c1 설계 확정을 병행한다.
+2. (승인 시) E4 VCT2 공격 판정을 한다.
+3. self-play 기반 코드를 구현한다.
+4. c1을 시작한다.
+5. 웹 연결은 CPU 인증 PASS 뒤 `feat/Web_SER5`에서 한다.
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 

@@ -50,7 +50,8 @@ BOARD = 15
 RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8406, 8411, 8412, 8413, 8414, 8415, 8416, 8417, 8418,
                             *range(8601, 8611), *range(8611, 8617), *range(8701, 8726),
                             8421, 8422, 8423,   # H7-E2 holdout (docs/h6-value.md)
-                            8407, 8408, 8409})  # H7-E3 (value v3 on TB-Engine-v2)
+                            8407, 8408, 8409,   # H7-E3 (value v3 on TB-Engine-v2)
+                            8431, 8432})        # CPU-backend certification of TB-V2-Value + fast4
 FRESH_PROBE_SEEDS = tuple(range(8601, 8611))
 DEV_PROBE_SEEDS = tuple(range(8611, 8614))
 DEV_PROBE_EXTENSION_SEEDS = tuple(range(8614, 8617))
