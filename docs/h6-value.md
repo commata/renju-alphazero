@@ -3280,8 +3280,22 @@ python scripts/summarize_h7_cpu_cert.py --cpu runs/h7_cert/cpu_8431.json runs/h7
 - 공격자 quiet 수의 순서: 위협수(4, 열린 삼·띈 삼, `selective_vct.threat_moves`)를 먼저 두고 나머지 합법 수를 뒤에 둔다(`TruthSolver`).
   - 수 집합이 같으므로 SAFE와 UNSAFE의 뜻은 바뀌지 않는다.
   - 순서는 예산 안에서 승리를 먼저 찾게 할 뿐이다. 측정은 아래에 있다.
-- 깊이 0, 1, 2는 solver cache를 공유한다. 같은 판(돌 + 둘 차례)은 한 번만 탐색한다.
+- 깊이 0, 1, 2는 solver cache를 공유한다. 같은 판(돌 + 둘 차례)은 한 번만 탐색한다. corpus 1,291국면은 판 1,182개다.
 - resume용 jsonl의 줄마다 예산을 적는다. 예산이 다른 줄은 거부한다.
+- 비용 측정(컨테이너, fast4, 1 프로세스, main 국면 무작위 5개). 예산을 정하는 데 쓰지 않고 시간 추정에만 쓴다.
+
+  | 수 | 결과 | 시간 | VCF 호출 | 노드 |
+  |---|---|---|---|---|
+  | 9 | NOT_FOUND | 52초 | 32k | 0.15M |
+  | 13 | UNKNOWN (depth 0, 1 SAFE, depth 2에서 예산 소진) | 492초 | 245k | 10M |
+  | 22 | NOT_FOUND | 341초 / 354초 (기존 순서 / 위협수 우선) | 27k | 6.87M |
+  | 37 | UNKNOWN (사람의 4 → 막은 뒤 모든 응수 열거, depth 0부터 예산 소진) | 413초 | 2.9k | 10M |
+  | 51 | NOT_FOUND | 100초 | 31k | 0.57M |
+
+  - 22수 국면에서 두 순서의 판정과 호출 수가 같았다. SAFE는 수 집합 전체를 봐야 하므로 순서가 비용을 바꾸지 않는다.
+  - depth 2 전폭은 SAFE 하나에 최소 "quiet 수 ~200 × 응수 1개 × quiet 수 ~200" 번의 VCF 호출이 든다. 그래서 초반 국면도 싸지 않다.
+  - 판당 평균은 약 4–5분(컨테이너)이다. 데스크톱 12 worker로 1,182판이면 **약 5–8시간**으로 본다(밤샘 1회).
+  - **UNKNOWN이 적지 않을 것이다**(표본 5개 중 2개). 예산은 고정값(10M)대로 두고 UNKNOWN 비율을 그대로 보고한다. UNKNOWN 국면의 VCT2 승리는 이 corpus에서 보이지 않는다. 빈도의 주 근거가 새 seed 대국인 이유가 하나 더 생긴 셈이다.
 
 **응징 (`scripts/h7_e4_baseline.py`)**
 - witness와 같은 수인지 보지 않는다. 둔 수 뒤 사람의 모든 응수가 depth 1 안에서 지는지(VCT2 범위의 승리를 유지하는지) 참값 solver와 같은 예산으로 확인한다. 5목도 응징이다.
@@ -3335,6 +3349,31 @@ python scripts/summarize_h7_cpu_cert.py --cpu runs/h7_cert/cpu_8431.json runs/h7
 - PROVEN_LOSS인 root 후보: 확률 0으로 두고 나머지를 다시 정규화
 - one-hot은 적어도 c1이 끝날 때까지 고정한다. "증명된 승리 수 전체에 분포"는 c2 이후 cycle 경계에서 검토할 후보다.
 - 웹 국면은 probe 목록에 올린다. 그 국면이 든 self-play 대국(D4 기준)은 학습에서 뺀다. 무른 국면은 DEV 보조 묶음에만 쓴다.
+
+**실행 명령 — 참값과 기준 엔진 (데스크톱 Ubuntu)**
+
+corpus(`docs/h7/h7_e4_web_corpus.json`)는 커밋돼 있다. 그래서 데스크톱에 웹 DB가 없어도 된다.
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4 tests.test_tb_v2_runtime
+mkdir -p runs/h7_e4
+# 1) truth: about 5-8 h with 12 workers; rerun the same command to resume (runs/h7_e4/truth.jsonl)
+python -u scripts/h7_e4_truth.py --corpus docs/h7/h7_e4_web_corpus.json --workers 12 --fast fast4 \
+  --jsonl runs/h7_e4/truth.jsonl --output docs/h7/h7_e4_truth.json 2>&1 | tee -a runs/h7_e4/truth.log
+# 2) baseline: frozen TB-V2-Value + fast4 (CUDA value) on the PROVEN_WIN positions only
+python -u scripts/h7_e4_baseline.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \
+  --device cuda --jsonl runs/h7_e4/baseline.jsonl --output docs/h7/h7_e4_baseline.json 2>&1 | tee -a runs/h7_e4/baseline.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4_truth.json`, `docs/h7/h7_e4_baseline.json`. jsonl과 log는 `runs/`에 둔다.
+- 먼저 볼 숫자
+  - truth 요약의 `DEV/main`·`HOLDOUT/main`별 `grade.WIN_VCT2_ONLY`와 `class.UNKNOWN`
+  - baseline 요약의 `target`(VCT2 전용 국면 중 B가 응징한 수·놓친 수)
+  - `shallow_flags`(0개 기대)와 `holdout_gate`
+- truth가 중간에 끊기면 같은 명령을 다시 실행한다. `--output` 파일은 전부 끝나야 써진다.
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
