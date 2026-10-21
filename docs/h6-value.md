@@ -3746,9 +3746,10 @@ python -u scripts/h7_e4_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth do
   - 그래서 NOT_FOUND 국면에서 E4가 WIN을 내면 둘 중 하나가 틀렸다는 뜻이다. 0이 나온 것은 실제로 확인된 일치다.
 
 **아직 남은 DEV 놓침 11국면 (MISS 10, UNCLEAR 1, 선택 후보 기준, E4-v2용 기록)**
-- 8국면: 200k 예산 소진. 그중 1국면은 400k에서 풀렸다.
-- 2국면: 예산 안에서 탐색을 끝냈지만 WIN 없음. depth 1의 우리 quiet 수를 4·열린 삼으로 제한한 selective 탐색의 불완전성이다.
-- 1국면: 400k에서도 예산 소진이고, witness 첫 수가 V8-B 후보 밖이다.
+- 8국면: 200k 예산 소진
+  - 1국면은 400k에서 풀렸다(witness 첫 수가 V8-B 후보 밖).
+  - 1국면은 400k에서도 소진이다(witness 첫 수가 V8-B 후보 밖).
+- 3국면: 예산 안에서 탐색을 끝냈지만 WIN 없음. depth 1의 우리 quiet 수를 4·열린 삼으로 제한한 selective 탐색의 불완전성이다.
 - 이 관찰로 현재 후보를 바꾸지 않는다.
 
 **비용 위험 (arena 전에 알려 둘 것)**
