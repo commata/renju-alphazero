@@ -12,3 +12,6 @@
   `src/hybrid/h6_value_leaf.py`) outside an explicit engine-version step.
 - The frozen runtime profile `src/analysis/tb_v2_runtime.py` (TB-V2-Value + fast4) also locks `src/rt30/native/*.c`
   and `src/rt30/fast*.py` by SHA-256: change them only as a new runtime step (same-move equivalence gate first).
+- The H7-E4 candidate `src/analysis/tb_v2_value_e4.py` locks `src/analysis/e4_attack.py`, `vct2_attack.py` and
+  `selective_vct.py` by SHA-256 (`ATTACK_SOURCES`), and `src/analysis/e4_reference.py` is the arena's frozen event
+  detector once its DEV check passes: do not edit them until the seed 8441 / 8442 arena has given ADOPT / REJECT.

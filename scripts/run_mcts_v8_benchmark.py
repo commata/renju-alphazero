@@ -37,6 +37,7 @@ move as ``root.table``). With ``--puct-c 1.5`` it is ``analysis.tb_engine_v1_t``
 --opponent-puct-c 1.5`` = TB-Engine-v2).
     puct_policy_vct2_50k_tt puct_policy_vct2_50k with root_vcf_table (TB-Engine-v2)
     puct_value_vct2_50k_tt  TB-Engine-v2 with the value leaf (TB-V2-Value, H7-E3; a tested arm only)
+    puct_value_vct2_50k_tt_e4  TB-V2-Value + the H7-E4 attack candidate (``analysis.tb_v2_value_e4``; tested only)
 
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
@@ -121,6 +122,9 @@ ARMS = {
                                 'vct2_node_budget': 50_000, 'root_vcf_table': True},
     'puct_value_vct2_50k_tt': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
                                'vct2_node_budget': 50_000, 'root_vcf_table': True},
+    # 'e4_attack' is not a V8 option: it wraps the agent in the H7-E4 candidate (analysis.tb_v2_value_e4).
+    'puct_value_vct2_50k_tt_e4': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+                                  'vct2_node_budget': 50_000, 'root_vcf_table': True, 'e4_attack': True},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -355,6 +359,9 @@ def play_one(task: dict) -> dict:
     if config.get('stage_vct2'):
         from analysis.e3_arms import StageVCT2Agent
         v8 = StageVCT2Agent(v8, config['stage_vct2'])
+    if config.get('e4_attack'):
+        from analysis.tb_v2_value_e4 import wrap
+        v8 = wrap(v8)
     opponent = task.get('opponent', 'v7')
     opp = make_opponent(opponent, derive_seed(seed, 'v7'), task.get('v7_overrides', {}),
                         task.get('policy_checkpoint'))
@@ -373,6 +380,8 @@ def play_one(task: dict) -> dict:
             record = _move_record(len(game.history), elapsed, v8.diagnostics)
             if getattr(v8, 'stage_info', None):
                 record['stage_vct2'] = v8.stage_info
+            if getattr(v8, 'attack_info', None):  # H7-E4: the attack ran on this move
+                record['e4_attack'] = dict(v8.attack_info)
             if task.get('counterfactual') and v8.diagnostics.v8_route == 'own_vct':
                 record['counterfactual'] = _counterfactual(game, seed, len(game.history), {**config, **search})
             v8_moves.append(record)
@@ -656,7 +665,10 @@ def file_sha256(path) -> str | None:
     return digest.hexdigest()
 
 
-def _runtime_provenance(device: str) -> dict:
+def _runtime_provenance(device: str, arm: str = 'puct_value_vct2_50k_tt') -> dict:
+    if arm == 'puct_value_vct2_50k_tt_e4':
+        from analysis.tb_v2_value_e4 import provenance as candidate_provenance
+        return candidate_provenance(device)
     from analysis.tb_v2_runtime import provenance as runtime_provenance
     return runtime_provenance(device)
 
@@ -824,8 +836,8 @@ def main(argv=None) -> int:
         'value_checkpoint': args.value_checkpoint,
         'value_device': args.value_device if args.value_checkpoint else None,
         # the frozen runtime profile's identities, when this run is it (TB-V2-Value + fast4)
-        **({'runtime': _runtime_provenance(args.value_device)}
-           if args.fast == 'fast4' and args.arm == 'puct_value_vct2_50k_tt' else {}),
+        **({'runtime': _runtime_provenance(args.value_device, args.arm)}
+           if args.fast == 'fast4' and args.arm in ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4') else {}),
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': opponent_config(args.opponent, args.opponent_overrides),
         'opponent_puct_c': args.opponent_puct_c,

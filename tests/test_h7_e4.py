@@ -322,3 +322,155 @@ class DevSelectionTest(unittest.TestCase):
         self.assertTrue(all(a['id'] in {p['id'] for p in dev_positions} for a in result['attacks']))
         self.assertEqual(len(result['scores']), 8)
         self.assertIsNotNone(result['selection']['selected'])
+
+
+class CandidateTest(unittest.TestCase):
+    def test_identity(self):
+        import hashlib
+        from analysis import e4_attack, tb_v2_value, tb_v2_value_e4 as cand
+        root = Path(__file__).resolve().parents[1]
+        for name, digest in cand.ATTACK_SOURCES.items():
+            self.assertEqual(hashlib.sha256((root / name).read_bytes()).hexdigest(), digest, name)
+        self.assertEqual(cand.BASE_ENGINE_HASH, tb_v2_value.config_hash())
+        cand.check_sources()
+        self.assertEqual(e4_attack.BUDGETS[cand.ATTACK['budget']], cand.ATTACK['budget_values'])
+        selected = json.loads((root / cand.SELECTION['dev_result']).read_text(encoding='utf-8'))['selection']['selected']
+        self.assertEqual({k: cand.ATTACK[k] for k in selected}, selected)  # the DEV selection, literally
+        self.assertNotEqual(cand.candidate_hash(), cand.BASE_ENGINE_HASH)
+        self.assertNotEqual(cand.runtime_hash('cuda'), cand.runtime_hash('cpu'))
+
+    def agents(self, attack):
+        from analysis import tb_v2_value, tb_v2_value_e4 as cand
+        from tests.test_tb_v2_value import Leaf
+        from tests.tb_engine_v1_regression import hashed_policy
+        leaf = Leaf(tb_v2_value.VALUE_CHECKPOINT_SHA256)
+        return (tb_v2_value.make_agent(hashed_policy, leaf, seed=5),
+                cand.make_agent(hashed_policy, leaf, seed=5, attack=attack))
+
+    def test_off_is_the_base_engine(self):
+        from tests.tb_engine_v1_regression import WEB
+        moves = [tuple(m) for m in json.loads(WEB.read_text(encoding='utf-8'))['moves']]
+        base_agent, off = self.agents(attack=False)
+        for ply in (12, 20, 28):
+            game = Game()
+            for m in moves[:ply]:
+                game.play(*m)
+            self.assertEqual(off.select_move(game), base_agent.select_move(game), ply)
+            self.assertEqual(off.attack_info, {})
+
+    def test_attack_on_replaces_only_with_a_proof(self):
+        _, on = self.agents(attack=True)
+        game = Game()
+        for m in VCF:
+            game.play(*m)
+        move = on.select_move(game)  # a forced stage (not an attack route): the attack does not run
+        self.assertNotIn(on.diagnostics.v8_route, ('stage4', 'stage5', 'tree'))
+        self.assertEqual(on.attack_info, {})
+        self.assertEqual(base.check_move(VCF, move, truth.DEFAULT_BUDGET)['outcome'], 'PUNISH')
+
+    def test_a_proven_win_replaces_a_tree_move(self):
+        from types import SimpleNamespace
+        from analysis.tb_v2_value_e4 import E4AttackAgent
+
+        class Stub:
+            name = 'stub'
+
+            def __init__(self):
+                self.diagnostics = SimpleNamespace(v8_route='tree', v8_changed=False)
+
+            def select_move(self, game):
+                return (0, 7)
+
+        game = Game()
+        for m in VCF:
+            game.play(*m)
+        agent = E4AttackAgent(Stub())
+        move = agent.select_move(game)
+        self.assertNotEqual(move, (0, 7))
+        self.assertEqual((agent.diagnostics.v8_route, agent.diagnostics.v8_changed), ('own_vct2', True))
+        self.assertEqual(agent.attack_info['base_move'], [0, 7])
+        self.assertEqual(base.check_move(VCF, move, truth.DEFAULT_BUDGET)['outcome'], 'PUNISH')
+        self.assertEqual(E4AttackAgent(Stub(), attack=False).select_move(game), (0, 7))
+
+
+class ReferenceTest(unittest.TestCase):
+    def test_quiet_moves_extend_the_candidate_set(self):
+        from analysis.e4_reference import BUDGETS, ReferenceSolver, reference_attack
+        from analysis.selective_vct import threat_moves
+        game = Game()
+        for m in VCF:
+            game.play(*m)
+        solver = ReferenceSolver(node_limit=20_000, call_limit=10_000, node_budget=1_000_000)
+        solver._cap, solver._call_cap = solver.node_budget, solver.call_limit
+        quiet = solver.quiet_moves(game)
+        threats = threat_moves(game)
+        self.assertEqual(quiet[:len(threats)], threats)
+        self.assertEqual(len(quiet), len(set(quiet)))
+        move, info = reference_attack(game, '2m')
+        self.assertIsNotNone(move)
+        self.assertEqual(base.check_move(VCF, move, truth.DEFAULT_BUDGET)['outcome'], 'PUNISH')
+        self.assertEqual(set(BUDGETS), {'2m', '4m'})
+
+    def test_judge(self):
+        from scripts import h7_e4_reference as ref
+        boards = {'k1': {'class': 'PROVEN_WIN'}, 'k2': {'class': 'PROVEN_WIN'}, 'k3': {'class': 'NOT_FOUND'}}
+        keys = {'a': 'k1', 'b': 'k2', 'c': 'k3'}
+        win = {'reference': {'move': [1, 1], 'nodes': 5, 'seconds': 0.1, 'exhausted': False},
+               'check': {'outcome': 'PUNISH'}}
+        none = {'reference': {'move': None, 'nodes': 5, 'seconds': 0.1, 'exhausted': True}, 'check': None}
+        self.assertEqual(ref.judge({'a': win, 'b': win}, ['a'], ['a', 'b'], boards, keys, '2m')['verdict'], 'FREEZE')
+        self.assertEqual(ref.judge({'a': none, 'b': win}, ['a'], ['b'], boards, keys, '2m')['verdict'], 'RAISE_TO_4M')
+        self.assertEqual(ref.judge({'a': none}, ['a'], [], boards, keys, '4m')['verdict'], 'INVESTIGATE')
+        self.assertEqual(ref.judge({'c': win}, [], [], boards, keys, '2m')['verdict'], 'INVESTIGATE')
+        false = {**win, 'check': {'outcome': 'MISS'}}
+        self.assertEqual(ref.judge({'a': false}, ['a'], [], boards, keys, '2m')['false_proofs'], ['a'])
+
+
+class PrecheckTest(unittest.TestCase):
+    def test_game_cluster_and_ratio(self):
+        from scripts import h7_e4_precheck as pre
+        self.assertEqual(pre.game_of('e3a|arm@v8:x/8407/0/black|12'), 'e3a|arm@v8:x/8407/0/black')
+        self.assertEqual(pre.game_of('probe|P92'), 'probe')
+        rows = [{'game': g, 'e_seconds': e, 'b_seconds': 1.0} for g, e in
+                [('a', 2.0), ('a', 2.0), ('b', 1.9), ('c', 2.1), ('d', 2.0)]]
+        out = pre.ratio_ci(rows)
+        self.assertEqual((out['ratio'], out['games'], out['verdict']), (2.0, 4, 'PRECHECK_FAIL'))
+        cheap = [{**r, 'e_seconds': 1.2} for r in rows]
+        self.assertEqual(pre.ratio_ci(cheap)['verdict'], 'PROCEED')
+
+    def test_end_to_end_drops_web_boards(self):
+        from rt30 import fast4_forbidden
+        from scripts import h7_e4_precheck as pre
+        from tests.test_h7_timing import FACTORIES
+        from tests.tb_engine_v1_regression import WEB
+        if not fast4_forbidden.available():
+            self.skipTest('python -m rt30.native.build first')
+        moves = json.loads(WEB.read_text(encoding='utf-8'))['moves']
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            path = corpus_of(tmp, GAMES[:1])
+            positions = [{'id': f'e3a|g/1/0/black|{n}', 'source': 'e3a', 'moves': moves[:n]} for n in (14, 22)]
+            positions.append({'id': 'e3a|g/1/1/black|5', 'source': 'e3a', 'moves': [list(m) for m in FIVE[:5]]})
+            (tmp / 'p.json').write_text(json.dumps({'positions': positions}))
+            out = tmp / 'pre.json'
+            self.assertEqual(pre.main(['--positions', str(tmp / 'p.json'), '--corpus', str(path), '--device', 'cpu',
+                                       '--output', str(out)], factories=FACTORIES), 0)
+            result = json.loads(out.read_text(encoding='utf-8'))
+        self.assertEqual(result['dropped_web_boards'], ['e3a|g/1/1/black|5'])  # a web corpus board
+        self.assertEqual(result['positions'], 2)
+        for row in result['rows']:
+            self.assertGreaterEqual(row['e_seconds'], row['b_seconds'])
+        from hybrid.h6_fast import installed_mode
+        self.assertEqual(installed_mode(), 'off')
+
+
+class BenchmarkArmTest(unittest.TestCase):
+    def test_e4_arm_is_the_frozen_base_plus_the_wrapper(self):
+        from analysis.tb_v2_value import ENGINE_OPTIONS, TB_V2_VALUE
+        from scripts.run_mcts_v8_benchmark import ARMS, parse_opponent, v8_config
+        e4 = v8_config('puct_value_vct2_50k_tt_e4')
+        self.assertEqual({k: v for k, v in e4.items() if k != 'e4_attack'}, v8_config('puct_value_vct2_50k_tt'))
+        self.assertEqual({k: e4[k] for k in {**TB_V2_VALUE, **ENGINE_OPTIONS}}, {**TB_V2_VALUE, **ENGINE_OPTIONS})
+        self.assertTrue(ARMS['puct_value_vct2_50k_tt_e4']['e4_attack'])
+        with self.assertRaises(ValueError):
+            parse_opponent('v8:puct_value_vct2_50k_tt_e4')  # a tested arm only
