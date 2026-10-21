@@ -2916,6 +2916,102 @@ done
   - SER5 두 회의 요약: `summary`, `settings`, `engine`, `label`만 담은 `docs/h7/h7_timing_mini_fast4_r1_summary.json`, `…_r2_summary.json`
 - paired 출력 파일은 국면 행을 포함해 크다(수 MB). 크기가 문제면 `summary`와 `settings`만 옮겨 커밋한다.
 
+## P1a-1 결과: PASS, P1a-2 보류 (2026-10-21, 커밋 `548ebad`, `ce441a4`)
+
+**파일**
+- 데스크톱: `docs/h7/h7_p1a_check.json`, `h7_p1a_paired_cpu_r1.json`, `h7_p1a_paired_cpu_r2.json`, `h7_p1a_p2_cpu.json`, `h7_p1a_paired_cuda.json`
+- SER5: `h7_p1a_ser5_fast4_r1_summary.json`, `h7_p1a_ser5_fast4_r2_summary.json`
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 다음 결론에 동의한다.
+- 판정은 PASS다.
+- 종료 규칙에 따라 P1a-2는 하지 않는다(필요 없어진 것이지, 효과가 없다고 판정한 것이 아니다).
+- value 시간은 그대로다.
+- 두 SER5 회는 재현성이 높다.
+
+하나는 크게 고치고, 사실 둘을 더했다.
+
+**확인한 수치**
+- 함수 단위:
+  - 판 5,594개, 빈 칸 956,774개에서 불일치 0
+  - V8-C trace 705국면, 금수 호출 25,302,024회에서 불일치 0(이 중 사사 226,931, 장목 46,142, 삼삼 2,580)
+- 데스크톱 P2(CPU):
+  - 두 회 모두 의미 PASS(차이 0 / 827), 속도 PASS
+  - 국면별 시간 비 중앙값 0.9615, 95% [0.9555, 0.9649] / [0.9543, 0.9679]
+- CUDA: 의미 PASS(0 / 827), 중앙값 0.9444
+- SER5 fast4(두 회):
+  - mean 3.505 / 3.507, p99 17.407 / 17.315, 최대 22.277 / 22.323, 30초 초과 0 / 0 → 종료 기준 두 회 모두 충족
+  - engine 해시는 `tb_v2_value.config_hash`와 같다.
+  - native 소스 SHA(`forbidden.c` `211fd89d…`, `threat_windows.c` `2a1e309c…`)가 저장소와 같다.
+
+**크게 고칠 부분: 데스크톱 P2도 큰 꼬리 감소를 보여 준다. SER5의 감소는 부하 차이가 아니다.**
+- 초안은 "인과 효과는 데스크톱 약 4%, SER5의 30–40%는 측정 시점·부하 차이가 섞였을 수 있다"고 읽었다. 결과 파일은 그렇지 않다.
+- 약 4%(0.9615)는 **국면별 비의 중앙값**이다. corpus의 절반 이상은 V8-C가 거의 일하지 않는 빠른 국면이고, 거기서는 비가 1에 가깝다. 중앙값은 꼬리를 보지 않는 통계다(gate로는 보수적이라 맞다).
+- 같은 데스크톱 P2(같은 프로세스, ABBA / BAAB, 같은 국면 짝)의 다른 수치:
+
+  | 데스크톱 CPU P2 (r1 / r2) | fast3 | fast4 | 비 |
+  |---|---:|---:|---:|
+  | 시간 합 | — | — | **0.7105 / 0.7104** |
+  | mean | 2.914 / 2.895 | 2.070 / 2.056 | 0.71 |
+  | p99 | 18.256 / 17.859 | 10.677 / 10.664 | 0.58–0.60 |
+  | 최대 | 22.613 / 22.545 | 13.279 / 13.232 | 0.59 |
+
+  - 국면을 나눠 보면: 가장 느린 10%의 국면별 비 중앙값은 **0.59**(약 1.69배), 빠른 절반은 0.98이다.
+- SER5 기준선 대비 fast4: mean 0.71, p99 0.58, 최대 0.58. **데스크톱 짝 측정과 거의 같은 크기**다.
+  - 그래서 SER5의 감소는 짝 측정이 보인 인과 효과와 맞다. 측정 시점의 부하로 설명할 필요가 없다.
+  - 다만 SER5 자체는 짝 측정이 아니므로 SER5에서의 정확한 배율은 "관측치"로 쓴다.
+- VCT2 시간이 줄어든 것(SER5 mean 0.808 → 0.524)도 이상한 점이 아니다. VCT2 검사도 VCF와 흑 합법성 검사를 쓴다.
+- **정정된 결론:** fast4는 쉬운 국면에서는 거의 차이가 없고, 어려운 국면(V8-C가 노드 예산을 다 쓰는 국면)을 약 1.7배 빠르게 한다.
+  - P0 뒤에 적은 예상치(V8-C 1.4–1.6배)를 꼬리에서는 조금 넘었다.
+  - 앞으로 속도 보고에는 중앙값 gate와 함께 **시간 합의 비와 짝 분위수(p90 / p99 / 최대)**를 같이 쓴다. gate 통계는 바꾸지 않는다.
+
+**추가 사실**
+- P2 순서 배치는 ABBA 401 / BAAB 426이다(국면 id SHA 기준, 의도대로 거의 반반).
+- 데스크톱 CPU 대 CUDA에서 fast4의 효과(시간 합 비 0.71 / 0.68)가 같은 방향이다. 금수 판정은 CPU 계산이라 장치와 무관하다는 예상과 맞다.
+
+## 다음 단계 설계 방향: 실행판 동결, 웹 CPU backend, 웹 연결 (2026-10-21, 초안, 승인 대기)
+
+**1. 실행판 동결: "TB-V2-Value + fast4" (먼저, 별도 커밋)**
+- 엔진 identity(`tb_v2_value.config_hash`, `256e5abe…`)는 그대로다. 바뀐 것은 실행 경로뿐이다. 그래서 엔진 파일은 고치지 않고 새 파일 `src/analysis/tb_v2_runtime.py`에 실행판을 적는다.
+  - `ENGINE = tb_v2_value` (해시 고정)
+  - `FAST_MODE = 'fast4'`
+  - `NATIVE_SOURCES = {threat_windows.c: 2a1e309c…, forbidden.c: 211fd89d…}`
+  - `EVIDENCE` = 위 P1a-1 파일들
+  - `make_agent`는 fast4 설치를 확인한 뒤 TB-V2-Value agent를 만든다. native가 없거나 stale이면 거부한다.
+- 테스트로 잠그는 것: native 소스 SHA, `fast4_forbidden.py`와 `h6_fast`의 fast4 경로가 기대한 함수를 묶는지, 근거 파일
+- CLAUDE.md frozen 목록에 `tb_v2_runtime.py`, `rt30/native/forbidden.c`, `rt30/native/threat_windows.c`, `rt30/fast4_forbidden.py`를 더한다.
+- P1a-2(VCF 전체 native)는 보류로 기록한다. 다시 꺼낼 조건은 "웹 실측에서 30초 초과가 생기거나, 탐색 예산을 늘리는 새 엔진 후보가 생길 때"로 둔다.
+
+**2. 웹 CPU backend 결정 (SER5에는 CUDA가 없다)**
+- 앞서 정한 대로, CPU backend는 canonical(CUDA)과 착수가 3 / 827 달라 semantics-preserving이 아니다. SER5에서 웹을 열려면 별도 판정이 필요하다.
+- **제안: CPU backend 비열등 짝 판정(E2 방식)**
+  - arm: TB-V2-Value + fast4, value CPU 대 value CUDA. 데스크톱에서 같은 상대(`v8:full`), 같은 opening·색으로 둔다.
+  - seed: 새로 예약한다(예: 8431, 8432). 50 pair × 2 seed.
+  - 기준: 점수 차(CPU − CUDA) 95% 하한 ≥ −0.05, safety violation 0
+  - 보고: 수순이 완전히 같은 대국 수(착수 99.6%가 같으므로 대부분 같을 것으로 예상하지만 예측일 뿐이다), 시간
+  - 이 판정은 "CPU backend가 기력을 잃지 않는다"만 묻는다. 엔진 채택 판정이 아니다.
+- 대안: 웹을 CUDA 기계(데스크톱)에서 연다. 그러면 이 판정은 필요 없지만, 미니 PC 계획이 바뀐다.
+
+**3. 웹 연결 (`feat/Web_SER5` 쪽 작업, 설계만)**
+- 웹 서버 코드는 deadline을 검사하는 VCF(`rt30.vcf`, native core)를 쓴다. 이 브랜치의 `fast4`와 table(`vcf_tt_v1`)은 거기에 없다. 연결할 때 두 가지를 정한다(결정 필요).
+  - **(a) deadline 없이 동결판 그대로 돌리고, 30초는 감시만 한다(권장).**
+    - SER5 corpus에서 최대가 22.3초이므로 대부분 deadline에 닿지 않는다.
+    - 30초를 넘으면 그 수를 기록하고 정해 둔 대체 수를 둔다(예: 그때까지의 V8-C 판정으로 고른 수, 또는 tree 수). 대체 수 규칙은 연결 때 정한다.
+    - 장점: 웹 대국이 동결 엔진의 행동과 같다. 같은 기록으로 재현할 수 있다.
+  - **(b) deadline 판 VCF에 table과 native 금수를 다시 옮긴다.**
+    - deadline이 없을 때 `vcf_tt_v1`과 노드 단위로 같음을 다시 증명해야 한다. 작업이 크고, deadline이 걸린 수는 시간에 따라 달라진다.
+- 어느 쪽이든 웹 대국 로그에 다음을 남긴다: 엔진 해시, 실행 모드, native SHA, value 장치, 수당 시간, 30초 감시 발동 여부.
+- 배포 제약은 그대로다. RenjuNet으로 학습한 망이므로 로컬 범위에서만 연다.
+
+**4. H7-c1 self-play (병행)**
+- 데스크톱 GPU에서 canonical CUDA backend + fast4로 시작한다. 웹 쪽과 독립이다.
+- self-play 설계(주기, 데이터 형식, 학습 gate)는 따로 정한다. track-b-post-e1 §2–3과 external-engine §9의 모니터링 상대를 따른다.
+
+**승인이 필요한 것**
+1. 실행판 동결 방식(새 파일 `tb_v2_runtime.py`, native SHA 잠금)
+2. 웹 CPU backend: 비열등 짝 판정(seed 예약) 또는 CUDA 기계
+3. 웹 deadline 방식: (a) 감시 + 대체 수(권장) 또는 (b) deadline 판 재포팅
+4. H7-c1 설계를 다음 단계로 시작할지
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
