@@ -3682,6 +3682,138 @@ python -u scripts/h7_e4_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth do
 - 먼저 볼 것: `selection`과, 조합별 응징 수 / 거짓 증명 / 모순 / 얕은 회귀 / DEV 국면당 노드
 - 다음 도구(DEV 선택 뒤): E4 엔진 동결 파일, 기준 solver와 그 DEV 재현율, arena 사건 추출과 cluster bootstrap
 
+## H7-E4 DEV grid 결과와 후보 선택 (2026-10-22, 결과 커밋 `c65cd62`)
+
+**E4는 아직 채택된 엔진이 아니다.** 이 단계는 결과 전에 고정한 DEV 절차로 8조합을 비교하고, 공식 arena에 보낼 후보 하나를 고른 단계다.
+- HOLDOUT은 읽지 않았다(`dev_only` 검사, 결과 파일 `split = DEV`).
+- 이름은 "E4 후보"로 쓴다. "TB-Engine-v3" 같은 채택 이름은 쓰지 않는다.
+
+**실행 확인 (`docs/h7/h7_e4_dev.json`)**
+- 도구 git `1ec482c`, `fast4`, 제한 실행 아님
+- corpus / truth / baseline v2의 SHA가 커밋된 파일과 같다.
+- DEV 1,091국면(main 987 + undone 104)
+  - 공격 실행: 867국면 × (예산, 후보) 4쌍 = 3,468회
+  - 공격 생략: 224국면. 증명된 승리 국면 중 기록된 B route가 stage1–3 / own_vcf / own_vct라 wrapper가 돌지 않는다.
+- 목표: DEV WIN_VCT2_ONLY 41국면. baseline v2의 B는 17 / 41 (41.5%)
+
+**결과**
+
+| 조합 | 응징 | 얕은 회귀 | 거짓 증명 | 모순 | 미검증 | 수 바뀜 | DEV 국면당 노드 | 공격 초 평균 / p95 / 최대 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 200k/four_three/all | 29 | 0 | 0 | 0 | 0 | 17 | 24,711 | 1.6 / 9.4 / 10.8 |
+| **200k/vcf_threat/all** | **30** | 0 | 0 | 0 | 0 | 17 | **32,136** | 2.1 / 10.2 / 12.1 |
+| 400k/four_three/all | 30 | 0 | 0 | 0 | 0 | 20 | 41,993 | 2.5 / 17.6 / 19.5 |
+| 400k/vcf_threat/all | **31** | 0 | 0 | 0 | 0 | 20 | 54,535 | 3.3 / 18.3 / 20.6 |
+| 200k/four_three/threat | 17 | 0 | 0 | 0 | 0 | 0 | 15,322 | 3.1 / 9.9 / 10.8 |
+| 200k/vcf_threat/threat | 17 | 0 | 0 | 0 | 0 | 0 | 17,526 | 3.7 / 10.4 / 12.1 |
+| 400k/four_three/threat | 17 | 0 | 0 | 0 | 0 | 0 | 26,735 | 5.1 / 18.2 / 19.2 |
+| 400k/vcf_threat/threat | 17 | 0 | 0 | 0 | 0 | 0 | 30,571 | 5.9 / 18.8 / 20.5 |
+
+- 응징은 41국면 기준이다.
+- 공격 초는 공격한 국면의 평균이다. 데스크톱 12 worker 동시 실행이므로 부하의 영향을 받는다. 그래서 보고만 하고, 선택에는 쓰지 않는다.
+- `threat` 조합의 초 평균은 발동한 소수 국면(258)의 평균이다. 총비용 비교는 "DEV 국면당 노드"로 한다.
+
+**선택: `200k/vcf_threat/all` (고정 규칙 그대로)**
+- 8조합 모두 거짓 증명 0, 모순 0, 얕은 회귀 0, 미검증 0이었다.
+- 응징 최대는 `400k/vcf_threat/all`의 31이다. 그와 1국면 이내인 동률 묶음은 다음 셋이다.
+  - `200k/vcf_threat/all` 30
+  - `400k/four_three/all` 30
+  - `400k/vcf_threat/all` 31
+- 묶음 안에서 DEV 국면당 노드가 가장 적은 `200k/vcf_threat/all`(32,136)을 골랐다.
+  - `400k/vcf_threat/all`(54,535)보다 41% 적다.
+  - `400k/four_three/all`(41,993)보다 23% 적다.
+- 이 규칙은 DEV 결과 전에 고정했다. 31이 최대였다는 사실은 그대로 기록한다. 400k가 약하다는 뜻이 아니다. 최종 기력과 비용은 arena에서 본다.
+- 선택 후보 설정(동결 대상)
+  - 노드 200,000, 호출 20,000, VCF 한 번 20,000 노드
+  - 첫 수 후보: 4 / 열린 삼 + 국소 VCF 위협수
+  - 발동: 해당 route 전부
+  - route: stage4, stage5, tree
+- DEV 응징: 17 / 41 → **30 / 41 (73.2%)**, +13국면(+31.7%p)
+
+**축별 관찰**
+- VCF 위협수 확장: 두 예산에서 모두 +1국면(29 → 30, 30 → 31). 앞선 coverage 분석(4·열린 삼 밖의 VCF 위협수)이 실제로 한 국면을 더 풀었다.
+- 예산 200k → 400k: 두 후보 범위에서 모두 +1국면. 대신 노드는 약 1.7배다.
+- **`threat` 발동은 효과가 0이다.** 네 조합 모두 17 / 41이고, 수가 바뀐 국면이 없다.
+  - 원인: DEV 목표 41국면 중 상대(사람)의 직전 수가 4나 열린 삼을 만든 국면은 **1개**뿐이다. 사람의 VCT2 패배수는 대부분 조용한 수다.
+  - 그래서 이 발동 조건은 E4 목표와 맞지 않는다. 기각한다.
+
+**건전성 결과의 해석 (초안 수정)**
+- 거짓 증명 0: E4가 WIN이라 한 수(조합마다 23–27개)는 전부 truth `check_move`에서 PUNISH였다.
+- 얕은 회귀 0: B가 이미 응징하던 WIN_5 / VCF / VCT1 국면을 E4가 놓치게 만든 예는 없다.
+- **모순 0은 "보수적인 이름"이 아니라 실제 검사다.**
+  - truth의 NOT_FOUND는 같은 VCT2 범위를 전폭으로 끝까지 탐색해 SAFE로 끝났다는 뜻이다(잘린 탐색은 UNKNOWN). 깊이 3 이상의 승리를 배제하지는 않는다.
+  - E4의 WIN도 같은 범위 안의 증명이다(같은 VCF 탐색, 방어자 응수 전부).
+  - 그래서 NOT_FOUND 국면에서 E4가 WIN을 내면 둘 중 하나가 틀렸다는 뜻이다. 0이 나온 것은 실제로 확인된 일치다.
+
+**아직 남은 DEV 놓침 11국면 (MISS 10, UNCLEAR 1, 선택 후보 기준, E4-v2용 기록)**
+- 8국면: 200k 예산 소진. 그중 1국면은 400k에서 풀렸다.
+- 2국면: 예산 안에서 탐색을 끝냈지만 WIN 없음. depth 1의 우리 quiet 수를 4·열린 삼으로 제한한 selective 탐색의 불완전성이다.
+- 1국면: 400k에서도 예산 소진이고, witness 첫 수가 V8-B 후보 밖이다.
+- 이 관찰로 현재 후보를 바꾸지 않는다.
+
+**비용 위험 (arena 전에 알려 둘 것)**
+- 선택 후보의 공격 시간(발동한 867국면): 평균 2.09초, 중앙값 0.24초, 5초 초과 18.5%. 200k 예산을 다 쓴 경우가 143회다.
+- 같은 엔진의 timing 기준선(`docs/h7/h7_timing_base_cpu_summary.json`, fast4 이전, CPU value)에서 B의 수당 평균은 1.95초, tree route는 2.63초다. tree route가 전체 수의 61%다.
+- 단순 추정은 이렇다: 추가 시간 ≈ 0.61 × 2.09 ≈ 1.3초 / 수. B ≈ 1.4–2.0초 / 수(fast4 / off). 그러면 비용 비율은 약 **1.6–1.9**로, gate(≤ 1.5)를 넘을 수 있다.
+- 단, 확실하지 않다. 국면 분포가 다르고(웹 사람 국면 대 arena), 공격 초는 12 worker 부하 아래 쟀고, B 시간은 다른 국면·다른 모드 값이다.
+- 그래서 arena 전에 같은 프로세스에서 짝으로 잰 비용 사전 검사를 제안한다(아래).
+
+## H7-E4 다음 단계 설계: 후보 동결, 비용 사전 검사, 기준 solver, arena (2026-10-22, 초안, 승인 대기)
+
+**1. 후보 동결 (구현)**
+- `src/analysis/tb_v2_value_e4.py`(이름은 후보 표기)
+  - 기준 엔진: TB-V2-Value(엔진 해시 `256e5abe…`)를 그대로 쓴다.
+  - 공격 설정을 리터럴로 둔다: `200k/vcf_threat/all`, route stage4 / 5 / tree
+  - 공격 모듈 SHA: `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`
+  - 후보 해시 = 위 셋 + 기준 엔진 해시
+  - wrapper `E4AttackAgent`: B가 먼저 둔다. route가 해당하면 공격하고, 증명된 WIN이면 바꾼다.
+  - diag에 남길 것: 공격 수, B 수, 노드, 호출, 초, 후보 수
+- 실행판: fast4 바인딩 검사(`tb_v2_runtime.check_bound`)를 재사용한다. 새 runtime 해시를 만든다.
+- CLAUDE.md 동결 목록에 `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`, 후보 파일을 더한다.
+- 격리 시험: 공격을 끈 wrapper는 TB-V2-Value와 같은 수를 둔다(단위 시험, timing corpus 일부에서 수 일치).
+- 벤치마크 arm `puct_value_vct2_50k_tt_e4`(시험 arm 전용). 수마다 위 diag를 run 파일에 기록한다.
+
+**2. 비용 사전 검사 (제안, arena 전, 결과 전 규칙 고정)**
+- 질문: 이 후보를 arena에 보내면 비용 gate(대국 총 V8 시간 비율 ≤ 1.5)를 통과할 가능성이 있는가
+- 국면: `docs/h7/h7_timing_positions.json`(E3 대국 등 2,594국면). DEV / HOLDOUT / arena seed와 겹치지 않는다.
+- 방법: P2와 같다. 같은 프로세스, ABBA / BAAB, fresh state, B(TB-V2-Value + fast4) 대 E4 후보, CUDA value
+- 보고: 합계 비율(주 지표), 중앙값 비율, p95 / 최대
+- 규칙
+  - 합계 비율 bootstrap 95% 하한 > 1.5 → **arena를 돌리지 않는다.** 이 후보는 "비용 사전 검사 FAIL"로 기록하고 REJECT한다. 비용을 고려한 E4-v2로 간다.
+  - 그 밖에는 arena로 간다. arena의 비용 gate가 최종 판정이다.
+- 근거: 결과가 거의 정해진 arena(데스크톱 수 시간)를 아낀다. 이 검사는 응징 지표와 HOLDOUT을 보지 않는다. 후보 설정도 바꾸지 않는다(통과 / 중단만 정함).
+
+**3. 기준 solver (DEV, 모델 불필요)**
+- 정의: selective VCT2
+  - 첫 수: 4 / 열린 삼 + 국소 VCF 위협수
+  - depth 1 quiet: 4 / 열린 삼 + 국소 VCF 위협수
+  - 노드 2M, 호출 200k, VCF 한 번 20k
+  - 방어자 응수 전부
+- DEV 재현율: DEV WIN_VCT2_ONLY 41개 중 기준 solver가 WIN을 증명한 수. 건전성 검사로 NOT_FOUND 국면의 WIN 0도 본다.
+- 재현율이 낮으면 DEV에서만 예산을 한 번 바꿀 수 있다(2M → 4M). 그 뒤 동결한다.
+- 도구: `scripts/h7_e4_reference.py`(DEV only assertion 포함)
+
+**4. arena (데스크톱)**
+- 두 arm 모두 `v8:full` 상대, `--puct-c 1.5 --fast fast4`, CUDA value, seed 8441 / 8442, 각 50 pair, 같은 opening·색
+  - B: `puct_value_vct2_50k_tt`
+  - E: `puct_value_vct2_50k_tt_e4`
+- `scripts/summarize_h7_e4.py`
+  - 기력: opening(양 색) 단위 점수 차 bootstrap, 95% 하한 ≥ −0.05(E2 / E3 방식)
+  - 비용: 총 V8 수 시간 E / B ≤ 1.5
+  - 건전성: E4가 공격으로 바꾼 모든 수를 truth `check_move`(10M)로 검사. MISS 0이어야 한다.
+  - 빈도
+    - 사건: `v8:full`이 둔 직후 국면 중 기준 solver가 WIN을 증명한 국면
+    - 응징: 그 국면에서 arm이 둔 수의 `check_move` PUNISH
+    - opening cluster bootstrap, 표본마다 Σ응징 / Σ사건을 다시 계산. E − B의 95% 하한 > 0
+  - 격리: 단위 시험과 후보 파일의 off 경로
+- 실패하면 이 후보는 고치지 않는다. E4-v2로 간다.
+
+**5. 결정이 필요한 것**
+1. 후보 동결 방식(새 후보 파일, 공격 모듈 SHA 잠금, 동결 목록 추가)
+2. 비용 사전 검사를 둘지, 그리고 그 중단 규칙(합계 비율 하한 > 1.5면 arena 생략, REJECT)
+3. 기준 solver 정의(양 깊이에 VCF 위협수, 2M)와 DEV 재현율 측정 후 동결
+4. arena 사건 추출을 상대(`v8:full`) 수 직후 국면 전부에 기준 solver로 하는 것(arm마다 약 6,000국면, 데스크톱 수 시간)
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
