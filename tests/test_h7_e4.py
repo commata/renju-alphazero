@@ -181,6 +181,20 @@ class CheckMoveTest(unittest.TestCase):
         self.assertEqual(base.check_move(FIVE, (0, 7), tiny)['outcome'], 'UNCLEAR')
 
 
+class RemainingDepthTest(unittest.TestCase):
+    def test_a_forced_block_keeps_depth_two(self):
+        four = [(7, 7), (7, 6), (7, 8), (0, 0), (7, 9), (0, 2), (7, 10)]  # Black's four, White to move
+        game = Game()
+        for m in four:
+            game.play(*m)
+        self.assertEqual(base.remaining_depth(game, (7, 11)), 2)
+        self.assertEqual(base.remaining_depth(game, (0, 4)), 1)
+        game = Game()
+        for m in FIVE[:-1]:  # White just made a four: any move but its block uses a depth
+            game.play(*m)
+        self.assertEqual(base.remaining_depth(game, (1, 1)), 1)
+
+
 class LossReviewTest(unittest.TestCase):
     def test_walk_and_status(self):
         from scripts import h7_web_loss_review as review

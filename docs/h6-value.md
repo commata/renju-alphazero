@@ -3428,6 +3428,187 @@ python -u scripts/h7_web_loss_review.py --corpus docs/h7/h7_e4_web_corpus.json -
   --workers 3 --engine --device cuda --output docs/h7/h7_web_losses_20261021_engine.json 2>&1 | tee runs/h7_e4/loss_review.log
 ```
 
+## H7-E4 웹 truth / frozen baseline 결과와 shallow miss 분석 (2026-10-21, 결과 커밋 `9f2d6dd`)
+
+E4는 아직 채택된 것이 아니다. 여기까지는 truth와 baseline의 관측, 그리고 원인 분석이다.
+
+좌표 표기: 이 절의 국면 좌표는 내부 표기(0부터, 행·열)다. 4번(사람 승리 3판)만 웹 화면 표기(1부터)다.
+
+### 1. 100판 웹 corpus truth (`docs/h7/h7_e4_truth.json`)
+
+- corpus: 2026-10-21 두 번째 백업까지(SHA-256 `5ea219a8…f3673`)
+  - main 1,363국면(DEV 987 / HOLDOUT 376), undone 104국면(DEV), 판 1,356개
+- 예산: VCF 한 번 100k 노드, 국면당 호출 1M, 국면당 노드 10M. `fast4`, 12 worker, git `b6b9f92`
+- torn line 0, 제한 실행 아님
+
+| split / set | 국면 | PROVEN_WIN | NOT_FOUND | UNKNOWN | WIN_5 | WIN_VCF | WIN_VCT1 | WIN_VCT2_ONLY | WIN_VCT2_OR_LESS |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| DEV/main | 987 | 220 | 671 | 96 | 38 | 114 | 28 | **40** | 0 |
+| HOLDOUT/main | 376 | 120 | 195 | 61 | 15 | 86 | 11 | **8** | 0 |
+| DEV/undone | 104 | 52 | 28 | 24 | 0 | 44 | 6 | **1** | 1 |
+
+- main 합계
+  - PROVEN_WIN 340 / 1,363 (24.9%)
+  - UNKNOWN 157 (11.5%)
+  - WIN_VCT2_ONLY 48 (3.5%)
+- 웹 실전 국면에 E4 목표(VCF / VCT1로는 증명되지 않고 VCT2에서 처음 증명되는 승리)가 실제로 있다.
+- 비용 표본(5국면)에서는 UNKNOWN이 2/5였지만, main 전체에서는 11.5%였다.
+- **HOLDOUT의 WIN_VCT2_ONLY는 8개다.** 사전 고정값 `HOLDOUT_MIN_EVENTS = 10`에 못 미친다. 그래서 웹 HOLDOUT은 E4 판정이 아니라 보고(report-only)다. 빈도와 기력의 주 근거는 예정대로 새 seed 8441/8442 arena다.
+
+### 2. Frozen TB-V2-Value + fast4 baseline (`docs/h7/h7_e4_baseline.json` → 재검사 `docs/h7/h7_e4_baseline_v2.json`)
+
+- PROVEN_WIN 392국면 전부에서 엔진을 돌렸다.
+  - 엔진 해시 `256e5abe…`, runtime 해시 `d9c51824…`, CUDA value(canonical), seed 8440
+- **검토에서 응징 검사의 오류 하나를 찾아 고쳤다(baseline v2).**
+  - truth(`ThreatSolver.after_move`)에서는 사람의 4 하나를 막는 강제 수가 깊이를 쓰지 않는다. 막은 뒤에도 depth 2가 남는다.
+  - 그런데 v1의 `check_move`는 모든 수 뒤를 depth 1로만 봤다. 그래서 VCT2_ONLY 국면에서 강제 block을 두면, 승리를 유지해도 MISS로 셀 수 있었다.
+  - `86c1383d…:11`(DEV)에서 B는 truth witness와 같은 block `(12,13)`(route stage2)을 뒀다. 그런데 v1은 MISS로 셌다.
+  - v2(`remaining_depth`): 사람의 유일한 4를 막는 수는 depth 2로 검사한다.
+  - `--recheck`로 엔진을 다시 돌리지 않고, 규칙이 바뀌는 검사 30개(B 15, 웹 AI 15)만 다시 했다.
+    - 바뀐 것은 이 국면 하나다. B와 웹 AI 모두 MISS → PUNISH가 됐다.
+    - 나머지 14국면은 VCF / VCT1 국면의 block으로, 그대로 PUNISH다.
+- WIN_VCT2_ONLY (v2)
+
+| split / set | 국면 | B PUNISH | B MISS | B UNCLEAR | 웹 AI PUNISH (참고) |
+|---|---:|---:|---:|---:|---:|
+| DEV/main | 40 | **16** | **23** | 1 | 11 |
+| HOLDOUT/main | 8 | 4 | 4 | 0 | 2 |
+| DEV/undone | 1 | 1 | 0 | 0 | 1 |
+
+- main 합계: B PUNISH 20 / 48 (41.7%), MISS 27 (56.3%), UNCLEAR 1 (2.1%)
+  - 웹에서 실제로 둔 AI(대부분 TB-RT30-v3)는 13 / 48이었다. 현재 B가 이미 더 많이 응징한다. 그래도 절반 넘게 놓친다.
+  - B가 놓친 DEV 23국면은 모두 route `tree`였다. 그래서 E2 모듈의 실행 경로(`ATTACK_ROUTES`)에 든다.
+- WIN_5 53국면과 WIN_VCF 244국면은 전부 PUNISH다(own VCF, stage1–3).
+- HOLDOUT은 8국면뿐이므로 4 PUNISH / 4 MISS로 보고만 한다.
+
+### 3. shallow flag 2건 (WIN_VCT1인데 B가 MISS)
+
+| 국면 | split | 웹 엔진 | truth witness | B의 수 (route) |
+|---|---|---|---|---|
+| `8b68bc87…:35` | **DEV** | TB-RT30-v3 | `(13,8)` | `(12,7)` (tree) |
+| `9040d79e…:25` | **HOLDOUT** | MCTS-v8 | `(5,12)` | `(6,11)` (tree) |
+
+**3.1 `8b68…:35` (DEV): V8-B 후보 부족**
+- witness `(13,8)`은 합법이지만 4도 열린 삼도 만들지 않는다(`four = 0`, `open_three = 0`). 그래서 V8-B `_attack_candidates`(4 또는 열린 삼)에 들어가지 않는다.
+- 하지만 그 수를 두면, 상대가 수를 쉬는 경우 AI에게 VCF가 있다(VCF 위협수, `docs/h7/h7_e4_dev_coverage.json`).
+- 사용자 추가 검사: witness의 `check_move`는 PUNISH였다(793,341 노드, VCF 호출 17,056).
+- truth는 4·열린 삼 수를 먼저 시도한다(`TruthSolver`). 그러므로 V8-B 후보 중 어느 것도 truth 예산 안에서 승리로 증명되지 않았다.
+- 원인은 예산이 아니라 **후보 범위**다. 예산을 늘려도 풀리지 않는다.
+
+**3.2 `9040…:25` (HOLDOUT): V8-B 호출 예산 (사용자 추가 검사)**
+- witness `(5,12)`는 열린 삼이므로 V8-B 후보에 있었다. 하지만 B의 V8-B는 호출 9,997 / 10k에서 예산이 끝났고, witness는 UNKNOWN이었다.
+- `attack_call_limit`만 바꾼 진단에서 10k / 20k는 그대로였다. 40k / 80k에서는 `(5,12)`를 WIN으로 증명하고 `own_vct` route로 뒀다.
+  - 80k가 40k보다 호출이 적은 것은 `_first_proven`의 공정 분배 때문이다. 오류가 아니다.
+- **이 국면은 HOLDOUT이다.** 그래서 이 진단을 E4 후보의 매개변수(예: `attack_call_limit = 40k`)를 고르는 근거로 쓰지 않는다.
+  - 고정 규칙은 "DEV에서만 선택, HOLDOUT을 본 뒤 조정 없음"이다.
+  - 이 국면은 "DEV 전에 열어 본 HOLDOUT 국면"으로 기록한다. HOLDOUT 보고에서 따로 표시한다.
+  - HOLDOUT은 이미 report-only이므로 판정에는 영향이 없다.
+- DEV에는 예산 때문에 생긴 VCT1 MISS가 없다(DEV VCT1 34국면, main 28 + undone 6 중 MISS는 3.1의 1건).
+
+### 4. 사람 승리 3판, 현재 엔진 재검사 (`docs/h7/h7_web_losses_20261021_engine.json`, 웹 좌표)
+
+| 대국 | 과거 첫 증명 패배수 | 현재 TB-V2-Value + fast4 |
+|---|---|---|
+| `8fcbd265` | 46수 `(3,5)`, VCT1 패배 | **`(2,6)` tree, SAFE**(depth ≤ 1) |
+| `0bd2800b` | 52수 `(9,12)`, VCT1 패배 | `(9,12)` tree, LOST_D1 |
+| `c10508db` | 53수 `(12,8)`, VCT1 패배 | `(12,8)` stage4, LOST_D1 |
+
+- `8fcbd265`에서 현재 엔진은 VCT1-SAFE 대안 4개 중 하나를 뒀다. 과거 TB-RT30-v3는 root 예산과 30초 deadline 때문에 이 대안들을 판정하지 못했다. 같은 국면에서 현재 동결 실행판은 그 실패를 피한다.
+  - (2,6)이 depth 2에서도 안전한지는 보지 않았다.
+- 나머지 두 판은 그 국면에서 이미 depth 1 안에서 졌다(또는 거의 졌다). 그래서 현재 엔진도 같은 결과다. 원인은 더 앞의 수다. 그 수 뒤 depth 2는 10M에서도 UNKNOWN이므로 VCT2 방어 실패로 확정하지 않는다.
+- 세 판은 방어 실패다. E4(공격) 목표 지표에는 넣지 않는다.
+
+### 5. DEV 원인 분석: 놓친 승리의 첫 수가 어디에 있나 (`scripts/h7_e4_coverage.py`, DEV만)
+
+| DEV 묶음 | 국면 | block witness | witness ∈ V8-B 후보 | V8-B 밖, VCF 위협수 | 그 밖 |
+|---|---:|---:|---:|---:|---:|
+| main WIN_VCT2_ONLY, B MISS | 23 | 0 | **20** | **3** | 0 |
+| main WIN_VCT2_ONLY, B PUNISH | 16 | 1 | 14 | 1 | 0 |
+| main WIN_VCT1, B MISS | 1 | 0 | 0 | 1 | 0 |
+| main WIN_VCT1, B PUNISH | 27 | 0 | 26 | 1 | 0 |
+
+- DEV의 VCT1 / VCT2_ONLY witness(block 제외) 첫 수는 **전부 VCF 위협수**다. 대부분(20 / 23)은 4·열린 삼, 즉 E2 모듈이 시작하는 후보 안에 있다.
+- 첫 수만 본 상한이다. E2 모듈은 depth 1의 우리 quiet 수도 위협수로 제한한다. 그래서 실제로 찾을 수 있는 수는 DEV 실행으로만 안다.
+
+### 6. 현재 판단
+
+1. E4 목표는 실제로 있다. main 1,363국면 중 WIN_VCT2_ONLY 48개다.
+2. 현재 B가 놓치는 기회가 많다. main 48개 중 MISS 27개, DEV에서는 23개(모두 tree route)다.
+3. E4와 따로, V8-B(VCT1 공격)에도 두 종류의 구멍이 관측됐다.
+   - 후보 범위 부족: DEV 1건
+   - 호출 예산 부족: HOLDOUT 1건, 그래서 매개변수 근거로 쓰지 않음
+4. 동결 TB-V2-Value는 바꾸지 않는다. 다음 설계는 아래에 있다.
+
+## H7-E4 DEV 설계 수정안 (2026-10-21, 초안, 승인 대기)
+
+위 결과(DEV 관측만)를 반영해, DEV를 돌리기 전에 격자와 측정을 고친다. HOLDOUT 관측(`9040…:25`)은 근거로 쓰지 않는다.
+
+**1. 격자 수정 (8조합 유지)**
+- route 축을 뺀다. `ATTACK_ROUTES = (stage4, stage5, tree)`(E2 모듈 기본값)로 고정한다.
+  - DEV에서 B가 놓친 23국면은 모두 tree다. route 축은 DEV에서 구별력이 없다.
+- 새 축: **첫 수 후보 범위**
+  - (a) E2 그대로(4 / 열린 삼)
+  - (b) (a) + **VCF 위협수**. 정의(DEV 전 고정):
+    - 돌에서 체비쇼프 거리 2 이내의 합법 수 중 (a)에 없는 수
+    - 그 수를 두고 상대가 쉰다고 할 때 우리에게 VCF가 있는 수(board 기준 VCF, 호출당 20k 노드)
+    - (a) 뒤에 V3.2.1 priority 순서로 붙인다.
+    - 이 판별에 드는 VCF 호출과 노드는 공격 예산에서 센다.
+  - 건전성은 그대로다. 증명은 여전히 방어자의 모든 응수를 본다. 후보를 늘리는 것은 완전성만 바꾼다.
+  - 근거(DEV): VCT2_ONLY MISS 중 3건, VCT1 MISS 1건(`8b68…:35`)의 첫 수가 이 범위다.
+  - depth 1 안의 우리 quiet 수는 지금처럼 위협수(4 / 열린 삼)로 둔다. 비용을 묶기 위해서다.
+- 예산 축: 노드 200k / 400k. 호출 한도는 노드 / 10(20k / 40k)으로 함께 움직인다.
+  - E2 기본값이 200k / 20k다.
+  - E1에서 호출 한도에 걸린 국면(26개)이 있었다. 그래서 "예산"은 노드와 호출을 함께 뜻한다. HOLDOUT 관측과 무관한 근거다.
+- 발동 축: (i) 해당 route의 모든 국면 / (ii) 상대의 직전 수가 4 또는 열린 삼을 만든 국면만
+  - (ii)의 정의는 `_fast_pattern_features_for_move`로 고정한다.
+- 조합: 예산 2 × 후보 2 × 발동 2 = 8
+- **V8-B(`attack_call_limit`)는 바꾸지 않는다.**
+  - E4 모듈의 WIN 검사(우리 수 뒤 모든 응수가 depth 1 안에서 짐)는 VCT1 승리를 포함한다. 그래서 V8-B가 놓친 VCT1 승리도 tree route에서는 E4가 잡을 수 있다(`8b68…:35`는 (b)의 범위).
+  - V8-B 호출 예산 문제는 HOLDOUT에서만 관측됐다. 그래서 매개변수로 다루지 않는다.
+
+**2. DEV 측정 (`scripts/h7_e4_dev.py`, 만들 도구, 엔진 모델 불필요)**
+- E4 wrapper는 기준 엔진의 수를 바꾸지 않는다. 기준 엔진은 국면마다 seed가 고정돼 있다. 그래서 DEV 국면에서 E4의 수는 다음과 같이 정해진다.
+  - baseline에 기록된 B의 route가 `ATTACK_ROUTES`이고 발동 조건이 맞으면 → 공격 결과(WIN이면 그 수)
+  - 아니면 → B가 기록한 수
+  - 정책망과 value 없이 CPU에서 돌릴 수 있다.
+- 대상: DEV main 987 + undone 104. 조합마다 공격을 돌린다.
+- 지표
+  - **응징**: DEV WIN_VCT2_ONLY 41국면에서 E의 수를 `check_move`(v2)로 검사한 PUNISH 수(B 17)
+  - **얕은 회귀**: DEV WIN_5 / VCF / VCT1에서 B는 PUNISH인데 E는 아닌 국면 수(0이어야 함)
+  - **건전성**: 공격이 WIN이라 한 모든 수를 `check_move`로 다시 본다.
+    - PUNISH가 아니면 거짓 증명이다.
+    - truth가 NOT_FOUND인 국면에서 WIN이 나오면 모순이다.
+    - 둘 중 하나라도 있으면 그 조합은 탈락하고 원인을 조사한다.
+  - **비용**: 발동한 국면마다 공격 시간과 노드 / 호출. 분포(중앙값, p95, 최대)와 합계를 본다.
+    - B의 수당 시간 대비 비율은 arena 비용 gate에서 최종 판정한다.
+- 선택 순서(고정 규칙 그대로)
+  1. 응징 수 최대. 차이가 1국면 이내면 동률로 본다.
+  2. 얕은 회귀 0, 거짓 증명 0
+  3. 비용(평균 추가 시간)이 작은 것
+- DEV만으로는 기력을 잴 수 없다. 기력은 동결 후 arena에서 본다.
+
+**3. 동결과 엔진 구성**
+- 후보 엔진 = TB-V2-Value + E4 공격 wrapper(선택한 조합, 리터럴 설정)
+- 새 동결 파일을 만든다(예: `analysis/tb_v3_value.py`, VCF 위협수 후보는 새 모듈). 기존 동결 파일(`tb_v2_value.py`, `mcts_v8.py`, `vct2_attack.py` 등)은 고치지 않는다.
+- runtime(fast4) 해시도 새로 만든다.
+- 끄면 TB-V2-Value와 같은 수(격리)
+
+**4. arena 빈도 측정의 구체화 (결정 필요)**
+- 새 seed 8441 / 8442 대국(100 pair × 2색)의 상대 수 뒤 국면은 arm마다 약 6,000개다. 이것을 웹 truth(전폭, 판당 수 분)로 보면 수백 CPU시간이 든다.
+- 제안: arena에서는 **기준 solver**로 사건을 정한다.
+  - 기준 solver: selective VCT2, 후보 (b), depth 1 quiet도 VCF 위협수까지, 노드 2M. E4의 어떤 조합보다 넓다.
+  - 사건 = 기준 solver가 WIN을 증명한 상대 수 뒤 국면
+  - 응징 = 그 국면에서 둔 수가 `check_move` PUNISH
+  - 두 arm은 대국이 갈라지므로 사건 수가 다르다. 그래서 opening(양 색) 단위로 "응징 수 / 사건 수"를 모아 bootstrap으로 비교한다(E − B, 95% 하한 > 0).
+  - 웹 truth와 같은 전폭이 아니다. 그래서 웹 DEV에서 기준 solver가 전폭 truth의 VCT2_ONLY를 얼마나 다시 찾는지(재현율)를 먼저 보고한다.
+
+**5. 결정이 필요한 것**
+1. 격자 수정: route 축 제거, 후보 범위 축(VCF 위협수) 추가, 호출 한도를 예산과 함께 움직임
+2. V8-B는 동결 그대로 두고, VCT1 구멍은 E4 범위에서 다룸
+3. `9040…:25`를 "DEV 전에 열어 본 HOLDOUT 국면"으로 표시하는 방식(보고 유지, 표시만)
+4. arena 빈도: 기준 solver 방식과 opening 단위 bootstrap
+5. DEV 기력 확인을 생략하고 arena에서만 볼지, 동결 전에 짧은 DEV arena(새 seed 8443, 25 pair)를 둘지(제안: 생략)
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

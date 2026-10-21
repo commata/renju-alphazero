@@ -4,7 +4,8 @@ On every web corpus position whose truth (``h7_e4_truth.py``) is PROVEN_WIN, the
 (``analysis.tb_v2_runtime``: TB-V2-Value + fast4) chooses a move, and the move is checked:
 
     PUNISH   after the move every reply of the human still loses within depth 1, i.e. the move keeps a
-             proven win of the truth's class (VCT depth <= 2 in total); a five counts
+             proven win of the truth's class (VCT depth <= 2 in total); a five counts. The forced block of
+             the human's only four keeps depth 2, as in the truth (``ThreatSolver``: a four chain is free)
     MISS     some reply finished SAFE: the move does not keep a proven win of that class
     UNCLEAR  the check ran out of budget (never counted as MISS)
 The check is the truth's solver (full width, threat moves first) with the truth's budget.
@@ -17,6 +18,9 @@ an own VCF and the depth-1 attack). HOLDOUT is a non-regression gate for E4 only
 
     python scripts/h7_e4_baseline.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \\
         --device cuda --jsonl runs/h7_e4/baseline.jsonl --output docs/h7/h7_e4_baseline.json
+
+``--recheck BASELINE`` keeps the moves of an earlier run (no engine) and redoes only the checks the current
+rule changes: v1 checked a forced block at depth 1 and so counted a block that keeps the win as MISS.
 """
 from __future__ import annotations
 
@@ -35,11 +39,23 @@ for extra in (ROOT, ROOT / 'src'):
 from scripts import h7_e4_truth as truth  # noqa: E402
 from scripts import h7_e4_web_corpus as web  # noqa: E402
 
-FORMAT = 'h7-e4-baseline-v1'
+FORMAT = 'h7-e4-baseline-v2'  # v2: the forced block of the human's four keeps depth 2
 SEED = 8440  # TB-V2-Value's search seed per position: derive_seed(SEED, 'h7-e4', position id)
 OUTCOMES = ('PUNISH', 'MISS', 'UNCLEAR')
 SHALLOW = ('WIN_5', 'WIN_VCF', 'WIN_VCT1')
 HOLDOUT_MIN_EVENTS = 10
+
+
+def remaining_depth(game, move) -> int:
+    """Depth left to the attacker after ``move``: 2 for the forced block of the defender's only four, else 1.
+
+    The defender just moved; in the truth's search (``ThreatSolver.after_move``) the block of its single
+    four does not use a depth, every other first move of the attacker does (VCF moves are inside depth 1).
+    """
+    from search.mcts_v5 import _winning_moves
+
+    fours = _winning_moves(game, -game.to_play)
+    return 2 if len(fours) == 1 and tuple(fours[0]) == tuple(move) else 1
 
 
 def check_move(moves, move, budget: dict) -> dict:
@@ -50,17 +66,18 @@ def check_move(moves, move, budget: dict) -> dict:
     game = Game()
     for m in moves:
         game.play(*m)
+    depth = remaining_depth(game, move)
     solver = truth._truth_solver_class()(node_limit=budget['node_limit'], call_limit=budget['call_limit'],
                              node_budget=budget['node_budget'])
 
     def check(g):
         if g.done:
             return UNSAFE if g.winner is not None else SAFE
-        counts, _ = solver.decision(g, 1, stop_at_safe=True)  # every human reply, from the human's side
+        counts, _ = solver.decision(g, depth, stop_at_safe=True)  # every human reply, from the human's side
         return decision_status(counts)
 
     status = solver._bounded(game, tuple(move), None, None, check)
-    return {'outcome': {'UNSAFE': 'PUNISH', 'SAFE': 'MISS'}.get(status, 'UNCLEAR'),
+    return {'outcome': {'UNSAFE': 'PUNISH', 'SAFE': 'MISS'}.get(status, 'UNCLEAR'), 'depth': depth,
             'search': {'nodes': solver.nodes_used, 'vcf_calls': solver.vcf_calls,
                        'vcf_cut_calls': solver.vcf_exhausted, 'budget_exhausted': solver.exhausted}}
 
@@ -141,10 +158,13 @@ def main(argv=None, factories=None) -> int:
     parser.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
     parser.add_argument('--limit', type=int)
     parser.add_argument('--jsonl', type=Path, help='one line per finished position (resume)')
+    parser.add_argument('--recheck', type=Path, help='an earlier baseline output: keep its moves, redo changed checks')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
     if args.output is not None and args.output.exists():
         parser.error(f'{args.output} exists')
+    if args.recheck is not None:
+        return recheck(args, parser)
     from analysis import tb_v2_runtime as rt
     from hybrid.progress import Progress, run_chunks
     from scripts.h7_timing import restore_fast_mode
@@ -198,6 +218,47 @@ def main(argv=None, factories=None) -> int:
                'truth_sha256': file_sha256(args.truth), 'budget': budget, 'seed': SEED,
                'runtime': rt.provenance(args.device) if factories is None else None,
                'restricted': args.limit is not None or set(args.grades) != set(truth.GRADES),
+               'summary': summary, 'positions': rows}
+    print(json.dumps({k: summary[k] for k in ('target', 'shallow_flags', 'holdout_gate', 'holdout_target_events')},
+                     indent=1), flush=True)
+    if args.output is not None:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(payload, indent=1) + '\n', encoding='utf-8')
+    return 0
+
+
+def recheck(args, parser) -> int:
+    """``--recheck``: the moves of an earlier run, the checks whose depth the current rule changes redone."""
+    from renju import Game
+    from scripts.run_mcts_v8_benchmark import _git_commit, file_sha256
+
+    corpus = web.load(args.corpus)
+    old = json.loads(args.recheck.read_text(encoding='utf-8'))
+    t = json.loads(args.truth.read_text(encoding='utf-8'))
+    if old.get('corpus_sha256') != file_sha256(args.corpus) or old.get('truth_sha256') != file_sha256(args.truth):
+        parser.error(f'{args.recheck} is not a baseline of this corpus and truth')
+    positions = {p['id']: p for p in corpus['positions']}
+    rows, changed = {}, []
+    for pid, row in old['positions'].items():
+        moves = web.history(corpus, positions[pid])
+        game = Game()
+        for m in moves:
+            game.play(*m)
+        row = json.loads(json.dumps(row))
+        for who in ('b', 'web_ai'):
+            if row[who] is None or row[who].get('depth', 1) == remaining_depth(game, row[who]['move']):
+                continue
+            before = row[who]['outcome']
+            row[who].update(check_move(moves, row[who]['move'], old['budget']))
+            changed.append({'id': pid, 'who': who, 'move': row[who]['move'], 'before': before,
+                            'after': row[who]['outcome'], 'depth': row[who]['depth']})
+            print(f"[recheck] {pid} {who} {row[who]['move']}: {before} -> {row[who]['outcome']}", flush=True)
+        rows[pid] = row
+    corpus['positions'] = [p for p in corpus['positions'] if p['id'] in rows]
+    summary = summarize(corpus, t['boards'], rows)
+    payload = {**{k: v for k, v in old.items() if k not in ('format', 'summary', 'positions')},
+               'format': FORMAT, 'recheck': {'of_sha256': file_sha256(args.recheck), 'of_format': old.get('format'),
+                                             'git_commit': _git_commit(), 'changed': changed},
                'summary': summary, 'positions': rows}
     print(json.dumps({k: summary[k] for k in ('target', 'shallow_flags', 'holdout_gate', 'holdout_target_events')},
                      indent=1), flush=True)

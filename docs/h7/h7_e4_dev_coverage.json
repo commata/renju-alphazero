@@ -1,0 +1,1412 @@
+{
+ "format": "h7-e4-dev-coverage-v1",
+ "git_commit": "9f2d6dd56a030b10cc4df554a1a5b7a173324d9d",
+ "corpus_sha256": "5ea219a8c573242b9f36b23c71fbc686fe0d1df0bd0ccc676e8c9af8f3cf3673",
+ "truth_sha256": "4434dfd42597fa51b8501c3d5c654bf8a673dba5e632bef8270a42a278fa5bfe",
+ "baseline_sha256": "73a3dbcd90fa48d3311e7bb10d83892659949a8b3191bec71651c4d98aecbd5a",
+ "split": "DEV",
+ "coordinates": "0-indexed (row, col)",
+ "summary": {
+  "main/WIN_VCT1/PUNISH": {
+   "positions": 27,
+   "block": 0,
+   "in_v8b": 26,
+   "not_v8b_vcf_threat": 1,
+   "other": 0
+  },
+  "main/WIN_VCT2_ONLY/MISS": {
+   "positions": 23,
+   "block": 0,
+   "in_v8b": 20,
+   "not_v8b_vcf_threat": 3,
+   "other": 0
+  },
+  "main/WIN_VCT2_ONLY/PUNISH": {
+   "positions": 16,
+   "block": 1,
+   "in_v8b": 14,
+   "not_v8b_vcf_threat": 1,
+   "other": 0
+  },
+  "main/WIN_VCT2_ONLY/UNCLEAR": {
+   "positions": 1,
+   "block": 0,
+   "in_v8b": 1,
+   "not_v8b_vcf_threat": 0,
+   "other": 0
+  },
+  "undone/WIN_VCT1/PUNISH": {
+   "positions": 6,
+   "block": 0,
+   "in_v8b": 6,
+   "not_v8b_vcf_threat": 0,
+   "other": 0
+  },
+  "main/WIN_VCT1/MISS": {
+   "positions": 1,
+   "block": 0,
+   "in_v8b": 0,
+   "not_v8b_vcf_threat": 1,
+   "other": 0
+  },
+  "undone/WIN_VCT2_ONLY/PUNISH": {
+   "positions": 1,
+   "block": 0,
+   "in_v8b": 1,
+   "not_v8b_vcf_threat": 0,
+   "other": 0
+  }
+ },
+ "positions": [
+  {
+   "id": "6aa505ca6e474a36932ce13b1f98b272:29",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    2,
+    7
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 2,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "c71f3c88798f42098aa66e58fd9a219e:10",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    3,
+    6
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "c71f3c88798f42098aa66e58fd9a219e:14",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    4,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 12,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:39",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    9,
+    13
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 2,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:41",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    10,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:43",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    12,
+    10
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:47",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    12,
+    10
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:51",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    12,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:57",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    11,
+    9
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": false,
+   "rank": null,
+   "candidates": 4,
+   "four": 0,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:59",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    11,
+    9
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 3,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "5248d75ea82d4942b4882a4c338c6144:15",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    4,
+    8
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 6,
+   "four": 1,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "5248d75ea82d4942b4882a4c338c6144:17",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    3,
+    9
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "b0ea886316564818be37a9b772e1d2d0:25",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    12,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 11,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "6a679c14c94d4d49a6f83bfab8dd7ff6:63",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    4,
+    6
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 4,
+   "four": 1,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "6a679c14c94d4d49a6f83bfab8dd7ff6:65",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    5,
+    7
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 2,
+   "candidates": 4,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "e297975d0f224800a3f0f61dfea04264:9",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    8,
+    6
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "462a01252c404b84ba99b3fafafc2b1b:15",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    7
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 2,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "462a01252c404b84ba99b3fafafc2b1b:17",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    7,
+    6
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 3,
+   "candidates": 11,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "79c92ba62a1d4262935b819b50334a42:18",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    10,
+    10
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 2,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "79c92ba62a1d4262935b819b50334a42:20",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    8,
+    11
+   ],
+   "outcome": "UNCLEAR",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 9,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "79c92ba62a1d4262935b819b50334a42:22",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    8,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 6,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "c94bc588390b49e3a778e543b82e3421:16",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    11,
+    8
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": false,
+   "rank": null,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "abb1455fb0e440b4b4c37440ffad6e0f:10",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    5,
+    9
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": false,
+   "rank": null,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "abb1455fb0e440b4b4c37440ffad6e0f:12",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    5,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 7,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "abb1455fb0e440b4b4c37440ffad6e0f:30",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    5,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 2,
+   "candidates": 8,
+   "four": 1,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "abb1455fb0e440b4b4c37440ffad6e0f:u53",
+   "set": "undone",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    4,
+    12
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 11,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "8b68bc876ab246ebbb7b31866ef9b349:29",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    11,
+    8
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 9,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "8b68bc876ab246ebbb7b31866ef9b349:31",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    11,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 9,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "8b68bc876ab246ebbb7b31866ef9b349:33",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    11,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 7,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "8b68bc876ab246ebbb7b31866ef9b349:35",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    13,
+    8
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": false,
+   "rank": null,
+   "candidates": 9,
+   "four": 0,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "86c1383da3e24a368bffa402bb8c96b3:11",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "block",
+   "witness": [
+    12,
+    13
+   ],
+   "outcome": "PUNISH",
+   "b_route": "stage2",
+   "in_v8b": false,
+   "rank": null,
+   "candidates": 18,
+   "four": 0,
+   "open_three": 0,
+   "vcf_threat": "NONE"
+  },
+  {
+   "id": "8ba36a6fbc1d4193bd2b7e11a0e77ae5:37",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    10,
+    2
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 10,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "25484464e30f4fd08fe9aa3d58078a7d:17",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    7,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 12,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "25484464e30f4fd08fe9aa3d58078a7d:19",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    4,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 14,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "25484464e30f4fd08fe9aa3d58078a7d:21",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    4,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 9,
+   "candidates": 12,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "2f1c0437f5b54874bc3bf0e98f089362:u20",
+   "set": "undone",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    9,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 9,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "2f1c0437f5b54874bc3bf0e98f089362:u38",
+   "set": "undone",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    5,
+    6
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 6,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "2f1c0437f5b54874bc3bf0e98f089362:29",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    8,
+    4
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 12,
+   "candidates": 14,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "2f1c0437f5b54874bc3bf0e98f089362:31",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    8,
+    4
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 12,
+   "candidates": 14,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "520a3ab9d0884e85a100458e497b4972:u8",
+   "set": "undone",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    8,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "520a3ab9d0884e85a100458e497b4972:u10",
+   "set": "undone",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    5,
+    9
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "b4afe97f2b0341afb9eb7a201f325ee9:u12",
+   "set": "undone",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    5,
+    4
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "b4afe97f2b0341afb9eb7a201f325ee9:29",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    5,
+    13
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 7,
+   "candidates": 9,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "e167531c4ab444b1b2f7b106ff3fa2ce:12",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    5
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 6,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "e167531c4ab444b1b2f7b106ff3fa2ce:14",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    5
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "e167531c4ab444b1b2f7b106ff3fa2ce:16",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    5
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "e167531c4ab444b1b2f7b106ff3fa2ce:18",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    7,
+    5
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 3,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "62673b6ae05a49b9b4c4d65b57c103b1:9",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    8
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "62673b6ae05a49b9b4c4d65b57c103b1:11",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    6,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 3,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "c1b4957108494bd2bed74eae8b66e5e2:11",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 6,
+   "four": 1,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "c1b4957108494bd2bed74eae8b66e5e2:13",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    7,
+    11
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "d431e59af18045a0b666c7190bbca419:7",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 3,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "d431e59af18045a0b666c7190bbca419:9",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    5,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "26b4450d52ea443eb1a58525367d7849:13",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    8,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "stage4",
+   "in_v8b": false,
+   "rank": null,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "abdadbff5c8c416d84c6fbf92e17b649:u18",
+   "set": "undone",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    8,
+    5
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 4,
+   "candidates": 6,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "1a6d7cff296e4142a999797ab56d06ee:11",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    9,
+    10
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 6,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "cd2aa845cf554746b45e0befe70ebed5:13",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    5,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "cd2aa845cf554746b45e0befe70ebed5:15",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    5,
+    9
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 2,
+   "candidates": 15,
+   "four": 0,
+   "open_three": 2,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "7d3d3ab5787e482ea60a4b2c1b3c0cdc:16",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    4,
+    5
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": false,
+   "rank": null,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "8b59e5c56d444ffaa3f64614954f0012:29",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    4
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 11,
+   "candidates": 14,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "8b59e5c56d444ffaa3f64614954f0012:35",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    3,
+    8
+   ],
+   "outcome": "PUNISH",
+   "b_route": "stage5",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 17,
+   "four": 1,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0957e88d1c461ba2e3b530e648f0b8:10",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    3,
+    6
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0957e88d1c461ba2e3b530e648f0b8:18",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    6,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 10,
+   "candidates": 13,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "3d0957e88d1c461ba2e3b530e648f0b8:20",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    6,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 9,
+   "candidates": 13,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "746f6734abdd4e649c27539e8cfc2cbd:12",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    8,
+    7
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 5,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "ee02483c8f134563ba39ab07f7723fed:34",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    12,
+    3
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 10,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "ee02483c8f134563ba39ab07f7723fed:36",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    12,
+    3
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 8,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "ee02483c8f134563ba39ab07f7723fed:38",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    8,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 7,
+   "candidates": 12,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "74f644071f6240eb9d4e5165189acee1:18",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    9,
+    7
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 8,
+   "candidates": 9,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "1acca17dec1845d2b45d42228f7c1c4f:20",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    3,
+    10
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 3,
+   "candidates": 4,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "83c346e042b8487e9b094933137d365a:10",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    8,
+    7
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 3,
+   "candidates": 12,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "83c346e042b8487e9b094933137d365a:12",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    8,
+    10
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 12,
+   "candidates": 14,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "2ade676fafa7483184ffe8c68aabe6df:17",
+   "set": "main",
+   "grade": "WIN_VCT1",
+   "kind": "threat",
+   "witness": [
+    4,
+    4
+   ],
+   "outcome": "PUNISH",
+   "b_route": "own_vct",
+   "in_v8b": true,
+   "rank": 2,
+   "candidates": 10,
+   "four": 0,
+   "open_three": 1,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "0bd2800bd90e46aabb8f3f4c0a66ead5:15",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    11,
+    4
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 3,
+   "candidates": 6,
+   "four": 1,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  },
+  {
+   "id": "28f3cce06f6f48019e7a5377d6f53958:26",
+   "set": "main",
+   "grade": "WIN_VCT2_ONLY",
+   "kind": "threat",
+   "witness": [
+    10,
+    5
+   ],
+   "outcome": "MISS",
+   "b_route": "tree",
+   "in_v8b": true,
+   "rank": 1,
+   "candidates": 6,
+   "four": 1,
+   "open_three": 0,
+   "vcf_threat": "WIN"
+  }
+ ]
+}
