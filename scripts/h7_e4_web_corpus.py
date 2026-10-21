@@ -131,14 +131,30 @@ def session_order(session_hash: str) -> str:
     return hashlib.sha256(session_hash.encode('utf-8')).hexdigest()
 
 
-def assign_splits(games: list[dict], main_counts: dict[str, int]) -> dict[str, str]:
-    """game_id -> DEV / HOLDOUT: whole sessions in sha256 order until HOLDOUT >= 25% of the main positions."""
+def assign_splits(games: list[dict], main_counts: dict[str, int], frozen: dict[str, str] | None = None) -> dict[str, str]:
+    """game_id -> DEV / HOLDOUT: whole sessions in sha256 order until HOLDOUT >= 25% of the main positions.
+
+    ``frozen`` (game_id -> split of a committed corpus) is kept as it is: a session with a frozen game
+    keeps that split for all its games, and only the sessions new to the corpus are ordered and filled,
+    against the 25% of their own main positions. Adding games never moves a committed game.
+    """
+    frozen = frozen or {}
     sessions: dict[str, list[str]] = {}
     for g in games:
         sessions.setdefault(g['session_hash'] or f"game:{g['game_id']}", []).append(g['game_id'])
-    total = sum(main_counts.values())
-    split, holdout = {}, 0
-    for session in sorted(sessions, key=session_order):
+    split, fresh = {}, []
+    for session, gids in sessions.items():
+        sides = {frozen[gid] for gid in gids if gid in frozen}
+        if len(sides) > 1:
+            raise ValueError(f'a session of the committed corpus has games in both splits: {sorted(gids)}')
+        if sides:
+            side = sides.pop()
+            split.update({gid: side for gid in gids})
+        else:
+            fresh.append(session)
+    total = sum(main_counts.get(gid, 0) for session in fresh for gid in sessions[session])
+    holdout = 0
+    for session in sorted(fresh, key=session_order):
         side = 'HOLDOUT' if holdout < HOLDOUT_SHARE * total else 'DEV'
         for gid in sessions[session]:
             split[gid] = side
@@ -147,7 +163,7 @@ def assign_splits(games: list[dict], main_counts: dict[str, int]) -> dict[str, s
     return split
 
 
-def build(games: list[dict], moves: dict[str, list[dict]]) -> dict:
+def build(games: list[dict], moves: dict[str, list[dict]], previous: dict | None = None) -> dict:
     excluded, candidates, kept_games = {}, [], []
     for g in games:
         try:
@@ -161,7 +177,11 @@ def build(games: list[dict], moves: dict[str, list[dict]]) -> dict:
     for p in candidates:
         if p['set'] == 'main':
             main_counts[p['game_id']] = main_counts.get(p['game_id'], 0) + 1
-    split = assign_splits([g for g, _ in kept_games], main_counts)
+    frozen = {gid: g['split'] for gid, g in (previous or {}).get('games', {}).items()}
+    lost = sorted(gid for gid in frozen if gid not in {g['game_id'] for g, _ in kept_games})
+    if lost:
+        raise ValueError(f'games of the committed corpus are missing or no longer rebuild: {lost}')
+    split = assign_splits([g for g, _ in kept_games], main_counts, frozen)
     seen = {p['key'] for p in candidates if p['set'] == 'main'}
     positions, dropped = [], {'undone_in_holdout': 0, 'undone_duplicate': 0}
     for p in candidates:
@@ -182,6 +202,11 @@ def build(games: list[dict], moves: dict[str, list[dict]]) -> dict:
                                    'agent_name': g['agent_name'], 'status': g['status'], 'result': g['result'],
                                    'moves': [[r['row0'], r['col0']] for r in line]}
     built = {'games': out_games, 'positions': positions, 'excluded_games': excluded, 'dropped': dropped}
+    if previous is not None:  # a committed position never changes or disappears
+        now = {p['id']: p for p in positions}
+        changed = sorted(p['id'] for p in previous['positions'] if now.get(p['id']) != p)
+        if changed:
+            raise ValueError(f'positions of the committed corpus would change: {changed[:5]} ({len(changed)})')
     for p in positions:  # a main position must be the prefix of its game's line
         if position_key(history(built, p)) != p['key']:
             raise AssertionError(f"{p['id']}: the stored moves do not give the recorded board")
@@ -242,16 +267,25 @@ def load(path: Path) -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--db', type=Path, required=True, help='the web DB (data/web/, never committed)')
+    parser.add_argument('--previous', type=Path, help='a committed corpus: its games keep their split')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
     if args.output.exists():
         parser.error(f'{args.output} exists')
+    previous = load(args.previous) if args.previous else None
     games, moves = read_db(args.db)
-    built = build(games, moves)
+    try:
+        built = build(games, moves, previous)
+    except ValueError as exc:
+        parser.error(str(exc))
+    history_ = [*previous.get('increments', []), {'corpus_sha256': file_sha256(args.previous),
+                                                  'db_sha256': previous['db_sha256'], 'games': len(previous['games']),
+                                                  'positions': len(previous['positions'])}] if previous else []
     corpus = {'format': FORMAT, 'db_sha256': file_sha256(args.db),
               'rules': {'holdout_share': HOLDOUT_SHARE, 'split': 'sessions by sha256(session_hash), HOLDOUT first',
+                        'increments': 'committed games keep their split; new sessions only are ordered and filled',
                         'use': 'development and probes only, never training'},
-              'report': None, **built}
+              'increments': history_, 'report': None, **built}
     corpus['report'] = report(corpus)
     write(corpus, args.output)
     print(json.dumps({'report': corpus['report'], 'excluded_games': corpus['excluded_games'],

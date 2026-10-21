@@ -90,6 +90,26 @@ class CorpusTest(unittest.TestCase):
         else:
             self.assertEqual((undone, corpus['dropped']['undone_in_holdout']), ([], 1))
 
+    def test_increment_keeps_committed_splits(self):
+        g4 = {'id': 'g4', 'session': 's3', 'human': 'WHITE', 'moves': [(7, 7), (6, 6), (8, 8), (9, 9)]}
+        g5 = {'id': 'g5', 'session': 's2', 'human': 'WHITE', 'moves': [(7, 7), (7, 6), (8, 8), (5, 5)]}
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            first = corpus_of(tmp, GAMES[:2])
+            make_db(tmp / 'more.db', [*GAMES[:2], g4, g5])
+            out = tmp / 'more.json'
+            self.assertEqual(web.main(['--db', str(tmp / 'more.db'), '--previous', str(first), '--output', str(out)]), 0)
+            a, b = web.load(first), web.load(out)
+            make_db(tmp / 'less.db', GAMES[1:2])
+            with self.assertRaises(SystemExit):  # a committed game is gone
+                web.main(['--db', str(tmp / 'less.db'), '--previous', str(first), '--output', str(tmp / 'x.json')])
+        for gid in ('g1', 'g2'):
+            self.assertEqual(b['games'][gid]['split'], a['games'][gid]['split'])
+        self.assertEqual(b['games']['g5']['split'], a['games']['g2']['split'])  # an old session keeps its split
+        self.assertEqual(b['games']['g4']['split'], 'HOLDOUT')  # the only new session: first in its own order
+        self.assertTrue(all(p in b['positions'] for p in a['positions']))
+        self.assertEqual(b['increments'][0]['games'], 2)
+
     def test_a_bad_record_drops_the_game(self):
         with TemporaryDirectory() as tmp:
             tmp = Path(tmp)
@@ -159,6 +179,25 @@ class CheckMoveTest(unittest.TestCase):
         self.assertEqual(base.check_move(FIVE, (0, 7), truth.DEFAULT_BUDGET)['outcome'], 'MISS')
         tiny = {'node_limit': 10, 'call_limit': 1, 'node_budget': 10}
         self.assertEqual(base.check_move(FIVE, (0, 7), tiny)['outcome'], 'UNCLEAR')
+
+
+class LossReviewTest(unittest.TestCase):
+    def test_walk_and_status(self):
+        from scripts import h7_web_loss_review as review
+        lost = [(7, 7), (0, 0), (7, 8), (0, 2), (7, 9), (0, 4), (7, 10), (0, 6), (7, 11)]  # the human (Black) wins
+        game = {'id': 'g9', 'session': 's9', 'human': 'BLACK', 'moves': lost}
+        self.assertEqual(review.ai_plies({'human_color': 'BLACK', 'moves': lost}), [2, 4, 6, 8])
+        self.assertEqual(review.ai_plies({'human_color': 'WHITE', 'moves': lost}), [3, 5, 7, 9])
+        self.assertEqual(review.depth1_status(lost[:5], (0, 4)), 'LOST_D0')  # the open three becomes an open four
+        self.assertEqual(review.depth1_status(lost[:5], (7, 6)), 'SAFE')
+        with TemporaryDirectory() as tmp:
+            path = corpus_of(Path(tmp), [game])
+            out = Path(tmp) / 'r.json'
+            self.assertEqual(review.main(['--corpus', str(path), '--games', 'g9', '--max-steps', '2', '--fast', 'off',
+                                          '--output', str(out)]), 0)
+            row = json.loads(out.read_text(encoding='utf-8'))['games'][0]
+        self.assertEqual([(w['ply'], w['grade']) for w in row['walk']], [(8, 'WIN_5'), (6, 'WIN_VCF')])
+        self.assertIsNone(row['first_loss'])  # the walk did not reach a move that is not lost
 
 
 class BaselineTest(unittest.TestCase):

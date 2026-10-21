@@ -3280,7 +3280,7 @@ python scripts/summarize_h7_cpu_cert.py --cpu runs/h7_cert/cpu_8431.json runs/h7
 - 공격자 quiet 수의 순서: 위협수(4, 열린 삼·띈 삼, `selective_vct.threat_moves`)를 먼저 두고 나머지 합법 수를 뒤에 둔다(`TruthSolver`).
   - 수 집합이 같으므로 SAFE와 UNSAFE의 뜻은 바뀌지 않는다.
   - 순서는 예산 안에서 승리를 먼저 찾게 할 뿐이다. 측정은 아래에 있다.
-- 깊이 0, 1, 2는 solver cache를 공유한다. 같은 판(돌 + 둘 차례)은 한 번만 탐색한다. corpus 1,291국면은 판 1,182개다.
+- 깊이 0, 1, 2는 solver cache를 공유한다. 같은 판(돌 + 둘 차례)은 한 번만 탐색한다. corpus 1,291국면은 판 1,182개다(10-21 추가 뒤 1,467국면 / 판 1,356개).
 - resume용 jsonl의 줄마다 예산을 적는다. 예산이 다른 줄은 거부한다.
 - 비용 측정(컨테이너, fast4, 1 프로세스, main 국면 무작위 5개). 예산을 정하는 데 쓰지 않고 시간 추정에만 쓴다.
 
@@ -3294,7 +3294,7 @@ python scripts/summarize_h7_cpu_cert.py --cpu runs/h7_cert/cpu_8431.json runs/h7
 
   - 22수 국면에서 두 순서의 판정과 호출 수가 같았다. SAFE는 수 집합 전체를 봐야 하므로 순서가 비용을 바꾸지 않는다.
   - depth 2 전폭은 SAFE 하나에 최소 "quiet 수 ~200 × 응수 1개 × quiet 수 ~200" 번의 VCF 호출이 든다. 그래서 초반 국면도 싸지 않다.
-  - 판당 평균은 약 4–5분(컨테이너)이다. 데스크톱 12 worker로 1,182판이면 **약 5–8시간**으로 본다(밤샘 1회).
+  - 판당 평균은 약 4–5분(컨테이너)이다. 데스크톱 12 worker로 1,182판이면 **약 5–8시간**으로 본다(밤샘 1회). 추가 뒤 1,356판이면 약 6–9시간이다.
   - **UNKNOWN이 적지 않을 것이다**(표본 5개 중 2개). 예산은 고정값(10M)대로 두고 UNKNOWN 비율을 그대로 보고한다. UNKNOWN 국면의 VCT2 승리는 이 corpus에서 보이지 않는다. 빈도의 주 근거가 새 seed 대국인 이유가 하나 더 생긴 셈이다.
 
 **응징 (`scripts/h7_e4_baseline.py`)**
@@ -3374,6 +3374,59 @@ python -u scripts/h7_e4_baseline.py --corpus docs/h7/h7_e4_web_corpus.json --tru
   - baseline 요약의 `target`(VCT2 전용 국면 중 B가 응징한 수·놓친 수)
   - `shallow_flags`(0개 기대)와 `holdout_gate`
 - truth가 중간에 끊기면 같은 명령을 다시 실행한다. `--output` 파일은 전부 끝나야 써진다.
+
+## 웹 대국 추가 (2026-10-21 두 번째 백업)와 사람 승리 3판 검토
+
+**추가 (`docs/h7/h7_e4_web_corpus.json` 갱신)**
+- 새 백업: 100판, 3,132수. 앞 백업의 89판은 그대로 들어 있고 기록도 바뀌지 않았다. 새 대국은 11판이다.
+  - 엔진은 모두 TB-RT30-v3다(웹은 아직 TB-V2-Value가 아니다).
+  - 결과: AI 승 5, **사람 승 3**, 미완 3(2수에서 끝남)
+  - 새 session 2개
+- 3,132수 전부 다시 세우기 검사(`ply`, `board_hash`, 합법성)를 통과했다.
+- **분할 규칙을 그대로 처음부터 적용하면 기존 9판의 split이 바뀐다.** 새 session이 sha 순서의 앞쪽에 들어가기 때문이다. 커밋된 분할은 고정이므로 증분 규칙을 더했다(`--previous`).
+  - 커밋된 대국은 split을 그대로 유지한다. 기존 session에 새 대국이 생기면 그 session의 split을 따른다.
+  - 새 session만 `sha256(session_hash)` 순서로 늘어놓는다. 새 session의 main 국면 중 25% 이상이 될 때까지 HOLDOUT에 넣는다.
+  - 커밋된 국면이 바뀌거나 사라지면 거부한다. 커밋된 대국이 DB에서 없어져도 거부한다. 이전 corpus의 SHA는 `increments`에 남긴다.
+  - 결과
+    - 기존 대국의 split 변화 0
+    - 새 3판 session(56국면, 새 국면의 32.6%) → HOLDOUT
+    - 새 8판 session(116국면, 사람 승 3판 포함) → DEV
+- 갱신 뒤 corpus: main 1,363국면(DEV 987 / HOLDOUT 376, 27.6%), undone 104국면(DEV)
+- 원본 DB는 `data/web/renju_web_full_20261021a.db`(첫 번째)와 `..._20261021b.db`(두 번째)에 둔다(커밋 안 함).
+- 데스크톱에서 참값을 이미 돌리기 시작했다면, 같은 jsonl로 새 corpus를 넣어 다시 실행한다. 새 판만 탐색한다(판 key와 예산이 같기 때문). `--output`은 새 corpus의 SHA로 써진다.
+
+**사람 승리 3판 검토 (`scripts/h7_web_loss_review.py`, 결과 `docs/h7/h7_web_losses_20261021.json`)**
+- 방법
+  - AI 수를 끝에서 거꾸로 따라가며 참값 solver(전폭 VCT2, 10M)로 "그 수 뒤 사람에게 증명된 강제승이 있는가"를 본다.
+  - 증명된 패배가 끊기지 않고 이어지는 마지막 구간의 첫 수를 "첫 패배수"로 둔다.
+  - 그 직전 국면에서 AI의 모든 합법 수를 depth ≤ 1(VCF / VCT1)로 분류한다(수당 2M 노드).
+- 좌표는 웹 화면처럼 1부터 센다(행, 열).
+
+| 대국 | 사람 | 첫 패배수 | 등급 | 직전 국면의 대안 | 직전 AI 수 |
+|---|---|---|---|---|---|
+| 8fcbd265 | 흑, 55수 | 46수 (3,5) | VCT1 | **SAFE 4개**: (2,6), (4,10), (1,5), (3,10) | 44수: depth 0·1 SAFE, depth 2 UNKNOWN |
+| 0bd2800b | 흑, 59수 | 52수 (9,12) | VCT1 | SAFE 0개(지는 수 171, UNKNOWN 3) | 50수: depth 0·1 SAFE, depth 2 UNKNOWN |
+| c10508db | 백, 62수 | 53수 (12,8) | VCT1 | 173수 전부 depth 1 안에서 짐 | 51수: depth 0 SAFE, depth 1·2 UNKNOWN |
+
+- **8fcbd265: 예산과 deadline 때문에 놓친 방어다.**
+  - tree가 고른 (4,3)을 V8-C가 UNSAFE로 증명했다. 그래서 다른 root 후보로 바꾸려 했다.
+  - 남은 후보 (3,5), (2,6), (5,3)이 모두 UNKNOWN인 채 root 예산이 끝났다(367k 노드). RT30 deadline으로 `root` 단계도 잘렸다.
+  - 남은 후보 중 첫째인 (3,5)를 뒀다. 그런데 후보였던 (2,6)은 참값으로 VCT1-SAFE다. 예산이 더 있었으면 피할 수 있었다.
+  - (2,6)이 depth 2에서도 안전한지는 이 검토가 보지 않았다.
+- **0bd2800b, c10508db: 직전 국면이 이미 VCT1 범위에서 거의 또는 완전히 졌다.**
+  - 0bd2800b의 52수에서 root 자식은 (9,12) 하나뿐이었다(policy 1.0). V8-C가 그 수를 UNSAFE로 증명했지만, 대안이 없어 그대로 뒀다.
+  - c10508db의 53수는 stage4(상대 위협 방어)였다. V8-A 예산(200k)이 끝난 상태에서 수를 골랐다.
+  - 진짜 실수는 그 전 AI 수(50수, 51수)에 있다. 그 수 뒤 사람의 승리는 depth 2 이상이거나 10M 예산 안에서 증명되지 않았다(UNKNOWN). 즉 **VCT2 깊이의 방어 실패**일 가능성이 크지만 증명은 아니다.
+- E4와의 관계
+  - E4는 상대의 VCT2 패배수를 **응징**하는 공격 쪽 변경이다. 이 세 판은 **방어** 실패다. E4의 목표 지표에는 들어가지 않는다.
+  - 세 판의 국면은 corpus DEV에 들어갔다. 그래서 참값 scan 대상이다. 사람이 둔 수 뒤 국면 중 AI가 이길 수 있었던 곳이 있으면 baseline에 잡힌다.
+  - 첫 패배수 국면 3개는 방어 회귀 probe로 쓸 수 있다. 데스크톱에서 `--engine`으로 TB-V2-Value + fast4가 같은 국면에서 무엇을 두는지 확인한다.
+    - 8fcbd265에서 VCT1-SAFE 수를 두면, E2 이후의 root VCF table(같은 예산에서 V8-C가 더 많이 판정)과 deadline 없음이 효과를 낸 것이다.
+
+```bash
+python -u scripts/h7_web_loss_review.py --corpus docs/h7/h7_e4_web_corpus.json --games 8fcbd265 0bd2800b c10508db \
+  --workers 3 --engine --device cuda --output docs/h7/h7_web_losses_20261021_engine.json 2>&1 | tee runs/h7_e4/loss_review.log
+```
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
