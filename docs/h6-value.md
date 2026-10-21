@@ -3815,6 +3815,102 @@ python -u scripts/h7_e4_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth do
 3. 기준 solver 정의(양 깊이에 VCF 위협수, 2M)와 DEV 재현율 측정 후 동결
 4. arena 사건 추출을 상대(`v8:full`) 수 직후 국면 전부에 기준 solver로 하는 것(arm마다 약 6,000국면, 데스크톱 수 시간)
 
+## H7-E4 다음 단계 확정: 후보 동결, 기준 solver, 비용 사전 검사 (2026-10-22)
+
+결정 1–4가 승인됐다. 사용자 보완 두 가지를 더해 아래처럼 고정한다.
+
+**순서 (고정)**
+1. `c65cd62` 후보 선택
+2. 후보 동결 + 공격 의존 파일 SHA 잠금 + OFF 격리
+3. 기준 solver 2M DEV 검사
+   - 선택 후보가 DEV에서 WIN을 증명한 국면을 전부 포함하면 → 동결
+   - 하나라도 빠지면 → 4M으로 한 번 올림
+     - 4M에서 전부 포함하면 → 동결
+     - 여전히 빠지면 → 기준 측정기를 조사하고, arena는 보류
+4. 짝 비용 사전 검사
+   - 대국 cluster bootstrap 95% 하한 > 1.5 → E4 후보 REJECT
+   - 그 밖 → arena
+5. seed 8441 / 8442 arena → 기력 + 비용 + 건전성 + 빈도 + 격리 → ADOPT / REJECT
+
+**보완 1: 기준 solver의 동결 규칙은 "포함"이다**
+- 재현율에 임의 기준(예: 80%)을 두지 않는다.
+- 기준 solver가 후보보다 넓다는 것을 직접 확인한다. 기준 solver는 선택 후보가 DEV에서 WIN으로 증명한 모든 국면을 다시 WIN으로 증명해야 한다.
+- DEV WIN_VCT2_ONLY 41국면 재현율은 보고만 한다.
+
+**보완 2: 비용 사전 검사의 통계**
+- bootstrap 단위는 국면이 아니라 원래 대국이다. 같은 대국의 연속 국면은 시간이 서로 상관돼 있다.
+- 표본마다 `Σ E 시간 / Σ B 시간`을 다시 계산한다.
+- 실행 전에 timing corpus와 웹 corpus(DEV + HOLDOUT)가 D4 정규형으로 겹치지 않음을 assert한다.
+  - **실제 확인: 69국면이 겹친다.** 모두 3–7수의 초반 국면이다(E3 대국과 웹 대국의 같은 초반).
+  - 규칙: 겹치는 국면을 먼저 빼고, 남은 집합에 겹침 0을 assert한다.
+  - 이 검사는 시간만 잰다. 그래서 빼도 측정의 뜻은 같다. 뺀 id는 결과 파일에 남긴다(`dropped_web_boards`).
+
+**1. 후보 동결 (`fb1e887`)**
+- `src/analysis/tb_v2_value_e4.py`: 이름은 `TB-V2-Value+E4`이고, 후보 identity다(채택 엔진 아님).
+  - 기준 엔진 해시: `256e5abe…`(TB-V2-Value)
+  - 공격 설정 리터럴 `ATTACK`: `200k/vcf_threat/all`, 노드 200k / 호출 20k / VCF 한 번 20k, route stage4 / 5 / tree
+  - 공격 코드 SHA (`ATTACK_SOURCES`)
+    - `e4_attack.py` `73b0902d…`. DEV 실행(`1ec482c`) 때와 같은 파일이다.
+    - `vct2_attack.py` `ad263e3f…`
+    - `selective_vct.py` `b0b3a063…`
+  - `candidate_hash` = `5e359f42…0ba8`
+  - `runtime_hash('cuda')` = `cad1c03e…44a0`. tb_v2_runtime의 native / 바인딩 소스에 후보 해시를 묶은 값이다.
+  - `check_sources`: SHA, 기준 엔진 해시, 선택 설정 중 하나라도 다르면 agent를 만들지 않는다.
+  - `E4AttackAgent`
+    - B가 먼저 둔다.
+    - route가 stage4 / 5 / tree이면 공격한다.
+    - 증명된 WIN이면 그 수로 바꾼다(route `own_vct2`).
+    - `attack=False`이면 B의 수를 그대로 둔다(격리).
+- 시험
+  - SHA와 DEV 선택 일치(결과 파일의 `selection`과 리터럴 비교)
+  - OFF가 TB-V2-Value와 같은 수
+  - 강제 stage에서는 공격하지 않음
+  - tree 수를 증명된 WIN만으로 바꿈
+- 벤치마크 arm `puct_value_vct2_50k_tt_e4`(시험 arm 전용, 상대로 쓸 수 없음)
+  - 수마다 `e4_attack` 기록(B 수, B route, 노드, 호출, 초)
+  - fast4 run에는 후보 runtime provenance
+- CLAUDE.md: arena 판정 전까지 후보 파일, 공격 의존 파일, 기준 solver를 고치지 않는다.
+
+**2. 기준 solver (`src/analysis/e4_reference.py`, SHA `cf580000…b02b`) — DEV 검사 결과: FREEZE**
+- 정의
+  - 첫 수: 4 / 열린 삼 + 국소 VCF 위협수
+  - depth 1 quiet: 4 / 열린 삼 + 국소 VCF 위협수(`ReferenceSolver.quiet_moves`)
+  - 방어자 응수 전부
+  - 2M 노드 / 200k 호출 / VCF 한 번 20k
+- DEV 검사 (`docs/h7/h7_e4_reference_2m.json`, 코드 `fb1e887`, 컨테이너 3 worker, `fast4`; `git_dirty`는 커밋 전 문서 수정 때문이다. 커밋 전 실행과 수·노드가 국면마다 같았다)
+  - **포함: 23 / 23.** 선택 후보의 DEV WIN 23국면 모두에서 WIN이었다. → 규칙대로 2M으로 동결한다. 4M은 쓰지 않는다.
+  - 거짓 증명 0, 모순 0, 미검증 0. 기준 solver의 모든 WIN을 truth `check_move`로 다시 검사했다.
+  - 재현율(보고): DEV WIN_VCT2_ONLY 41국면 중 **32**(78%)
+    - 놓친 9국면 중 8국면은 2M 예산 소진, 1국면은 탐색을 끝냈지만 WIN 없음
+    - `86c1383d…:11`(사람의 4를 막는 강제 수가 첫 수인 국면)도 놓쳤다. 이런 "block으로 시작하는 VCT2" 사건은 arena 빈도에서 덜 세어질 수 있다. 두 arm에 똑같이 적용되므로 비교는 공정하다.
+  - 비용: 국면당 평균 19초, 최대 81초. 42국면 중 8국면이 2M을 다 썼다.
+    - arena 사건 추출(arm마다 약 6,000국면)은 데스크톱 12 worker로 수 시간이 걸릴 것으로 본다.
+
+**3. 비용 사전 검사 (`scripts/h7_e4_precheck.py`, 데스크톱, CUDA)**
+- 국면: `docs/h7/h7_timing_positions.json` 2,594 − 웹 겹침 69 = **2,525국면**, 대국 cluster
+- 국면마다 같은 호출 안에서 잰다.
+  - 후보의 wrapper는 B를 먼저 그대로 돌린다. 그래서 B 시간과 공격 시간을 같은 계산에서 나눠 잰다.
+  - B = B 착수 시간, E = B + 공격 시간. 위치와 계산이 완전히 짝이 된다.
+  - P2처럼 따로 두 번 돌리는 것보다 잡음이 적다(같은 B 계산을 두 번 하지 않음).
+- 판정: 비율 Σ E / Σ B. 대국 cluster bootstrap 10,000회, 95% 하한 > 1.5면 `PRECHECK_FAIL`(REJECT), 아니면 `PROCEED`
+- 보고: 공격한 국면 수, 수가 바뀐 국면 수, 공격 초(평균 / p95 / 최대), B 초, 중앙값 비율
+
+**실행 명령 — 비용 사전 검사 (데스크톱 Ubuntu, 1 프로세스, 약 2시간)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4 tests.test_tb_v2_runtime
+python -u scripts/h7_e4_precheck.py --positions docs/h7/h7_timing_positions.json \
+  --corpus docs/h7/h7_e4_web_corpus.json --device cuda \
+  --jsonl runs/h7_e4/precheck.jsonl --output docs/h7/h7_e4_precheck.json 2>&1 | tee -a runs/h7_e4/precheck.log
+```
+
+- 다른 무거운 작업과 동시에 돌리지 않는다(시간 측정).
+- 커밋할 것: `docs/h7/h7_e4_precheck.json`
+- `PROCEED`이면 다음은 arena 명령과 `summarize_h7_e4.py`(사건 추출 포함)다. 그 도구는 사전 검사 결과를 본 뒤가 아니라 지금 정의대로 만든다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
