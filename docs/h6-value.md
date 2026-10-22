@@ -4382,6 +4382,95 @@ python -m unittest tests.test_track_b_guard
 2. 기준 solver 4M 검사를 사전 규칙대로 진행
 3. COSTTEST 사전 검사의 측정 방식(대국 순서, 대국당 후보 agent 하나, 국면마다 B는 cold)
 
+## E4-v2 후보 동결과 기준 solver 4M (2026-10-22)
+
+사용자 승인(세 항목)에 따라 진행했다. DEV 결과를 본 뒤 추가 조정은 없다. `150k/cd/killer` 그대로다.
+
+**1. 후보 동결 (`6ea3f3c`, `src/analysis/tb_v2_value_e4v2.py`, 이름 `TB-V2-Value+E4v2`, 후보 identity)**
+- 기준 엔진: TB-V2-Value(`256e5abe…`). `track_b_guard.make_canonical_agent`로만 만든다. 그 위에 E4-v2 wrapper를 씌운다.
+- 리터럴 설정 `ATTACK`
+  - `150k/cd/killer`: 150k 노드 / 15k 호출 / VCF 한 번 20k
+  - cooldown on, killer on
+  - G1 2만 노드
+  - route stage4 / 5 / tree
+- 잠금 SHA
+  - `e4v2_attack.py` `dd61f5af…`
+  - `e4_attack.py` `73b0902d…`
+  - `vct2_attack.py` `ad263e3f…`
+  - `selective_vct.py` `b0b3a063…`
+  - code manifest `7b73005d…`
+  - 이 값들은 DEV 실행의 fingerprint와 같다. DEV에서 잰 바로 그 코드다.
+- `candidate_hash`, `runtime_hash`, `provenance`. `check_sources`가 SHA, manifest 대상 파일, 기준 엔진 해시, 선택 설정을 확인한다.
+- **상태**
+  - 수와 수 사이에 남는 것은 `E4v2AttackAgent.cooldown` 하나다(agent 하나, 곧 대국 하나).
+  - 공격은 호출마다 solver를 새로 만든다. 기준 엔진은 수마다 tree를 새로 만든다.
+  - 기준 엔진에 남는 것은 동결 TB-V2-Value가 원래 갖는 것뿐이다: 난수 흐름, 그리고 value leaf의 결과 캐시. 결과 캐시는 같은 입력에 같은 값을 주는 순수 캐시라 판정을 바꾸지 않는다.
+  - 둘 다 B와 E가 똑같다.
+- 통합 시험(`tests/test_tb_v2_value_e4v2.py`, 실제 wrapper, 공격 결과는 각본으로 대체)
+  - 예산 소진 실패 → 다음 자기 수에서 정확히 한 번 생략 → 그다음 수는 다시 공격
+  - 다음 수가 강제 route여도 cooldown은 소비된다.
+  - 문턱 생략, 끝까지 탐색한 실패는 비트를 세우지 않는다.
+  - `new_game` 초기화. 서로 다른 agent / 대국 사이에 누출 없음
+  - 실제 wrapper의 판정 순서 = DEV `replay`
+  - cooldown off = 상태 없음, attack off = 기준 수
+  - WIN일 때만 수 교체(route `own_vct2`)
+  - agent 속성은 base / attack / config / name / cooldown / attack_info뿐
+- 벤치마크 arm `puct_value_vct2_50k_tt_e4v2`: canonical(fast4, 동결 설정) run에서만 실행된다. 그 밖에는 거부한다.
+- CLAUDE.md: E4-v2 후보 파일과 잠금 파일은 판정 전까지 고치지 않는다.
+- `ThreatSolver`의 판 가득 참 결함은 이 단계에서 고치지 않는다. 이번 proof cycle은 기존 동결 의미로 끝낸다.
+
+**2. 기준 solver 4M 검사: FREEZE (`docs/h7/h7_e4v2_reference_4m.json`)**
+- 규칙(사전 고정): 2M이 후보 DEV WIN 21개 중 20개만 포함했다(`c94b…:16` 누락). 그래서 4M으로 한 번 올렸다.
+- 결과
+  - **포함 21 / 21**
+  - 거짓 증명 0, 모순 0, 미검증 0
+  - 재현율(보고): DEV WIN_VCT2_ONLY 41국면 중 **37**(2M은 32)
+  - 비용: 국면당 평균 33초, 최대 213초(컨테이너 3 worker). 41국면 중 3국면이 4M을 다 썼다.
+- 실행 조건
+  - 코드 `6ea3f3c`, `fast4`
+  - 기준 solver SHA `cf580000…`(2M 때와 같은 파일, 예산 `4m`)
+  - `git_dirty`는 실행 중 다음 단계 도구를 쓰던 중이라 생겼다. 기준 solver와 공격 파일 SHA는 결과 파일에 기록돼 있고 커밋본과 같다.
+- **arena 사건 검출기는 `e4_reference.reference_attack(game, '4m')`로 동결한다.** 후보의 150k 예산은 그대로다.
+- arena 사건 추출 비용은 2M 때보다 크다. arm마다 약 6,000국면이고, 데스크톱 12 worker로 수 시간을 본다.
+
+**3. COSTTEST 실측 도구 (`scripts/h7_e4v2_precheck.py`, 승인된 방식)**
+- COSTTEST 94대국 / 2,513국면 그대로
+  - 파일의 corpus / COSTDEV SHA를 대조한다.
+  - D4 겹침 0을 다시 확인한다.
+  - 대국은 파일 순서(sha256), 대국 안은 ply 순서다.
+- 대국마다 후보 wrapper 하나(Cooldown 하나)
+  - 국면마다 기준 엔진은 `make_canonical_agent`로 새로 만든다(seed는 국면 id에서, value 캐시 비움). tree / 캐시 / 탐색 상태는 국면을 넘지 않는다.
+- 시간: 후보 호출 안에서 잰다.
+  - B = 기준 엔진의 `select_move`(그 route가 E4-v2 단계를 정한다. `source_recorded`는 쓰지 않는다)
+  - E = 호출 전체(기준 + cooldown + 상대 VCF 문턱 + 공격)
+  - 모델 로딩, native build, agent 생성은 둘 다 밖이다.
+- 판정
+  - 대국 cluster bootstrap 95% 하한 > 1.5 → `PRECHECK_FAIL`(REJECT, arena 없음)
+  - 아니면 `PROCEED`
+  - `PROCEED`는 비용 통과가 아니다. 점추정이 1.5를 넘으면 "비용은 아직 열려 있음"으로 결과 파일(`interpretation`)에 적는다.
+- resume은 대국 단위다(cooldown이 대국을 따라 흐르므로). fingerprint는 후보 해시, COSTTEST SHA, 장치다.
+- 시험: 대국 순서와 ply 순서 유지, 대국 단위 resume, E ≥ B, fast 모드 복원(stand-in 모델)
+
+**실행 명령 — E4-v2 COSTTEST 사전 검사 (데스크톱, 1 프로세스, 약 2–3시간, 다른 작업 없이)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_tb_v2_value_e4v2 tests.test_track_b_guard tests.test_h7_e4
+mkdir -p runs/h7_e4v2
+python -u scripts/h7_e4v2_precheck.py --positions docs/h7/h7_e4v2_costtest_positions.json \
+  --corpus docs/h7/h7_e4_web_corpus.json --costdev docs/h7/h7_timing_positions.json --device cuda \
+  --jsonl runs/h7_e4v2/precheck.jsonl --output docs/h7/h7_e4v2_precheck.json 2>&1 | tee -a runs/h7_e4v2/precheck.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4v2_precheck.json`
+- 먼저 볼 것
+  - `verdict`, `interpretation`, `ratio`, `ci95`
+  - `report`: 공격 수, 수 바뀜, 생략 사유별 수(route / cooldown / opponent_vcf), 공격 초
+- `PRECHECK_FAIL`이면 여기서 E4-v2 REJECT다. `PROCEED`이면 다음은 arena 명령과 `summarize_h7_e4.py`다(기준 4M 사건 추출 포함).
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

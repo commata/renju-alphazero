@@ -1,0 +1,1394 @@
+{
+ "format": "h7-e4-reference-v1",
+ "git_commit": "6ea3f3c0c6c0fe217f6e91032ed63089773bc787",
+ "git_dirty": true,
+ "reference_sha256": "cf580000fe5c56cc150fd9e8186552509a44ded15719054e3f5fbdaf6718b02b",
+ "e4_attack_sha256": "73b0902d9d479065b9279e43ca356509dfdec4daa1a759f881aa695009b7415f",
+ "corpus_sha256": "5ea219a8c573242b9f36b23c71fbc686fe0d1df0bd0ccc676e8c9af8f3cf3673",
+ "truth_sha256": "4434dfd42597fa51b8501c3d5c654bf8a673dba5e632bef8270a42a278fa5bfe",
+ "dev_sha256": "c5e56ad4b23624a66e5dc231b01eb4acc06daed71eac6c01dc1e2100267170d6",
+ "split": "DEV",
+ "selected": {
+  "name": "150k/cd/killer",
+  "budget": "150k",
+  "cooldown": true,
+  "killer": true
+ },
+ "fast": "fast4",
+ "verdict": "FREEZE",
+ "budget": "4m",
+ "containment": {
+  "candidate_wins": 21,
+  "contained": 21,
+  "missing": []
+ },
+ "recall": {
+  "targets": 41,
+  "found": 37,
+  "missed": [
+   "3d0957e88d1c461ba2e3b530e648f0b8:18",
+   "86c1383da3e24a368bffa402bb8c96b3:11",
+   "8b68bc876ab246ebbb7b31866ef9b349:29",
+   "abb1455fb0e440b4b4c37440ffad6e0f:30"
+  ]
+ },
+ "false_proofs": [],
+ "contradictions": [],
+ "unverified": [],
+ "cost": {
+  "positions": 41,
+  "nodes_mean": 699039.2,
+  "nodes_max": 3999999,
+  "exhausted": 3,
+  "seconds_mean": 33.44,
+  "seconds_max": 212.8545
+ },
+ "positions": {
+  "0bd2800bd90e46aabb8f3f4c0a66ead5:15": {
+   "id": "0bd2800bd90e46aabb8f3f4c0a66ead5:15",
+   "key": "e98209bc20c538c2",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     11,
+     4
+    ],
+    "candidates": 8,
+    "vcf_threat_candidates": 2,
+    "calls": 2090,
+    "nodes": 7870,
+    "exhausted": false,
+    "seconds": 0.5993
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 6204,
+     "vcf_calls": 1816,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "1a6d7cff296e4142a999797ab56d06ee:11": {
+   "id": "1a6d7cff296e4142a999797ab56d06ee:11",
+   "key": "c51be58f45e9b889",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     9,
+     10
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 0,
+    "calls": 1566,
+    "nodes": 18262,
+    "exhausted": false,
+    "seconds": 1.1798
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 4224,
+     "vcf_calls": 640,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "1acca17dec1845d2b45d42228f7c1c4f:20": {
+   "id": "1acca17dec1845d2b45d42228f7c1c4f:20",
+   "key": "60bc19cde6384f38",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     3,
+     10
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 6,
+    "calls": 709,
+    "nodes": 3084,
+    "exhausted": false,
+    "seconds": 0.3006
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 1802,
+     "vcf_calls": 418,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "25484464e30f4fd08fe9aa3d58078a7d:17": {
+   "id": "25484464e30f4fd08fe9aa3d58078a7d:17",
+   "key": "fb4dbc341e4bcba8",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     7,
+     11
+    ],
+    "candidates": 12,
+    "vcf_threat_candidates": 0,
+    "calls": 14552,
+    "nodes": 3140218,
+    "exhausted": false,
+    "seconds": 139.7819
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 540250,
+     "vcf_calls": 6527,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "26b4450d52ea443eb1a58525367d7849:13": {
+   "id": "26b4450d52ea443eb1a58525367d7849:13",
+   "key": "89b10922bc779fac",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     8,
+     8
+    ],
+    "candidates": 12,
+    "vcf_threat_candidates": 6,
+    "calls": 4249,
+    "nodes": 39104,
+    "exhausted": false,
+    "seconds": 2.3267
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 11651,
+     "vcf_calls": 1069,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "28f3cce06f6f48019e7a5377d6f53958:26": {
+   "id": "28f3cce06f6f48019e7a5377d6f53958:26",
+   "key": "e1423aaf5e7ce971",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     10,
+     5
+    ],
+    "candidates": 19,
+    "vcf_threat_candidates": 13,
+    "calls": 2465,
+    "nodes": 109323,
+    "exhausted": false,
+    "seconds": 4.9667
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 101072,
+     "vcf_calls": 2302,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "3d0957e88d1c461ba2e3b530e648f0b8:10": {
+   "id": "3d0957e88d1c461ba2e3b530e648f0b8:10",
+   "key": "c241ab7273d295b6",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     3,
+     6
+    ],
+    "candidates": 12,
+    "vcf_threat_candidates": 4,
+    "calls": 2454,
+    "nodes": 43475,
+    "exhausted": false,
+    "seconds": 2.7063
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 12505,
+     "vcf_calls": 986,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "3d0957e88d1c461ba2e3b530e648f0b8:18": {
+   "id": "3d0957e88d1c461ba2e3b530e648f0b8:18",
+   "key": "68eece23c90c6bcb",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "",
+    "move": null,
+    "candidates": 19,
+    "vcf_threat_candidates": 6,
+    "calls": 8091,
+    "nodes": 3999998,
+    "exhausted": true,
+    "seconds": 184.6232
+   },
+   "check": null
+  },
+  "3d0cf38ada894b3d9df651de8ace89a5:39": {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:39",
+   "key": "d58721cfe55d9fb1",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     9,
+     13
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 4,
+    "calls": 1757,
+    "nodes": 240107,
+    "exhausted": false,
+    "seconds": 10.2055
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 24793,
+     "vcf_calls": 770,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "3d0cf38ada894b3d9df651de8ace89a5:41": {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:41",
+   "key": "29a198dd54e8e48f",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     9,
+     13
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 4,
+    "calls": 1748,
+    "nodes": 239999,
+    "exhausted": false,
+    "seconds": 10.6132
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 24685,
+     "vcf_calls": 762,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "3d0cf38ada894b3d9df651de8ace89a5:43": {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:43",
+   "key": "ada80537dd8c9c72",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     9,
+     13
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 4,
+    "calls": 9761,
+    "nodes": 395129,
+    "exhausted": false,
+    "seconds": 18.2847
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 136259,
+     "vcf_calls": 6646,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "3d0cf38ada894b3d9df651de8ace89a5:47": {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:47",
+   "key": "5b9f7aadf54b54e9",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     10,
+     11
+    ],
+    "candidates": 12,
+    "vcf_threat_candidates": 6,
+    "calls": 4071,
+    "nodes": 106320,
+    "exhausted": false,
+    "seconds": 5.4258
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 83574,
+     "vcf_calls": 3094,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "3d0cf38ada894b3d9df651de8ace89a5:51": {
+   "id": "3d0cf38ada894b3d9df651de8ace89a5:51",
+   "key": "fa42b36d7ad0eaf1",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     9,
+     13
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 4,
+    "calls": 3706,
+    "nodes": 67630,
+    "exhausted": false,
+    "seconds": 3.6123
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 46908,
+     "vcf_calls": 2542,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "462a01252c404b84ba99b3fafafc2b1b:15": {
+   "id": "462a01252c404b84ba99b3fafafc2b1b:15",
+   "key": "92ae7425791b4782",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     7
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 0,
+    "calls": 2404,
+    "nodes": 25989,
+    "exhausted": false,
+    "seconds": 1.5951
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 19534,
+     "vcf_calls": 1935,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "520a3ab9d0884e85a100458e497b4972:u8": {
+   "id": "520a3ab9d0884e85a100458e497b4972:u8",
+   "key": "5819b2957dda8254",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     6
+    ],
+    "candidates": 11,
+    "vcf_threat_candidates": 1,
+    "calls": 310,
+    "nodes": 792,
+    "exhausted": false,
+    "seconds": 0.118
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 643,
+     "vcf_calls": 214,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "5248d75ea82d4942b4882a4c338c6144:15": {
+   "id": "5248d75ea82d4942b4882a4c338c6144:15",
+   "key": "b30e3e81519c23c1",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     4,
+     8
+    ],
+    "candidates": 16,
+    "vcf_threat_candidates": 10,
+    "calls": 326,
+    "nodes": 822,
+    "exhausted": false,
+    "seconds": 0.1143
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 619,
+     "vcf_calls": 206,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "62673b6ae05a49b9b4c4d65b57c103b1:9": {
+   "id": "62673b6ae05a49b9b4c4d65b57c103b1:9",
+   "key": "66aeabca6ca634d9",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     8
+    ],
+    "candidates": 8,
+    "vcf_threat_candidates": 0,
+    "calls": 2474,
+    "nodes": 15608,
+    "exhausted": false,
+    "seconds": 0.9282
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 14544,
+     "vcf_calls": 2066,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "6a679c14c94d4d49a6f83bfab8dd7ff6:63": {
+   "id": "6a679c14c94d4d49a6f83bfab8dd7ff6:63",
+   "key": "b929550c23c61eab",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     4,
+     6
+    ],
+    "candidates": 13,
+    "vcf_threat_candidates": 9,
+    "calls": 391,
+    "nodes": 2511,
+    "exhausted": false,
+    "seconds": 0.1813
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 1822,
+     "vcf_calls": 161,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "79c92ba62a1d4262935b819b50334a42:18": {
+   "id": "79c92ba62a1d4262935b819b50334a42:18",
+   "key": "4e016897f5aaabac",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     7,
+     8
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 2,
+    "calls": 1527,
+    "nodes": 31611,
+    "exhausted": false,
+    "seconds": 1.7158
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 26663,
+     "vcf_calls": 1221,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "79c92ba62a1d4262935b819b50334a42:20": {
+   "id": "79c92ba62a1d4262935b819b50334a42:20",
+   "key": "aa826023ce0f4a8a",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     8,
+     11
+    ],
+    "candidates": 18,
+    "vcf_threat_candidates": 9,
+    "calls": 7482,
+    "nodes": 1371037,
+    "exhausted": false,
+    "seconds": 70.7128
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 407986,
+     "vcf_calls": 2055,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "7d3d3ab5787e482ea60a4b2c1b3c0cdc:16": {
+   "id": "7d3d3ab5787e482ea60a4b2c1b3c0cdc:16",
+   "key": "c9c00e5af0c74bf5",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     4,
+     5
+    ],
+    "candidates": 15,
+    "vcf_threat_candidates": 5,
+    "calls": 5411,
+    "nodes": 146708,
+    "exhausted": false,
+    "seconds": 7.7366
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 27958,
+     "vcf_calls": 2267,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "83c346e042b8487e9b094933137d365a:10": {
+   "id": "83c346e042b8487e9b094933137d365a:10",
+   "key": "24c594d9c903c6d1",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     8,
+     7
+    ],
+    "candidates": 16,
+    "vcf_threat_candidates": 4,
+    "calls": 745,
+    "nodes": 18019,
+    "exhausted": false,
+    "seconds": 1.1124
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 4696,
+     "vcf_calls": 427,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "86c1383da3e24a368bffa402bb8c96b3:11": {
+   "id": "86c1383da3e24a368bffa402bb8c96b3:11",
+   "key": "39dcd962ef537adb",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "",
+    "move": null,
+    "candidates": 18,
+    "vcf_threat_candidates": 0,
+    "calls": 193495,
+    "nodes": 3999999,
+    "exhausted": true,
+    "seconds": 212.8545
+   },
+   "check": null
+  },
+  "8b59e5c56d444ffaa3f64614954f0012:29": {
+   "id": "8b59e5c56d444ffaa3f64614954f0012:29",
+   "key": "86fdccf6bcfb9b2e",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     4
+    ],
+    "candidates": 27,
+    "vcf_threat_candidates": 13,
+    "calls": 29915,
+    "nodes": 2479272,
+    "exhausted": false,
+    "seconds": 116.068
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 105068,
+     "vcf_calls": 9674,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "8b59e5c56d444ffaa3f64614954f0012:35": {
+   "id": "8b59e5c56d444ffaa3f64614954f0012:35",
+   "key": "82892b304cf22059",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     3,
+     8
+    ],
+    "candidates": 30,
+    "vcf_threat_candidates": 13,
+    "calls": 346,
+    "nodes": 25755,
+    "exhausted": false,
+    "seconds": 1.1541
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 17033,
+     "vcf_calls": 194,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "8b68bc876ab246ebbb7b31866ef9b349:29": {
+   "id": "8b68bc876ab246ebbb7b31866ef9b349:29",
+   "key": "ee621ddd3f4076f6",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "",
+    "move": null,
+    "candidates": 12,
+    "vcf_threat_candidates": 3,
+    "calls": 49482,
+    "nodes": 3999999,
+    "exhausted": true,
+    "seconds": 185.489
+   },
+   "check": null
+  },
+  "8b68bc876ab246ebbb7b31866ef9b349:31": {
+   "id": "8b68bc876ab246ebbb7b31866ef9b349:31",
+   "key": "35f3c8130de0a1a3",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     13,
+     6
+    ],
+    "candidates": 11,
+    "vcf_threat_candidates": 2,
+    "calls": 37282,
+    "nodes": 2269376,
+    "exhausted": false,
+    "seconds": 107.2251
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 175777,
+     "vcf_calls": 12223,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "abb1455fb0e440b4b4c37440ffad6e0f:10": {
+   "id": "abb1455fb0e440b4b4c37440ffad6e0f:10",
+   "key": "15ac6f7b1150ea29",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     5,
+     9
+    ],
+    "candidates": 18,
+    "vcf_threat_candidates": 10,
+    "calls": 3596,
+    "nodes": 79427,
+    "exhausted": false,
+    "seconds": 4.4364
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 10284,
+     "vcf_calls": 871,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "abb1455fb0e440b4b4c37440ffad6e0f:12": {
+   "id": "abb1455fb0e440b4b4c37440ffad6e0f:12",
+   "key": "6bcd4c5a36f7471a",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     5,
+     10
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 0,
+    "calls": 2442,
+    "nodes": 70552,
+    "exhausted": false,
+    "seconds": 3.8211
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 6796,
+     "vcf_calls": 655,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "abb1455fb0e440b4b4c37440ffad6e0f:30": {
+   "id": "abb1455fb0e440b4b4c37440ffad6e0f:30",
+   "key": "fdae026103c4328c",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "",
+    "move": null,
+    "candidates": 19,
+    "vcf_threat_candidates": 11,
+    "calls": 4363,
+    "nodes": 354013,
+    "exhausted": false,
+    "seconds": 17.0034
+   },
+   "check": null
+  },
+  "c1b4957108494bd2bed74eae8b66e5e2:11": {
+   "id": "c1b4957108494bd2bed74eae8b66e5e2:11",
+   "key": "bd2da59a64125450",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     11
+    ],
+    "candidates": 6,
+    "vcf_threat_candidates": 0,
+    "calls": 727,
+    "nodes": 2016,
+    "exhausted": false,
+    "seconds": 0.1763
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 1898,
+     "vcf_calls": 629,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "c71f3c88798f42098aa66e58fd9a219e:10": {
+   "id": "c71f3c88798f42098aa66e58fd9a219e:10",
+   "key": "c241ab7273d295b6",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     3,
+     6
+    ],
+    "candidates": 12,
+    "vcf_threat_candidates": 4,
+    "calls": 2454,
+    "nodes": 43475,
+    "exhausted": false,
+    "seconds": 2.6975
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 12505,
+     "vcf_calls": 986,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "c94bc588390b49e3a778e543b82e3421:16": {
+   "id": "c94bc588390b49e3a778e543b82e3421:16",
+   "key": "62a26724149362e9",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     9,
+     11
+    ],
+    "candidates": 18,
+    "vcf_threat_candidates": 12,
+    "calls": 31791,
+    "nodes": 3216235,
+    "exhausted": false,
+    "seconds": 151.7604
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 423568,
+     "vcf_calls": 5211,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "cd2aa845cf554746b45e0befe70ebed5:13": {
+   "id": "cd2aa845cf554746b45e0befe70ebed5:13",
+   "key": "458f18521d2e011a",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     5,
+     8
+    ],
+    "candidates": 10,
+    "vcf_threat_candidates": 0,
+    "calls": 2349,
+    "nodes": 69898,
+    "exhausted": false,
+    "seconds": 3.6043
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 63517,
+     "vcf_calls": 2012,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "d431e59af18045a0b666c7190bbca419:7": {
+   "id": "d431e59af18045a0b666c7190bbca419:7",
+   "key": "7329b8029953a429",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     8
+    ],
+    "candidates": 3,
+    "vcf_threat_candidates": 0,
+    "calls": 761,
+    "nodes": 2839,
+    "exhausted": false,
+    "seconds": 0.2294
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 2577,
+     "vcf_calls": 644,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "e167531c4ab444b1b2f7b106ff3fa2ce:12": {
+   "id": "e167531c4ab444b1b2f7b106ff3fa2ce:12",
+   "key": "356ccd07064ad5b7",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     5
+    ],
+    "candidates": 18,
+    "vcf_threat_candidates": 10,
+    "calls": 1013,
+    "nodes": 67192,
+    "exhausted": false,
+    "seconds": 3.3202
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 32532,
+     "vcf_calls": 422,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "e167531c4ab444b1b2f7b106ff3fa2ce:14": {
+   "id": "e167531c4ab444b1b2f7b106ff3fa2ce:14",
+   "key": "a822d4d00fba37b3",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     5
+    ],
+    "candidates": 14,
+    "vcf_threat_candidates": 8,
+    "calls": 883,
+    "nodes": 27916,
+    "exhausted": false,
+    "seconds": 1.573
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 21214,
+     "vcf_calls": 418,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "e167531c4ab444b1b2f7b106ff3fa2ce:16": {
+   "id": "e167531c4ab444b1b2f7b106ff3fa2ce:16",
+   "key": "78494675535307e3",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     6,
+     5
+    ],
+    "candidates": 9,
+    "vcf_threat_candidates": 1,
+    "calls": 1133,
+    "nodes": 88946,
+    "exhausted": false,
+    "seconds": 4.2928
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 80019,
+     "vcf_calls": 414,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "e297975d0f224800a3f0f61dfea04264:9": {
+   "id": "e297975d0f224800a3f0f61dfea04264:9",
+   "key": "431c6db01a5446e3",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     8,
+     6
+    ],
+    "candidates": 6,
+    "vcf_threat_candidates": 0,
+    "calls": 1427,
+    "nodes": 15041,
+    "exhausted": false,
+    "seconds": 0.9613
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 11131,
+     "vcf_calls": 945,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "ee02483c8f134563ba39ab07f7723fed:34": {
+   "id": "ee02483c8f134563ba39ab07f7723fed:34",
+   "key": "1a2bc70cadd9e51e",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     12,
+     3
+    ],
+    "candidates": 20,
+    "vcf_threat_candidates": 10,
+    "calls": 3064,
+    "nodes": 1645697,
+    "exhausted": false,
+    "seconds": 77.3008
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 154962,
+     "vcf_calls": 463,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  "ee02483c8f134563ba39ab07f7723fed:36": {
+   "id": "ee02483c8f134563ba39ab07f7723fed:36",
+   "key": "fdd7ba4635e1d0b3",
+   "budget": "4m",
+   "check_budget": {
+    "node_limit": 100000,
+    "call_limit": 1000000,
+    "node_budget": 10000000
+   },
+   "reference": {
+    "budget": "4m",
+    "status": "WIN",
+    "move": [
+     12,
+     3
+    ],
+    "candidates": 18,
+    "vcf_threat_candidates": 10,
+    "calls": 1603,
+    "nodes": 179344,
+    "exhausted": false,
+    "seconds": 8.4032
+   },
+   "check": {
+    "outcome": "PUNISH",
+    "depth": 1,
+    "search": {
+     "nodes": 35012,
+     "vcf_calls": 465,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  }
+ }
+}

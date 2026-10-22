@@ -183,3 +183,49 @@ class ReferenceInputTest(unittest.TestCase):
                                      load('docs/h7/h7_e4_baseline_v2.json'), dev['selection']['selected'])
         self.assertEqual(len(wins), 21)
         self.assertIn('c94bc588390b49e3a778e543b82e3421:16', wins)  # the one the frozen 2M reference misses
+
+
+class PrecheckV2Test(unittest.TestCase):
+    def test_games_in_order_one_cooldown_per_game(self):
+        from tempfile import TemporaryDirectory
+        from rt30 import fast4_forbidden
+        from scripts import h7_e4v2_costtest as ct, h7_e4v2_precheck as pre
+        from scripts.run_mcts_v8_benchmark import file_sha256
+        from tests.test_h7_e4 import GAMES, corpus_of
+        from tests.test_h7_timing import FACTORIES
+        if not fast4_forbidden.available():
+            self.skipTest('python -m rt30.native.build first')
+        line = [(7, 7), (6, 6), (8, 8), (5, 5), (9, 9), (4, 4), (10, 10), (3, 3), (11, 11)]
+        game = (lambda key, moves: {'key': key, 'moves': [list(m) for m in moves],
+                                    'v8_moves': [{'ply': p, 'route': 'tree', 'seconds': 1.0}
+                                                 for p in range(1, len(moves), 2)]})
+        runs = [{'arm': ct.ARM, 'opponent': ct.OPPONENT, 'seed': s,
+                 'games': [game('k/0/white', line), game('k/1/white', line[:7])]} for s in ct.SEEDS]
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            path = corpus_of(tmp, GAMES[:1])
+            (tmp / 'costdev.json').write_text(json.dumps({'positions': [{'id': 'x', 'moves': [[7, 7], [0, 0], [7, 8]]}]}))
+            built = ct.build(runs, web_load(path), [], count=5)
+            costtest = {'format': ct.FORMAT, 'corpus_sha256': file_sha256(path),
+                        'costdev_sha256': file_sha256(tmp / 'costdev.json'), **built}
+            (tmp / 'ct.json').write_text(json.dumps(costtest))
+            argv = ['--positions', str(tmp / 'ct.json'), '--corpus', str(path), '--costdev', str(tmp / 'costdev.json'),
+                    '--device', 'cpu', '--limit-games', '2', '--jsonl', str(tmp / 'p.jsonl')]
+            self.assertEqual(pre.main([*argv, '--output', str(tmp / 'a.json')], factories=FACTORIES), 0)
+            a = json.loads((tmp / 'a.json').read_text(encoding='utf-8'))
+            self.assertEqual(pre.main([*argv, '--output', str(tmp / 'b.json')], factories=FACTORIES), 0)  # resumed
+            b = json.loads((tmp / 'b.json').read_text(encoding='utf-8'))
+        ids = [r['id'] for r in a['rows']]
+        self.assertEqual(ids, [p['id'] for k in built['games'][:2] for p in built['positions'] if p['id'].split('|')[1] == k])
+        self.assertEqual([r['id'] for r in b['rows']], ids)
+        for r in a['rows']:
+            self.assertGreaterEqual(r['e_seconds'], r['b_seconds'])
+            self.assertIn(r['route'], ('tree', 'stage1', 'stage2', 'stage3', 'stage4', 'stage5', 'own_vcf', 'own_vct'))
+        self.assertIn(a['verdict'], ('PRECHECK_FAIL', 'PROCEED'))
+        from hybrid.h6_fast import installed_mode
+        self.assertEqual(installed_mode(), 'off')
+
+
+def web_load(path):
+    from scripts import h7_e4_web_corpus as web
+    return web.load(path)

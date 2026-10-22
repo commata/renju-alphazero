@@ -15,6 +15,7 @@
 - The H7-E4 candidate `src/analysis/tb_v2_value_e4.py` locks `src/analysis/e4_attack.py`, `vct2_attack.py` and
   `selective_vct.py` by SHA-256 (`ATTACK_SOURCES`), and `src/analysis/e4_reference.py` is the arena's frozen event
   detector once its DEV check passes: do not edit them until the seed 8441 / 8442 arena has given ADOPT / REJECT.
+  For E4-v2 the detector is frozen at its `'4m'` budget (`docs/h7/h7_e4v2_reference_4m.json`).
 - `scripts/check_track_b_frozen.py` checks the canonical (code manifest `tests/track_b_frozen.sha256`, engine hash,
   runtime sources and binding, policy / value checkpoints): run it before benchmark, web or self-play work; regenerate
   the manifest (`--write-manifest`) only in an explicit engine or runtime freeze step. Canonical runs go through
