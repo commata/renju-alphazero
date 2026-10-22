@@ -4268,9 +4268,14 @@ python -m unittest tests.test_track_b_guard
 - 보정 파일과 DEV의 코드 fingerprint가 같고, 둘 다 fast4다.
 - 비용 모형: v1 공격 1,858회, R² 0.987
 - 데스크톱 보정: plain 1.028, killer 1.022, 판별 0.898 → 상대 보정 killer **0.9936**, 판별 **0.8735**
-- **COSTTEST 국면 파일(`docs/h7/h7_e4v2_costtest_positions.json`)은 아직 커밋되지 않았다.** 1단계가 빠졌다.
-  - 이 파일은 E2 holdout 대국에서 규칙으로만 정해지고 E4-v2 결과와 무관하다. 그래서 지금 만들어도 누출은 없다.
-  - 공식 사전 검사 전에 생성·커밋한다.
+- COSTTEST 국면 파일 `docs/h7/h7_e4v2_costtest_positions.json`은 DEV 결과 뒤에 따로 커밋됐다(`7390e59`).
+  - 이 파일은 E2 holdout 대국에서 규칙으로만 정해지고 E4-v2 결과와 무관하다. 그래서 누출은 없다.
+  - 검산
+    - 94대국, **2,513국면**(2,500 목표, 대국 단위라 초과)
+    - 겹침 때문에 통째로 뺀 대국 100개
+    - 쓴 대국은 모두 통째이고 ply 순서
+    - 웹 corpus / COSTDEV와의 D4 겹침 0(다시 계산)
+    - corpus / COSTDEV SHA 일치, `source_recorded`만 있음
 
 **결과**
 
@@ -4358,7 +4363,7 @@ python -m unittest tests.test_track_b_guard
 - 모델이 필요 없다. 컨테이너에서 약 15–30분
 
 **3. COSTTEST 실측 (`scripts/h7_e4v2_precheck.py`, 새로 만듦)**
-- COSTTEST 국면 파일을 먼저 생성·커밋한다.
+- COSTTEST 국면 파일은 커밋돼 있다(2,513국면, 94대국).
 - 대국마다 수 순서대로 잰다.
   - 대국마다 후보 agent 하나(Cooldown 유지)
   - 국면마다 B는 새로 만든다(cold, v1과 같음)
