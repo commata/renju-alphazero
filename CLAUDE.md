@@ -19,3 +19,5 @@
   runtime sources and binding, policy / value checkpoints): run it before benchmark, web or self-play work; regenerate
   the manifest (`--write-manifest`) only in an explicit engine or runtime freeze step. Canonical runs go through
   `analysis.track_b_guard.make_canonical_agent`.
+- The H7-E4-v2 candidate `src/analysis/tb_v2_value_e4v2.py` locks `src/analysis/e4v2_attack.py` (with the E4 attack
+  files above) and the code manifest by SHA-256: do not edit them until its COSTTEST / arena verdict.

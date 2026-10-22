@@ -14,6 +14,12 @@ Every position read here must be DEV (``h7_e4_dev.dev_only``).
     python scripts/h7_e4_reference.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \\
         --dev docs/h7/h7_e4_dev.json --budget 2m --workers 4 --fast fast4 \\
         --jsonl runs/h7_e4/reference_2m.jsonl --output docs/h7/h7_e4_reference_2m.json
+
+E4-v2 (``h7_e4v2_dev.py`` result): its candidate wins are replayed with the cooldown (``--baseline`` needed):
+
+    python scripts/h7_e4_reference.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \\
+        --dev docs/h7/h7_e4v2_dev.json --baseline docs/h7/h7_e4_baseline_v2.json --budget 4m --workers 3 \\
+        --fast fast4 --jsonl runs/h7_e4v2/reference_4m.jsonl --output docs/h7/h7_e4v2_reference_4m.json
 """
 from __future__ import annotations
 
@@ -88,11 +94,26 @@ def judge(rows: dict, candidate_wins: list[str], targets: list[str], boards: dic
                      'seconds_max': max(seconds, default=None)}}
 
 
+def candidate_wins_v2(corpus: dict, dev: dict, baseline: dict, selected: dict) -> list[str]:
+    """DEV positions where the selected E4-v2 step ran and proved a WIN (``h7_e4v2_dev.replay``, as scored)."""
+    from analysis.e4v2_attack import ROUTES
+    from scripts import h7_e4v2_dev as dev2
+
+    positions = [dev_only(p) for p in corpus['positions'] if p['split'] == 'DEV']
+    recorded = {p['id']: baseline['positions'][p['id']] for p in positions if p['id'] in baseline['positions']}
+    eligible = {p['id'] for p in positions if p['id'] not in recorded or recorded[p['id']]['b']['route'] in ROUTES}
+    steps = {}
+    for seq in dev2.sequences_dev(corpus, positions, eligible):
+        steps.update(dev2.replay(selected, seq, dev['rows']['dev']))
+    return sorted(i for i, step in steps.items() if step['ran'] and step['move'] is not None)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--corpus', type=Path, required=True)
     parser.add_argument('--truth', type=Path, required=True)
     parser.add_argument('--dev', type=Path, required=True, help='h7_e4_dev.py output (its selection)')
+    parser.add_argument('--baseline', type=Path, help='E4-v2 DEV results: the baseline v2 they were scored on')
     parser.add_argument('--budget', choices=('2m', '4m'), default='2m')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--fast', choices=('off', 'fast2', 'fast3', 'fast4'), default='off')
@@ -114,9 +135,17 @@ def main(argv=None) -> int:
     if selected is None:
         parser.error(f'{args.dev} selected no configuration')
     positions = {p['id']: p for p in corpus['positions'] if p['split'] == 'DEV'}
-    candidate_wins = sorted(a['id'] for a in d['attacks']
-                            if a['budget_name'] == selected['budget'] and a['candidates'] == selected['candidates']
-                            and a['attack']['move'] is not None)
+    if d.get('format') == 'h7-e4v2-dev-v1':  # E4-v2: the wins of the selected step, cooldown replayed
+        if args.baseline is None:
+            parser.error('an E4-v2 DEV result needs --baseline (the recorded base routes)')
+        b = json.loads(args.baseline.read_text(encoding='utf-8'))
+        if d['baseline_sha256'] != file_sha256(args.baseline):
+            parser.error(f'{args.baseline} is not the baseline of {args.dev}')
+        candidate_wins = candidate_wins_v2(corpus, d, b, selected)
+    else:
+        candidate_wins = sorted(a['id'] for a in d['attacks']
+                                if a['budget_name'] == selected['budget'] and a['candidates'] == selected['candidates']
+                                and a['attack']['move'] is not None)
     targets = sorted(i for i, p in positions.items() if t['boards'][p['key']]['grade'] == truth.TARGET)
     ids = sorted(set(candidate_wins) | set(targets))
     tasks = [{'id': i, 'key': dev_only(positions[i])['key'], 'moves': web.history(corpus, positions[i]),

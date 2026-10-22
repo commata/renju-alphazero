@@ -38,6 +38,8 @@ move as ``root.table``). With ``--puct-c 1.5`` it is ``analysis.tb_engine_v1_t``
     puct_policy_vct2_50k_tt puct_policy_vct2_50k with root_vcf_table (TB-Engine-v2)
     puct_value_vct2_50k_tt  TB-Engine-v2 with the value leaf (TB-V2-Value, H7-E3; a tested arm only)
     puct_value_vct2_50k_tt_e4  TB-V2-Value + the H7-E4 attack candidate (``analysis.tb_v2_value_e4``; tested only)
+    puct_value_vct2_50k_tt_e4v2  TB-V2-Value + the H7-E4-v2 candidate (``analysis.tb_v2_value_e4v2``; canonical
+                    fast4 runs only, tested only)
 
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
@@ -125,6 +127,9 @@ ARMS = {
     # 'e4_attack' is not a V8 option: it wraps the agent in the H7-E4 candidate (analysis.tb_v2_value_e4).
     'puct_value_vct2_50k_tt_e4': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
                                   'vct2_node_budget': 50_000, 'root_vcf_table': True, 'e4_attack': True},
+    # 'e4v2_attack' wraps the canonical agent in the H7-E4-v2 candidate (analysis.tb_v2_value_e4v2).
+    'puct_value_vct2_50k_tt_e4v2': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+                                    'vct2_node_budget': 50_000, 'root_vcf_table': True, 'e4v2_attack': True},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -343,7 +348,7 @@ def _counterfactual(game: Game, seed: int, ply: int, config: dict) -> dict:
             'seconds': round(perf_counter() - started, 4)}
 
 
-CANONICAL_ARMS = ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4')
+CANONICAL_ARMS = ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4', 'puct_value_vct2_50k_tt_e4v2')
 
 
 def is_canonical(arm: str, fast: str, config: dict) -> bool:
@@ -379,6 +384,11 @@ def play_one(task: dict) -> dict:
     if config.get('e4_attack'):
         from analysis.tb_v2_value_e4 import wrap
         v8 = wrap(v8)
+    if config.get('e4v2_attack'):  # only on the canonical (frozen config, fast4, guarded factory)
+        if not is_canonical(task['arm'], task.get('fast', 'off'), config):
+            raise ValueError(f"{task['arm']} runs only as the canonical: --fast fast4 and the frozen configuration")
+        from analysis.tb_v2_value_e4v2 import wrap as wrap_v2
+        v8 = wrap_v2(v8)  # one agent, so one cooldown, per game
     opponent = task.get('opponent', 'v7')
     opp = make_opponent(opponent, derive_seed(seed, 'v7'), task.get('v7_overrides', {}),
                         task.get('policy_checkpoint'))
@@ -686,6 +696,9 @@ def _runtime_provenance(device: str, arm: str = 'puct_value_vct2_50k_tt') -> dic
     if arm == 'puct_value_vct2_50k_tt_e4':
         from analysis.tb_v2_value_e4 import provenance as candidate_provenance
         return candidate_provenance(device)
+    if arm == 'puct_value_vct2_50k_tt_e4v2':
+        from analysis.tb_v2_value_e4v2 import provenance as candidate_v2_provenance
+        return candidate_v2_provenance(device)
     from analysis.tb_v2_runtime import provenance as runtime_provenance
     return runtime_provenance(device)
 
