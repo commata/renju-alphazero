@@ -4918,6 +4918,157 @@ done
 - 커밋할 것: `docs/h7/tb_v3_ser5_r1_summary.json`, `docs/h7/tb_v3_ser5_r2_summary.json`
 - 먼저 볼 것: 두 회의 `ser5_check`(`over_deadline`, `max`, `pass`), `summary.all`, `summary.tree_route`
 
+## TB-V3 Resolve 승격 재생: PROMOTION_PASS, SER5: NOT CERTIFIED (2026-10-22, `9cd83d4`)
+
+**상태 (이번 커밋부터)**
+
+```
+TB-V3 Resolve         canonical (analysis.canonical.CANONICAL_ENGINE_ID = 'TB-V3')
+TB-V2-Value + fast4   previous canonical (make_tb_v2_agent, unchanged)
+SER5 deployment       NOT CERTIFIED (TB-V3, max > 25 s in both rounds)
+```
+
+- `check_track_b_frozen.py`는 이제 승격 기록을 요구한다. 컨테이너(`--no-models`)에서 `tb-v3 promotion: canonical, promotion replay PASS`
+- CUDA canonical은 그대로다. CPU는 미인증(8451 / 8452 예정)이고, SER5 배포도 미인증이다.
+
+**검증 (`docs/h7/tb_v3_promotion.json`, `tb_v3_ser5_r1/r2_summary.json`)**
+- 승격 기록
+  - 코드 `cd2795e`, `git_dirty: false`, CUDA
+  - 엔진 해시 `d0ef0da6…`, `tb_v3.py` SHA `b275f762…`, manifest `eb15dedc…`, runtime 해시 `51e3579a…`. 모두 현재 파일로 다시 계산한 값과 같다.
+  - arena SHA는 `ADOPTION`과 같다. B runtime 해시는 TB-V2-Value CUDA 값과 같다.
+- E: 200대국, 3,201 / 3,201수. 수·결정·기록 불일치 0, `PROMOTION_PASS`
+- B: 200대국, 3,876 / 3,876수. 불일치 0, `REPRODUCED`
+- SER5 두 회
+  - 엔진 해시와 `tb_v3.py` SHA가 같다. runtime 해시 `ef21b7bf…`는 현재 파일로 계산한 CPU 값과 같다.
+  - R1: 평균 4.699초, p99 22.705초, 최대 29.432초, 30초 초과 0 → 기준(최대 ≤ 25초) FAIL
+  - R2: 평균 4.687초, p99 22.662초, 최대 29.151초, 30초 초과 0 → FAIL
+- 초안의 수치는 모두 결과 파일과 같다. 결론(승격 PASS, SER5 미인증, 두 판정 분리)에 동의한다.
+
+**초안에서 고칠 것**
+1. **CUDA와 SER5의 runtime 해시가 다른 이유는 value 장치 하나다.**
+   - `runtime_hash`가 덮는 것: 엔진 ID, 엔진 해시, `tb_v3.py` SHA, fast 모드, native C 소스와 binding 파일의 SHA, value 장치(cuda / cpu)
+   - Python 판, 컴파일러, 빌드된 `.so`의 SHA는 덮지 않는다. 이것들은 `provenance`에 기록만 한다(기계마다 다르므로).
+   - 확인: 컨테이너(Python 3.13, 다른 빌드)에서 계산한 `runtime_hash('cpu')`도 SER5와 같은 `ef21b7bf…`다.
+   - 그래서 규칙은 이렇다.
+     - 같은 엔진: 엔진 해시와 `tb_v3.py` SHA
+     - 같은 실행판: runtime 해시(fast 모드, 잠긴 소스, 장치). CPU에서 잰 기계끼리는 같은 값이 정상이다.
+     - 같은 기계 빌드: provenance의 `native_binaries`, `native_python`, `native_compiler`(기록만)
+2. **E4 단계 시간은 분해할 수 있다.**
+   - 기준 엔진 부분은 TB-V2-Value SER5 측정(`h7_p1a_ser5_fast4_r1/r2`)과 같은 계산이다. 같은 엔진, 같은 국면, 국면마다 같은 seed다.
+   - 실제로 tree route의 기준 엔진 부분 평균이 같다: tree 1.533 / 1.528, root 1.219 / 1.204, vct2 0.507 / 0.524, value 0.762 / 0.758(TB-V3 R1 / TB-V2 R1).
+   - 그래서 늘어난 시간은 E4-v2 단계(상대 VCF 문턱 + 공격)다.
+     - 국면당 평균 +1.19초(3.505 → 4.699초, +34%)
+     - 최대 22.3 → 29.4초. 가장 느린 국면이 같은 국면인지는 요약 파일만으로 알 수 없다.
+   - tree route 국면이 705 → 676으로 29개 줄었다. 공격이 WIN을 증명하면 route가 `own_vct2`로 바뀌기 때문이다.
+   - 국면별 분해: SER5의 전체 출력(`runs/tb_v3/ser5_r*.json`)의 각 행에 `e4_seconds`(공격 solver 시간)와 단계 기록이 있다. TB-V2 출력과 짝지어 보는 도구 `scripts/tb_v3_ser5_tail.py`를 더했다(아래 명령).
+3. 승격 재생 시간을 비용 근거로 쓰지 않는다는 초안 판단이 맞다.
+
+**SER5 실패의 사전 규칙상 의미**
+- P1a 단계에서 고정한 규칙이 있다: "P1a-1 뒤 SER5에서 30초 초과 0이고 최대 ≤ 25초면 P1a-2(VCF 전체 native core)를 하지 않는다. 아니면 P1a-2로 간다."
+- TB-V2-Value + fast4는 이 기준을 통과했다(최대 22.3초). TB-V3는 같은 기준에서 실패했다.
+- 그래서 사전 규칙에 따른 다음 단계는 **P1a-2: VCF 전체 native core**다(아래 최적화 계획의 1순위와 같다).
+
+**실행 명령 — SER5 꼬리 분해 (SER5, 몇 초)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate   # SER5의 저장소 경로에 맞춘다
+python scripts/tb_v3_ser5_tail.py --tb-v3 runs/tb_v3/ser5_r1.json runs/tb_v3/ser5_r2.json \
+  --tb-v2 runs/h7_timing/mini_fast4_r1.json runs/h7_timing/mini_fast4_r2.json --output docs/h7/tb_v3_ser5_tail.json
+```
+
+- TB-V2 파일 이름은 P1a-1 SER5 측정 때 쓴 이름이다. 다르면 그 경로로 바꾼다. 없으면 `--tb-v2`를 빼도 된다(짝 비교만 빠진다).
+- 커밋할 것: `docs/h7/tb_v3_ser5_tail.json`(국면 행 없이 요약과 가장 느린 25국면만)
+- 보는 것
+  - `step_seconds`(E4 단계 시간 분포)
+  - `over_rule`(25초 초과 국면)
+  - `what_if.step_beside_base`(E4를 기준 엔진과 동시에 돌렸다면)
+  - `attack_capped_*`(공격 시간 상한을 두었다면). 둘 다 행에서 계산한 추정이지 측정이 아니다.
+
+## TB-V3 실행 최적화 제안: SER5와 데스크톱 (2026-10-22, 결정 필요)
+
+**목표**
+- SER5: 같은 827 corpus에서 2회 모두 30초 초과 0, 최대 ≤ 25초(지금 29.4초, −15% 이상 필요)
+- 데스크톱: H7-c1 self-play 처리량(대국 / 시간). 계산의 대부분이 CPU solver라서, 같은 정확 가속이 두 기계에 모두 듣는다.
+
+**근거: 컨테이너 profiling (보고용, cProfile)**
+- cProfile은 Python 함수 호출마다 부담을 더한다(공격 25국면: 데스크톱 실측 123초 → profile 541초). 순위는 믿을 만하지만, 비율은 Python 쪽이 부풀려진 값이다.
+- E4-v2 공격: COSTTEST에서 공격 시간이 가장 긴 25국면(`decide`)
+  - VCF(`_find_vcf_with_stats`) 61%
+  - 조용한 수 생성(`threat_moves`: 열린 삼 판별 `_fast_open_three_in_direction`) 24%
+  - 수 정렬(`threats.ordered_moves`) 14%
+  - 자기 시간 상위 원시 함수
+    - `run_length` + `inside` 18%
+    - `winning_extensions_in_direction` 9%
+    - native threat window 8%. 1,058만 번 호출이라 대부분 호출 경계 비용이다.
+    - `ordered_moves`의 거리 계산 9%
+- 기준 엔진: timing corpus E3A 40국면(stand-in 모델이라 수는 실제와 다를 수 있다. 경로와 원시 함수의 비중을 보는 용도다)
+  - 측정 구간: V8-C root 52%, tree 19%, VCT2 17%
+  - root VCF(`vcf_tt_v1`) 38%, 열린 삼 판별 20%, `ordered_moves` 12%
+  - 원시 함수는 공격과 같은 묶음이다: `run_length`, `winning_extensions_in_direction`, threat window, 금수
+- 한 수 안의 VCF 중복(30국면, 기준 엔진 + E4)
+  - 같은 (판, 공격자, max_fours) VCF가 다시 불린 경우는 호출의 1.7%(290 / 16,705)다. 그런데 **VCF 시간의 32%**를 차지한다.
+  - 대부분은 공정 라운드(`_proven`)가 예산이 모자라 끊긴 VCF를 두 배 예산으로 다시 처음부터 돌린 것이다.
+  - 끝난 결과를 그대로 다시 쓸 수 있는 몫은 6.3%뿐이다.
+- 수 정렬과 합법 수 생성(42수 판): `ordered_moves` 1.6 ms, `Game.legal_moves` 0.77 ms. 결정 노드마다 Python으로 다시 계산한다.
+
+**정확 가속 후보 (같은 수, 같은 노드·호출·cut. 엔진 의미 불변)**
+
+| # | 후보 | 대상 | 방식 | 위험 | 기대(대략) |
+|---|---|---|---|---|---|
+| X2-A | 규칙 원시 함수 native | `run_length`, `_wins_for_player`, `winning_extensions_in_direction`, `_placed_completions`, `_legal_completions`, `_fast_open_three_in_direction` | fast3 / fast4처럼 함수 단위 C. 판 list를 그 자리에서 읽는다 | 낮음(함수 단위 차분 시험) | 공격·root·VCT2 전반. 원시 함수 자기 시간 30–45%의 대부분 |
+| X2-B | `ordered_moves` 정확 대체 | E4 공격, 진실 solver, threats 계열 전부 | 돌 둘레의 Chebyshev 거리 지도를 한 번에 계산(팽창). 정렬 키 `(near > 2, near, 마지막 수 거리, move)`가 같다 | 낮음(같은 list 비교) | 공격 약 10%, 기준 엔진 약 10% |
+| X2-C | threat window 일괄 계산 | `_window_candidates` 호출 1천만 회 | 한 번의 native 호출로 후보 좌표 집합과 정렬까지(경계 비용 제거) | 낮음 | 약 5–8% |
+| X2-D | 이어서 하는 VCF (resumable) | `_proven`의 라운드 재시도 | 예산으로 끊긴 DFS의 스택을 보관했다가 더 큰 예산으로 이어 간다. 결과와 노드 수는 처음부터 다시 돌린 것과 같다 | 중간(상태 보관, 같은 solver 객체 안에서만) | VCF 시간의 약 10–20%(중복 32% 중 접두부 재탐색 몫) |
+| X2-E | 노드 청구 VCF memo | 서로 다른 solver(V7 안전, V8-A/B/C, VCT2, 문턱, 공격) | VCF는 판만 읽는다(이력·차례를 읽지 않음, 확인함). (판, 공격자, max_fours) → (결과, 노드, 완료 여부)를 저장한다. 다시 부를 때는 원래 노드 수를 그대로 청구한다. 완료된 결과는 한도 ≥ 노드면 같은 답이고, 한도 < 노드면 "한도에서 cut"이다 | 낮음–중간(순수 함수 논증 + 차분 시험) | 이번 측정으로는 6.3%. X2-D와 합치면 중복 대부분 |
+| X2-F | VCF 전체 native core (P1a-2) | V7 / V8 / VCT2 / E4 / 기준 solver / truth의 모든 VCF | 사전 규칙상 다음 단계다. VCF 한 호출이 경계이고, Python VCF와 `vcf_tt_v1`이 oracle이다. 결과, witness, 노드, cut, table 의미가 같아야 한다 | 높음(금수 재귀 포함, native-core-plan G0) | VCF 38–61%의 대부분. X2-A, X2-C, X2-D를 흡수한다 |
+| X2-G | 비트보드와 선 패턴 표 | X2-F 내부 | 방향별 선 비트마스크와 3^k / 2×2^k 패턴 표로 5 / 4 / 열린 삼 판정을 표 조회로 | X2-F 안에서 | X2-F 속도의 핵심 |
+| X2-H | E4 단계 동시 실행 (SER5 지연용) | E4 문턱 + 공격 | 공격은 판만의 함수다. 그래서 기준 엔진 탐색과 동시에 별도 프로세스에서 미리 돌리고, 기준 엔진이 끝나면 `decide`와 같은 순서(cooldown 소비 → route → cooldown → 문턱 → 공격)로 결과를 고른다 | 낮음–중간(프로세스 관리, 결과 순서) | SER5 최대 ≈ max(기준, 단계). 추정은 `what_if.step_beside_base`. 처리량은 늘지 않는다(데스크톱 self-play에는 무의미) |
+| X2-I | Python 3.12 → 3.13 / 3.14 (데스크톱) | 전체 | SER5는 이미 3.14다 | 낮음(재생 gate) | 5–15%(일반적인 값, 측정 전) |
+| X2-J | native 빌드 플래그 `-O3 -march=native` | native 부분 | 소스 SHA는 그대로, 바이너리만 바뀜(provenance 기록) | 낮음 | native 비중이 커지는 X2-A / X2-F 뒤에 의미 |
+
+- 원칙: 동결 파일은 고치지 않는다. fast3 / fast4처럼 새 파일이 이름을 바꿔 끼운다(`fast5` 후보).
+  - TB-V3의 63개 manifest 파일은 그대로 두고, 새 파일만 더한다.
+  - 엔진 identity(`ENGINE_HASH`)는 그대로다. 새 실행판(runtime) identity를 만든다. TB-V2-Value와 fast4의 관계와 같다.
+- 정확성 gate(사전 제안)
+  - G0 함수 단위 차분 시험: 무작위 판 + corpus 국면의 모든 빈 칸 / 모든 VCF 호출에서 Python 원본과 결과(노드·cut 포함)가 같다.
+  - G1 재생: arena E 200대국 3,201수를 새 실행판으로 다시 둔다. 수·결정 필드·**기록 전체(노드, 호출, 상태)** 불일치 0. 승격 재생보다 엄격하다.
+  - G2 속도: 데스크톱 짝 측정(같은 corpus) + SER5 2회(30초 초과 0, 최대 ≤ 25초)
+- X2-H(동시 실행)는 결과가 같다. 다만 시간이 아니라 "수 선택 순서"가 같은지를 G1처럼 재생으로 확인한다.
+
+**정확하지 않은 후보 (엔진 또는 배포 판이 바뀜. 따로 gate가 필요)**
+
+| # | 후보 | 효과 | 필요한 판정 |
+|---|---|---|---|
+| Y-A | 웹용 시간 제한 E4 | 경과 시간이 T를 넘으면 공격을 건너뛰거나 끊는다. 제한에 걸린 수만 달라진다 | 배포 판(TB-V3 Resolve / web). 제한에 걸리지 않은 수는 같은 수, 제한 발동 비율 보고. 엔진 채택은 그대로 |
+| Y-B | SER5용 작은 공격 예산(예: 100k) | 꼬리 감소 | 새 엔진. arena 필요 |
+| Y-C | 노드를 청구하지 않는 solver 간 표 공유 | 큰 가속 | 새 엔진(예산 소비가 바뀜). arena 필요 |
+| Y-D | 데스크톱 self-play용 value 서버(여러 대국의 국면을 한 번에 GPU로) | GPU 활용, 처리량 | batch 크기에 따라 부동소수점이 달라질 수 있다. value-mode 동일성 검사(최종 수 같음) 또는 인증 |
+| Y-E | SER5 value를 여러 스레드로(torch threads 2–4) | value 평균 0.76초 → 절반 이하 | 스레드 수에 따라 값이 달라질 수 있다. value-mode 동일성 검사 |
+
+**데스크톱 self-play 처리량 (H7-c1)**
+- 계산의 대부분이 CPU solver다. 그래서 X2-A–X2-F가 그대로 처리량을 올린다.
+- worker 수
+  - 지금 arena는 8 worker다. i5-12600K는 16 스레드(P 6 × 2 + E 4)다.
+  - worker 10–14를 짧게 재서 처리량이 가장 큰 값을 고른다(결과는 같고 속도만 다르다).
+  - 프로세스마다 CUDA context가 하나씩 있다(약 0.3–0.5 GB, 12 GB 안).
+- X2-H(동시 실행)는 처리량에 도움이 안 된다. 대국 병렬이 낫다.
+- Y-D(value 서버)는 처리량에 크지만 정확하지 않다. 측정 뒤 결정한다.
+
+**제안 순서**
+1. X2-B(`ordered_moves`) + X2-A(규칙 원시 함수 native) + X2-C(window 일괄): 함수 단위라 위험이 낮다. `fast5` 후보 하나로 묶는다. G0 → G1 → G2
+2. 1로 SER5 최대 ≤ 25초가 되면 X2-F는 보류한다(P1a의 단계 규칙과 같은 방식). 안 되면 X2-F(+ X2-D, X2-E, X2-G)로 간다.
+3. X2-H는 SER5 배포 판에만 쓰는 선택지로 따로 둔다. 1과 2로 부족할 때, 또는 웹 지연을 더 줄이고 싶을 때 쓴다.
+4. 데스크톱: X2-I(Python 3.13 / 3.14)와 worker 수 측정은 1과 함께 한다. Y-D는 H7-c1 설계 때 결정한다.
+5. CPU 인증 8451 / 8452는 지금 실행판으로 먼저 해도 된다. 정확 가속은 G1(수와 기록이 같음)을 통과해야 하므로 인증 결과가 그대로 이어진다.
+6. 그 전에 SER5 꼬리 분해(`tb_v3_ser5_tail.py`)를 커밋하면, 25초 초과 국면에서 E4와 V8-C의 몫을 확정할 수 있다.
+
+**결정이 필요한 것**
+1. 정확 가속은 엔진 identity를 그대로 두고 새 실행판 identity로 다룬다(`fast5` 실행판, gate G0–G2).
+2. 1단계 범위: X2-A + X2-B + X2-C
+3. X2-F(VCF 전체 native)로 갈지의 기준: 1단계 뒤 SER5 최대 ≤ 25초면 보류
+4. X2-H(동시 실행)를 SER5 배포 선택지로 둘지
+5. CPU 인증을 최적화와 병행할지
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

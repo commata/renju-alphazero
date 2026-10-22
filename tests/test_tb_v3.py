@@ -98,7 +98,11 @@ class FactoryTest(unittest.TestCase):
 
 class CanonicalTest(unittest.TestCase):
     def test_one_alias_versioned_factories(self):
-        self.assertEqual(canonical.CANONICAL_ENGINE_ID, 'TB-V2-Value')  # until the promotion replay passes
+        self.assertEqual(canonical.CANONICAL_ENGINE_ID, 'TB-V3')  # since the promotion replay passed
+        record = json.loads((ROOT / 'docs/h7/tb_v3_promotion.json').read_text(encoding='utf-8'))
+        self.assertEqual((record['verdict'], record['engine_hash'], record['identity_sha256'], record['runtime_hash']),
+                         ('PROMOTION_PASS', tb_v3.ENGINE_HASH, v3rt.identity_sha256(), v3rt.runtime_hash('cuda')))
+        self.assertIs(canonical.factory(), v3rt.make_tb_v3_agent)
         self.assertIs(canonical.factory('TB-V3'), v3rt.make_tb_v3_agent)
         self.assertIs(canonical.factory('TB-V2-Value'), guard.make_tb_v2_agent)
         self.assertIs(guard.make_canonical_agent, guard.make_tb_v2_agent)  # the candidate's base, for good
@@ -207,3 +211,26 @@ class PromotionTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class Ser5TailTest(unittest.TestCase):
+    def test_pairs_tb_v2_and_what_ifs(self):
+        from scripts import tb_v3_ser5_tail as tail
+
+        def row(pid, seconds, e4=None, ran=True):
+            r = {'id': pid, 'source': 'e3a', 'move': [1, 1], 'seconds': seconds, 'decision': {'route': 'tree'},
+                 'times': {'tree': 1.0, 'root': 1.0, 'vct2': 0.5, 'value': 0.5}}
+            if e4 is not None:
+                r.update(e4_seconds=e4, e4_attack={'ran': ran, 'skip': None if ran else 'route', 'exhausted': ran})
+            return r
+
+        v3 = {'engine_name': 'TB-V3 Resolve', 'rows': [row('a', 28.0, 8.0), row('b', 3.0, 0.0, ran=False)]}
+        v2 = {'rows': [row('a', 20.0), row('b', 3.0)]}
+        out = tail.analyse([v3, v3], [v2])
+        self.assertEqual(out['over_rule'], ['a'])
+        self.assertEqual(out['slowest'][0]['step_seconds'], 8.0)
+        self.assertEqual(out['what_if']['step_beside_base']['max'], 20.0)
+        self.assertEqual(out['what_if']['attack_capped_4s']['max'], 24.0)
+        self.assertEqual(out['skips']['route'], 1)
+        with self.assertRaises(ValueError):
+            tail.analyse([v2], [])

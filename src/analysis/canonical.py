@@ -1,13 +1,14 @@
 """Which engine is the Track B canonical: the one place that decides it.
 
 Versioned factories never change meaning (``make_tb_v2_agent`` is TB-V2-Value for good, ``make_tb_v3_agent``
-TB-V3 Resolve); only ``CANONICAL_ENGINE_ID`` moves. TB-V3 Resolve is ADOPT-approved (E4-v2 arena) and becomes
-the canonical when its promotion replay passes (``docs/h7/tb_v3_promotion.json``); until then it is
-TB-V2-Value + fast4. Benchmark, web and self-play code that means "the canonical" builds it here.
+TB-V3 Resolve); only ``CANONICAL_ENGINE_ID`` moves. TB-V3 Resolve (adopted by the E4-v2 arena) is the canonical
+since its promotion replay passed (``docs/h7/tb_v3_promotion.json``: 200 games, 3,201 / 3,201 moves, no decision
+or record mismatch; ``check_track_b_frozen.py`` requires that record). Before it: TB-V2-Value + fast4.
+Benchmark, web and self-play code that means "the canonical" builds it here.
 """
 from __future__ import annotations
 
-CANONICAL_ENGINE_ID = 'TB-V2-Value'
+CANONICAL_ENGINE_ID = 'TB-V3'
 ENGINES = ('TB-V2-Value', 'TB-V3')
 
 
