@@ -4495,7 +4495,9 @@ python -u scripts/h7_e4v2_precheck.py --positions docs/h7/h7_e4v2_costtest_posit
   - code manifest 검사
   - 기준 solver: `docs/h7/h7_e4v2_reference_4m.json`이 `FREEZE` / `4m`이고, 그 `reference_sha256`이 지금 `e4_reference.py`와 같아야 한다.
 
-**판정 (두 seed를 합쳐 한 번. 모든 gate PASS → ADOPT, 하나라도 아니면 REJECT)**
+**판정 (두 seed를 합쳐 한 번)**
+- 먼저 유효성(아래 격리 6, 7)을 본다. 하나라도 FAIL이면 `INVALID`다. 이때는 ADOPT도 REJECT도 내리지 않는다.
+- 유효하면 모든 gate PASS → ADOPT, 하나라도 아니면 REJECT
 - 기력: opening(seed, pair, 양 색) 단위 점수 차 E − B, bootstrap 10,000(seed 0, E2와 같음). 95% 하한 ≥ −0.05
 - 비용: 짝 대국 전체 V8 수 시간 합 E / B ≤ 1.5
 - 건전성
@@ -4509,18 +4511,31 @@ python -u scripts/h7_e4v2_precheck.py --positions docs/h7/h7_e4v2_costtest_posit
   - bootstrap 표본마다 arm별 `Σ응징 / Σ사건`을 다시 계산한다. opening별 비율의 평균은 쓰지 않는다. 사건 0인 opening도 남긴다.
   - E − B의 95% 하한 > 0이면 PASS다.
   - 한 arm의 사건이 0인 표본은 비율이 정의되지 않는다. 그런 표본은 빼고, 그 수를 `degenerate_samples`로 남긴다.
-- 격리
-  - 위 입력 검사: 설정, runtime identity, canonical factory, 후보 SHA, 단계 기록
-  - off 경로는 단위 시험(`tests.test_tb_v2_value_e4v2`)이 맡는다.
+- 격리 (7항목)
+  1. 동결 설정
+  2. runtime identity
+  3. canonical factory
+  4. 후보 SHA(+ code manifest, 기준 엔진 해시)
+  5. 단계 기록(E는 모든 수, B는 없음, 공격 WIN = 둔 수)
+     - 1–5는 입력 검사다. 하나라도 어긋나면 요약 자체를 거부한다.
+  6. off 경로 단위 시험: 요약할 때 `tests.test_tb_v2_value_e4v2`를 subprocess로 실제로 돌려 통과해야 한다.
+  7. `left_before_first_switch == 0`
+     - E 대국이 E의 첫 수 교체보다 먼저 B 대국과 갈라진 경우의 수다.
+     - 첫 교체 전까지 E는 같은 기보 위의 같은 기준 엔진이다. CUDA 반복 측정(`h7_equiv_cuda_vs_cuda.json`)도 차이 0이었다. 그래서 허용값은 0뿐이다.
+
+**유효성 gate (2026-10-22, arena 결과를 보기 전에 사용자 결정으로 고정)**
+- 6, 7은 후보 성능을 재는 채택 gate가 아니다. 실험이 유효한지를 보는 integrity gate다.
+- 6 또는 7이 FAIL이면 `INVALID` / STOP이다. 결과를 ADOPT / REJECT에 쓰지 않고, 원인을 먼저 분류한다.
+  - 후보 wrapper의 상태 누출이면(기준 엔진의 난수, 탐색 캐시, 전역 VCF / native 상태를 바꿈): 후보 결함이다. 동결 E4-v2를 REJECT한다. 고친 판은 별도 후보 cycle이다.
+  - runner 또는 계측 오류이면(seed 전달, agent 수명, opening 정렬, 요약 비교): runner를 고친다. 같은 동결 후보로 같은 seed 8441 / 8442를 다시 돌린다. 후보 설정은 그대로다.
+  - 같은 엔진 / 장치 / 설정에서 CUDA 비결정성이 재현되면: 재현성 문제를 조사한다. 해결 전에는 기력·빈도 결과를 채택하지 않는다.
+- 곧바로 REJECT로 두지 않는 이유가 있다. 첫 교체 전 분기는 후보의 기력 부족이 아니라 실험 인프라 문제일 수 있기 때문이다.
 
 **보고만 하는 것**
 - arm별 점수, 색별 점수, 대국 분
 - E4-v2 단계: 생략 사유별 수, 공격 수, 예산 소진, WIN, 수 바뀜, 공격 초
 - 응징 검사 UNCLEAR 수, opening별 사건 / 응징
 - B와 같은 대국 수
-- **E의 첫 수 교체보다 먼저 B와 갈라진 대국**
-  - CUDA 반복 측정(`h7_equiv_cuda_vs_cuda.json`)은 차이 0이었다. 그래서 E 대국은 첫 교체 전까지 B 대국과 같아야 한다.
-  - 0이 아니면 공격 단계가 기준 엔진에 새는 것(예: VCF 표, 난수)이다. 판정을 받아들이기 전에 원인을 본다.
 
 **계산 방식**
 - 국면은 수순(history)마다 한 번만 푼다. 두 arm과 두 seed를 합친다.
@@ -4571,7 +4586,7 @@ python -u scripts/summarize_h7_e4.py --runs $RUNS --workers 10 --fast fast4 \
 - 먼저 볼 것
   - `verdict`
   - `gates`의 각 `verdict`, `diff`, `ci95`, `ratio`, `rate`, `miss`
-  - `report.isolation.left_before_first_switch`: 0이어야 한다.
+  - `gates.isolation`: `items` 7개가 모두 PASS이고 `left_before_first_switch`가 비어 있어야 한다. `INVALID`면 판정하지 않고 원인부터 본다.
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 

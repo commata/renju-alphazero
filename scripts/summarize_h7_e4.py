@@ -22,10 +22,16 @@ the same openings and colours. One verdict on both seeds together, every gate ne
                an opening without events stays in); 95% lower bound of rate_E - rate_B > 0
     isolation  B is the frozen runtime profile and E the frozen candidate (configuration, runtime identities,
                canonical factory, candidate sources checked now); B never ran the attack, E recorded the
-               E4-v2 step at every move; the off path is the unit tests (tests.test_tb_v2_value_e4v2)
-    verdict    ADOPT if every gate passes, else REJECT (no retuning, no further seed)
+               E4-v2 step at every move (any of these failing refuses the summary). Validity (integrity, not
+               adoption): the off-path unit tests (tests.test_tb_v2_value_e4v2) pass now, and no E game left
+               B's line before E's first switched move (``left_before_first_switch`` empty: until the attack
+               replaces a move E is B's engine on B's history, and CUDA repeats were identical)
+    verdict    INVALID if the validity fails: STOP, the arena gives neither ADOPT nor REJECT until the cause is
+               found (a candidate leak -> REJECT; a runner / measurement fault -> fix it, rerun the same frozen
+               candidate on 8441 / 8442; CUDA non-determinism -> investigate). Otherwise ADOPT if every gate
+               passes, else REJECT (no retuning, no further seed)
 Reported only: per-colour scores, game minutes, the E4-v2 steps (skips by reason, attacks, wins, switches),
-punish checks UNCLEAR, games identical to B and the openings that left B's line before E's first switch.
+punish checks UNCLEAR, games identical to B.
 
 The positions are solved once per distinct history (both arms, both seeds), in a worker pool; each finished
 position is appended to ``--jsonl`` (resume; a fingerprint binds the reference, the checker and the budget).
@@ -63,6 +69,7 @@ SEEDS = (8441, 8442)
 DEVICE = 'cuda'
 REFERENCE_BUDGET = '4m'
 REFERENCE_RESULT = 'docs/h7/h7_e4v2_reference_4m.json'
+OFF_PATH_TESTS = 'tests.test_tb_v2_value_e4v2'
 RULES = {'strength_low_min': -0.05, 'cost_max': 1.5, 'frequency_low_gt': 0.0, 'soundness_miss_max': 0,
          'fast': 'fast4', 'value_device': DEVICE, 'pairs_per_seed': 50, 'seeds': list(SEEDS),
          'reference_budget': REFERENCE_BUDGET, 'bootstrap': e2.RULES['bootstrap'], 'seed': e2.RULES['seed'],
@@ -297,8 +304,9 @@ def steps(run_games: list[dict]) -> dict:
     return out
 
 
-def isolation_report(cand: dict, base: dict) -> dict:
-    """Games equal to B, and openings whose E game left B's line before E's first switched move."""
+def left_before_first_switch(cand: dict, base: dict) -> dict:
+    """Games equal to B, and the games of E that left B's line before E's first switched move (must be none:
+    until the attack replaces a move, E is B's engine on B's history)."""
     identical, early = 0, []
     for key in sorted(cand):
         c, b = cand[key]['moves'], base[key]['moves']
@@ -313,7 +321,41 @@ def isolation_report(cand: dict, base: dict) -> dict:
     return {'identical_games': identical, 'games': len(cand), 'left_before_first_switch': early}
 
 
-def evaluate(runs: list[dict], solved: dict) -> dict:
+def run_off_path_tests() -> dict:
+    """The off-path unit tests of the candidate (attack off = the base's moves, the cooldown, the identity)."""
+    import os
+    import subprocess
+
+    env = {**os.environ, 'PYTHONPATH': os.pathsep.join([str(ROOT / 'src'), str(ROOT)])}
+    done = subprocess.run([sys.executable, '-m', 'unittest', OFF_PATH_TESTS], cwd=ROOT, env=env,
+                          capture_output=True, text=True)
+    tail = (done.stderr or done.stdout).strip().splitlines()[-3:]
+    return {'tests': OFF_PATH_TESTS, 'passed': done.returncode == 0, 'tail': tail}
+
+
+def isolation(cand: dict, base: dict, off_path: dict) -> dict:
+    """Items 1-5 are checked on input (``check_run``, ``check_sources``: any failure refuses the summary);
+    6 and 7 decide the validity of the arena: either failing makes it INVALID (no ADOPT / REJECT)."""
+    split = left_before_first_switch(cand, base)
+    items = {'frozen configuration': 'PASS', 'runtime identities': 'PASS', 'canonical factory': 'PASS',
+             'candidate sources': 'PASS', 'attack step records': 'PASS',
+             'off-path unit tests': 'PASS' if off_path.get('passed') else 'FAIL',
+             'left_before_first_switch == 0': 'PASS' if not split['left_before_first_switch'] else 'FAIL'}
+    return {'verdict': 'PASS' if all(v == 'PASS' for v in items.values()) else 'INVALID', 'items': items,
+            'off_path': off_path, **split}
+
+
+def decide(gates: dict) -> dict:
+    if gates['isolation']['verdict'] != 'PASS':
+        bad = [k for k, v in gates['isolation']['items'].items() if v != 'PASS']
+        return {'decision': 'INVALID', 'reasons': [f'isolation: {k} FAIL' for k in bad] +
+                ['the arena is not valid: no ADOPT / REJECT from it; find the cause first']}
+    failed = [k for k, g in gates.items() if g['verdict'] != 'PASS']
+    return {'decision': 'REJECT' if failed else 'ADOPT',
+            'reasons': [f'{k} {gates[k]["verdict"]}' for k in failed] or ['every gate PASS']}
+
+
+def evaluate(runs: list[dict], solved: dict, off_path: dict) -> dict:
     for run in runs:
         check_run(run)
     by_arm = {a: sorted(r['seed'] for r in runs if r['arm'] == a) for a in (BASELINE, CANDIDATE)}
@@ -336,16 +378,11 @@ def evaluate(runs: list[dict], solved: dict) -> dict:
     counts = frequency_counts(rows, solved)
     gates = {'strength': strength(cand, base), 'cost': e2.cost(cand, base),
              'soundness': soundness(rows, solved, safety), 'frequency': frequency(counts),
-             'isolation': {'verdict': 'PASS', 'checked': ['configuration', 'runtime identities', 'canonical factory',
-                                                         'candidate sources', 'attack step records'],
-                           'off_path': 'tests.test_tb_v2_value_e4v2'}}
-    failed = [k for k, g in gates.items() if g['verdict'] != 'PASS']
-    verdict = {'decision': 'REJECT' if failed else 'ADOPT',
-               'reasons': [f'{k} {gates[k]["verdict"]}' for k in failed] or ['every gate PASS']}
+             'isolation': isolation(cand, base, off_path)}
+    verdict = decide(gates)
     minutes = {arm: round(sum(g['game_seconds'] for g in a['games']) / 60, 1) for arm, a in arms.items()}
     return {'seeds': list(SEEDS), 'arms': tables, 'gates': gates, 'verdict': verdict,
             'report': {'game_minutes': minutes, 'e4v2_steps': steps(arms[CANDIDATE]['games']),
-                       'isolation': isolation_report(cand, base),
                        'frequency_per_opening': {f'{k[0]}/{k[1]}': v for k, v in sorted(counts.items())}}}
 
 
@@ -454,7 +491,7 @@ def main(argv=None) -> int:
             print(f'[h7-e4v2-arena] shard {args.shard}: {len(shard)} positions solved into {args.jsonl}', flush=True)
             return 0
         solved = solve_all(tasks, args.fast, args.workers, args.jsonl, fp, args.merge)
-        result = evaluate(runs, solved)
+        result = evaluate(runs, solved, run_off_path_tests())
     except ValueError as exc:
         parser.error(str(exc))
     payload = {'format': FORMAT, 'git_commit': _git_commit(), 'git_dirty': _git_dirty(), 'rules': RULES,

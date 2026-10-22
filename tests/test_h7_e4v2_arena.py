@@ -13,6 +13,7 @@ from scripts import summarize_h7_e4 as arena
 OPENING = [[7, 7], [7, 8]]
 SWITCH = [14, 14]  # E's attack move at ply 6 where it switches
 LENGTH = 12
+OFF_OK = {'tests': arena.OFF_PATH_TESTS, 'passed': True, 'tail': ['OK']}
 
 
 def line(pair):
@@ -76,7 +77,7 @@ def solved(rs, **kw):
 class ArenaTest(unittest.TestCase):
     def test_adopt_when_every_gate_passes(self):
         rs = runs(switch_pairs=range(0, 50, 2))  # E punishes on 25 of 50 openings per seed, B never
-        out = arena.evaluate(rs, solved(rs))
+        out = arena.evaluate(rs, solved(rs), OFF_OK)
         g = out['gates']
         self.assertEqual(out['verdict']['decision'], 'ADOPT', out['verdict'])
         # the events: ply 6 of every black game (white moves on odd plies), 50 pairs x 2 seeds
@@ -88,8 +89,38 @@ class ArenaTest(unittest.TestCase):
                          (50, 50, []))
         self.assertEqual(g['cost']['ratio'], 1.0)
         self.assertEqual(out['report']['e4v2_steps']['skips'], {})
-        self.assertEqual(out['report']['isolation']['left_before_first_switch'], [])
-        self.assertEqual(out['report']['isolation']['identical_games'], 150)
+        iso = g['isolation']
+        self.assertEqual((iso['verdict'], iso['left_before_first_switch'], iso['identical_games']), ('PASS', [], 150))
+        self.assertEqual(set(iso['items'].values()), {'PASS'})
+        self.assertEqual(len(iso['items']), 7)
+
+    def test_invalid_when_e_leaves_b_before_its_first_switch(self):
+        rs = runs(switch_pairs=range(0, 50, 2))
+        for r in rs:  # E's black game of pair 1, seed 8441: a different move at ply 4, before any switch
+            if r['arm'] == arena.CANDIDATE and r['seed'] == 8441:
+                g = next(g for g in r['games'] if g['pair'] == 1 and g['v8_color'] == 'black')
+                g['moves'][4] = SWITCH
+                g['v8_moves'][1]['played'] = SWITCH
+        out = arena.evaluate(rs, solved(rs), OFF_OK)
+        iso = out['gates']['isolation']
+        self.assertEqual((iso['verdict'], iso['left_before_first_switch']), ('INVALID', ['8441/1/black@4']))
+        self.assertEqual(out['verdict']['decision'], 'INVALID')  # not REJECT: no adoption verdict at all
+        # every other gate still passes, and a failing one does not turn INVALID into REJECT
+        self.assertEqual({k: g['verdict'] for k, g in out['gates'].items() if k != 'isolation'},
+                         dict.fromkeys(('strength', 'cost', 'soundness', 'frequency'), 'PASS'))
+        rs2 = runs(switch_pairs=range(0, 50, 2), seconds=1.6)
+        out = arena.evaluate(rs2, solved(rs2), {**OFF_OK, 'passed': False})
+        self.assertEqual(out['verdict']['decision'], 'INVALID')
+        self.assertEqual(out['gates']['isolation']['items']['off-path unit tests'], 'FAIL')
+
+    def test_a_switch_then_divergence_is_valid(self):
+        rs = runs(switch_pairs=[3])
+        for r in rs:  # after E's switch at ply 6 the games may differ in any way
+            if r['arm'] == arena.CANDIDATE:
+                g = next(g for g in r['games'] if g['pair'] == 3 and g['v8_color'] == 'black')
+                g['moves'][9] = [0, 14]
+        iso = arena.evaluate(rs, solved(rs), OFF_OK)['gates']['isolation']
+        self.assertEqual((iso['verdict'], iso['left_before_first_switch']), ('PASS', []))
 
     def test_event_positions_exclude_the_one_after_the_opening(self):
         rows = arena.positions(runs())
@@ -110,29 +141,29 @@ class ArenaTest(unittest.TestCase):
 
     def test_rejects(self):
         rs = runs(switch_pairs=range(0, 50, 2))
-        out = arena.evaluate(rs, solved(rs, b_punish=True))  # B punishes every event as well
+        out = arena.evaluate(rs, solved(rs, b_punish=True), OFF_OK)  # B punishes every event as well
         self.assertEqual(out['gates']['frequency']['verdict'], 'FAIL')
         self.assertEqual(out['verdict']['decision'], 'REJECT')
         rs = runs(switch_pairs=range(0, 50, 2), loss_pairs=range(10))
-        self.assertEqual(arena.evaluate(rs, solved(rs))['gates']['strength']['verdict'], 'FAIL')
+        self.assertEqual(arena.evaluate(rs, solved(rs), OFF_OK)['gates']['strength']['verdict'], 'FAIL')
         rs = runs(switch_pairs=range(0, 50, 2), seconds=1.6)
-        self.assertEqual(arena.evaluate(rs, solved(rs))['gates']['cost']['verdict'], 'FAIL')
+        self.assertEqual(arena.evaluate(rs, solved(rs), OFF_OK)['gates']['cost']['verdict'], 'FAIL')
         rs = runs(switch_pairs=range(0, 50, 2))
         bad = solved(rs)
         for row in bad.values():
             for k in row['checks']:
                 if k == json.dumps(SWITCH):
                     row['checks'][k] = {'outcome': 'MISS'}
-        out = arena.evaluate(rs, bad)
+        out = arena.evaluate(rs, bad, OFF_OK)
         self.assertEqual((out['gates']['soundness']['verdict'], len(out['gates']['soundness']['miss'])), ('FAIL', 50))
         self.assertEqual(out['verdict']['decision'], 'REJECT')
 
     def test_refusals(self):
         good = runs()
         with self.assertRaises(ValueError):  # a seed missing
-            arena.evaluate(good[:1] + good[2:], solved(good))
+            arena.evaluate(good[:1] + good[2:], solved(good), OFF_OK)
         with self.assertRaises(ValueError):  # unsolved positions
-            arena.evaluate(good, {})
+            arena.evaluate(good, {}, OFF_OK)
         for change in ({'fast': {'requested': 'fast3'}}, {'pairs': 25}, {'value_device': 'cpu'},
                        {'canonical_factory': None}, {'runtime': {'engine_hash': rt.ENGINE_HASH, 'runtime_hash': 'x'}},
                        {'v8_config': {**TB_V2_VALUE, **ENGINE_OPTIONS}}):
@@ -182,7 +213,8 @@ class ArenaTest(unittest.TestCase):
                 paths.append(str(p))
             jsonl = Path(tmp) / 'pos.jsonl'
             argv = ['--runs', *paths, '--fast', 'off', '--jsonl', str(jsonl)]
-            with mock.patch.object(arena, 'position_task', stand_in):
+            with mock.patch.object(arena, 'position_task', stand_in), \
+                    mock.patch.object(arena, 'run_off_path_tests', lambda: OFF_OK):
                 self.assertEqual(arena.main(argv + ['--output', str(Path(tmp) / 'a.json')]), 0)
                 first = len(calls)
                 lines = jsonl.read_text(encoding='utf-8').splitlines()
@@ -214,7 +246,8 @@ class ArenaTest(unittest.TestCase):
                 paths.append(str(p))
             base = ['--runs', *paths, '--fast', 'off']
             parts = [str(Path(tmp) / f'part_{k}.jsonl') for k in range(2)]
-            with mock.patch.object(arena, 'position_task', stand_in):
+            with mock.patch.object(arena, 'position_task', stand_in), \
+                    mock.patch.object(arena, 'run_off_path_tests', lambda: OFF_OK):
                 for k in range(2):
                     self.assertEqual(arena.main(base + ['--shard', f'{k}/2', '--jsonl', parts[k]]), 0)
                 solved_once = len(calls)
