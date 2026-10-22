@@ -4642,6 +4642,129 @@ python -u scripts/summarize_h7_e4.py --runs $RUNS --workers 10 --fast fast4 \
   - `gates`의 각 `verdict`, `diff`, `ci95`, `ratio`, `rate`, `miss`
   - `gates.isolation`: `items` 7개가 모두 PASS이고 `left_before_first_switch`가 비어 있어야 한다. `INVALID`면 판정하지 않고 원인부터 본다.
 
+## E4-v2 최종 arena: ADOPT (2026-10-22, `docs/h7/h7_e4v2_arena.json`)
+
+**상태: 채택 판정 완료 → canonical 승격 대기.** 코드상 `TB-V2-Value+E4v2`는 아직 후보 identity다. canonical은 아래 승격 단계가 끝난 뒤다.
+
+**검증**
+- 요약 실행: 코드 `e0f926f`, `git_dirty: false`
+- 대조한 것
+  - `candidate_hash` `f5e43aca…`: 현재 동결 후보와 같다.
+  - 기준 solver 결과 파일 SHA: `h7_e4v2_reference_4m.json`과 같다.
+  - fingerprint: 현재 파일로 다시 계산한 값과 같다(4M, 10M 검사, fast4, 기준 solver / truth / 공격 / manifest SHA).
+- 판정 형식: `verdict` = ADOPT, "every gate PASS"
+- 아래 수치는 모두 결과 파일에서 다시 읽은 값이다. run 파일 4개는 `runs/`에 있어 그 SHA만 기록돼 있다.
+
+**gate**
+
+| gate | 결과 | 값 |
+|---|---|---|
+| 유효성 / 격리 | PASS | 7 / 7. off 경로 시험 13개 통과. `left_before_first_switch` 없음 |
+| 기력 | PASS | E − B +0.040, CI95 [+0.0175, +0.0650](100 opening, 200쌍) |
+| 비용 | PASS | E / B 0.941(7,858.1초 / 8,355.0초) |
+| 건전성 | PASS | 공격 WIN 132개 모두 PUNISH. MISS 0, UNCLEAR 0. 안전 위반 B 0 / E 0 |
+| 빈도 | PASS | B 1,184 / 1,354 = 0.8744, E 1,206 / 1,262 = 0.9556. 차이 +0.0812, CI95 [+0.0625, +0.1020]. degenerate 0 |
+
+- 기력
+  - B 178승 9무 13패(0.912), E 188승 5무 7패(0.953)
+  - 색별: 흑 0.905 → 0.945, 백 0.920 → 0.960
+- 보조(판정 아님)
+  - 상대 VCT 뒤 패배 11 → 6
+  - `proven_loss_in_lost_position_per_move` 0.0044 → 0.0025
+- 빈도의 seed별 값(보조): 8441 0.8927 → 0.9493, 8442 0.8565 → 0.9616. 두 seed 모두 같은 방향이다.
+
+**E4-v2 단계 (E의 3,201수가 정확히 한 경로씩)**
+- 공격 1,693(52.9%)
+- 생략: route 1,155, 상대 VCF 문턱 228, cooldown 125
+- 공격 중 WIN 132(7.8%), 수 교체 91(공격의 5.4%, 전체 수의 2.84%), 예산 소진 150(8.9%)
+- 공격 시간 합 2,256.6초
+- 200대국 중 109대국은 B와 끝까지 같고, 91대국이 갈라졌다.
+  - 교체는 모두 91번이다. 갈라진 대국은 첫 교체 전에는 B와 같았다(유효성 7).
+  - 그래서 갈라진 91대국마다 교체가 정확히 한 번씩이다. 첫 교체 뒤에 다시 교체한 대국은 없다.
+- WIN 132 중 41개는 기준 엔진이 이미 같은 수를 골랐다. 증명이 기준 엔진의 선택을 확인한 경우다.
+
+**초안 검토**
+- 초안의 수치는 모두 결과 파일과 같다. 결론(ADOPT, 승격 대기 구분)도 맞다. 고치거나 더할 것은 다섯 가지다.
+1. **빈도의 UNCLEAR**: 응징 검사가 UNCLEAR인 사건이 B 8, E 5개 있다. 규칙대로 응징이 아닌 것으로 셌다.
+   - B의 8개가 모두 PUNISH였다고 해도 B는 0.8804가 되고, 차이 +0.0752가 남는다. 판정은 바뀌지 않는다.
+2. **빈도는 사건 단위 비율이다.**
+   - 100 opening 중 36개는 두 arm의 사건·응징 수가 같다. 차이는 대부분 나머지 64 opening에서 나온다.
+   - B가 응징을 놓치면 대국이 이어지고, 다음 사건이 다시 생긴다. E는 응징하고 곧 끝난다. 그래서 "+8.12%p"는 "사건당 응징 비율"이다. "대국당 기회를 잡은 비율"이 아니다.
+   - 사전 고정 지표가 원래 이 정의다. 판정에는 문제가 없다. 해석할 때만 이렇게 읽는다.
+3. **arena 비용 0.941과 COSTTEST 1.4617은 수치로도 맞는다.**
+   - `time_ratio`(V8 초 / 상대 초)는 B 1.37, E 1.93이다. 상대 수 시간 합은 B 약 6,099초, E 약 4,072초다. E 대국의 상대 수가 약 33% 적다는 뜻이다(상대 수당 시간이 비슷하다고 보면).
+   - 그러면 자기 수 하나당 비용 E / B는 약 0.941 / 0.668 ≈ 1.41이다. COSTTEST의 1.46과 가깝다.
+   - E의 tree 수 1,664 대 B 2,297도 같은 방향이다.
+   - 결론: 수당 추가 비용(약 1.4배)은 그대로 있다. 대국이 짧아져 대국 전체 계산량이 늘지 않았다. **웹처럼 수마다 deadline이 있는 곳에서는 0.941이 아니라 수당 비용(그리고 꼬리)이 기준이다.**
+4. 기력 하한 +0.0175 > 0은 사전 gate(비열등, ≥ −0.05)가 아니라 같은 자료의 기술적 관찰이다. 우월성은 사전 가설이 아니었다. 그래서 "이 arena에서 양의 차이가 관측됐다"까지만 쓴다. 초안 표현이 이미 그렇다.
+   - 초안의 "기존 엔진보다 5% 이상 약해지지 않았다"는 "점수 0.05(5%p) 이상"이 정확하다.
+5. 대국 분(240.9 / 198.8)은 상대 시간까지 포함한 전체 대국 시간이다. V8 시간만은 위 비용 행이다.
+
+**E4 흐름 (사전 규칙 그대로, 결과를 본 뒤 조정 없음)**
+
+```
+E4-v1 200k/vcf_threat/all   DEV 30/41, cost pre-check 1.7752 [1.6677, 1.9126]   -> REJECT
+E4-v2 DEV                   150k/cd/killer                                       -> SELECTED
+candidate freeze            6ea3f3c                                              -> PASS
+reference 4M                candidate WIN 21/21, false proof 0                   -> FREEZE
+COSTTEST                    1.4617 [1.3956, 1.5518]                              -> PROCEED (not a cost pass)
+final arena 8441 / 8442     validity, strength, cost, soundness, frequency       -> ADOPT
+```
+
+## 다음 단계 제안: E4-v2 canonical 승격 (명시적 엔진 동결 단계)
+
+원칙은 **행동 불변**이다. 수, 예산, cooldown, killer, 문턱, route를 하나도 바꾸지 않는다. 바뀌는 것은 identity와 검사 장치뿐이다. 그래서 같은 수 동등성 gate로 확인한다.
+
+**1. 새 엔진 identity (이름 제안: `TB-V3-Value`)**
+- 새 동결 파일 `src/analysis/tb_v3_value.py`
+  - 리터럴: TB-V2-Value 설정 + E4-v2 `ATTACK`
+  - 계보: 채택 근거 `candidate_hash f5e43aca…`, `h7_e4v2_arena.json` SHA
+- "다음 엔진 동결 때 반드시 넣을 것"(동결 보증 점검 절)을 이번에 넣는다.
+  - `config_hash`에 policy checkpoint / metadata SHA, value `best.pt` / `best.json` SHA
+  - code manifest SHA를 identity에 포함
+  - 새 `make_agent`는 fail-closed: policy / value / 실행판 소스 / binding / manifest를 안에서 검사한다(지금 `track_b_guard`가 바깥에서 하는 일).
+- 실행판: `tb_v3_runtime`(fast4). native / binding SHA는 그대로, 새 runtime 해시
+- 기존 파일(`tb_v2_value.py`, `tb_v2_runtime.py`, `tb_v2_value_e4v2.py`, 공격 파일)은 고치지 않는다. 새 파일이 import해서 쓴다.
+
+**2. 동결 목록과 가드**
+- code manifest를 새로 쓴다(`--write-manifest`, 이 단계에서만). 새 엔진의 import closure에 공격 파일이 들어간다.
+- CLAUDE.md
+  - 새 동결 파일을 추가한다.
+  - E4-v2 후보 잠금 줄을 "TB-V3-Value에 동결"로 바꾼다.
+- `check_track_b_frozen.py`가 새 엔진을 검사한다.
+- 벤치마크 arm(예: `puct_value_vct2_50k_tt_v3`)과 상대 이름(`v8:` 계열)을 추가한다. self-play / 웹은 새 factory만 쓴다.
+- 결정 필요: `make_canonical_agent`를 새 엔진으로 바꿀지, 아니면 `make_canonical_agent_v3`를 따로 두고 기존 것은 기록 재현용으로 남길지
+  - 제안: 이름을 버전으로 고정하고(`v2`, `v3`) "canonical"은 한 곳(상수)에서만 가리킨다.
+
+**3. 같은 수 동등성 gate (승격의 판정)**
+- arena E 대국 200개(3,201수)를 새 factory로 다시 둔다.
+  - 대국마다 agent 하나, 같은 seed(`derive_seed(seed, 'v8')`)를 쓴다. 기록된 기보 위에서 자기 수 차례마다 고른다.
+- 판정: 3,201수 모두 같은 수, 같은 E4-v2 단계 기록(생략 사유, WIN, 교체)이면 PASS다. 하나라도 다르면 승격하지 않고 원인을 본다.
+- 근거: CUDA 반복은 차이 0이었고, arena 유효성 7도 통과했다. 기록과 같아야 한다.
+- 비용: arena E의 V8 시간 약 2.2시간. 대국 병렬(8 worker)이면 1시간 이내
+- 보조: B 대국 200개를 기존 canonical로 다시 둬서 같은 방식으로 확인한다(재현성 대조군).
+
+**4. 승격 뒤 (예전에 고정한 순서)**
+- SER5 시간 2회
+  - 기준: 30초 초과 0, 최대 ≤ 25초
+  - E4-v2는 수당 꼬리 비용을 더한다(COSTTEST 공격 최대 5.7초, 데스크톱). 그래서 다시 재야 한다.
+  - SER5 실패는 웹 배포만 막는다. 엔진 채택은 그대로다.
+- CPU 인증: 새 seed 8451 / 8452로 새 엔진에 대해 한다.
+- 웹(`feat/Web_SER5`): 웹은 deadline이 있는 VCF 경로를 쓴다. E4-v2 공격에도 deadline 판을 만들어야 한다. deadline이 없을 때 같은 수인지 확인하는 G3 방식이다. 별도 단계로 둔다.
+- H7-c1: self-play는 새 factory로만 만든다. policy target 계약(E4 PROVEN_WIN 덮어쓰기 = one-hot)은 이미 고정돼 있다.
+
+**이번 승격에 넣지 않는 것 (행동이 바뀌므로 다음 proof cycle)**
+- `ThreatSolver` 판 가득 참 결함(`expectedFailure` 시험)
+- `puct_c` / `child_priors` 유한성 검사
+- V8-B 후보 범위, 호출 한도
+
+**결정이 필요한 것**
+1. 새 엔진 이름(`TB-V3-Value` 제안)과 파일 구성(새 identity 파일 + 새 runtime 파일)
+2. canonical factory 이름 정책(버전 고정 이름 + canonical 상수)
+3. 승격 gate = arena E 200대국 재생, 3,201수 같은 수 + 같은 단계 기록(보조: B 200대국 재생)
+4. identity 강화 범위(위 1의 네 항목)를 이번에 모두 넣는 것
+5. 승격 뒤 순서: SER5 시간 → CPU 인증 8451 / 8452 → H7-c1(웹 deadline 공격은 별도로 병행)
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
