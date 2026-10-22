@@ -4258,6 +4258,125 @@ python -m unittest tests.test_track_b_guard
 - 기대: 모든 항목 PASS. policy `efee4832…`, value `a0fcccc4…`
 - FAIL이면 E4-v2 DEV 실행 전에 원인을 먼저 본다. DEV 단계 명령은 모델을 쓰지 않으므로 FAIL과 무관하게 돌릴 수 있다. 다만 사전 검사와 arena는 이 검사가 PASS여야 한다.
 
+## H7-E4-v2 DEV / COSTDEV 결과: `150k/cd/killer` 선택 (2026-10-22, 결과 커밋 `77901c7`)
+
+**아직 채택이 아니다.** 결과 전에 고정한 DEV 절차로 후보 하나를 고른 단계다(DEV-SELECTED).
+
+**검산 (`docs/h7/h7_e4v2_dev.json`, `docs/h7/h7_e4v2_calibration.json`)**
+- 코드 `7caf38a`, `fast4`, 제한 실행 아님
+- corpus / truth / baseline v2 / 사전 검사 / 보정 파일 SHA가 커밋 파일과 같다.
+- 보정 파일과 DEV의 코드 fingerprint가 같고, 둘 다 fast4다.
+- 비용 모형: v1 공격 1,858회, R² 0.987
+- 데스크톱 보정: plain 1.028, killer 1.022, 판별 0.898 → 상대 보정 killer **0.9936**, 판별 **0.8735**
+- **COSTTEST 국면 파일(`docs/h7/h7_e4v2_costtest_positions.json`)은 아직 커밋되지 않았다.** 1단계가 빠졌다.
+  - 이 파일은 E2 holdout 대국에서 규칙으로만 정해지고 E4-v2 결과와 무관하다. 그래서 지금 만들어도 누출은 없다.
+  - 공식 사전 검사 전에 생성·커밋한다.
+
+**결과**
+
+| 조합 | DEV 응징 | COSTDEV 비율 | COSTDEV 수 바뀜 | COSTDEV 공격 / cooldown / 문턱 생략 | 선택 |
+|---|---:|---:|---:|---|---|
+| 200k/nocd/plain | 30 / 41 | 1.5498 | 51 | 1,518 / 0 / 340 | 비용 탈락 |
+| 200k/nocd/killer | 30 / 41 | 1.5177 | 56 | 1,518 / 0 / 340 | 비용 탈락 |
+| 200k/cd/plain | 30 / 41 | 1.4190 | 48 | 1,425 / 109 / 324 | 비용 탈락 |
+| 200k/cd/killer | 30 / 41 | 1.4097 | 53 | 1,442 / 88 / 328 | 비용 탈락 |
+| 150k/nocd/plain | 30 / 41 | 1.4581 | 47 | 1,518 / 0 / 340 | 비용 탈락 |
+| 150k/nocd/killer | 30 / 41 | 1.4333 | 51 | 1,518 / 0 / 340 | 비용 탈락 |
+| 150k/cd/plain | 30 / 41 | **1.3457** | 42 | 1,413 / 120 / 325 | 통과 |
+| **150k/cd/killer** | **30 / 41** | **1.3407** | **47** | 1,430 / 101 / 327 | **선택** |
+
+- 8조합 모두 거짓 증명 0, 모순 0, 얕은 회귀 0, 미검증 0이다. 조합을 가른 것은 비용뿐이다.
+- 선택 규칙 검산
+  - 1–4를 통과한 조합은 `150k/cd/plain`(1.3457), `150k/cd/killer`(1.3407) 둘이다.
+  - 둘 다 30으로 최대다. 비용이 낮은 `150k/cd/killer`가 선택됐다. 결과 파일의 `selection`과 같다.
+- sanity: `200k/nocd/plain` 1.5498(예상 1.545), `200k/cd/plain` 1.4190(예상 1.414). 재생과 비용 모형이 앞선 기록 분석과 0.005 안에서 맞는다.
+
+**초안 검토: 고친 것과 더한 것**
+1. **"30 / 41이 같다"는 같은 30국면이라는 뜻이 아니다.** 응징 집합을 직접 비교했다.
+   - plain 4조합: E4-v1 선택 후보와 **정확히 같은 30국면**이다.
+   - killer 4조합(선택 후보 포함): `c94bc588…:16`을 새로 응징하고 `28f3cce0…:26`을 놓친다.
+     - killer 순서가 예산 배분을 바꾼 결과다.
+     - `c94b…:16`은 v1에서 400k에서만 풀리던 국면이다.
+   - 따라서 선택 후보는 v1과 같은 개수이고, 1국면이 바뀐 30국면이다.
+2. 비용 비교의 단위
+   - E4-v1 1.7752는 실측이다. E4-v2 1.3407은 모형 추정이다.
+   - 같은 모형은 v1 공격을 합계 비율 1.000으로 재현한다. 그래서 "추가 비용 +77.5% → +34.1%(약 56% 감소)"는 모형 기준으로 같은 잣대의 비교다.
+   - 공식 값은 COSTTEST 실측이다.
+3. killer의 효과
+   - 모든 짝에서 비용이 조금 낮고 수 바뀜이 많다.
+   - 최종 두 후보의 차이는 0.005뿐이다. 선택 이유는 동률 규칙이다. "killer가 크게 좋다"는 결론은 아니다.
+4. 모순 0의 뜻: truth NOT_FOUND는 같은 범위를 전폭으로 끝까지 본 결과다. 그래서 0은 실제 일치다(E4-v1 절과 같다).
+
+**기준 solver 포함 예측 (사전 규칙 적용)**
+- 선택 후보가 DEV에서 WIN을 증명한 국면: 21개
+- 동결된 기준 solver 2M(`docs/h7/h7_e4_reference_2m.json`)이 WIN으로 증명한 것: 20개
+- 빠진 국면: **`c94b…:16`**(기준 2M에서 예산 소진)
+- 규칙: "빠지면 4M으로 한 번, 그래도 빠지면 조사, arena 보류"
+- 그래서 **기준 solver를 4M으로 한 번 올려 다시 검사**해야 한다. 4M이 21개를 모두 포함하면 4M으로 동결한다.
+  - arena 사건 추출 비용은 약 2배가 된다(국면당 평균 20–40초 예상, 12 worker로 수 시간).
+
+## 코드 감사 반영 (2026-10-22, 사실 확인 후)
+
+| # | 지적 | 판단 | 조치 |
+|---|---|---|---|
+| 1 | E4-v2 fingerprint가 manifest **파일**의 SHA만 묶고 실제 엔진 파일 상태는 묶지 않는다. `h7_e4v2_calibrate.py`, `h7_e4_truth.py`(WIN 재검사의 solver)도 빠져 있다 | **사실**. 이번 실행은 시작 전 검사기 통과로 안전했다. | `code_shas`가 `experiment`(실험 코드 9개, 보정 / truth 도구 포함)와 `engine`(manifest가 가리키는 56개 파일의 **현재** SHA)를 함께 기록한다. 시험: 엔진 파일 SHA 하나만 달라도 resume 거부, 보정 도구 SHA가 다르면 보정 파일 거부 |
+| 2 | `ThreatSolver`: 막는 수가 마지막 합법점을 채워 무승부가 되면 UNSAFE로 판정한다 | **실제 결함(재현됨)**. 판이 W 하나만 남은 fixture에서 `after_move` = `UNSAFE ('block', W)`, 실제로는 막은 뒤 `done` + 승자 없음(무승부). 원인: 끝난 판의 `decision`이 빈 Counter를 내고 `decision_status`가 UNSAFE로 읽는다. 일어나는 조건은 판이 가득 차거나 흑에게 금수점만 남는 경우뿐이다. corpus에서는 나올 수 없다(웹 최대 73수). | `threats.py`는 동결이므로 고치지 않는다. `tests/test_known_defects.py`에 재현 fixture와 `expectedFailure`(올바른 기대값 SAFE)를 남겼다. 다음 proof cycle에서 "막은 뒤 `done`이면 SAFE"로 고친다. 고쳐지면 시험이 예상 밖 통과로 알려 준다. |
+| 3 | `mcts_v8`: `puct_c`가 inf도 통과 | 사실(canonical은 1.5 고정이라 영향 없음) | 다음 비동결 validator에서 `isfinite` |
+| 4 | E4-v2 실행 wrapper에서 Cooldown을 수마다 새로 만들면 안 된다 | 맞다(아직 구현 전) | 후보 동결 때 대국당 하나를 유지하는 통합 시험을 필수로 둔다(아래) |
+| 5 | `legal_moves`와 `has_legal_move`의 불변식 | 문제 없음 | 무작위 대국 30판, 매 수에서 일치 시험 추가 |
+| 6 | `child_priors`의 inf / NaN | 사실(정상 `RootPolicy`에서는 영향 없음) | 다음 비동결 버전에서 finite 검사 |
+| 7–8 | value leaf 캐시 키, VCF 표 | 문제 없음 | 다음 엔진 동결 때 identity 내부화(앞 절 목록) |
+
+## E4-v2 다음 단계 제안 (2026-10-22, 승인 대기)
+
+고정된 순서(후보 동결 → 기준 solver → COSTTEST → arena)를 그대로 따른다. 구체안은 다음과 같다.
+
+**1. 후보 동결: `src/analysis/tb_v2_value_e4v2.py` (이름 `TB-V2-Value+E4v2`, 후보 identity)**
+- 기준 엔진 해시 `256e5abe…`
+- 리터럴 설정
+  - `150k` / 15k 호출 / VCF 한 번 20k
+  - cooldown on, killer on
+  - G1 2만 노드
+  - route stage4 / 5 / tree
+- 소스 SHA 잠금: `e4v2_attack.py`, `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`
+- 후보 해시, runtime 해시
+- `E4v2AttackAgent`
+  - B가 먼저 둔다. 그다음 `e4v2_attack.decide`로 공격한다.
+  - **`Cooldown`은 agent 하나에 하나이고 대국 내내 유지한다.** 새 대국은 수순 접두어로 구별한다.
+- 시험
+  - OFF 격리(TB-V2-Value와 같은 수)
+  - 한 대국 안에서 소진 → 다음 수 생략이 실제 agent로 재현됨
+  - 다른 대국의 상태가 넘어오지 않음
+  - DEV 재생(`replay`)과 agent의 판정 순서가 같음
+- 만드는 경로: `track_b_guard.make_canonical_agent` → wrap. 벤치마크 arm `puct_value_vct2_50k_tt_e4v2`(canonical 경로 전용)
+
+**2. 기준 solver 포함 검사(4M)**
+- `h7_e4_reference.py`를 E4-v2 DEV 결과에서 후보 WIN 집합을 읽도록 넓힌다(cooldown 재생 포함). 기준 solver 코드(`e4_reference.py`)는 그대로 둔다.
+- 2M은 위 예측대로 21 중 20이다. 그래서 4M을 돌린다.
+  - 21개 전부 포함하고 거짓 증명이 0이면 4M으로 동결한다.
+  - 아니면 조사하고 arena를 보류한다.
+- 모델이 필요 없다. 컨테이너에서 약 15–30분
+
+**3. COSTTEST 실측 (`scripts/h7_e4v2_precheck.py`, 새로 만듦)**
+- COSTTEST 국면 파일을 먼저 생성·커밋한다.
+- 대국마다 수 순서대로 잰다.
+  - 대국마다 후보 agent 하나(Cooldown 유지)
+  - 국면마다 B는 새로 만든다(cold, v1과 같음)
+  - B의 route는 TB-V2-Value를 실제로 돌려 얻는다(`source_recorded`는 쓰지 않는다).
+- 같은 호출 안에서 B 시간과 E4 추가 시간(판별 + 공격)을 나눠 잰다.
+- 대국 cluster bootstrap, 하한 > 1.5 → REJECT
+- 데스크톱 1 프로세스, 약 2시간
+
+**4. arena 8441 / 8442**
+- B(`puct_value_vct2_50k_tt`)와 E(`_e4v2`), 각 50 pair, `v8:full`, fast4, CUDA
+- 둘 다 canonical factory로 만든다.
+- `summarize_h7_e4.py`: 기력, 비용, 건전성(공격으로 바꾼 수 전부 truth 재검사), 빈도(기준 solver 4M 사건 + opening cluster bootstrap), 격리
+
+**결정이 필요한 것**
+1. 위 동결 설계(특히 Cooldown 수명과 그 통합 시험)
+2. 기준 solver 4M 검사를 사전 규칙대로 진행
+3. COSTTEST 사전 검사의 측정 방식(대국 순서, 대국당 후보 agent 하나, 국면마다 B는 cold)
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

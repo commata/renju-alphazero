@@ -51,17 +51,23 @@ COST_MAX = 1.35
 TIE = 1
 
 
-# The files a computed row or a calibration depends on: the attack, its proof and solver, the check of a WIN,
-# this tool (replay, cost model) and the canonical engine code (manifest: mcts_v8, threats, search, ...).
+# The files a computed row or a calibration depends on: the attack, its proof and solver, the check of a WIN
+# and its truth solver, this tool (replay, cost model) and the calibration; and, file by file, the current
+# SHA-256 of every file of the canonical code manifest (mcts_v8, threats, search, model, rules, ...), so a
+# changed engine file changes the fingerprint even when the manifest itself is unchanged.
 CODE = ('src/analysis/e4v2_attack.py', 'src/analysis/e4_attack.py', 'src/analysis/vct2_attack.py',
-        'src/analysis/selective_vct.py', 'scripts/h7_e4_baseline.py', 'scripts/h7_e4v2_dev.py',
-        'tests/track_b_frozen.sha256')
+        'src/analysis/selective_vct.py', 'scripts/h7_e4_baseline.py', 'scripts/h7_e4_truth.py',
+        'scripts/h7_e4v2_dev.py', 'scripts/h7_e4v2_calibrate.py', 'tests/track_b_frozen.sha256')
 
 
 def code_shas() -> dict:
     import hashlib
 
-    return {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in CODE}
+    from analysis.track_b_guard import read_manifest
+
+    sha = (lambda name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest())
+    return {'experiment': {name: sha(name) for name in CODE},
+            'engine': {name: sha(name) if (ROOT / name).exists() else None for name in read_manifest()}}
 
 
 # -- cost model --------------------------------------------------------------------------------------------

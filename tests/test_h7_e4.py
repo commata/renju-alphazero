@@ -609,14 +609,16 @@ class E4v2Test(unittest.TestCase):
             result = json.loads(out.read_text(encoding='utf-8'))
             lines = (tmp / 'v2.jsonl').read_text(encoding='utf-8').splitlines()
             stale = json.loads(lines[0])
+            code = stale['fingerprint']['code']
             stale['fingerprint'] = {**stale['fingerprint'],
-                                    'code': {**stale['fingerprint']['code'], 'src/analysis/selective_vct.py': 'old'}}
+                                    'code': {**code, 'engine': {**code['engine'], 'src/analysis/threats.py': 'old'}}}
             (tmp / 'v2.jsonl').write_text('\n'.join([json.dumps(stale), *lines[1:]]) + '\n', encoding='utf-8')
             with self.assertRaises(SystemExit):  # a row of other code is refused, not mixed in
                 dev2.main([*argv, '--output', str(tmp / 'v2b.json')])
             cal = {'precheck_sha256': file_sha256(tmp / 'pre.json'), 'fast': 'off', 'code': dev2.code_shas(),
                    'correction': {'killer': 1.0, 'gate': 1.0}}
-            for bad in ({'fast': 'fast4'}, {'code': {**cal['code'], 'src/analysis/e4v2_attack.py': 'old'}}):
+            other = {**cal['code'], 'experiment': {**cal['code']['experiment'], 'scripts/h7_e4v2_calibrate.py': 'old'}}
+            for bad in ({'fast': 'fast4'}, {'code': other}):
                 (tmp / 'cal.json').write_text(json.dumps({**cal, **bad}))
                 with self.assertRaises(SystemExit):  # another mode / other code than this run
                     dev2.main([*argv[:-2], '--calibration', str(tmp / 'cal.json'), '--output', str(tmp / 'v2c.json')])
