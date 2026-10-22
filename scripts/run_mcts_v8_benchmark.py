@@ -343,6 +343,17 @@ def _counterfactual(game: Game, seed: int, ply: int, config: dict) -> dict:
             'seconds': round(perf_counter() - started, 4)}
 
 
+CANONICAL_ARMS = ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4')
+
+
+def is_canonical(arm: str, fast: str, config: dict) -> bool:
+    """Whether this run is the frozen TB-V2-Value + fast4 (or the E4 wrapper on it), config unchanged."""
+    from analysis.tb_v2_value import ENGINE_OPTIONS, TB_V2_VALUE
+
+    return (arm in CANONICAL_ARMS and fast == 'fast4' and {k: config[k] for k in TB_V2_VALUE} == TB_V2_VALUE
+            and all(config.get(k) == v for k, v in ENGINE_OPTIONS.items()))
+
+
 def play_one(task: dict) -> dict:
     """One game; ``task`` is a plain dict so it can cross process boundaries."""
     if task.get('fast', 'off') != 'off':  # exact solver speed-up (hybrid.h6_fast): same moves, nodes and cuts
@@ -353,9 +364,14 @@ def play_one(task: dict) -> dict:
     seed, v8_color = task['seed'], task['v8_color']
     policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
     leaf = load_value(task.get('value_checkpoint'), task.get('value_device', 'cpu')) if needs_value(config) else None
-    v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy, leaf_value=leaf,
-                     root_vcf_table=bool(config.get('root_vcf_table')),
-                     **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    if is_canonical(task['arm'], task.get('fast', 'off'), config):
+        # the frozen canonical: built by its factory after the policy / value / source / code checks
+        from analysis.track_b_guard import make_canonical_agent
+        v8 = make_canonical_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'))
+    else:
+        v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy, leaf_value=leaf,
+                         root_vcf_table=bool(config.get('root_vcf_table')),
+                         **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     if config.get('stage_vct2'):
         from analysis.e3_arms import StageVCT2Agent
         v8 = StageVCT2Agent(v8, config['stage_vct2'])
@@ -836,8 +852,9 @@ def main(argv=None) -> int:
         'value_checkpoint': args.value_checkpoint,
         'value_device': args.value_device if args.value_checkpoint else None,
         # the frozen runtime profile's identities, when this run is it (TB-V2-Value + fast4)
-        **({'runtime': _runtime_provenance(args.value_device, args.arm)}
-           if args.fast == 'fast4' and args.arm in ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4') else {}),
+        **({'runtime': _runtime_provenance(args.value_device, args.arm), 'canonical_factory': True}
+           if is_canonical(args.arm, args.fast, v8_config(args.arm, {**args.search_overrides, **args.arm_overrides}))
+           else {}),
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': opponent_config(args.opponent, args.opponent_overrides),
         'opponent_puct_c': args.opponent_puct_c,

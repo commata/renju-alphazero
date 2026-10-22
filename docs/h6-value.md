@@ -4175,6 +4175,75 @@ python -u scripts/h7_e4v2_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth 
   - `200k/cd/plain`은 "문턱 + cooldown" 추정(1.414) 근처여야 한다.
   - 크게 다르면 재생 코드를 먼저 조사한다.
 
+## 동결 보증 점검: TB-V2-Value + fast4 (2026-10-22)
+
+사용자 검토 8항목을 코드로 확인했다. 동결 파일(`tb_v2_value.py`, `tb_v2_runtime.py`)은 고치지 않았다(canonical identity 보존). 그 바깥에 가드와 통합 검사기를 더했다.
+
+| # | 지적 | 사실 여부 | 조치 |
+|---|---|---|---|
+| 1 | policy SHA가 `ENGINE_HASH`에 없다 | **사실**. `config_hash` payload에 policy가 없다. docstring의 "policy도 identity"와 어긋난다(TB-Engine-v1 / v2도 같다). | 다음 엔진 동결 때 hash에 넣는다. 지금은 가드가 실행 시 검사한다. |
+| 2 | `make_agent`가 policy를 검사하지 않는다 | **사실**. `check_checkpoint`를 import만 한다. `RootPolicy`는 policy-only 여부만 본다. 벤치마크의 `load_policy`도 SHA를 보지 않는다(웹 / 외부 대국 / E1 도구는 본다). | `track_b_guard.check_policy_checkpoint`: 두 SHA와 "그 파일에서 로드했는지"를 검사한다. canonical 경로에 강제한다. |
+| 3 | SHA 없는 value leaf 통과 | **사실**(fail-open). 실제 `ValueLeaf`는 기본으로 V3 SHA를 강제하므로 정상 경로는 막혀 있었다. | `check_leaf`: SHA가 없거나 다르면 거부한다(fail-closed). |
+| 4 | 벤치마크가 동결 factory를 우회한다 | **사실**. `MCTSV8Agent`를 직접 만들었다. | `is_canonical`(arm ∈ value_tt / value_tt_e4, fast4, 설정이 동결값과 정확히 같음)이면 `make_canonical_agent` → `tb_v2_runtime.make_agent`로 만든다. 같은 kwargs이므로 수는 같다. runtime provenance는 이 경우에만 기록한다(`canonical_factory: true`). 설정이 다른 실험 run은 예전처럼 generic이다. |
+| 5 | binding Python SHA를 실행 시 검사하지 않는다 | **사실**. native C는 `build.stale()`가 실행 시 확인하지만, binding 파일은 시험에서만 확인한다. | `check_runtime_sources`(native + binding 파일 SHA)를 canonical 경로와 검사기에서 실행한다. |
+| 6 | `check_frozen_baseline.py`의 범위 | **사실**. v6 / v7 벤치마크 파일만 본다. | `scripts/check_track_b_frozen.py`(아래)를 만들었다. |
+| 7 | V8-B 후보 범위가 좁다 | 사실(이미 관측, completeness) | 엔진은 그대로 둔다. E4 범위에서 다룬다. |
+| 8 | V8-B 호출 10k 한계 | 사실(HOLDOUT 관측) | 그대로 둔다. DEV 근거가 있을 때 다음 cycle에서 다룬다. |
+
+**검토 중 찾은 더 큰 구멍: 엔진 해시는 코드를 덮지 않는다**
+- `config_hash`는 설정, 표, 체크포인트만 해시한다. `mcts_v8.py`, `threats.py`, `puct_value_v1.py`, 모델 코드(`src/model/*`), 규칙(`src/renju/*`)이 바뀌어도 같은 해시가 나온다.
+- CLAUDE.md의 "고치지 말 것"만 있었고 강제하는 장치가 없었다(`src/search`는 `frozen_baseline`이 덮는다).
+- 확인 결과
+  - canonical import closure의 파일 중 TB-V2-Value 동결(`9c94676`) 이후 바뀐 파일은 `src/hybrid/h6_labels.py`(seed 예약, 엔진 아님)뿐이다.
+  - fast4 관련 3개는 실행판 동결(`46ebcf7`) 전의 변경이다.
+  - 그래서 지금 파일이 canonical 코드다. 과거 결과는 영향을 받지 않았다.
+  - 과거 run과 웹 DB에 기록된 policy SHA도 모두 동결값 `efee4832…`다.
+- 조치
+  - `tests/track_b_frozen.sha256`에 canonical import closure 56개 파일의 SHA를 고정했다. closure는 하위 프로세스에서 진입 모듈과 fast4 설치로 계산한다.
+  - 도구용 모듈(`h6_labels`, `progress`, `renjunet`, `h3_cache`, `h6_value_cache`)은 뺐다.
+  - `check_code`가 이 목록과 대조한다.
+
+**`src/analysis/track_b_guard.py`**
+- `check_policy_checkpoint(path, policy)`, `check_leaf(leaf)`, `check_runtime_sources()`, `check_code()`
+- `make_canonical_agent(policy, leaf, seed, policy_checkpoint)`: 위 넷을 모두 통과한 뒤 `tb_v2_runtime.make_agent`(엔진 해시, fast4 바인딩)
+- 쓰는 곳
+  - 벤치마크 canonical arm
+  - `h7_e4_baseline.py`, `h7_e4_precheck.py`(실모델일 때)
+  - 앞으로의 E4-v2 사전 검사, arena, H7-c1 self-play
+
+**`scripts/check_track_b_frozen.py`**
+- 검사 항목
+  - code(manifest와 closure)
+  - engine(`config_hash` = `ENGINE_HASH`, VCF 표 SHA)
+  - runtime sources
+  - runtime binding(fast4 설치·바인딩)
+  - policy checkpoint
+  - value checkpoint(`--no-models`로 생략)
+  - E4-v1 후보 소스
+- FAIL이 하나라도 있으면 종료 코드 1
+- 컨테이너(`--no-models`): 모두 PASS. 모델 검사는 데스크톱에서 확인한다.
+- `--write-manifest`는 명시적 엔진 / 실행판 동결 단계에서만 쓴다.
+
+**다음 엔진 동결 때 반드시 넣을 것 (E4-v2 ADOPT 시 또는 별도 identity 단계)**
+- `config_hash`에 `POLICY_CHECKPOINT_SHA256`, `POLICY_METADATA_SHA256`를 포함
+- 새 `make_agent`에서 policy checkpoint 검사, value SHA fail-closed
+- 실행판 `check_bound`에서 binding 파일 SHA 검사
+- code manifest를 identity에 포함(엔진 해시 또는 runtime 해시)
+- 벤치마크 / self-play는 동결 factory만 사용(지금 가드 경로를 그 factory로 바꿈)
+
+**실행 명령 (데스크톱, 모델 포함 확인)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_track_b_frozen.py
+python -m unittest tests.test_track_b_guard
+```
+
+- 기대: 모든 항목 PASS. policy `efee4832…`, value `a0fcccc4…`
+- FAIL이면 E4-v2 DEV 실행 전에 원인을 먼저 본다. DEV 단계 명령은 모델을 쓰지 않으므로 FAIL과 무관하게 돌릴 수 있다. 다만 사전 검사와 arena는 이 검사가 PASS여야 한다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
