@@ -49,7 +49,11 @@ DEADLINE = 30.0
 RULES = {'corpus': {'near_tie_visit_ratio': 0.9, 'near_tie_q': 0.02, 'slow_top_share': 0.05,
                     'random_rest': 200, 'random_seed': 0,
                     'groups': ['near_tie', 'v8c_not_safe_or_switch', 'vct2_switch', 'probe', 'h6_4b', 'slow']},
-         'deadline_seconds': DEADLINE}
+         'deadline_seconds': DEADLINE,
+         # SER5 deployment certification of an engine (docs/h6-value.md): two independent rounds on the 827
+         # corpus, CPU, threads 1, workers 1, fast4; both rounds need no move over 30 s and a maximum <= 25 s
+         'ser5': {'over_deadline': 0, 'max_seconds': 25.0}}
+ENGINES = ('tb-v2-value', 'tb-v3')
 _WORKER: dict = {}
 
 
@@ -102,10 +106,23 @@ def _init(policy_checkpoint, value_checkpoint, device, threads, fast, factories=
     from hybrid.h6_value_leaf import ValueLeaf
     _WORKER['policy'] = RootPolicy(policy_checkpoint)
     _WORKER['leaf'] = ValueLeaf(value_checkpoint, device=device, threads=threads)
+    _WORKER.update(policy_checkpoint=policy_checkpoint, value_checkpoint=value_checkpoint)
 
 
-def decide(moves, seed: int) -> dict:
-    """The frozen TB-V2-Value on one position; every decision field and the times."""
+def _tb_v3_agent(seed: int):
+    """TB-V3 Resolve by its fail-closed factory (tests: the engine after the checks, on stand-in models)."""
+    from analysis import tb_v3_runtime
+
+    w = _WORKER
+    if w.get('stand_in'):
+        return tb_v3_runtime._build(w['policy'], w['leaf'], seed)
+    return tb_v3_runtime.make_tb_v3_agent(w['policy'], w['leaf'], seed, w['policy_checkpoint'], w['value_checkpoint'])
+
+
+def decide(moves, seed: int, engine: str = 'tb-v2-value') -> dict:
+    """The frozen TB-V2-Value (or TB-V3 Resolve) on one position; every decision field and the times.
+
+    TB-V3 gets a fresh agent per position, so its cooldown never skips an attack here: the worst case for time."""
     from analysis import tb_v2_value
     from renju import Game
 
@@ -115,13 +132,18 @@ def decide(moves, seed: int) -> dict:
     leaf = _WORKER['leaf']
     if hasattr(leaf, '_cache'):
         leaf._cache.clear()  # cold per position: the time does not depend on the order of positions
-    agent = tb_v2_value.make_agent(_WORKER['policy'], leaf, seed=seed)
+    if engine == 'tb-v3':
+        agent = _tb_v3_agent(seed)  # built (and checked) before the clock starts
+    else:
+        agent = tb_v2_value.make_agent(_WORKER['policy'], leaf, seed=seed)
     started = perf_counter()
     move = agent.select_move(game)
     seconds = perf_counter() - started
     d = agent.diagnostics
     one = (lambda m: list(m) if m is not None else None)
-    return {
+    step = {k: v for k, v in getattr(agent, 'attack_info', {}).items() if k != 'seconds'}
+    return {**({'e4_attack': step, 'e4_seconds': getattr(agent, 'attack_info', {}).get('seconds')}
+               if engine == 'tb-v3' else {}),
         'move': list(move), 'seconds': round(seconds, 4),
         'decision': {'move': list(move), 'route': d.v8_route, 'tree_move': one(d.v8_v7_move), 'changed': d.v8_changed,
                      'root_visits': [[list(m), n, round(q, 9)] for m, n, q in d.v8_root_visits],
@@ -141,7 +163,16 @@ def decide(moves, seed: int) -> dict:
 def measure_task(task: dict) -> dict:
     from scripts.run_mcts_v8_benchmark import derive_seed
 
-    return {'id': task['id'], 'source': task['source'], **decide(task['moves'], derive_seed(SEED, 'h7-timing', task['id']))}
+    engine = task.get('engine', 'tb-v2-value')
+    return {'id': task['id'], 'source': task['source'], **({'engine': engine} if engine != 'tb-v2-value' else {}),
+            **decide(task['moves'], derive_seed(SEED, 'h7-timing', task['id']), engine)}
+
+
+def ser5_check(summary: dict) -> dict:
+    """One round against the SER5 rule (both rounds must pass)."""
+    rule, a = RULES['ser5'], summary['all']
+    return {'over_deadline': a['over_deadline'], 'max': a['max'],
+            'pass': a['over_deadline'] <= rule['over_deadline'] and a['max'] <= rule['max_seconds']}
 
 
 def _chunk(tasks):
@@ -368,6 +399,7 @@ def main(argv=None, factories=None) -> int:
     pm.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     pm.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
     pm.add_argument('--label', default='frozen', help='what runs: frozen, or the optimization candidate name')
+    pm.add_argument('--engine', choices=ENGINES, default='tb-v2-value', help='tb-v3: TB-V3 Resolve (fast4 only)')
     pm.add_argument('--jsonl', type=Path)
     pm.add_argument('--limit', type=int)
     pc = sub.add_parser('corpus')
@@ -417,13 +449,25 @@ def main(argv=None, factories=None) -> int:
             keep = set(load(args.corpus)['ids'])
             tasks = [t for t in tasks if t['id'] in keep]
         tasks = tasks[:args.limit]
+        if args.engine == 'tb-v3':
+            if args.fast != 'fast4':
+                parser.error('TB-V3 Resolve runs only on fast4')
+            tasks = [{**t, 'engine': 'tb-v3'} for t in tasks]
         init = (args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, args.fast, factories)
         rows = _run_measure(tasks, args.workers, args.jsonl, init)
-        result = {'format': FORMAT, 'step': 'measure', 'engine': config_hash(), 'label': args.label,
+        identity = {}
+        if args.engine == 'tb-v3':
+            from analysis import tb_v3, tb_v3_runtime
+            identity = {'engine_name': tb_v3.ENGINE_NAME, 'runtime_hash': tb_v3_runtime.runtime_hash(args.device),
+                        'identity_sha256': tb_v3_runtime.identity_sha256()}
+        summary = summarize_measure(rows)
+        result = {'format': FORMAT, 'step': 'measure',
+                  'engine': tb_v3.ENGINE_HASH if args.engine == 'tb-v3' else config_hash(), **identity,
+                  'label': args.label, 'ser5_check': ser5_check(summary),
                   'settings': {'device': args.device, 'threads': args.threads, 'workers': args.workers,
                                'fast': _fast_provenance(args.fast) if factories is None else args.fast,
                                'machine': machine()},
-                  'summary': summarize_measure(rows), 'rows': rows}
+                  'summary': summary, 'rows': rows}
     elif args.step == 'corpus':
         result = build_corpus(load(args.measure))
     elif args.step == 'paired':
@@ -503,6 +547,9 @@ def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
             if line.strip():
                 row = json.loads(line)
                 done[row['id']] = row
+    for t in tasks:
+        if t['id'] in done and done[t['id']].get('engine', 'tb-v2-value') != t.get('engine', 'tb-v2-value'):
+            raise ValueError(f'{jsonl} has rows of another engine; use another file')
     todo = [t for t in tasks if t['id'] not in done]
     print(f'[h7-timing] {len(tasks)} positions, {len(tasks) - len(todo)} already done, workers {workers}', flush=True)
 

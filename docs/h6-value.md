@@ -4879,6 +4879,45 @@ python -u scripts/tb_v3_promotion.py --runs runs/h7_e4v2/e_8441.json runs/h7_e4v
   - 문서 상태를 "TB-V3 Resolve = canonical"로 바꾼다.
   - 그 뒤 SER5 시간 측정으로 간다.
 
+**SER5 시간 측정의 병행 (사용자 요청 검토)**
+- 병행할 수 있다.
+  - 기계가 다르다(데스크톱 GPU / SER5 CPU). 서로 자원을 나누지 않는다.
+  - SER5 결과는 코드 identity(엔진 해시, runtime 해시 = `tb_v3.py` SHA 포함)에만 달려 있다. 승격 재생은 코드를 바꾸지 않는다. PASS 뒤의 alias 변경은 `canonical.py`와 검사기만 고치므로 runtime 해시도 그대로다.
+- 조건
+  - SER5 결과는 PROMOTION_PASS 뒤에만 판정에 쓴다. 측정 파일의 `runtime_hash`와 `identity_sha256`이 승격 기록과 같아야 한다.
+  - PROMOTION_FAIL로 코드가 바뀌면 SER5는 다시 잰다.
+  - 순서(승격 → SER5)의 뜻은 그대로다. 측정만 먼저 하고, 판정은 승격 뒤에 한다.
+- 도구: `h7_timing.py measure --engine tb-v3`(새로 추가)
+  - 국면마다 `make_tb_v3_agent`로 새 agent를 만든다(검사는 시계 밖). 그래서 cooldown이 한 번도 공격을 건너뛰지 않는다. 시간으로는 최악 조건이다.
+  - fast4만 허용한다.
+  - 결과에 엔진 해시, runtime 해시(cpu), `tb_v3.py` SHA, E4-v2 단계 기록, `ser5_check`를 남긴다.
+  - 다른 엔진의 jsonl은 이어 쓰지 않는다.
+- 기준(그대로): 827 corpus, CPU, threads 1, workers 1, fast4, 독립 2회. 두 회 모두 30초 초과 0, 최대 ≤ 25초
+  - 참고: TB-V2-Value fast4는 SER5에서 평균 3.5초, 최대 22.3초였다. E4-v2는 수당 약 1.4배이고 꼬리를 더한다(COSTTEST 공격 최대 5.7초, 데스크톱). 그래서 25초 기준은 빠듯할 수 있다.
+  - 실패해도 엔진 채택과 canonical 지위는 그대로다. "SER5 배포 미인증"이 되고, 웹용 deadline 공격 단계로 간다.
+
+**실행 명령 — SER5 (CPU, 1 프로세스, 회당 약 1–1.5시간, 다른 작업 없이 2회)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate   # SER5의 저장소 경로에 맞춘다
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_track_b_frozen.py
+python -m unittest tests.test_fast4 tests.test_tb_v3 tests.test_h7_timing
+mkdir -p runs/tb_v3
+for R in 1 2; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --engine tb-v3 --device cpu --threads 1 --workers 1 --fast fast4 --label tb_v3_ser5_r$R \
+  --jsonl runs/tb_v3/ser5_r$R.jsonl --output runs/tb_v3/ser5_r$R.json 2>&1 | tee runs/tb_v3/ser5_r$R.log
+python -c "import json,sys; d=json.load(open(sys.argv[1])); json.dump({k: d[k] for k in ('format','engine','engine_name','runtime_hash','identity_sha256','label','ser5_check','settings','summary')}, open(sys.argv[2],'w'), indent=1)" \
+  runs/tb_v3/ser5_r$R.json docs/h7/tb_v3_ser5_r${R}_summary.json
+done
+```
+
+- `check_track_b_frozen.py`는 모델까지 모두 PASS여야 한다. `tb-v3 promotion`은 "pending"이 정상이다.
+- 커밋할 것: `docs/h7/tb_v3_ser5_r1_summary.json`, `docs/h7/tb_v3_ser5_r2_summary.json`
+- 먼저 볼 것: 두 회의 `ser5_check`(`over_deadline`, `max`, `pass`), `summary.all`, `summary.tree_route`
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

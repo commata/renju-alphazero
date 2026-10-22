@@ -89,6 +89,35 @@ class CorpusRulesTest(unittest.TestCase):
                 'decision': {'route': 'tree', 'tree_move': [7, 7], 'changed': False, 'root_switch': switch,
                              'root_visits': visits, 'root_checked': [[[7, 7], checked]], 'vct2_switched': vct2}}
 
+    def test_measure_tb_v3(self):
+        from rt30 import fast4_forbidden
+        from analysis import tb_v3, tb_v3_runtime
+        if not fast4_forbidden.available():
+            self.skipTest('python -m rt30.native.build first')
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            run = tmp / 'run.json'
+            run.write_text(json.dumps(e3_run()), encoding='utf-8')
+            pos = tmp / 'positions.json'
+            self.assertEqual(t.main(['positions', '--runs', str(run), '--output', str(pos)]), 0)
+            argv = ['measure', '--positions', str(pos), '--limit', '2', '--engine', 'tb-v3']
+            with self.assertRaises(SystemExit):  # fast4 only
+                t.main(argv + ['--output', str(tmp / 'x.json')], factories={**FACTORIES, 'stand_in': True})
+            jsonl = tmp / 'v3.jsonl'
+            out = tmp / 'v3.json'
+            self.assertEqual(t.main(argv + ['--fast', 'fast4', '--jsonl', str(jsonl), '--output', str(out)],
+                                    factories={**FACTORIES, 'stand_in': True}), 0)
+            r = json.loads(out.read_text(encoding='utf-8'))
+            self.assertEqual((r['engine'], r['engine_name']), (tb_v3.ENGINE_HASH, 'TB-V3 Resolve'))
+            self.assertEqual(r['runtime_hash'], tb_v3_runtime.runtime_hash('cpu'))
+            self.assertEqual(set(r['ser5_check']), {'over_deadline', 'max', 'pass'})
+            self.assertTrue(all(row['engine'] == 'tb-v3' and 'e4_attack' in row for row in r['rows']))
+            with self.assertRaises(ValueError):  # a TB-V3 jsonl is not resumed as TB-V2-Value
+                t.main(['measure', '--positions', str(pos), '--limit', '2', '--jsonl', str(jsonl),
+                        '--output', str(tmp / 'y.json')], factories=FACTORIES)
+        from hybrid.h6_fast import installed_mode
+        self.assertEqual(installed_mode(), 'off')
+
     def test_groups(self):
         far = [[[7, 7], 40, 0.5], [[7, 8], 10, 0.1]]
         self.assertEqual(t.groups_of(self.row(far), 9.0), [])
