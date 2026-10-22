@@ -6,7 +6,8 @@ Two position sets, no HOLDOUT (``h7_e4_dev.dev_only`` on every web position read
               recorded base move of ``h7_e4_baseline.py`` v2)
     COSTDEV   the E4-v1 pre-check positions (``h7_e4_precheck.json``): their measured base seconds, and the
               attack cost from VCF nodes and calls through a cost model fitted on that pre-check's own attacks
-              (``fit_cost_model``: seconds ~ nodes + calls + 1, its coefficients, R^2 and ranges are recorded)
+              (``fit_cost_model``: seconds ~ nodes + calls + 1, its coefficients, R^2 and ranges are recorded),
+              times the killer and gate corrections of ``h7_e4v2_calibrate.py`` (``--calibration``)
 Per position the G1 gate and, unless it stops the attack, the attack for each (budget, killer) pair are
 computed once; cooldown is then replayed per configuration along each game with ``e4v2_attack.Cooldown``
 (the AI moves of a web game are its consecutive main positions; COSTDEV games by position id).
@@ -82,6 +83,18 @@ def model_seconds(model: dict, nodes: int, calls: int, attack: bool) -> float:
         model['seconds_per_attack'] if attack else 0.0)
 
 
+def step_seconds(model: dict, correction: dict, step: dict, killer: bool) -> float:
+    """Model seconds of one step: its gate (if computed) and its attack (if run), with the calibration's
+    relative corrections (``h7_e4v2_calibrate.py``: 'gate', 'killer'; 1.0 when not given)."""
+    seconds = 0.0
+    if 'gate' in step:
+        seconds += correction.get('gate', 1.0) * model_seconds(model, step['gate']['nodes'], step['gate']['calls'], False)
+    if step['ran']:
+        seconds += (correction.get('killer', 1.0) if killer else 1.0) * model_seconds(
+            model, step['nodes'], step['calls'], True)
+    return seconds
+
+
 # -- work --------------------------------------------------------------------------------------------------
 
 def _init(fast: str) -> None:
@@ -99,8 +112,7 @@ def position_task(task: dict) -> dict:
     for m in task['moves']:
         game.play(*m)
     gate = v2.opponent_vcf(game)
-    row = {'set': task['set'], 'id': task['id'], 'check_budget': task.get('check_budget'), 'gate': gate,
-           'attacks': {}}
+    row = {'set': task['set'], 'id': task['id'], 'fingerprint': task['fingerprint'], 'gate': gate, 'attacks': {}}
     if gate['status'] == 'WIN':
         return row
     for budget in v2.BUDGETS:
@@ -127,11 +139,12 @@ def replay(config: dict, sequence: list[dict], rows: dict) -> dict:
     cooldown, out = Cooldown(), {}
     pair = f"{config['budget']}/{'killer' if config['killer'] else 'plain'}"
     for item in sequence:
+        game = SimpleNamespace(history=[tuple(m) for m in item['moves']])
+        blocked = config['cooldown'] and cooldown.blocks(game)  # consumed at every own move, as in ``decide``
         if not item['eligible']:
             out[item['id']] = {'ran': False, 'skip': 'route'}
             continue
-        game = SimpleNamespace(history=[tuple(m) for m in item['moves']])
-        if config['cooldown'] and cooldown.blocks(game):
+        if blocked:
             out[item['id']] = {'ran': False, 'skip': 'cooldown'}
             continue
         row = rows[item['id']]
@@ -145,7 +158,8 @@ def replay(config: dict, sequence: list[dict], rows: dict) -> dict:
     return out
 
 
-def dev_score(config: dict, positions: list[dict], boards: dict, baseline: dict, steps: dict, model: dict) -> dict:
+def dev_score(config: dict, positions: list[dict], boards: dict, baseline: dict, steps: dict, model: dict,
+              correction: dict | None = None) -> dict:
     out = {'punish': 0, 'targets': 0, 'punished': [], 'missed': [], 'unclear': [], 'shallow_regressions': [],
            'false_proofs': [], 'contradictions': [], 'unverified': [], 'ran': 0, 'skips': {}, 'switched': 0}
     seconds = 0.0
@@ -154,12 +168,10 @@ def dev_score(config: dict, positions: list[dict], boards: dict, baseline: dict,
         step = steps[p['id']]
         if not step['ran']:
             out['skips'][step['skip']] = out['skips'].get(step['skip'], 0) + 1
-        if 'gate' in step:
-            seconds += model_seconds(model, step['gate']['nodes'], step['gate']['calls'], False)
+        seconds += step_seconds(model, correction or {}, step, config['killer'])
         win = step['ran'] and step['move'] is not None
         if step['ran']:
             out['ran'] += 1
-            seconds += model_seconds(model, step['nodes'], step['calls'], True)
         if win:
             outcome = step['check']['outcome']
             if outcome == 'MISS':
@@ -186,16 +198,14 @@ def dev_score(config: dict, positions: list[dict], boards: dict, baseline: dict,
     return out
 
 
-def costdev_score(steps: dict, pre_rows: list[dict], model: dict) -> dict:
+def costdev_score(config: dict, steps: dict, pre_rows: list[dict], model: dict, correction: dict | None = None) -> dict:
     base_seconds = sum(r['b_seconds'] for r in pre_rows)
     extra, ran, switched, skips = 0.0, 0, 0, {}
     for r in pre_rows:
         step = steps[r['id']]
-        if 'gate' in step:
-            extra += model_seconds(model, step['gate']['nodes'], step['gate']['calls'], False)
+        extra += step_seconds(model, correction or {}, step, config['killer'])
         if step['ran']:
             ran += 1
-            extra += model_seconds(model, step['nodes'], step['calls'], True)
             switched += step['move'] is not None and step['move'] != r['base_move']
         else:
             skips[step['skip']] = skips.get(step['skip'], 0) + 1
@@ -249,6 +259,7 @@ def main(argv=None) -> int:
     parser.add_argument('--positions', type=Path, required=True, help='the timing positions of that pre-check')
     parser.add_argument('--workers', type=int, default=1)
     parser.add_argument('--fast', choices=('off', 'fast2', 'fast3', 'fast4'), default='off')
+    parser.add_argument('--calibration', type=Path, help='h7_e4v2_calibrate.py output: killer / gate corrections')
     parser.add_argument('--limit', type=int, help='smoke tests: first N positions of each set')
     parser.add_argument('--jsonl', type=Path)
     parser.add_argument('--output', type=Path)
@@ -268,15 +279,25 @@ def main(argv=None) -> int:
         parser.error('the truth and the baseline must be of this corpus')
     if b.get('format') != base.FORMAT or pre.get('format') != 'h7-e4-precheck-v1':
         parser.error('needs the baseline v2 and the E4-v1 pre-check')
+    if pre.get('positions_sha256') != file_sha256(args.positions) or pre.get('corpus_sha256') != file_sha256(args.corpus):
+        parser.error(f'{args.precheck} was not measured on these timing positions and this web corpus')
+    from analysis import tb_v2_value_e4
+    if pre.get('candidate_hash') != tb_v2_value_e4.candidate_hash():
+        parser.error(f'{args.precheck} is not the pre-check of the frozen E4-v1 candidate')
     timing = {p['id']: p for p in json.loads(args.positions.read_text(encoding='utf-8'))['positions']}
+    fingerprint = {'e4v2_attack_sha256': file_sha256(ROOT / 'src/analysis/e4v2_attack.py'),
+                   'e4_attack_sha256': file_sha256(ROOT / 'src/analysis/e4_attack.py'),
+                   'truth_sha256': file_sha256(args.truth), 'check_budget': t['budget'], 'budgets': v2.BUDGETS,
+                   'gate_node_limit': v2.GATE_NODE_LIMIT}
     positions = [dev_only(p) for p in corpus['positions'] if p['split'] == 'DEV'][:args.limit]
     baseline = {p['id']: b['positions'][p['id']] for p in positions if p['id'] in b['positions']}
     eligible = {p['id'] for p in positions
                 if p['id'] not in baseline or baseline[p['id']]['b']['route'] in v2.ROUTES}
     pre_rows = pre['rows'][:args.limit]
-    tasks = [{'set': 'dev', 'id': p['id'], 'moves': web.history(corpus, p), 'check_budget': t['budget']}
-             for p in positions if p['id'] in eligible]
-    tasks += [{'set': 'costdev', 'id': r['id'], 'moves': timing[r['id']]['moves']} for r in pre_rows if r['attacked']]
+    tasks = [{'set': 'dev', 'id': p['id'], 'moves': web.history(corpus, p), 'check_budget': t['budget'],
+              'fingerprint': fingerprint} for p in positions if p['id'] in eligible]
+    tasks += [{'set': 'costdev', 'id': r['id'], 'moves': timing[r['id']]['moves'], 'fingerprint': fingerprint}
+              for r in pre_rows if r['attacked']]
     done = {}
     if args.jsonl is not None and args.jsonl.exists():
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
@@ -284,8 +305,10 @@ def main(argv=None) -> int:
                 row = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if row['set'] == 'costdev' or row['check_budget'] == t['budget']:
-                done[(row['set'], row['id'])] = row
+            if row.get('fingerprint') != json.loads(json.dumps(fingerprint)):
+                parser.error(f'{args.jsonl} has rows of another code / truth / budget ({row["id"]}); '
+                             'use another --jsonl file')
+            done[(row['set'], row['id'])] = row
     todo = [x for x in tasks if (x['set'], x['id']) not in done]
     print(f'[h7-e4v2-dev] DEV {len(positions)} positions ({len(eligible)} eligible), COSTDEV {len(pre_rows)} '
           f'positions, {len(tasks)} tasks, {len(tasks) - len(todo)} done, workers {args.workers}', flush=True)
@@ -311,6 +334,12 @@ def main(argv=None) -> int:
                 keep(i, _chunk(c))
                 progress.update(1)
     model = fit_cost_model(pre['rows'])
+    correction, calibration = {}, None
+    if args.calibration is not None:
+        calibration = json.loads(args.calibration.read_text(encoding='utf-8'))
+        if calibration.get('precheck_sha256') != file_sha256(args.precheck):
+            parser.error(f'{args.calibration} is not a calibration of this pre-check')
+        correction = calibration['correction']
     dev_rows = {i: r for (s, i), r in done.items() if s == 'dev'}
     cost_rows = {i: r for (s, i), r in done.items() if s == 'costdev'}
     dev_seq = sequences_dev(corpus, positions, eligible)
@@ -319,8 +348,8 @@ def main(argv=None) -> int:
     for config in v2.GRID:
         dev_steps = {k: v for seq in dev_seq for k, v in replay(config, seq, dev_rows).items()}
         cost_steps = {k: v for seq in cost_seq for k, v in replay(config, seq, cost_rows).items()}
-        dev = dev_score(config, positions, t['boards'], baseline, dev_steps, model)
-        costdev = costdev_score(cost_steps, pre_rows, model)
+        dev = dev_score(config, positions, t['boards'], baseline, dev_steps, model, correction)
+        costdev = costdev_score(config, cost_steps, pre_rows, model, correction)
         scores.append({'config': config, 'dev': dev, 'costdev': costdev,
                        'eligible': not (dev['false_proofs'] or dev['contradictions'] or dev['shallow_regressions'])})
     selection = select(scores)
@@ -329,7 +358,9 @@ def main(argv=None) -> int:
                'precheck_sha256': file_sha256(args.precheck), 'positions_sha256': file_sha256(args.positions),
                'split': 'DEV', 'fast': args.fast, 'restricted': args.limit is not None,
                'rule': {'cost_max': COST_MAX, 'tie': TIE, 'gate_node_limit': v2.GATE_NODE_LIMIT},
-               'cost_model': model, 'selection': selection, 'scores': scores,
+               'fingerprint': fingerprint,
+               'cost_model': model, 'correction': correction,
+               'calibration_sha256': file_sha256(args.calibration) if args.calibration else None, 'selection': selection, 'scores': scores,
                'rows': {'dev': dev_rows, 'costdev': cost_rows}}
     table = [{'name': s['config']['name'], 'punish': f"{s['dev']['punish']}/{s['dev']['targets']}",
               'shallow': len(s['dev']['shallow_regressions']), 'false': len(s['dev']['false_proofs']),

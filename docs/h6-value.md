@@ -4124,6 +4124,23 @@ timing 국면 기준이다. 시간은 데스크톱 실측이다. 예산 상한�
 3. COSTTEST 실측: 대국 cluster bootstrap 하한 > 1.5 → REJECT
 4. 8441 / 8442 arena → ADOPT / REJECT → E4 종료 → H7-c1
 
+**도구 검토 반영 (사용자 검토 7항목, 사실 확인 후)**
+
+| # | 지적 | 판단 | 조치 |
+|---|---|---|---|
+| 1 | 강제 route 수에서 cooldown 비트가 해제되지 않아 뒤늦게 적용된다 | **늦게 적용되지는 않는다.** `Cooldown.blocks`는 "기록된 수순 + 정확히 2수"일 때만 막는다. 그래서 한 수 늦은 tree 수에서는 막지 않고 해제만 한다(재현으로 확인). 다만 비트가 남아 있는 것은 정의의 문자와 다르다. | 비트를 route 판정보다 먼저 소비하도록 `decide`와 `replay`를 바꿨다. 회귀 시험 추가: 소진 → 강제 수에서 소비 → 다음 tree 수는 막히지 않음 / 소진 → 바로 다음 수는 막힘 |
+| 2 | COSTTEST에서 국면만 빼면 cooldown 재생이 깨진다 | 사실이다. 빠진 국면의 소진이 다음 수를 쉬게 하는 효과가 사라진다. 측정이 비용을 높게 잡는 쪽(보수적)이지만, 대국 단위로 뽑은 목적과 어긋난다. | 웹 / COSTDEV 판이 하나라도 있는 대국은 통째로 뺀다. 깨끗한 대국만 sha256 순서로 넣는다. 2,500국면에 못 미치면 오류로 멈춘다. |
+| 3 | COSTDEV 출처 검사 부족 | 사실이다. | 사전 검사의 `positions_sha256`, `corpus_sha256`, `candidate_hash`(동결 E4-v1)가 넘긴 파일과 맞지 않으면 거부한다(시험 추가). |
+| 4 | resume에 낡은 행이 섞일 수 있다 | 사실이다. | 행마다 fingerprint(`e4v2_attack.py` / `e4_attack.py` SHA, truth SHA, 검사 예산, 예산 표, G1 노드 한도)를 넣는다. 하나라도 다르면 거부한다(시험 추가). fingerprint가 없는 이전 행도 거부된다. |
+| 5 | 비용 모형이 killer를 과소평가할 수 있다 | 측정했다(컨테이너, 1 프로세스, COSTDEV 150국면). killer 보정 = **0.988**이다. 과소평가가 아니고 약 1% 과대평가다. | `scripts/h7_e4v2_calibrate.py`: 데스크톱에서 같은 150국면으로 잰 보정값을 `h7_e4v2_dev.py --calibration`이 killer 공격과 G1 판별 비용에 곱한다. 순서를 결과 전에 고정한다(아래 명령). |
+| 6 | G1 판별 비용에 상수항을 뺀 것 | 측정 보정 = **0.877**(모형이 약간 과대평가). 판별 시간 합은 공격 시간의 1.6%라 선택에 영향이 없다. | 5와 같은 보정을 적용한다. |
+| 7 | COSTTEST의 `recorded.route`는 E4-v2 base의 route가 아니다 | 사실이다(출처 엔진은 TB-Engine-v2). | `source_recorded`로 이름을 바꾸고, 사전 검사가 TB-V2-Value를 직접 돌려 route를 얻어야 한다고 docstring에 적었다. |
+
+- 보정 방식
+  - 보정값 = (실측 / 모형) / (plain 실측 / plain 모형)
+  - plain 대비 상대값이므로 기계 속도는 상쇄된다.
+  - 컨테이너는 plain 1.68배, killer 1.66배, 판별 1.47배였다.
+
 **실행 명령 (데스크톱, 모델 불필요)**
 
 ```bash
@@ -4132,23 +4149,27 @@ export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
 (cd src && CC=gcc python -m rt30.native.build --if-stale)
 python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4
 mkdir -p runs/h7_e4v2
+rm -f runs/h7_e4v2/dev.jsonl docs/h7/h7_e4v2_dev.json   # nothing from before this fix
 # 1) COSTTEST positions (fixed now, before any E4-v2 measurement)
 python scripts/h7_e4v2_costtest.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7_e2/tt_vs_full_8422.json \
   --corpus docs/h7/h7_e4_web_corpus.json --costdev docs/h7/h7_timing_positions.json \
   --output docs/h7/h7_e4v2_costtest_positions.json
-# 2) DEV + COSTDEV, the eight configurations and the selection (about 20-40 min with 12 workers)
+# 2) cost-model calibration (one process, nothing else running, about 4 min)
+python -u scripts/h7_e4v2_calibrate.py --precheck docs/h7/h7_e4_precheck.json \
+  --positions docs/h7/h7_timing_positions.json --fast fast4 --output docs/h7/h7_e4v2_calibration.json
+# 3) DEV + COSTDEV, the eight configurations and the selection (about 20-40 min with 12 workers)
 python -u scripts/h7_e4v2_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \
   --baseline docs/h7/h7_e4_baseline_v2.json --precheck docs/h7/h7_e4_precheck.json \
-  --positions docs/h7/h7_timing_positions.json --workers 12 --fast fast4 \
-  --jsonl runs/h7_e4v2/dev.jsonl --output docs/h7/h7_e4v2_dev.json 2>&1 | tee -a runs/h7_e4v2/dev.log
+  --positions docs/h7/h7_timing_positions.json --calibration docs/h7/h7_e4v2_calibration.json \
+  --workers 12 --fast fast4 --jsonl runs/h7_e4v2/dev.jsonl --output docs/h7/h7_e4v2_dev.json 2>&1 | tee -a runs/h7_e4v2/dev.log
 ```
 
-- 커밋할 것: `docs/h7/h7_e4v2_costtest_positions.json`, `docs/h7/h7_e4v2_dev.json`
-- 1)은 2)보다 먼저 커밋해도 된다. COSTTEST는 E4-v2 결과와 무관하게 정해진다.
+- 커밋할 것: `docs/h7/h7_e4v2_costtest_positions.json`, `docs/h7/h7_e4v2_calibration.json`, `docs/h7/h7_e4v2_dev.json`
+- 1)이 "clean 국면 부족"으로 멈추면 E4-v2를 멈추고 COSTTEST 출처를 다시 정한다. 규칙을 조용히 바꾸지 않는다.
 - 먼저 볼 것
   - `selection`
   - 조합별 DEV 응징 / 거짓 증명 / 모순 / 얕은 회귀 / COSTDEV 비율과 수 바뀜
-  - `cost_model`(R²와 범위)
+  - `cost_model`, `correction`
 - 확인용
   - `200k/nocd/plain`의 COSTDEV 비율은 앞선 분석의 "상대 VCF 문턱만" 추정(1.545)에 G1 판별 비용을 더한 값 근처여야 한다.
   - `200k/cd/plain`은 "문턱 + cooldown" 추정(1.414) 근처여야 한다.

@@ -530,6 +530,30 @@ class E4v2Test(unittest.TestCase):
         self.assertEqual(len(v2.GRID), 8)
         self.assertEqual(len({c['name'] for c in v2.GRID}), 8)
 
+    def test_a_forced_move_consumes_the_cooldown(self):
+        from analysis import e4v2_attack as v2
+        from scripts import h7_e4v2_dev as dev2
+        config = {'budget': '200k', 'cooldown': True, 'killer': False}
+        positions = [Game() for _ in range(3)]
+        for game, n in zip(positions, (7, 9, 11)):  # three own moves of White on one line
+            for m in VCF[:n]:
+                game.play(*m)
+        cd = v2.Cooldown()
+        cd.exhausted(positions[0])
+        self.assertEqual(v2.decide(positions[1], config, 'own_vcf', cd)[1]['skip'], 'route')
+        self.assertIsNone(cd.history)  # consumed by the forced move
+        self.assertTrue(v2.decide(positions[2], config, 'tree', cd)[1]['ran'])  # not delayed to this move
+        cd.exhausted(positions[1])
+        self.assertEqual(v2.decide(positions[2], config, 'tree', cd)[1]['skip'], 'cooldown')
+        # the offline replay does the same
+        seq = [{'id': i, 'moves': VCF[:n], 'eligible': e} for i, n, e in (('a', 7, True), ('b', 9, False), ('c', 11, True))]
+        info = {'move': None, 'exhausted': True, 'nodes': 1, 'calls': 1}
+        rows = {i: {'gate': {'status': 'NONE', 'nodes': 1, 'calls': 1}, 'attacks': {'200k/plain': info}} for i in 'ac'}
+        out = dev2.replay(config, seq, rows)
+        self.assertEqual((out['b']['skip'], out['c']['ran']), ('route', True))
+        out = dev2.replay(config, [seq[0], {**seq[2], 'moves': VCF[:9]}], {'a': rows['a'], 'c': rows['c']})
+        self.assertEqual(out['c']['skip'], 'cooldown')
+
     def test_cost_model_fit(self):
         from scripts import h7_e4v2_dev as dev2
         rows = [{'attacked': True, 'attack_nodes': n, 'attack_calls': c, 'attack_seconds': 2e-5 * n + 1e-4 * c + 0.05}
@@ -567,13 +591,28 @@ class E4v2Test(unittest.TestCase):
                      'base_move': [0, 0]} for i, p in enumerate(timing)]
             rows.append({**rows[0], 'id': 'e3a|g/1/0/black|8', 'attacked': False, 'attack_seconds': 0.0})
             timing.append({'id': 'e3a|g/1/0/black|8', 'moves': [list(m) for m in VCF[:8]]})
-            (tmp / 'pre.json').write_text(json.dumps({'format': 'h7-e4-precheck-v1', 'rows': rows}))
+            from analysis import tb_v2_value_e4
             (tmp / 'pos.json').write_text(json.dumps({'positions': timing}))
+            pre = {'format': 'h7-e4-precheck-v1', 'rows': rows, 'positions_sha256': file_sha256(tmp / 'pos.json'),
+                   'corpus_sha256': file_sha256(path), 'candidate_hash': tb_v2_value_e4.candidate_hash()}
+            (tmp / 'pre.json').write_text(json.dumps({**pre, 'corpus_sha256': 'x'}))
+            with self.assertRaises(SystemExit):  # COSTDEV must be the pre-check of these positions and corpus
+                dev2.main(['--corpus', str(path), '--truth', str(tmp / 't.json'), '--baseline', str(tmp / 'b.json'),
+                           '--precheck', str(tmp / 'pre.json'), '--positions', str(tmp / 'pos.json'),
+                           '--output', str(tmp / 'x.json')])
+            (tmp / 'pre.json').write_text(json.dumps(pre))
             out = tmp / 'v2.json'
-            self.assertEqual(dev2.main(['--corpus', str(path), '--truth', str(tmp / 't.json'), '--baseline',
-                                        str(tmp / 'b.json'), '--precheck', str(tmp / 'pre.json'), '--positions',
-                                        str(tmp / 'pos.json'), '--limit', '3', '--output', str(out)]), 0)
+            argv = ['--corpus', str(path), '--truth', str(tmp / 't.json'), '--baseline', str(tmp / 'b.json'),
+                    '--precheck', str(tmp / 'pre.json'), '--positions', str(tmp / 'pos.json'), '--limit', '3',
+                    '--jsonl', str(tmp / 'v2.jsonl')]
+            self.assertEqual(dev2.main([*argv, '--output', str(out)]), 0)
             result = json.loads(out.read_text(encoding='utf-8'))
+            lines = (tmp / 'v2.jsonl').read_text(encoding='utf-8').splitlines()
+            stale = json.loads(lines[0])
+            stale['fingerprint'] = {**stale['fingerprint'], 'e4v2_attack_sha256': 'old'}
+            (tmp / 'v2.jsonl').write_text('\n'.join([json.dumps(stale), *lines[1:]]) + '\n', encoding='utf-8')
+            with self.assertRaises(SystemExit):  # a row of other code is refused, not mixed in
+                dev2.main([*argv, '--output', str(tmp / 'v2b.json')])
         self.assertEqual(len(result['scores']), 8)
         self.assertEqual(result['split'], 'DEV')
         self.assertTrue(all(s['costdev']['positions'] == 3 for s in result['scores']))
@@ -591,13 +630,20 @@ class CosttestTest(unittest.TestCase):
         runs = [{'arm': ct.ARM, 'opponent': ct.OPPONENT, 'seed': s,
                  'games': [game('k/0/white', FIVE), game('k/1/white', VCF)]} for s in ct.SEEDS]
         costdev = [{'id': 'x', 'moves': [list(m) for m in VCF[:3]]}]
+        clean = (lambda key: game(key, [(7, 7), (6, 6), (8, 8), (5, 5), (9, 9), (4, 4), (10, 10)]))
+        runs = [{**r, 'games': [*r['games'], clean('k/2/white'), clean('k/3/white')]} for r in runs]
         out = ct.build(runs, corpus, costdev, count=6)
-        self.assertTrue(set(out['dropped']) >= {'e2h|8421/k/0/white|5', 'e2h|8421/k/1/white|3'})
+        dirty = {f'{s}/k/{i}/white' for s in ct.SEEDS for i in (0, 1)}  # a web board, a COSTDEV board
+        self.assertTrue(dirty.isdisjoint(out['games']))
+        self.assertTrue(set(out['dropped_games']) <= dirty)
         ids = [p['id'] for p in out['positions']]
         self.assertEqual(len(set(ids)), len(ids))
-        for key in out['games']:  # whole games, in ply order
+        for key in out['games']:  # whole games, every tested-arm position, in ply order
             plies = [int(i.rsplit('|', 1)[1]) for i in ids if i.split('|')[1] == key]
-            self.assertEqual(plies, sorted(plies))
+            self.assertEqual(plies, [1, 3, 5])
+        self.assertTrue(all('source_recorded' in p and 'recorded' not in p for p in out['positions']))
+        with self.assertRaises(ValueError):  # not enough clean positions
+            ct.build(runs, corpus, costdev, count=100)
         with self.assertRaises(ValueError):
             ct.build([{**runs[0], 'opponent': 'v7'}, runs[1]], corpus, costdev)
 
@@ -614,3 +660,22 @@ class E4v2EquivalenceTest(unittest.TestCase):
             m1, i1 = e4_attack.e4_attack(game, {'budget': '200k', 'candidates': 'vcf_threat'})
             m2, i2 = v2.attack(game, '200k', False)
             self.assertEqual((m1, i1['nodes'], i1['calls'], i1['candidates']), (m2, i2['nodes'], i2['calls'], i2['candidates']))
+
+
+class CalibrationTest(unittest.TestCase):
+    def test_relative_corrections(self):
+        from scripts import h7_e4v2_calibrate as cal
+        from scripts import h7_e4v2_dev as dev2
+        model = {'seconds_per_node': 1e-5, 'seconds_per_call': 0.0, 'seconds_per_attack': 0.0}
+        rows = [{'gate': {'nodes': 1000, 'calls': 1, 'seconds': 0.02},  # 2x the model
+                 'plain': {'nodes': 100_000, 'calls': 10, 'seconds': 1.5},  # this machine: 1.5x
+                 'killer': {'nodes': 100_000, 'calls': 10, 'seconds': 1.65}}]  # 1.1x plain
+        out = cal.summarize(rows, model)
+        self.assertEqual(out['factor'], {'plain': 1.5, 'killer': 1.65, 'gate': 2.0})
+        self.assertEqual(out['correction'], {'killer': 1.1, 'gate': 1.3333})
+        step = {'ran': True, 'gate': {'nodes': 1000, 'calls': 1}, 'nodes': 100_000, 'calls': 10}
+        self.assertAlmostEqual(dev2.step_seconds(model, out['correction'], step, True), 1.3333 * 0.01 + 1.1 * 1.0)
+        self.assertAlmostEqual(dev2.step_seconds(model, {}, step, False), 0.01 + 1.0)
+        picked = cal.subset([{'id': str(i), 'attacked': i % 2 == 0} for i in range(10)], 3)
+        self.assertEqual(len(picked), 3)
+        self.assertTrue(all(r['attacked'] for r in picked))

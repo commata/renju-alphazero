@@ -3,11 +3,14 @@
 Source: the E2 holdout games of TB-Engine-v2 against ``v8:full`` (``runs/h7_e2/tt_vs_full_8421.json`` and
 ``_8422.json``: arm ``puct_policy_vct2_50k_tt``), never used for timing or E4 design. Rule:
     1. every position before a tested-arm move: id ``e2h|<game key>|<ply>``, the moves before it
-    2. drop every position whose D4-canonical board (``hybrid.h6_labels.canonical_hash``) is a web corpus
-       position (DEV or HOLDOUT) or a COSTDEV position (``docs/h7/h7_timing_positions.json``); assert none left
-    3. whole games in sha256(game key) order until the kept positions reach ``--count`` (2,500): a game's
-       positions stay together and in order, because the cooldown works along the moves of one game
+    2. drop every game with a position whose D4-canonical board (``hybrid.h6_labels.canonical_hash``) is a web
+       corpus position (DEV or HOLDOUT) or a COSTDEV position (``docs/h7/h7_timing_positions.json``), whole:
+       the cooldown is a state carried along the moves of one game, so a game is never measured with a gap
+    3. clean games in sha256(game key) order until the positions reach ``--count`` (2,500); fewer is an error
+    4. assert that no kept position is such a board
 The output is the position file of the E4-v2 pre-check (same shape as ``h7_timing.py positions``).
+``source_recorded`` is what the source engine (TB-Engine-v2) did there: never the E4-v2 base route, which the
+pre-check must get by running TB-V2-Value itself.
 
     python scripts/h7_e4v2_costtest.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7_e2/tt_vs_full_8422.json \\
         --corpus docs/h7/h7_e4_web_corpus.json --costdev docs/h7/h7_timing_positions.json \\
@@ -50,17 +53,21 @@ def build(runs: list[dict], corpus: dict, costdev: list[dict], count: int = COUN
         for g in run['games']:
             key = f"{run['seed']}/{g['key']}"
             games[key] = [{'id': f"e2h|{key}|{m['ply']}", 'source': 'e2h', 'moves': g['moves'][:m['ply']],
-                           'recorded': {'route': m['route'], 'seconds': m['seconds']}}
+                           'source_recorded': {'route': m['route'], 'seconds': m['seconds']}}
                           for m in sorted(g['v8_moves'], key=lambda m: m['ply'])]
     kept, dropped, used = [], [], []
     for key in sorted(games, key=lambda k: hashlib.sha256(k.encode('utf-8')).hexdigest()):
         if len(kept) >= count:
             break
+        if any(canonical_hash(p['moves']) in banned for p in games[key]):
+            dropped.append(key)
+            continue
         used.append(key)
-        for p in games[key]:
-            (dropped if canonical_hash(p['moves']) in banned else kept).append(p)
+        kept.extend(games[key])
+    if len(kept) < count:
+        raise ValueError(f'only {len(kept)} positions in clean games, the rule needs {count}')
     assert not any(canonical_hash(p['moves']) in banned for p in kept), 'a web or COSTDEV board is in COSTTEST'
-    return {'games': used, 'positions': kept, 'dropped': [p['id'] for p in dropped]}
+    return {'games': used, 'positions': kept, 'dropped_games': dropped}
 
 
 def main(argv=None) -> int:
@@ -86,7 +93,7 @@ def main(argv=None) -> int:
                'costdev_sha256': file_sha256(args.costdev), 'rule': {'count': args.count, 'arm': ARM,
                                                                      'opponent': OPPONENT, 'seeds': list(SEEDS)},
                'counts': {'games': len(built['games']), 'positions': len(built['positions']),
-                          'dropped': len(built['dropped'])}, **built}
+                          'dropped_games': len(built['dropped_games'])}, **built}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload) + '\n', encoding='utf-8')
     print(json.dumps(payload['counts']), flush=True)

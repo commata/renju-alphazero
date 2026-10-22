@@ -108,7 +108,8 @@ class Cooldown:
         self.history: tuple | None = None  # the game history of the move that set the flag
 
     def blocks(self, game: Game) -> bool:
-        """True if this move must not attack; the flag is cleared either way (one move only)."""
+        """True if this move must not attack; the flag is cleared either way (one move only). Called at every
+        own move; a later move than the next own one is never blocked (exactly two plies on the same line)."""
         prev, self.history = self.history, None
         if prev is None:
             return False
@@ -121,9 +122,11 @@ class Cooldown:
 
 def decide(game: Game, config: dict, base_route: str, cooldown: Cooldown | None = None) -> tuple[Move | None, dict]:
     """The E4-v2 step after the base move: route, cooldown, G1, then the attack. (move or None, record)."""
+    # the bit is consumed at every own move, before the route decides (a forced move clears it too)
+    blocked = config['cooldown'] and cooldown is not None and cooldown.blocks(game)
     if base_route not in ROUTES:
         return None, {'ran': False, 'skip': 'route'}
-    if config['cooldown'] and cooldown is not None and cooldown.blocks(game):
+    if blocked:
         return None, {'ran': False, 'skip': 'cooldown'}
     gate = opponent_vcf(game)
     if gate['status'] == 'WIN':
