@@ -4976,7 +4976,11 @@ python scripts/tb_v3_ser5_tail.py --tb-v3 runs/tb_v3/ser5_r1.json runs/tb_v3/ser
   --tb-v2 runs/h7_timing/mini_fast4_r1.json runs/h7_timing/mini_fast4_r2.json --output docs/h7/tb_v3_ser5_tail.json
 ```
 
-- TB-V2 파일 이름은 P1a-1 SER5 측정 때 쓴 이름이다. 다르면 그 경로로 바꾼다. 없으면 `--tb-v2`를 빼도 된다(짝 비교만 빠진다).
+- TB-V2 파일 이름은 P1a-1 SER5 측정 때 쓴 이름이다. 다르면 그 경로로 바꾼다.
+  - 측정의 `--output` `.json`과 `--jsonl` 둘 다 받는다. 파일이 어느 엔진의 측정인지 확인한다(TB-V3 파일을 `--tb-v2`에 넣으면 거부).
+  - 찾기: `find ~ -name '*fast4_r*.json*' -path '*runs*'`
+  - 없으면 `--tb-v2`를 빼도 된다(짝 비교 열과 `what_if`만 빠진다). 또는 TB-V2-Value를 SER5에서 한 번 다시 잰다(약 50분).
+  - (2026-10-22) 첫 실행은 SER5의 `~/renju-h7-timing`에 `runs/h7_timing/mini_fast4_r1.json`이 없어 실패했다. 파일이 없으면 이제 위 안내와 함께 멈춘다.
 - 커밋할 것: `docs/h7/tb_v3_ser5_tail.json`(국면 행 없이 요약과 가장 느린 25국면만)
 - 보는 것
   - `step_seconds`(E4 단계 시간 분포)

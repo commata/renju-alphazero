@@ -1,7 +1,8 @@
 """TB-V3 Resolve on SER5: where the time of the slow moves goes (deployment analysis, no gate).
 
-Reads ``h7_timing.py measure --engine tb-v3`` outputs (full files with rows, not the committed summaries) and,
-optionally, the TB-V2-Value fast4 measure of the same machine on the same positions: the base is the same
+Reads ``h7_timing.py measure --engine tb-v3`` outputs (the full ``--output`` file with rows, or its ``--jsonl``;
+not the committed summaries) and, optionally, the TB-V2-Value fast4 measure of the same machine on the same
+positions (its ``--output`` or ``--jsonl``; omit ``--tb-v2`` if neither is kept): the base is the same
 engine with the same seed per position, so TB-V3 - TB-V2-Value is the E4-v2 step (gate + attack) there.
 Per position: total, the attack solver's own time (``e4_seconds``), the base parts (tree / root / vct2 /
 value), the step (skip reason, nodes, exhausted) and the paired TB-V2 time. Reported: the slowest positions,
@@ -46,10 +47,39 @@ def _mean_rows(files: list[dict]) -> dict[str, dict]:
     return merged
 
 
+def engine_of(measure: dict) -> str:
+    """'tb-v3' or 'tb-v2-value' from the file's engine hash, or (a jsonl) from its rows."""
+    from analysis import tb_v2_value, tb_v3
+
+    if 'engine' in measure:
+        return {tb_v3.ENGINE_HASH: 'tb-v3', tb_v2_value.config_hash(): 'tb-v2-value'}.get(measure['engine'], 'other')
+    kinds = {r.get('engine', 'tb-v2-value') for r in measure['rows']}
+    return kinds.pop() if len(kinds) == 1 else 'mixed'
+
+
+def load_measure(path: Path) -> dict:
+    """A measure ``--output`` file, or its ``--jsonl`` (one row per line; a torn last line is skipped)."""
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    text = path.read_text(encoding='utf-8')
+    if path.suffix != '.jsonl':
+        return json.loads(text)
+    rows = []
+    for line in text.splitlines():
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return {'rows': rows}
+
+
 def analyse(v3_files: list[dict], v2_files: list[dict]) -> dict:
     for f in v3_files:
-        if f.get('engine_name') != 'TB-V3 Resolve':
+        if engine_of(f) != 'tb-v3':
             raise ValueError('--tb-v3 takes TB-V3 Resolve measure files (with rows)')
+    for f in v2_files:
+        if engine_of(f) != 'tb-v2-value':
+            raise ValueError('--tb-v2 takes TB-V2-Value measure files (with rows)')
     v3 = _mean_rows(v3_files)
     v2 = _mean_rows(v2_files) if v2_files else {}
     rule = RULES['ser5']['max_seconds']
@@ -93,9 +123,15 @@ def main(argv=None) -> int:
     parser.add_argument('--tb-v2', nargs='*', type=Path, default=[])
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
-    load = (lambda p: json.loads(p.read_text(encoding='utf-8')))
     try:
-        result = analyse([load(p) for p in args.tb_v3], [load(p) for p in args.tb_v2])
+        v3 = [load_measure(p) for p in args.tb_v3]
+        v2 = [load_measure(p) for p in args.tb_v2]
+    except FileNotFoundError as exc:
+        parser.error(f'{exc.args[0]} not found. Measure files keep their rows in the --output .json or the --jsonl '
+                     "of that run; look for them with: find ~ -name '*fast4_r*.json*' -path '*runs*'. "
+                     'Without a TB-V2-Value file, leave out --tb-v2 (only the paired columns are lost).')
+    try:
+        result = analyse(v3, v2)
     except ValueError as exc:
         parser.error(str(exc))
     shown = {k: v for k, v in result.items() if k not in ('rows', 'slowest')}

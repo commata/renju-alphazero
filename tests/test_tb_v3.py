@@ -224,8 +224,8 @@ class Ser5TailTest(unittest.TestCase):
                 r.update(e4_seconds=e4, e4_attack={'ran': ran, 'skip': None if ran else 'route', 'exhausted': ran})
             return r
 
-        v3 = {'engine_name': 'TB-V3 Resolve', 'rows': [row('a', 28.0, 8.0), row('b', 3.0, 0.0, ran=False)]}
-        v2 = {'rows': [row('a', 20.0), row('b', 3.0)]}
+        v3 = {'engine': tb_v3.ENGINE_HASH, 'rows': [row('a', 28.0, 8.0), row('b', 3.0, 0.0, ran=False)]}
+        v2 = {'rows': [row('a', 20.0), row('b', 3.0)]}  # a jsonl: rows only, no engine field
         out = tail.analyse([v3, v3], [v2])
         self.assertEqual(out['over_rule'], ['a'])
         self.assertEqual(out['slowest'][0]['step_seconds'], 8.0)
@@ -234,3 +234,15 @@ class Ser5TailTest(unittest.TestCase):
         self.assertEqual(out['skips']['route'], 1)
         with self.assertRaises(ValueError):
             tail.analyse([v2], [])
+        with self.assertRaises(ValueError):  # a TB-V3 file given as the TB-V2 baseline
+            tail.analyse([v3], [v3])
+        with TemporaryDirectory() as tmp:
+            jsonl = Path(tmp) / 'v3.jsonl'
+            jsonl.write_text('\n'.join(json.dumps({**r, 'engine': 'tb-v3'}) for r in v3['rows']) + '\n{"torn',
+                             encoding='utf-8')
+            self.assertEqual(tail.engine_of(tail.load_measure(jsonl)), 'tb-v3')
+            out = Path(tmp) / 'tail.json'
+            self.assertEqual(tail.main(['--tb-v3', str(jsonl), '--output', str(out)]), 0)  # no --tb-v2
+            self.assertIsNone(json.loads(out.read_text(encoding='utf-8'))['step_seconds'])
+            with self.assertRaises(SystemExit):
+                tail.main(['--tb-v3', str(jsonl), '--tb-v2', str(Path(tmp) / 'missing.json')])
