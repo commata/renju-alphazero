@@ -4471,6 +4471,108 @@ python -u scripts/h7_e4v2_precheck.py --positions docs/h7/h7_e4v2_costtest_posit
   - `report`: 공격 수, 수 바뀜, 생략 사유별 수(route / cooldown / opponent_vcf), 공격 초
 - `PRECHECK_FAIL`이면 여기서 E4-v2 REJECT다. `PROCEED`이면 다음은 arena 명령과 `summarize_h7_e4.py`다(기준 4M 사건 추출 포함).
 
+## E4-v2 arena 요약 도구 (2026-10-22, arena 전 고정)
+
+`scripts/summarize_h7_e4.py`(시험 `tests/test_h7_e4v2_arena.py`). 승인된 arena 규칙을 그대로 옮겼다. 사전 검사가 `PROCEED`일 때만 쓴다.
+
+**입력 검사 (하나라도 어긋나면 요약하지 않는다)**
+- run 4개: B `puct_value_vct2_50k_tt`, E `puct_value_vct2_50k_tt_e4v2`
+  - 각각 seed 8441, 8442 한 번씩. 다른 seed는 받지 않는다.
+  - `v8:full` 상대, 50 pair, `--fast fast4`, CUDA value, `canonical_factory: true`
+- 설정
+  - B = `TB_V2_VALUE + ENGINE_OPTIONS`
+  - E = B 설정 + `e4v2_attack`
+- runtime 기록
+  - B: 동결 엔진 해시, `tb_v2_runtime.runtime_hash('cuda')`
+  - E: `candidate_hash`, 후보 `runtime_hash('cuda')`, 기준 runtime 해시
+- 단계 기록
+  - E는 모든 수에 E4-v2 단계 기록(`e4_attack`)이 있어야 한다.
+  - B에는 하나도 없어야 한다.
+  - 공격 WIN은 route `own_vct2`이고, 실제로 둔 수와 같아야 한다.
+- 같은 seed의 두 arm은 opening이 같아야 하고, (seed, pair, 색) 집합도 같아야 한다.
+- 요약 시점의 코드
+  - `tb_v2_value_e4v2.check_sources()`
+  - code manifest 검사
+  - 기준 solver: `docs/h7/h7_e4v2_reference_4m.json`이 `FREEZE` / `4m`이고, 그 `reference_sha256`이 지금 `e4_reference.py`와 같아야 한다.
+
+**판정 (두 seed를 합쳐 한 번. 모든 gate PASS → ADOPT, 하나라도 아니면 REJECT)**
+- 기력: opening(seed, pair, 양 색) 단위 점수 차 E − B, bootstrap 10,000(seed 0, E2와 같음). 95% 하한 ≥ −0.05
+- 비용: 짝 대국 전체 V8 수 시간 합 E / B ≤ 1.5
+- 건전성
+  - E4-v2 공격이 WIN을 증명한 수 전부를 truth `check_move`(10M)로 다시 검사한다. 수가 바뀌지 않은 WIN도 포함한다. MISS 0이어야 한다. UNCLEAR는 보고만 한다.
+  - 두 arm 모두 안전 위반(`summarize_h4.safety`) 0. E2 / CPU 인증과 같은 불변식이다.
+- 빈도
+  - 사건 국면: arm이 둘 차례이고, 직전 수가 `v8:full`의 수인 국면이다. opening 마지막 수 직후 국면은 넣지 않는다.
+  - 그 국면에서 기준 solver(`reference_attack(game, '4m')`)가 WIN을 증명하면 사건이다.
+  - 응징: 그 국면에서 arm이 둔 수가 `check_move` PUNISH
+  - cluster는 opening(seed, pair)이다. 양 색과 두 arm을 함께 묶는다.
+  - bootstrap 표본마다 arm별 `Σ응징 / Σ사건`을 다시 계산한다. opening별 비율의 평균은 쓰지 않는다. 사건 0인 opening도 남긴다.
+  - E − B의 95% 하한 > 0이면 PASS다.
+  - 한 arm의 사건이 0인 표본은 비율이 정의되지 않는다. 그런 표본은 빼고, 그 수를 `degenerate_samples`로 남긴다.
+- 격리
+  - 위 입력 검사: 설정, runtime identity, canonical factory, 후보 SHA, 단계 기록
+  - off 경로는 단위 시험(`tests.test_tb_v2_value_e4v2`)이 맡는다.
+
+**보고만 하는 것**
+- arm별 점수, 색별 점수, 대국 분
+- E4-v2 단계: 생략 사유별 수, 공격 수, 예산 소진, WIN, 수 바뀜, 공격 초
+- 응징 검사 UNCLEAR 수, opening별 사건 / 응징
+- B와 같은 대국 수
+- **E의 첫 수 교체보다 먼저 B와 갈라진 대국**
+  - CUDA 반복 측정(`h7_equiv_cuda_vs_cuda.json`)은 차이 0이었다. 그래서 E 대국은 첫 교체 전까지 B 대국과 같아야 한다.
+  - 0이 아니면 공격 단계가 기준 엔진에 새는 것(예: VCF 표, 난수)이다. 판정을 받아들이기 전에 원인을 본다.
+
+**계산 방식**
+- 국면은 수순(history)마다 한 번만 푼다. 두 arm과 두 seed를 합친다.
+  - E 대국은 첫 교체 전까지 B와 같으므로, 국면의 상당수가 겹친다.
+- 한 국면에서 하는 일
+  - 기준 solver는 항상 돌린다.
+  - WIN이면 그 수순에서 둔 수를 모두 `check_move`로 검사한다.
+  - 공격 WIN 수는 항상 검사한다.
+- worker pool(`run_chunks`)로 돌리고, 끝난 국면을 바로 `--jsonl`에 쓴다(resume).
+  - fingerprint: 예산 `4m`, 검사 예산(10M), fast 모드, 기준 solver / truth / `check_move` / 공격 의존 파일 / code manifest의 SHA
+- 두 solver는 시간이 아니라 노드로 끊는다. 그래서 국면 결과가 기계에 따라 달라지지 않는다.
+  - 기계를 나눠 돌릴 수 있다: `--shard K/N`으로 나눠 풀고, 마지막에 `--merge`로 합쳐 요약한다.
+- `--plan`: 입력만 검사하고 국면 수를 센다.
+- 비용 추정: COSTTEST 국면(E2 대국, 같은 종류) 표본에서 기준 solver 4M은 국면당 평균 약 30초였다(컨테이너 1코어).
+  - 분포가 한쪽으로 길다. 표본의 약 1/6이 4M을 다 써서 약 180초가 걸린다. 나머지는 대부분 수 초 이내다.
+  - 사건 국면의 `check_move`(10M)가 더 붙는다.
+  - 국면 수는 arm·seed마다 100대국 × 약 27수다. 겹침을 빼면 수천 국면이다. 실제 수는 `--plan`이 알려 준다.
+
+**실행 명령 — arena (데스크톱, 사전 검사가 `PROCEED`일 때만)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_tb_v2_value_e4v2 tests.test_track_b_guard tests.test_h7_e4v2_arena
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; W=8
+mkdir -p runs/h7_e4v2
+for SEED in 8441 8442; do
+for SIDE in b e; do
+ARM=puct_value_vct2_50k_tt; [ $SIDE = e ] && ARM=puct_value_vct2_50k_tt_e4v2
+python -u scripts/run_mcts_v8_benchmark.py --arm $ARM --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast4 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h7_e4v2/${SIDE}_$SEED.jsonl --output runs/h7_e4v2/${SIDE}_$SEED.json 2>&1 | tee runs/h7_e4v2/${SIDE}_$SEED.log
+done; done
+RUNS="runs/h7_e4v2/b_8441.json runs/h7_e4v2/b_8442.json runs/h7_e4v2/e_8441.json runs/h7_e4v2/e_8442.json"
+python scripts/summarize_h7_e4.py --runs $RUNS --plan
+python -u scripts/summarize_h7_e4.py --runs $RUNS --workers 10 --fast fast4 \
+  --jsonl runs/h7_e4v2/arena_positions.jsonl --output docs/h7/h7_e4v2_arena.json 2>&1 | tee runs/h7_e4v2/arena_summary.log
+```
+
+- 요약 단계는 GPU가 필요 없다. 중간에 끊겨도 같은 명령을 다시 실행하면 이어서 푼다.
+- SER5와 나눠 돌릴 때
+  - run 파일 4개를 SER5에 복사한다.
+  - 각 기계에서 `--shard 0/2`(데스크톱)과 `--shard 1/2`(SER5)를 `--jsonl`과 함께 실행한다.
+  - 마지막에 데스크톱에서 `--merge <두 jsonl>`로 요약한다.
+- 커밋할 것: `docs/h7/h7_e4v2_arena.json`. run 파일과 jsonl은 `runs/`에 둔다.
+- 먼저 볼 것
+  - `verdict`
+  - `gates`의 각 `verdict`, `diff`, `ci95`, `ratio`, `rate`, `miss`
+  - `report.isolation.left_before_first_switch`: 0이어야 한다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
