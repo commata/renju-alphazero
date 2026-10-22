@@ -367,7 +367,8 @@ def play_one(task: dict) -> dict:
     if is_canonical(task['arm'], task.get('fast', 'off'), config):
         # the frozen canonical: built by its factory after the policy / value / source / code checks
         from analysis.track_b_guard import make_canonical_agent
-        v8 = make_canonical_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'))
+        v8 = make_canonical_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
+                                  task.get('value_checkpoint'))
     else:
         v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy, leaf_value=leaf,
                          root_vcf_table=bool(config.get('root_vcf_table')),

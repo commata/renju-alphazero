@@ -5,8 +5,8 @@
     engine     ``tb_v2_value.config_hash`` == ``tb_v2_runtime.ENGINE_HASH``; the VCF table file SHA
     runtime    the native C and Python binding sources (``track_b_guard.check_runtime_sources``); the native build
                is fresh; fast4 installs and binds (``tb_v2_runtime.install`` / ``check_bound``)
-    models     the H3 policy checkpoint and metadata (``s3_vct2_v1.check_checkpoint``); the value checkpoint
-               SHA (and that its ``best.json`` exists)
+    models     the H3 policy checkpoint and metadata (``s3_vct2_v1.check_checkpoint``); the value checkpoint and
+               its ``best.json`` (``track_b_guard.check_value_checkpoint``)
     e4         the E4-v1 candidate's locked attack sources (``tb_v2_value_e4.check_sources``)
 Exit status 1 on any FAIL. Run it before benchmark, web or self-play work on a machine with the models.
 
@@ -117,13 +117,9 @@ def checks(models: bool, policy_checkpoint: Path, value_checkpoint: Path) -> lis
         return guard.check_policy_checkpoint(policy_checkpoint)['policy_checkpoint_sha256'][:12]
 
     def value():
-        from analysis.tb_v2_value import VALUE_CHECKPOINT_SHA256
-        if not value_checkpoint.with_name('best.json').exists():
-            raise FileNotFoundError(f'{value_checkpoint.with_name("best.json")} is missing')
-        sha = hashlib.sha256(value_checkpoint.read_bytes()).hexdigest()
-        if sha != VALUE_CHECKPOINT_SHA256:
-            raise ValueError(f'{value_checkpoint} is {sha[:12]}, the frozen value is {VALUE_CHECKPOINT_SHA256[:12]}')
-        return sha[:12]
+        found = guard.check_value_checkpoint(value_checkpoint)
+        return f"{found['value_checkpoint_sha256'][:12]} + best.json {found['value_metadata_sha256'][:12]}"
+
 
     def e4():
         from analysis import tb_v2_value_e4

@@ -51,6 +51,19 @@ COST_MAX = 1.35
 TIE = 1
 
 
+# The files a computed row or a calibration depends on: the attack, its proof and solver, the check of a WIN,
+# this tool (replay, cost model) and the canonical engine code (manifest: mcts_v8, threats, search, ...).
+CODE = ('src/analysis/e4v2_attack.py', 'src/analysis/e4_attack.py', 'src/analysis/vct2_attack.py',
+        'src/analysis/selective_vct.py', 'scripts/h7_e4_baseline.py', 'scripts/h7_e4v2_dev.py',
+        'tests/track_b_frozen.sha256')
+
+
+def code_shas() -> dict:
+    import hashlib
+
+    return {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in CODE}
+
+
 # -- cost model --------------------------------------------------------------------------------------------
 
 def fit_cost_model(rows: list[dict]) -> dict:
@@ -285,10 +298,8 @@ def main(argv=None) -> int:
     if pre.get('candidate_hash') != tb_v2_value_e4.candidate_hash():
         parser.error(f'{args.precheck} is not the pre-check of the frozen E4-v1 candidate')
     timing = {p['id']: p for p in json.loads(args.positions.read_text(encoding='utf-8'))['positions']}
-    fingerprint = {'e4v2_attack_sha256': file_sha256(ROOT / 'src/analysis/e4v2_attack.py'),
-                   'e4_attack_sha256': file_sha256(ROOT / 'src/analysis/e4_attack.py'),
-                   'truth_sha256': file_sha256(args.truth), 'check_budget': t['budget'], 'budgets': v2.BUDGETS,
-                   'gate_node_limit': v2.GATE_NODE_LIMIT}
+    fingerprint = {'code': code_shas(), 'truth_sha256': file_sha256(args.truth), 'check_budget': t['budget'],
+                   'budgets': v2.BUDGETS, 'gate_node_limit': v2.GATE_NODE_LIMIT}
     positions = [dev_only(p) for p in corpus['positions'] if p['split'] == 'DEV'][:args.limit]
     baseline = {p['id']: b['positions'][p['id']] for p in positions if p['id'] in b['positions']}
     eligible = {p['id'] for p in positions
@@ -339,6 +350,10 @@ def main(argv=None) -> int:
         calibration = json.loads(args.calibration.read_text(encoding='utf-8'))
         if calibration.get('precheck_sha256') != file_sha256(args.precheck):
             parser.error(f'{args.calibration} is not a calibration of this pre-check')
+        if calibration.get('fast') != args.fast:
+            parser.error(f"{args.calibration} was measured with --fast {calibration.get('fast')}, this run uses {args.fast}")
+        if calibration.get('code') != code_shas():
+            parser.error(f'{args.calibration} was measured with other attack or cost-model code')
         correction = calibration['correction']
     dev_rows = {i: r for (s, i), r in done.items() if s == 'dev'}
     cost_rows = {i: r for (s, i), r in done.items() if s == 'costdev'}

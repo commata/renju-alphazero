@@ -4,7 +4,12 @@ The frozen identity files cannot change without a new engine / runtime step (CLA
 four checks to their callers (docs/h6-value.md, "동결 보증 점검"):
     policy     ``tb_v2_value.config_hash`` does not cover the H3 policy and ``make_agent`` does not check it:
                ``check_policy_checkpoint`` (both SHA-256, ``s3_vct2_v1.check_checkpoint``)
-    value      ``tb_v2_value.make_agent`` accepts a leaf without a ``sha256``: ``check_leaf`` refuses it
+    value      ``tb_v2_value.make_agent`` accepts a leaf without a ``sha256``, and no identity covers the value's
+               ``best.json`` (its ``model_config`` builds the network): ``check_leaf`` refuses a leaf without the
+               frozen SHA, ``check_value_checkpoint`` checks both files (``VALUE_METADATA_SHA256`` is the
+               ``best.json`` SHA-256 recorded with the frozen checkpoint in the E3 provenance,
+               ``docs/h7/h7_e3_p92.json``)
+    objects    ``check_models`` also requires a real ``RootPolicy`` / ``ValueLeaf`` loaded from those paths
     sources    ``tb_v2_runtime.check_bound`` checks the native build, not the Python binding files:
                ``check_runtime_sources`` hashes every native and binding source of the profile
     code       no engine hash covers the code: ``check_code`` compares every file of the canonical import
@@ -19,6 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / 'tests' / 'track_b_frozen.sha256'
+VALUE_METADATA_SHA256 = '51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea'
 
 
 def _sha(path: Path) -> str:
@@ -44,6 +50,45 @@ def check_leaf(leaf) -> str:
     if sha != VALUE_CHECKPOINT_SHA256:
         raise ValueError(f'the value leaf reports {sha!r}, the frozen checkpoint is {VALUE_CHECKPOINT_SHA256[:12]}...')
     return sha
+
+
+def check_value_checkpoint(checkpoint) -> dict:
+    """Both files of the value checkpoint must be the frozen ones (``best.pt`` and its ``best.json``)."""
+    from .tb_v2_value import VALUE_CHECKPOINT_SHA256
+
+    checkpoint = Path(checkpoint)
+    found = {'value_checkpoint_sha256': _sha(checkpoint),
+             'value_metadata_sha256': _sha(checkpoint.with_name('best.json'))}
+    expected = {'value_checkpoint_sha256': VALUE_CHECKPOINT_SHA256, 'value_metadata_sha256': VALUE_METADATA_SHA256}
+    if found != expected:
+        raise ValueError(f'{checkpoint} is not the frozen value checkpoint: {found} != {expected}')
+    return found
+
+
+def check_models(policy, leaf, policy_checkpoint, value_checkpoint) -> dict:
+    """The real H3 ``RootPolicy`` and H6 ``ValueLeaf`` of the frozen files, loaded from exactly those paths."""
+    from hybrid.h4_policy import RootPolicy
+    from hybrid.h6_value_leaf import ValueLeaf
+
+    if not isinstance(policy, RootPolicy) or not isinstance(leaf, ValueLeaf):
+        raise TypeError(f'the canonical needs a RootPolicy and a ValueLeaf, got {type(policy).__name__} and '
+                        f'{type(leaf).__name__}')
+    hashes = check_policy_checkpoint(policy_checkpoint, policy)
+    hashes.update(check_value_checkpoint(value_checkpoint))
+    if Path(leaf.checkpoint).resolve() != Path(value_checkpoint).resolve():
+        raise ValueError(f'the value leaf was not loaded from {value_checkpoint} (it reports {leaf.checkpoint})')
+    check_leaf(leaf)
+    return hashes
+
+
+def check_all(policy, leaf, policy_checkpoint, value_checkpoint) -> dict:
+    """Models, runtime sources and code: everything here but the engine hash and the binding."""
+    hashes = check_models(policy, leaf, policy_checkpoint, value_checkpoint)
+    check_runtime_sources()
+    bad = check_code()
+    if bad:
+        raise RuntimeError(f'the canonical code differs from {MANIFEST.name}: {bad}')
+    return hashes
 
 
 def check_runtime_sources() -> None:
@@ -77,14 +122,9 @@ def check_code(path: Path = MANIFEST) -> list[str]:
     return bad
 
 
-def make_canonical_agent(policy, leaf, seed: int, policy_checkpoint):
+def make_canonical_agent(policy, leaf, seed: int, policy_checkpoint, value_checkpoint):
     """TB-V2-Value + fast4 after every check above (raises on the first failure)."""
     from . import tb_v2_runtime as rt
 
-    check_policy_checkpoint(policy_checkpoint, policy)
-    check_leaf(leaf)
-    check_runtime_sources()
-    bad = check_code()
-    if bad:
-        raise RuntimeError(f'the canonical code differs from {MANIFEST.name}: {bad}')
+    check_all(policy, leaf, policy_checkpoint, value_checkpoint)
     return rt.make_agent(policy, leaf, seed=seed)

@@ -30,6 +30,20 @@ class GuardTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 guard.check_policy_checkpoint(ckpt)
 
+    def test_value_checkpoint_and_objects(self):
+        with TemporaryDirectory() as tmp:
+            ckpt = Path(tmp) / 'best.pt'
+            ckpt.write_bytes(b'another value')
+            (Path(tmp) / 'best.json').write_text('{}')
+            with self.assertRaises(ValueError):
+                guard.check_value_checkpoint(ckpt)
+            with self.assertRaises(TypeError):  # stand-ins are not the real RootPolicy / ValueLeaf
+                guard.check_models(object(), Leaf(VALUE_CHECKPOINT_SHA256), ckpt, ckpt)
+        self.assertEqual(len(guard.VALUE_METADATA_SHA256), 64)
+        e3 = json.loads(Path(guard.ROOT / 'docs/h7/h7_e3_p92.json').read_text(encoding='utf-8'))['provenance']
+        self.assertEqual((e3['value_checkpoint_sha256'], e3['value_metadata_sha256']),
+                         (VALUE_CHECKPOINT_SHA256, guard.VALUE_METADATA_SHA256))  # recorded with the frozen value
+
     def test_sources_and_code_manifest(self):
         guard.check_runtime_sources()
         self.assertEqual(guard.check_code(), [])

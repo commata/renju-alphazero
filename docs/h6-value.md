@@ -4113,7 +4113,7 @@ timing 국면 기준이다. 시간은 데스크톱 실측이다. 예산 상한�
 - **COSTTEST (`scripts/h7_e4v2_costtest.py`, 측정 전 고정)**
   - E2 holdout `runs/h7_e2/tt_vs_full_8421.json`, `_8422.json`(TB-Engine-v2 대 `v8:full`)
   - 시험 arm이 둔 수 직전 국면 전부에서, 웹 corpus와 COSTDEV의 D4 겹침을 뺀다(남은 집합 겹침 0 assert).
-  - **대국 단위로** sha256(대국 key) 순서로 2,500국면이 될 때까지 넣는다.
+  - **대국 단위로** sha256(대국 key) 순서로 2,500국면이 될 때까지 넣는다(대국을 쪼개지 않으므로 2,500을 조금 넘을 수 있다).
   - 국면 단위로 뽑지 않는 이유: cooldown은 같은 대국의 연속된 수에서만 작동한다. 공식 사전 검사도 대국마다 수 순서대로, 대국당 상태 하나로 잰다(E4-v2 사전 검사 도구는 후보 동결 때 만든다).
 - arena: seed 8441 / 8442(본 적 없음)
 - 웹 HOLDOUT: 보고만
@@ -4206,10 +4206,12 @@ python -u scripts/h7_e4v2_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth 
 **`src/analysis/track_b_guard.py`**
 - `check_policy_checkpoint(path, policy)`, `check_leaf(leaf)`, `check_runtime_sources()`, `check_code()`
 - `make_canonical_agent(policy, leaf, seed, policy_checkpoint)`: 위 넷을 모두 통과한 뒤 `tb_v2_runtime.make_agent`(엔진 해시, fast4 바인딩)
-- 쓰는 곳
-  - 벤치마크 canonical arm
-  - `h7_e4_baseline.py`, `h7_e4_precheck.py`(실모델일 때)
-  - 앞으로의 E4-v2 사전 검사, arena, H7-c1 self-play
+- 쓰는 곳(구현됨)
+  - 벤치마크 canonical arm: `make_canonical_agent`로 agent를 만든다.
+  - `h7_e4_baseline.py`, `h7_e4_precheck.py`(실모델일 때): `check_all`(모델, 실행판 소스, 코드 manifest)을 통과해야 시작한다.
+    - agent는 예전처럼 `tb_v2_value.make_agent`와 `tb_v2_value_e4.make_runtime_agent`로 만든다. 엔진 해시와 fast4 바인딩은 그 안에서 검사된다.
+    - 그래서 `make_canonical_agent`와 같은 검사 범위다. 다만 같은 함수 경로는 아니다.
+- 앞으로(아직 구현 전): E4-v2 사전 검사, arena, H7-c1 self-play는 처음부터 `make_canonical_agent`로 만든다.
 
 **`scripts/check_track_b_frozen.py`**
 - 검사 항목
@@ -4224,8 +4226,19 @@ python -u scripts/h7_e4v2_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth 
 - 컨테이너(`--no-models`): 모두 PASS. 모델 검사는 데스크톱에서 확인한다.
 - `--write-manifest`는 명시적 엔진 / 실행판 동결 단계에서만 쓴다.
 
+**2차 검토 반영 (사실 확인 후)**
+
+| 지적 | 판단 | 조치 |
+|---|---|---|
+| E4 baseline / precheck는 가드 일부만 거친다(코드 manifest 없음). 문서 표현도 부정확 | 사실 | 두 도구에 `check_all`(모델 + 실행판 소스 + 코드 manifest)을 적용했다. 문서를 실제 경로대로 고쳤다(위). |
+| value `best.json` SHA가 고정돼 있지 않다(`ValueLeaf`가 그 `model_config`로 망을 만든다) | 사실 | `VALUE_METADATA_SHA256 = 51fd3fa4…`를 가드에 넣었다. 이 값은 E3 run provenance(`docs/h7/h7_e3_p92.json`)에 동결 value `a0fcccc4…`와 함께 기록된 값이다(시험으로 대조). `check_value_checkpoint`(두 파일)를 가드와 검사기가 쓴다. |
+| 가짜 객체가 SHA 속성만 맞추면 통과한다 | 사실(실수 방지 수준) | `check_models`: 진짜 `RootPolicy` / `ValueLeaf`여야 하고, value leaf도 넘긴 경로에서 로드했어야 한다. |
+| manifest 파일 수 57 → 56 | 문서는 이미 56(57은 첫 채팅 답에만 있었다) | 없음 |
+| DEV resume fingerprint에 `vct2_attack.py`, `selective_vct.py`가 없다 | 사실 | fingerprint의 `code`에 `e4v2_attack.py`, `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`, `h7_e4_baseline.py`(WIN 재검사), `h7_e4v2_dev.py`(재생, 비용 모형), `tests/track_b_frozen.sha256`(엔진 코드 전체)의 SHA를 넣었다. |
+| 보정 파일이 코드와 fast 모드에 묶여 있지 않다 | 사실 | 보정 파일에 같은 `code` SHA와 `fast`를 기록한다. DEV는 사전 검사 SHA, fast(= 이번 run의 `--fast`), code 중 하나라도 다르면 거부한다(시험 추가). |
+
 **다음 엔진 동결 때 반드시 넣을 것 (E4-v2 ADOPT 시 또는 별도 identity 단계)**
-- `config_hash`에 `POLICY_CHECKPOINT_SHA256`, `POLICY_METADATA_SHA256`를 포함
+- `config_hash`에 `POLICY_CHECKPOINT_SHA256`, `POLICY_METADATA_SHA256`, value `best.json` SHA를 포함
 - 새 `make_agent`에서 policy checkpoint 검사, value SHA fail-closed
 - 실행판 `check_bound`에서 binding 파일 SHA 검사
 - code manifest를 identity에 포함(엔진 해시 또는 runtime 해시)

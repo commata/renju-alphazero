@@ -90,9 +90,7 @@ def _init(policy_checkpoint, value_checkpoint, device, threads, factories=None):
     rt.check_bound()
     if factories is None:  # the real models: the checks the frozen factory leaves to its callers
         from analysis import track_b_guard as guard
-        guard.check_policy_checkpoint(policy_checkpoint, h7_timing._WORKER['policy'])
-        guard.check_leaf(h7_timing._WORKER['leaf'])
-        guard.check_runtime_sources()
+        guard.check_all(h7_timing._WORKER['policy'], h7_timing._WORKER['leaf'], policy_checkpoint, value_checkpoint)
 
 
 def position_task(task: dict) -> dict:

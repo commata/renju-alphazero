@@ -8,7 +8,8 @@ position) are timed and compared with the model:
     correction    = factor[mode] / factor['plain'] for 'killer' and 'gate' (relative to the plain attack the
                     model was fitted on, so the machine speed cancels); ``h7_e4v2_dev.py --calibration``
                     multiplies the model seconds of killer attacks and of the gate by these
-Run on the desktop (the machine of the pre-check), nothing else running.
+Run on the desktop (the machine of the pre-check), nothing else running. The output records the fast mode and
+the SHA-256 of the code it measured (``h7_e4v2_dev.code_shas``); the DEV run refuses it if either differs.
 
     python scripts/h7_e4v2_calibrate.py --precheck docs/h7/h7_e4_precheck.json \\
         --positions docs/h7/h7_timing_positions.json --fast fast4 --output docs/h7/h7_e4v2_calibration.json
@@ -105,8 +106,12 @@ def main(argv=None) -> int:
             rows.append({'id': r['id'], **measure([tuple(m) for m in timing[r['id']]['moves']], i % 2 == 1)})
             progress.update(1)
     result = summarize(rows, model)
+    if args.fast != 'fast4':
+        print('[h7-e4v2-calibrate] note: the DEV run uses --fast fast4 and refuses a calibration of another mode',
+              flush=True)
     payload = {'format': FORMAT, 'git_commit': _git_commit(), 'precheck_sha256': file_sha256(args.precheck),
-               'positions_sha256': file_sha256(args.positions), 'fast': args.fast, 'machine': machine(),
+               'positions_sha256': file_sha256(args.positions), 'fast': args.fast, 'code': dev2.code_shas(),
+               'machine': machine(),
                'count': args.count, 'cost_model': model, **result, 'rows': rows}
     print(json.dumps(result, indent=1), flush=True)
     if args.output is not None:

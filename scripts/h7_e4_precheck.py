@@ -171,9 +171,7 @@ def main(argv=None, factories=None) -> int:
             from hybrid.h6_value_leaf import ValueLeaf
             policy, leaf = RootPolicy(args.policy_checkpoint), ValueLeaf(args.value_checkpoint, device=args.device)
             from analysis import track_b_guard as guard
-            guard.check_policy_checkpoint(args.policy_checkpoint, policy)
-            guard.check_leaf(leaf)
-            guard.check_runtime_sources()
+            guard.check_all(policy, leaf, args.policy_checkpoint, args.value_checkpoint)
         for p in todo:
             row = measure(p, policy, leaf)
             done[row['id']] = row
