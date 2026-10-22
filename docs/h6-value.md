@@ -4147,9 +4147,10 @@ timing 국면 기준이다. 시간은 데스크톱 실측이다. 예산 상한�
 cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
 export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
 (cd src && CC=gcc python -m rt30.native.build --if-stale)
-python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_h7_e4 tests.test_track_b_guard
 mkdir -p runs/h7_e4v2
-rm -f runs/h7_e4v2/dev.jsonl docs/h7/h7_e4v2_dev.json   # nothing from before this fix
+rm -f runs/h7_e4v2/dev.jsonl docs/h7/h7_e4v2_calibration.json docs/h7/h7_e4v2_dev.json   # nothing from older code
 # 1) COSTTEST positions (fixed now, before any E4-v2 measurement)
 python scripts/h7_e4v2_costtest.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7_e2/tt_vs_full_8422.json \
   --corpus docs/h7/h7_e4_web_corpus.json --costdev docs/h7/h7_timing_positions.json \
