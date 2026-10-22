@@ -4053,6 +4053,107 @@ timing 국면 기준이다. 시간은 데스크톱 실측이다. 예산 상한�
 4. COSTDEV / COSTTEST 분리. COSTTEST는 E2 holdout 대국에서 만든다.
 5. 비용 모형(노드, 호출 → 초)을 COSTDEV 비용 추정에 쓴다. 공식 판정은 COSTTEST의 실측이다.
 
+## E4-v2 설계 확정과 도구 (2026-10-22, DEV 실행 전 고정)
+
+위 초안이 승인됐다. 아래가 확정 내용이다.
+
+**순서와 목표**
+- E4-v2를 먼저 끝낸다(ADOPT / REJECT까지). H7-c1은 그 뒤에 시작한다.
+  - E4-v2 ADOPT → 그 엔진으로 H7-c1을 한다.
+  - REJECT → TB-V2-Value + fast4로 H7-c1을 한다.
+- 목표는 더 많은 승리를 찾는 것이 아니다. E4-v1의 전술 성능(DEV 30 / 41)을 최대한 유지하면서, 비용의 대부분인 "예산을 다 쓰고 실패한 공격"을 줄여 공식 비용 ≤ 1.5를 통과하는 것이다.
+- 남은 DEV MISS를 더 푸는 것은 우선순위가 아니다.
+
+**고정한 구조 (`src/analysis/e4v2_attack.py`)**
+- E4-v1 그대로인 것
+  - 첫 수: 4 / 열린 삼 + 국소 VCF 위협수
+  - 방어자 응수 전부를 검사하는 selective VCT2 증명
+  - 증명된 WIN일 때만 B의 수를 바꾼다.
+  - route: stage4 / 5 / tree
+  - 공정 분배
+  - 시험: `200k`·killer off의 `attack`은 v1 `e4_attack`과 같은 수, 노드, 호출, 후보 수를 낸다.
+- **G1 상대 VCF 문턱 (모든 조합에 고정)**
+  - 우리가 쉬면 상대에게 VCF가 있는 국면(`opponent_vcf`, VCF 한 번, 2만 노드)에서는 공격하지 않는다.
+  - VCF 판별이 잘리면(UNKNOWN) 공격한다.
+  - 판별 비용(노드, 호출 1)도 비용에 넣는다.
+- **C cooldown (축)**
+  - 우리의 직전 공격이 예산을 다 쓰고 WIN을 증명하지 못했으면, 우리 다음 수에서 공격을 한 번 건너뛴다.
+  - 대국마다 1비트다(`Cooldown`).
+  - "같은 대국의 우리 다음 수"는 기록된 수순에 지금 수순이 두 수 더해진 경우다.
+  - 비트는 다음 수에서 무슨 일이 있든 해제한다. 그 수가 강제 route라 공격 자체가 없어도 해제한다.
+  - 상대 VCF 문턱으로 시작하지 않은 공격, 끝까지 탐색했지만 WIN 없이 끝난 공격, 건너뛴 수는 비트를 세우지 않는다.
+- **K killer 응수 순서 (축)**
+  - 앞에서 공격을 막은 방어 응수를 먼저 시도한다(`KillerSolver`, 깊이·둘 차례별 최근 8개).
+  - 합법 수 집합과 방어 응수 집합은 줄이지 않는다.
+  - 시험: 예산을 충분히 주면 후보마다 killer 유무로 WIN / REFUTED가 같다(4국면, 후보 최대 6개씩).
+- **예산 (축)**: 200k / 20k 호출, 150k / 15k 호출(VCF 한 번 20k). 100k는 쓰지 않는다.
+- 격자: 예산 × C × K = 8 (`GRID`)
+
+**DEV 선택 규칙 (결과 전 고정, `scripts/h7_e4v2_dev.py`)**
+1. 거짓 증명 0
+2. 모순 0
+3. 얕은 회귀 0
+4. COSTDEV 비용 추정 ≤ 1.35
+5. 그중 DEV 응징(WIN_VCT2_ONLY 41) 최대
+6. 1국면 이내는 동률
+7. 동률이면 COSTDEV 비용이 가장 낮은 조합(그다음 격자 순서)
+- 1–4를 통과하는 조합이 없으면 E4-v2는 DEV에서 REJECT다. 기준은 바꾸지 않는다.
+
+**자료 역할**
+- 웹 DEV(`dev_only`): 응징, 건전성, 얕은 회귀. cooldown은 같은 웹 대국의 연속 main 국면으로 재생한다. undone 국면은 직전 상태가 없다.
+- COSTDEV = E4-v1 사전 검사 2,525국면(설계용)
+  - 비용 = v1에서 잰 B 초 + 비용 모형
+  - 비용 모형: 초 = a·노드 + b·호출 + c. v1 사전 검사의 공격 1,858회로 도구 안에서 맞춘다.
+    - a = 2.218e-5, b = 9.57e-5, c = 0.0644, R² 0.987, 범위 노드 0–200k, 호출 0–20k
+    - 계수, R², 범위는 결과 파일에 남긴다.
+    - G1 판별에는 상수 c를 붙이지 않는다(VCF 한 번이라 공격 준비 비용이 없다).
+  - cooldown은 대국 id와 ply 순서로 재생한다.
+  - E4-v1이 공격한 국면이 대상이다(B route가 해당).
+  - 이 비용은 선택용 추정일 뿐이다. 공식 판정이 아니다.
+- **COSTTEST (`scripts/h7_e4v2_costtest.py`, 측정 전 고정)**
+  - E2 holdout `runs/h7_e2/tt_vs_full_8421.json`, `_8422.json`(TB-Engine-v2 대 `v8:full`)
+  - 시험 arm이 둔 수 직전 국면 전부에서, 웹 corpus와 COSTDEV의 D4 겹침을 뺀다(남은 집합 겹침 0 assert).
+  - **대국 단위로** sha256(대국 key) 순서로 2,500국면이 될 때까지 넣는다.
+  - 국면 단위로 뽑지 않는 이유: cooldown은 같은 대국의 연속된 수에서만 작동한다. 공식 사전 검사도 대국마다 수 순서대로, 대국당 상태 하나로 잰다(E4-v2 사전 검사 도구는 후보 동결 때 만든다).
+- arena: seed 8441 / 8442(본 적 없음)
+- 웹 HOLDOUT: 보고만
+
+**그 뒤 (고정)**
+1. 후보 동결: 리터럴 설정, 의존 SHA 잠금, candidate / runtime 해시, OFF 격리
+2. 기준 solver(2M, 동결)가 새 후보의 DEV WIN을 모두 포함하는지 확인. 빠지면 v1 규칙(4M 한 번, 그래도 빠지면 조사)
+3. COSTTEST 실측: 대국 cluster bootstrap 하한 > 1.5 → REJECT
+4. 8441 / 8442 arena → ADOPT / REJECT → E4 종료 → H7-c1
+
+**실행 명령 (데스크톱, 모델 불필요)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4
+mkdir -p runs/h7_e4v2
+# 1) COSTTEST positions (fixed now, before any E4-v2 measurement)
+python scripts/h7_e4v2_costtest.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7_e2/tt_vs_full_8422.json \
+  --corpus docs/h7/h7_e4_web_corpus.json --costdev docs/h7/h7_timing_positions.json \
+  --output docs/h7/h7_e4v2_costtest_positions.json
+# 2) DEV + COSTDEV, the eight configurations and the selection (about 20-40 min with 12 workers)
+python -u scripts/h7_e4v2_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \
+  --baseline docs/h7/h7_e4_baseline_v2.json --precheck docs/h7/h7_e4_precheck.json \
+  --positions docs/h7/h7_timing_positions.json --workers 12 --fast fast4 \
+  --jsonl runs/h7_e4v2/dev.jsonl --output docs/h7/h7_e4v2_dev.json 2>&1 | tee -a runs/h7_e4v2/dev.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4v2_costtest_positions.json`, `docs/h7/h7_e4v2_dev.json`
+- 1)은 2)보다 먼저 커밋해도 된다. COSTTEST는 E4-v2 결과와 무관하게 정해진다.
+- 먼저 볼 것
+  - `selection`
+  - 조합별 DEV 응징 / 거짓 증명 / 모순 / 얕은 회귀 / COSTDEV 비율과 수 바뀜
+  - `cost_model`(R²와 범위)
+- 확인용
+  - `200k/nocd/plain`의 COSTDEV 비율은 앞선 분석의 "상대 VCF 문턱만" 추정(1.545)에 G1 판별 비용을 더한 값 근처여야 한다.
+  - `200k/cd/plain`은 "문턱 + cooldown" 추정(1.414) 근처여야 한다.
+  - 크게 다르면 재생 코드를 먼저 조사한다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

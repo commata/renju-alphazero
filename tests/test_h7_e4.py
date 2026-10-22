@@ -474,3 +474,143 @@ class BenchmarkArmTest(unittest.TestCase):
         self.assertTrue(ARMS['puct_value_vct2_50k_tt_e4']['e4_attack'])
         with self.assertRaises(ValueError):
             parse_opponent('v8:puct_value_vct2_50k_tt_e4')  # a tested arm only
+
+
+class E4v2Test(unittest.TestCase):
+    def test_killer_keeps_every_status(self):
+        from analysis import e4v2_attack as v2
+        from analysis.mcts_v8 import SearchDiagnostics, _attack_candidates
+        from analysis.selective_vct import SelectiveSolver
+        from analysis.vct2_attack import _depth2_attack_check
+        from search.mcts_v5 import _RootContext
+        from tests.tb_engine_v1_regression import WEB
+        web_moves = [tuple(m) for m in json.loads(WEB.read_text(encoding='utf-8'))['moves']]
+        for moves in (VCF, FIVE, web_moves[:13], web_moves[:20]):
+            game = Game()
+            for m in moves:
+                game.play(*m)
+            for move in _attack_candidates(game, _RootContext(game.legal_moves(), SearchDiagnostics()))[:6]:
+                statuses = []
+                for cls in (SelectiveSolver, v2.KillerSolver):
+                    s = cls(node_limit=20_000, call_limit=1_000_000, node_budget=50_000_000)
+                    statuses.append(s._bounded(game, move, None, None, lambda g, s=s: _depth2_attack_check(s, g)))
+                self.assertEqual(statuses[0], statuses[1], (len(moves), move))
+                self.assertNotEqual(statuses[0], 'UNKNOWN')
+
+    def test_cooldown_is_one_move_of_the_same_game(self):
+        from types import SimpleNamespace
+        from analysis.e4v2_attack import Cooldown
+        g = (lambda moves: SimpleNamespace(history=list(moves)))
+        cd = Cooldown()
+        self.assertFalse(cd.blocks(g(VCF[:4])))
+        cd.exhausted(g(VCF[:4]))
+        self.assertTrue(cd.blocks(g(VCF[:6])))  # the next own move
+        self.assertFalse(cd.blocks(g(VCF[:8])))  # cleared after one move
+        cd.exhausted(g(VCF[:4]))
+        self.assertFalse(cd.blocks(g(VCF[:8])))  # not the next own move: cleared, no skip
+        cd.exhausted(g(VCF[:4]))
+        self.assertFalse(cd.blocks(g([*VCF[:3], (1, 1), (2, 2), (3, 3)])))  # another game (other prefix)
+        self.assertIsNone(cd.history)
+
+    def test_decide_route_gate_and_attack(self):
+        from analysis import e4v2_attack as v2
+        config = {'budget': '200k', 'cooldown': True, 'killer': False}
+        game = Game()
+        for m in VCF:
+            game.play(*m)
+        self.assertEqual(v2.decide(game, config, 'own_vcf')[1]['skip'], 'route')
+        move, info = v2.decide(game, config, 'tree', v2.Cooldown())
+        self.assertTrue(info['ran'])
+        self.assertEqual(base.check_move(VCF, move, truth.DEFAULT_BUDGET)['outcome'], 'PUNISH')
+        three = Game()
+        for m in [(7, 7), (0, 0), (7, 8), (0, 2), (7, 9)]:  # Black's open three, White to move
+            three.play(*m)
+        move, info = v2.decide(three, config, 'tree', v2.Cooldown())
+        self.assertEqual((move, info['skip'], info['gate']['status']), (None, 'opponent_vcf', 'WIN'))
+        self.assertEqual(len(v2.GRID), 8)
+        self.assertEqual(len({c['name'] for c in v2.GRID}), 8)
+
+    def test_cost_model_fit(self):
+        from scripts import h7_e4v2_dev as dev2
+        rows = [{'attacked': True, 'attack_nodes': n, 'attack_calls': c, 'attack_seconds': 2e-5 * n + 1e-4 * c + 0.05}
+                for n, c in [(1000, 10), (5000, 200), (200000, 4000), (80000, 900), (30000, 1500)]]
+        m = dev2.fit_cost_model(rows + [{'attacked': False}])
+        self.assertAlmostEqual(m['seconds_per_node'], 2e-5, places=9)
+        self.assertAlmostEqual(m['seconds_per_call'], 1e-4, places=8)
+        self.assertAlmostEqual(m['seconds_per_attack'], 0.05, places=6)
+        self.assertEqual((m['n'], m['r2']), (5, 1.0))
+        self.assertAlmostEqual(dev2.model_seconds(m, 1000, 1, False), 2e-2 + 1e-4, places=6)
+
+    def test_select_rule(self):
+        from scripts import h7_e4v2_dev as dev2
+        s = (lambda name, punish, ratio, ok=True: {'config': {'name': name}, 'eligible': ok,
+                                                   'dev': {'punish': punish}, 'costdev': {'ratio': ratio}})
+        out = dev2.select([s('a', 30, 1.40), s('b', 29, 1.30), s('c', 28, 1.20), s('d', 31, 1.10, ok=False)])
+        self.assertEqual((out['selected']['name'], out['tied']), ('c', ['b', 'c']))  # a is over 1.35
+        self.assertEqual(dev2.select([s('a', 30, 1.40)])['verdict'], 'REJECT_AT_DEV')
+
+    def test_end_to_end(self):
+        from scripts import h7_e4v2_dev as dev2
+        from scripts.run_mcts_v8_benchmark import file_sha256
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            path = corpus_of(tmp, GAMES[:2])
+            corpus = web.load(path)
+            boards = {p['key']: {'key': p['key'], 'class': 'NOT_FOUND', 'grade': None} for p in corpus['positions']}
+            (tmp / 't.json').write_text(json.dumps({'format': truth.FORMAT, 'corpus_sha256': file_sha256(path),
+                                                    'budget': truth.DEFAULT_BUDGET, 'boards': boards}))
+            (tmp / 'b.json').write_text(json.dumps({'format': base.FORMAT, 'truth_sha256': file_sha256(tmp / 't.json'),
+                                                    'positions': {}}))
+            timing = [{'id': f'e3a|g/1/0/black|{n}', 'moves': [list(m) for m in VCF[:n]]} for n in (4, 6)]
+            rows = [{'id': p['id'], 'game': 'e3a|g/1/0/black', 'attacked': True, 'b_seconds': 1.0,
+                     'attack_seconds': 0.1 + i, 'attack_nodes': 1000 * (i + 1), 'attack_calls': 10 * (i + 3),
+                     'base_move': [0, 0]} for i, p in enumerate(timing)]
+            rows.append({**rows[0], 'id': 'e3a|g/1/0/black|8', 'attacked': False, 'attack_seconds': 0.0})
+            timing.append({'id': 'e3a|g/1/0/black|8', 'moves': [list(m) for m in VCF[:8]]})
+            (tmp / 'pre.json').write_text(json.dumps({'format': 'h7-e4-precheck-v1', 'rows': rows}))
+            (tmp / 'pos.json').write_text(json.dumps({'positions': timing}))
+            out = tmp / 'v2.json'
+            self.assertEqual(dev2.main(['--corpus', str(path), '--truth', str(tmp / 't.json'), '--baseline',
+                                        str(tmp / 'b.json'), '--precheck', str(tmp / 'pre.json'), '--positions',
+                                        str(tmp / 'pos.json'), '--limit', '3', '--output', str(out)]), 0)
+            result = json.loads(out.read_text(encoding='utf-8'))
+        self.assertEqual(len(result['scores']), 8)
+        self.assertEqual(result['split'], 'DEV')
+        self.assertTrue(all(s['costdev']['positions'] == 3 for s in result['scores']))
+        self.assertIn(result['selection']['verdict'], ('SELECTED', 'REJECT_AT_DEV'))
+
+
+class CosttestTest(unittest.TestCase):
+    def test_whole_games_in_hash_order_without_known_boards(self):
+        from scripts import h7_e4v2_costtest as ct
+        with TemporaryDirectory() as tmp:
+            corpus = web.load(corpus_of(Path(tmp), GAMES[:1]))
+        game = (lambda key, moves: {'key': key, 'moves': [list(m) for m in moves],
+                                    'v8_moves': [{'ply': p, 'route': 'tree', 'seconds': 1.0}
+                                                 for p in range(1, len(moves), 2)]})
+        runs = [{'arm': ct.ARM, 'opponent': ct.OPPONENT, 'seed': s,
+                 'games': [game('k/0/white', FIVE), game('k/1/white', VCF)]} for s in ct.SEEDS]
+        costdev = [{'id': 'x', 'moves': [list(m) for m in VCF[:3]]}]
+        out = ct.build(runs, corpus, costdev, count=6)
+        self.assertTrue(set(out['dropped']) >= {'e2h|8421/k/0/white|5', 'e2h|8421/k/1/white|3'})
+        ids = [p['id'] for p in out['positions']]
+        self.assertEqual(len(set(ids)), len(ids))
+        for key in out['games']:  # whole games, in ply order
+            plies = [int(i.rsplit('|', 1)[1]) for i in ids if i.split('|')[1] == key]
+            self.assertEqual(plies, sorted(plies))
+        with self.assertRaises(ValueError):
+            ct.build([{**runs[0], 'opponent': 'v7'}, runs[1]], corpus, costdev)
+
+
+class E4v2EquivalenceTest(unittest.TestCase):
+    def test_plain_200k_attack_is_the_v1_attack(self):
+        from analysis import e4_attack, e4v2_attack as v2
+        from tests.tb_engine_v1_regression import WEB
+        web_moves = [tuple(m) for m in json.loads(WEB.read_text(encoding='utf-8'))['moves']]
+        for moves in (VCF, web_moves[:13], web_moves[:20]):
+            game = Game()
+            for m in moves:
+                game.play(*m)
+            m1, i1 = e4_attack.e4_attack(game, {'budget': '200k', 'candidates': 'vcf_threat'})
+            m2, i2 = v2.attack(game, '200k', False)
+            self.assertEqual((m1, i1['nodes'], i1['calls'], i1['candidates']), (m2, i2['nodes'], i2['calls'], i2['candidates']))
