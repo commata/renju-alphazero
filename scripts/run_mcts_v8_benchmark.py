@@ -130,6 +130,9 @@ ARMS = {
     # 'e4v2_attack' wraps the canonical agent in the H7-E4-v2 candidate (analysis.tb_v2_value_e4v2).
     'puct_value_vct2_50k_tt_e4v2': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
                                     'vct2_node_budget': 50_000, 'root_vcf_table': True, 'e4v2_attack': True},
+    # 'tb_v3' builds TB-V3 Resolve by its own fail-closed factory (analysis.tb_v3_runtime.make_tb_v3_agent).
+    'tb_v3': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+              'vct2_node_budget': 50_000, 'root_vcf_table': True, 'tb_v3': True},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -247,6 +250,8 @@ def make_opponent(opponent: str, seed: int, overrides: dict, policy_checkpoint=N
     if opponent == 'v7':
         return MCTSV7Agent(seed=seed, **overrides)
     config = v8_config(opponent_arm(opponent), overrides)
+    if config.get('tb_v3') or config.get('e4v2_attack'):  # built only by their factories, never as a bare V8
+        raise ValueError(f'{opponent} runs only as the tested arm (its factory checks the models and the code)')
     policy = load_policy(policy_checkpoint) if needs_policy(config) else None
     agent = MCTSV8Agent(seed=seed, root_policy=policy, root_vcf_table=bool(config.get('root_vcf_table')),
                         **{k: v for k, v in config.items() if k in V8_DEFAULTS})
@@ -348,7 +353,7 @@ def _counterfactual(game: Game, seed: int, ply: int, config: dict) -> dict:
             'seconds': round(perf_counter() - started, 4)}
 
 
-CANONICAL_ARMS = ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4', 'puct_value_vct2_50k_tt_e4v2')
+CANONICAL_ARMS = ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4', 'puct_value_vct2_50k_tt_e4v2', 'tb_v3')
 
 
 def is_canonical(arm: str, fast: str, config: dict) -> bool:
@@ -369,11 +374,17 @@ def play_one(task: dict) -> dict:
     seed, v8_color = task['seed'], task['v8_color']
     policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
     leaf = load_value(task.get('value_checkpoint'), task.get('value_device', 'cpu')) if needs_value(config) else None
-    if is_canonical(task['arm'], task.get('fast', 'off'), config):
-        # the frozen canonical: built by its factory after the policy / value / source / code checks
-        from analysis.track_b_guard import make_canonical_agent
-        v8 = make_canonical_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
-                                  task.get('value_checkpoint'))
+    if config.get('tb_v3'):  # TB-V3 Resolve, only by its factory (identity, models, code, fast4 checked)
+        if not is_canonical(task['arm'], task.get('fast', 'off'), config):
+            raise ValueError(f"{task['arm']} runs only as frozen: --fast fast4 and the frozen configuration")
+        from analysis.tb_v3_runtime import make_tb_v3_agent
+        v8 = make_tb_v3_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
+                              task.get('value_checkpoint'))
+    elif is_canonical(task['arm'], task.get('fast', 'off'), config):
+        # the frozen TB-V2-Value: built by its factory after the policy / value / source / code checks
+        from analysis.track_b_guard import make_tb_v2_agent
+        v8 = make_tb_v2_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
+                              task.get('value_checkpoint'))
     else:
         v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy, leaf_value=leaf,
                          root_vcf_table=bool(config.get('root_vcf_table')),
@@ -699,6 +710,9 @@ def _runtime_provenance(device: str, arm: str = 'puct_value_vct2_50k_tt') -> dic
     if arm == 'puct_value_vct2_50k_tt_e4v2':
         from analysis.tb_v2_value_e4v2 import provenance as candidate_v2_provenance
         return candidate_v2_provenance(device)
+    if arm == 'tb_v3':
+        from analysis.tb_v3_runtime import provenance as tb_v3_provenance
+        return tb_v3_provenance(device)
     from analysis.tb_v2_runtime import provenance as runtime_provenance
     return runtime_provenance(device)
 

@@ -16,9 +16,15 @@
   `selective_vct.py` by SHA-256 (`ATTACK_SOURCES`), and `src/analysis/e4_reference.py` is the arena's frozen event
   detector once its DEV check passes: do not edit them until the seed 8441 / 8442 arena has given ADOPT / REJECT.
   For E4-v2 the detector is frozen at its `'4m'` budget (`docs/h7/h7_e4v2_reference_4m.json`).
-- `scripts/check_track_b_frozen.py` checks the canonical (code manifest `tests/track_b_frozen.sha256`, engine hash,
-  runtime sources and binding, policy / value checkpoints): run it before benchmark, web or self-play work; regenerate
-  the manifest (`--write-manifest`) only in an explicit engine or runtime freeze step. Canonical runs go through
-  `analysis.track_b_guard.make_canonical_agent`.
+- `scripts/check_track_b_frozen.py` checks the frozen engines (code manifests, engine hashes, runtime sources and
+  binding, policy / value checkpoints, TB-V3 identity and promotion): run it before benchmark, web or self-play work.
+  Canonical runs go through `analysis.canonical.make_canonical_agent` (the E4 tools keep `track_b_guard`'s TB-V2 factory).
 - The H7-E4-v2 candidate `src/analysis/tb_v2_value_e4v2.py` locks `src/analysis/e4v2_attack.py` (with the E4 attack
-  files above) and the code manifest by SHA-256: do not edit them until its COSTTEST / arena verdict.
+  files above) and the code manifest by SHA-256. Its arena verdict is ADOPT: it is frozen for good as part of TB-V3.
+- TB-V3 Resolve (`src/analysis/tb_v3.py`, `tb_v3_runtime.py`) puts the SHA-256 of its code manifest
+  `tests/tb_v3_frozen.sha256` (every file of its factory's import closure, including `track_b_guard.py`) in its engine
+  hash, and `tb_v3.py` in its runtime hash: do not edit any of them, or `tests/track_b_frozen.sha256`, outside a new
+  engine-version step (`check_track_b_frozen.py --write-manifest tb-v3` only there). `src/analysis/canonical.py` is the
+  one place that says which engine is the canonical; TB-V3 becomes it only after its promotion replay
+  (`docs/h7/tb_v3_promotion.json`, PROMOTION_PASS). Versioned factories (`make_tb_v2_agent`, `make_tb_v3_agent`) never
+  change meaning.

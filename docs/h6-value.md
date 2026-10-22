@@ -4765,6 +4765,120 @@ final arena 8441 / 8442     validity, strength, cost, soundness, frequency      
 4. identity 강화 범위(위 1의 네 항목)를 이번에 모두 넣는 것
 5. 승격 뒤 순서: SER5 시간 → CPU 인증 8451 / 8452 → H7-c1(웹 deadline 공격은 별도로 병행)
 
+## TB-V3 Resolve 승격: 확정안과 구현 (2026-10-22)
+
+**현재 상태**
+
+```
+TB-V2-Value + fast4   current canonical
+TB-V3 Resolve         ADOPT-approved, promotion pending
+```
+
+- 3,201수 재생(PROMOTION_PASS)과 canonical alias 변경이 끝나야 "TB-V3 Resolve = canonical"로 쓴다.
+
+**확정한 것 (사용자 승인)**
+- 이름
+  - Engine ID `TB-V3`, codename `Resolve`, 표시 이름 `TB-V3 Resolve`
+  - 파일 이름에는 codename을 넣지 않는다.
+- factory
+  - 버전 고정 factory(`make_tb_v2_agent`, `make_tb_v3_agent`)는 뜻이 바뀌지 않는다.
+  - "canonical"은 한 곳(`analysis.canonical.CANONICAL_ENGINE_ID`)에서만 가리킨다.
+- 승격 gate: arena E 200대국 재생
+  - 3,201수 모두 같은 수
+  - E4-v2 단계 기록의 결정 필드 불일치 0
+  - 하나라도 다르면 PROMOTION_FAIL이다. 승격을 멈추고 원인을 본다. 이것은 후보 REJECT가 아니다. arena의 ADOPT는 그대로이고, 새 factory가 후보와 같지 않다는 뜻이다.
+- B 200대국 재생은 재현성 보조 검사다(gate 아님).
+- identity 강화 네 항목을 모두 넣는다. 확인할 수 없으면 거부한다(fail closed).
+- 순서
+  1. TB-V3 구현
+  2. identity / manifest 동결
+  3. E 200대국 재생
+  4. canonical alias → TB-V3
+  5. 동결 검사 전체 PASS
+  6. SER5 시간 2회
+  7. CPU 인증 8451 / 8452
+  8. H7-c1
+- SER5 시간은 배포 인증이다. 실패해도 TB-V3의 canonical 지위는 그대로이고, "SER5 배포 미인증"이 된다.
+- CPU 인증은 기력·안전 인증이다. CUDA canonical의 정의를 바꾸지 않는다.
+- 보류(다음 proof / 엔진 변경 cycle): ThreatSolver 판 가득 참 결함, `puct_c` / `child_priors` 유한성 검사
+
+**구현 (이번 커밋, 행동 변화 없음)**
+- `src/analysis/tb_v3.py`(identity)
+  - `ENGINE_ID`, `ENGINE_CODENAME`, `ENGINE_NAME`
+  - 리터럴 `ATTACK`, `ATTACK_SOURCES`(후보와 같음), `BASE_ENGINE_HASH`(TB-V2-Value)
+  - `MODELS`: policy `best.pt` / `best.json`, value `best.pt` / `best.json`의 SHA-256
+  - `CODE_MANIFEST_SHA256`: `tests/tb_v3_frozen.sha256`의 SHA
+  - `ADOPTION`: 후보 해시, arena / 사전 검사 / 기준 solver 결과 파일 SHA
+  - `ENGINE_HASH` **`d0ef0da6…`**: 위 설정, 공격, 모델, code manifest를 모두 덮는다.
+  - `check_identity`가 확인하는 것
+    - 엔진 해시, 기준 엔진, 채택 후보와 같음(설정, 소스, 후보 해시, 후보 `check_sources`)
+    - 모델 상수
+    - manifest 파일 SHA, manifest의 모든 파일
+- `tests/tb_v3_frozen.sha256`: TB-V3 factory의 import closure 63개 파일
+  - TB-V2-Value의 56개에 7개를 더했다(공격 4, 후보 wrapper, `tb_v3_runtime.py`, `track_b_guard.py`). 56개는 SHA까지 같다.
+  - `tb_v3.py`는 manifest 해시를 담고 있어 넣을 수 없다. 대신 runtime 해시가 이 파일의 SHA를 덮는다.
+  - TB-V2-Value manifest(`tests/track_b_frozen.sha256`)는 그대로다. E4-v2 후보와 TB-V3가 그 SHA를 잠근다. `--write-manifest`는 이제 `tb-v3`만 쓴다.
+- `src/analysis/tb_v3_runtime.py`
+  - `runtime_hash(device)`: 엔진 해시, `tb_v3.py` SHA(`b275f762…`), fast4, native / binding 소스, 장치. CUDA는 `51e3579a…`이다.
+  - `make_tb_v3_agent`: identity → 모델(진짜 `RootPolicy` / `ValueLeaf`, 그 경로에서 로드, 네 파일 SHA = `MODELS`) → 실행판 소스 → fast4 바인딩 순으로 검사한다. 경로가 없거나 파일을 읽을 수 없으면 거부한다.
+  - 그 뒤 동결 TB-V2-Value agent에 후보의 `E4v2AttackAgent`(설정 `tb_v3.ATTACK`)를 씌운다. 대국마다 agent 하나다.
+  - `CERTIFICATION`: CUDA canonical, CPU 미인증. `DEPLOYMENT`: SER5 미인증
+- `src/analysis/canonical.py`
+  - `CANONICAL_ENGINE_ID = 'TB-V2-Value'`(승격 전)
+  - `factory(engine_id)`, `make_canonical_agent`, `provenance`
+- `track_b_guard`
+  - `make_tb_v2_agent`(기존 함수, 이름만 버전 고정)
+  - `make_canonical_agent`는 `make_tb_v2_agent`의 별칭으로 남긴다. 동결 E4-v2 후보 파일이 이 이름으로 기준 엔진을 만들기 때문이다. alias가 TB-V3로 바뀌어도 이 이름은 TB-V2-Value다. 후보 파일은 고치지 않는다.
+- 벤치마크
+  - arm `tb_v3`: fast4와 동결 설정일 때만, `make_tb_v3_agent`로 만든다. runtime provenance는 TB-V3 것이다.
+  - `v8:tb_v3`와 `v8:..._e4v2`는 상대로 쓰지 못한다. 그렇게 하면 wrapper 없는 V8이 조용히 만들어지기 때문이다.
+- `check_track_b_frozen.py`: `tb-v3 code`(manifest = closure), `tb-v3 identity`, `tb-v3 promotion`
+  - promotion: alias가 TB-V3이면 승격 기록이 PROMOTION_PASS이고, 지금 runtime 해시와 `tb_v3.py` SHA여야 한다. 승격 전에는 "pending"이다.
+  - 컨테이너(`--no-models`): 전부 PASS
+- `scripts/tb_v3_promotion.py`(승격 재생)
+  - 입력: arena 요약(SHA = `ADOPTION['arena_sha256']`, ADOPT)과 그 run 파일. run 파일은 요약에 기록된 SHA로 확인한다.
+  - 대국마다 버전 factory로 agent 하나, arena와 같은 seed(`derive_seed(seed, 'v8')`)
+  - 기록된 수를 순서대로 두며, 자기 차례마다 고른 수와 기록을 비교한다.
+    - 수: 고른 수 = 기록된 수
+    - 결정 필드: `route`, `changed`, `v7_move`, E4-v2 단계의 `base_route`, `base_move`, `ran`, `skip`, `gate.status`, `move`, `exhausted`. cooldown 전이는 `exhausted`와 `skip`으로 정해진다.
+    - 나머지 기록 필드(시간 제외): 보고만 한다.
+  - 판정: E 200대국 / 3,201수(arena `e4v2_steps.moves`), 수와 결정 불일치 0 → PROMOTION_PASS
+  - CUDA만 허용한다. 대국 단위 worker pool, 끝난 대국마다 jsonl(resume)
+- 시험 `tests/test_tb_v3.py`(13개)
+  - identity와 해시가 모델·코드·공격 설정을 덮는지
+  - manifest = closure, TB-V2 56개 포함
+  - fail closed(경로 없음, 읽을 수 없는 파일, 가짜 모델 객체, identity 불일치)
+  - stand-in 모델에서 TB-V3와 후보가 같은 수, 같은 단계 기록, 같은 cooldown
+  - alias와 버전 factory, 벤치마크 arm, 상대 금지
+  - 재생 도구: 기록과 일치, 결정 필드 변경 검출, 기록과 기보 불일치 거부, 판정, 다른 arena 거부
+
+**실행 명령 — 승격 재생 (데스크톱, GPU, 8 worker, 약 1시간 이내)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_tb_v3 tests.test_track_b_guard tests.test_tb_v2_value_e4v2 tests.test_h7_e4v2_arena
+mkdir -p runs/tb_v3
+python -u scripts/tb_v3_promotion.py --runs runs/h7_e4v2/e_8441.json runs/h7_e4v2/e_8442.json \
+  --baseline-runs runs/h7_e4v2/b_8441.json runs/h7_e4v2/b_8442.json --workers 8 --device cuda \
+  --jsonl runs/tb_v3/promotion.jsonl --output docs/h7/tb_v3_promotion.json 2>&1 | tee runs/tb_v3/promotion.log
+```
+
+- `check_track_b_frozen.py`는 모델까지 모두 PASS여야 한다. `tb-v3 promotion`은 "pending"이 정상이다.
+- 커밋할 것: `docs/h7/tb_v3_promotion.json`
+- 먼저 볼 것
+  - `verdict`, `reasons`
+  - `tb_v3`: `games` 200, `moves` 3,201, `moves_matched`, `decision_mismatches`
+  - `record_mismatch_moves`(보고)
+  - `baseline`: REPRODUCED / DIFFERS(보고)
+- PROMOTION_PASS가 나오면 다음 커밋에서 할 것
+  - `CANONICAL_ENGINE_ID = 'TB-V3'`
+  - `check_track_b_frozen.py`가 승격 기록을 요구한다.
+  - 문서 상태를 "TB-V3 Resolve = canonical"로 바꾼다.
+  - 그 뒤 SER5 시간 측정으로 간다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

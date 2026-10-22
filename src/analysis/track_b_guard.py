@@ -14,8 +14,9 @@ four checks to their callers (docs/h6-value.md, "동결 보증 점검"):
                ``check_runtime_sources`` hashes every native and binding source of the profile
     code       no engine hash covers the code: ``check_code`` compares every file of the canonical import
                closure with ``tests/track_b_frozen.sha256``
-``make_canonical_agent`` runs them all, then ``tb_v2_runtime.make_agent`` (engine hash, fast4 binding).
-The next engine freeze puts the policy SHA into its hash and fails closed in its own ``make_agent``.
+``make_tb_v2_agent`` runs them all, then ``tb_v2_runtime.make_agent`` (engine hash, fast4 binding).
+TB-V3 (``analysis.tb_v3``) puts the model and code SHAs into its engine hash and fails closed in its own
+factory (``tb_v3_runtime.make_tb_v3_agent``), which runs these checks against its own manifest.
 """
 from __future__ import annotations
 
@@ -122,9 +123,14 @@ def check_code(path: Path = MANIFEST) -> list[str]:
     return bad
 
 
-def make_canonical_agent(policy, leaf, seed: int, policy_checkpoint, value_checkpoint):
-    """TB-V2-Value + fast4 after every check above (raises on the first failure)."""
+def make_tb_v2_agent(policy, leaf, seed: int, policy_checkpoint, value_checkpoint):
+    """TB-V2-Value + fast4 after every check above (raises on the first failure). Always TB-V2-Value."""
     from . import tb_v2_runtime as rt
 
     check_all(policy, leaf, policy_checkpoint, value_checkpoint)
     return rt.make_agent(policy, leaf, seed=seed)
+
+
+# The name the frozen E4-v2 candidate (``tb_v2_value_e4v2.make_agent``) and the H7-E4 tools use for its base:
+# it stays TB-V2-Value for good. Which engine is the canonical is decided in one place, ``analysis.canonical``.
+make_canonical_agent = make_tb_v2_agent

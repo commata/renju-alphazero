@@ -1,4 +1,4 @@
-"""Check that this checkout runs the frozen Track B canonical: TB-V2-Value + fast4, with its models.
+"""Check that this checkout runs the frozen Track B engines: TB-V2-Value + fast4 and TB-V3 Resolve, with models.
 
 ``scripts/check_frozen_baseline.py`` covers the MCTS-v6 / v7 benchmark files only. This covers the canonical:
     code       every file of the canonical import closure against ``tests/track_b_frozen.sha256``
@@ -8,13 +8,17 @@
     models     the H3 policy checkpoint and metadata (``s3_vct2_v1.check_checkpoint``); the value checkpoint and
                its ``best.json`` (``track_b_guard.check_value_checkpoint``)
     e4         the E4-v1 candidate's locked attack sources (``tb_v2_value_e4.check_sources``)
+    tb-v3      its code manifest ``tests/tb_v3_frozen.sha256`` against its import closure, its identity
+               (``tb_v3.check_identity``), and, once it is the canonical (``analysis.canonical``), the promotion
+               record ``docs/h7/tb_v3_promotion.json`` (PROMOTION_PASS on this runtime hash and identity file)
 Exit status 1 on any FAIL. Run it before benchmark, web or self-play work on a machine with the models.
 
     python scripts/check_track_b_frozen.py
     python scripts/check_track_b_frozen.py --no-models   # code / engine / runtime only (no checkpoints here)
 
-``--write-manifest`` regenerates the manifest from the import closure: only in an explicit engine or runtime
-freeze step, after reviewing the behaviour change.
+``--write-manifest tb-v3`` regenerates TB-V3's manifest from its import closure: only in an explicit engine or
+runtime freeze step, after reviewing the behaviour change. TB-V2-Value's manifest is never rewritten (the
+E4-v2 candidate and TB-V3 lock its SHA-256).
 """
 from __future__ import annotations
 
@@ -36,25 +40,38 @@ ENTRY = ('analysis.tb_v2_runtime', 'analysis.tb_v2_value', 'analysis.mcts_v8', '
 # Imported on the way but not part of what the engine decides (tooling and data loaders).
 EXCLUDE = ('src/hybrid/h6_labels.py', 'src/hybrid/progress.py', 'src/hybrid/renjunet.py', 'src/hybrid/h3_cache.py',
            'src/hybrid/h6_value_cache.py')
+# TB-V3: the factory and the attack on top; its identity file holds the manifest's hash, so it is pinned by the
+# runtime hash instead (``tb_v3_runtime.identity_sha256``).
+ENTRY_V3 = ENTRY + ('analysis.tb_v3_runtime', 'analysis.tb_v2_value_e4v2', 'analysis.e4v2_attack',
+                    'analysis.e4_attack', 'analysis.vct2_attack', 'analysis.selective_vct', 'analysis.track_b_guard')
+EXCLUDE_V3 = EXCLUDE + ('src/analysis/tb_v3.py',)
+MANIFEST_V3 = ROOT / 'tests' / 'tb_v3_frozen.sha256'
+PROMOTION = ROOT / 'docs' / 'h7' / 'tb_v3_promotion.json'
+HEADER_V3 = """# TB-V3 Resolve (TB-V2-Value + E4-v2 150k/cd/killer, fast4): every file of the import closure of
+# its factory (scripts/check_track_b_frozen.py --write-manifest tb-v3), except src/analysis/tb_v3.py, which
+# holds this file's SHA-256 in the engine hash. Written at the TB-V3 freeze; do not update these hashes only
+# to make a check pass.
+"""
 HEADER = """# Track B canonical (TB-V2-Value + fast4): every file of its import closure (scripts/check_track_b_frozen.py).
 # Written at the review of the frozen guarantees; the code is unchanged since the TB-V2-Value freeze (9c94676)
 # and the fast4 runtime freeze (46ebcf7). Do not update these hashes only to make a check pass.
 """
 
 
-def closure() -> list[str]:
+def closure(engine: str = 'tb-v2') -> list[str]:
     """Repository files under src/ imported by the entry modules (and the fast4 install), computed in a fresh
     interpreter so that nothing this process imported for other reasons is counted."""
     import json
     import subprocess
 
-    out = subprocess.run([sys.executable, str(Path(__file__).resolve()), '--print-closure'], check=True,
+    out = subprocess.run([sys.executable, str(Path(__file__).resolve()), '--print-closure', engine], check=True,
                          capture_output=True, text=True, cwd=ROOT)
     return json.loads(out.stdout.strip().splitlines()[-1])
 
 
-def _closure_here() -> list[str]:
-    for name in ENTRY:
+def _closure_here(engine: str = 'tb-v2') -> list[str]:
+    entry, exclude = (ENTRY_V3, EXCLUDE_V3) if engine == 'tb-v3' else (ENTRY, EXCLUDE)
+    for name in entry:
         importlib.import_module(name)
     from hybrid import h6_fast
     previous = h6_fast.installed_mode()
@@ -66,12 +83,12 @@ def _closure_here() -> list[str]:
         path = getattr(module, '__file__', None)
         if path and path.endswith('.py') and Path(path).resolve().is_relative_to(src):
             files.add(Path(path).resolve().relative_to(ROOT).as_posix())
-    return sorted(f for f in files if f not in EXCLUDE)
+    return sorted(f for f in files if f not in exclude)
 
 
-def write_manifest(path: Path) -> int:
-    lines = [f'{hashlib.sha256((ROOT / f).read_bytes()).hexdigest()}  {f}' for f in closure()]
-    path.write_text(HEADER + '\n'.join(lines) + '\n', encoding='utf-8')
+def write_manifest_v3(path: Path = MANIFEST_V3) -> int:
+    lines = [f'{hashlib.sha256((ROOT / f).read_bytes()).hexdigest()}  {f}' for f in closure('tb-v3')]
+    path.write_text(HEADER_V3 + '\n'.join(lines) + '\n', encoding='utf-8')
     return len(lines)
 
 
@@ -133,7 +150,34 @@ def checks(models: bool, policy_checkpoint: Path, value_checkpoint: Path) -> lis
     if models:
         run('policy checkpoint', policy)
         run('value checkpoint', value)
+    def v3_code():
+        bad = guard.check_code(MANIFEST_V3)
+        missing = sorted(set(closure('tb-v3')) - set(guard.read_manifest(MANIFEST_V3)))
+        if bad or missing:
+            raise RuntimeError(f'changed: {bad}; imported but not in the manifest: {missing}')
+        return f'{len(guard.read_manifest(MANIFEST_V3))} files'
+
+    def v3_identity():
+        from analysis import tb_v3
+        tb_v3.check_identity()
+        return f'{tb_v3.ENGINE_NAME} {tb_v3.ENGINE_HASH[:12]}'
+
+    def v3_promotion():
+        import json
+        from analysis import canonical, tb_v3_runtime
+        if canonical.CANONICAL_ENGINE_ID != 'TB-V3':
+            return f'pending: the canonical is {canonical.CANONICAL_ENGINE_ID}'
+        record = json.loads(PROMOTION.read_text(encoding='utf-8'))
+        if (record.get('verdict') != 'PROMOTION_PASS'
+                or record.get('runtime_hash') != tb_v3_runtime.runtime_hash(tb_v3_runtime.CANONICAL_DEVICE)
+                or record.get('identity_sha256') != tb_v3_runtime.identity_sha256()):
+            raise RuntimeError(f'{PROMOTION.name} is not a PROMOTION_PASS of this TB-V3 runtime')
+        return 'canonical, promotion replay PASS'
+
     run('e4-v1 candidate sources', e4)
+    run('tb-v3 code', v3_code)
+    run('tb-v3 identity', v3_identity)
+    run('tb-v3 promotion', v3_promotion)
     return out
 
 
@@ -142,22 +186,21 @@ def main(argv=None) -> int:
     parser.add_argument('--policy-checkpoint', type=Path, default=ROOT / 'runs/h3_policy_64x4/best.pt')
     parser.add_argument('--value-checkpoint', type=Path, default=ROOT / 'runs/h6_value_head_v3/best.pt')
     parser.add_argument('--no-models', action='store_true', help='skip the checkpoint checks')
-    parser.add_argument('--write-manifest', action='store_true', help='freeze step only')
-    parser.add_argument('--print-closure', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--write-manifest', choices=('tb-v3',), help='freeze step only (TB-V3 manifest)')
+    parser.add_argument('--print-closure', choices=('tb-v2', 'tb-v3'), help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.print_closure:
         import json
-        print(json.dumps(_closure_here()), flush=True)
+        print(json.dumps(_closure_here(args.print_closure)), flush=True)
         return 0
     if args.write_manifest:
-        from analysis.track_b_guard import MANIFEST
-        print(f'wrote {write_manifest(MANIFEST)} files to {MANIFEST}', flush=True)
+        print(f'wrote {write_manifest_v3()} files to {MANIFEST_V3}', flush=True)
         return 0
     results = checks(not args.no_models, args.policy_checkpoint, args.value_checkpoint)
     for name, status, detail in results:
         print(f'{status:4}  {name:24}  {detail}', flush=True)
     failed = [r for r in results if r[1] == 'FAIL']
-    print('Track B canonical frozen checks ' + ('FAIL' if failed else 'PASS'), flush=True)
+    print('Track B frozen checks ' + ('FAIL' if failed else 'PASS'), flush=True)
     return 1 if failed else 0
 
 
