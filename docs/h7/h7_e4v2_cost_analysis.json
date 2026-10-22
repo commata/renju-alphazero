@@ -1,0 +1,444 @@
+{
+ "format": "h7-e4v2-cost-analysis-v1",
+ "git_commit": "2049ca679e7883d7db19f38b0e39d58b63fc40e6",
+ "dev_sha256": "b495ae2cc118f86b31f966356a1e686fc6893c6afebc07e28c72e1183e25b673",
+ "precheck_sha256": "468fa1a28f2e9f2b7cec0ff567db3a997caff6c5e83b593f2383ebd4ef16e83f",
+ "selected": {
+  "name": "200k/vcf_threat/all",
+  "budget": "200k",
+  "candidates": "vcf_threat",
+  "trigger": "all"
+ },
+ "dev": {
+  "attacks": 867,
+  "classes": {
+   "win": {
+    "attacks": 23,
+    "time_share": 0.024,
+    "seconds_mean": 1.901,
+    "opponent_vcf": 1
+   },
+   "exhausted": {
+    "attacks": 143,
+    "time_share": 0.763,
+    "seconds_mean": 9.655,
+    "opponent_vcf": 94
+   },
+   "finished": {
+    "attacks": 701,
+    "time_share": 0.213,
+    "seconds_mean": 0.55,
+    "opponent_vcf": 205
+   },
+   "win_nodes": [
+    780,
+    804,
+    2012,
+    2397,
+    2505,
+    2597,
+    5693,
+    11403,
+    11794,
+    20172,
+    27796,
+    28096,
+    28604,
+    30383,
+    38372,
+    42228,
+    50587,
+    50594,
+    63913,
+    84781,
+    84990,
+    85092,
+    144971
+   ]
+  },
+  "projections": [
+   {
+    "cap": 200000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 23,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 1.0
+   },
+   {
+    "cap": 200000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 22,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.389
+   },
+   {
+    "cap": 150000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 23,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.804
+   },
+   {
+    "cap": 150000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 22,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.323
+   },
+   {
+    "cap": 100000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 22,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.599
+   },
+   {
+    "cap": 100000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 21,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.251
+   },
+   {
+    "cap": 75000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 19,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.486
+   },
+   {
+    "cap": 75000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 18,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.211
+   },
+   {
+    "cap": 50000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 16,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.365
+   },
+   {
+    "cap": 50000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 15,
+    "switches_kept": 0,
+    "ratio": null,
+    "attack_time_kept": 0.167
+   }
+  ]
+ },
+ "timing": {
+  "attacks": 1858,
+  "base_seconds": 2796.6,
+  "classes": {
+   "win": {
+    "attacks": 79,
+    "time_share": 0.065,
+    "seconds_mean": 1.775,
+    "opponent_vcf": 2
+   },
+   "exhausted": {
+    "attacks": 312,
+    "time_share": 0.684,
+    "seconds_mean": 4.752,
+    "opponent_vcf": 93
+   },
+   "finished": {
+    "attacks": 1467,
+    "time_share": 0.251,
+    "seconds_mean": 0.372,
+    "opponent_vcf": 245
+   },
+   "win_nodes": [
+    918,
+    955,
+    1032,
+    1426,
+    1642,
+    2934,
+    3342,
+    4045,
+    4083,
+    7630,
+    7699,
+    7957,
+    8461,
+    12287,
+    12399,
+    14723,
+    14863,
+    16296,
+    19008,
+    19901,
+    25270,
+    25789,
+    27906,
+    28364,
+    28770,
+    32349,
+    33224,
+    35867,
+    37685,
+    39305,
+    40588,
+    40600,
+    41290,
+    41767,
+    44389,
+    46362,
+    46631,
+    48852,
+    50088,
+    50733,
+    51827,
+    54622,
+    54822,
+    54917,
+    55449,
+    56279,
+    56419,
+    56541,
+    57874,
+    60512,
+    67393,
+    67772,
+    74211,
+    75427,
+    88223,
+    93695,
+    102115,
+    102538,
+    104498,
+    105849,
+    115528,
+    118143,
+    120591,
+    122584,
+    124956,
+    128507,
+    130031,
+    130970,
+    132423,
+    135240,
+    144529,
+    147627,
+    149547,
+    152032,
+    157582,
+    166649,
+    171795,
+    177273,
+    181208
+   ]
+  },
+  "projections": [
+   {
+    "cap": 200000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 79,
+    "switches_kept": 52,
+    "ratio": 1.775,
+    "attack_time_kept": 1.0
+   },
+   {
+    "cap": 200000,
+    "opponent_vcf_gate": false,
+    "tree_only": true,
+    "wins_kept": 79,
+    "switches_kept": 52,
+    "ratio": 1.562,
+    "attack_time_kept": 0.725
+   },
+   {
+    "cap": 200000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 77,
+    "switches_kept": 51,
+    "ratio": 1.545,
+    "attack_time_kept": 0.703
+   },
+   {
+    "cap": 200000,
+    "opponent_vcf_gate": true,
+    "tree_only": true,
+    "wins_kept": 77,
+    "switches_kept": 51,
+    "ratio": 1.53,
+    "attack_time_kept": 0.684
+   },
+   {
+    "cap": 150000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 73,
+    "switches_kept": 47,
+    "ratio": 1.637,
+    "attack_time_kept": 0.822
+   },
+   {
+    "cap": 150000,
+    "opponent_vcf_gate": false,
+    "tree_only": true,
+    "wins_kept": 73,
+    "switches_kept": 47,
+    "ratio": 1.462,
+    "attack_time_kept": 0.596
+   },
+   {
+    "cap": 150000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 72,
+    "switches_kept": 47,
+    "ratio": 1.448,
+    "attack_time_kept": 0.578
+   },
+   {
+    "cap": 150000,
+    "opponent_vcf_gate": true,
+    "tree_only": true,
+    "wins_kept": 72,
+    "switches_kept": 47,
+    "ratio": 1.435,
+    "attack_time_kept": 0.562
+   },
+   {
+    "cap": 100000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 56,
+    "switches_kept": 34,
+    "ratio": 1.482,
+    "attack_time_kept": 0.622
+   },
+   {
+    "cap": 100000,
+    "opponent_vcf_gate": false,
+    "tree_only": true,
+    "wins_kept": 56,
+    "switches_kept": 34,
+    "ratio": 1.351,
+    "attack_time_kept": 0.453
+   },
+   {
+    "cap": 100000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 56,
+    "switches_kept": 34,
+    "ratio": 1.341,
+    "attack_time_kept": 0.439
+   },
+   {
+    "cap": 100000,
+    "opponent_vcf_gate": true,
+    "tree_only": true,
+    "wins_kept": 56,
+    "switches_kept": 34,
+    "ratio": 1.331,
+    "attack_time_kept": 0.427
+   },
+   {
+    "cap": 75000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 53,
+    "switches_kept": 32,
+    "ratio": 1.395,
+    "attack_time_kept": 0.51
+   },
+   {
+    "cap": 75000,
+    "opponent_vcf_gate": false,
+    "tree_only": true,
+    "wins_kept": 53,
+    "switches_kept": 32,
+    "ratio": 1.289,
+    "attack_time_kept": 0.373
+   },
+   {
+    "cap": 75000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 53,
+    "switches_kept": 32,
+    "ratio": 1.281,
+    "attack_time_kept": 0.362
+   },
+   {
+    "cap": 75000,
+    "opponent_vcf_gate": true,
+    "tree_only": true,
+    "wins_kept": 53,
+    "switches_kept": 32,
+    "ratio": 1.273,
+    "attack_time_kept": 0.352
+   },
+   {
+    "cap": 50000,
+    "opponent_vcf_gate": false,
+    "tree_only": false,
+    "wins_kept": 38,
+    "switches_kept": 22,
+    "ratio": 1.298,
+    "attack_time_kept": 0.385
+   },
+   {
+    "cap": 50000,
+    "opponent_vcf_gate": false,
+    "tree_only": true,
+    "wins_kept": 38,
+    "switches_kept": 22,
+    "ratio": 1.22,
+    "attack_time_kept": 0.284
+   },
+   {
+    "cap": 50000,
+    "opponent_vcf_gate": true,
+    "tree_only": false,
+    "wins_kept": 38,
+    "switches_kept": 22,
+    "ratio": 1.214,
+    "attack_time_kept": 0.276
+   },
+   {
+    "cap": 50000,
+    "opponent_vcf_gate": true,
+    "tree_only": true,
+    "wins_kept": 38,
+    "switches_kept": 22,
+    "ratio": 1.209,
+    "attack_time_kept": 0.269
+   }
+  ],
+  "persistence": {
+   "exhausted_then_next": 287,
+   "next_also_exhausted": 142,
+   "next_switched": 4
+  }
+ }
+}
