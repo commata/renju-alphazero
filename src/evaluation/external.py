@@ -12,7 +12,9 @@ from random import Random
 
 # Fixed before any game was played (docs/external-engine.md §4).
 CALIBRATION_SEEDS = tuple(range(8701, 8706))  # X1: strength calibration and the confirmation run
-MONITORING_SEEDS = tuple(range(8711, 8721))   # X2: one per H7 cycle, record only
+# X2: one per H7 cycle c (seed 8710 + c), record only; 8710 = cycle 0, the pre-RL baseline of the frozen TB-V3
+# (registered 2026-10-23, before any game on it)
+MONITORING_SEEDS = tuple(range(8710, 8721))
 FINAL_ANCHOR_SEEDS = tuple(range(8721, 8726))  # X3: H8 report, not played before H8
 EXTERNAL_SEEDS = frozenset(CALIBRATION_SEEDS + MONITORING_SEEDS + FINAL_ANCHOR_SEEDS)
 

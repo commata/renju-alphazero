@@ -68,7 +68,7 @@ Rapfi에게 패배 → 패배 직전 국면(loss_candidates) → offline 참값(
 | 블록 | seed | 용도 |
 |---|---|---|
 | X1 보정 | 8701–8705 | 8701 강도 사다리, 8702 확인 대국, 8703 재현성 재실행(**2026-10-18 사용 완료**, §8.1), 8704–8705 예비(쓰지 않음) |
-| X2 모니터링 | 8711–8720 | H7 주기 c에 seed 8710 + c(c = 1…10). 기록 전용 |
+| X2 모니터링 | 8710–8720 | H7 주기 c에 seed 8710 + c. **8710 = c 0: 학습 전 동결 TB-V3의 Pre-RL 기준선**(2026-10-23, 대국 전 등록), 8711–8720 = c 1…10. 기록 전용 |
 | X3 최종 앵커 | 8721–8725 | H8 보고용. **H8 전에는 두지 않는다** |
 
 - 세 블록 모두 `hybrid.h6_labels.RESERVED_SEEDS`에 있다. runner는 이 블록 밖의 seed를 거부한다(`--allow-unreserved-seed`는 가짜 엔진 smoke 전용).
@@ -171,10 +171,30 @@ Rapfi를 소스에서 빌드해(GPL-3.0, `dhbloo/rapfi` master, g++ 13.3, SSE4.1
 - 엔진 파일을 바꾸면 같은 상대가 아니다. 그때는 새 앵커로 따로 등록하고 이전 곡선과 잇지 않는다.
 - X2·X3 실행의 `engine.executable_sha256`, `extra_files`, `info`가 위와 같은지 확인한다. 우리 agent가 바뀌면 `run_signature` 전체는 달라지는 것이 정상이다.
 
+### 8.3 WSL2(데스크톱 Ubuntu)에서 같은 앵커 실행
+
+- 앵커는 §8.2의 **Windows 실행 파일 그 자체**다. Linux용 빌드는 다른 상대다(실행 파일 SHA가 다르고, 컴파일러 · SIMD가 다르면 노드 제한 탐색의 수도 달라질 수 있다). 그 빌드를 쓰려면 X1을 새로 한다.
+- WSL2는 Windows 실행 파일을 interop으로 그대로 실행한다.
+  - `--engine /mnt/c/engines/rapfi/pbrain-rapfi-windows-avx2.exe`
+  - 실행 파일 SHA가 그대로 기록되고, `cwd`(`/mnt/c/...`)가 Windows 경로로 바뀌어 `config.toml`을 찾는다.
+  - 어댑터 · runner는 OS 중립이라 코드 수정이 필요 없다(pipe, 읽기 스레드 timeout, `\r\n` 제거, signature에는 경로가 아니라 해시).
+- **WSL 경로 gate(첫 사용 전, 순서대로, 하나라도 다르면 앵커로 쓰지 않는다)**
+  1. 실행 파일 SHA-256 = `1e02497433fb…`, config · 가중치 6개 = `x1_provenance.json`
+  2. 규칙 교차검사 seed 1 · 반경 1 · 300판 = 데스크톱 Windows 기록(8,886국면, 금수점 9,517, 불일치 0). 우리 쪽 무작위 수만 쓰므로 Rapfi 답만의 비교다.
+  3. X1 재현성 재실행(`tb1` 대 L_mid, seed 8703, 2쌍, `--forbid-check` 없이)
+     - `run_signature` = `7b7710808f4d…`: 엔진 바이트 · 설정 · 우리 쪽이 X1과 같다. 테스트가 지금 코드로 X1의 10개 signature를 그대로 다시 만든다.
+     - fingerprint = `1adbb7d3433bb330…`
+  4. 끝난 뒤 Windows 쪽에 Rapfi 프로세스가 남지 않았는가(`tasklist.exe`)
+- 3번의 fingerprint만 다르면 원인을 2번 결과로 가른다. 2번이 같다면 우리 쪽(`tb1`의 CPU torch, OS 차이)의 문제다. 그때는 기록하고 앵커 사용을 멈춘 뒤 결정한다.
+
 ## 9. X2: H7 모니터링 상대 결정 (B1-Champion H7-c1 시작 전)
 
 - track-b-b1-b2.md §13에 따라 Monitoring Arena는 H7 시작 전에 고정된다. 외부 앵커를 넣을지 이때 정하고, 이후 바꾸지 않는다.
 - **결정(2026-10-17): 넣는다.** **기록용 monitoring 상대**로, 주기마다 L_mid 25쌍(50판), seed 8710 + c. B1-Champion-v1 25쌍 기록용과 같은 지위다.
+- **c 0 = Pre-RL 기준선(2026-10-23 추가):** H7-c1 self-play 전, 동결 TB-V3 Resolve / fast5(H3 + H6, CUDA)를 같은 설정으로 seed 8710에서 둔다.
+  - `run_external_match.py --ours tbv3`: canonical factory만 쓰고, 엔진 · runtime 해시와 모델 SHA 4개가 `run_signature`에 들어간다.
+  - 이 결과를 본 뒤 H7-c1의 학습 설정과 Rapfi 강도를 바꾸지 않는다.
+  - 주기마다 seed가 달라(opening이 다르다) 주기 사이 차이에 opening 표본 잡음이 들어간다. 진단 지표로만 읽는다.
   - 승급·탈락 gate에는 **절대 쓰지 않는다.** 승급(직전 checkpoint 50쌍), B1 수렴 기준(§9), B2 catch-up 기준은 바꾸지 않는다.
   - B1-Champion, B1-Matched, B2, Track A를 같은 Rapfi 설정으로 기록해 장기 곡선을 비교한다.
   - L_mid 점수가 0.8을 넘으면 그 주기부터 L_strong 25쌍을 **추가로** 기록한다(L_mid도 계속 둔다. 곡선이 끊기지 않게).

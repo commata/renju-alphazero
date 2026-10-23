@@ -179,6 +179,18 @@ class RunnerTest(unittest.TestCase):
         for changed in changes:
             self.assertNotEqual(self.runner.run_signature(*changed), base)
 
+    def test_x1_signatures_still_reproduce(self):
+        """The signature function is the one X1 ran: a rerun of the frozen anchor (e.g. on WSL2) can be compared
+        by its run_signature with the committed X1 record."""
+        record = json.loads((ROOT / 'docs' / 'external' / 'x1_provenance.json').read_text(encoding='utf-8'))
+        for run in record['runs']:
+            e = run['engine']
+            engine = {'name': 'rapfi', 'command': ['pbrain-rapfi-windows-avx2.exe'], 'info': e['info'],
+                      'rule': e['rule'], 'executable_sha256': e['executable_sha256'], 'extra_files': e['extra_files']}
+            args = Namespace(opening_random_plies=run['opening_random_plies'], opening_radius=run['opening_radius'],
+                             forbid_check=run['forbid_check'])
+            self.assertEqual(self.runner.run_signature(engine, run['ours'], args), run['run_signature'], run['file'])
+
     def test_identity_fail_fast(self):
         engine = {'command': ['rapfi'], 'executable_sha256': None, 'extra_files': {'w.bin': None, 'c.toml': 'cc'}}
         self.assertEqual(len(self.runner.check_identity(engine, strict=False)), 1)  # missing --engine-file
@@ -190,6 +202,85 @@ class RunnerTest(unittest.TestCase):
 
     def test_external_seeds_are_reserved(self):
         self.assertTrue(EXTERNAL_SEEDS <= RESERVED_SEEDS)
+        from evaluation.external import MONITORING_SEEDS
+        self.assertEqual(MONITORING_SEEDS, tuple(range(8710, 8721)))  # 8710 = X2 cycle 0, the pre-RL baseline
+        self.assertIn(8710, EXTERNAL_SEEDS)
+        self.assertIn(8710, RESERVED_SEEDS)  # never training data
+
+    def test_tbv3_identity_fails_closed(self):
+        from unittest import mock
+
+        from analysis import canonical, tb_v3, tb_v3_fast5
+        halves = (lambda path, policy=None: {k: v for k, v in tb_v3.MODELS.items() if k.startswith('policy')},
+                  lambda path: {k: v for k, v in tb_v3.MODELS.items() if k.startswith('value')})
+        with mock.patch('analysis.track_b_guard.check_policy_checkpoint', halves[0]), \
+                mock.patch('analysis.track_b_guard.check_value_checkpoint', halves[1]):
+            cuda = self.runner.tbv3_provenance('p.pt', 'v.pt', 'cuda')
+            cpu = self.runner.tbv3_provenance('p.pt', 'v.pt', 'cpu')
+            self.assertEqual((cuda['engine_hash'], cuda['runtime_hash'], cuda['value_checkpoint_sha256']),
+                             (tb_v3.ENGINE_HASH, tb_v3_fast5.runtime_hash('cuda'), tb_v3.MODELS['value_checkpoint_sha256']))
+            self.assertNotEqual(cuda['runtime_hash'], cpu['runtime_hash'])
+            with mock.patch.object(canonical, 'CANONICAL_RUNTIME', 'fast4'), self.assertRaises(ValueError):
+                self.runner.tbv3_provenance('p.pt', 'v.pt', 'cuda')  # no longer the canonical it stands for
+            with mock.patch.object(canonical, '_git_blob_sha256', lambda commit, path: 'f' * 64), \
+                    self.assertRaises(RuntimeError):  # the fast5 evidence does not hold for this checkout
+                self.runner.tbv3_provenance('p.pt', 'v.pt', 'cuda')
+        other = lambda path: {'value_checkpoint_sha256': 'f' * 64, 'value_metadata_sha256': 'f' * 64}
+        with mock.patch('analysis.track_b_guard.check_policy_checkpoint', halves[0]), \
+                mock.patch('analysis.track_b_guard.check_value_checkpoint', other), self.assertRaises(ValueError):
+            self.runner.tbv3_provenance('p.pt', 'v.pt', 'cuda')
+        # the identities are part of the run signature: another device or model is another run
+        args = Namespace(opening_random_plies=4, opening_radius=2, forbid_check=True)
+        engine = {'name': 'rapfi', 'command': ['/x/rapfi'], 'info': [], 'rule': 4, 'executable_sha256': 'aa',
+                  'extra_files': {}}
+        sig = lambda tbv3: self.runner.run_signature(engine, {'kind': 'tbv3', 'tbv3': tbv3}, args)
+        self.assertNotEqual(sig(cuda), sig(cpu))
+        self.assertEqual(self.runner.ours_label(Namespace(ours='tbv3', value_device='cuda')), 'tbv3')
+        self.assertEqual(self.runner.ours_label(Namespace(ours='tbv3', value_device='cpu')), 'tbv3[cpu]')
+
+    def test_tbv3_game_loop(self):
+        """--ours tbv3 in a game against the fake engine: fast5 bound, models cached, the canonical factory's agent
+        (stand-in models here; the real factory refuses anything but the frozen ones)."""
+        from unittest import mock
+
+        from rt30 import fast5
+        if not fast5.available():
+            self.skipTest('python -m rt30.vcfcore.build first')
+        from analysis import canonical, tb_v3_runtime
+        from hybrid.h6_fast import install
+        from tests.test_h7_timing import FACTORIES
+        self.addCleanup(lambda: (fast5.uninstall(), install('off')))
+        tbv3 = {**spec(), 'ours': 'tbv3', 'ours_label': 'tbv3', 'policy_checkpoint': 'p.pt',
+                'value_checkpoint': 'v.pt', 'value_device': 'cpu'}
+        self.runner._MODELS[('p.pt', 'v.pt', 'cpu')] = (FACTORIES['policy'], FACTORIES['leaf'])
+        self.addCleanup(self.runner._MODELS.clear)
+        built = []
+
+        def factory(engine, runtime):
+            self.assertEqual((engine, runtime), ('TB-V3', 'fast5'))
+            def make(policy, leaf, seed, policy_checkpoint, value_checkpoint):
+                built.append(seed)
+                return tb_v3_runtime._build(policy, leaf, seed)
+            return make
+
+        with mock.patch.object(canonical, 'factory', factory):
+            record = self.runner.play_one({**self.task(), 'spec': tbv3})
+        self.assertTrue(fast5.installed())
+        self.assertEqual(len(built), 1)
+        self.assertIn(record['result'], ('win', 'loss', 'draw'))
+        self.assertTrue(all('route' in m for m in record['our_moves']))
+
+    def test_tbv3_without_the_frozen_models_never_plays(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = io.StringIO()
+            with self.assertRaises(SystemExit), redirect_stderr(out):
+                self.runner.main(['--ours', 'tbv3', '--engine', sys.executable, '--engine-arg', FAKE,
+                                  '--seed', '1', '--allow-unreserved-seed', '--pairs', '1',
+                                  '--policy-checkpoint', str(Path(tmp) / 'none.pt'),
+                                  '--value-checkpoint', str(Path(tmp) / 'none' / 'best.pt'),
+                                  '--output', str(Path(tmp) / 'o.json')])
+            self.assertIn('setup failed', out.getvalue())
+            self.assertFalse((Path(tmp) / 'o.json').exists())
 
 
 class SummaryTest(unittest.TestCase):

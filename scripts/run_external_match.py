@@ -14,9 +14,13 @@ Referee is our ``Game``. Pre-fixed handling (§5):
 With ``--forbid-check`` every black-to-move position is also compared with the engine's own
 forbidden points (``YXSHOWFORBID``); differences are listed as ``forbid_mismatches``.
 
-Ours (``--ours``): ``tb1`` (TB-Engine-v1 + its H3 checkpoint), ``v7``, ``v8:<arm>`` (an arm of
-``run_mcts_v8_benchmark.py``; a PUCT arm needs ``--ours-puct-c``), ``az`` (a Track A training
-checkpoint, ``--az-checkpoint``), ``random`` (smoke tests).
+Ours (``--ours``): ``tb1`` (TB-Engine-v1 + its H3 checkpoint), ``tbv3`` (the canonical TB-V3 Resolve / fast5 with
+the frozen H3 policy and H6 value, ``--value-device cuda`` or the certified ``cpu``; built only by
+``analysis.canonical.factory``, refused unless the canonical, its fast5 evidence, its identity and both model files
+check), ``v7``, ``v8:<arm>`` (an arm of ``run_mcts_v8_benchmark.py``; a PUCT arm needs ``--ours-puct-c``), ``az``
+(a Track A training checkpoint, ``--az-checkpoint``), ``random`` (smoke tests). For ``tbv3`` the engine, runtime and
+model identities go into ``ours`` and so into ``run_signature``; its workers are spawned (CUDA) and keep the models
+loaded across games.
 
 Games are appended to ``--games-jsonl`` as they finish (a rerun skips finished keys), progress goes
 to stdout once a minute. Seeds must be in the external blocks (``evaluation.external``) unless
@@ -33,6 +37,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 import hashlib
+from multiprocessing import get_context
 import json
 from pathlib import Path
 import sys
@@ -59,7 +64,32 @@ def tb1_config_hash() -> str:
     return config_hash()
 
 
+TBV3 = ('TB-V3', 'fast5')  # the canonical engine and runtime --ours tbv3 stands for
+_MODELS: dict = {}         # per worker process: the frozen (policy, value) of --ours tbv3
+
+
+def tbv3_provenance(policy_checkpoint, value_checkpoint, device: str) -> dict:
+    """Fail closed: the canonical is still TB-V3 / fast5, its evidence holds, its identity and both model files are the
+    frozen ones; the identities that define our side of the games."""
+    from analysis import canonical, tb_v3, tb_v3_fast5, tb_v3_runtime, track_b_guard
+
+    if (canonical.CANONICAL_ENGINE_ID, canonical.CANONICAL_RUNTIME) != TBV3:
+        raise ValueError(f'--ours tbv3 is {TBV3}, the canonical is {canonical.CANONICAL_ENGINE_ID} / '
+                         f'{canonical.CANONICAL_RUNTIME}')
+    canonical.check_fast5_evidence()
+    tb_v3.check_identity()
+    models = {**track_b_guard.check_policy_checkpoint(policy_checkpoint),
+              **track_b_guard.check_value_checkpoint(value_checkpoint)}
+    if models != tb_v3.MODELS:
+        raise ValueError(f'--ours tbv3 needs the frozen models, got {models}')
+    return {'engine_id': tb_v3.ENGINE_ID, 'engine_hash': tb_v3.ENGINE_HASH, 'runtime': TBV3[1],
+            'runtime_hash': tb_v3_fast5.runtime_hash(device), 'identity_sha256': tb_v3_runtime.identity_sha256(),
+            'value_device': tb_v3_fast5.device_kind(device), **models}
+
+
 def ours_label(args) -> str:
+    if args.ours == 'tbv3':
+        return 'tbv3' + ('' if args.value_device == 'cuda' else f'[{args.value_device}]')
     if args.ours == 'az':
         return f"az:{(file_sha256(args.az_checkpoint) or 'missing')[:12]}" + (
             f'[sims={args.az_simulations}]' if args.az_simulations else '')
@@ -79,6 +109,22 @@ def make_ours(spec: dict, seed: int):
         from hybrid.h4_policy import RootPolicy
         check_checkpoint(spec['policy_checkpoint'])  # TB-Engine-v1 includes its checkpoint bytes
         return make_agent(RootPolicy(spec['policy_checkpoint']), seed=seed)
+    if kind == 'tbv3':
+        from analysis import canonical, tb_v2_runtime, tb_v3_fast5
+        from rt30 import fast5
+        if not fast5.installed():  # fast4 then fast5 in this process, once
+            tb_v2_runtime.install()
+            tb_v3_fast5.install()
+        key = (spec['policy_checkpoint'], spec['value_checkpoint'], spec['value_device'])
+        if key not in _MODELS:
+            from hybrid.h4_policy import RootPolicy
+            from hybrid.h6_value_leaf import ValueLeaf
+            _MODELS[key] = (RootPolicy(spec['policy_checkpoint'], threads=1),
+                            ValueLeaf(spec['value_checkpoint'], device=spec['value_device'], threads=1))
+        policy, leaf = _MODELS[key]
+        # the canonical factory checks identity, models and runtime again for every game
+        return canonical.factory(*TBV3)(policy, leaf, seed, Path(spec['policy_checkpoint']),
+                                        Path(spec['value_checkpoint']))
     if kind == 'az':
         from agents.alphazero_agent import AlphaZeroAgent
         return AlphaZeroAgent.from_checkpoint(spec['az_checkpoint'], simulations=spec.get('az_simulations'))
@@ -168,8 +214,8 @@ def build_tasks(args, spec: dict) -> tuple[list[dict], list[dict]]:
     return tasks, openings
 
 
-def ours_provenance(args, overrides: dict) -> dict:
-    uses_policy = args.ours == 'tb1' or args.ours.startswith('v8:')
+def ours_provenance(args, overrides: dict, tbv3: dict | None = None) -> dict:
+    uses_policy = args.ours in ('tb1', 'tbv3') or args.ours.startswith('v8:')
     policy = Path(args.policy_checkpoint) if uses_policy else None
     return {
         'kind': args.ours, 'label': ours_label(args), 'overrides': overrides,
@@ -178,6 +224,7 @@ def ours_provenance(args, overrides: dict) -> dict:
         'az_checkpoint_sha256': file_sha256(args.az_checkpoint) if args.az_checkpoint else None,
         'az_simulations': args.az_simulations,
         'tb_engine_config_hash': tb1_config_hash() if args.ours == 'tb1' else None,
+        **({'tbv3': tbv3} if tbv3 is not None else {}),
     }
 
 
@@ -243,8 +290,12 @@ def parse_info(values: list[str]) -> list[list[str]]:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument('--ours', required=True, help="'tb1', 'v7', 'v8:<arm>', 'az' or 'random'")
+    parser.add_argument('--ours', required=True, help="'tb1', 'tbv3', 'v7', 'v8:<arm>', 'az' or 'random'")
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
+    parser.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'),
+                        help='--ours tbv3: the frozen H6 value checkpoint')
+    parser.add_argument('--value-device', choices=('cuda', 'cpu'), default='cuda',
+                        help='--ours tbv3: cuda (canonical) or cpu (certified)')
     parser.add_argument('--ours-puct-c', type=float, help='c_puct of a v8 PUCT arm')
     parser.add_argument('--az-checkpoint', type=Path)
     parser.add_argument('--az-simulations', type=int)
@@ -279,7 +330,7 @@ def main(argv=None) -> int:
             parse_opponent(args.ours)
         except ValueError as exc:
             parser.error(str(exc))
-    elif args.ours not in ('tb1', 'v7', 'az', 'random'):
+    elif args.ours not in ('tb1', 'tbv3', 'v7', 'az', 'random'):
         parser.error(f'unknown --ours {args.ours!r}')
     try:
         info = parse_info(args.engine_info)
@@ -293,23 +344,27 @@ def main(argv=None) -> int:
         'ours': args.ours, 'policy_checkpoint': args.policy_checkpoint, 'overrides': overrides,
         'az_checkpoint': str(args.az_checkpoint) if args.az_checkpoint else None,
         'az_simulations': args.az_simulations, 'ours_label': ours_label(args),
+        'value_checkpoint': args.value_checkpoint, 'value_device': args.value_device,
         'engine_command': [args.engine, *args.engine_arg], 'engine_name': args.engine_name,
         'engine_info': info, 'move_timeout': args.move_timeout, 'engine_files': args.engine_file,
     }
     config = engine_config(spec)
     spec['engine_label'] = config.label
-    try:  # fail before any game starts: the engine must start and our agent must build
+    tbv3 = None
+    try:  # fail before any game starts: our identity, the engine must start and our agent must build
+        if args.ours == 'tbv3':
+            tbv3 = tbv3_provenance(args.policy_checkpoint, args.value_checkpoint, args.value_device)
         with ExternalEngineAgent(config) as probe:
             about = probe.engine.about()
         make_ours(spec, 0)
-    except (EngineError, OSError, ValueError, ImportError) as exc:
+    except (EngineError, OSError, ValueError, RuntimeError, ImportError) as exc:
         parser.error(f'setup failed: {exc}')
 
     engine_provenance = config.provenance()
     problems = check_identity(engine_provenance, strict=args.seed in EXTERNAL_SEEDS)
     if problems:
         parser.error('; '.join(problems))
-    ours_info = ours_provenance(args, overrides)
+    ours_info = ours_provenance(args, overrides, tbv3)
     spec['run_signature'] = signature = run_signature(engine_provenance, ours_info, args)
     tasks, openings = build_tasks(args, spec)
     try:
@@ -333,7 +388,8 @@ def main(argv=None) -> int:
 
     if pending:
         progress = Progress('external', len(pending), 'games')
-        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        context = get_context('spawn') if args.ours == 'tbv3' else None  # CUDA cannot cross a fork
+        with ProcessPoolExecutor(max_workers=args.workers, mp_context=context) as pool:
             run_chunks(pool, play_one, pending, progress, lambda _task: 1, unit_name='games', on_result=keep)
 
     games = [finished[t['key']] for t in tasks]
