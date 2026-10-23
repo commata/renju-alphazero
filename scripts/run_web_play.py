@@ -205,6 +205,30 @@ def create_agent(version: str, *, seed: int = 42):
     raise ValueError(f"unknown MCTS version: {version}")
 
 
+# The board marks of black's forbidden points (the usual renju notation): double three, double four, overline.
+FORBIDDEN_MARKS = {'삼삼': '33', '사사': '44', '장목': '6'}
+
+
+def forbidden_points(board, to_play: int, done: bool) -> list[list]:
+    """[[row, col, mark], ...] of every empty point forbidden for black when black is to move (else []).
+
+    ``renju.rules.forbidden_reason`` is the exact rule (the one ``Game.play`` enforces), run on a copy of the board:
+    it places a stone for a moment, and an AI job may be reading the live board."""
+    from renju.rules import forbidden_reason
+
+    if done or to_play != BLACK:
+        return []
+    copy = [list(row) for row in board]
+    out = []
+    for row in range(len(copy)):
+        for col in range(len(copy[row])):
+            if copy[row][col] == 0:
+                reason = forbidden_reason(copy, row, col)
+                if reason is not None:
+                    out.append([row, col, FORBIDDEN_MARKS.get(reason, reason)])
+    return out
+
+
 def _winner_name(winner: int | None) -> str | None:
     if winner == BLACK:
         return "BLACK"
@@ -965,9 +989,17 @@ class PlaySession:
         print(f"[web] saved game log: {display_path}")
         return log_dir
 
+    def _forbidden_locked(self) -> list[list]:
+        """Black's forbidden points of the current position, computed once per position (the page polls)."""
+        key = (self.epoch, tuple(self.game.history), self.game.done)
+        if getattr(self, "_forbidden_cache", (None, None))[0] != key:
+            self._forbidden_cache = (key, forbidden_points(self.game.board, self.game.to_play, self.game.done))
+        return self._forbidden_cache[1]
+
     def _state_locked(self) -> dict[str, Any]:
         return {
             "board": self.game.board,
+            "forbidden": self._forbidden_locked(),
             "to_play": "BLACK" if self.game.to_play == BLACK else "WHITE",
             "winner": _winner_name(self.game.winner),
             "done": self.game.done,

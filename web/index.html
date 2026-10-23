@@ -101,6 +101,7 @@
       <span><i class="dot black"></i>흑</span>
       <span><i class="dot white"></i>백</span>
       <span>빨간 점 = 마지막 착수</span>
+      <span>빨간 ⊘ = 흑 금수 (33 삼삼 · 44 사사 · 6 장목)</span>
       <span>좌표: 열 A–O, 행 1–15(아래에서 위)</span>
     </div>
 
@@ -272,6 +273,8 @@ function drawBoard() {
     }
   }
 
+  drawForbidden(radius);
+
   if (state.last_move) {
     const [r,c] = state.last_move;
     ctx.fillStyle = "#ef4444";
@@ -279,6 +282,40 @@ function drawBoard() {
     ctx.arc(margin + c * gap, margin + r * gap, Math.max(4, gap * .08), 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+const FORBIDDEN_NAME = {"33": "삼삼", "44": "사사", "6": "장목"};
+
+function drawForbidden(radius) {
+  // Black's forbidden points when black is to move (from the server's exact rule): a red ring over the board
+  // colour (so no grid line crosses the mark), the mark (33 double three, 44 double four, 6 overline) and a slash.
+  const {margin, gap} = geometry();
+  const color = "rgba(185, 28, 28, 0.9)";
+  for (const [r, c, mark] of state.forbidden || []) {
+    const x = margin + c * gap, y = margin + r * gap, k = radius * 0.86;
+    ctx.fillStyle = "#d9a75d";
+    ctx.beginPath();
+    ctx.arc(x, y, k, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(1.5, gap * 0.045);
+    ctx.beginPath();
+    ctx.arc(x, y, k, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - k * 0.7, y - k * 0.7);
+    ctx.lineTo(x + k * 0.7, y + k * 0.7);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = `bold ${Math.round(gap * (mark.length > 1 ? 0.42 : 0.5))}px system-ui, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(mark, x, y + 1);
+  }
+}
+
+function forbiddenAt(row, col) {
+  return (state.forbidden || []).find(([r, c]) => r === row && c === col);
 }
 
 function syncVersions() {
@@ -359,6 +396,11 @@ canvas.addEventListener("click", async event => {
   const col = Math.round((x - margin) / gap);
   const row = Math.round((y - margin) / gap);
   if (row < 0 || row >= SIZE || col < 0 || col >= SIZE) return;
+  const forbidden = forbiddenAt(row, col);
+  if (forbidden) {
+    errorBox.textContent = `${notation([row, col])}: 흑 금수(${FORBIDDEN_NAME[forbidden[2]] || forbidden[2]}) 자리입니다`;
+    return;
+  }
   await request("api/move", {row, col});
 });
 

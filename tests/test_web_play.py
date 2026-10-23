@@ -3,11 +3,38 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from scripts.run_web_play import VERSION_LABELS, PlaySession, create_agent
+from scripts.run_web_play import VERSION_LABELS, PlaySession, create_agent, forbidden_points
 from renju import BLACK, WHITE
 
 
 class WebPlayTest(unittest.TestCase):
+    def test_forbidden_points_marks_black_forbidden_moves_only_when_black_is_to_move(self):
+        from renju.game import Game
+        from renju.rules import forbidden_reason
+
+        game = Game()
+        for move in [(7, 7), (0, 0), (7, 8), (0, 2), (5, 9), (0, 4), (6, 9), (0, 6)]:
+            game.play(*move)
+        board = [list(row) for row in game.board]
+        points = forbidden_points(game.board, BLACK, False)
+        self.assertIn([7, 9, "33"], points)
+        self.assertEqual(game.board, board)  # the live board is never touched
+        expected = [[r, c, {"삼삼": "33", "사사": "44", "장목": "6"}[forbidden_reason(board, r, c)]]
+                    for r in range(15) for c in range(15)
+                    if board[r][c] == 0 and forbidden_reason(board, r, c) is not None]
+        self.assertEqual(points, expected)
+        self.assertEqual(forbidden_points(game.board, WHITE, False), [])
+        self.assertEqual(forbidden_points(game.board, BLACK, True), [])
+
+    def test_state_reports_forbidden_points(self):
+        session = PlaySession()
+        state = session.reset(agent_key="v6", human_color=WHITE, seed=7)  # centre placed, white (human) to move
+        self.assertEqual(state["forbidden"], [])
+        for move in [(0, 0), (7, 8), (0, 2), (5, 9), (0, 4), (6, 9), (0, 6)]:
+            session.game.play(*move)  # on the game itself: no AI job is queued
+        with session.lock:
+            self.assertIn([7, 9, "33"], session._state_locked()["forbidden"])
+
     def test_all_versions_can_be_constructed(self):
         for key in VERSION_LABELS:
             agent = create_agent(key, seed=7)
