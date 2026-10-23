@@ -5345,6 +5345,92 @@ C VCF core 자체에서는 고칠 의미 차이를 찾지 못했다는 검토에
 3. SER5 판정은 공식 조건을 모두 만족할 때만 나온다. 판정 기준은 두 회 모두 30초 초과 0, 최대 ≤ 25초다.
 4. PASS하면 "TB-V3 / fast5 SER5 runtime certification PASS"이다. 그 뒤 canonical 실행판 전환(`CANONICAL_RUNTIME = 'fast5'`)을 따로 결정한다.
 
+## fast5 G2: SER5_CERTIFIED (2026-10-23, `8022aa3`)
+
+**상태: TB-V3 / fast5 SER5 runtime certification PASS.** G0 · G1 · G2를 모두 통과했다. canonical 실행판은 아직 `fast4`다. 전환은 아래 정책 결정으로 따로 한다.
+
+**검증 (`tb_v3_fast5_g2_desktop.json`, `tb_v3_fast5_g2_ser5.json`)**
+- 두 파일 모두 도구 `tb-v3-fast5-g2-v2`, 코드 `58b1c71`
+  - corpus SHA는 커밋된 827 corpus와 같다.
+  - `same_decisions: true`, `official: true`, `not_official: []`
+  - 공식 조건(전체 `.json`, identity와 실행판별 runtime 해시, 같은 장치·기계, threads 1 / workers 1 / fast4, corpus id 정확히 일치, SER5 fast5 2회 + CPU + 깨끗한 tree)을 도구가 모두 확인했다.
+- SER5: fast5 2회(최대 6.873 / 6.802초, 30초 초과 0) → **`SER5_CERTIFIED`**
+- 데스크톱: 회차당 1회씩(인증 규칙 없음, 비교용). `official: true`는 출처 조건을 만족했다는 뜻이다.
+- 초안의 수치는 모두 결과 파일과 같다. 결론에 동의한다. 핵심은 "평균 2.3배"보다 "SER5 최악 29.3초 → 6.8초, 두 독립 회차 모두 기준 통과"다.
+
+| | 데스크톱 fast4 | 데스크톱 fast5 | SER5 fast4 | SER5 fast5 |
+|---|---|---|---|---|
+| 합계(초) | 2,114.7 | 742.8(0.351) | 3,881.3 | 1,689.2(0.435) |
+| 평균 | 2.557 | 0.898 | 4.693 | 2.043 |
+| p50 | 0.821 | 0.726 | 1.997 | 1.828 |
+| p99 | 13.429 | 2.977 | 22.683 | 5.674 |
+| 최대 | 17.950 | 3.682 | 29.291 | 6.838 |
+| E4 실행 국면 평균 / 최대 | 0.865 / 5.062 | 0.237 / 2.299 | 1.409 / 8.358 | 0.405 / 3.746 |
+| E4 예산 소진 국면 평균 | 3.634 | 0.802 | 5.858 | 1.353 |
+
+- 부분별 비(fast5 / fast4)
+  - 데스크톱: root 0.217, VCT2 0.246, E4 0.274, tree 0.978, value 0.944
+  - SER5: root 0.193, VCT2 0.260, E4 0.287, tree 0.995, value 0.997
+- 25초 초과였던 5국면(SER5): 29.291 → 4.881, 26.776 → 2.326, 26.767 → 2.508, 26.414 → 1.948, 25.311 → 5.971
+  - 최장 국면은 root 12.812 → 0.778, E4 6.704 → 2.298
+  - 데스크톱에서도 같은 5국면이 17.95–16.07초 → 1.08–3.10초
+
+**초안 검토에서 더할 것**
+1. **부분 시간은 더하면 안 된다.** `value`는 `tree` 안에서 잰 시간이다(tree 탐색 중 leaf 평가). 초안은 더하지 않았으므로 결론은 그대로다. 다만 남은 비용을 읽을 때 중요하다.
+2. **fast5 뒤 남은 비용은 VCF 밖이다.** 국면당 평균 중의 몫은 다음과 같다(E4는 전체 국면으로 환산).
+   - SER5: tree 1.298초(64%, 그 안에 value 0.645초 = 32%), E4 0.334초(16%), root 0.198초(10%), VCT2 0.116초(6%), 나머지 약 5%
+   - 데스크톱: tree 0.434초(48%, value 0.085초 = 9%), E4 0.196초(22%), root 0.145초(16%), VCT2 0.067초(7%)
+   - 그래서 p50이 거의 안 줄었다(0.88 / 0.92배). 보통 국면은 원래 tree와 value가 대부분이었다.
+   - 다음 정확 가속의 목표는 tree(Python MCTS, 열린 삼 판별, 수 정렬)와 SER5의 CPU value다. 웹 지연에도, self-play 처리량에도 같다.
+3. **SER5의 여유:** 최대 6.873초로 25초 기준의 약 27%, 30초 deadline의 약 23%다.
+   - 측정은 국면마다 새 agent라 cooldown이 공격을 건너뛰지 않는 최악 조건이다. 실제 대국은 이보다 짧다.
+   - 웹 서버 동시 부하는 이 측정에 없다. 배포 뒤 30초 soft monitor로 본다.
+4. 데스크톱 측정은 회차당 1회다. 인증이 아니라 비교용이므로 충분하다. 비율이 SER5와 같은 방향(root / VCT2 / E4만 크게 줄고 tree / value는 그대로)이라 측정 흔들림으로 보기 어렵다.
+5. `tb_v3_ser5_tail.json`을 새 검사(회차 결정 일치, TB-V2 짝 검사)로 다시 만드는 일은 아직 남아 있다. G2는 자체 검사로 fast4 / fast5 결정 일치를 확인했으므로 판정과는 무관하다.
+
+## 다음 단계 제안 (결정 필요)
+
+**1. 실행판 정책: canonical 실행판을 fast5로 전환 (코드 변경, 엔진 해시 그대로)**
+- 근거
+  - CUDA: G1(arena 3,201수 정확 재생)과 데스크톱 G2
+  - SER5 CPU: G2 공식 2회(827국면 모두 fast4 CPU와 같은 결정)
+- 바꾸는 것
+  - `analysis.canonical.CANONICAL_RUNTIME = 'fast5'`
+  - `check_track_b_frozen.py`: canonical 실행판이 fast5면 G0(두 파일) · G1 · G2(SER5) 기록이 모두 PASS / CERTIFIED이고, runtime 해시가 지금 값(CUDA / CPU)과 같아야 한다(승격 기록 검사와 같은 방식).
+  - `tb_v3_fast5.CERTIFICATION['cuda']`, `DEPLOYMENT['ser5']`에 근거 파일을 기록한다.
+  - 벤치마크 `tb_v3` arm에 `--runtime fast4|fast5`를 둔다(기본 canonical). 실행 기록의 provenance는 실제 실행판을 따른다(`canonical.provenance(device, 'TB-V3', runtime)`).
+- 되돌릴 곳: fast4는 그대로 남는다(`factory('TB-V3', 'fast4')`). 되돌림은 상수 한 줄과 검사기다.
+- 바꾸지 않는 것: 엔진 해시, 63개 manifest, 동결 파일
+
+**2. CPU 인증을 fast5로 (seed 8451 / 8452, 사전 고정 seed 그대로)**
+- TB-V3의 CPU 인증은 아직 하지 않았다. fast4로 먼저 하면 fast5에 이어지지 않는다(승인 규칙). 그래서 실제로 쓸 fast5로 한 번만 하자고 제안한다.
+- 방식은 기존 CPU 인증(8431 / 8432 설계)과 같다.
+  - 데스크톱에서 같은 opening·색으로 CPU value와 CUDA value 대국을 둔다(각 50 pair × 2 seed).
+  - 판정: opening 단위 점수 차 CPU − CUDA의 95% 하한 ≥ −0.05, 안전 위반 0
+- 필요한 도구: 벤치마크 `tb_v3` arm의 `--runtime fast5`, `summarize_h7_cpu_cert.py`의 TB-V3 / fast5 판(seed, arm, runtime 해시 검사)
+
+**3. H7-c1 self-play 설계**
+- 엔진: canonical TB-V3 / fast5(CUDA)
+- policy target 계약은 이미 고정했다(E4 증명 승리 덮어쓰기 = one-hot).
+- 처리량: 데스크톱 한 수 평균 0.9초(workers 1). worker 수(8–14)는 짧게 재서 고른다.
+- 데이터 provenance: 엔진 해시, fast5 runtime 해시, 모델 SHA를 대국마다 기록한다.
+
+**4. 웹 배포 (`feat/Web_SER5`, 별도 단계)**
+- TB-V3 / fast5가 SER5 시간 기준을 크게 여유 있게 통과했다. 그래서 앞서 계획한 "웹용 시간 제한 E4"는 지금은 필요 없어 보인다.
+  - 30초 soft monitor와 deadline cut 기록은 그대로 둔다.
+- 웹 서버의 엔진 생성 경로를 canonical factory로 바꾸는 작업은 그 브랜치에서 따로 계획한다.
+
+**5. 이후 정확 가속 (우선순위 낮음, 같은 G0–G2 방식)**
+- tree: 열린 삼 판별(`_fast_open_three_in_direction`)과 패턴 특징의 native화
+- `ordered_moves` 거리 지도(X2-B): E4 공격의 Python 몫
+- SER5 value: 스레드 수 / 추론 backend. 정확하지 않을 수 있으므로 value-mode 동일성 검사가 필요하다.
+
+**결정이 필요한 것**
+1. canonical 실행판 fast5 전환(1번 방식)
+2. CPU 인증을 fast5로 한 번만(8451 / 8452)
+3. 순서: 1 → 2(데스크톱) → 3 설계. 4는 병행 가능
+4. 5번 정확 가속은 H7-c1 처리량을 보고 결정
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
