@@ -429,6 +429,15 @@ def make_tb_rt30_v3_agent(seed: int = 42, *, checkpoint: str | None = None, unif
     return agent
 
 
+def make_tb_rt30_v4_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_prior: bool = False):
+    """TB-RT30-v4 (``rt30.tb_rt30_v4``: v3 with TB-V3's native builder) for the web worker, as v3's."""
+    from . import tb_rt30_v4
+
+    agent = make_tb_rt30_v3_agent(seed, checkpoint=checkpoint, uniform_prior=uniform_prior)
+    agent.name = agent.name.replace('TB-RT30-v3', tb_rt30_v4.NAME)
+    return agent
+
+
 def make_tb_rt30_v1_agent(seed: int = 42, *, checkpoint: str | None = None, uniform_prior: bool = False):
     """The frozen TB-RT30-v1 (``rt30.tb_rt30_v1``) for the web worker: the H3 policy from ``checkpoint``
     (hash-checked), or ``uniform_prior=True`` without one (a test engine, named so)."""

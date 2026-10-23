@@ -11,6 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 LOCK = ROOT / 'tests' / 'frozen_tb_rt30_v3.sha256'
 V1_LOCK = ROOT / 'tests' / 'frozen_tb_rt30_v1.sha256'
 CONFIG_HASH = 'f80d2348a85b34add30e30c6157e197a365517aca64ca1668279a14298c29eda'
+BUILDER = 'src/rt30/native/build.py'
+V3_MODULES = "MODULES = {'_threat_windows': 'threat_windows.c'}"
+V4_MODULES = "MODULES = {'_threat_windows': 'threat_windows.c', '_forbidden': 'forbidden.c'}  # fast3 X1-A; fast4 (H7 P1a-1)"
 
 
 def evidence(name):
@@ -67,10 +70,18 @@ class FrozenTest(unittest.TestCase):
         self.assertTrue(all(t == traces[0] for t in traces))
 
     def test_locked_files(self):
+        """v3's lock holds but for the native builder, which TB-V3's replaced (that change is TB-RT30-v4):
+        the builder differs from v3's by its MODULES line only (``_forbidden`` added)."""
         entries = lock_entries(LOCK)
         self.assertGreaterEqual(len(entries), 16)
         for digest, relative in entries:
+            if relative == BUILDER:
+                continue
             self.assertEqual(hashlib.sha256((ROOT / relative).read_bytes()).hexdigest(), digest, relative)
+        text = (ROOT / BUILDER).read_text(encoding='utf-8')
+        self.assertEqual(text.count(V4_MODULES), 1)
+        self.assertEqual(hashlib.sha256(text.replace(V4_MODULES, V3_MODULES).encode()).hexdigest(),
+                         dict((r, d) for d, r in entries)[BUILDER])
         locked = {relative for _, relative in entries}
         self.assertTrue({relative for _, relative in lock_entries(V1_LOCK)} <= locked)  # v1's files too
 
