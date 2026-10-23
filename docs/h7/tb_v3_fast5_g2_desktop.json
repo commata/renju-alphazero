@@ -1,0 +1,207 @@
+{
+ "format": "tb-v3-fast5-g2-v2",
+ "git_commit": "58b1c7182e5118a4d4f2046eb18b2c7d88ae4cbe",
+ "corpus_sha256": "f7f2e6eab581af4cc949eac468098a9d0269a65097f185ffa8975fcb10061fe4",
+ "files": {
+  "fast4": {
+   "runs/tb_v3/desktop_fast4.json": "c6018c24f1d6128dd12e777988044de677e1c65f837813438fbcf1626d355fe1"
+  },
+  "fast5": {
+   "runs/tb_v3/desktop_fast5.json": "97868ee3a83fd7b538e5c07c007edd78343923b049b3deb344dff4af0dc6b1b8"
+  }
+ },
+ "positions": 827,
+ "rounds": {
+  "fast4": 1,
+  "fast5": 1
+ },
+ "machine": "desktop",
+ "same_decisions": true,
+ "fast4": {
+  "all": {
+   "n": 827,
+   "mean": 2.557,
+   "p50": 0.821,
+   "p90": 8.207,
+   "p95": 9.868,
+   "p99": 13.429,
+   "max": 17.95,
+   "over_deadline": 0
+  },
+  "total_seconds": 2114.7,
+  "parts_mean": {
+   "tree": 0.444,
+   "root": 0.669,
+   "vct2": 0.272,
+   "value": 0.09
+  },
+  "e4_ran": {
+   "n": 683,
+   "mean": 0.865,
+   "p50": 0.095,
+   "p90": 3.528,
+   "p95": 3.982,
+   "p99": 4.563,
+   "max": 5.062,
+   "over_deadline": 0
+  },
+  "e4_exhausted": {
+   "n": 116,
+   "mean": 3.634,
+   "p50": 3.709,
+   "p90": 4.437,
+   "p95": 4.596,
+   "p99": 5.004,
+   "max": 5.062,
+   "over_deadline": 0
+  },
+  "ran_total_seconds": {
+   "n": 683,
+   "mean": 2.712,
+   "p50": 0.902,
+   "p90": 8.659,
+   "p95": 10.116,
+   "p99": 14.881,
+   "max": 17.95,
+   "over_deadline": 0
+  },
+  "exhausted_total_seconds": {
+   "n": 116,
+   "mean": 8.561,
+   "p50": 8.434,
+   "p90": 13.034,
+   "p95": 15.914,
+   "p99": 16.697,
+   "max": 17.95,
+   "over_deadline": 0
+  }
+ },
+ "fast5": {
+  "all": {
+   "n": 827,
+   "mean": 0.898,
+   "p50": 0.726,
+   "p90": 1.87,
+   "p95": 2.323,
+   "p99": 2.977,
+   "max": 3.682,
+   "over_deadline": 0
+  },
+  "total_seconds": 742.8,
+  "parts_mean": {
+   "tree": 0.434,
+   "root": 0.145,
+   "vct2": 0.067,
+   "value": 0.085
+  },
+  "e4_ran": {
+   "n": 683,
+   "mean": 0.237,
+   "p50": 0.079,
+   "p90": 0.762,
+   "p95": 1.132,
+   "p99": 1.612,
+   "max": 2.299,
+   "over_deadline": 0
+  },
+  "e4_exhausted": {
+   "n": 116,
+   "mean": 0.802,
+   "p50": 0.822,
+   "p90": 1.544,
+   "p95": 1.612,
+   "p99": 1.914,
+   "max": 2.299,
+   "over_deadline": 0
+  },
+  "ran_total_seconds": {
+   "n": 683,
+   "mean": 1.023,
+   "p50": 0.783,
+   "p90": 1.945,
+   "p95": 2.464,
+   "p99": 3.022,
+   "max": 3.682,
+   "over_deadline": 0
+  },
+  "exhausted_total_seconds": {
+   "n": 116,
+   "mean": 2.015,
+   "p50": 1.921,
+   "p90": 2.91,
+   "p95": 3.032,
+   "p99": 3.278,
+   "max": 3.682,
+   "over_deadline": 0
+  }
+ },
+ "ratio_total": 0.3513,
+ "ratio_by_part": {
+  "tree": 0.9775,
+  "root": 0.2167,
+  "vct2": 0.2463,
+  "value": 0.9444
+ },
+ "ratio_e4": 0.274,
+ "tracked": [
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8408/3/white|39",
+   "fast4": 17.95,
+   "fast5": 2.75,
+   "ratio": 0.1532,
+   "e4_fast4": 4.228,
+   "e4_fast5": 1.39,
+   "root_fast4": 8.073,
+   "root_fast5": 0.514
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/14/white|111",
+   "fast4": 16.508,
+   "fast5": 1.206,
+   "ratio": 0.0731,
+   "e4_fast4": 2.821,
+   "e4_fast5": 0.102,
+   "root_fast4": 7.803,
+   "root_fast5": 0.305
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/14/white|105",
+   "fast4": 16.358,
+   "fast5": 1.405,
+   "ratio": 0.0859,
+   "e4_fast4": 2.839,
+   "e4_fast5": 0.102,
+   "root_fast4": 7.758,
+   "root_fast5": 0.471
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/14/white|107",
+   "fast4": 16.069,
+   "fast5": 1.075,
+   "ratio": 0.0669,
+   "e4_fast4": 2.831,
+   "e4_fast5": 0.104,
+   "root_fast4": 7.679,
+   "root_fast5": 0.426
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/11/black|34",
+   "fast4": 16.697,
+   "fast5": 3.095,
+   "ratio": 0.1854,
+   "e4_fast4": 3.904,
+   "e4_fast5": 0.85,
+   "root_fast4": 7.976,
+   "root_fast5": 1.157
+  }
+ ],
+ "ser5_rounds": [
+  {
+   "over_deadline": 0,
+   "max": 3.682,
+   "pass": true
+  }
+ ],
+ "official": true,
+ "not_official": []
+}

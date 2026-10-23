@@ -1,0 +1,215 @@
+{
+ "format": "tb-v3-fast5-g2-v2",
+ "git_commit": "58b1c7182e5118a4d4f2046eb18b2c7d88ae4cbe",
+ "corpus_sha256": "f7f2e6eab581af4cc949eac468098a9d0269a65097f185ffa8975fcb10061fe4",
+ "files": {
+  "fast4": {
+   "runs/tb_v3/ser5_r1.json": "e0583fe68529063ff27847e8e7c912edc1457d476a6043306f3736189281f57a",
+   "runs/tb_v3/ser5_r2.json": "0aa29fe2d7b9792e752e7f40f281d94edb0aa662fc12fc71a47047394d9cf24b"
+  },
+  "fast5": {
+   "runs/tb_v3/ser5_fast5_r1.json": "822df61dd9bca05bb8aeb4e524a5f6f46602b5ea5d8904da1891267fa9302212",
+   "runs/tb_v3/ser5_fast5_r2.json": "c3c1f6ff0cab5516bf5528eb153f43feda7a28ef332ffb2a82414e7e55cb03b5"
+  }
+ },
+ "positions": 827,
+ "rounds": {
+  "fast4": 2,
+  "fast5": 2
+ },
+ "machine": "ser5",
+ "same_decisions": true,
+ "fast4": {
+  "all": {
+   "n": 827,
+   "mean": 4.693,
+   "p50": 1.997,
+   "p90": 13.518,
+   "p95": 16.602,
+   "p99": 22.683,
+   "max": 29.291,
+   "over_deadline": 0
+  },
+  "total_seconds": 3881.3,
+  "parts_mean": {
+   "tree": 1.304,
+   "root": 1.026,
+   "vct2": 0.446,
+   "value": 0.647
+  },
+  "e4_ran": {
+   "n": 683,
+   "mean": 1.409,
+   "p50": 0.169,
+   "p90": 5.718,
+   "p95": 6.443,
+   "p99": 7.26,
+   "max": 8.358,
+   "over_deadline": 0
+  },
+  "e4_exhausted": {
+   "n": 116,
+   "mean": 5.858,
+   "p50": 5.924,
+   "p90": 7.047,
+   "p95": 7.312,
+   "p99": 7.88,
+   "max": 8.358,
+   "over_deadline": 0
+  },
+  "ran_total_seconds": {
+   "n": 683,
+   "mean": 5.039,
+   "p50": 2.09,
+   "p90": 14.722,
+   "p95": 17.082,
+   "p99": 24.104,
+   "max": 29.291,
+   "over_deadline": 0
+  },
+  "exhausted_total_seconds": {
+   "n": 116,
+   "mean": 14.423,
+   "p50": 14.699,
+   "p90": 21.82,
+   "p95": 24.215,
+   "p99": 26.776,
+   "max": 29.291,
+   "over_deadline": 0
+  }
+ },
+ "fast5": {
+  "all": {
+   "n": 827,
+   "mean": 2.043,
+   "p50": 1.828,
+   "p90": 3.776,
+   "p95": 4.618,
+   "p99": 5.674,
+   "max": 6.838,
+   "over_deadline": 0
+  },
+  "total_seconds": 1689.2,
+  "parts_mean": {
+   "tree": 1.298,
+   "root": 0.198,
+   "vct2": 0.116,
+   "value": 0.645
+  },
+  "e4_ran": {
+   "n": 683,
+   "mean": 0.405,
+   "p50": 0.156,
+   "p90": 1.273,
+   "p95": 1.937,
+   "p99": 2.651,
+   "max": 3.746,
+   "over_deadline": 0
+  },
+  "e4_exhausted": {
+   "n": 116,
+   "mean": 1.353,
+   "p50": 1.378,
+   "p90": 2.501,
+   "p95": 2.755,
+   "p99": 3.237,
+   "max": 3.746,
+   "over_deadline": 0
+  },
+  "ran_total_seconds": {
+   "n": 683,
+   "mean": 2.347,
+   "p50": 1.94,
+   "p90": 4.064,
+   "p95": 4.888,
+   "p99": 5.772,
+   "max": 6.838,
+   "over_deadline": 0
+  },
+  "exhausted_total_seconds": {
+   "n": 116,
+   "mean": 4.0,
+   "p50": 3.907,
+   "p90": 5.547,
+   "p95": 5.853,
+   "p99": 6.113,
+   "max": 6.838,
+   "over_deadline": 0
+  }
+ },
+ "ratio_total": 0.4352,
+ "ratio_by_part": {
+  "tree": 0.9954,
+  "root": 0.193,
+  "vct2": 0.2601,
+  "value": 0.9969
+ },
+ "ratio_e4": 0.2874,
+ "tracked": [
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8408/3/white|39",
+   "fast4": 29.291,
+   "fast5": 4.881,
+   "ratio": 0.1666,
+   "e4_fast4": 6.704,
+   "e4_fast5": 2.298,
+   "root_fast4": 12.812,
+   "root_fast5": 0.778
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/14/white|111",
+   "fast4": 26.776,
+   "fast5": 2.326,
+   "ratio": 0.0869,
+   "e4_fast4": 4.504,
+   "e4_fast5": 0.197,
+   "root_fast4": 12.3,
+   "root_fast5": 0.519
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/14/white|105",
+   "fast4": 26.767,
+   "fast5": 2.508,
+   "ratio": 0.0937,
+   "e4_fast4": 4.478,
+   "e4_fast5": 0.2,
+   "root_fast4": 12.408,
+   "root_fast5": 0.741
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/14/white|107",
+   "fast4": 26.414,
+   "fast5": 1.948,
+   "ratio": 0.0737,
+   "e4_fast4": 4.5,
+   "e4_fast5": 0.201,
+   "root_fast4": 12.554,
+   "root_fast5": 0.672
+  },
+  {
+   "id": "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/11/black|34",
+   "fast4": 25.311,
+   "fast5": 5.971,
+   "ratio": 0.2359,
+   "e4_fast4": 5.795,
+   "e4_fast5": 1.447,
+   "root_fast4": 11.13,
+   "root_fast5": 1.648
+  }
+ ],
+ "ser5_rounds": [
+  {
+   "over_deadline": 0,
+   "max": 6.873,
+   "pass": true
+  },
+  {
+   "over_deadline": 0,
+   "max": 6.802,
+   "pass": true
+  }
+ ],
+ "official": true,
+ "not_official": [],
+ "verdict": "SER5_CERTIFIED"
+}
