@@ -20,7 +20,9 @@ on fast5, and every record field but times must match too (charged VCF nodes, un
 statuses, V8-C table hits / stores, the E4-v2 step): G1_PASS / G1_FAIL. B then runs TB-V2-Value's factory
 with the native VCF core bound (a cross-check of the V8-C table path, reported).
 CUDA only (the arena's value device). One game per task in a worker pool; each finished game is appended to
-``--jsonl`` (resume; a fingerprint binds the runtime hash, the run file and the device).
+``--jsonl`` (resume; a fingerprint binds the gate version, this tool's SHA-256, the arena summary, the runtime hash,
+the run file and the device, so a row compared by other rules or code is never reused). An official run needs a
+clean tree (``--allow-dirty``: a smoke run, verdict NOT_OFFICIAL).
 
     python scripts/tb_v3_promotion.py --runs runs/h7_e4v2/e_8441.json runs/h7_e4v2/e_8442.json \\
         --baseline-runs runs/h7_e4v2/b_8441.json runs/h7_e4v2/b_8442.json --workers 8 --device cuda \\
@@ -41,6 +43,8 @@ for path in (ROOT, ROOT / 'src', ROOT / 'scripts'):
         sys.path.insert(0, str(path))
 
 FORMAT = 'tb-v3-promotion-v1'
+FAST5_FORMAT = 'tb-v3-fast5-g1-v1'
+GATE_VERSION = 2  # 2: G1 for fast5 (record fields), fingerprint with the tool and the arena
 ARENA = 'docs/h7/h7_e4v2_arena.json'
 ENGINES = {'puct_value_vct2_50k_tt_e4v2': 'TB-V3', 'puct_value_vct2_50k_tt': 'TB-V2-Value'}
 MOVE_FIELDS = ('route', 'changed', 'v7_move')
@@ -190,6 +194,7 @@ def main(argv=None, factories=None) -> int:
     parser.add_argument('--runtime', choices=('fast4', 'fast5'), default='fast4',
                         help='fast4: the promotion replay; fast5: G1 of the fast5 runtime')
     parser.add_argument('--jsonl', type=Path, help='one line per replayed game (resume)')
+    parser.add_argument('--allow-dirty', action='store_true', help='smoke runs only: the verdict is NOT_OFFICIAL')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
     if args.output is not None and args.output.exists():
@@ -205,6 +210,9 @@ def main(argv=None, factories=None) -> int:
         parser.error(f'{args.arena} is not the adopting arena of {tb_v3.ENGINE_NAME}')
     if factories is None and tb_v3_runtime.device_kind(args.device) != 'cuda':
         parser.error('the arena ran its value on CUDA: the replay must too')
+    dirty = _git_dirty()
+    if factories is None and dirty is not False and not args.allow_dirty:
+        parser.error('the tree has uncommitted changes (or git is unavailable): an official replay needs a clean tree')
     loaded = []
     for path, arm in [(p, arena_rules.CANDIDATE) for p in args.runs] + \
                      [(p, arena_rules.BASELINE) for p in args.baseline_runs]:
@@ -225,6 +233,12 @@ def main(argv=None, factories=None) -> int:
                   'TB-V2-Value': f"{tb_v2_runtime.runtime_hash(device)}+vcfcore:{tb_v3_fast5.runtime_hash(device)}"}
     else:
         hashes = {'TB-V3': tb_v3_runtime.runtime_hash(device), 'TB-V2-Value': tb_v2_runtime.runtime_hash(device)}
+    tool_sha, arena_sha = file_sha256(Path(__file__)), file_sha256(args.arena)
+
+    def fingerprint(engine):
+        return {'gate_version': GATE_VERSION, 'tool_sha256': tool_sha, 'arena_sha256': arena_sha,
+                'runtime_mode': args.runtime, 'runtime_hash': hashes[engine], 'device': device}
+
     done = {}
     if args.jsonl is not None and args.jsonl.exists():
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
@@ -232,7 +246,7 @@ def main(argv=None, factories=None) -> int:
                 row = json.loads(line)
             except json.JSONDecodeError:
                 continue  # a torn last line: that game is replayed again
-            if row.get('fingerprint') != {'runtime_hash': hashes[row['engine']], 'device': device}:
+            if row.get('fingerprint') != fingerprint(row['engine']):
                 parser.error(f'{args.jsonl} has games of another runtime / device; use another file')
             done[(row['key'], row['run_sha256'])] = row
     todo = [t for t in tasks if (t['key'], t['run_sha256']) not in done]
@@ -241,7 +255,7 @@ def main(argv=None, factories=None) -> int:
 
     def keep(_, rows):
         for row in rows:
-            row = {**row, 'fingerprint': {'runtime_hash': hashes[row['engine']], 'device': device}}
+            row = {**row, 'fingerprint': fingerprint(row['engine'])}
             done[(row['key'], row['run_sha256'])] = row
             if args.jsonl is not None:
                 args.jsonl.parent.mkdir(parents=True, exist_ok=True)
@@ -277,7 +291,10 @@ def main(argv=None, factories=None) -> int:
     b = summarize(rows, 'TB-V2-Value') if args.baseline_runs else None
     steps = arena['report']['e4v2_steps']['moves']
     result = verdict(e, arena['arms'][arena_rules.CANDIDATE]['games'], steps, b, args.runtime)
-    payload = {'format': FORMAT, 'git_commit': _git_commit(), 'git_dirty': _git_dirty(), 'engine': tb_v3.ENGINE_NAME,
+    if dirty is not False and factories is None:
+        result = {**result, 'verdict': 'NOT_OFFICIAL', 'reasons': result['reasons'] + ['dirty tree (--allow-dirty)']}
+    payload = {'format': FAST5_FORMAT if args.runtime == 'fast5' else FORMAT, 'gate_version': GATE_VERSION,
+               'git_commit': _git_commit(), 'git_dirty': dirty, 'engine': tb_v3.ENGINE_NAME,
                'engine_hash': tb_v3.ENGINE_HASH, 'identity_sha256': tb_v3_runtime.identity_sha256(),
                'code_manifest_sha256': tb_v3.CODE_MANIFEST_SHA256, 'runtime_hash': hashes['TB-V3'],
                'baseline_runtime_hash': hashes['TB-V2-Value'], 'device': device, 'runtime_mode': args.runtime,

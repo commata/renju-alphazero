@@ -109,10 +109,17 @@ class CorpusRulesTest(unittest.TestCase):
                                     factories={**FACTORIES, 'stand_in': True}), 0)
             r = json.loads(out.read_text(encoding='utf-8'))
             self.assertEqual((r['engine'], r['engine_name']), (tb_v3.ENGINE_HASH, 'TB-V3 Resolve'))
+            fp = r['fingerprint']
+            self.assertEqual((fp['runtime_hash'], fp['threads'], fp['workers'], fp['models']),
+                             (tb_v3_runtime.runtime_hash('cpu'), 1, 1, 'stand-in'))
+            self.assertTrue(all('fingerprint' not in row for row in r['rows']))
+            with self.assertRaises(SystemExit):  # the same jsonl under another setting (threads) is refused
+                t.main(argv + ['--fast', 'fast4', '--threads', '2', '--jsonl', str(jsonl),
+                               '--output', str(tmp / 'w.json')], factories={**FACTORIES, 'stand_in': True})
             self.assertEqual(r['runtime_hash'], tb_v3_runtime.runtime_hash('cpu'))
             self.assertEqual(set(r['ser5_check']), {'over_deadline', 'max', 'pass'})
             self.assertTrue(all(row['engine'] == 'tb-v3' and 'e4_attack' in row for row in r['rows']))
-            with self.assertRaises(ValueError):  # a TB-V3 jsonl is not resumed as TB-V2-Value
+            with self.assertRaises(SystemExit):  # a TB-V3 jsonl is not resumed as TB-V2-Value
                 t.main(['measure', '--positions', str(pos), '--limit', '2', '--jsonl', str(jsonl),
                         '--output', str(tmp / 'y.json')], factories=FACTORIES)
             from rt30 import fast5
@@ -125,7 +132,7 @@ class CorpusRulesTest(unittest.TestCase):
                 self.assertEqual((r5['runtime_mode'], r5['runtime_hash']), ('fast5', tb_v3_fast5.runtime_hash('cpu')))
                 untimed = (lambda row: (row['move'], row['decision'], {k: v for k, v in row['e4_attack'].items()}))
                 self.assertEqual([untimed(x) for x in r5['rows']], [untimed(x) for x in r['rows']])
-                with self.assertRaises(ValueError):  # a fast4 jsonl is not resumed as fast5
+                with self.assertRaises(SystemExit):  # a fast4 jsonl is not resumed as fast5
                     t.main(argv + ['--fast', 'fast4', '--runtime', 'fast5', '--jsonl', str(jsonl),
                                    '--output', str(tmp / 'z.json')], factories={**FACTORIES, 'stand_in': True})
                 self.assertFalse(fast5.installed())

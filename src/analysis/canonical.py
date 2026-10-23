@@ -37,9 +37,17 @@ def make_canonical_agent(policy, leaf, seed: int, policy_checkpoint, value_check
     return factory()(policy, leaf, seed, policy_checkpoint, value_checkpoint)
 
 
-def provenance(device: str, engine_id: str = CANONICAL_ENGINE_ID) -> dict:
+def provenance(device: str, engine_id: str = CANONICAL_ENGINE_ID, runtime: str | None = None) -> dict:
+    """The identities of ``engine_id`` on ``runtime`` (default: the canonical runtime), as ``factory`` builds it."""
+    runtime = runtime or CANONICAL_RUNTIME
+    if engine_id not in ENGINES or runtime not in RUNTIMES[engine_id]:
+        raise ValueError(f'unknown engine / runtime {engine_id!r} / {runtime!r}')
+    canonical = engine_id == CANONICAL_ENGINE_ID and runtime == CANONICAL_RUNTIME
+    if engine_id == 'TB-V3' and runtime == 'fast5':
+        from .tb_v3_fast5 import provenance as v3_fast5
+        return {**v3_fast5(device), 'canonical': canonical}
     if engine_id == 'TB-V3':
         from .tb_v3_runtime import provenance as v3
-        return {**v3(device), 'canonical': engine_id == CANONICAL_ENGINE_ID}
+        return {**v3(device), 'canonical': canonical}
     from .tb_v2_runtime import provenance as v2
-    return {**v2(device), 'canonical': engine_id == CANONICAL_ENGINE_ID}
+    return {**v2(device), 'canonical': canonical}

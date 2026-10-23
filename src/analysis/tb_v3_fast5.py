@@ -27,7 +27,7 @@ FAST_MODE = 'fast5'
 FAST5_SOURCES = {
     'src/rt30/vcfcore/vcf_core.c': 'c9fcfec0751b6f3b8286d694f925a854b6c5e307e2ab47d4ea1149ac46d474d5',
     'src/rt30/native/forbidden.c': '211fd89d65db9963b8d1c31f09c4d235f927ad6744010672b0ae6c70d3435822',
-    'src/rt30/fast5.py': '6f14fa3b0c8b84f2cc02a58a89af856d54827e9857e1ab2660cbdc37752b7350',
+    'src/rt30/fast5.py': '891f3edb9ea2dff561da5412b78aa2f901733a877a3f3125ec557bcc44ea9289',
     'src/rt30/vcfcore/build.py': 'ffafbc5da1dc62c90cbbaa23fb00baa34e7679ecc233ad9d967f0cf128d07572',
     'src/rt30/vcfcore/__init__.py': 'cf781caf4f2579ec9e770836128c807f451a1ed4b1040b396c7e80d7c1ba13a7',
 }

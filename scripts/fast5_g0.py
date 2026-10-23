@@ -28,9 +28,10 @@ for path in (ROOT, ROOT / 'src'):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-FORMAT = 'tb-v3-fast5-g0-v1'
+FORMAT = 'tb-v3-fast5-g0-v2'  # v2: full fingerprint, table coverage, clean tree (gate hardening)
 PARTS = ('e4', 'base', 'ref')
 SEED = 8707
+MAX_STORED = 20  # mismatches kept per position (all are counted)
 _WORKER: dict = {}
 
 
@@ -75,31 +76,36 @@ def _compare(stats, kind, board, game, attacker, max_fours, node_limit, frozen, 
     stats['cut'][kind] += bool(frozen[2])
     ok = frozen == native and game.board == board and (extra is None or extra[0] == extra[1])
     if not ok:
+        stats['mismatch_count'] += 1
+    if not ok and len(stats['mismatches']) < MAX_STORED:
         stats['mismatches'].append({'kind': kind, 'board': board, 'attacker': attacker, 'max_fours': max_fours,
                                     'node_limit': node_limit, 'frozen': repr(frozen), 'native': repr(native),
                                     'table': extra})
 
 
 def install_shadow(stats) -> None:
-    """Rebind the two searches to the shadow pair in every loaded module (fast4 stays underneath)."""
+    """Rebind the three searches (plain, table factory, and the table module's own direct ``find``) to shadow
+    pairs in every loaded module (fast4 stays underneath); fail closed if a frozen alias is left."""
     from rt30 import fast5
 
-    find, make_find = _shadow_find(stats), _shadow_make_find(stats)
-    for module, name in fast5._bindings(fast5.FROZEN):
-        setattr(module, name, find)
-    for module, name in fast5._bindings(fast5.FROZEN_MAKE_FIND):
-        setattr(module, name, make_find)
-    _WORKER['shadow'] = (find, make_find)
+    make_find = _shadow_make_find(stats)
+    pairs = ((fast5.FROZEN, _shadow_find(stats)), (fast5.FROZEN_MAKE_FIND, make_find),
+             (fast5.FROZEN_TABLE_FIND, make_find()))
+    for frozen, shadow in pairs:
+        for module, name in fast5._bindings(frozen):
+            setattr(module, name, shadow)
+    _WORKER['shadow'] = pairs
+    left = fast5.frozen_aliases()
+    if left:
+        raise RuntimeError(f'fast5 G0: frozen searches left unshadowed: {left}')
 
 
 def uninstall_shadow() -> None:
     from rt30 import fast5
 
-    find, make_find = _WORKER.pop('shadow')
-    for module, name in fast5._bindings(find):
-        setattr(module, name, fast5.FROZEN)
-    for module, name in fast5._bindings(make_find):
-        setattr(module, name, fast5.FROZEN_MAKE_FIND)
+    for frozen, shadow in _WORKER.pop('shadow'):
+        for module, name in fast5._bindings(shadow):
+            setattr(module, name, frozen)
 
 
 def _init(parts, policy_checkpoint, value_checkpoint, device, stand_in) -> None:
@@ -123,7 +129,7 @@ def position_task(task: dict) -> dict:
     from scripts.run_mcts_v8_benchmark import derive_seed
 
     stats = {'calls': {'plain': 0, 'table': 0}, 'nodes': {'plain': 0, 'table': 0}, 'found': {'plain': 0, 'table': 0},
-             'cut': {'plain': 0, 'table': 0}, 'mismatches': []}
+             'cut': {'plain': 0, 'table': 0}, 'mismatch_count': 0, 'mismatches': []}
     install_shadow(stats)
     try:
         game = Game()
@@ -152,12 +158,17 @@ def _chunk(tasks):
     return [position_task(t) for t in tasks]
 
 
-def summarize(rows: list[dict]) -> dict:
+def summarize(rows: list[dict], parts) -> dict:
+    """G0_PASS: no mismatch, plain VCF calls checked, and with ``base`` V8-C table calls checked too."""
     total = {k: {kind: sum(r[k][kind] for r in rows) for kind in ('plain', 'table')}
              for k in ('calls', 'nodes', 'found', 'cut')}
-    mismatches = [m for r in rows for m in r['mismatches']]
-    return {'positions': len(rows), **total, 'mismatches': len(mismatches),
-            'verdict': 'G0_PASS' if not mismatches and total['calls']['plain'] else 'G0_FAIL'}
+    mismatches = sum(r['mismatch_count'] for r in rows)
+    reasons = ([f'{mismatches} calls differ'] if mismatches else []) + \
+              (['no plain VCF call checked'] if not total['calls']['plain'] else []) + \
+              (['base ran but no V8-C table call was checked'] if 'base' in parts and not total['calls']['table']
+               else [])
+    return {'positions': len(rows), **total, 'mismatches': mismatches,
+            'verdict': 'G0_FAIL' if reasons else 'G0_PASS', 'reasons': reasons}
 
 
 def main(argv=None) -> int:
@@ -171,12 +182,13 @@ def main(argv=None) -> int:
     parser.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
     parser.add_argument('--stand-in', action='store_true', help='base with the torch-free test models (smoke)')
     parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--allow-dirty', action='store_true', help='smoke runs only: the result is not official')
     parser.add_argument('--jsonl', type=Path)
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
     if args.output is not None and args.output.exists():
         parser.error(f'{args.output} exists')
-    from analysis import tb_v3_fast5
+    from analysis import tb_v3, tb_v3_fast5, tb_v3_runtime
     from hybrid.progress import Progress, run_chunks
     from rt30 import fast5
     from scripts.h7_timing import restore_fast_mode
@@ -185,11 +197,27 @@ def main(argv=None) -> int:
     if not fast5.available():
         parser.error('python -m rt30.vcfcore.build first (run in src/)')
     tb_v3_fast5.check_sources()
+    dirty = _git_dirty()
+    if dirty is not False and not args.allow_dirty:
+        parser.error('the tree has uncommitted changes (or git is unavailable): an official G0 needs a clean tree')
     tasks = []
     for path in args.positions:
         ps = json.loads(path.read_text(encoding='utf-8'))['positions'][::args.stride][:args.limit]
         tasks += [{'id': p['id'], 'moves': p['moves']} for p in ps]
-    fp = {'parts': sorted(args.parts), 'stand_in': args.stand_in, 'fast5_sources': tb_v3_fast5.FAST5_SOURCES}
+    device = tb_v3_runtime.device_kind(args.device)
+    models = None
+    if 'base' in args.parts:
+        if args.stand_in:
+            models = 'stand-in'
+        else:
+            policy, value = Path(args.policy_checkpoint), Path(args.value_checkpoint)
+            models = {'policy': file_sha256(policy), 'policy_metadata': file_sha256(policy.with_suffix('.json')),
+                      'value': file_sha256(value), 'value_metadata': file_sha256(value.with_name('best.json'))}
+    fp = {'format': FORMAT, 'tool_sha256': file_sha256(Path(__file__)), 'engine_hash': tb_v3.ENGINE_HASH,
+          'identity_sha256': tb_v3_runtime.identity_sha256(), 'fast4_runtime_hash': tb_v3_runtime.runtime_hash(device),
+          'fast5_runtime_hash': tb_v3_fast5.runtime_hash(device), 'fast5_sources': tb_v3_fast5.FAST5_SOURCES,
+          'positions_sha256': [file_sha256(p) for p in args.positions], 'stride': args.stride, 'limit': args.limit,
+          'parts': sorted(args.parts), 'stand_in': args.stand_in, 'models': models, 'device': device}
     done = {}
     if args.jsonl is not None and args.jsonl.exists():
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
@@ -208,8 +236,8 @@ def main(argv=None) -> int:
         for row in rows:
             row = {**row, 'fingerprint': fp}
             done[row['id']] = row
-            if row['mismatches']:
-                print(f"[fast5-g0] MISMATCH at {row['id']}: {len(row['mismatches'])}", flush=True)
+            if row['mismatch_count']:
+                print(f"[fast5-g0] MISMATCH at {row['id']}: {row['mismatch_count']}", flush=True)
             if args.jsonl is not None:
                 args.jsonl.parent.mkdir(parents=True, exist_ok=True)
                 with args.jsonl.open('a', encoding='utf-8') as handle:
@@ -228,8 +256,10 @@ def main(argv=None) -> int:
                 keep(i, _chunk([t]))
                 progress.update(1)
     rows = [done[t['id']] for t in tasks]
-    result = summarize(rows)
-    payload = {'format': FORMAT, 'git_commit': _git_commit(), 'git_dirty': _git_dirty(),
+    result = summarize(rows, args.parts)
+    if dirty is not False:
+        result = {**result, 'verdict': 'NOT_OFFICIAL', 'reasons': result['reasons'] + ['dirty tree (--allow-dirty)']}
+    payload = {'format': FORMAT, 'git_commit': _git_commit(), 'git_dirty': dirty,
                'positions_files': {str(p): file_sha256(p) for p in args.positions}, 'fingerprint': fp,
                **result, 'mismatch_rows': [m for r in rows for m in r['mismatches']][:50],
                'per_position': [{k: r[k] for k in ('id', 'calls', 'nodes')} for r in rows]}

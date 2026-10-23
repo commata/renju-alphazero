@@ -86,9 +86,22 @@ def _bindings(target):
             for name, value in list(getattr(module, '__dict__', {}).items()) if value is target]
 
 
+# The engine modules that must hold the native searches once installed (fail closed if any still holds a frozen one).
+ENGINE_MODULES = ('search.mcts_v7', 'analysis.vcf_tt_v1', 'analysis.threats', 'analysis.mcts_v8',
+                  'analysis.selective_vct', 'analysis.vct2_attack', 'analysis.e4_attack', 'analysis.e4v2_attack')
+
+
+def frozen_aliases() -> list[str]:
+    """Names in loaded modules (other than this one) that still point at a frozen search."""
+    return sorted(f'{m.__name__}.{n}' for target in (FROZEN, FROZEN_MAKE_FIND, FROZEN_TABLE_FIND)
+                  for m, n in _bindings(target))
+
+
 def installed() -> bool:
-    return _native is not None and v7._find_vcf_with_stats is find_vcf_with_stats \
-        and vcf_tt_v1.make_find is make_find
+    """The native searches bound where the engine looks them up, and no frozen alias left in a loaded module."""
+    return (_native is not None and v7._find_vcf_with_stats is find_vcf_with_stats
+            and vcf_tt_v1.make_find is make_find and vcf_tt_v1.find_vcf_with_stats is table_find_vcf_with_stats
+            and not frozen_aliases())
 
 
 def install() -> dict:
@@ -104,6 +117,9 @@ def install() -> dict:
         raise RuntimeError(f'fast5: the native VCF core is stale ({reason}); '
                            'python -m rt30.vcfcore.build --if-stale (run in src/)')
     h6_fast.install(BASE_MODE)
+    from importlib import import_module
+    for name in ENGINE_MODULES:  # loaded first, so that every alias exists before the rebinding
+        import_module(name)
     bound = {'find': _bindings(FROZEN), 'make_find': _bindings(FROZEN_MAKE_FIND),
              'table_find': _bindings(FROZEN_TABLE_FIND)}
     for module, name in bound['find']:
@@ -112,6 +128,9 @@ def install() -> dict:
         setattr(module, name, make_find)
     for module, name in bound['table_find']:
         setattr(module, name, table_find_vcf_with_stats)
+    left = frozen_aliases()
+    if left:
+        raise RuntimeError(f'fast5: frozen searches still bound after install: {left}')
     return {k: sorted(f'{m.__name__}.{n}' for m, n in v) for k, v in bound.items()}
 
 

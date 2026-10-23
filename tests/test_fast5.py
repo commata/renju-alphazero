@@ -159,6 +159,27 @@ class Fast5RuntimeTest(unittest.TestCase):
         tb_v3_fast5.install()
         tb_v3_fast5.check_bound()
 
+    def test_provenance_follows_the_runtime(self):
+        from analysis import canonical, tb_v3_fast5, tb_v3_runtime
+        self.assertEqual(canonical.provenance('cuda', 'TB-V3', 'fast5')['runtime_hash'],
+                         tb_v3_fast5.runtime_hash('cuda'))
+        self.assertEqual(canonical.provenance('cuda', 'TB-V3')['runtime_hash'], tb_v3_runtime.runtime_hash('cuda'))
+        self.assertTrue(canonical.provenance('cuda')['canonical'])
+        self.assertFalse(canonical.provenance('cuda', 'TB-V3', 'fast5')['canonical'])  # not canonical before G1 / G2
+        with self.assertRaises(ValueError):
+            canonical.provenance('cuda', 'TB-V2-Value', 'fast5')
+
+    def test_g0_needs_table_calls_when_the_base_runs(self):
+        from scripts import fast5_g0 as g0
+
+        def row(table):
+            return {'calls': {'plain': 10, 'table': table}, 'nodes': {'plain': 1, 'table': 1},
+                    'found': {'plain': 1, 'table': 0}, 'cut': {'plain': 0, 'table': 0}, 'mismatch_count': 0}
+        self.assertEqual(g0.summarize([row(0)], ['e4'])['verdict'], 'G0_PASS')
+        self.assertEqual(g0.summarize([row(0)], ['e4', 'base'])['verdict'], 'G0_FAIL')
+        self.assertEqual(g0.summarize([row(3)], ['e4', 'base'])['verdict'], 'G0_PASS')
+        self.assertEqual(g0.summarize([{**row(3), 'mismatch_count': 1}], ['base'])['verdict'], 'G0_FAIL')
+
     def test_g1_replay_on_fast5_matches_every_record_field(self):
         from analysis import tb_v2_runtime, tb_v3_fast5, tb_v3_runtime as v3rt
         from scripts import tb_v3_promotion as promo
@@ -177,8 +198,10 @@ class Fast5RuntimeTest(unittest.TestCase):
 
 
 class G2Test(unittest.TestCase):
+    MACHINE = {'platform': 'Linux', 'cpu': 'AMD Ryzen 7 5800H', 'python': '3.14.4'}
+
     def measure(self, runtime, seconds, e4=1.0, move=(1, 1)):
-        from analysis import tb_v3
+        from analysis import tb_v3, tb_v3_fast5, tb_v3_runtime
         rows = []
         for i, s in enumerate(seconds):
             r = {'id': f'p{i}', 'source': 'e3a', 'engine': 'tb-v3', 'move': list(move), 'seconds': s, 'e4_seconds': e4,
@@ -188,20 +211,53 @@ class G2Test(unittest.TestCase):
             if runtime == 'fast5':
                 r['runtime'] = 'fast5'
             rows.append(r)
-        return {'engine': tb_v3.ENGINE_HASH, 'runtime_mode': runtime, 'rows': rows}
+        runtime_hash = (tb_v3_fast5 if runtime == 'fast5' else tb_v3_runtime).runtime_hash('cpu')
+        return {'engine': tb_v3.ENGINE_HASH, 'identity_sha256': tb_v3_runtime.identity_sha256(),
+                'runtime_mode': runtime, 'runtime_hash': runtime_hash, 'git_dirty': False, 'rows': rows,
+                'settings': {'device': 'cpu', 'threads': 1, 'workers': 1, 'fast': {'requested': 'fast4'},
+                             'machine': dict(self.MACHINE)}}
 
     def test_tail_table_and_verdicts(self):
         from scripts import fast5_g2 as g2
+        ids = ['p0', 'p1']
         a = [self.measure('fast4', [29.0, 3.0]), self.measure('fast4', [29.4, 3.0])]
         b = [self.measure('fast5', [20.0, 1.0], e4=0.2), self.measure('fast5', [21.0, 1.0], e4=0.2)]
-        out = g2.analyse(a, b, machine='ser5')
-        self.assertEqual(out['verdict'], 'SER5_CERTIFIED')
+        out = g2.analyse(a, b, machine='ser5', corpus_ids=ids)
+        self.assertEqual((out['verdict'], out['official']), ('SER5_CERTIFIED', True))
         self.assertEqual([t['id'] for t in out['tracked']], ['p0'])  # over 25 s on fast4
         self.assertEqual(out['tracked'][0]['fast5'], 20.5)
         self.assertEqual(out['ratio_e4'], 0.2)
         slow = [self.measure('fast5', [26.0, 1.0]), self.measure('fast5', [20.0, 1.0])]
-        self.assertEqual(g2.analyse(a, slow, machine='ser5')['verdict'], 'SER5_NOT_CERTIFIED')
+        self.assertEqual(g2.analyse(a, slow, machine='ser5', corpus_ids=ids)['verdict'], 'SER5_NOT_CERTIFIED')
         with self.assertRaises(ValueError):  # a different move: not the same engine
             g2.analyse(a, [self.measure('fast5', [20.0, 1.0], move=(2, 2))])
         with self.assertRaises(ValueError):  # the runtimes swapped
             g2.analyse(b, a)
+
+    def test_no_certificate_from_incomplete_or_unverified_inputs(self):
+        from scripts import fast5_g2 as g2
+        a = [self.measure('fast4', [29.0, 3.0]), self.measure('fast4', [29.4, 3.0])]
+
+        def fast5(**change):
+            rounds = [self.measure('fast5', [20.0, 1.0]), self.measure('fast5', [21.0, 1.0])]
+            for key, value in change.items():
+                if key == 'machine':
+                    rounds[1]['settings']['machine'] = value
+                else:
+                    rounds[1][key] = value
+            return rounds
+
+        cases = {'missing corpus positions': dict(rounds=fast5(), corpus_ids=['p0', 'p1', 'p2']),
+                 'jsonl input': dict(rounds=fast5(), full_files=False),
+                 'wrong runtime hash': dict(rounds=fast5(runtime_hash='f' * 64)),
+                 'another machine': dict(rounds=fast5(machine={**self.MACHINE, 'cpu': 'other'})),
+                 'dirty fast5 round': dict(rounds=fast5(git_dirty=True)),
+                 'one round only': dict(rounds=fast5()[:1])}
+        for name, case in cases.items():
+            out = g2.analyse(a, case['rounds'], machine='ser5', corpus_ids=case.get('corpus_ids', ['p0', 'p1']),
+                             full_files=case.get('full_files', True))
+            self.assertEqual(out['verdict'], 'DIAGNOSTIC', name)
+            self.assertFalse(out['official'], name)
+        threads = fast5()
+        threads[0]['settings']['threads'] = 2
+        self.assertEqual(g2.analyse(a, threads, machine='ser5', corpus_ids=['p0', 'p1'])['verdict'], 'DIAGNOSTIC')

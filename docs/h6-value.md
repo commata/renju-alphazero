@@ -5179,7 +5179,7 @@ fast5 → G0 → G1 (3,201수) → G2 (데스크톱 + SER5)
 - `src/analysis/tb_v3_fast5.py`(실행판 identity)
   - 이름 `TB-V3 Resolve/fast5`. 엔진 해시는 TB-V3 그대로다.
   - `FAST5_SOURCES`(5개 파일 SHA 잠금)
-  - `runtime_hash`: 엔진 해시, `tb_v3.py`, 이 파일, fast4 소스 / binding, fast5 소스, 장치. CUDA 값은 `60268d63…`이다(fast4 `51e3579a…`와 다름).
+  - `runtime_hash`: 엔진 해시, `tb_v3.py`, 이 파일, fast4 소스 / binding, fast5 소스, 장치. CUDA 값은 `7c727150…`이다(fast4 `51e3579a…`와 다름. 아래 gate 보강으로 fast5 파일이 바뀐 뒤의 값).
   - `make_tb_v3_fast5_agent`: fast4 factory와 같은 fail-closed 검사에 fast5 소스와 native 빌드 검사를 더한 뒤, 같은 agent(`tb_v3_runtime._build`)를 만든다.
   - `CERTIFICATION`: CUDA / CPU 모두 None
 - `analysis.canonical`
@@ -5275,6 +5275,28 @@ python scripts/fast5_g2.py --fast4 runs/tb_v3/ser5_r1.json runs/tb_v3/ser5_r2.js
   - `tracked`: 25초 초과 5국면의 fast4 → fast5 표
   - `ser5_rounds`, `verdict`
 - SER5에서는 tail 도구도 새 검사로 한 번 다시 돌려 `tb_v3_ser5_tail.json`을 갱신한다(몇 초).
+
+## fast5 gate 보강 (2026-10-23, 공식 G0 / G1 / G2 전, 사용자 검토 반영)
+
+C VCF core 자체에서는 고칠 의미 차이를 찾지 못했다는 검토에 동의한다. 아래는 검증 도구가 잘못된 PASS를 낼 수 있는 곳이다. 코드와 대조한 결과 모두 사실이었고, 모두 고쳤다. 엔진 동작은 바뀌지 않는다.
+
+| # | 지적 | 사실 여부 | 조치 |
+|---|---|---|---|
+| 1 | G2가 runtime 해시를 보지 않고, 불완전한 입력으로도 SER5 인증을 낼 수 있다 | 사실. `check_file`은 엔진 / identity / 모드만 봤다. 판정은 "2회 이상 + 각 회 기준 통과"뿐이었다. jsonl(출처 정보 없음)도 받았다 | 공식 조건(`official_checks`)을 모두 만족할 때만 판정을 낸다. 아니면 `DIAGNOSTIC`이다. 조건: 전체 `.json`만, 엔진 해시 / `tb_v3.py` SHA / 각 실행판의 runtime 해시(그 장치 기준), 모든 파일이 같은 장치·같은 기계, threads 1 / workers 1 / fast4, `--corpus`(기본 827 corpus)의 id와 정확히 같음(중복·누락·추가 없음), SER5는 fast5 정확히 2회 + CPU + 깨끗한 tree |
+| 2 | G0 resume fingerprint가 약하다 | 사실(부분 / 소스 / stand-in만) | fingerprint에 도구 형식과 SHA, 엔진 해시, `tb_v3.py` SHA, fast4 / fast5 runtime 해시, fast5 소스, 국면 파일 SHA, stride / limit, 부분, 모델 네 파일 SHA(실제 모델일 때), 장치를 넣었다 |
+| 3 | G1 resume이 다른 비교 규칙의 행을 다시 쓸 수 있다 | 사실(runtime 해시와 장치만) | fingerprint에 `GATE_VERSION`, 도구 SHA, arena SHA, 실행판 모드를 넣었다. fast5 결과의 형식은 따로 `tb-v3-fast5-g1-v1`이다 |
+| 4 | G0가 V8-C 표 호출 0번이어도 PASS할 수 있다 | 사실(일반 호출만 요구) | `base`를 돌렸으면 표 호출 > 0도 요구한다(E4만이면 일반 호출만) |
+| 5 | `canonical.provenance`가 runtime을 구분하지 않는다 | 사실(지금은 호출처가 없어 영향 없음. fast5로 바꾸는 순간 버그) | `provenance(device, engine, runtime)`. factory와 같은 실행판의 runtime 해시를 낸다. `canonical` 표시는 엔진과 실행판이 모두 canonical일 때만 참이다 |
+| 6 | `h7_timing` resume이 다른 설정의 행을 다시 쓸 수 있다 | 사실(엔진 / 모드만) | 행마다 fingerprint: 도구 형식과 SHA, 엔진, identity, 모드, runtime 해시, 장치, threads, workers, fast, 국면·corpus SHA, 모델 네 파일 SHA. 다르면 거부한다. 잘린 마지막 줄은 건너뛴다. 출력에 `git_commit` / `git_dirty` / fingerprint를 기록한다 |
+| 추가 | 공식 gate는 깨끗한 tree에서만 | 동의 | G0 / G1은 tree가 dirty면 시작하지 않는다(`--allow-dirty`는 smoke용, 판정 `NOT_OFFICIAL`). G2는 fast5 회차가 `git_dirty: false`여야 공식이다 |
+| 추가 | mismatch 저장량 | 동의 | 국면마다 개수는 모두 세고, 내용은 20개까지만 저장한다 |
+| 추가 | fast5 바인딩 검사가 핵심 이름만 본다 | 사실 | `installed()`와 `install()`이 엔진 모듈 8개를 먼저 불러온 뒤 확인한다. 불러온 모든 모듈에 frozen 별칭이 하나라도 남으면 실패한다(`frozen_aliases`) |
+| 추가 | 표 모듈의 직접 함수(`vcf_tt_v1.find_vcf_with_stats`)를 G0가 보지 않는다 | 사실(지금 엔진은 쓰지 않음) | G0 shadow가 세 이름을 모두 감싼다. 남은 frozen 별칭이 있으면 G0를 멈춘다 |
+
+- 시험: `tests/test_fast5.py` 12개(G2 비공식 입력 7가지, G0 표 요구, provenance 포함), `tests/test_h7_timing.py`(설정이 다른 jsonl 거부). 관련 시험 모두 통과
+- fast5 소스 SHA를 다시 잠갔다(`fast5.py`가 바뀜). 그래서 runtime 해시가 바뀌었다(CUDA `7c727150…`).
+- 공식 실행 순서는 그대로다: 깨끗한 tree에서 실제 모델 G0 → G1(3,201수) → G2 데스크톱 → G2 SER5 2회. 명령은 위 "X2-F 구현" 절과 같다(G2는 `--corpus`가 기본값으로 827 corpus).
+- 컨테이너 smoke(stand-in, 7국면, `--allow-dirty`): 일반 5,618 / 표 1,103 호출, 불일치 0, 판정 `NOT_OFFICIAL`(의도대로)
 
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 

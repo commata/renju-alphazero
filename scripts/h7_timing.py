@@ -470,7 +470,11 @@ def main(argv=None, factories=None) -> int:
                      for t in tasks]
         init = (args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, args.fast, factories,
                 args.runtime)
-        rows = _run_measure(tasks, args.workers, args.jsonl, init)
+        fp = measure_fingerprint(args, factories)
+        try:
+            rows = _run_measure(tasks, args.workers, args.jsonl, init, fp)
+        except ValueError as exc:
+            parser.error(str(exc))
         identity = {}
         if args.engine == 'tb-v3':
             from analysis import tb_v3, tb_v3_fast5, tb_v3_runtime
@@ -479,7 +483,9 @@ def main(argv=None, factories=None) -> int:
                         'runtime_hash': runtime.runtime_hash(args.device),
                         'identity_sha256': tb_v3_runtime.identity_sha256()}
         summary = summarize_measure(rows)
-        result = {'format': FORMAT, 'step': 'measure',
+        from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty
+        result = {'format': FORMAT, 'step': 'measure', 'git_commit': _git_commit(), 'git_dirty': _git_dirty(),
+                  'fingerprint': fp, 'positions_sha256': fp['positions_sha256'], 'corpus_sha256': fp['corpus_sha256'],
                   'engine': tb_v3.ENGINE_HASH if args.engine == 'tb-v3' else config_hash(), **identity,
                   'label': args.label, 'ser5_check': ser5_check(summary),
                   'settings': {'device': args.device, 'threads': args.threads, 'workers': args.workers,
@@ -552,8 +558,34 @@ def _paired_rows(args, tasks, modes) -> list[dict]:
     return [done[t['id']] for t in tasks]
 
 
-def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
-    """Per-position rows, resumable from ``jsonl``; progress every minute (hybrid.progress)."""
+def measure_fingerprint(args, factories) -> dict:
+    """What a measured row depends on: a resumed ``--jsonl`` row is kept only under the same fingerprint."""
+    from scripts.run_mcts_v8_benchmark import file_sha256
+
+    if args.engine == 'tb-v3':
+        from analysis import tb_v3, tb_v3_fast5, tb_v3_runtime
+        engine, identity = tb_v3.ENGINE_HASH, tb_v3_runtime.identity_sha256()
+        runtime = (tb_v3_fast5 if args.runtime == 'fast5' else tb_v3_runtime).runtime_hash(args.device)
+    else:
+        from analysis import tb_v2_runtime
+        from analysis.tb_v2_value import config_hash
+        engine, identity = config_hash(), None
+        runtime = tb_v2_runtime.runtime_hash(args.device) if args.fast == 'fast4' else f'tb-v2-value/{args.fast}'
+    if factories is None:
+        policy, value = Path(args.policy_checkpoint), Path(args.value_checkpoint)
+        models = {'policy': file_sha256(policy), 'policy_metadata': file_sha256(policy.with_suffix('.json')),
+                  'value': file_sha256(value), 'value_metadata': file_sha256(value.with_name('best.json'))}
+    else:
+        models = 'stand-in'
+    return {'format': FORMAT, 'tool_sha256': file_sha256(Path(__file__)), 'engine': engine, 'identity_sha256': identity,
+            'runtime_mode': args.runtime, 'runtime_hash': runtime, 'device': args.device, 'threads': args.threads,
+            'workers': args.workers, 'fast': args.fast, 'positions_sha256': file_sha256(args.positions),
+            'corpus_sha256': file_sha256(args.corpus) if args.corpus else None, 'models': models}
+
+
+def _run_measure(tasks, workers, jsonl, init, fingerprint=None) -> list[dict]:
+    """Per-position rows, resumable from ``jsonl`` (only rows of the same ``fingerprint``); progress every minute
+    (hybrid.progress)."""
     from concurrent.futures import ProcessPoolExecutor
     from multiprocessing import get_context
 
@@ -562,9 +594,14 @@ def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
     done = {}
     if jsonl is not None and jsonl.exists():
         for line in jsonl.read_text(encoding='utf-8').splitlines():
-            if line.strip():
+            try:
                 row = json.loads(line)
-                done[row['id']] = row
+            except json.JSONDecodeError:
+                continue  # a torn last line: that position is measured again
+            if row.get('fingerprint') != fingerprint:
+                raise ValueError(f'{jsonl} has rows of another engine / runtime / setting / input; use another file')
+            done[row['id']] = row
+
     def kind(r):
         return r.get('engine', 'tb-v2-value'), r.get('runtime', 'fast4')
 
@@ -580,7 +617,7 @@ def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
             if jsonl is not None:
                 jsonl.parent.mkdir(parents=True, exist_ok=True)
                 with jsonl.open('a', encoding='utf-8') as handle:
-                    handle.write(json.dumps(row) + '\n')
+                    handle.write(json.dumps({**row, 'fingerprint': fingerprint}) + '\n')
 
     progress = Progress('h7-timing', len(todo), 'positions')
     chunks = [[t] for t in todo]
@@ -594,7 +631,7 @@ def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
             for i, c in enumerate(chunks):
                 keep(i, _chunk(c))
                 progress.update(1)
-    return [done[t['id']] for t in tasks]
+    return [{k: v for k, v in done[t['id']].items() if k != 'fingerprint'} for t in tasks]
 
 
 if __name__ == '__main__':
