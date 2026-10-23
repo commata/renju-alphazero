@@ -5298,6 +5298,53 @@ C VCF core 자체에서는 고칠 의미 차이를 찾지 못했다는 검토에
 - 공식 실행 순서는 그대로다: 깨끗한 tree에서 실제 모델 G0 → G1(3,201수) → G2 데스크톱 → G2 SER5 2회. 명령은 위 "X2-F 구현" 절과 같다(G2는 `--corpus`가 기본값으로 827 corpus).
 - 컨테이너 smoke(stand-in, 7국면, `--allow-dirty`): 일반 5,618 / 표 1,103 호출, 불일치 0, 판정 `NOT_OFFICIAL`(의도대로)
 
+## fast5 G0 · G1: PASS (2026-10-23, `8ba51fc`)
+
+**상태: 정확성 검증 완료, G2(성능 인증) 진입 가능.** canonical 실행판은 G2 전까지 `fast4` 그대로다.
+
+**검증 (세 파일 모두 현재 코드로 다시 계산해 대조)**
+- 세 결과 모두 코드 `5a01b7d`, `git_dirty: false`, CUDA, 실제 모델(policy `efee4832…`, value `a0fcccc4…`, 두 메타데이터 포함)
+- G0 fingerprint
+  - 도구 SHA, 엔진 해시 `d0ef0da6…`, `tb_v3.py` SHA `b275f762…`
+  - fast4 / fast5 runtime 해시, `FAST5_SOURCES`
+  - 국면 파일 SHA: timing `187c70b7…`, COSTTEST `6c133883…`
+- G1
+  - runtime 해시 `7c727150…` = 현재 fast5 CUDA 값
+  - arena SHA = `ADOPTION`
+  - 도구 SHA = 현재 `tb_v3_promotion.py`
+  - run 파일 4개 SHA = arena 요약의 SHA
+  - 400행의 fingerprint는 두 종류뿐이다(TB-V3 / TB-V2). 중간에 규칙이 바뀐 행이 섞이지 않았다.
+
+**G0 결과**
+
+| 파일 | 국면 | 일반 VCF 호출 | 표 VCF 호출 | 노드 | 발견 | cut | 불일치 | 판정 |
+|---|---|---|---|---|---|---|---|---|
+| `tb_v3_fast5_g0_base.json`(기준 엔진 + E4) | 2,594 | 3,023,704 | 612,730 | 174,366,208 | 2,969,942 | 13,092 | 0 | G0_PASS |
+| `tb_v3_fast5_g0_e4.json`(E4) | 2,513 | 951,182 | 0 | 59,981,758 | 776,264 | 6,481 | 0 | G0_PASS |
+
+- 합계: VCF 호출 4,587,616번, 노드 2억 3,435만, 불일치 0
+- 표 경로(V8-C)는 base에서 612,730번 검사됐다. 보강한 G0 조건(base면 표 호출 > 0)을 만족한다. E4만 돌린 파일의 표 호출 0은 정상이다.
+
+**G1 결과 (`tb_v3_fast5_g1.json`, 형식 `tb-v3-fast5-g1-v1`, gate v2)**
+- TB-V3: 200대국, 3,201 / 3,201수. 수·결정·기록(시간 제외) 불일치 0 → **G1_PASS**
+- TB-V2-Value(교차 확인, C VCF 위의 TB-V2 factory): 200대국, 3,876 / 3,876수. 모든 불일치 0 → REPRODUCED
+
+**초안 검토**
+- 초안의 수치는 모두 결과 파일과 같다. 결론("정확성 검증 완료, 성능 인증 진입 가능"이지 "fast5 완료"가 아님)에 동의한다.
+- G1의 TB-V3 2,417.1초와 TB-V2 2,519.2초를 비교하지 않는다는 판단도 맞다. 서로 다른 엔진의 서로 다른 대국이다.
+- 더할 것: **같은 일의 비교는 따로 있다. 다만 비공식이다.**
+  - 승격 재생(fast4)과 G1(fast5)은 같은 200대국을 같은 명령(8 worker, CUDA)으로 다시 둔 것이다.
+  - TB-V3: 7,448.2초 → 2,417.1초(0.32배)
+  - TB-V2: 5,809.1초 → 2,519.2초(0.43배)
+  - 다른 시점의 실행이고, 시간은 worker 8개가 동시에 도는 동안의 대국별 벽시계 합이다(CPU·GPU 경합 포함). 그래서 방향 참고로만 쓴다. 공식 성능은 G2(827 corpus, workers 1)에서 판정한다.
+- 용어 하나: G0의 "Python oracle"은 동결 Python VCF를 fast4 바인딩(native threat window, native 금수) 위에서 돌린 것이다. fast4는 이전 단계에서 Python 원본과 같음이 확인됐으므로 기준으로 쓸 수 있다.
+
+**다음: G2** (명령은 위 "X2-F 구현: fast5 실행판" 절)
+1. 데스크톱: 827 corpus, CUDA, workers 1. fast4와 fast5를 연달아 잰 뒤 `fast5_g2.py`로 비교한다.
+2. SER5: fast5로 2회 잰다(깨끗한 tree). 이미 있는 fast4 전체 결과(`runs/tb_v3/ser5_r1/r2.json`)와 `fast5_g2.py --machine ser5`로 비교한다.
+3. SER5 판정은 공식 조건을 모두 만족할 때만 나온다. 판정 기준은 두 회 모두 30초 초과 0, 최대 ≤ 25초다.
+4. PASS하면 "TB-V3 / fast5 SER5 runtime certification PASS"이다. 그 뒤 canonical 실행판 전환(`CANONICAL_RUNTIME = 'fast5'`)을 따로 결정한다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
