@@ -1,0 +1,27 @@
+{
+ "format": "external-rule-crosscheck-v1",
+ "seed": 1,
+ "radius": 1,
+ "git_commit": "1a74f5b061633cad3be5d717a7d88a60b4f2f3ba",
+ "git_dirty": false,
+ "engine": {
+  "name": "rapfi",
+  "label": "rapfi",
+  "command": [
+   "/mnt/c/engines/rapfi/pbrain-rapfi-windows-avx2.exe"
+  ],
+  "info": [],
+  "rule": 4,
+  "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+  "extra_files": {},
+  "move_timeout": 600.0,
+  "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\""
+ },
+ "summary": {
+  "games": 300,
+  "positions": 8886,
+  "our_forbidden_points": 9517,
+  "mismatch_positions": 0
+ },
+ "mismatches": []
+}

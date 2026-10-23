@@ -1,0 +1,71 @@
+{
+ "format": "external-wsl-gate-v1",
+ "result": "PASS",
+ "checks": {
+  "executable": true,
+  "engine_files": true,
+  "crosscheck": true,
+  "repro_signature": true,
+  "repro_fingerprint": true,
+  "clean_tree": true
+ },
+ "files_sha256": {
+  "pbrain-rapfi-windows-avx2.exe": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+  "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+  "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+  "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+  "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+  "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+  "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+ },
+ "crosscheck": {
+  "summary": {
+   "games": 300,
+   "positions": 8886,
+   "our_forbidden_points": 9517,
+   "mismatch_positions": 0
+  },
+  "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+  "git_commit": "1a74f5b061633cad3be5d717a7d88a60b4f2f3ba",
+  "git_dirty": false
+ },
+ "repro": {
+  "run_signature": "7b7710808f4d2636ad7d6bafa89c35009db9a12d94ec23265e84778a1307e002",
+  "fingerprint": "1adbb7d3433bb33073f71f4cfe340829765907350464008dc223c23dc4a08c60",
+  "score": 0.75,
+  "git_commit": "1a74f5b061633cad3be5d717a7d88a60b4f2f3ba",
+  "git_dirty": false,
+  "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\""
+ },
+ "expected": {
+  "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+  "extra_files": {
+   "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+   "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+   "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+   "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+   "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+   "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+  },
+  "crosscheck": {
+   "seed": 1,
+   "radius": 1,
+   "summary": {
+    "games": 300,
+    "positions": 8886,
+    "our_forbidden_points": 9517,
+    "mismatch_positions": 0
+   },
+   "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+   "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+   "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+   "git_dirty": false
+  },
+  "repro": {
+   "seed": 8703,
+   "pairs": 2,
+   "run_signature": "7b7710808f4d2636ad7d6bafa89c35009db9a12d94ec23265e84778a1307e002",
+   "fingerprint": "1adbb7d3433bb33073f71f4cfe340829765907350464008dc223c23dc4a08c60"
+  }
+ }
+}
