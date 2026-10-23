@@ -221,7 +221,8 @@ class Ser5TailTest(unittest.TestCase):
             r = {'id': pid, 'source': 'e3a', 'move': [1, 1], 'seconds': seconds, 'decision': {'route': 'tree'},
                  'times': {'tree': 1.0, 'root': 1.0, 'vct2': 0.5, 'value': 0.5}}
             if e4 is not None:
-                r.update(e4_seconds=e4, e4_attack={'ran': ran, 'skip': None if ran else 'route', 'exhausted': ran})
+                r.update(e4_seconds=e4, e4_attack={'base_route': 'tree', 'base_move': [1, 1], 'ran': ran,
+                                                   'skip': None if ran else 'route', 'exhausted': ran})
             return r
 
         v3 = {'engine': tb_v3.ENGINE_HASH, 'rows': [row('a', 28.0, 8.0), row('b', 3.0, 0.0, ran=False)]}
@@ -230,7 +231,16 @@ class Ser5TailTest(unittest.TestCase):
         self.assertEqual(out['over_rule'], ['a'])
         self.assertEqual(out['slowest'][0]['step_seconds'], 8.0)
         self.assertEqual(out['what_if']['step_beside_base']['max'], 20.0)
-        self.assertEqual(out['what_if']['attack_capped_4s']['max'], 24.0)
+        self.assertEqual(out['what_if']['step_capped_4s']['max'], 24.0)
+        self.assertEqual(out['e4_seconds_exhausted']['n'], 1)
+        other = json.loads(json.dumps(v3))
+        other['rows'][0]['e4_attack']['exhausted'] = False  # round 2 disagrees on the step, not the move
+        with self.assertRaises(ValueError):
+            tail.analyse([v3, other], [v2])
+        moved = json.loads(json.dumps(v2))
+        moved['rows'][0]['move'] = [2, 2]  # TB-V2 did not make TB-V3's base decision: no pairing
+        with self.assertRaises(ValueError):
+            tail.analyse([v3], [moved])
         self.assertEqual(out['skips']['route'], 1)
         with self.assertRaises(ValueError):
             tail.analyse([v2], [])

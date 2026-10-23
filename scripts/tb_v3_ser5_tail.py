@@ -28,6 +28,16 @@ for path in (ROOT, ROOT / 'src', ROOT / 'scripts'):
 from h7_timing import RULES, percentiles  # noqa: E402
 
 TOP = 25
+STEP_FIELDS = ('base_route', 'base_move', 'ran', 'skip', 'move', 'exhausted', 'nodes', 'calls')
+
+
+def decision_of(row: dict) -> dict:
+    """What must agree between rounds: the move, the route and the E4-v2 step (TB-V3 rows)."""
+    step = row.get('e4_attack')
+    out = {'move': row['move'], 'route': row['decision']['route']}
+    if step is not None:
+        out.update({f'e4.{k}': step.get(k) for k in STEP_FIELDS}, **{'e4.gate': (step.get('gate') or {}).get('status')})
+    return out
 
 
 def _mean_rows(files: list[dict]) -> dict[str, dict]:
@@ -38,8 +48,11 @@ def _mean_rows(files: list[dict]) -> dict[str, dict]:
             out.setdefault(r['id'], []).append(r)
     merged = {}
     for pid, rs in out.items():
-        if any(r['move'] != rs[0]['move'] for r in rs):
-            raise ValueError(f'{pid}: the rounds chose different moves')
+        first = decision_of(rs[0])
+        for r in rs[1:]:
+            other = decision_of(r)
+            if other != first:
+                raise ValueError(f'{pid}: the rounds differ in {sorted(k for k in first if first[k] != other.get(k))}')
         n = len(rs)
         merged[pid] = {**rs[0], 'seconds': sum(r['seconds'] for r in rs) / n,
                        'e4_seconds': sum(r.get('e4_seconds') or 0.0 for r in rs) / n,
@@ -82,6 +95,14 @@ def analyse(v3_files: list[dict], v2_files: list[dict]) -> dict:
             raise ValueError('--tb-v2 takes TB-V2-Value measure files (with rows)')
     v3 = _mean_rows(v3_files)
     v2 = _mean_rows(v2_files) if v2_files else {}
+    if v2:  # the pairing is valid only if TB-V3's base made TB-V2's decision on every position
+        missing = sorted(set(v3) - set(v2))
+        if missing:
+            raise ValueError(f'{len(missing)} TB-V3 positions have no TB-V2 row: {missing[:3]}')
+        bad = [pid for pid, r in v3.items() if (r['e4_attack'].get('base_move'), r['e4_attack'].get('base_route'))
+               != (v2[pid]['move'], v2[pid]['decision']['route'])]
+        if bad:
+            raise ValueError(f'{len(bad)} positions: TB-V3 base move / route != TB-V2 (no paired overhead): {bad[:3]}')
     rule = RULES['ser5']['max_seconds']
     rows = []
     for pid, r in v3.items():
@@ -108,11 +129,16 @@ def analyse(v3_files: list[dict], v2_files: list[dict]) -> dict:
             'e4_seconds': percentiles([x['e4_seconds'] for x in rows if x['step']['ran']]),
             'step_seconds': percentiles([x['step_seconds'] for x in paired]) if paired else None,
             'exhausted_attacks': sum(bool(x['step']['exhausted']) for x in rows if x['step']['ran']),
+            'e4_seconds_exhausted': percentiles([x['e4_seconds'] for x in rows if x['step']['ran']
+                                                 and x['step']['exhausted']]),
+            'checks': {'rounds_agree': 'move, route and E4-v2 step equal in every round',
+                       'paired_base': 'TB-V3 base move and route = TB-V2 move and route' if paired else None},
             'skips': {k: sum(x['step']['skip'] == k for x in rows) for k in ('route', 'cooldown', 'opponent_vcf')},
             'over_rule': [x['id'] for x in rows if x['seconds'] > rule],
-            # not measured: what the rows imply if the step ran beside the base, or the attack were capped
+            # not measured: what the rows imply if the step ran beside the base (no CPU contention counted),
+            # or the paired step overhead were capped (not a solver cut: a cut could change the proof)
             'what_if': {'step_beside_base': what_if(lambda x: max(x['tb_v2_seconds'], x['step_seconds'])),
-                        **{f'attack_capped_{c}s': what_if(lambda x, c=c: x['tb_v2_seconds'] + min(x['step_seconds'], c))
+                        **{f'step_capped_{c}s': what_if(lambda x, c=c: x['tb_v2_seconds'] + min(x['step_seconds'], c))
                            for c in (2, 4, 6)}},
             'slowest': rows[:TOP], 'rows': rows}
 
