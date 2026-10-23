@@ -17,7 +17,8 @@ forbidden points (``YXSHOWFORBID``); differences are listed as ``forbid_mismatch
 Ours (``--ours``): ``tb1`` (TB-Engine-v1 + its H3 checkpoint), ``tbv3`` (the canonical TB-V3 Resolve / fast5 with
 the frozen H3 policy and H6 value, ``--value-device cuda`` or the certified ``cpu``; built only by
 ``analysis.canonical.factory``, refused unless the canonical, its fast5 evidence, its identity and both model files
-check), ``v7``, ``v8:<arm>`` (an arm of ``run_mcts_v8_benchmark.py``; a PUCT arm needs ``--ours-puct-c``), ``az``
+check), ``h7c`` (a cycle's candidate models on TB-V3 / fast5: only through ``scripts/h7c_external.py``, which
+passes their identity), ``v7``, ``v8:<arm>`` (an arm of ``run_mcts_v8_benchmark.py``; a PUCT arm needs ``--ours-puct-c``), ``az``
 (a Track A training checkpoint, ``--az-checkpoint``), ``random`` (smoke tests). For ``tbv3`` the engine, runtime and
 model identities go into ``ours`` and so into ``run_signature``; its workers are spawned (CUDA) and keep the models
 loaded across games.
@@ -88,6 +89,8 @@ def tbv3_provenance(policy_checkpoint, value_checkpoint, device: str) -> dict:
 
 
 def ours_label(args) -> str:
+    if args.ours == 'h7c':
+        return args.h7c['label']
     if args.ours == 'tbv3':
         return 'tbv3' + ('' if args.value_device == 'cuda' else f'[{args.value_device}]')
     if args.ours == 'az':
@@ -125,6 +128,9 @@ def make_ours(spec: dict, seed: int):
         # the canonical factory checks identity, models and runtime again for every game
         return canonical.factory(*TBV3)(policy, leaf, seed, Path(spec['policy_checkpoint']),
                                         Path(spec['value_checkpoint']))
+    if kind == 'h7c':  # the candidate factory is used by the H7-c tools only
+        from scripts.h7c_external import make_candidate
+        return make_candidate(spec, seed)
     if kind == 'az':
         from agents.alphazero_agent import AlphaZeroAgent
         return AlphaZeroAgent.from_checkpoint(spec['az_checkpoint'], simulations=spec.get('az_simulations'))
@@ -215,7 +221,7 @@ def build_tasks(args, spec: dict) -> tuple[list[dict], list[dict]]:
 
 
 def ours_provenance(args, overrides: dict, tbv3: dict | None = None) -> dict:
-    uses_policy = args.ours in ('tb1', 'tbv3') or args.ours.startswith('v8:')
+    uses_policy = args.ours in ('tb1', 'tbv3', 'h7c') or args.ours.startswith('v8:')
     policy = Path(args.policy_checkpoint) if uses_policy else None
     return {
         'kind': args.ours, 'label': ours_label(args), 'overrides': overrides,
@@ -225,6 +231,7 @@ def ours_provenance(args, overrides: dict, tbv3: dict | None = None) -> dict:
         'az_simulations': args.az_simulations,
         'tb_engine_config_hash': tb1_config_hash() if args.ours == 'tb1' else None,
         **({'tbv3': tbv3} if tbv3 is not None else {}),
+        **({'h7c': args.h7c['provenance']} if args.ours == 'h7c' else {}),
     }
 
 
@@ -288,7 +295,8 @@ def parse_info(values: list[str]) -> list[list[str]]:
     return out
 
 
-def main(argv=None) -> int:
+def main(argv=None, h7c: dict | None = None) -> int:
+    """``h7c``: the candidate's label and provenance, given only by ``scripts/h7c_external.py`` (``--ours h7c``)."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--ours', required=True, help="'tb1', 'tbv3', 'v7', 'v8:<arm>', 'az' or 'random'")
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
@@ -319,8 +327,11 @@ def main(argv=None) -> int:
     parser.add_argument('--games-jsonl', type=Path)
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
+    args.h7c = h7c
     if args.pairs < 1 or args.workers < 1:
         parser.error('--pairs and --workers must be positive')
+    if (args.ours == 'h7c') != (h7c is not None):
+        parser.error('--ours h7c runs only through scripts/h7c_external.py')
     if args.seed not in EXTERNAL_SEEDS and not args.allow_unreserved_seed:
         parser.error(f'--seed must be an external anchor seed {sorted(EXTERNAL_SEEDS)} (docs/external-engine.md §4)')
     if args.ours == 'az' and args.az_checkpoint is None:
@@ -330,7 +341,7 @@ def main(argv=None) -> int:
             parse_opponent(args.ours)
         except ValueError as exc:
             parser.error(str(exc))
-    elif args.ours not in ('tb1', 'tbv3', 'v7', 'az', 'random'):
+    elif args.ours not in ('tb1', 'tbv3', 'h7c', 'v7', 'az', 'random'):
         parser.error(f'unknown --ours {args.ours!r}')
     try:
         info = parse_info(args.engine_info)
@@ -388,7 +399,7 @@ def main(argv=None) -> int:
 
     if pending:
         progress = Progress('external', len(pending), 'games')
-        context = get_context('spawn') if args.ours == 'tbv3' else None  # CUDA cannot cross a fork
+        context = get_context('spawn') if args.ours in ('tbv3', 'h7c') else None  # CUDA cannot cross a fork
         with ProcessPoolExecutor(max_workers=args.workers, mp_context=context) as pool:
             run_chunks(pool, play_one, pending, progress, lambda _task: 1, unit_name='games', on_result=keep)
 

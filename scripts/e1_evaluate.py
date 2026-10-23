@@ -100,15 +100,19 @@ def _evaluate(task):
 
     position, checkpoint, *rest = task
     arm = rest[0] if rest else 's3'
-    make_agent = lambda policy, seed: make_arm(arm, policy, seed=seed)  # noqa: E731
     policy = load_policy(checkpoint)
+    return evaluate_position(position, lambda seed: make_arm(arm, policy, seed=seed), arm)
+
+
+def evaluate_position(position: dict, make_agent, arm: str) -> dict:
+    """Every seeded run of one manifest position with ``make_agent(seed)`` (H7-c's tactical gate passes its own)."""
     game = Game()
     for move in position['history']:
         game.play(*move)
     truths = dict(position['truths'])
     runs = []
     for seed, built in zip(position['e1_seeds'], position['runs']):
-        agent = make_agent(policy, seed=seed)
+        agent = make_agent(seed)
         started = perf_counter()
         played = list(agent.select_move(game))
         seconds = perf_counter() - started
