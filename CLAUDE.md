@@ -36,3 +36,6 @@
   fast5 files or `tb_v3.py`: their SHA-256 is in the runtime hash the evidence was measured on. fast4 stays the
   rollback. CPU use of fast5 needs its own certification (seeds 8451 / 8452); a fast4 one does not carry over.
   Build it with `python -m rt30.vcfcore.build --if-stale` (in `src/`); `rt30/native/build.py` stays untouched.
+- H7-c candidate models run only through `analysis.tb_v3_net.make_tb_v3_net_agent` (the frozen TB-V3 engine and fast5
+  runtime, models recorded by SHA-256, never canonical). Only `scripts/h7c_*` tools may use it: the web, benchmarks and
+  `analysis.canonical` keep the frozen H3 policy / H6 value until a separate promotion step.

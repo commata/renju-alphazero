@@ -26,7 +26,12 @@ FAST5_EVIDENCE = {
     'g1': 'docs/h7/tb_v3_fast5_g1.json',
     'g2_desktop': 'docs/h7/tb_v3_fast5_g2_desktop.json',
     'g2_ser5': 'docs/h7/tb_v3_fast5_g2_ser5.json',
+    'cpu_cert': 'docs/h7/tb_v3_fast5_cpu_cert.json',
 }
+# The CPU certification's rules, fixed before its games (scripts/summarize_tb_v3_cpu_cert.py RULES).
+CPU_CERT_RULES = {'low_min': -0.05, 'pairs_per_seed': 50, 'fast': 'fast4', 'runtime': 'fast5', 'bootstrap': 10_000,
+                  'seed': 0}
+CPU_CERT_SEEDS = (8451, 8452)
 # What tb_v3_fast5.runtime_hash reads besides the device: equal files, equal runtime hash.
 RUNTIME_HASH_FILES = ('src/analysis/tb_v3.py', 'src/analysis/tb_v3_fast5.py', 'src/analysis/tb_v2_runtime.py')
 _ROOT = Path(__file__).resolve().parents[2]
@@ -86,7 +91,7 @@ def _git_blob_sha256(commit: str, path: str) -> str:
 
 
 def check_fast5_evidence() -> dict:
-    """Raise unless the committed G0 / G1 / G2 records pass and were made on exactly this fast5 runtime."""
+    """Raise unless the committed G0 / G1 / G2 and CPU certification records pass on exactly this fast5 runtime."""
     import hashlib
     import json
 
@@ -116,6 +121,28 @@ def check_fast5_evidence() -> dict:
                 raise RuntimeError(f'fast5 evidence: {path} changed since {name} ({r["git_commit"][:7]})')
     if load['g2_ser5'].get('verdict') != 'SER5_CERTIFIED':
         raise RuntimeError('fast5 evidence: SER5 is not certified')
+    cpu = _check_cpu_cert(load['cpu_cert'])
     return {'runtime_hash_cuda': tb_v3_fast5.runtime_hash('cuda'), 'runtime_hash_cpu': tb_v3_fast5.runtime_hash('cpu'),
             'g0_calls': sum(load[k]['calls']['plain'] + load[k]['calls']['table'] for k in ('g0_base', 'g0_e4')),
-            'g1_moves': g1['tb_v3']['moves_matched'], 'ser5': load['g2_ser5']['verdict']}
+            'g1_moves': g1['tb_v3']['moves_matched'], 'ser5': load['g2_ser5']['verdict'], 'cpu_cert': cpu}
+
+
+def _check_cpu_cert(r: dict) -> dict:
+    """The CPU backend's non-inferiority record (not an identity proof): its fixed rules, sample and runtime hashes."""
+    from . import tb_v3_fast5
+
+    s = r.get('strength', {})
+    if r.get('format') != 'tb-v3-fast5-cpu-cert-v1' or r.get('verdict') != 'PASS' or r.get('rules') != CPU_CERT_RULES:
+        raise RuntimeError('fast5 evidence: the CPU certification is not a PASS under its fixed rules')
+    pairs = CPU_CERT_RULES['pairs_per_seed'] * len(CPU_CERT_SEEDS)
+    if (s.get('n') != 2 * pairs or s.get('openings') != pairs or s['ci95'][0] < CPU_CERT_RULES['low_min']
+            or r.get('safety_violations') != {'cpu': 0, 'cuda': 0}):
+        raise RuntimeError('fast5 evidence: the CPU certification sample, bound or safety does not hold')
+    if r.get('runtime_hash') != {d: tb_v3_fast5.runtime_hash(d) for d in ('cpu', 'cuda')}:
+        raise RuntimeError('fast5 evidence: the CPU certification was made on another fast5 runtime')
+    runs = r.get('runs', {})
+    want = sorted(f'{d}_{seed}' for d in ('cpu', 'cuda') for seed in CPU_CERT_SEEDS)
+    if (sorted(Path(p).stem for p in runs) != want or len(set(runs.values())) != len(want)
+            or not all(isinstance(v, str) and len(v) == 64 for v in runs.values())):
+        raise RuntimeError(f'fast5 evidence: the CPU certification does not rest on the four runs {want}')
+    return {'verdict': r['verdict'], 'diff': s['diff'], 'ci95': s['ci95'], 'games': s['n']}

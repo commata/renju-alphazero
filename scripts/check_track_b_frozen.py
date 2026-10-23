@@ -14,7 +14,7 @@
     fast5      the exact runtime's sources (``tb_v3_fast5.check_sources``) and, when built, its native VCF core
                (fresh, bound by ``tb_v3_fast5.install``); not built is reported, not a failure. As the canonical
                runtime (``analysis.canonical.CANONICAL_RUNTIME``) its gate records must all hold for this checkout
-               (``canonical.check_fast5_evidence``: G0 x2, G1, G2 desktop, G2 SER5_CERTIFIED, same runtime)
+               (``canonical.check_fast5_evidence``: G0 x2, G1, G2 desktop, G2 SER5_CERTIFIED, CPU certification PASS, same runtime)
 Exit status 1 on any FAIL. Run it before benchmark, web or self-play work on a machine with the models.
 
     python scripts/check_track_b_frozen.py
@@ -201,7 +201,9 @@ def checks(models: bool, policy_checkpoint: Path, value_checkpoint: Path) -> lis
         if canonical.CANONICAL_RUNTIME != 'fast5':
             return f'canonical runtime {canonical.CANONICAL_RUNTIME}'
         e = canonical.check_fast5_evidence()
-        return (f"fast5, evidence PASS (G0 {e['g0_calls']:,} calls, G1 {e['g1_moves']} moves, {e['ser5']}; "
+        c = e['cpu_cert']
+        return (f"fast5, evidence PASS (G0 {e['g0_calls']:,} calls, G1 {e['g1_moves']} moves, {e['ser5']}, "
+                f"CPU cert {c['verdict']} {c['games']} games low {c['ci95'][0]:+.3f}; "
                 f"cuda {e['runtime_hash_cuda'][:12]}, cpu {e['runtime_hash_cpu'][:12]})")
 
     run('tb-v3 promotion', v3_promotion)

@@ -178,16 +178,27 @@ class Fast5RuntimeTest(unittest.TestCase):
         from analysis import canonical
         e = canonical.check_fast5_evidence()  # the committed G0 / G1 / G2 records, on this very runtime
         self.assertEqual((e['g0_calls'], e['g1_moves'], e['ser5']), (4_587_616, 3201, 'SER5_CERTIFIED'))
+        self.assertEqual((e['cpu_cert']['verdict'], e['cpu_cert']['games']), ('PASS', 200))
         real = canonical.FAST5_EVIDENCE
-        with TemporaryDirectory() as tmp:
-            for name, path in real.items():
-                d = json.loads((ROOT / path).read_text(encoding='utf-8'))
-                if name == 'g2_ser5':
-                    d['verdict'] = 'SER5_NOT_CERTIFIED'
-                (Path(tmp) / Path(path).name).write_text(json.dumps(d), encoding='utf-8')
-            fake = {k: str(Path(tmp) / Path(v).name) for k, v in real.items()}
-            with mock.patch.object(canonical, 'FAST5_EVIDENCE', fake), self.assertRaises(RuntimeError):
-                canonical.check_fast5_evidence()
+
+        def tamper(name, change):
+            with TemporaryDirectory() as tmp:
+                for key, path in real.items():
+                    d = json.loads((ROOT / path).read_text(encoding='utf-8'))
+                    if key == name:
+                        change(d)
+                    (Path(tmp) / Path(path).name).write_text(json.dumps(d), encoding='utf-8')
+                fake = {k: str(Path(tmp) / Path(v).name) for k, v in real.items()}
+                with mock.patch.object(canonical, 'FAST5_EVIDENCE', fake), self.assertRaises(RuntimeError):
+                    canonical.check_fast5_evidence()
+
+        tamper('g2_ser5', lambda d: d.update(verdict='SER5_NOT_CERTIFIED'))
+        tamper('cpu_cert', lambda d: d.update(verdict='FAIL'))
+        tamper('cpu_cert', lambda d: d['rules'].update(low_min=-0.10))
+        tamper('cpu_cert', lambda d: d['strength'].update(ci95=[-0.06, 0.01]))
+        tamper('cpu_cert', lambda d: d['safety_violations'].update(cpu=1))
+        tamper('cpu_cert', lambda d: d['runtime_hash'].update(cpu='f' * 64))
+        tamper('cpu_cert', lambda d: d['runs'].pop(sorted(d['runs'])[0]))
         with mock.patch.object(canonical, '_git_blob_sha256', lambda commit, path: 'f' * 64), \
                 self.assertRaises(RuntimeError):  # a runtime file changed since the G2 commit
             canonical.check_fast5_evidence()

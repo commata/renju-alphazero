@@ -5623,6 +5623,108 @@ python scripts/summarize_tb_v3_cpu_cert.py --cpu runs/tb_v3_cert/cpu_8451.json r
 4. 다양성: 처음 4수 방문 비례 표본(제안), opening seed 범위 8800–8999
 5. 구현 순서
 
+## H7-c1 설계 승인과 0 · 1번 구현 (2026-10-23, 사용자 승인)
+
+**승인 요지**
+- CPU 인증 PASS를 승인했다. 현재 동결 실행판(TB-V3 / fast5 / H3 policy / H6 value)을 SER5 웹에서 CPU value로 쓰는 것도 승인했다.
+- 해석은 "CPU와 CUDA가 같다"가 아니다. 같은 실행판에서 CPU value backend가 허용 범위를 넘는 기력 저하·안전 회귀를 보이지 않았다는 배포 근거다(197 / 200국 수순 동일, 3국은 value 수치 차이에 따른 near-tie 갈림).
+- SER5 웹과 H7-c1은 따로 간다.
+  - 웹은 동결 모델이다.
+  - H7-c1은 다음 모델 후보를 만든다.
+  - H7-c1 checkpoint는 어떤 결과든 웹에 자동으로 들어가지 않는다. 승급 gate와 별도 배포 결정을 거친 경우에만 교체를 검토한다.
+
+**고정된 H7-c1 설계 (구현 전 고정)**
+- 망: 두 망 유지
+  - policy: H3에서 시작해 self-play root 방문 target으로 fine-tune
+  - value: H6-2a 구조(H3 trunk · policy head 고정, value head만) + self-play value 라벨 + 기존 허용 value 데이터
+  - 공유 trunk 한 망은 c2 이후 실험 경계
+- policy KL: λ = 0.5 (Arena를 본 뒤 바꾸지 않는다)
+  - 정의: teacher = 동결 H3, student = c1 policy. 같은 국면의 합법 수 분포에서 T = 1로 `KL(teacher ‖ student) = Σ p_T log(p_T / p_S)`
+  - 보통(root 방문 target) 국면에만 적용한다. 증명 덮어쓰기(PROVEN_WIN one-hot) 국면에는 적용하지 않는다(증명이 H3보다 우선).
+  - guard: RenjuNet val top-1이 H3보다 2%p 넘게 떨어지면 Arena에 올리지 않는다(붕괴 방지용, 판정은 Arena).
+  - 행에는 정규화 target과 원본 방문 수를 함께 저장한다.
+- self-play seed: 8800–8999는 **run seed 이름 공간**이다(대국 seed 200개가 아니다).
+  - 대국 seed = `derive_seed(run_seed, 'h7c', cycle, game_index)`(SHA-256, 벤치마크와 같은 함수)
+  - 같은 입력이면 같은 seed다. 생성기는 주기 안의 충돌을 검사하고 거부한다.
+  - 기록: run seed, cycle, game index, 대국 seed
+- opening: 벤치마크와 같은 생성기(`make_opening`, 무작위 2수, 반경 2)
+- opening 뒤 처음 4수
+  - root에 PROVEN_WIN이 있으면 표본하지 않는다. 증명된 승리 수를 두고, policy target은 one-hot이다.
+  - 보통 국면은 root 방문 분포에서 T = 1로 표본한다.
+  - PROVEN_LOSS 후보는 확률 0으로 두고 다시 정규화한다.
+  - 남는 확률이 없으면 엔진의 수로 대신하고 그 사건을 기록한다.
+  - 그 뒤는 엔진의 수
+- 라벨: `h6_labels`의 검증된 규칙을 그대로 쓴다(새로 단순 구현하지 않는다).
+  - 증명 1.0 / 대국 결과 0.1
+  - probe · D4 · 대국 단위 누출 규칙: 웹 · 평가 probe를 probe 목록에 더한다.
+  - split은 대국 단위다. Arena · probe · benchmark 대국은 학습과 완전히 분리한다.
+- 처리량
+  - 먼저 같은 4국을 worker 1 / 12로 두어 시간 외 기록이 같은지 본다.
+  - 다음 worker 6 / 8 / 10 / 12 / 14로 같은 20국을 둔다(시간당 대국, 수 평균 · p99, GPU 사용률 · 메모리, CPU 사용률).
+  - 최고의 95% 이상 중 가장 적은 worker를 고른다(운영 값, 판정 아님).
+- 주기 규칙은 그대로다: 1,000국 / 주기, 최소 3주기, 승급 50쌍, Monitoring Arena, 수렴 규칙, 주기 안 엔진 · runtime 변경 금지(fast6 등을 섞지 않음).
+
+**0. CPU 인증 근거 검사 (구현)**
+- `canonical.FAST5_EVIDENCE['cpu_cert']` = `docs/h7/tb_v3_fast5_cpu_cert.json`
+- `check_fast5_evidence`가 확인하는 것
+  - 형식 `tb-v3-fast5-cpu-cert-v1`, `PASS`
+  - 규칙이 고정값과 같음(`canonical.CPU_CERT_RULES`: 하한 −0.05, 50 pair, fast4, fast5, bootstrap 10,000, seed 0)
+  - 표본 200국 / opening 100, `ci95[0] ≥ −0.05`, 안전 위반 0 / 0
+  - CPU / CUDA runtime 해시 = 지금 값
+  - run 4개(`cpu_8451`, `cpu_8452`, `cuda_8451`, `cuda_8452`)의 서로 다른 SHA-256
+- 결과 형식은 바꾸지 않았고 다시 돌리지도 않았다. run의 커밋은 run 파일 provenance로 따로 감사한다.
+- 검사기: "fast5, evidence PASS (G0 4,587,616 calls, G1 3201 moves, SER5_CERTIFIED, CPU cert PASS 200 games low +0.000; …)"
+- 변조 테스트 6가지(판정, 규칙, 하한, 안전 위반, runtime 해시, run 누락)를 모두 거부한다.
+
+**1. `analysis/tb_v3_net.py` 후보 factory (구현)**
+- `make_tb_v3_net_agent(policy, leaf, seed, policy_checkpoint, value_checkpoint)`
+  - 엔진: `tb_v3.check_identity`(엔진 해시, 63개 manifest)
+  - runtime: fast4 · fast5 sources, fast5 binding
+  - 모델은 고정값과 비교하지 않는다. 대신 checkpoint · metadata SHA 4개를 identity로 남긴다(`agent.models`, `model_hash`, 이름 `TB-V3 Resolve/fast5 + net <policy 8자>/<value 8자>`).
+  - 호환성 검사
+    - policy-only `RootPolicy`, H6-2a `ValueLeaf`가 그 경로에서 로드됐는지
+    - 동결 구조(`ModelConfig` 기본값, 64 채널 · 4 블록). encoder · action index 판은 `load_checkpoint`가 강제한다.
+    - value head가 동결 H3 trunk 위에서 학습됐는지(`trunk_frozen`, `policy_head_frozen`, `parent_h3_checkpoint_sha256`)
+  - `provenance(device, identity)`: fast5 provenance + 모델 identity, `canonical: false`, `frozen_models`
+- **구현에서 드러난 점:** 동결 파일 `tb_v2_value.make_agent`는 동결 H6 외의 value checkpoint를 거부한다.
+  - 그 SHA는 TB-V2-Value `config_hash`의 한 항이고, 따라서 TB-V3 엔진 해시에도 들어 있다.
+  - 동결 파일은 고치지 않았다. 후보 factory는 같은 동결 설정으로 agent를 직접 만든다(`MCTSV8Agent(**TB_V2_VALUE, **ENGINE_OPTIONS)` + `E4v2AttackAgent(tb_v3.ATTACK)`).
+  - 같은 agent임은 테스트로 보였다. arena 기록 1국을 이 build로 재생하면 수 · 결정 · 모든 기록 필드가 같다. 데스크톱 전용 테스트는 동결 모델로 canonical factory와 이 factory의 수 · 기록이 같은지 본다.
+  - 그래서 후보 기록의 `engine_hash`는 "동결 탐색 설정(그 value 항은 동결 H6)"을 뜻한다. 실제로 쓴 모델은 `models` / `model_hash`로 읽는다.
+- canonical 경로와의 분리
+  - `canonical`은 이 factory를 돌려주지 않는다.
+  - 테스트가 `src/` · `scripts/` 안의 사용처를 검사한다. `scripts/h7c_*` 도구 밖(웹, 벤치마크, canonical)에서는 쓸 수 없다.
+- 테스트: `tests/test_tb_v3_net.py`
+  - 무작위 망 checkpoint로 identity · 거부(경로, 구조, trunk, 파일 변경)
+  - 실제 agent 생성과 착수, 재생 동일성
+  - 동결 모델(데스크톱)
+- 전체: 79개 PASS(동결 모델이 없는 이 환경에서 skip 2), 검사기 PASS(모델 파일 항목 제외)
+
+**웹(`feat/Web_SER5`) 배포 전에 결정할 것: 두 브랜치의 동결 파일 충돌**
+- `feat/Web_SER5`는 `f1cca21`에서 갈라졌다. TB-V2 / TB-V3 / fast5 / canonical 코드가 없다(그 뒤 `feat/h6-value` 157커밋).
+- 로컬 시험 병합의 충돌은 4개였다(push하지 않음).
+  - `ci.yml`, `.gitignore`, `CLAUDE.md`: 합치면 된다.
+  - **`src/rt30/native/build.py`: 두 동결 엔진이 서로 다른 판을 SHA로 잠근다.**
+    - TB-RT30-v3(지금 웹 엔진, `tests/frozen_tb_rt30_v3.sha256`): `4d596b17…`, `MODULES = {'_threat_windows'}`
+    - TB-V2 / TB-V3(`tests/track_b_frozen.sha256`, `tb_v3_frozen.sha256`, TB-V3 엔진 해시 안): `512c6a90…`, `'_forbidden'`(fast4) 추가
+    - 차이는 이 한 줄이다. threat_windows 빌드는 같다. 그러나 한 브랜치에서는 둘 중 하나의 동결 검사가 실패한다.
+    - TB-V3 쪽 manifest는 엔진 해시에 들어가므로 바꿀 수 없다.
+- 선택지
+  - **A (제안): 웹 브랜치에서 TB-RT30-v3의 manifest만 새 판(`frozen_tb_rt30_v3.sha256`의 `build.py` 줄)으로 다시 잠그는 기록 단계**
+    - 근거: 바뀐 줄은 `_forbidden` 모듈을 더 빌드할 뿐이다. TB-RT30-v3가 쓰는 `_threat_windows`의 소스 · 빌드 명령은 같다.
+    - 확인: 병합 뒤 TB-RT30-v3의 동결 move 테스트(기존 웹 테스트)가 같은 수를 내는지
+    - TB-RT30-v3의 엔진 hash가 build.py를 담는지는 그때 확인한다. 담는다면 A는 TB-RT30-v4(동일 수 확인)로 처리한다.
+  - B: 웹에서 TB-RT30-v3를 내리고 TB-V3 / fast5만 둔다. TB-RT30-v3 코드는 남기되 동결 검사를 끈다. 기록 보존이 약해진다.
+  - C: `feat/h6-value`에서 새 웹 브랜치를 만들고 웹 코드만 옮긴다. TB-RT30-v3는 옛 브랜치에만 남는다.
+- 결정 뒤 웹 작업
+  1. 병합
+  2. TB-V3 / fast5 슬롯: canonical factory, CPU value, worker 1
+  3. 서버 시작 때 `check_track_b_frozen`의 TB-V3 항목과 `check_fast5_evidence`(CPU 인증 포함), 동결 policy / value SHA를 확인한다.
+  4. 30초 soft monitor
+  5. smoke test
+
+**다음 (H7-c1)**: self-play 생성기 `scripts/h7c_selfplay.py`. 위 seed · 표본 · 기록 규칙, 이어하기, 진행 출력(`run_chunks`), 대국마다 provenance와 수별 방문 분포를 남긴다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
