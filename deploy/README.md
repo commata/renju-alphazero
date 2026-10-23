@@ -1,7 +1,16 @@
-# SER5 웹 운영 배포 (TB-RT30-v3)
+# SER5 웹 운영 배포 (TB-V3 Resolve / fast5, CPU value)
 
 미니PC(SER5) 한 대에서 렌주 웹대국을 `https://ser5tack.duckdns.org/`로 운영하는 구성이다.
-엔진과 웹 구조는 `docs/web-ser5.md` §8(멀티 세션), §9.11(v3 연결), §9.12(B3, `--ai-slots 2`)를 따른다.
+웹 구조는 `docs/web-ser5.md` §8(멀티 세션)을 따른다.
+
+기본 상대는 **latest-certified** 엔진이다(`src/rt30/tb_v3_slot.py`).
+- 뜻: 가장 최근에 만든 checkpoint가 아니라, 가장 최근에 승급 gate와 배포 gate를 모두 통과한 엔진·실행판·모델이다.
+- 지금 기본 상대: TB-V3 Resolve / fast5 / 동결 H3 policy / 동결 H6 value / CPU value
+- 근거
+  - 승급: TB-V3 promotion replay, fast5 G0 · G1 · G2 desktop
+  - 배포: fast5 G2 SER5 `SER5_CERTIFIED`(worker 1), fast5 CPU 인증 PASS(seed 8451 / 8452)
+- 학습 중인 H7-c checkpoint는 자동으로 바뀌지 않는다. 새 승급·배포 단계가 `LATEST_CERTIFIED`를 바꿀 때만 바뀐다.
+- TB-RT30(`--rt30`, 지금은 v4 후보 = v3 + TB-V3 native builder)은 legacy / rollback 상대다. 지금 서비스에서는 켜지 않는다.
 
 ## 1. 환경
 
@@ -18,8 +27,7 @@
 ```text
 Internet ─ https://ser5tack.duckdns.org ─ 공유기 80/443 ─ Caddy :443 (자동 TLS, Basic Auth)
                                                               └─ http://127.0.0.1:8000  renju-web.service
-                                                                   ├─ slot 0: engine worker + V8-B helper (+ 예비 짝)
-                                                                   ├─ slot 1: engine worker + V8-B helper (+ 예비 짝)
+                                                                   ├─ slot 0: TB-V3 engine worker (CPU value, + 예비 worker)
                                                                    └─ SQLite data/renju_web.db
 ```
 
@@ -50,15 +58,23 @@ cd ~/renju-alphazero
 # 수동으로 띄운 서버가 있으면 끈다 (systemd가 같은 포트를 쓴다)
 pkill -f "scripts/run_web_pla[y]"; sleep 2
 
+git rev-parse --is-shallow-repository   # false 여야 한다 (근거 검사가 G2 측정 커밋을 git에서 읽는다)
 sudo cp deploy/renju-web.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now renju-web
-journalctl -u renju-web -f      # "TB-RT30-v3: ... + V8-B helper each", "worker ready", "Renju local web" 확인 후 Ctrl-C
-curl -s localhost:8000/api/health; echo     # "ai": {"slots": 2, ...}
+journalctl -u renju-web -f      # "deployment check PASS", "worker ready", "Renju local web" 확인 후 Ctrl-C
+curl -s localhost:8000/api/health; echo     # "default_agent": "tbv3", "engine": {"engine": "TB-V3", ...}
+curl -s localhost:8000/api/engine; echo     # 엔진 · runtime 해시, 모델 SHA-256 4개, 근거 파일
+.venv-ser5/bin/python scripts/ser5/tbv3_smoke.py --base http://127.0.0.1:8000   # 한 판: AI 응답 6수, 시간
 ```
 
-- 시작 전에 `rt30.native.build --if-stale`가 돈다. `git pull`로 C 소스가 바뀌었거나 Python이 바뀌었을 때만 다시 빌드한다.
-  native scan이 맞지 않으면 서버는 시작 단계에서 멈춘다(v3가 v1 시간 배분으로 몰래 돌지 않게).
+- 시작 전에 `rt30.native.build --if-stale`와 `rt30.vcfcore.build --if-stale`가 돈다. C 소스나 Python이 바뀌었을 때만 다시 빌드한다.
+- 서버는 엔진 worker를 띄우기 전에 배포 검사를 한다(fail-closed). 하나라도 실패하면 시작하지 않는다.
+  - canonical = TB-V3 / fast5
+  - fast5 근거(G0 두 파일, G1, G2 desktop, G2 SER5, CPU 인증)가 이 checkout에서 성립(runtime 해시, 안전 위반 0)
+  - TB-V3 identity, 동결 policy / value 파일 SHA, 두 native 빌드가 최신
+- TB-V3는 deadline이 없다(노드 예산, SER5 최대 6.9초). 30초는 soft monitor다: 넘으면 로그(`[tbv3] soft limit`)와 수 기록(`rt.soft_limit_exceeded`)만 남기고 그 수를 그대로 둔다.
+- 대체 수(fallback)는 없다. worker가 300초 동안 답하지 않거나 죽으면 그 수는 오류로 끝나고(브라우저에 오류 표시), worker는 교체된다.
 - 죽으면 5초 뒤 다시 뜬다(10분에 5번까지). 끄기(`systemctl stop`)는 SIGTERM이다. 대기 중인 AI 수를 취소하고, 진행 중인 판을 `abandoned`로 남기고, 엔진 worker와 helper를 닫는다. 탐색 중이면 최대 40초 걸린다.
 - 설정 값은 `deploy/renju-web.service`의 `ExecStart` 한 줄이다. 바꾸면 `sudo systemctl daemon-reload && sudo systemctl restart renju-web`.
 

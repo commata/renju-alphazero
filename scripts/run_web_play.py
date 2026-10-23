@@ -93,7 +93,9 @@ _TB1_INFO: dict[str, Any] = {}
 FROZEN_KEYS = (S3_KEY, TB1_KEY)  # frozen Track B engines: full provenance and veto positions in the logs
 RT30_KEY = "rt30"
 _RT30: dict[str, Any] = {}  # supervisor, label, info (register_rt30)
-TRACKED_KEYS = FROZEN_KEYS + (RT30_KEY,)  # logged like the frozen engines (TB-RT30 runs the TB1 flow)
+TBV3_KEY = "tbv3"  # the latest-certified engine (rt30.tb_v3_slot): TB-V3 Resolve / fast5, CPU value
+_TBV3: dict[str, Any] = {}  # supervisors, label, info (register_tbv3)
+TRACKED_KEYS = FROZEN_KEYS + (RT30_KEY, TBV3_KEY)  # logged like the frozen engines (TB-RT30 runs the TB1 flow)
 
 
 def register_alphazero(factory, label: str) -> None:
@@ -159,6 +161,40 @@ class SupervisedAgent:
         return result.move
 
 
+class CertifiedSupervisedAgent(SupervisedAgent):
+    """The latest-certified opponent (TB-V3): no move fallback and a soft time monitor.
+
+    A result that is not the engine's own move (watchdog, dead or failing worker) raises: the browser gets an
+    error and the game waits, instead of a move the certified engine did not choose. A move slower than the
+    soft limit is played as it is and flagged (``rt.soft_limit_exceeded``) and logged."""
+
+    def __init__(self, supervisors, name: str, seed: int, soft_limit: float):
+        super().__init__(supervisors, name, seed)
+        self.soft_limit = soft_limit
+
+    def select_move(self, game: Game, received_at: float | None = None, slot: int | None = None) -> tuple[int, int]:
+        move = super().select_move(game, received_at=received_at, slot=slot)
+        result = self.last
+        if result.source != "engine":
+            raise RuntimeError(f"{self.name}: no engine move ({result.source}: {result.error or 'no answer'}); "
+                               "not replaced by a fallback")
+        engine = result.engine_seconds if result.engine_seconds is not None else result.wall_seconds
+        result.deadline_seconds = None  # TB-V3 has no deadline (node budgets); the supervisor's is a hang guard
+        result.rt = {**result.rt, "soft_limit_seconds": self.soft_limit,
+                     "soft_limit_exceeded": engine > self.soft_limit}
+        if engine > self.soft_limit:
+            print(f"[tbv3] soft limit: {engine:.1f} s > {self.soft_limit:g} s at ply {len(game.history)}"
+                  f" (played as searched)", flush=True)
+        return move
+
+
+def register_tbv3(supervisors, label: str, info: dict[str, Any], soft_limit: float) -> None:
+    """Add the latest-certified "tbv3" opponent (``rt30.tb_v3_slot``), searched by ``supervisors``."""
+    supervisors = list(supervisors) if isinstance(supervisors, (list, tuple)) else [supervisors]
+    _TBV3.update(supervisors=supervisors, label=label, info=info, soft_limit=soft_limit)
+    VERSION_LABELS[TBV3_KEY] = label
+
+
 def register_rt30(supervisors, label: str, info: dict[str, Any], config: dict[str, Any] | None = None) -> None:
     """Add the "rt30" opponent, searched by ``supervisors`` (one per AI search slot, or a single one);
     ``config`` is the engine's frozen configuration, logged with every game (default: TB-RT30-v1's)."""
@@ -167,9 +203,30 @@ def register_rt30(supervisors, label: str, info: dict[str, Any], config: dict[st
     VERSION_LABELS[RT30_KEY] = label
 
 
+def engine_summary() -> dict[str, Any] | None:
+    """The default engine for /api/health: what runs, without the model SHA (those are in /api/engine)."""
+    if not _TBV3:
+        return None
+    info = _TBV3["info"]
+    return {"engine": info["engine_id"], "runtime": info["runtime"], "value_device": info["value_device"],
+            "model": info["model"], "engine_hash": info["engine_config_hash"][:12],
+            "runtime_hash": info["runtime_hash"][:12]}
+
+
+def engine_details() -> dict[str, Any]:
+    """Full provenance of the latest-certified engine (identities, model SHA-256, evidence records)."""
+    if not _TBV3:
+        return {"engine": None}
+    keep = ("engine", "engine_id", "engine_config_hash", "runtime", "runtime_hash", "fast_mode", "value_device",
+            "model", "policy_checkpoint_sha256", "policy_metadata_sha256", "value_checkpoint_sha256",
+            "value_metadata_sha256", "evidence", "evidence_summary")
+    return {k: _TBV3["info"].get(k) for k in keep}
+
+
 def default_agent_key() -> str:
-    """The opponent a new browser starts with: the newest engine served, TB-RT30 when it runs, else V7."""
-    return RT30_KEY if _RT30 else "v7"
+    """The opponent a new browser starts with: the latest-certified engine (TB-V3) when it runs, then TB-RT30,
+    else V7."""
+    return TBV3_KEY if _TBV3 else RT30_KEY if _RT30 else "v7"
 
 
 def create_agent(version: str, *, seed: int = 42):
@@ -180,6 +237,8 @@ def create_agent(version: str, *, seed: int = 42):
         return _S3_FACTORY(seed)
     if version == TB1_KEY and _TB1_FACTORY is not None:
         return _TB1_FACTORY(seed)
+    if version == TBV3_KEY and _TBV3:
+        return CertifiedSupervisedAgent(_TBV3["supervisors"], _TBV3["info"]["engine"], seed, _TBV3["soft_limit"])
     if version == RT30_KEY and _RT30:
         return SupervisedAgent(_RT30["supervisors"], _RT30["info"]["engine"], seed)
     if version in _EXTRA_FACTORIES:
@@ -830,6 +889,11 @@ class PlaySession:
         """Provenance of the frozen engine of this game (S3-VCT2-v1 or TB-Engine-v1)."""
         from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty
 
+        if self.agent_key == TBV3_KEY:
+            from rt30.tb_v3_slot import LATEST_CERTIFIED
+
+            return {**_TBV3["info"], "config": dict(LATEST_CERTIFIED), "engine_commit": _git_commit(),
+                    "git_dirty": _git_dirty()}
         if self.agent_key == RT30_KEY:
             config = _RT30.get("config")
             if config is None:
@@ -1097,7 +1161,11 @@ class Handler(BaseHTTPRequestHandler):
                 db = None if store is None else {"path": _display_path(store.path), "written": store.written,
                                                  "failures": store.failures, "last_error": store.last_error}
                 self._send_json({"ok": True, "db": db, "sessions": len(APP.sessions),
-                                 "sessions_expired": APP.sessions.expired, "ai": APP.jobs.stats()})
+                                 "sessions_expired": APP.sessions.expired, "ai": APP.jobs.stats(),
+                                 "default_agent": default_agent_key(), "engine": engine_summary()})
+                return
+            if self.path == "/api/engine":
+                self._send_json(engine_details())
                 return
         except Exception as exc:  # noqa: BLE001
             self._error(exc)
@@ -1200,10 +1268,16 @@ def main() -> None:
                         help="PUCT v2 rules (auto = the checkpoint's evaluation setting)")
     parser.add_argument("--policy-checkpoint", type=Path, default=ROOT / "runs/h3_policy_64x4/best.pt",
                         help="H3 policy checkpoint of the frozen S3-VCT2-v1 opponent (needs torch)")
+    parser.add_argument("--tbv3", action="store_true",
+                        help="add the latest-certified opponent TB-V3 Resolve / fast5 (CPU value), the default; "
+                             "the server refuses to start unless its evidence, identity and models check")
+    parser.add_argument("--value-checkpoint", type=Path, default=ROOT / "runs/h6_value_head_v3/best.pt",
+                        help="H6 value checkpoint of TB-V3 (needs torch)")
     parser.add_argument("--rt30", action="store_true",
                         help="add the TB-RT30 opponent (engine worker process, 27.5 s deadline, 29 s watchdog)")
-    parser.add_argument("--rt30-engine", choices=("v3", "v1"), default="v3",
-                        help="TB-RT30 version: v3 (frozen; native scan + V8-B helper beside each worker) or v1")
+    parser.add_argument("--rt30-engine", choices=("v4", "v1"), default="v4",
+                        help="TB-RT30 version (legacy / rollback opponent): v4 (v3 with TB-V3's native builder; "
+                             "native scan + V8-B helper beside each worker) or v1")
     parser.add_argument("--rt30-uniform-prior", action="store_true",
                         help="TB-RT30 without the H3 checkpoint (uniform PUCT prior; a test engine, not TB1)")
     parser.add_argument("--rt30-deadline", type=float, help="override TB-RT30-v1's 27.5 s (experiments only)")
@@ -1250,19 +1324,41 @@ def main() -> None:
     else:
         print(f"S3-VCT2-v1 opponent off: {args.policy_checkpoint} not found")
     supervisors = []
-    if args.rt30:
-        from rt30 import tb_rt30_v1, tb_rt30_v3
+    if args.tbv3:
+        from rt30 import tb_v3_slot
         from rt30.supervisor import AgentSpec, EngineSupervisor
 
-        module = tb_rt30_v3 if args.rt30_engine == "v3" else tb_rt30_v1
-        config = tb_rt30_v3.TB_RT30_V3 if module is tb_rt30_v3 else tb_rt30_v1.TB_RT30_V1
+        try:  # fail closed: no TB-V3 opponent (and no server) on an uncertified checkout, runtime or model
+            info = tb_v3_slot.check_deployment(args.policy_checkpoint, args.value_checkpoint)
+        except Exception as exc:  # noqa: BLE001 - reported, then the server stops
+            parser.exit(1, f"TB-V3 deployment check failed: {type(exc).__name__}: {exc}\n")
+        print(f"{info['engine']}: deployment check PASS (engine {info['engine_config_hash'][:12]}, runtime "
+              f"{info['runtime_hash'][:12]} {info['value_device']}, policy {info['policy_checkpoint_sha256'][:12]}, "
+              f"value {info['value_checkpoint_sha256'][:12]}; evidence {', '.join(info['evidence'])})", flush=True)
+        kwargs = {"policy_checkpoint": str(args.policy_checkpoint), "value_checkpoint": str(args.value_checkpoint)}
+        print(f"{info['engine']}: starting {args.ai_slots} engine worker(s) ...", flush=True)
+        tbv3_supervisors = [EngineSupervisor(AgentSpec("rt30.tb_v3_slot:make_agent", kwargs),
+                                             engine_deadline=tb_v3_slot.HANG_SECONDS - 1,  # unread by TB-V3
+                                             watchdog=tb_v3_slot.HANG_SECONDS,
+                                             agent_cache=max(8, args.max_sessions), attack_helper=False, preload=True)
+                            for _ in range(args.ai_slots)]
+        supervisors += tbv3_supervisors
+        register_tbv3(tbv3_supervisors, tb_v3_slot.LABEL, info, tb_v3_slot.SOFT_LIMIT_SECONDS)
+        print(f"{info['engine']}: worker ready (no deadline: node budgets; soft monitor "
+              f"{tb_v3_slot.SOFT_LIMIT_SECONDS:g} s, no move fallback)", flush=True)
+    if args.rt30:
+        from rt30 import tb_rt30_v1, tb_rt30_v4
+        from rt30.supervisor import AgentSpec, EngineSupervisor
+
+        module = tb_rt30_v4 if args.rt30_engine == "v4" else tb_rt30_v1
+        config = tb_rt30_v4.TB_RT30_V4 if module is tb_rt30_v4 else tb_rt30_v1.TB_RT30_V1
         extra: dict[str, Any] = {}
-        if module is tb_rt30_v3:
+        if module is tb_rt30_v4:
             from rt30 import fast3_windows
             from rt30.native import build as native_build
 
             if not fast3_windows.available() or native_build.stale():
-                parser.error("TB-RT30-v3 needs the native scan built for this checkout and Python: "
+                parser.error("TB-RT30-v4 needs the native scan built for this checkout and Python: "
                              "PYTHONPATH=src python -m rt30.native.build --if-stale")
             extra["native_build"] = native_build.build_info()
         if args.policy_checkpoint.exists():
@@ -1277,14 +1373,17 @@ def main() -> None:
         watchdog = args.rt30_watchdog or config["watchdog_seconds"]
         if (args.rt30_deadline, args.rt30_watchdog) != (None, None):
             engine += " (deadline override)"
-        helper = module is tb_rt30_v3
+        helper = module is tb_rt30_v4
         print(f"{engine}: starting {args.ai_slots} engine worker(s)"
               f"{' + V8-B helper each' if helper else ''} ...", flush=True)
-        supervisors = [EngineSupervisor(AgentSpec(f"rt30.supervisor:make_tb_rt30_{args.rt30_engine}_agent", kwargs),
-                                        engine_deadline=deadline, watchdog=watchdog,
-                                        agent_cache=max(8, args.max_sessions), attack_helper=helper, preload=True)
-                       for _ in range(args.ai_slots)]
-        register_rt30(supervisors, f"{engine} (실시간 {deadline:g}초)",
+        rt30_supervisors = [EngineSupervisor(AgentSpec(f"rt30.supervisor:make_tb_rt30_{args.rt30_engine}_agent",
+                                                       kwargs),
+                                             engine_deadline=deadline, watchdog=watchdog,
+                                             agent_cache=max(8, args.max_sessions), attack_helper=helper,
+                                             preload=True)
+                            for _ in range(args.ai_slots)]
+        supervisors += rt30_supervisors
+        register_rt30(rt30_supervisors, f"{engine} (실시간 {deadline:g}초)",
                       {"engine": engine, "engine_config_hash": module.config_hash(),
                        "deadline_seconds": deadline, "watchdog_seconds": watchdog,
                        "freeze_evidence": module.FREEZE_EVIDENCE, **extra}, config=config)

@@ -1,10 +1,11 @@
-# Renju web server (TB-RT30-v3) behind Caddy on SER5 (deploy/README.md).
+# Renju web server (TB-V3 Resolve / fast5, CPU value: the latest-certified engine) behind Caddy on SER5
+# (deploy/README.md).
 #   sudo cp deploy/renju-web.service /etc/systemd/system/ && sudo systemctl daemon-reload
 #   sudo systemctl enable --now renju-web
 # Caddy (caddy.service) keeps HTTPS and certificates; this unit runs only the Python server,
 # on 127.0.0.1:8000 (never reachable from outside but through Caddy).
 [Unit]
-Description=Renju web server (TB-RT30-v3, ai-slots 2)
+Description=Renju web server (TB-V3 Resolve / fast5 CPU, ai-slots 1)
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=600
@@ -17,18 +18,22 @@ Group=deploy
 WorkingDirectory=/home/deploy/renju-alphazero
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONPATH=src
-# The native threat-window scan of v3: rebuilt only when the C source, the venv's Python or the
-# flags changed (after a git pull); the server refuses to start with a stale one.
+# The native builds of TB-V3 / fast5 (threat windows + forbidden points, the VCF core): rebuilt only when a
+# C source, the venv's Python or the flags changed (after a git pull); the server refuses to start with a
+# stale one, and also unless the fast5 evidence (G0 / G1 / G2 / CPU certification, read through git: a full,
+# non-shallow clone), TB-V3's identity and both model files check (rt30.tb_v3_slot.check_deployment).
+# One AI slot, as SER5 was certified (worker 1). TB-RT30 (--rt30, v4 legacy) is not served for now.
 ExecStartPre=/home/deploy/renju-alphazero/.venv-ser5/bin/python -m rt30.native.build --if-stale
+ExecStartPre=/home/deploy/renju-alphazero/.venv-ser5/bin/python -m rt30.vcfcore.build --if-stale
 ExecStart=/home/deploy/renju-alphazero/.venv-ser5/bin/python scripts/run_web_play.py \
-    --host 127.0.0.1 --port 8000 --rt30 --db data/renju_web.db \
-    --ai-slots 2 --slot-spill 2 --max-queue 4 --max-sessions 16 --session-ttl 3600 --secure-cookie
+    --host 127.0.0.1 --port 8000 --tbv3 --db data/renju_web.db \
+    --ai-slots 1 --slot-spill 2 --max-queue 4 --max-sessions 16 --session-ttl 3600 --secure-cookie
 # SIGTERM takes the server's Ctrl+C path: queued replies cancelled, games marked abandoned,
-# engine workers and V8-B helpers closed. A running search may take up to the 29 s watchdog.
+# engine workers closed. A TB-V3 search takes seconds (SER5 max 6.9 s); its 30 s limit is a soft monitor.
 KillSignal=SIGTERM
 KillMode=mixed
 TimeoutStopSec=40
-# Loading the H3 policy in 2 engine workers + spares takes a while.
+# The deployment check and loading the H3 policy / H6 value in the engine worker + spare take a while.
 TimeoutStartSec=300
 Restart=on-failure
 RestartSec=5

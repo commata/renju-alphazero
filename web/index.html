@@ -320,7 +320,7 @@ function forbiddenAt(row, col) {
 
 function syncVersions() {
   // Versions registered by the server (e.g. an AlphaZero checkpoint) join the list; the server's
-  // default (the newest engine it serves, TB-RT30-v3 in production) goes first.
+  // default (the latest-certified engine it serves, TB-V3 / fast5 in production) goes first.
   for (const [key, label] of Object.entries(state.versions || {})) {
     if (![...agentSelect.options].some(option => option.value === key)) {
       agentSelect.add(new Option(label, key), key === state.default_agent ? 0 : undefined);

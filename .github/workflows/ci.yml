@@ -40,7 +40,7 @@ jobs:
         run: |
           python -c "import importlib.util,sys; spec=importlib.util.find_spec('torch'); print('torch spec:', spec); sys.exit(spec is not None)"
       - name: Build the native exact speed-ups (TB-RT30 threat windows; TB-V3 fast4 forbidden)
-        run: PYTHONPATH=src python -m rt30.native.build
+        run: PYTHONPATH=src python -m rt30.native.build && PYTHONPATH=src python -m rt30.vcfcore.build
       - name: Run torch-free regression with strict skip policy
         run: python scripts/ci_run_tests.py --skip-policy torch-only
 
@@ -66,7 +66,7 @@ jobs:
       - name: Renju rules contract
         run: python -m unittest tests.test_game -v
       - name: Build the native exact speed-ups (TB-RT30 threat windows; TB-V3 fast4 forbidden)
-        run: PYTHONPATH=src python -m rt30.native.build
+        run: PYTHONPATH=src python -m rt30.native.build && PYTHONPATH=src python -m rt30.vcfcore.build
       - name: Run full regression with zero skips
         run: python scripts/ci_run_tests.py --skip-policy none
 

@@ -39,5 +39,16 @@
 - H7-c candidate models run only through `analysis.tb_v3_net.make_tb_v3_net_agent` (the frozen TB-V3 engine and fast5
   runtime, models recorded by SHA-256, never canonical). Only `scripts/h7c_*` tools may use it: the web, benchmarks and
   `analysis.canonical` keep the frozen H3 policy / H6 value until a separate promotion step.
+- Branches: `feat/h6-value` is frozen (H6, TB-V3, fast5 and its evidence); H7-c training is on `feat/h7-c1`; this
+  deployment line (`feat/Web_SER5` -> `feat/Web_SER5-tbv3-fast5`) takes frozen engine code from `feat/h6-value` by
+  merge only and never develops training code. Never merge the web line into the training line or back.
+- The web's default opponent is the latest-certified engine (`src/rt30/tb_v3_slot.py`, `LATEST_CERTIFIED`): today
+  TB-V3 Resolve / fast5 with the frozen H3 / H6 models and CPU value, after `check_deployment` (fail-closed: canonical,
+  fast5 evidence incl. the CPU certification, identity, model SHA-256, fresh native builds). It has no deadline and no
+  move fallback; 30 s is a soft monitor. Only a promotion and deployment step changes `LATEST_CERTIFIED`; an H7-c
+  checkpoint never reaches the web by being trained.
+- TB-RT30-v3's lock is kept but for `src/rt30/native/build.py`, which TB-V3's builder replaced (one `MODULES` line,
+  checked by `tests/test_tb_rt30_v3.py`): that is TB-RT30-v4 (`src/rt30/tb_rt30_v4.py`, `tests/frozen_tb_rt30_v4.sha256`),
+  a candidate until its same-move gate on SER5, and only a legacy / rollback opponent.
 - TB-RT30-v1 (the web engine) is frozen the same way: the files in `tests/frozen_tb_rt30_v1.sha256`
   (`src/rt30/engine.py`, `solver.py`, `deadline.py`, `vcf.py`, `fast*.py`, `tb_rt30_v1.py`); a change is TB-RT30-v2.
