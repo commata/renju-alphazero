@@ -5501,6 +5501,128 @@ python scripts/summarize_tb_v3_cpu_cert.py --cpu runs/tb_v3_cert/cpu_8451.json r
 - 페이지: 빨간 원(바탕은 판 색이라 선이 가리지 않음) + 표시 + 사선. 그 점을 누르면 착수 대신 "J8: 흑 금수(삼삼) 자리입니다"를 띄운다. 범례에 설명을 더했다.
 - 웹 테스트 50개 PASS(새 테스트 2개: 금수 점 = `forbidden_reason` 전수, 백 차례·종국에는 빈 목록, 상태에 포함). 화면에서 33 · 44 · 6 표시를 확인했다.
 
+## fast5 CPU 인증: PASS (2026-10-23, `cd4a3b9`, `docs/h7/tb_v3_fast5_cpu_cert.json`)
+
+**상태: TB-V3 Resolve / fast5의 CPU value backend 인증 PASS.** CUDA(canonical)와 CPU 둘 다 쓸 수 있다.
+
+**검증 (결과 파일)**
+- 형식 `tb-v3-fast5-cpu-cert-v1`. 규칙은 사전 고정값 그대로다(하한 −0.05, seed당 50 pair, fast4 + fast5, bootstrap 10,000).
+- runtime 해시: CPU `669c7999…`, CUDA `7c727150…`. 둘 다 G0–G2와 검사기가 확인한 값과 같다.
+- run 4개(CPU / CUDA × 8451 / 8452)의 SHA가 기록돼 있다. 도구는 run마다 다음을 확인했다.
+  - 동결 설정, `--runtime fast5`(대국마다), canonical factory, 엔진 해시, 그 장치의 runtime 해시
+  - 50 pair, 깨끗한 tree, 두 backend의 opening·색 일치
+
+| | CPU | CUDA |
+|---|---|---|
+| 점수 | 0.948 | 0.943 |
+| 흑 / 백 | 0.965 / 0.930 | 0.965 / 0.920 |
+| 안전 위반 | 0 | 0 |
+| 대국 시간 합(분, 기록만) | 54.8 | 47.4 |
+
+- 짝 차이 CPU − CUDA: +0.005, 95% 구간 [0.000, 0.015], opening 100개, 200국
+- 수순까지 같은 대국: 197 / 200
+
+**초안 검토**: 수치는 모두 결과 파일과 같고, 결론에 동의한다. 아래를 더하거나 고친다.
+1. **실행 커밋.** `650357b`는 요약 도구를 돌린 커밋이다(그 커밋은 요약 스크립트의 import만 고쳤다). 대국 run은 그 전인 `1085d36`에서 돌았을 것이다.
+   - 인증 기록에는 run의 커밋이 없다. 대신 도구가 run마다 runtime 해시가 지금 값과 같고 tree가 깨끗했음을 확인했다. 그래서 판정과는 무관하다.
+   - 확인하려면: `jq -r .provenance.git_commit runs/tb_v3_cert/*.json`
+2. **하한 0.000의 뜻.** 200국 중 197국이 같아서 opening 대부분의 차이가 정확히 0이다. 나머지 몇 opening도 모두 0 이상이라 bootstrap 하한이 0이 된다.
+   - 즉 "CPU가 CUDA보다 강하다"가 아니라 "CPU가 진 쪽으로 갈린 opening이 하나도 없었다"는 뜻이다. 초안이 우월성으로 읽지 말라고 한 것이 맞다.
+   - 점수로는 +0.005 × 200국 = 1점이다. 모두 백 쪽이다(0.930 − 0.920 = 100국 중 1점).
+   - 흑 쪽에서 수순이 갈린 대국이 있었다면 결과는 같았다.
+3. **갈린 3국의 원인.** 초안은 "부동소수점 차이 등"이라고 했다. 구조상 원인은 하나로 좁혀진다.
+   - 두 run은 value 장치만 다르다. 엔진의 예산은 모두 노드 수라서 시간이 결정에 들어가지 않는다.
+   - CUDA끼리는 G1이 3,201수 정확 재생을 보였다.
+   - 그래서 3국의 갈림은 CPU와 CUDA의 value 출력 수치 차이가 근소한 국면의 순위를 바꾼 것이다. 어느 국면이었는지는 기록에 없다(필요하면 run 파일로 찾을 수 있다).
+   - 초안의 "CPU와 CUDA가 같다고 쓰지 않는다"에 동의한다. 이 인증은 동일성 증명이 아니라 비열등 판정이다.
+4. **SER5에의 적용 범위.** 대국은 데스크톱 CPU(i5-12600K)에서 돌았다. runtime 해시의 장치 구분은 `cpu`(종류)라서, 이 인증은 CPU value 전반을 덮는다.
+   - SER5 CPU의 value 수치가 데스크톱 CPU와 미세하게 다를 수 있다. 그 결과는 이번 시험이 본 것과 같은 종류의 near-tie 갈림이다. 그런 갈림이 기력을 잃지 않는다는 것이 이번 결과다.
+   - SER5의 결정 자체는 G2가 따로 확인했다(SER5에서 fast4 / fast5 CPU 결정이 827국면 모두 같음).
+   - 그래서 "SER5 배포 실행 환경으로 쓸 수 있다"는 결론에 동의한다. 배포 뒤 30초 soft monitor는 그대로 둔다.
+5. **시간.** 대국 시간 합은 데스크톱 8 worker(worker마다 torch 1스레드)에서 잰 값이다. 기록만 하는 항목이고, 대국 길이도 backend마다 같지 않다. 초안처럼 참고로만 읽는다.
+6. **인증 기록의 위치.** `tb_v3_runtime.CERTIFICATION['cpu']`는 `None`으로 남는다. 그 파일은 TB-V3 manifest와 runtime 해시에 들어가서 고칠 수 없다.
+   - 근거 목록은 fast5 G0–G2처럼 `canonical.FAST5_EVIDENCE`에 둔다. 아래 제안 0번이다.
+
+## 다음 단계 제안: H7-c1 설계 (결정 필요)
+
+**0. CPU 인증을 검사기에 넣는다 (작은 코드 변경, 엔진·runtime 해시 그대로)**
+- `canonical.FAST5_EVIDENCE['cpu_cert']`에 `docs/h7/tb_v3_fast5_cpu_cert.json`을 둔다.
+- `check_fast5_evidence`가 확인할 것: 형식, `verdict: PASS`, 안전 위반 0 / 0, run 4개, CPU / CUDA runtime 해시가 지금 값과 같음
+- 웹(`feat/Web_SER5`)은 엔진을 canonical factory(`TB-V3`, fast5, `cpu`)로 만든다. 서버 시작 때 이 근거 검사를 한 번 돌리게 한다.
+
+**1. c1에서 바뀌는 모델을 받는 factory (새 파일, 동결 파일은 그대로)**
+- 문제: `make_tb_v3_agent` / `make_tb_v3_fast5_agent`는 모델이 `tb_v3.MODELS`(H3 policy + H6 value)와 같지 않으면 거부한다.
+  - c1 self-play 자체는 지금 모델로 두므로 문제없다.
+  - 그러나 승급 Arena(c1 checkpoint 대 직전)와 c2 self-play는 TB-V3 엔진 코드에 새 모델을 얹어야 한다.
+- 제안: `analysis/tb_v3_net.py`의 `make_tb_v3_net_agent(policy, leaf, seed, policy_checkpoint, value_checkpoint, runtime)`
+  - 엔진 identity(코드 manifest, 엔진 해시)와 runtime 검사(fast5 근거)는 그대로 한다.
+  - 모델은 고정값과 비교하지 않는다. 대신 두 checkpoint와 metadata의 SHA를 기록하고, 구조(채널·블록·encoder 판)가 엔진의 것과 같은지만 확인한다.
+  - 이름: `TB-V3 Resolve/fast5 + net <policy sha 앞 8자>/<value sha 앞 8자>`
+  - provenance: 엔진 해시, runtime 해시, 모델 SHA 4개. self-play 행과 Arena 기록에 그대로 남는다.
+  - fast5의 runtime 해시는 모델을 담지 않으므로 G0–G2와 CPU 인증 근거는 그대로 이어진다. 모델은 그 위의 별도 identity다.
+
+**2. 망 구성: 두 망 유지 (제안)**
+- 지금 policy와 value는 따로 된 checkpoint다. value는 H3 trunk를 얼리고 value head만 학습했다(H6-2a).
+- **제안 (c1):**
+  - policy 망: H3에서 시작해 self-play policy target으로 fine-tune
+  - value 망: H6-2a 방식 그대로(H3 trunk 고정, value head만) self-play value 라벨 + 기존 RenjuNet 라벨로 다시 학습
+  - 이유: value 쪽은 검증된 도구(`h6_value_train`)와 gate를 그대로 쓴다. 바뀌는 것이 policy fine-tune 하나라서, 승급 Arena가 무엇 때문에 이기고 지는지 읽을 수 있다.
+- 대안: 한 망(공유 trunk)으로 policy + value 동시 학습. AlphaZero에 가깝지만 leaf와 policy 로더, 학습 코드를 새로 만들어야 한다. 위험이 커서 c2 이후 경계 후보로 둔다.
+- 이미 정한 "policy와 value를 함께 학습한다"는 두 안 모두 만족한다. 갈리는 것은 망을 하나로 합치느냐뿐이다.
+
+**3. policy target의 질 (결정 필요)**
+- 계약(고정)
+  - 보통 국면: root 방문 분포
+  - 증명된 승리로 덮어쓴 수: 그 수 one-hot
+  - PROVEN_LOSS 후보: 0으로 두고 다시 정규화
+- 걱정: 엔진의 tree는 50 simulation이다. 50방문 분포는 거칠고, H3 policy는 RenjuNet 고수 수로 학습했다. 거친 분포만 따라가면 policy가 오히려 나빠질 수 있다.
+- **제안:** policy 손실에 H3 고정 망과의 KL 항을 둔다. `λ`는 c1 전에 하나로 고정한다(제안 0.5).
+  - 함께 정할 DEV 점검: RenjuNet val의 top-1이 H3보다 2%p 넘게 떨어지면 그 checkpoint는 Arena에 올리지 않는다.
+  - 최종 판정은 승급 Arena(직전과 50쌍)다.
+- 기록용: `v8_root_visits`(수, 방문, 값)가 진단에 이미 있다. 행에는 방문 수 원본도 남긴다. 나중에 target 정의를 바꿔도 다시 두지 않아도 된다.
+
+**4. self-play 프로토콜 (엔진 identity 밖, c1 동안 고정)**
+- opening: 벤치마크와 같은 생성기(`make_opening`, 무작위 2수, 반경 2). seed는 새로 예약한 범위를 쓴다(제안 8800–8999, 다른 실험과 겹치지 않음).
+- 다양성: opening 뒤 처음 4수(흑·백 각 2수)는 root 방문 분포에 비례해 표본한다(T = 1). 증명된 승리 수와 PROVEN_LOSS 수는 표본하지 않는다. 그 뒤는 엔진 수.
+  - policy target은 표본과 무관하게 방문 분포다. value 라벨은 표본한 수 뒤의 국면에도 쓴다(증명 우선, 대국 결과 0.1).
+- 양쪽 같은 엔진·같은 checkpoint, 대국마다 새 agent(`seed`는 대국 seed에서 파생)
+- 라벨: H6 규칙 그대로
+  - 증명 라벨(`h6_labels.proof_label`, 예산 고정)이 1.0, 대국 결과가 0.1
+  - 행마다 `game_id`, `canonical_hash`, 엔진 해시, runtime 해시, 모델 SHA
+  - 웹 probe 국면(D4)이 든 대국은 통째로 뺀다.
+  - split은 `game_id` 기준으로 val 5%
+
+**5. 처리량 측정 (도구가 생긴 뒤 짧게)**
+- 결정은 노드 예산으로만 정해진다. 그래서 worker 수는 결과를 바꾸지 않고 속도만 바꾼다. 그래도 한 번은 확인한다.
+  - 같은 대국 4개를 worker 1과 worker 12로 두어 기록(시간 제외)이 같은지 본다.
+- 데스크톱 CUDA에서 worker 6 / 8 / 10 / 12 / 14로 각 20국(같은 대국 seed)을 둔다.
+  - 지표: 시간당 대국 수, 수당 평균·p99 시간, GPU 사용률, 메모리
+  - 가장 빠른 값의 95% 안에서 가장 적은 worker를 고른다(학습·Arena와 함께 돌 여유를 남긴다).
+- 이 측정은 판정이 아니다. 결과로 주기 하나(1,000국 + 라벨 + 학습 + Arena)의 시간을 잡는다.
+
+**6. 이미 고정된 주기 규칙 (그대로)**
+- 1주기 = self-play 1,000국, 최소 3주기
+- 승급: 직전 checkpoint와 50쌍(점수 차 하한 기준)
+- 수렴: 연속 2주기 동안 향상 하한 ≤ 0이고 전술 회귀 없음
+- Monitoring Arena: 상대 3종 × 25쌍 + 직전 50쌍, Rapfi L_mid 25쌍(기록만)
+- 주기 안에서 엔진은 바꾸지 않는다.
+
+**구현 순서 (승인 뒤)**
+1. 0번(CPU 인증 근거 검사)과 1번(`tb_v3_net` factory + 테스트)
+2. `scripts/h7_selfplay.py`
+   - 1,000국 생성, 이어하기, 진행 출력(`run_chunks`)
+   - 대국마다 provenance와 수별 방문 분포
+3. 라벨러(H6 label builder 재사용)와 학습 둘(policy fine-tune + KL, value head)
+4. 5번 처리량 측정 → worker 결정
+5. c1 실행
+
+**결정이 필요한 것**
+1. 0번을 지금 넣을지(제안: 예)
+2. 망 구성: 두 망 유지(제안) 또는 한 망
+3. policy KL 항과 `λ`, DEV top-1 점검(제안: KL 있음, λ = 0.5, −2%p)
+4. 다양성: 처음 4수 방문 비례 표본(제안), opening seed 범위 8800–8999
+5. 구현 순서
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```
