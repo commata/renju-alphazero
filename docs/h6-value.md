@@ -5710,10 +5710,10 @@ python scripts/summarize_tb_v3_cpu_cert.py --cpu runs/tb_v3_cert/cpu_8451.json r
     - 차이는 이 한 줄이다. threat_windows 빌드는 같다. 그러나 한 브랜치에서는 둘 중 하나의 동결 검사가 실패한다.
     - TB-V3 쪽 manifest는 엔진 해시에 들어가므로 바꿀 수 없다.
 - 선택지
-  - **A (제안): 웹 브랜치에서 TB-RT30-v3의 manifest만 새 판(`frozen_tb_rt30_v3.sha256`의 `build.py` 줄)으로 다시 잠그는 기록 단계**
-    - 근거: 바뀐 줄은 `_forbidden` 모듈을 더 빌드할 뿐이다. TB-RT30-v3가 쓰는 `_threat_windows`의 소스 · 빌드 명령은 같다.
-    - 확인: 병합 뒤 TB-RT30-v3의 동결 move 테스트(기존 웹 테스트)가 같은 수를 내는지
-    - TB-RT30-v3의 엔진 hash가 build.py를 담는지는 그때 확인한다. 담는다면 A는 TB-RT30-v4(동일 수 확인)로 처리한다.
+  - **A (제안): 웹 브랜치에서 `build.py`를 TB-V3 판으로 두고, TB-RT30 쪽은 TB-RT30-v4로 기록하는 단계**
+    - TB-RT30-v3의 `config_hash`는 `build.py`를 담지 않는다. 그러나 그 파일의 규칙은 "잠긴 파일을 바꾸면 새 엔진(TB-RT30-v4)"이다. 그래서 v3 manifest를 고치지 않고 v4를 만든다.
+    - v4 = v3 설정 그대로 + 새 manifest(`build.py` 줄만 다름). 같은 수 확인(v3 동결 move 테스트와 SER5 대표 국면 재생)이 gate다.
+    - 근거: 바뀐 줄은 `_forbidden` 모듈을 더 빌드할 뿐이다. TB-RT30이 쓰는 `_threat_windows`의 소스 · 빌드 명령은 같다.
   - B: 웹에서 TB-RT30-v3를 내리고 TB-V3 / fast5만 둔다. TB-RT30-v3 코드는 남기되 동결 검사를 끈다. 기록 보존이 약해진다.
   - C: `feat/h6-value`에서 새 웹 브랜치를 만들고 웹 코드만 옮긴다. TB-RT30-v3는 옛 브랜치에만 남는다.
 - 결정 뒤 웹 작업
