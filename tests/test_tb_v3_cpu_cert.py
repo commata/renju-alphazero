@@ -1,4 +1,10 @@
 """scripts/summarize_tb_v3_cpu_cert.py: TB-V3 Resolve / fast5 with its value on CPU vs on CUDA, paired."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+from tempfile import TemporaryDirectory
 import unittest
 
 from analysis import tb_v3, tb_v3_fast5
@@ -47,6 +53,27 @@ class CertTest(unittest.TestCase):
         bad['games'][3]['runtime'] = 'fast4'  # one game resumed from another runtime
         with self.assertRaises(ValueError):
             cert.evaluate([bad, run('cpu', 8452)], cuda)
+
+    def test_command_line(self):
+        """As run on the desktop: ``python scripts/summarize_tb_v3_cpu_cert.py`` (only ``src`` on PYTHONPATH)."""
+        root = Path(__file__).resolve().parents[1]
+        with TemporaryDirectory() as tmp:
+            args = []
+            for device in ('cpu', 'cuda'):
+                args.append(f'--{device}')
+                for seed in cert.SEEDS:
+                    path = Path(tmp) / f'{device}_{seed}.json'
+                    path.write_text(json.dumps(run(device, seed)), encoding='utf-8')
+                    args.append(str(path))
+            out = Path(tmp) / 'cert.json'
+            env = {**os.environ, 'PYTHONPATH': str(root / 'src')}
+            done = subprocess.run([sys.executable, str(root / 'scripts/summarize_tb_v3_cpu_cert.py'), *args,
+                                   '--output', str(out)], cwd=tmp, env=env, capture_output=True, text=True)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            record = json.loads(out.read_text(encoding='utf-8'))
+            self.assertEqual((record['format'], record['verdict']), (cert.FORMAT, 'PASS'))
+            self.assertEqual(len(record['runs']), 4)
+            self.assertTrue(all(len(v) == 64 for v in record['runs'].values()))
 
 
 if __name__ == '__main__':

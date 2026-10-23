@@ -106,7 +106,7 @@ def main(argv=None) -> int:
     if args.output is not None and args.output.exists():
         parser.error(f'{args.output} exists')
     from analysis import tb_v3_fast5
-    from scripts.run_mcts_v8_benchmark import _git_commit, file_sha256
+    from run_mcts_v8_benchmark import _git_commit, file_sha256
 
     load = (lambda p: json.loads(p.read_text(encoding='utf-8')))
     try:
