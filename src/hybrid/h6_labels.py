@@ -42,7 +42,21 @@ PERSPECTIVE = 'side_to_move'
 SPLIT_ORDER = ('train', 'val', 'test')
 BOARD = 15
 # Benchmark / evaluation seeds whose games never become training data (§12.19, §12.26, §12.31-12.35).
-RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8411, 8412, 8413, 8414, 8415, 8416, 8417, 8418})
+# 8601-8610: H6 fresh-final probe games (docs/h6-value.md, H6-2a'); reserved before any of them was played.
+# 8611-8616: H6 dev deep-probe games (H6-2a' option B): 8611-8613 first, 8614-8616 only by the pre-declared
+# extension rule; all six reserved before any of them was played, whether used or not.
+# 8701-8725: external-engine anchor games (docs/external-engine.md §4, ``evaluation.external``), evaluation only.
+# 8406: reserve H6-5 seed of the next value candidate (8404 / 8405 official), added after the 8403 REJECT.
+RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8406, 8411, 8412, 8413, 8414, 8415, 8416, 8417, 8418,
+                            *range(8601, 8611), *range(8611, 8617), *range(8701, 8726),
+                            8421, 8422, 8423,   # H7-E2 holdout (docs/h6-value.md)
+                            8407, 8408, 8409,   # H7-E3 (value v3 on TB-Engine-v2)
+                            8431, 8432,         # CPU-backend certification of TB-V2-Value + fast4 (pre-E4 record)
+                            8441, 8442,         # H7-E4 arena (candidate vs v8:full)
+                            8451, 8452})        # CPU-backend certification of the post-E4 engine
+FRESH_PROBE_SEEDS = tuple(range(8601, 8611))
+DEV_PROBE_SEEDS = tuple(range(8611, 8614))
+DEV_PROBE_EXTENSION_SEEDS = tuple(range(8614, 8617))
 # Proof label kinds of ``analysis.tactical_labels`` that carry a value (side to move).
 PROOF_VALUES = {'immediate_win': 1, 'unstoppable_four': 1, 'vcf': 1, 'forced_loss': -1, 'vcf_loss': -1}
 PROOF_DEPTH = {'immediate_win': 0, 'unstoppable_four': 0, 'vcf': 0, 'forced_loss': 0, 'vcf_loss': 0,
@@ -113,7 +127,63 @@ def outcome_value(winner: int | None, ply: int, *, real_draw: bool) -> int | Non
 
 # -- proofs ----------------------------------------------------------------------
 
-def proof_label(moves, solver, *, prove_losses: bool = False, vct1_budget: dict | None = None) -> dict | None:
+class BudgetExceeded(Exception):
+    """A per-position solver budget ran out: no label (never a guess)."""
+
+
+def budgeted_solver(*, node_limit: int, call_budget: int, node_budget: int):
+    """``ThreatSolver`` whose uncached VCF calls and VCF nodes are capped for one position; a cut raises
+    ``BudgetExceeded`` and is never cached. Deterministic (counts, not wall-clock time)."""
+    from analysis.threats import (VCF_NONE, VCF_UNKNOWN, VCF_WIN, ThreatSolver, _board_key,
+                                  _find_vcf_with_stats, _unbounded_max_fours)
+
+    class Budgeted(ThreatSolver):
+        nodes_used = 0
+
+        def vcf(self, game, attacker):
+            key = (_board_key(game), attacker)
+            cached = self._vcf_cache.get(key)
+            if cached is not None:
+                return cached
+            remaining = node_budget - self.nodes_used
+            if self.vcf_calls >= call_budget or remaining < 1:
+                raise BudgetExceeded
+            limit = min(self.node_limit, remaining)
+            self.vcf_calls += 1
+            found, nodes, exhausted = _find_vcf_with_stats(
+                game, attacker, max_fours=_unbounded_max_fours(game), node_limit=limit)
+            self.nodes_used += nodes
+            if found is not None:
+                result = (VCF_WIN, tuple(found.attack_moves))
+            elif exhausted:
+                if limit < self.node_limit:
+                    raise BudgetExceeded
+                self.vcf_exhausted += 1
+                result = (VCF_UNKNOWN, ())
+            else:
+                result = (VCF_NONE, ())
+            self._vcf_cache[key] = result
+            return result
+
+    return Budgeted(node_limit=node_limit)
+
+
+def vcf_loss_status(game: Game, *, node_limit: int, call_budget: int, node_budget: int) -> str | None:
+    """``'loss'`` when every move of the side to move loses to the opponent's VCF (``vcf_loss``),
+    ``'budget'`` when the per-position budget ran out, else None. Stops at the first surviving move, so it
+    gives ``label_position(prove_losses=True)``'s verdict without classifying every legal move."""
+    from analysis.threats import UNSAFE, decision_status
+
+    solver = budgeted_solver(node_limit=node_limit, call_budget=call_budget, node_budget=node_budget)
+    try:
+        counts, _ = solver.decision(game, 0, stop_at_safe=True)
+    except BudgetExceeded:
+        return 'budget'
+    return 'loss' if decision_status(counts) == UNSAFE else None
+
+
+def proof_label(moves, solver, *, prove_losses: bool = False, vct1_budget: dict | None = None,
+                loss_budget: dict | None = None, stats: dict | None = None) -> dict | None:
     """``{'kind', 'value', 'depth'}`` for the position after ``moves``, or None (no proof).
 
     VCF-class proofs come from ``analysis.tactical_labels.label_position``; with ``vct1_budget`` a
@@ -127,9 +197,16 @@ def proof_label(moves, solver, *, prove_losses: bool = False, vct1_budget: dict 
         game.play(*move)
     if game.done:
         return None
-    label = label_position(game, solver, prove_losses=prove_losses)
+    label = label_position(game, solver, prove_losses=prove_losses and loss_budget is None)
     if label is not None and label['value'] is not None:
         return {'kind': label['kind'], 'value': label['value'], 'depth': PROOF_DEPTH[label['kind']]}
+    if prove_losses and loss_budget is not None and label is None:
+        # label_position checks vcf_loss only when it found nothing else (not after must_block): same here
+        status = vcf_loss_status(game, **loss_budget)
+        if status == 'loss':
+            return {'kind': 'vcf_loss', 'value': -1, 'depth': PROOF_DEPTH['vcf_loss']}
+        if status == 'budget' and stats is not None:
+            stats['loss_budget_cuts'] = stats.get('loss_budget_cuts', 0) + 1
     if vct1_budget is not None:
         from analysis.mcts_v8 import WIN, SearchDiagnostics, _own_vct_attack
         from search.mcts_v5 import _RootContext
@@ -238,6 +315,7 @@ def default_probe_files(root: Path) -> list[str]:
     files = sorted(glob.glob(str(root / 'tests' / 'fixtures' / '*probes*.json')))
     files += sorted(glob.glob(str(root / 'docs' / 'mcts-v8-results' / 'probe_*.json')))
     files += sorted(glob.glob(str(root / 'docs' / 'mcts-v8-results' / 'e1*' / '*manifest.json')))
+    files += sorted(glob.glob(str(root / 'docs' / 'h6' / '*fresh*probes*.json')))
     return files
 
 

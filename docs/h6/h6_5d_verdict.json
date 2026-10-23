@@ -1,0 +1,60 @@
+{
+ "format": "h6-5d-v1",
+ "step": "judge",
+ "rules": {
+  "a_lower_bound_above": 0.0,
+  "unresolved_max": 0.3333333333333333,
+  "c_safe_min": 0.6666666666666666,
+  "c_unsafe_max": 0.1,
+  "bootstrap": 10000,
+  "seed": 0
+ },
+ "verdict": {
+  "cause": "C",
+  "reason": "d2: V8-C@4M SAFE >= 2/3 and UNSAFE <= 0.10 (proof budget)",
+  "next": "no value change; V8-C budget / endgame handling and the guard definition, both engines",
+  "evidence": {
+   "d3_diff_large_unsafe": {
+    "n": 198,
+    "games": 30,
+    "mean": -0.0354,
+    "ci95": [
+     -0.0787,
+     -0.004
+    ]
+   },
+   "d3_diff_standard_not_safe": {
+    "n": 198,
+    "games": 30,
+    "mean": 0.0505,
+    "ci95": [
+     0.0,
+     0.1071
+    ]
+   },
+   "d2_main_pooled": {
+    "n": 90,
+    "large_safe": 64,
+    "large_unsafe": 1,
+    "large_unknown": 25,
+    "share_safe": 0.7111,
+    "share_unsafe": 0.0111,
+    "share_unknown": 0.2778,
+    "standard_budget_cut": 90,
+    "standard_cut_kind": {
+     "calls": 13,
+     "nodes": 77,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 24,
+     "per_call_limit": 1,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 67
+   }
+  }
+ }
+}

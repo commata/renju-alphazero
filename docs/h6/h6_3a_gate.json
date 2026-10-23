@@ -1,0 +1,204 @@
+{
+ "format": "h6-offline-gate-v1",
+ "stage": "H6-3",
+ "git_commit": "78af28c4a1f1fca4fe4e5d356b763c1585bc778d",
+ "git_dirty": false,
+ "checkpoint_sha256": "f6984a1123ff4b2a5a341cae78e1230db79551346222aec268a3c846e3f795de",
+ "metadata_sha256": "600b235ab2d85f442f0a23ad939a0276ec6e0e84393f7453dbca13043deab738",
+ "checkpoint_step": 7857,
+ "labels_sha256": "1e8a37b561b6bc1e1493d7c40dff2c452a6d2c3e3387dafdac441f2e926db6eb",
+ "test_cache_sha256": "762b5dab63216f5f0646cada5e05c039d67310e5bad7b96b607672bdac12c025",
+ "probe_file_sha256": "87a2b1d7acfff018dbbe6aef1f659d774a0e0a8c82fac49a12a07c9a106110b5",
+ "partition": {
+  "part": "A",
+  "salt": "h6-3-v1:",
+  "games": 2795,
+  "states": 53531,
+  "games_sha256": "9361ec96d10e07a4630ba916f4f5de43a033ea5c216e9305d8e65a79e9f290de",
+  "other_part_games": 2637
+ },
+ "thresholds": {
+  "G1": {
+   "proof_balanced_accuracy_min": 0.9,
+   "proof_minus_accuracy_min": 0.85
+  },
+  "G2": {
+   "outcome_mse_max_exclusive": 1.0,
+   "outcome_balanced_accuracy_min": 0.6
+  },
+  "G3": {
+   "mean_std_max": 0.05,
+   "p95_std_max": 0.1,
+   "confident_abs_mean_min": 0.1,
+   "confident_sign_agreement_min": 0.95
+  },
+  "G4": {
+   "P93": 1,
+   "P94": -1
+  },
+  "G5": {
+   "outcome_balanced_accuracy_min": 0.55,
+   "max_difference": 0.05
+  }
+ },
+ "verdict": "FAIL",
+ "gates": {
+  "G1": true,
+  "G2": true,
+  "G3": false,
+  "G4": false,
+  "G5": true
+ },
+ "failed": [
+  "G3",
+  "G4"
+ ],
+ "next_steps_if_failed": {
+  "G3": "check the D4 transform, encoder, BatchNorm and augmentation before any retraining",
+  "G4": "investigate the win-side sign / probe-specific representation; not --prove-losses"
+ },
+ "lambda": 1.0,
+ "outcome_ece": 0.07644444856622529,
+ "metrics": {
+  "states": 53531,
+  "proof": {
+   "states": 4491,
+   "minus_states": 469,
+   "balanced_accuracy": 0.9453387558460236,
+   "plus_accuracy": 0.952511191368103,
+   "minus_accuracy": 0.9381663203239441,
+   "mse": 0.17888832092285156
+  },
+  "outcome": {
+   "states": 49040,
+   "balanced_accuracy": 0.6404293775558472,
+   "plus_accuracy": 0.7052707076072693,
+   "minus_accuracy": 0.575588047504425,
+   "mse": 0.9175958037376404
+  },
+  "outcome_by_side": {
+   "black": {
+    "balanced_accuracy": 0.6387280821800232,
+    "bias": 0.19490158557891846
+   },
+   "white": {
+    "balanced_accuracy": 0.6426028907299042,
+    "bias": 0.11197201162576675
+   }
+  },
+  "report": {
+   "outcome_ece": 0.07644444856622529,
+   "bias": {
+    "all": 0.1228199452161789,
+    "outcome": 0.15288889408111572,
+    "proof": -0.20552128553390503,
+    "black": 0.15400633215904236,
+    "white": 0.09161143004894257,
+    "by_ply": {
+     "5-9": 0.013161919079720974,
+     "10-14": 0.039281684905290604,
+     "15-19": 0.09335151314735413,
+     "20-29": 0.12083768844604492,
+     "30-49": 0.15855546295642853,
+     "50-1000": 0.2048327773809433
+    },
+    "outcome_by_ply": {
+     "5-9": 0.01586131751537323,
+     "10-14": 0.05025714635848999,
+     "15-19": 0.11335227638483047,
+     "20-29": 0.14946739375591278,
+     "30-49": 0.19879871606826782,
+     "50-1000": 0.28150492906570435
+    }
+   },
+   "outcome_bias_corrected": {
+    "balanced_accuracy": 0.6335973739624023,
+    "plus_accuracy": 0.5375544428825378,
+    "minus_accuracy": 0.7296403050422668
+   }
+  }
+ },
+ "d4": {
+  "states": 2000,
+  "sample": {
+   "outcome": 1000,
+   "proof": 1000
+  },
+  "seed": 20261014,
+  "mean_std": 0.12372221052646637,
+  "p95_std": 0.27598345279693604,
+  "max_std": 0.6305708885192871,
+  "confident_states": 1723,
+  "confident_sign_agreement": 0.8345908522605896,
+  "report_all_sign_agreement": 0.7239999771118164
+ },
+ "probes": {
+  "P93": {
+   "original": -0.36084863543510437,
+   "d4_mean": -0.39019307494163513,
+   "d4_min": -0.970914363861084,
+   "d4_max": 0.6466400623321533,
+   "d4_std": 0.4987763464450836,
+   "side_to_move": "white",
+   "expected_sign": 1,
+   "pass": false
+  },
+  "P94": {
+   "original": 0.9799374938011169,
+   "d4_mean": 0.8939365744590759,
+   "d4_min": 0.685936450958252,
+   "d4_max": 0.9922196865081787,
+   "d4_std": 0.10063806176185608,
+   "side_to_move": "black",
+   "expected_sign": -1,
+   "pass": false
+  },
+  "P92": {
+   "report_only": true,
+   "played_0idx": [
+    2,
+    3
+   ],
+   "rank": 6,
+   "legal_moves": 133,
+   "played_value": 0.3602699041366577,
+   "top5": [
+    {
+     "move_0idx": [
+      13,
+      1
+     ],
+     "value": 0.40876755118370056
+    },
+    {
+     "move_0idx": [
+      10,
+      7
+     ],
+     "value": 0.4065915048122406
+    },
+    {
+     "move_0idx": [
+      12,
+      2
+     ],
+     "value": 0.3814144730567932
+    },
+    {
+     "move_0idx": [
+      10,
+      4
+     ],
+     "value": 0.3712155818939209
+    },
+    {
+     "move_0idx": [
+      13,
+      3
+     ],
+     "value": 0.3654440641403198
+    }
+   ]
+  }
+ }
+}

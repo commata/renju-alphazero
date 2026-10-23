@@ -1,0 +1,101 @@
+{
+ "format": "h6-value-cache-v1",
+ "labels_sha256": "1e8a37b561b6bc1e1493d7c40dff2c452a6d2c3e3387dafdac441f2e926db6eb",
+ "labels_file": "data\\tactical\\h6\\renjunet_labels_v2.jsonl.gz",
+ "h6_report_sha256": "bd7302676ce0e169acb75445010d588cb82e2b93301f386b392812fdf709ee67",
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+ "policy_from_ply": 5,
+ "git_commit": "5f8faf7396c498a58bb6e4659580dd36e17b3141",
+ "splits": {
+  "train": {
+   "states": 2682580,
+   "games": 89044,
+   "weight_sum": 402735.10377470404,
+   "by_kind": {
+    "outcome": {
+     "states": 2533161,
+     "weight_sum": 253316.10377470404,
+     "weight_share": 0.6289893813587524,
+     "sign": {
+      "+1": 1233531,
+      "-1": 1299630,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 149419,
+     "weight_sum": 149419.0,
+     "weight_share": 0.3710106186412476,
+     "sign": {
+      "+1": 134466,
+      "-1": 14953,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 470282,
+   "sha256": "1212c599a621f24423cc33f39ca4bbdd86461234ee62222ae10ea2444a66c158"
+  },
+  "val": {
+   "states": 106223,
+   "games": 4953,
+   "weight_sum": 19301.900143913925,
+   "by_kind": {
+    "outcome": {
+     "states": 96579,
+     "weight_sum": 9657.900143913925,
+     "weight_share": 0.5003600719051048,
+     "sign": {
+      "+1": 46473,
+      "-1": 50106,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 9644,
+     "weight_sum": 9644.0,
+     "weight_share": 0.49963992809489516,
+     "sign": {
+      "+1": 8462,
+      "-1": 1182,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 67732,
+   "sha256": "ace71ef1a1377841411362fb0ecfa773966ebfca36c8ac1d9a3a4a86b32d4609"
+  },
+  "test": {
+   "states": 104672,
+   "games": 4996,
+   "weight_sum": 18291.800143018365,
+   "by_kind": {
+    "outcome": {
+     "states": 95978,
+     "weight_sum": 9597.800143018365,
+     "weight_share": 0.5247050628137147,
+     "sign": {
+      "+1": 46339,
+      "-1": 49639,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 8694,
+     "weight_sum": 8694.0,
+     "weight_share": 0.4752949371862854,
+     "sign": {
+      "+1": 7771,
+      "-1": 923,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 67718,
+   "sha256": "762b5dab63216f5f0646cada5e05c039d67310e5bad7b96b607672bdac12c025"
+  }
+ },
+ "h6_report_restricted": false
+}

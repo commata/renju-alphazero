@@ -1,0 +1,3230 @@
+{
+ "format": "h6-dev-probe-eval-v1",
+ "git_commit": "008589bb734b5f5f49d1c9a5d7b32499e0ab3cc0",
+ "git_dirty": false,
+ "rule": {
+  "inference": "d4_average",
+  "sign_accuracy_min": 0.8,
+  "min_probes_per_sign": 20,
+  "decide": "v3"
+ },
+ "probes": {
+  "file": "docs\\h6\\h6_fresh_dev_probes_v2.json",
+  "sha256": "96407fb0cae50dcf10b3d064f23b286cda49b8adfd7b36155b7aaf60222abcc9",
+  "counts": {
+   "win": 93,
+   "loss": 81,
+   "games_scanned": 120,
+   "games_with_win": 93,
+   "games_with_loss": 81,
+   "positions_over_budget": 254,
+   "games_with_budget_cuts": 58,
+   "games_by_scan_version": {
+    "2": 0,
+    "3": 120
+   }
+  },
+  "seeds": [
+   8611,
+   8612,
+   8613,
+   8614,
+   8615,
+   8616
+  ]
+ },
+ "models": {
+  "v3": {
+   "checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+   "metadata_sha256": "f13a76d52e8e81d2753caa9b44e94617d3c70b7f225cc519d5202eea11076d7d",
+   "trained_on_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084",
+   "step": 7860,
+   "win": {
+    "correct": 93,
+    "probes": 93,
+    "games": 93,
+    "accuracy": 1.0,
+    "mean_value": 0.8338164485269978,
+    "enough_probes": true,
+    "pass": true,
+    "text": "93 / 93 = 100.0%"
+   },
+   "loss": {
+    "correct": 78,
+    "probes": 81,
+    "games": 81,
+    "accuracy": 0.9629629629629629,
+    "mean_value": -0.4960086557692216,
+    "enough_probes": true,
+    "pass": true,
+    "text": "78 / 81 = 96.3%"
+   },
+   "verdict": "PASS",
+   "per_probe": [
+    {
+     "name": "D01",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.5846912860870361,
+     "correct": true
+    },
+    {
+     "name": "D02",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8412116169929504,
+     "correct": true
+    },
+    {
+     "name": "D03",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 18,
+     "value": -0.2230314314365387,
+     "correct": true
+    },
+    {
+     "name": "D04",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 19,
+     "value": 0.9016937017440796,
+     "correct": true
+    },
+    {
+     "name": "D05",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 28,
+     "value": 0.9207210540771484,
+     "correct": true
+    },
+    {
+     "name": "D06",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.5165848731994629,
+     "correct": true
+    },
+    {
+     "name": "D07",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.907945990562439,
+     "correct": true
+    },
+    {
+     "name": "D08",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.2926437258720398,
+     "correct": true
+    },
+    {
+     "name": "D09",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8759890794754028,
+     "correct": true
+    },
+    {
+     "name": "D10",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 48,
+     "value": -0.5458241105079651,
+     "correct": true
+    },
+    {
+     "name": "D11",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 49,
+     "value": 0.9476852416992188,
+     "correct": true
+    },
+    {
+     "name": "D12",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 22,
+     "value": 0.9849157333374023,
+     "correct": true
+    },
+    {
+     "name": "D13",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 15,
+     "value": -0.663118839263916,
+     "correct": true
+    },
+    {
+     "name": "D14",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.6334157586097717,
+     "correct": true
+    },
+    {
+     "name": "D15",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.3349893391132355,
+     "correct": true
+    },
+    {
+     "name": "D16",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.8065423965454102,
+     "correct": true
+    },
+    {
+     "name": "D17",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 33,
+     "value": -0.7731969356536865,
+     "correct": true
+    },
+    {
+     "name": "D18",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 34,
+     "value": 0.8705810308456421,
+     "correct": true
+    },
+    {
+     "name": "D19",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.3229351043701172,
+     "correct": true
+    },
+    {
+     "name": "D20",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.8715004920959473,
+     "correct": true
+    },
+    {
+     "name": "D21",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/6/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 37,
+     "value": -0.6327657103538513,
+     "correct": true
+    },
+    {
+     "name": "D22",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 38,
+     "value": 0.9401654601097107,
+     "correct": true
+    },
+    {
+     "name": "D23",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 26,
+     "value": 0.8632351756095886,
+     "correct": true
+    },
+    {
+     "name": "D24",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 27,
+     "value": -0.6190674304962158,
+     "correct": true
+    },
+    {
+     "name": "D25",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 30,
+     "value": 0.7239959239959717,
+     "correct": true
+    },
+    {
+     "name": "D26",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 44,
+     "value": -0.7482564449310303,
+     "correct": true
+    },
+    {
+     "name": "D27",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.7304642200469971,
+     "correct": true
+    },
+    {
+     "name": "D28",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.9189959764480591,
+     "correct": true
+    },
+    {
+     "name": "D29",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.4388713240623474,
+     "correct": true
+    },
+    {
+     "name": "D30",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8851522207260132,
+     "correct": true
+    },
+    {
+     "name": "D31",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 48,
+     "value": -0.6582276821136475,
+     "correct": true
+    },
+    {
+     "name": "D32",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 49,
+     "value": 0.7376964688301086,
+     "correct": true
+    },
+    {
+     "name": "D33",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 88,
+     "value": -0.6719381213188171,
+     "correct": true
+    },
+    {
+     "name": "D34",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 89,
+     "value": 0.9660427570343018,
+     "correct": true
+    },
+    {
+     "name": "D35",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 23,
+     "value": -0.6085563898086548,
+     "correct": true
+    },
+    {
+     "name": "D36",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 24,
+     "value": 0.9448537826538086,
+     "correct": true
+    },
+    {
+     "name": "D37",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 32,
+     "value": -0.6586899757385254,
+     "correct": true
+    },
+    {
+     "name": "D38",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 33,
+     "value": 0.7809299230575562,
+     "correct": true
+    },
+    {
+     "name": "D39",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.5705212950706482,
+     "correct": true
+    },
+    {
+     "name": "D40",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9260566830635071,
+     "correct": true
+    },
+    {
+     "name": "D41",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 39,
+     "value": 0.9030096530914307,
+     "correct": true
+    },
+    {
+     "name": "D42",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 31,
+     "value": -0.7734776735305786,
+     "correct": true
+    },
+    {
+     "name": "D43",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 32,
+     "value": 0.9245390892028809,
+     "correct": true
+    },
+    {
+     "name": "D44",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 46,
+     "value": -0.7405380606651306,
+     "correct": true
+    },
+    {
+     "name": "D45",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 47,
+     "value": 0.891086220741272,
+     "correct": true
+    },
+    {
+     "name": "D46",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.42926841974258423,
+     "correct": true
+    },
+    {
+     "name": "D47",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.860176682472229,
+     "correct": true
+    },
+    {
+     "name": "D48",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 20,
+     "value": -0.40698713064193726,
+     "correct": true
+    },
+    {
+     "name": "D49",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 21,
+     "value": 0.8838400840759277,
+     "correct": true
+    },
+    {
+     "name": "D50",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 15,
+     "value": -0.23639057576656342,
+     "correct": true
+    },
+    {
+     "name": "D51",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9718112945556641,
+     "correct": true
+    },
+    {
+     "name": "D52",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": 0.5530362129211426,
+     "correct": false
+    },
+    {
+     "name": "D53",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.5969401597976685,
+     "correct": true
+    },
+    {
+     "name": "D54",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/6/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 21,
+     "value": -0.6890091896057129,
+     "correct": true
+    },
+    {
+     "name": "D55",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 24,
+     "value": 0.941489577293396,
+     "correct": true
+    },
+    {
+     "name": "D56",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 21,
+     "value": 0.9561045169830322,
+     "correct": true
+    },
+    {
+     "name": "D57",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.6953243017196655,
+     "correct": true
+    },
+    {
+     "name": "D58",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8563648462295532,
+     "correct": true
+    },
+    {
+     "name": "D59",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 25,
+     "value": 0.9789565801620483,
+     "correct": true
+    },
+    {
+     "name": "D60",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 35,
+     "value": 0.7069215774536133,
+     "correct": true
+    },
+    {
+     "name": "D61",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.8644154071807861,
+     "correct": true
+    },
+    {
+     "name": "D62",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.7974673509597778,
+     "correct": true
+    },
+    {
+     "name": "D63",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8644605278968811,
+     "correct": true
+    },
+    {
+     "name": "D64",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 32,
+     "value": -0.3890625238418579,
+     "correct": true
+    },
+    {
+     "name": "D65",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 33,
+     "value": 0.6370582580566406,
+     "correct": true
+    },
+    {
+     "name": "D66",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/0/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.2522925138473511,
+     "correct": true
+    },
+    {
+     "name": "D67",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 46,
+     "value": -0.8554685115814209,
+     "correct": true
+    },
+    {
+     "name": "D68",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 47,
+     "value": 0.9554176926612854,
+     "correct": true
+    },
+    {
+     "name": "D69",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 62,
+     "value": 0.4253796339035034,
+     "correct": true
+    },
+    {
+     "name": "D70",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": -0.290871798992157,
+     "correct": true
+    },
+    {
+     "name": "D71",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.547134518623352,
+     "correct": true
+    },
+    {
+     "name": "D72",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 21,
+     "value": -0.6817516088485718,
+     "correct": true
+    },
+    {
+     "name": "D73",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": -0.3780519962310791,
+     "correct": true
+    },
+    {
+     "name": "D74",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.7572339177131653,
+     "correct": true
+    },
+    {
+     "name": "D75",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 19,
+     "value": -0.6879459619522095,
+     "correct": true
+    },
+    {
+     "name": "D76",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 20,
+     "value": 0.9726123809814453,
+     "correct": true
+    },
+    {
+     "name": "D77",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/3/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 25,
+     "value": 0.931257426738739,
+     "correct": true
+    },
+    {
+     "name": "D78",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.5082584619522095,
+     "correct": true
+    },
+    {
+     "name": "D79",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.799018383026123,
+     "correct": true
+    },
+    {
+     "name": "D80",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 57,
+     "value": 0.41386711597442627,
+     "correct": true
+    },
+    {
+     "name": "D81",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.6181915998458862,
+     "correct": true
+    },
+    {
+     "name": "D82",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.950122058391571,
+     "correct": true
+    },
+    {
+     "name": "D83",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.4962627589702606,
+     "correct": true
+    },
+    {
+     "name": "D84",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.868476152420044,
+     "correct": true
+    },
+    {
+     "name": "D85",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 21,
+     "value": -0.3750118613243103,
+     "correct": true
+    },
+    {
+     "name": "D86",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 30,
+     "value": 0.7723165154457092,
+     "correct": true
+    },
+    {
+     "name": "D87",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.7637802958488464,
+     "correct": true
+    },
+    {
+     "name": "D88",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.896754264831543,
+     "correct": true
+    },
+    {
+     "name": "D89",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 57,
+     "value": 0.4876914918422699,
+     "correct": false
+    },
+    {
+     "name": "D90",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.015248376876115799,
+     "correct": true
+    },
+    {
+     "name": "D91",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.9799290895462036,
+     "correct": true
+    },
+    {
+     "name": "D92",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8614746332168579,
+     "correct": true
+    },
+    {
+     "name": "D93",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.42041513323783875,
+     "correct": true
+    },
+    {
+     "name": "D94",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.5688189268112183,
+     "correct": true
+    },
+    {
+     "name": "D95",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.6124569177627563,
+     "correct": true
+    },
+    {
+     "name": "D96",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/3/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": -0.657213032245636,
+     "correct": true
+    },
+    {
+     "name": "D97",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/3/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.7360616326332092,
+     "correct": true
+    },
+    {
+     "name": "D98",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 29,
+     "value": -0.6587622165679932,
+     "correct": true
+    },
+    {
+     "name": "D99",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 30,
+     "value": 0.7055857181549072,
+     "correct": true
+    },
+    {
+     "name": "D100",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 24,
+     "value": -0.7794095277786255,
+     "correct": true
+    },
+    {
+     "name": "D101",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 25,
+     "value": 0.904212236404419,
+     "correct": true
+    },
+    {
+     "name": "D102",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 22,
+     "value": -0.5270988345146179,
+     "correct": true
+    },
+    {
+     "name": "D103",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 23,
+     "value": 0.8340274691581726,
+     "correct": true
+    },
+    {
+     "name": "D104",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9011857509613037,
+     "correct": true
+    },
+    {
+     "name": "D105",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/6/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.08138498663902283,
+     "correct": true
+    },
+    {
+     "name": "D106",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.46918928623199463,
+     "correct": true
+    },
+    {
+     "name": "D107",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 43,
+     "value": -0.31518805027008057,
+     "correct": true
+    },
+    {
+     "name": "D108",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 44,
+     "value": 0.9270180463790894,
+     "correct": true
+    },
+    {
+     "name": "D109",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 32,
+     "value": 0.9619773626327515,
+     "correct": true
+    },
+    {
+     "name": "D110",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.39214062690734863,
+     "correct": true
+    },
+    {
+     "name": "D111",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.9618069529533386,
+     "correct": true
+    },
+    {
+     "name": "D112",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 23,
+     "value": -0.7145860195159912,
+     "correct": true
+    },
+    {
+     "name": "D113",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/0/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.6382718682289124,
+     "correct": true
+    },
+    {
+     "name": "D114",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/0/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.9187484383583069,
+     "correct": true
+    },
+    {
+     "name": "D115",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 35,
+     "value": 0.9871019124984741,
+     "correct": true
+    },
+    {
+     "name": "D116",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/1/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.4578709304332733,
+     "correct": true
+    },
+    {
+     "name": "D117",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9736422300338745,
+     "correct": true
+    },
+    {
+     "name": "D118",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.1786678582429886,
+     "correct": true
+    },
+    {
+     "name": "D119",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9172483682632446,
+     "correct": true
+    },
+    {
+     "name": "D120",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.09972501546144485,
+     "correct": true
+    },
+    {
+     "name": "D121",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.8637003898620605,
+     "correct": true
+    },
+    {
+     "name": "D122",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.40308678150177,
+     "correct": true
+    },
+    {
+     "name": "D123",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8691938519477844,
+     "correct": true
+    },
+    {
+     "name": "D124",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 146,
+     "value": -0.38352328538894653,
+     "correct": true
+    },
+    {
+     "name": "D125",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": -0.20117878913879395,
+     "correct": true
+    },
+    {
+     "name": "D126",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.7201059460639954,
+     "correct": true
+    },
+    {
+     "name": "D127",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.6526522636413574,
+     "correct": true
+    },
+    {
+     "name": "D128",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.930282711982727,
+     "correct": true
+    },
+    {
+     "name": "D129",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 30,
+     "value": -0.5189396142959595,
+     "correct": true
+    },
+    {
+     "name": "D130",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 31,
+     "value": 0.9684680700302124,
+     "correct": true
+    },
+    {
+     "name": "D131",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.6239007711410522,
+     "correct": true
+    },
+    {
+     "name": "D132",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9657286405563354,
+     "correct": true
+    },
+    {
+     "name": "D133",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 22,
+     "value": -0.7102236747741699,
+     "correct": true
+    },
+    {
+     "name": "D134",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 23,
+     "value": 0.9274562001228333,
+     "correct": true
+    },
+    {
+     "name": "D135",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 19,
+     "value": -0.6421732902526855,
+     "correct": true
+    },
+    {
+     "name": "D136",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 20,
+     "value": 0.7017110586166382,
+     "correct": true
+    },
+    {
+     "name": "D137",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 18,
+     "value": -0.06966348737478256,
+     "correct": true
+    },
+    {
+     "name": "D138",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 19,
+     "value": 0.8633913993835449,
+     "correct": true
+    },
+    {
+     "name": "D139",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 15,
+     "value": -0.7461156249046326,
+     "correct": true
+    },
+    {
+     "name": "D140",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9500153064727783,
+     "correct": true
+    },
+    {
+     "name": "D141",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 44,
+     "value": -0.8057615756988525,
+     "correct": true
+    },
+    {
+     "name": "D142",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 45,
+     "value": 0.881879448890686,
+     "correct": true
+    },
+    {
+     "name": "D143",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.4432353973388672,
+     "correct": true
+    },
+    {
+     "name": "D144",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9420498609542847,
+     "correct": true
+    },
+    {
+     "name": "D145",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.2799202501773834,
+     "correct": true
+    },
+    {
+     "name": "D146",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.6237943172454834,
+     "correct": true
+    },
+    {
+     "name": "D147",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.7039920687675476,
+     "correct": true
+    },
+    {
+     "name": "D148",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.8537469506263733,
+     "correct": true
+    },
+    {
+     "name": "D149",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.5331994295120239,
+     "correct": true
+    },
+    {
+     "name": "D150",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 68,
+     "value": -0.6946671605110168,
+     "correct": true
+    },
+    {
+     "name": "D151",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 69,
+     "value": 0.9692494869232178,
+     "correct": true
+    },
+    {
+     "name": "D152",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.7079784274101257,
+     "correct": true
+    },
+    {
+     "name": "D153",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8760458827018738,
+     "correct": true
+    },
+    {
+     "name": "D154",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.5145548582077026,
+     "correct": true
+    },
+    {
+     "name": "D155",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.9341747164726257,
+     "correct": true
+    },
+    {
+     "name": "D156",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.5578449368476868,
+     "correct": true
+    },
+    {
+     "name": "D157",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.9212486743927002,
+     "correct": true
+    },
+    {
+     "name": "D158",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/3/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 34,
+     "value": -0.5146414041519165,
+     "correct": true
+    },
+    {
+     "name": "D159",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 25,
+     "value": -0.664780855178833,
+     "correct": true
+    },
+    {
+     "name": "D160",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 26,
+     "value": 0.9385190606117249,
+     "correct": true
+    },
+    {
+     "name": "D161",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.29885175824165344,
+     "correct": true
+    },
+    {
+     "name": "D162",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.6679953932762146,
+     "correct": true
+    },
+    {
+     "name": "D163",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.7450118064880371,
+     "correct": true
+    },
+    {
+     "name": "D164",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9465122222900391,
+     "correct": true
+    },
+    {
+     "name": "D165",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/6/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.5491211414337158,
+     "correct": true
+    },
+    {
+     "name": "D166",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.7916160225868225,
+     "correct": true
+    },
+    {
+     "name": "D167",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9558538198471069,
+     "correct": true
+    },
+    {
+     "name": "D168",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.357669472694397,
+     "correct": true
+    },
+    {
+     "name": "D169",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.3809460699558258,
+     "correct": true
+    },
+    {
+     "name": "D170",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 10,
+     "value": 0.7791209816932678,
+     "correct": true
+    },
+    {
+     "name": "D171",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 38,
+     "value": 0.01780286431312561,
+     "correct": false
+    },
+    {
+     "name": "D172",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 39,
+     "value": 0.9201651215553284,
+     "correct": true
+    },
+    {
+     "name": "D173",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 20,
+     "value": -0.4898092746734619,
+     "correct": true
+    },
+    {
+     "name": "D174",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 21,
+     "value": 0.6323471069335938,
+     "correct": true
+    }
+   ]
+  },
+  "v2": {
+   "checkpoint_sha256": "f6984a1123ff4b2a5a341cae78e1230db79551346222aec268a3c846e3f795de",
+   "metadata_sha256": "600b235ab2d85f442f0a23ad939a0276ec6e0e84393f7453dbca13043deab738",
+   "trained_on_labels_sha256": "1e8a37b561b6bc1e1493d7c40dff2c452a6d2c3e3387dafdac441f2e926db6eb",
+   "step": 7857,
+   "win": {
+    "correct": 93,
+    "probes": 93,
+    "games": 93,
+    "accuracy": 1.0,
+    "mean_value": 0.8546329935391744,
+    "enough_probes": true,
+    "pass": true,
+    "text": "93 / 93 = 100.0%"
+   },
+   "loss": {
+    "correct": 70,
+    "probes": 81,
+    "games": 81,
+    "accuracy": 0.8641975308641975,
+    "mean_value": -0.3014703127613038,
+    "enough_probes": true,
+    "pass": true,
+    "text": "70 / 81 = 86.4%"
+   },
+   "verdict": "PASS",
+   "per_probe": [
+    {
+     "name": "D01",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.34930115938186646,
+     "correct": true
+    },
+    {
+     "name": "D02",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8564428091049194,
+     "correct": true
+    },
+    {
+     "name": "D03",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 18,
+     "value": 0.22627542912960052,
+     "correct": false
+    },
+    {
+     "name": "D04",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 19,
+     "value": 0.9341995716094971,
+     "correct": true
+    },
+    {
+     "name": "D05",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 28,
+     "value": 0.9234838485717773,
+     "correct": true
+    },
+    {
+     "name": "D06",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.0782131776213646,
+     "correct": true
+    },
+    {
+     "name": "D07",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.9529227614402771,
+     "correct": true
+    },
+    {
+     "name": "D08",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.18366146087646484,
+     "correct": true
+    },
+    {
+     "name": "D09",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8894418478012085,
+     "correct": true
+    },
+    {
+     "name": "D10",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 48,
+     "value": -0.3660717010498047,
+     "correct": true
+    },
+    {
+     "name": "D11",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 49,
+     "value": 0.9600065350532532,
+     "correct": true
+    },
+    {
+     "name": "D12",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 22,
+     "value": 0.9833555221557617,
+     "correct": true
+    },
+    {
+     "name": "D13",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 15,
+     "value": -0.23762577772140503,
+     "correct": true
+    },
+    {
+     "name": "D14",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.7678821086883545,
+     "correct": true
+    },
+    {
+     "name": "D15",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.25528866052627563,
+     "correct": true
+    },
+    {
+     "name": "D16",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.8500000238418579,
+     "correct": true
+    },
+    {
+     "name": "D17",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 33,
+     "value": -0.6513237357139587,
+     "correct": true
+    },
+    {
+     "name": "D18",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 34,
+     "value": 0.8728084564208984,
+     "correct": true
+    },
+    {
+     "name": "D19",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.20343616604804993,
+     "correct": true
+    },
+    {
+     "name": "D20",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.8451105356216431,
+     "correct": true
+    },
+    {
+     "name": "D21",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/6/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 37,
+     "value": -0.5345840454101562,
+     "correct": true
+    },
+    {
+     "name": "D22",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 38,
+     "value": 0.9529542922973633,
+     "correct": true
+    },
+    {
+     "name": "D23",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 26,
+     "value": 0.8906112909317017,
+     "correct": true
+    },
+    {
+     "name": "D24",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 27,
+     "value": -0.40667885541915894,
+     "correct": true
+    },
+    {
+     "name": "D25",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 30,
+     "value": 0.7455034852027893,
+     "correct": true
+    },
+    {
+     "name": "D26",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 44,
+     "value": -0.6021913290023804,
+     "correct": true
+    },
+    {
+     "name": "D27",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.6185312271118164,
+     "correct": true
+    },
+    {
+     "name": "D28",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.9257115721702576,
+     "correct": true
+    },
+    {
+     "name": "D29",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.3155568540096283,
+     "correct": true
+    },
+    {
+     "name": "D30",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8896079659461975,
+     "correct": true
+    },
+    {
+     "name": "D31",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 48,
+     "value": -0.6299239993095398,
+     "correct": true
+    },
+    {
+     "name": "D32",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8611/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 49,
+     "value": 0.8621914386749268,
+     "correct": true
+    },
+    {
+     "name": "D33",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 88,
+     "value": -0.5780859589576721,
+     "correct": true
+    },
+    {
+     "name": "D34",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 89,
+     "value": 0.9732869267463684,
+     "correct": true
+    },
+    {
+     "name": "D35",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 23,
+     "value": -0.30923599004745483,
+     "correct": true
+    },
+    {
+     "name": "D36",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 24,
+     "value": 0.919395923614502,
+     "correct": true
+    },
+    {
+     "name": "D37",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 32,
+     "value": -0.5121468305587769,
+     "correct": true
+    },
+    {
+     "name": "D38",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 33,
+     "value": 0.7707337737083435,
+     "correct": true
+    },
+    {
+     "name": "D39",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.305164635181427,
+     "correct": true
+    },
+    {
+     "name": "D40",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.935469925403595,
+     "correct": true
+    },
+    {
+     "name": "D41",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 39,
+     "value": 0.9223394393920898,
+     "correct": true
+    },
+    {
+     "name": "D42",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 31,
+     "value": -0.5917083024978638,
+     "correct": true
+    },
+    {
+     "name": "D43",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 32,
+     "value": 0.9358476400375366,
+     "correct": true
+    },
+    {
+     "name": "D44",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 46,
+     "value": -0.7043557167053223,
+     "correct": true
+    },
+    {
+     "name": "D45",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/3/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 47,
+     "value": 0.8978782892227173,
+     "correct": true
+    },
+    {
+     "name": "D46",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.28428518772125244,
+     "correct": true
+    },
+    {
+     "name": "D47",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8535679578781128,
+     "correct": true
+    },
+    {
+     "name": "D48",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 20,
+     "value": 0.17070463299751282,
+     "correct": false
+    },
+    {
+     "name": "D49",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 21,
+     "value": 0.9488376975059509,
+     "correct": true
+    },
+    {
+     "name": "D50",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 15,
+     "value": 0.22287069261074066,
+     "correct": false
+    },
+    {
+     "name": "D51",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9685490131378174,
+     "correct": true
+    },
+    {
+     "name": "D52",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": 0.546690821647644,
+     "correct": false
+    },
+    {
+     "name": "D53",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.7091609835624695,
+     "correct": true
+    },
+    {
+     "name": "D54",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/6/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 21,
+     "value": -0.43755272030830383,
+     "correct": true
+    },
+    {
+     "name": "D55",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 24,
+     "value": 0.9456652402877808,
+     "correct": true
+    },
+    {
+     "name": "D56",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 21,
+     "value": 0.9546860456466675,
+     "correct": true
+    },
+    {
+     "name": "D57",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.5690381526947021,
+     "correct": true
+    },
+    {
+     "name": "D58",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8529294729232788,
+     "correct": true
+    },
+    {
+     "name": "D59",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 25,
+     "value": 0.9814331531524658,
+     "correct": true
+    },
+    {
+     "name": "D60",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 35,
+     "value": 0.8152726888656616,
+     "correct": true
+    },
+    {
+     "name": "D61",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.8781410455703735,
+     "correct": true
+    },
+    {
+     "name": "D62",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.6874550580978394,
+     "correct": true
+    },
+    {
+     "name": "D63",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.82173752784729,
+     "correct": true
+    },
+    {
+     "name": "D64",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 32,
+     "value": -0.24305382370948792,
+     "correct": true
+    },
+    {
+     "name": "D65",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8612/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 33,
+     "value": 0.7185688018798828,
+     "correct": true
+    },
+    {
+     "name": "D66",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/0/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.3647654354572296,
+     "correct": true
+    },
+    {
+     "name": "D67",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 46,
+     "value": -0.6514030694961548,
+     "correct": true
+    },
+    {
+     "name": "D68",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 47,
+     "value": 0.9669160842895508,
+     "correct": true
+    },
+    {
+     "name": "D69",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 62,
+     "value": 0.4229600429534912,
+     "correct": true
+    },
+    {
+     "name": "D70",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": -0.2254396229982376,
+     "correct": true
+    },
+    {
+     "name": "D71",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.5845706462860107,
+     "correct": true
+    },
+    {
+     "name": "D72",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 21,
+     "value": -0.4361622929573059,
+     "correct": true
+    },
+    {
+     "name": "D73",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": -0.3067540228366852,
+     "correct": true
+    },
+    {
+     "name": "D74",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.8305149674415588,
+     "correct": true
+    },
+    {
+     "name": "D75",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 19,
+     "value": -0.4800763726234436,
+     "correct": true
+    },
+    {
+     "name": "D76",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 20,
+     "value": 0.9676671624183655,
+     "correct": true
+    },
+    {
+     "name": "D77",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/3/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 25,
+     "value": 0.9448845386505127,
+     "correct": true
+    },
+    {
+     "name": "D78",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.3133413791656494,
+     "correct": true
+    },
+    {
+     "name": "D79",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.826353907585144,
+     "correct": true
+    },
+    {
+     "name": "D80",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 57,
+     "value": 0.4108209013938904,
+     "correct": true
+    },
+    {
+     "name": "D81",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.3539024591445923,
+     "correct": true
+    },
+    {
+     "name": "D82",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9526170492172241,
+     "correct": true
+    },
+    {
+     "name": "D83",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.20367152988910675,
+     "correct": true
+    },
+    {
+     "name": "D84",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.9055861234664917,
+     "correct": true
+    },
+    {
+     "name": "D85",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 21,
+     "value": -0.24387314915657043,
+     "correct": true
+    },
+    {
+     "name": "D86",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 30,
+     "value": 0.8489702939987183,
+     "correct": true
+    },
+    {
+     "name": "D87",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.5909243822097778,
+     "correct": true
+    },
+    {
+     "name": "D88",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.9028403759002686,
+     "correct": true
+    },
+    {
+     "name": "D89",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 57,
+     "value": 0.4135231673717499,
+     "correct": false
+    },
+    {
+     "name": "D90",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": 0.35149073600769043,
+     "correct": false
+    },
+    {
+     "name": "D91",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8613/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.9826459884643555,
+     "correct": true
+    },
+    {
+     "name": "D92",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8575243949890137,
+     "correct": true
+    },
+    {
+     "name": "D93",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.2061081975698471,
+     "correct": true
+    },
+    {
+     "name": "D94",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.5923649668693542,
+     "correct": true
+    },
+    {
+     "name": "D95",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.3292417526245117,
+     "correct": true
+    },
+    {
+     "name": "D96",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/3/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": -0.4431142807006836,
+     "correct": true
+    },
+    {
+     "name": "D97",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/3/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.782690167427063,
+     "correct": true
+    },
+    {
+     "name": "D98",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 29,
+     "value": -0.4371863901615143,
+     "correct": true
+    },
+    {
+     "name": "D99",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 30,
+     "value": 0.7494473457336426,
+     "correct": true
+    },
+    {
+     "name": "D100",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 24,
+     "value": -0.5978602170944214,
+     "correct": true
+    },
+    {
+     "name": "D101",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 25,
+     "value": 0.9360105991363525,
+     "correct": true
+    },
+    {
+     "name": "D102",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 22,
+     "value": -0.507712721824646,
+     "correct": true
+    },
+    {
+     "name": "D103",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 23,
+     "value": 0.8368507623672485,
+     "correct": true
+    },
+    {
+     "name": "D104",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9124576449394226,
+     "correct": true
+    },
+    {
+     "name": "D105",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/6/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": 0.06276261061429977,
+     "correct": false
+    },
+    {
+     "name": "D106",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.5369473099708557,
+     "correct": true
+    },
+    {
+     "name": "D107",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 43,
+     "value": -0.07073727250099182,
+     "correct": true
+    },
+    {
+     "name": "D108",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 44,
+     "value": 0.9372439384460449,
+     "correct": true
+    },
+    {
+     "name": "D109",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 32,
+     "value": 0.9638932943344116,
+     "correct": true
+    },
+    {
+     "name": "D110",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 14,
+     "value": -0.05381900072097778,
+     "correct": true
+    },
+    {
+     "name": "D111",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 15,
+     "value": 0.9652655124664307,
+     "correct": true
+    },
+    {
+     "name": "D112",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8614/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 23,
+     "value": -0.5654729604721069,
+     "correct": true
+    },
+    {
+     "name": "D113",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/0/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.40063995122909546,
+     "correct": true
+    },
+    {
+     "name": "D114",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/0/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.9315207004547119,
+     "correct": true
+    },
+    {
+     "name": "D115",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 35,
+     "value": 0.9875876307487488,
+     "correct": true
+    },
+    {
+     "name": "D116",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/1/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.2003387212753296,
+     "correct": true
+    },
+    {
+     "name": "D117",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9694032073020935,
+     "correct": true
+    },
+    {
+     "name": "D118",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": 0.26151296496391296,
+     "correct": false
+    },
+    {
+     "name": "D119",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9369675517082214,
+     "correct": true
+    },
+    {
+     "name": "D120",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": 0.14115169644355774,
+     "correct": false
+    },
+    {
+     "name": "D121",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.8895571231842041,
+     "correct": true
+    },
+    {
+     "name": "D122",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 17,
+     "value": -0.3969447612762451,
+     "correct": true
+    },
+    {
+     "name": "D123",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 18,
+     "value": 0.8775511980056763,
+     "correct": true
+    },
+    {
+     "name": "D124",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 146,
+     "value": -0.06149011850357056,
+     "correct": true
+    },
+    {
+     "name": "D125",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 12,
+     "value": 0.022893819957971573,
+     "correct": false
+    },
+    {
+     "name": "D126",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 13,
+     "value": 0.722913384437561,
+     "correct": true
+    },
+    {
+     "name": "D127",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.369612455368042,
+     "correct": true
+    },
+    {
+     "name": "D128",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9633339643478394,
+     "correct": true
+    },
+    {
+     "name": "D129",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 30,
+     "value": -0.3111181855201721,
+     "correct": true
+    },
+    {
+     "name": "D130",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/5/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 31,
+     "value": 0.9608047008514404,
+     "correct": true
+    },
+    {
+     "name": "D131",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.42881548404693604,
+     "correct": true
+    },
+    {
+     "name": "D132",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9714435935020447,
+     "correct": true
+    },
+    {
+     "name": "D133",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 22,
+     "value": -0.4914330542087555,
+     "correct": true
+    },
+    {
+     "name": "D134",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 23,
+     "value": 0.931726336479187,
+     "correct": true
+    },
+    {
+     "name": "D135",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 19,
+     "value": -0.33805376291275024,
+     "correct": true
+    },
+    {
+     "name": "D136",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 20,
+     "value": 0.742784857749939,
+     "correct": true
+    },
+    {
+     "name": "D137",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 18,
+     "value": -0.0896235853433609,
+     "correct": true
+    },
+    {
+     "name": "D138",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 19,
+     "value": 0.8628988265991211,
+     "correct": true
+    },
+    {
+     "name": "D139",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 15,
+     "value": -0.5690797567367554,
+     "correct": true
+    },
+    {
+     "name": "D140",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.955117404460907,
+     "correct": true
+    },
+    {
+     "name": "D141",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 44,
+     "value": -0.5422730445861816,
+     "correct": true
+    },
+    {
+     "name": "D142",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 45,
+     "value": 0.9271318316459656,
+     "correct": true
+    },
+    {
+     "name": "D143",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.3300960659980774,
+     "correct": true
+    },
+    {
+     "name": "D144",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9462485313415527,
+     "correct": true
+    },
+    {
+     "name": "D145",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.17364263534545898,
+     "correct": true
+    },
+    {
+     "name": "D146",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8615/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.608076274394989,
+     "correct": true
+    },
+    {
+     "name": "D147",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/0/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.5244883894920349,
+     "correct": true
+    },
+    {
+     "name": "D148",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/0/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.8314356803894043,
+     "correct": true
+    },
+    {
+     "name": "D149",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/1/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.5972124338150024,
+     "correct": true
+    },
+    {
+     "name": "D150",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/1/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 68,
+     "value": -0.5142357349395752,
+     "correct": true
+    },
+    {
+     "name": "D151",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/1/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 69,
+     "value": 0.98414146900177,
+     "correct": true
+    },
+    {
+     "name": "D152",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.5225815773010254,
+     "correct": true
+    },
+    {
+     "name": "D153",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.8909093737602234,
+     "correct": true
+    },
+    {
+     "name": "D154",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.3454573154449463,
+     "correct": true
+    },
+    {
+     "name": "D155",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/2/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.9470868706703186,
+     "correct": true
+    },
+    {
+     "name": "D156",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/3/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 11,
+     "value": -0.2575297951698303,
+     "correct": true
+    },
+    {
+     "name": "D157",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/3/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 12,
+     "value": 0.9334501028060913,
+     "correct": true
+    },
+    {
+     "name": "D158",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/3/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 34,
+     "value": -0.4221383333206177,
+     "correct": true
+    },
+    {
+     "name": "D159",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 25,
+     "value": -0.5368239283561707,
+     "correct": true
+    },
+    {
+     "name": "D160",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 26,
+     "value": 0.9281586408615112,
+     "correct": true
+    },
+    {
+     "name": "D161",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.1507495939731598,
+     "correct": true
+    },
+    {
+     "name": "D162",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/4/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.7253337502479553,
+     "correct": true
+    },
+    {
+     "name": "D163",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/5/black",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 13,
+     "value": -0.49957147240638733,
+     "correct": true
+    },
+    {
+     "name": "D164",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/5/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 14,
+     "value": 0.9509608745574951,
+     "correct": true
+    },
+    {
+     "name": "D165",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/6/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 16,
+     "value": -0.4045299291610718,
+     "correct": true
+    },
+    {
+     "name": "D166",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/6/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 17,
+     "value": 0.831931471824646,
+     "correct": true
+    },
+    {
+     "name": "D167",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/7/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 16,
+     "value": 0.9630418419837952,
+     "correct": true
+    },
+    {
+     "name": "D168",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/7/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 10,
+     "value": -0.26144200563430786,
+     "correct": true
+    },
+    {
+     "name": "D169",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/7/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 11,
+     "value": 0.41687896847724915,
+     "correct": true
+    },
+    {
+     "name": "D170",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/8/black",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 10,
+     "value": 0.777709424495697,
+     "correct": true
+    },
+    {
+     "name": "D171",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/8/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 38,
+     "value": 0.27514582872390747,
+     "correct": false
+    },
+    {
+     "name": "D172",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/8/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 39,
+     "value": 0.9261302947998047,
+     "correct": true
+    },
+    {
+     "name": "D173",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/9/white",
+     "expected_sign": -1,
+     "kind": "vct_loss",
+     "ply": 20,
+     "value": -0.3001364767551422,
+     "correct": true
+    },
+    {
+     "name": "D174",
+     "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8616/9/white",
+     "expected_sign": 1,
+     "kind": "vct1_win",
+     "ply": 21,
+     "value": 0.702875018119812,
+     "correct": true
+    }
+   ]
+  }
+ },
+ "decision": "PASS",
+ "next": "final gate: part B + sealed fresh probes + D4, no tuning"
+}

@@ -24,7 +24,7 @@ jobs:
   core-no-torch:
     name: core-no-torch
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -39,7 +39,7 @@ jobs:
       - name: Assert torch is absent
         run: |
           python -c "import importlib.util,sys; spec=importlib.util.find_spec('torch'); print('torch spec:', spec); sys.exit(spec is not None)"
-      - name: Build the native exact speed-up (TB-RT30-v3)
+      - name: Build the native exact speed-ups (TB-RT30 threat windows; TB-V3 fast4 forbidden)
         run: PYTHONPATH=src python -m rt30.native.build
       - name: Run torch-free regression with strict skip policy
         run: python scripts/ci_run_tests.py --skip-policy torch-only
@@ -47,7 +47,7 @@ jobs:
   full-tests:
     name: full-tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -65,7 +65,7 @@ jobs:
           python -c "import torch; print('torch', torch.__version__); print('cuda', torch.cuda.is_available()); assert not torch.cuda.is_available()"
       - name: Renju rules contract
         run: python -m unittest tests.test_game -v
-      - name: Build the native exact speed-up (TB-RT30-v3)
+      - name: Build the native exact speed-ups (TB-RT30 threat windows; TB-V3 fast4 forbidden)
         run: PYTHONPATH=src python -m rt30.native.build
       - name: Run full regression with zero skips
         run: python scripts/ci_run_tests.py --skip-policy none

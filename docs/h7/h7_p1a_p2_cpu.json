@@ -1,0 +1,47 @@
+{
+ "verdict": "PASS",
+ "semantics": true,
+ "speed": true,
+ "rounds": {
+  "1": {
+   "semantics": "PASS",
+   "speed": "PASS",
+   "total_ratio": {
+    "n": 827,
+    "median": 0.9615,
+    "ci95": [
+     0.9555,
+     0.9649
+    ]
+   },
+   "root_ratio_secondary": {
+    "n": 705,
+    "median": 0.9597,
+    "ci95": [
+     0.9511,
+     0.967
+    ]
+   }
+  },
+  "2": {
+   "semantics": "PASS",
+   "speed": "PASS",
+   "total_ratio": {
+    "n": 827,
+    "median": 0.9615,
+    "ci95": [
+     0.9543,
+     0.9679
+    ]
+   },
+   "root_ratio_secondary": {
+    "n": 705,
+    "median": 0.9621,
+    "ci95": [
+     0.9567,
+     0.9676
+    ]
+   }
+  }
+ }
+}

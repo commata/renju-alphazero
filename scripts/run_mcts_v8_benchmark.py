@@ -23,6 +23,24 @@ by ``scripts/h5_calibrate_puct.py``), which applies to the tested arm only.
     puct_policy_vct2_stage  E3-S (§12.32): puct_policy_vct2 + the same 10k check on Stage 4/5 moves
                             (``analysis.e3_arms.StageVCT2Agent``; recorded per move as ``stage_vct2``)
 
+H6-4 value arm (docs/h6-value.md, H6-4): TB-Engine-v1 with the tree leaf replaced by the H6-2a' value
+(``analysis.puct_value_v1``); with ``--puct-c 1.5`` it is ``analysis.tb_v1_value.TB_V1_VALUE``. It loads
+``--value-checkpoint`` (the gated v3 ``best.pt``, sha256 checked, D4-averaged) in every worker and fails
+if it cannot; it is a tested arm only, never an opponent. H6-5's main opponent is TB-Engine-v1 itself:
+``--opponent v8:puct_policy_vct2_50k --opponent-puct-c 1.5``.
+    puct_value_vct2_50k     puct_policy_vct2_50k with the value leaf (TB-V1-Value)
+
+H7-E2 table arm (docs/h6-value.md, H7-E2): TB-Engine-v1 with V8-C's root solver on the call-local VCF
+no-win table (``root_vcf_table``, not a ``V8_DEFAULTS`` option; recorded in ``v8_config`` and per tree
+move as ``root.table``). With ``--puct-c 1.5`` it is ``analysis.tb_engine_v1_t``, adopted as
+``analysis.tb_engine_v2``; since H7-E3 it is also an opponent (``--opponent v8:puct_policy_vct2_50k_tt
+--opponent-puct-c 1.5`` = TB-Engine-v2).
+    puct_policy_vct2_50k_tt puct_policy_vct2_50k with root_vcf_table (TB-Engine-v2)
+    puct_value_vct2_50k_tt  TB-Engine-v2 with the value leaf (TB-V2-Value, H7-E3; a tested arm only)
+    puct_value_vct2_50k_tt_e4  TB-V2-Value + the H7-E4 attack candidate (``analysis.tb_v2_value_e4``; tested only)
+    puct_value_vct2_50k_tt_e4v2  TB-V2-Value + the H7-E4-v2 candidate (``analysis.tb_v2_value_e4v2``; canonical
+                    fast4 runs only, tested only)
+
 Policy arms load ``--policy-checkpoint`` (H3 ``best.pt`` + ``best.json``) in every worker and
 fail if it cannot be loaded; they never fall back to the baseline. One NN call per tree move.
     ab      V8-A + V8-B        (root_vct_safety=False; the pilot's "full")
@@ -46,6 +64,10 @@ Every V8 move records its route, time and module diagnostics. With
 would have played there (a separate random stream, so the game itself does not
 change) and whether that V7 move is itself a proven VCT1 attack.
 
+``--fast fast2|fast3`` installs the exact solver speed-ups of ``hybrid.h6_fast`` in every worker (same
+moves, node counts and budget cuts; only the time differs). The mode is recorded in the output and in each
+game line (off adds nothing, so older files are unchanged).
+
 Games are written one JSON line each to ``--games-jsonl`` as they finish; a rerun
 with the same file skips finished games (resume). ``--workers`` plays games in
 parallel processes. The summary (``--output``) is built from every matching line.
@@ -57,6 +79,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from multiprocessing import get_context
 import hashlib
 import json
 from pathlib import Path
@@ -94,6 +117,22 @@ ARMS = {
     # 'stage_vct2' is not a V8 option: it selects the E3-S wrapper and records its budget.
     'puct_policy_vct2_stage': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True,
                                'stage_vct2': {'node_limit': 20_000, 'call_limit': 20_000, 'node_budget': 10_000}},
+    'puct_value_vct2_50k': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+                            'vct2_node_budget': 50_000},
+    # 'root_vcf_table' is not a V8_DEFAULTS option: it is passed to MCTSV8Agent on its own (H7-E2).
+    'puct_policy_vct2_50k_tt': {'tree_mode': 'puct', 'puct_prior': 'policy', 'root_vct2_check': True,
+                                'vct2_node_budget': 50_000, 'root_vcf_table': True},
+    'puct_value_vct2_50k_tt': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+                               'vct2_node_budget': 50_000, 'root_vcf_table': True},
+    # 'e4_attack' is not a V8 option: it wraps the agent in the H7-E4 candidate (analysis.tb_v2_value_e4).
+    'puct_value_vct2_50k_tt_e4': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+                                  'vct2_node_budget': 50_000, 'root_vcf_table': True, 'e4_attack': True},
+    # 'e4v2_attack' wraps the canonical agent in the H7-E4-v2 candidate (analysis.tb_v2_value_e4v2).
+    'puct_value_vct2_50k_tt_e4v2': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+                                    'vct2_node_budget': 50_000, 'root_vcf_table': True, 'e4v2_attack': True},
+    # 'tb_v3' builds TB-V3 Resolve by its own fail-closed factory (analysis.tb_v3_runtime.make_tb_v3_agent).
+    'tb_v3': {'tree_mode': 'puct_value', 'puct_prior': 'policy', 'root_vct2_check': True,
+              'vct2_node_budget': 50_000, 'root_vcf_table': True, 'tb_v3': True},
     'ab': {'root_vct_safety': False},
     'a_only': {'own_vct_attack': False, 'root_vct_safety': False},
     'b_only': {'stage_vct_safety': False, 'root_vct_safety': False},
@@ -151,6 +190,8 @@ def parse_opponent(value: str) -> str:
     if kind != 'v8' or arm not in ARMS:
         raise ValueError(f"opponent must be 'v7', 'v8:<arm>' or 'v8:<arm>{VCT2_ATTACK_SUFFIX}[<N>k]' "
                          f"with arm in {sorted(ARMS)}")
+    if needs_value(v8_config(arm)):
+        raise ValueError(f'{arm} is a tested arm only, not an opponent')
     return value
 
 
@@ -177,7 +218,23 @@ def opponent_config(opponent: str, overrides: dict | None = None) -> dict | None
 
 def needs_policy(config: dict) -> bool:
     return bool(config.get('root_policy_order') or config.get('root_policy_extra')
-                or (config.get('tree_mode') == 'puct' and config.get('puct_prior') == 'policy'))
+                or (config.get('tree_mode') in ('puct', 'puct_value') and config.get('puct_prior') == 'policy'))
+
+
+def is_puct(config: dict) -> bool:
+    return config.get('tree_mode') in ('puct', 'puct_value')
+
+
+def needs_value(config: dict) -> bool:
+    return config.get('tree_mode') == 'puct_value'
+
+
+def load_value(checkpoint, device='cpu'):
+    """H6-4 value leaf (torch); raises if unavailable or not the gated checkpoint."""
+    if not checkpoint:
+        raise ValueError('this arm needs --value-checkpoint')
+    from hybrid.h6_value_leaf import ValueLeaf  # torch is imported only here
+    return ValueLeaf(checkpoint, device=device)
 
 
 def load_policy(checkpoint):
@@ -193,8 +250,11 @@ def make_opponent(opponent: str, seed: int, overrides: dict, policy_checkpoint=N
     if opponent == 'v7':
         return MCTSV7Agent(seed=seed, **overrides)
     config = v8_config(opponent_arm(opponent), overrides)
+    if config.get('tb_v3') or config.get('e4v2_attack'):  # built only by their factories, never as a bare V8
+        raise ValueError(f'{opponent} runs only as the tested arm (its factory checks the models and the code)')
     policy = load_policy(policy_checkpoint) if needs_policy(config) else None
-    agent = MCTSV8Agent(seed=seed, root_policy=policy, **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    agent = MCTSV8Agent(seed=seed, root_policy=policy, root_vcf_table=bool(config.get('root_vcf_table')),
+                        **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     budget = opponent_attack_budget(opponent)
     if budget is not None:
         from analysis.vct2_attack import VCT2AttackAgent
@@ -202,7 +262,36 @@ def make_opponent(opponent: str, seed: int, overrides: dict, policy_checkpoint=N
     return agent
 
 
+SATURATED = 0.95  # |mean value| above this counts as saturated (C4)
+
+
+def root_q(root_visits) -> dict | None:
+    """C4 of the visited root children's mean values: range, std, saturated share (None off the tree)."""
+    q = [v for _, n, v in root_visits if n > 0]
+    if not q:
+        return None
+    mean = sum(q) / len(q)
+    return {'children': len(q), 'range': round(max(q) - min(q), 4),
+            'std': round((sum((x - mean) ** 2 for x in q) / len(q)) ** 0.5, 4),
+            'saturated': round(sum(abs(x) > SATURATED for x in q) / len(q), 4)}
+
+
+def _value_record(diag) -> dict:
+    b, w = diag.v8_value_black_leaves, diag.v8_value_white_leaves
+    return {'calls': diag.v8_value_calls, 'seconds': round(diag.v8_value_seconds, 4),
+            'exact_leaves': diag.v8_value_exact_leaves, 'terminal_leaves': diag.v8_value_terminal_leaves,
+            'black_leaves': b, 'black_mean': round(diag.v8_value_black_sum / b, 4) if b else None,
+            'white_leaves': w, 'white_mean': round(diag.v8_value_white_sum / w, 4) if w else None}
+
+
 def _move_record(ply, seconds, diag) -> dict:
+    record = _move_record_base(ply, seconds, diag)
+    if diag.v8_tree_mode == 'puct_value':
+        record['value'] = _value_record(diag)
+    return record
+
+
+def _move_record_base(ply, seconds, diag) -> dict:
     return {
         'ply': ply, 'seconds': round(seconds, 4), 'route': diag.v8_route,
         'changed': diag.v8_changed,
@@ -224,6 +313,8 @@ def _move_record(ply, seconds, diag) -> dict:
             'calls': diag.v8_root_calls, 'nodes': diag.v8_root_nodes,
             'exhausted': diag.v8_root_budget_exhausted, 'seconds': round(diag.v8_root_seconds, 4),
             'switch': diag.v8_root_switch,
+            **({'table': {'hits': diag.v8_root_table_hits, 'stores': diag.v8_root_table_stores}}
+               if diag.v8_root_vcf_table else {}),
         },
         'policy': {
             'seconds': round(diag.v8_policy_seconds, 4), 'added': [list(m) for m in diag.v8_policy_added],
@@ -239,6 +330,7 @@ def _move_record(ply, seconds, diag) -> dict:
             'prior_entropy': round(diag.v8_puct_prior_entropy, 4),
             'prior_top': list(diag.v8_puct_prior_top) if diag.v8_puct_prior_top is not None else None,
             'prior_top_prob': round(diag.v8_puct_prior_top_prob, 5),
+            'root_q': root_q(diag.v8_root_visits),
         },
         'vct2': {
             'checked': [[list(m), s] for m, s in diag.v8_vct2_checked], 'switched': diag.v8_vct2_switched,
@@ -261,17 +353,57 @@ def _counterfactual(game: Game, seed: int, ply: int, config: dict) -> dict:
             'seconds': round(perf_counter() - started, 4)}
 
 
+CANONICAL_ARMS = ('puct_value_vct2_50k_tt', 'puct_value_vct2_50k_tt_e4', 'puct_value_vct2_50k_tt_e4v2', 'tb_v3')
+
+
+def is_canonical(arm: str, fast: str, config: dict) -> bool:
+    """Whether this run is the frozen TB-V2-Value + fast4 (or the E4 wrapper on it), config unchanged."""
+    from analysis.tb_v2_value import ENGINE_OPTIONS, TB_V2_VALUE
+
+    return (arm in CANONICAL_ARMS and fast == 'fast4' and {k: config[k] for k in TB_V2_VALUE} == TB_V2_VALUE
+            and all(config.get(k) == v for k, v in ENGINE_OPTIONS.items()))
+
+
 def play_one(task: dict) -> dict:
     """One game; ``task`` is a plain dict so it can cross process boundaries."""
+    if task.get('fast', 'off') != 'off':  # exact solver speed-up (hybrid.h6_fast): same moves, nodes and cuts
+        from hybrid.h6_fast import install
+        install(task['fast'])
     config = v8_config(task['arm'], task.get('v8_overrides'))
     search = {k: config[k] for k in SEARCH_KEYS}
     seed, v8_color = task['seed'], task['v8_color']
     policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
-    v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy,
-                     **{k: v for k, v in config.items() if k in V8_DEFAULTS})
+    leaf = load_value(task.get('value_checkpoint'), task.get('value_device', 'cpu')) if needs_value(config) else None
+    if config.get('tb_v3'):  # TB-V3 Resolve, only by its versioned factory on the chosen runtime (fail closed)
+        if not is_canonical(task['arm'], task.get('fast', 'off'), config):
+            raise ValueError(f"{task['arm']} runs only as frozen: --fast fast4 and the frozen configuration")
+        from analysis import canonical
+        runtime = tb_v3_runtime_of(task)
+        if runtime == 'fast5':
+            from analysis import tb_v3_fast5
+            tb_v3_fast5.install()  # fast4 plus the native VCF core, in this worker
+        v8 = canonical.factory('TB-V3', runtime)(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
+                                                  task.get('value_checkpoint'))
+    elif is_canonical(task['arm'], task.get('fast', 'off'), config):
+        # the frozen TB-V2-Value: built by its factory after the policy / value / source / code checks
+        from analysis.track_b_guard import make_tb_v2_agent
+        v8 = make_tb_v2_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
+                              task.get('value_checkpoint'))
+    else:
+        v8 = MCTSV8Agent(seed=derive_seed(seed, 'v8'), root_policy=policy, leaf_value=leaf,
+                         root_vcf_table=bool(config.get('root_vcf_table')),
+                         **{k: v for k, v in config.items() if k in V8_DEFAULTS})
     if config.get('stage_vct2'):
         from analysis.e3_arms import StageVCT2Agent
         v8 = StageVCT2Agent(v8, config['stage_vct2'])
+    if config.get('e4_attack'):
+        from analysis.tb_v2_value_e4 import wrap
+        v8 = wrap(v8)
+    if config.get('e4v2_attack'):  # only on the canonical (frozen config, fast4, guarded factory)
+        if not is_canonical(task['arm'], task.get('fast', 'off'), config):
+            raise ValueError(f"{task['arm']} runs only as the canonical: --fast fast4 and the frozen configuration")
+        from analysis.tb_v2_value_e4v2 import wrap as wrap_v2
+        v8 = wrap_v2(v8)  # one agent, so one cooldown, per game
     opponent = task.get('opponent', 'v7')
     opp = make_opponent(opponent, derive_seed(seed, 'v7'), task.get('v7_overrides', {}),
                         task.get('policy_checkpoint'))
@@ -290,6 +422,8 @@ def play_one(task: dict) -> dict:
             record = _move_record(len(game.history), elapsed, v8.diagnostics)
             if getattr(v8, 'stage_info', None):
                 record['stage_vct2'] = v8.stage_info
+            if getattr(v8, 'attack_info', None):  # H7-E4: the attack ran on this move
+                record['e4_attack'] = dict(v8.attack_info)
             if task.get('counterfactual') and v8.diagnostics.v8_route == 'own_vct':
                 record['counterfactual'] = _counterfactual(game, seed, len(game.history), {**config, **search})
             v8_moves.append(record)
@@ -315,6 +449,8 @@ def play_one(task: dict) -> dict:
         'v8_moves': v8_moves, 'opponent_move_seconds': opp_seconds, 'opponent_routes': opp_routes,
         **({'opponent_vct2_attack': opp_attack2} if opponent_attack_budget(opponent) is not None else {}),
         'game_seconds': round(perf_counter() - started_game, 2),
+        **({'fast': task['fast']} if task.get('fast', 'off') != 'off' else {}),
+        **({'runtime': tb_v3_runtime_of(task)} if config.get('tb_v3') else {}),
     }
 
 
@@ -339,6 +475,10 @@ def build_tasks(args) -> tuple[list[dict], list[dict]]:
                 'v8_overrides': {**args.search_overrides, **arm_overrides},
                 'v7_overrides': getattr(args, 'opponent_overrides', args.search_overrides),
                 'policy_checkpoint': args.policy_checkpoint,
+                **({'fast': args.fast} if getattr(args, 'fast', 'off') != 'off' else {}),
+                **({'value_checkpoint': args.value_checkpoint, 'value_device': args.value_device}
+                   if getattr(args, 'value_checkpoint', None) else {}),
+                **({'runtime': tb_v3_runtime_of(args)} if args.arm == 'tb_v3' else {}),
             })
     return tasks, openings
 
@@ -385,6 +525,13 @@ def _stage_vct2_summary(moves) -> dict | None:
     }
 
 
+def _weighted_mean(moves, colour) -> float | None:
+    n = sum(m['value'][f'{colour}_leaves'] for m in moves)
+    total = sum(m['value'][f'{colour}_mean'] * m['value'][f'{colour}_leaves'] for m in moves
+                if m['value'][f'{colour}_leaves'])
+    return round(total / n, 4) if n else None
+
+
 def summarize(games: list[dict]) -> dict:
     def score(subset):
         if not subset:
@@ -403,7 +550,9 @@ def summarize(games: list[dict]) -> dict:
     ran_root = [m for m in moves if m.get('root', {}).get('checked')]
     with_policy = [m for m in moves if m.get('policy', {}).get('root_order_rank')]
     with_tree = [m for m in moves if m.get('tree', {}).get('mode')]
-    with_puct = [m for m in with_tree if m['tree']['mode'] == 'puct']
+    with_puct = [m for m in with_tree if m['tree']['mode'] in ('puct', 'puct_value')]
+    with_value = [m for m in moves if 'value' in m]
+    with_q = [m['tree']['root_q'] for m in with_tree if m['tree'].get('root_q')]
     root_first = [m['root']['checked'][0][1] for m in ran_root]  # V7's move is always checked first
     opp_routes = {}
     for g in games:
@@ -484,6 +633,23 @@ def summarize(games: list[dict]) -> dict:
             'prior_entropy': _dist([m['tree']['prior_entropy'] for m in with_puct]),
             'tree_chose_prior_top': sum(m['v7_move'] == m['tree']['prior_top'] for m in with_puct),
         },
+        'root_q': {
+            'moves': len(with_q),
+            'range': _dist([q['range'] for q in with_q]),
+            'std': _dist([q['std'] for q in with_q]),
+            'saturated': _dist([q['saturated'] for q in with_q]),
+            'saturated_root_moves': sum(q['saturated'] == 1.0 for q in with_q),
+        } if with_q else None,
+        'value': {
+            'tree_moves': len(with_value),
+            'calls': sum(m['value']['calls'] for m in with_value),
+            'seconds_per_move': _dist([m['value']['seconds'] for m in with_value]),
+            'exact_leaves': sum(m['value']['exact_leaves'] for m in with_value),
+            'terminal_leaves': sum(m['value']['terminal_leaves'] for m in with_value),
+            'black_leaf_mean': _weighted_mean(with_value, 'black'),
+            'white_leaf_mean': _weighted_mean(with_value, 'white'),
+        } if with_value else None,
+        'distinct_games': len({json.dumps(g['moves']) for g in games}),
         'vct2': {
             'moves_checked': sum(bool(m.get('vct2', {}).get('checked')) for m in moves),
             'played_move_proven_lost': sum(bool(m.get('vct2', {}).get('checked'))
@@ -543,17 +709,52 @@ def file_sha256(path) -> str | None:
     return digest.hexdigest()
 
 
-def provenance(policy_checkpoint) -> dict:
+def tb_v3_runtime_of(task_or_args) -> str:
+    """The TB-V3 runtime of a task / the command line (``--runtime``): the canonical runtime unless given."""
+    from analysis import canonical
+
+    get = task_or_args.get if isinstance(task_or_args, dict) else (lambda k: getattr(task_or_args, k, None))
+    return get('runtime') or canonical.default_runtime('TB-V3')
+
+
+def _runtime_provenance(device: str, arm: str = 'puct_value_vct2_50k_tt', runtime: str | None = None) -> dict:
+    if arm == 'puct_value_vct2_50k_tt_e4':
+        from analysis.tb_v2_value_e4 import provenance as candidate_provenance
+        return candidate_provenance(device)
+    if arm == 'puct_value_vct2_50k_tt_e4v2':
+        from analysis.tb_v2_value_e4v2 import provenance as candidate_v2_provenance
+        return candidate_v2_provenance(device)
+    if arm == 'tb_v3':  # the runtime the games ran on, not only the canonical one
+        from analysis import canonical
+        return canonical.provenance(device, 'TB-V3', runtime)
+    from analysis.tb_v2_runtime import provenance as runtime_provenance
+    return runtime_provenance(device)
+
+
+def _fast_provenance(mode: str) -> dict:
+    from hybrid.h6_fast import provenance as fast_provenance
+    return fast_provenance(mode)
+
+
+def provenance(policy_checkpoint, value_checkpoint=None) -> dict:
     """What a result depends on besides the code: tree state and the exact policy bytes (§12.19)."""
     checkpoint = Path(policy_checkpoint) if policy_checkpoint else None
-    return {
+    out = {
         'git_dirty': _git_dirty(),
         'policy_checkpoint_sha256': file_sha256(checkpoint) if checkpoint else None,
         'policy_metadata_sha256': file_sha256(checkpoint.with_suffix('.json')) if checkpoint else None,
     }
+    if value_checkpoint:
+        value = Path(value_checkpoint)
+        out.update({'value_checkpoint_sha256': file_sha256(value),
+                    'value_metadata_sha256': file_sha256(value.with_name('best.json')),
+                    'value_inference': 'd4_average'})
+    return out
 
 
-def load_finished(path: Path | None, keys: set[str]) -> dict[str, dict]:
+def load_finished(path: Path | None, keys: set[str], runtime: str | None = None) -> dict[str, dict]:
+    """Finished games of ``keys`` in a ``--games-jsonl``; with ``runtime`` (the tb_v3 arm) a game recorded on another
+    runtime (or before runtimes were recorded) is refused."""
     finished = {}
     if path is None or not path.exists():
         return finished
@@ -561,6 +762,8 @@ def load_finished(path: Path | None, keys: set[str]) -> dict[str, dict]:
         if line.strip():
             record = json.loads(line)
             if record['key'] in keys:
+                if runtime is not None and record.get('runtime') != runtime:
+                    raise ValueError(f"{path}: {record['key']} ran on {record.get('runtime')}, this run on {runtime}")
                 finished[record['key']] = record
     return finished
 
@@ -599,11 +802,19 @@ def main(argv=None) -> int:
                         help='tested arm only: simulations (time-matched check, §12.16)')
     parser.add_argument('--arm-tactical-simulations', type=int,
                         help='tested arm only: tactical simulations (time-matched check, §12.16)')
+    parser.add_argument('--value-checkpoint', help="H6-2a' v3 best.pt for the value arm (best.json next to it)")
+    parser.add_argument('--value-device', default='cpu', help='device of the value leaf (cpu / cuda)')
+    parser.add_argument('--fast', choices=('off', 'fast2', 'fast3', 'fast4'), default='off',
+                        help='exact solver speed-up in every worker (hybrid.h6_fast); results are the same')
+    parser.add_argument('--runtime', choices=('fast4', 'fast5'),
+                        help='tb_v3 arm only: its runtime (default: analysis.canonical.CANONICAL_RUNTIME)')
     parser.add_argument('--simulations', type=int, help='smoke tests only: both engines')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only: both engines')
     args = parser.parse_args(argv)
     if args.pairs < 1 or args.workers < 1:
         parser.error('--pairs and --workers must be positive')
+    if args.runtime is not None and args.arm != 'tb_v3':
+        parser.error('--runtime is the tb_v3 arm\'s runtime (TB-V3 Resolve on fast4 / fast5)')
     try:
         parse_opponent(args.opponent)
     except ValueError as exc:
@@ -614,13 +825,20 @@ def main(argv=None) -> int:
                 load_policy(args.policy_checkpoint)  # fail before any game starts
             except (OSError, ValueError, ImportError) as exc:
                 parser.error(f'policy arm {name}: {exc}')
+    if needs_value(v8_config(args.arm)):
+        try:
+            load_value(args.value_checkpoint, args.value_device)  # fail before any game starts
+        except (OSError, ValueError, ImportError) as exc:
+            parser.error(f'value arm {args.arm}: {exc}')
+    elif args.value_checkpoint:
+        parser.error('--value-checkpoint only applies to the value arm')
     args.search_overrides = {k: v for k, v in (('simulations', args.simulations),
                                                ('tactical_simulations', args.tactical_simulations))
                              if v is not None}
-    is_puct = v8_config(args.arm).get('tree_mode') == 'puct'
-    if is_puct and args.puct_c is None:
+    arm_is_puct = is_puct(v8_config(args.arm))
+    if arm_is_puct and args.puct_c is None:
         parser.error(f'{args.arm} needs --puct-c (the calibrated value, §12.16)')
-    if not is_puct and args.puct_c is not None:
+    if not arm_is_puct and args.puct_c is not None:
         parser.error('--puct-c only applies to the puct_* arms')
     opponent_is_puct = args.opponent != 'v7' and v8_config(opponent_arm(args.opponent)).get('tree_mode') == 'puct'
     if opponent_is_puct and args.opponent_puct_c is None:
@@ -633,8 +851,18 @@ def main(argv=None) -> int:
                                             ('tactical_simulations', args.arm_tactical_simulations))
                           if v is not None}
 
+    if args.fast != 'off':
+        from hybrid.h6_fast import install
+        try:
+            install(args.fast)  # fail before any game starts (e.g. native build missing or stale)
+        except RuntimeError as exc:
+            parser.error(str(exc))
     tasks, openings = build_tasks(args)
-    finished = load_finished(args.games_jsonl, {t['key'] for t in tasks})
+    try:
+        finished = load_finished(args.games_jsonl, {t['key'] for t in tasks},
+                                 tb_v3_runtime_of(args) if args.arm == 'tb_v3' else None)
+    except ValueError as exc:
+        parser.error(str(exc))
     pending = [t for t in tasks if t['key'] not in finished]
     print(f'arm={args.arm} opponent={args.opponent} games={len(tasks)} finished={len(finished)} pending={len(pending)} '
           f'workers={args.workers}', flush=True)
@@ -652,7 +880,9 @@ def main(argv=None) -> int:
         for task in pending:
             keep(play_one(task))
     else:
-        with ProcessPoolExecutor(max_workers=args.workers) as pool:
+        # spawn, not Linux's default fork: the parent may already hold a CUDA context (value check above),
+        # which a forked worker cannot re-initialize; spawn is also what Windows always used
+        with ProcessPoolExecutor(max_workers=args.workers, mp_context=get_context('spawn')) as pool:
             for future in as_completed([pool.submit(play_one, t) for t in pending]):
                 keep(future.result())
 
@@ -671,7 +901,17 @@ def main(argv=None) -> int:
         'git_commit': _git_commit(), 'v8_config': v8_config(args.arm, {**args.search_overrides,
                                                                         **args.arm_overrides}),
         'policy_checkpoint': payload_checkpoint,
-        'provenance': provenance(payload_checkpoint),
+        'provenance': provenance(payload_checkpoint, args.value_checkpoint),
+        'fast': _fast_provenance(args.fast),
+        'value_checkpoint': args.value_checkpoint,
+        'value_device': args.value_device if args.value_checkpoint else None,
+        # the frozen runtime profile's identities, when this run is it (TB-V2-Value + fast4)
+        **({'runtime_mode': tb_v3_runtime_of(args)} if args.arm == 'tb_v3' else {}),
+        **({'runtime': _runtime_provenance(args.value_device, args.arm,
+                                           tb_v3_runtime_of(args) if args.arm == 'tb_v3' else None),
+            'canonical_factory': True}
+           if is_canonical(args.arm, args.fast, v8_config(args.arm, {**args.search_overrides, **args.arm_overrides}))
+           else {}),
         'v7_config': {**V7_FINAL, **args.search_overrides},
         'opponent_config': opponent_config(args.opponent, args.opponent_overrides),
         'opponent_puct_c': args.opponent_puct_c,

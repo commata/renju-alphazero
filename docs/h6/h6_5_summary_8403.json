@@ -1,0 +1,193 @@
+{
+ "format": "h6-5-summary-v1",
+ "rules": {
+  "stage1_min": 0.5,
+  "adopt_min": 0.55,
+  "pair_low_above": 0.5,
+  "not_safe_margin": 0.03,
+  "time_ratio_max": 1.5,
+  "colour_min": 0.45
+ },
+ "main": {
+  "arm": "puct_value_vct2_50k",
+  "seeds": [
+   8403
+  ],
+  "games": 50,
+  "wins": 26,
+  "draws": 0,
+  "losses": 24,
+  "score": 0.52,
+  "ci95_wilson": [
+   0.385,
+   0.652
+  ],
+  "ci95_pairs": [
+   0.4,
+   0.64
+  ],
+  "by_colour": {
+   "black": 0.56,
+   "white": 0.48
+  },
+  "safety_violations": [],
+  "proven_loss_in_lost_position_per_move": 0.0409,
+  "losses_with_opponent_vct": 19,
+  "tree_moves": 477,
+  "tree_status": {
+   "SAFE": 433,
+   "UNKNOWN": 35,
+   "UNSAFE": 9,
+   "UNCHECKED": 0
+  },
+  "tree_not_safe_rate": 0.0922,
+  "v8c_changed": 13,
+  "root_check_minutes": 112.3,
+  "tree_seconds_median": 0.83,
+  "tree_simulations_per_second": 65.5,
+  "nn_calls_per_tree_move": 0,
+  "prior_fallbacks": 0,
+  "prior_entropy_mean": null,
+  "tree_chose_prior_top_rate": null,
+  "time_ratio": 1.378,
+  "total_game_minutes": 496.9,
+  "value": {
+   "value_tree_moves": 477,
+   "value_seconds_per_move": 0.1013,
+   "black_leaf_mean": 0.3502,
+   "white_leaf_mean": 0.1523,
+   "root_q_saturated_mean": 0.0159,
+   "root_visited_children_mean": 5.89,
+   "move_seconds_p95": 106.6821,
+   "move_seconds_max": 283.8133,
+   "distinct_games": 50
+  }
+ },
+ "aux": {
+  "puct_value_vct2_50k": {
+   "arm": "puct_value_vct2_50k",
+   "seeds": [
+    8403
+   ],
+   "games": 50,
+   "wins": 41,
+   "draws": 6,
+   "losses": 3,
+   "score": 0.88,
+   "ci95_wilson": [
+    0.762,
+    0.944
+   ],
+   "ci95_pairs": [
+    0.8,
+    0.95
+   ],
+   "by_colour": {
+    "black": 0.92,
+    "white": 0.84
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0045,
+   "losses_with_opponent_vct": 3,
+   "tree_moves": 891,
+   "tree_status": {
+    "SAFE": 830,
+    "UNKNOWN": 55,
+    "UNSAFE": 6,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0685,
+   "v8c_changed": 30,
+   "root_check_minutes": 151.4,
+   "tree_seconds_median": 0.857,
+   "tree_simulations_per_second": 76.2,
+   "nn_calls_per_tree_move": 0,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": null,
+   "tree_chose_prior_top_rate": null,
+   "time_ratio": 1.232,
+   "total_game_minutes": 655.0,
+   "value": {
+    "value_tree_moves": 891,
+    "value_seconds_per_move": 0.1028,
+    "black_leaf_mean": 0.265,
+    "white_leaf_mean": 0.3417,
+    "root_q_saturated_mean": 0.0158,
+    "root_visited_children_mean": 5.2,
+    "move_seconds_p95": 113.8212,
+    "move_seconds_max": 339.0809,
+    "distinct_games": 50
+   }
+  },
+  "puct_policy_vct2_50k": {
+   "arm": "puct_policy_vct2_50k",
+   "seeds": [
+    8403
+   ],
+   "games": 50,
+   "wins": 36,
+   "draws": 7,
+   "losses": 7,
+   "score": 0.79,
+   "ci95_wilson": [
+    0.659,
+    0.88
+   ],
+   "ci95_pairs": [
+    0.7,
+    0.88
+   ],
+   "by_colour": {
+    "black": 0.76,
+    "white": 0.82
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0079,
+   "losses_with_opponent_vct": 7,
+   "tree_moves": 1050,
+   "tree_status": {
+    "SAFE": 1012,
+    "UNKNOWN": 35,
+    "UNSAFE": 3,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0362,
+   "v8c_changed": 28,
+   "root_check_minutes": 109.7,
+   "tree_seconds_median": 1.102,
+   "tree_simulations_per_second": 49.7,
+   "nn_calls_per_tree_move": 62.7,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.51,
+   "tree_chose_prior_top_rate": 0.65,
+   "time_ratio": 0.868,
+   "total_game_minutes": 684.3,
+   "value": {
+    "value_tree_moves": 0,
+    "value_seconds_per_move": null,
+    "black_leaf_mean": null,
+    "white_leaf_mean": null,
+    "root_q_saturated_mean": 0.2824,
+    "root_visited_children_mean": 7.61,
+    "move_seconds_p95": 87.6539,
+    "move_seconds_max": 253.5714,
+    "distinct_games": 50
+   }
+  }
+ },
+ "aux_paired": {
+  "pairs": 25,
+  "diff": 0.09,
+  "ci95": [
+   -0.05,
+   0.22
+  ]
+ },
+ "p92_guard": "PASS",
+ "verdict": {
+  "decision": "REJECT",
+  "reasons": [
+   "tree not-SAFE 0.0685 > TB-Engine-v1 0.0362 + 0.03"
+  ]
+ }
+}

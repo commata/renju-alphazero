@@ -1,0 +1,569 @@
+{
+  "format": "x1-provenance-v1",
+  "runs": [
+    {
+      "file": "ladder_n300.json",
+      "seed": 8701,
+      "pairs": 5,
+      "run_signature": "1016c25bbe8f26612bd31490c60585e54840587b924b64b2d8d60dadd44b865c",
+      "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=300][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "300"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.2,
+      "fingerprint": "d5b5a14fda77e2ba1688bb5868edf6e613ff35be7ed4c7d17385d3bbed84d3c9"
+    },
+    {
+      "file": "ladder_n1000.json",
+      "seed": 8701,
+      "pairs": 5,
+      "run_signature": "78bed9940c2b30d1b67bfec117b8cf701dfc76a824a4a69a6aa425e134965bc9",
+      "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=1000][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "1000"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.2,
+      "fingerprint": "793cc36590f40206e196aab41fb2a2028b0ae6227ed42cd8e6eab4f311418970"
+    },
+    {
+      "file": "ladder_n3000.json",
+      "seed": 8701,
+      "pairs": 5,
+      "run_signature": "5496d6ab2d919cc0280680c6f0b4b879f5fbb9d4f298fe99fe288810ce497bc5",
+      "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=3000][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "3000"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.1,
+      "fingerprint": "fe338423f039cf673a1a6a0fed392ea51c6d0889429e795c3e6977ce322d3d7f"
+    },
+    {
+      "file": "ladder_n10000.json",
+      "seed": 8701,
+      "pairs": 5,
+      "run_signature": "51d1d73fdeefbd19c5600fb464583b8cb9e40387c8cad00a61046569788f5106",
+      "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=10000][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "10000"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.0,
+      "fingerprint": "734786ebc45d2432528855a55d2359fea858e1570c2fd04acdf6dabd8f43385a"
+    },
+    {
+      "file": "ladder_n30000.json",
+      "seed": 8701,
+      "pairs": 5,
+      "run_signature": "82ad60398a91383aaaba5940f93d1cdcf1777e08b9e18e670a993cdcba97a525",
+      "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=30000][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "30000"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.0,
+      "fingerprint": "d7f55def51247f60cec62ac314cf28b92ced08905d3848d5f53dd3b7576f4bc0"
+    },
+    {
+      "file": "ladder_n100000.json",
+      "seed": 8701,
+      "pairs": 5,
+      "run_signature": "d7f11ca9f6395782aca6352fce29c8bc650b126e017ccfc87339d9a29f75b1d2",
+      "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=100000][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "100000"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.0,
+      "fingerprint": "2faf812d4cd12d65f35bf7b54fb3de968063289eed7fc0139825c863888bd58c"
+    },
+    {
+      "file": "ladder_n300000.json",
+      "seed": 8701,
+      "pairs": 5,
+      "run_signature": "f27ef5a337c876a7b6b53a4b97aef3a5a8b4a9b033fb6f454d69bb599f6634a7",
+      "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=300000][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "300000"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.0,
+      "fingerprint": "4f61b3034dea3a77b74816c222ff4eac5c4838b47cd989eb0a3477848b2d60e3"
+    },
+    {
+      "file": "confirm_n300.json",
+      "seed": 8702,
+      "pairs": 25,
+      "run_signature": "1016c25bbe8f26612bd31490c60585e54840587b924b64b2d8d60dadd44b865c",
+      "git_commit": "2b5c0fa7907e0a47b8cbba1349210e89eb470a92",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=300][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "300"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": true,
+      "score": 0.26,
+      "fingerprint": "1a016894eb0f34787e96ef98a5804dd5ca229cee4e7d2014e90682109f2e0f6f"
+    },
+    {
+      "file": "repro_a.json",
+      "seed": 8703,
+      "pairs": 2,
+      "run_signature": "7b7710808f4d2636ad7d6bafa89c35009db9a12d94ec23265e84778a1307e002",
+      "git_commit": "2b5c0fa7907e0a47b8cbba1349210e89eb470a92",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=300][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "300"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": false,
+      "score": 0.75,
+      "fingerprint": "1adbb7d3433bb33073f71f4cfe340829765907350464008dc223c23dc4a08c60"
+    },
+    {
+      "file": "repro_b.json",
+      "seed": 8703,
+      "pairs": 2,
+      "run_signature": "7b7710808f4d2636ad7d6bafa89c35009db9a12d94ec23265e84778a1307e002",
+      "git_commit": "2b5c0fa7907e0a47b8cbba1349210e89eb470a92",
+      "git_dirty": false,
+      "engine": {
+        "label": "rapfi[max_node=300][thread_num=1][timeout_turn=600000][timeout_match=1000000000]",
+        "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+        "info": [
+          [
+            "max_node",
+            "300"
+          ],
+          [
+            "thread_num",
+            "1"
+          ],
+          [
+            "timeout_turn",
+            "600000"
+          ],
+          [
+            "timeout_match",
+            "1000000000"
+          ]
+        ],
+        "rule": 4,
+        "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+        "extra_files": {
+          "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+          "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+          "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+          "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+          "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+          "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+        }
+      },
+      "ours": {
+        "kind": "tb1",
+        "label": "tb1",
+        "overrides": {},
+        "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+        "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+        "az_checkpoint_sha256": null,
+        "az_simulations": null,
+        "tb_engine_config_hash": "2959295e8a32919367cc0f1d297ecb86b5f9ff19ab453d6c41f3f36224208351"
+      },
+      "opening_random_plies": 4,
+      "opening_radius": 2,
+      "forbid_check": false,
+      "score": 0.75,
+      "fingerprint": "1adbb7d3433bb33073f71f4cfe340829765907350464008dc223c23dc4a08c60"
+    }
+  ],
+  "rule_crosscheck_desktop": {
+    "seed": 1,
+    "radius": 1,
+    "summary": {
+      "games": 300,
+      "positions": 8886,
+      "our_forbidden_points": 9517,
+      "mismatch_positions": 0
+    },
+    "about": "name=\"Rapfi\", version=\"0.43.01 (clang++ 19.1.5 on Windows SSE41 AVX2)\", author=\"Rapfi developers (see AUTHORS file)\", country=\"China\"",
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "git_commit": "9105d3944bee01732fcd84ee4c4f744f745fdd12",
+    "git_dirty": false
+  }
+}

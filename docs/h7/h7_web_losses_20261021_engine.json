@@ -1,0 +1,1426 @@
+{
+ "format": "h7-web-loss-review-v1",
+ "git_commit": "b6b9f92f1b162ad4602f7079aa390bdfe9585e39",
+ "corpus_sha256": "5ea219a8c573242b9f36b23c71fbc686fe0d1df0bd0ccc676e8c9af8f3cf3673",
+ "truth_budget": {
+  "node_limit": 100000,
+  "call_limit": 1000000,
+  "node_budget": 10000000
+ },
+ "alt_budget": {
+  "node_limit": 100000,
+  "call_limit": 100000,
+  "node_budget": 2000000
+ },
+ "fast": "fast4",
+ "coordinates": "1-indexed (row, col)",
+ "games": [
+  {
+   "game_id": "8fcbd265a3c941edae7c1e449fc7c0db",
+   "walk": [
+    {
+     "ply": 54,
+     "move": [
+      2,
+      3
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_5",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "five",
+      [
+       2,
+       8
+      ]
+     ],
+     "seconds": 0.0,
+     "search": {
+      "nodes": 0,
+      "vcf_calls": 0,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 52,
+     "move": [
+      1,
+      5
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCF",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "vcf",
+      [
+       2,
+       3
+      ]
+     ],
+     "seconds": 0.001,
+     "search": {
+      "nodes": 14,
+      "vcf_calls": 1,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 50,
+     "move": [
+      1,
+      4
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCF",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "vcf",
+      [
+       2,
+       6
+      ]
+     ],
+     "seconds": 0.001,
+     "search": {
+      "nodes": 18,
+      "vcf_calls": 1,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 48,
+     "move": [
+      4,
+      3
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCF",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "vcf",
+      [
+       2,
+       4
+      ]
+     ],
+     "seconds": 0.001,
+     "search": {
+      "nodes": 45,
+      "vcf_calls": 1,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 46,
+     "move": [
+      3,
+      5
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCT1",
+     "statuses": [
+      "SAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "threat",
+      [
+       2,
+       6
+      ]
+     ],
+     "seconds": 4.842,
+     "search": {
+      "nodes": 208814,
+      "vcf_calls": 2054,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 44,
+     "move": [
+      11,
+      6
+     ],
+     "class": "UNKNOWN",
+     "grade": null,
+     "statuses": [
+      "SAFE",
+      "SAFE",
+      "UNKNOWN"
+     ],
+     "witness": null,
+     "seconds": 225.014,
+     "search": {
+      "nodes": 10000000,
+      "vcf_calls": 9463,
+      "vcf_cut_calls": 28,
+      "budget_exhausted": true
+     }
+    }
+   ],
+   "first_loss": {
+    "ply": 46,
+    "move": [
+     3,
+     5
+    ],
+    "class": "PROVEN_WIN",
+    "grade": "WIN_VCT1",
+    "statuses": [
+     "SAFE",
+     "UNSAFE",
+     "UNSAFE"
+    ],
+    "witness": [
+     "threat",
+     [
+      2,
+      6
+     ]
+    ],
+    "seconds": 4.842,
+    "search": {
+     "nodes": 208814,
+     "vcf_calls": 2054,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "previous_ai_move": {
+     "ply": 44,
+     "move": [
+      11,
+      6
+     ],
+     "class": "UNKNOWN",
+     "grade": null,
+     "statuses": [
+      "SAFE",
+      "SAFE",
+      "UNKNOWN"
+     ],
+     "witness": null,
+     "seconds": 225.014,
+     "search": {
+      "nodes": 10000000,
+      "vcf_calls": 9463,
+      "vcf_cut_calls": 28,
+      "budget_exhausted": true
+     }
+    },
+    "alternatives": {
+     "SAFE": 4,
+     "LOST_D0": 166,
+     "LOST_D1": 6,
+     "UNKNOWN_D1": 4
+    },
+    "safe_moves": [
+     "2,6",
+     "4,10",
+     "1,5",
+     "3,10"
+    ],
+    "already_lost_within_depth1": false,
+    "engine": {
+     "name": "TB-V2-Value/fast4",
+     "engine_hash": "256e5abe028c694891d33b9be1b9f58287fe18b6d4af278822b03cf09b7ec5c1",
+     "move": [
+      2,
+      6
+     ],
+     "route": "tree",
+     "seconds": 4.0487,
+     "status": "SAFE"
+    }
+   },
+   "seconds": 471.4,
+   "split": "DEV",
+   "human_color": "BLACK",
+   "agent_name": "TB-RT30-v3",
+   "result": "HUMAN_WIN",
+   "moves": [
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     2,
+     8
+    ]
+   ]
+  },
+  {
+   "game_id": "0bd2800bd90e46aabb8f3f4c0a66ead5",
+   "walk": [
+    {
+     "ply": 58,
+     "move": [
+      14,
+      9
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_5",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "five",
+      [
+       9,
+       14
+      ]
+     ],
+     "seconds": 0.0,
+     "search": {
+      "nodes": 0,
+      "vcf_calls": 0,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 56,
+     "move": [
+      12,
+      10
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCF",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "vcf",
+      [
+       9,
+       14
+      ]
+     ],
+     "seconds": 0.006,
+     "search": {
+      "nodes": 286,
+      "vcf_calls": 1,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 54,
+     "move": [
+      9,
+      11
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCF",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "vcf",
+      [
+       11,
+       13
+      ]
+     ],
+     "seconds": 0.0,
+     "search": {
+      "nodes": 11,
+      "vcf_calls": 1,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 52,
+     "move": [
+      9,
+      12
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCT1",
+     "statuses": [
+      "SAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "threat",
+      [
+       12,
+       10
+      ]
+     ],
+     "seconds": 0.325,
+     "search": {
+      "nodes": 12219,
+      "vcf_calls": 525,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 50,
+     "move": [
+      11,
+      9
+     ],
+     "class": "UNKNOWN",
+     "grade": null,
+     "statuses": [
+      "SAFE",
+      "SAFE",
+      "UNKNOWN"
+     ],
+     "witness": null,
+     "seconds": 217.095,
+     "search": {
+      "nodes": 10000000,
+      "vcf_calls": 8848,
+      "vcf_cut_calls": 24,
+      "budget_exhausted": true
+     }
+    }
+   ],
+   "first_loss": {
+    "ply": 52,
+    "move": [
+     9,
+     12
+    ],
+    "class": "PROVEN_WIN",
+    "grade": "WIN_VCT1",
+    "statuses": [
+     "SAFE",
+     "UNSAFE",
+     "UNSAFE"
+    ],
+    "witness": [
+     "threat",
+     [
+      12,
+      10
+     ]
+    ],
+    "seconds": 0.325,
+    "search": {
+     "nodes": 12219,
+     "vcf_calls": 525,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "previous_ai_move": {
+     "ply": 50,
+     "move": [
+      11,
+      9
+     ],
+     "class": "UNKNOWN",
+     "grade": null,
+     "statuses": [
+      "SAFE",
+      "SAFE",
+      "UNKNOWN"
+     ],
+     "witness": null,
+     "seconds": 217.095,
+     "search": {
+      "nodes": 10000000,
+      "vcf_calls": 8848,
+      "vcf_cut_calls": 24,
+      "budget_exhausted": true
+     }
+    },
+    "alternatives": {
+     "LOST_D0": 163,
+     "LOST_D1": 8,
+     "UNKNOWN_D1": 3
+    },
+    "safe_moves": [],
+    "already_lost_within_depth1": false,
+    "engine": {
+     "name": "TB-V2-Value/fast4",
+     "engine_hash": "256e5abe028c694891d33b9be1b9f58287fe18b6d4af278822b03cf09b7ec5c1",
+     "move": [
+      9,
+      12
+     ],
+     "route": "tree",
+     "seconds": 2.613,
+     "status": "LOST_D1"
+    }
+   },
+   "seconds": 405.6,
+   "split": "DEV",
+   "human_color": "BLACK",
+   "agent_name": "TB-RT30-v3",
+   "result": "HUMAN_WIN",
+   "moves": [
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     9
+    ],
+    [
+     13,
+     6
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     13,
+     7
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     13,
+     5
+    ],
+    [
+     12,
+     4
+    ],
+    [
+     11,
+     10
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     13,
+     8
+    ],
+    [
+     11,
+     12
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     11,
+     11
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     9,
+     12
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     13,
+     10
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     10,
+     13
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     9,
+     14
+    ]
+   ]
+  },
+  {
+   "game_id": "c10508db5b194173a71cd1d92d95040d",
+   "walk": [
+    {
+     "ply": 61,
+     "move": [
+      10,
+      9
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_5",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "five",
+      [
+       15,
+       14
+      ]
+     ],
+     "seconds": 0.0,
+     "search": {
+      "nodes": 0,
+      "vcf_calls": 0,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 59,
+     "move": [
+      14,
+      9
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCF",
+     "statuses": [
+      "UNSAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "vcf",
+      [
+       9,
+       2
+      ]
+     ],
+     "seconds": 0.002,
+     "search": {
+      "nodes": 105,
+      "vcf_calls": 1,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 57,
+     "move": [
+      13,
+      11
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCT1",
+     "statuses": [
+      "SAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "threat",
+      [
+       12,
+       11
+      ]
+     ],
+     "seconds": 16.072,
+     "search": {
+      "nodes": 724387,
+      "vcf_calls": 982,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 55,
+     "move": [
+      12,
+      12
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCT1",
+     "statuses": [
+      "SAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "threat",
+      [
+       12,
+       11
+      ]
+     ],
+     "seconds": 0.543,
+     "search": {
+      "nodes": 24057,
+      "vcf_calls": 336,
+      "vcf_cut_calls": 0,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 53,
+     "move": [
+      12,
+      8
+     ],
+     "class": "PROVEN_WIN",
+     "grade": "WIN_VCT1",
+     "statuses": [
+      "SAFE",
+      "UNSAFE",
+      "UNSAFE"
+     ],
+     "witness": [
+      "block",
+      [
+       12,
+       9
+      ]
+     ],
+     "seconds": 15.215,
+     "search": {
+      "nodes": 725198,
+      "vcf_calls": 697,
+      "vcf_cut_calls": 4,
+      "budget_exhausted": false
+     }
+    },
+    {
+     "ply": 51,
+     "move": [
+      10,
+      3
+     ],
+     "class": "UNKNOWN",
+     "grade": null,
+     "statuses": [
+      "SAFE",
+      "UNKNOWN",
+      "UNKNOWN"
+     ],
+     "witness": null,
+     "seconds": 208.716,
+     "search": {
+      "nodes": 10000000,
+      "vcf_calls": 1312,
+      "vcf_cut_calls": 92,
+      "budget_exhausted": true
+     }
+    }
+   ],
+   "first_loss": {
+    "ply": 53,
+    "move": [
+     12,
+     8
+    ],
+    "class": "PROVEN_WIN",
+    "grade": "WIN_VCT1",
+    "statuses": [
+     "SAFE",
+     "UNSAFE",
+     "UNSAFE"
+    ],
+    "witness": [
+     "block",
+     [
+      12,
+      9
+     ]
+    ],
+    "seconds": 15.215,
+    "search": {
+     "nodes": 725198,
+     "vcf_calls": 697,
+     "vcf_cut_calls": 4,
+     "budget_exhausted": false
+    },
+    "previous_ai_move": {
+     "ply": 51,
+     "move": [
+      10,
+      3
+     ],
+     "class": "UNKNOWN",
+     "grade": null,
+     "statuses": [
+      "SAFE",
+      "UNKNOWN",
+      "UNKNOWN"
+     ],
+     "witness": null,
+     "seconds": 208.716,
+     "search": {
+      "nodes": 10000000,
+      "vcf_calls": 1312,
+      "vcf_cut_calls": 92,
+      "budget_exhausted": true
+     }
+    },
+    "alternatives": {
+     "LOST_D0": 170,
+     "LOST_D1": 3
+    },
+    "safe_moves": [],
+    "already_lost_within_depth1": true,
+    "engine": {
+     "name": "TB-V2-Value/fast4",
+     "engine_hash": "256e5abe028c694891d33b9be1b9f58287fe18b6d4af278822b03cf09b7ec5c1",
+     "move": [
+      12,
+      8
+     ],
+     "route": "stage4",
+     "seconds": 4.3171,
+     "status": "LOST_D1"
+    }
+   },
+   "seconds": 258.0,
+   "split": "DEV",
+   "human_color": "WHITE",
+   "agent_name": "TB-RT30-v3",
+   "result": "HUMAN_WIN",
+   "moves": [
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     12,
+     4
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     13,
+     6
+    ],
+    [
+     14,
+     6
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     13,
+     8
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     14,
+     5
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     13,
+     7
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     11,
+     11
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     11,
+     10
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     11,
+     12
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     11,
+     14
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     13,
+     12
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     9
+    ],
+    [
+     12,
+     12
+    ],
+    [
+     13,
+     10
+    ],
+    [
+     13,
+     11
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     13
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     15,
+     14
+    ]
+   ]
+  }
+ ]
+}

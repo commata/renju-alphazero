@@ -1,0 +1,529 @@
+{
+ "format": "h7-timing-v1",
+ "step": "explain",
+ "positions": {
+  "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8407/8/white|5": {
+   "differing_fields": [
+    "move",
+    "root_calls",
+    "root_checked",
+    "root_nodes",
+    "root_visits",
+    "tree_move",
+    "vct2_checked",
+    "vct2_nodes"
+   ],
+   "same_root_children": true,
+   "max_abs_q_diff_common_children": 0.004876274,
+   "tree_move_same": false,
+   "baseline": {
+    "move": [
+     8,
+     8
+    ],
+    "route": "tree",
+    "tree_move": [
+     8,
+     8
+    ],
+    "changed": false,
+    "root_switch": "",
+    "top_children": [
+     [
+      [
+       8,
+       8
+      ],
+      13,
+      -0.057270137
+     ],
+     [
+      [
+       7,
+       6
+      ],
+      13,
+      -0.125112269
+     ],
+     [
+      [
+       6,
+       6
+      ],
+      12,
+      -0.070173667
+     ],
+     [
+      [
+       9,
+       6
+      ],
+      5,
+      -0.01760092
+     ],
+     [
+      [
+       7,
+       8
+      ],
+      4,
+      -0.138579018
+     ]
+    ],
+    "top1_top2_gap": {
+     "visits": 0,
+     "q": 0.067842132
+    },
+    "root_checked": [
+     [
+      [
+       8,
+       8
+      ],
+      "SAFE"
+     ]
+    ],
+    "vct2_checked": [
+     [
+      [
+       8,
+       8
+      ],
+      "SAFE"
+     ]
+    ],
+    "root_nodes": 72,
+    "root_calls": 233,
+    "value_calls": 50
+   },
+   "candidate": {
+    "move": [
+     7,
+     6
+    ],
+    "route": "tree",
+    "tree_move": [
+     7,
+     6
+    ],
+    "changed": false,
+    "root_switch": "",
+    "top_children": [
+     [
+      [
+       7,
+       6
+      ],
+      13,
+      -0.125233693
+     ],
+     [
+      [
+       8,
+       8
+      ],
+      12,
+      -0.062146411
+     ],
+     [
+      [
+       6,
+       6
+      ],
+      12,
+      -0.070310352
+     ],
+     [
+      [
+       9,
+       6
+      ],
+      5,
+      -0.017590178
+     ],
+     [
+      [
+       7,
+       8
+      ],
+      4,
+      -0.138682849
+     ]
+    ],
+    "top1_top2_gap": {
+     "visits": 1,
+     "q": -0.063087282
+    },
+    "root_checked": [
+     [
+      [
+       7,
+       6
+      ],
+      "SAFE"
+     ]
+    ],
+    "vct2_checked": [
+     [
+      [
+       7,
+       6
+      ],
+      "SAFE"
+     ]
+    ],
+    "root_nodes": 6,
+    "root_calls": 220,
+    "value_calls": 50
+   }
+  },
+  "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8408/22/black|6": {
+   "differing_fields": [
+    "move",
+    "root_calls",
+    "root_checked",
+    "root_nodes",
+    "root_visits",
+    "tree_move",
+    "vct2_checked",
+    "vct2_nodes"
+   ],
+   "same_root_children": true,
+   "max_abs_q_diff_common_children": 0.024462921,
+   "tree_move_same": false,
+   "baseline": {
+    "move": [
+     6,
+     6
+    ],
+    "route": "tree",
+    "tree_move": [
+     6,
+     6
+    ],
+    "changed": false,
+    "root_switch": "",
+    "top_children": [
+     [
+      [
+       6,
+       6
+      ],
+      21,
+      0.097817692
+     ],
+     [
+      [
+       10,
+       7
+      ],
+      19,
+      0.350622688
+     ],
+     [
+      [
+       8,
+       7
+      ],
+      6,
+      0.099322101
+     ],
+     [
+      [
+       6,
+       7
+      ],
+      2,
+      0.003452348
+     ],
+     [
+      [
+       9,
+       6
+      ],
+      2,
+      -0.007617189
+     ]
+    ],
+    "top1_top2_gap": {
+     "visits": 2,
+     "q": -0.252804996
+    },
+    "root_checked": [
+     [
+      [
+       6,
+       6
+      ],
+      "SAFE"
+     ]
+    ],
+    "vct2_checked": [
+     [
+      [
+       6,
+       6
+      ],
+      "SAFE"
+     ]
+    ],
+    "root_nodes": 8,
+    "root_calls": 219,
+    "value_calls": 50
+   },
+   "candidate": {
+    "move": [
+     10,
+     7
+    ],
+    "route": "tree",
+    "tree_move": [
+     10,
+     7
+    ],
+    "changed": false,
+    "root_switch": "",
+    "top_children": [
+     [
+      [
+       10,
+       7
+      ],
+      21,
+      0.326159767
+     ],
+     [
+      [
+       6,
+       6
+      ],
+      19,
+      0.076313566
+     ],
+     [
+      [
+       8,
+       7
+      ],
+      6,
+      0.099396495
+     ],
+     [
+      [
+       6,
+       7
+      ],
+      2,
+      0.003466617
+     ],
+     [
+      [
+       9,
+       6
+      ],
+      2,
+      -0.007500049
+     ]
+    ],
+    "top1_top2_gap": {
+     "visits": 2,
+     "q": 0.249846201
+    },
+    "root_checked": [
+     [
+      [
+       10,
+       7
+      ],
+      "SAFE"
+     ]
+    ],
+    "vct2_checked": [
+     [
+      [
+       10,
+       7
+      ],
+      "SAFE"
+     ]
+    ],
+    "root_nodes": 54,
+    "root_calls": 227,
+    "value_calls": 50
+   }
+  },
+  "e3a|puct_value_vct2_50k_tt[puct_c=1.5]@v8:puct_policy_vct2_50k_tt[puct_c=1.5]/8408/24/white|187": {
+   "differing_fields": [
+    "move",
+    "root_checked",
+    "root_nodes",
+    "root_visits",
+    "tree_move",
+    "vct2_checked"
+   ],
+   "same_root_children": true,
+   "max_abs_q_diff_common_children": 0.065777139,
+   "tree_move_same": false,
+   "baseline": {
+    "move": [
+     1,
+     2
+    ],
+    "route": "tree",
+    "tree_move": [
+     1,
+     2
+    ],
+    "changed": false,
+    "root_switch": "",
+    "top_children": [
+     [
+      [
+       1,
+       2
+      ],
+      24,
+      0.127759032
+     ],
+     [
+      [
+       0,
+       6
+      ],
+      22,
+      0.166420945
+     ],
+     [
+      [
+       0,
+       12
+      ],
+      2,
+      0.154086992
+     ],
+     [
+      [
+       14,
+       10
+      ],
+      1,
+      -0.110718668
+     ],
+     [
+      [
+       6,
+       4
+      ],
+      1,
+      -0.307957709
+     ]
+    ],
+    "top1_top2_gap": {
+     "visits": 2,
+     "q": -0.038661913
+    },
+    "root_checked": [
+     [
+      [
+       1,
+       2
+      ],
+      "SAFE"
+     ]
+    ],
+    "vct2_checked": [
+     [
+      [
+       1,
+       2
+      ],
+      "SAFE"
+     ]
+    ],
+    "root_nodes": 0,
+    "root_calls": 38,
+    "value_calls": 50
+   },
+   "candidate": {
+    "move": [
+     0,
+     6
+    ],
+    "route": "tree",
+    "tree_move": [
+     0,
+     6
+    ],
+    "changed": false,
+    "root_switch": "",
+    "top_children": [
+     [
+      [
+       0,
+       6
+      ],
+      25,
+      0.232198084
+     ],
+     [
+      [
+       1,
+       2
+      ],
+      21,
+      0.096725947
+     ],
+     [
+      [
+       0,
+       12
+      ],
+      2,
+      0.154260376
+     ],
+     [
+      [
+       14,
+       10
+      ],
+      1,
+      -0.110809363
+     ],
+     [
+      [
+       6,
+       4
+      ],
+      1,
+      -0.308057398
+     ]
+    ],
+    "top1_top2_gap": {
+     "visits": 4,
+     "q": 0.135472137
+    },
+    "root_checked": [
+     [
+      [
+       0,
+       6
+      ],
+      "SAFE"
+     ]
+    ],
+    "vct2_checked": [
+     [
+      [
+       0,
+       6
+      ],
+      "SAFE"
+     ]
+    ],
+    "root_nodes": 6,
+    "root_calls": 38,
+    "value_calls": 50
+   }
+  }
+ }
+}

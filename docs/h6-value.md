@@ -230,6 +230,5715 @@ canonical_hash(D4, 둘 차례 포함), solver_class, solver_depth, solver_budget
   - 기준을 못 넘으면 원인을 따로 본다. 후보는 고정된 trunk 표현의 한계, 증명 weight 1.0의 편향, 결과 라벨의 잡음이다. 그다음 증명 weight 조정이나 H6-2b를 검토한다.
 - `ff4d93b`는 평가 지표만 바꿨다. loss, optimizer, sampling, weight, D4, LR, checkpoint 선택 기준은 그대로다. 그래서 smoke를 다시 돌릴 필요는 없다.
 
+## H6-2a 본 학습 결과 (2026-10-14, `docs/h6/h6_2a_best.json`, `h6_2a_metrics.jsonl`, `h6_2a_cache_manifest.json`)
+
+provenance:
+- 학습 코드 `ff4d93b`, `git_dirty false`, RTX 5070, 3 epoch 7,857 step.
+- 부모 H3 checkpoint SHA `efee4832…`(H3 step 31,030, `value_trained false`).
+- 라벨 SHA `1e8a37b5…`, v2 보고서 SHA `bd730267…`, 캐시 분할 개수가 manifest와 일치한다.
+- test는 로드하지 않았다.
+- 결과 커밋 `7502368`은 `f1cca21`(문서) 위에 rebase됐다. 학습 코드와는 무관하다.
+- 파일 이름에 `h6_2a_` 접두사를 붙였다.
+
+| step | val wmse | 증명 +1 | 증명 −1 | 결과 +1 | 결과 −1 | 결과 MSE | 결과 −1 평균 v |
+|---|---|---|---|---|---|---|---|
+| 2,000 | 0.5973 | 0.949 | 0.915 | 0.655 | 0.551 | 0.984 | +0.050 |
+| 4,000 | 0.5727 | 0.963 | 0.919 | 0.765 | 0.467 | 0.974 | +0.074 |
+| 6,000 | 0.5648 | 0.952 | 0.933 | 0.677 | 0.574 | 0.945 | −0.003 |
+| **7,857** | **0.5620** | **0.951** | **0.933** | **0.698** | **0.560** | **0.939** | −0.001 |
+
+(표의 증명 ±1, 결과 ±1 값은 부호 정확도다.)
+
+- **진단 기준을 모두 통과했다.**
+  - val wmse가 한 번도 오르지 않았다.
+  - 결과 MSE 0.939로, 모든 국면에 0을 출력하는 경우(1.000)보다 낮다.
+  - 두 부호 정확도의 평균(balanced accuracy)은 증명 0.942, 결과 0.629다.
+  - 네 부호 정확도가 모두 0.5를 넘는다.
+  - smoke에서 보인 상수 편향 상태는 벗어났다. 4,000 step에서 잠시 양수 쪽으로 기울었다가(결과 −1 0.467) 회복했다.
+- **고정된 H3 trunk에도 승패 정보가 있다.** 결과 판별이 0.5보다 확실히 높으므로, "trunk가 장기 승패를 표현하지 못한다"는 H6-2b 근거는 지금 없다.
+- 마지막 step이 best인 것은 학습률을 cosine으로 최솟값까지 줄인 schedule에서 자연스럽다. step 사이 감소 폭이 0.0245 → 0.0079 → 0.0028로 줄었으므로 수렴에 가깝다고 본다. 수렴을 증명한 것은 아니다.
+- 흑·백 부호 정확도는 0.651 · 0.660, ply 구간별 부호 정확도는 0.60(5–9수)에서 0.68(50수 이상)으로 오른다. 모든 구간의 MSE가 1보다 낮고, |v| > 0.95 포화율은 3.4%다(증명 21.8%, 결과 1.6%).
+
+**MONITOR (H6-3에서 판정할 것)**
+1. **양수 편향이 남아 있다.** 결과 국면의 value 평균은 +0.124인데 target 평균은 −0.038이다(편향 +0.16). 결과 −1 국면의 평균 value는 −0.001로, 패배 국면을 거의 0으로 본다. 원인은 증명 +1에 큰 weight가 실린 것이다.
+   - 같은 깊이의 형제 노드에는 같은 편향이 더해지므로 MCTS의 순서에는 영향이 작다.
+   - 그러나 증명된 ±1 terminal, 다른 깊이의 leaf, rollout과 섞일 때 왜곡이 생긴다.
+   - 결과 calibration(ECE)에도 직접 나타난다. ECE는 §12.19의 λ 규칙(ECE ≤ 0.10이면 λ = 1.0, 아니면 0.5)에 쓰인다.
+2. **흑 차례 쪽 편향이 더 크다.** 평균 value와 평균 target의 차이가 흑 차례 +0.20(0.194 대 −0.009), 백 차례 +0.06(0.134 대 0.078)이다. 부호 정확도는 흑·백이 비슷하지만 calibration은 다르다. **P94는 흑 차례의 패배 국면(< 0이어야 함)이라 이 편향의 영향을 직접 받는다.**
+3. **ply가 늘수록 편향이 커진다.** 평균 value가 5–9수 0.02에서 50수 이상 0.27로 오르는데, 평균 target은 0.01–0.04다. 후반일수록 증명(+1 위주) 비중이 커지는 영향이다. 표본에 증명과 결과가 섞여 있어서 순수한 결과 편향과 분리되지는 않는다.
+4. **증명 −1 정확도 0.933이 깊은 패배까지 맞힌다는 뜻은 아니다.** val의 증명 −1은 모두 `forced_loss`(깊이 0, 상대의 막을 수 없는 위협) 패턴이다. P94(모든 수가 VCT1 패배)는 더 깊은 패배다. 그래서 `--prove-losses`/H6-2b 결정은 H6-3의 P94 결과를 보고 내린다.
+
+**H6-2a 판정: PASS** (진단 기준 기준). 추가 학습, `--prove-losses`, H6-2b는 지금 하지 않는다. 다음은 H6-3 오프라인 gate다.
+
+## H6-3A 결과 (2026-10-15, `docs/h6/h6_3a_gate.json`): **FAIL (G3, G4)**
+
+실행 조건:
+- 커밋 `78af28c`, `git_dirty false`, checkpoint step 7,857
+- part A: 2,795판, 53,531국면. part B(2,637판)는 열지 않았다.
+
+| gate | 결과 | 판정 |
+|---|---|---|
+| G1 증명 | balanced accuracy 0.945, +1 0.953, −1 0.938(469국면), MSE 0.179 | PASS |
+| G2 결과 | balanced accuracy 0.640(+1 0.705, −1 0.576), MSE 0.918 | PASS |
+| G3 D4 | 표준편차 평균 **0.124**, 95번째 백분위 **0.276**, 최대 0.631, 확신 국면(1,723개) 부호 일치 **0.835**, 전체 0.724 | **FAIL** |
+| G4 probe | P93(백 차례, +여야 함): 원래 −0.361, 평균 −0.390(범위 −0.97 ~ +0.65, 표준편차 0.50). P94(흑 차례, −여야 함): 원래 **+0.980**, 평균 +0.894(8개 모두 +0.69 이상) | **FAIL** |
+| G5 흑·백 | 0.639 · 0.643, 차이 0.004 | PASS |
+
+보고 항목:
+- 결과 ECE 0.076 → 규칙상 λ 1.0. 다만 전체 판정이 FAIL이므로 기록만 한다. 수정 모델은 B에서 ECE와 λ를 다시 계산한다.
+- 편향(평균 v − 평균 t):
+  - 결과 +0.153(흑 차례 +0.195, 백 차례 +0.112)
+  - 결과의 ply 구간별 +0.016 → +0.282
+  - val에서 본 편향이 test에서도 그대로 나타났다.
+- 편향을 뺀 결과 balanced accuracy는 0.634로 원래(0.640)보다 낮다. 전역 상수 보정으로는 해결되지 않는다.
+- P92: 실제 진 수 (3,4)가 133수 중 6위다. 1위와 value 차이는 작다(0.409 대 0.360).
+
+**검토로 확인하거나 보탠 점**
+1. **D4 변환 코드의 버그는 원인이 아니다.**
+   - `test_h6_value`가 이미 이를 검증한다. 증강한 plane과, 변환한 대국을 `encode_game`으로 인코딩한 결과가 8개 대칭 모두에서 같다.
+   - P92·P93·P94 원 국면으로도 8개 대칭을 다시 확인했고 모두 일치했다.
+   - 따라서 G3는 **모델의 방향 민감성**이다. value head가 `Flatten → Linear(225→64)`라서 칸마다 다른 weight를 쓰고, 구조상 D4 불변이 보장되지 않는다. 학습 때는 샘플마다 무작위 대칭 하나만 보여 줬고 3 epoch뿐이었다.
+2. **P93과 P94는 같은 방향으로 틀렸다. 두 국면 모두 "흑이 좋다"고 본다.**
+   - P93은 백 차례 −0.36(흑이 좋다는 뜻), P94는 흑 차례 +0.98이다. 이 대국에서 이긴 쪽은 백이다.
+   - 흑 차례 결과 편향(+0.195)과 같은 방향이다.
+3. **P93·P94는 깊은 전술일 뿐 아니라 RenjuNet 분포 밖의 국면이다.**
+   - 이 국면은 웹 대국(사람 백 대 MCTS-v8)에서 나왔다. 94수 시점에 흑은 왼쪽 위에 큰 덩어리를 이루고, 백 돌 30여 개는 판 전체에 격자처럼 흩어져 있다. 프로 기보에는 거의 없는 형태다.
+   - 깊이 0 증명 탐색으로는 P93·P94 모두 라벨이 나오지 않는다(`--prove-losses`를 켜도 없음). 두 국면의 승패는 VCF보다 깊다(P93은 VCT2 승리, P94는 모든 수가 VCT1 패배).
+   - 그래서 G4 실패에는 두 원인이 섞여 있다. 하나는 **깊이**(학습 증명은 깊이 0뿐), 다른 하나는 **분포 밖 국면**이다. 흑의 큰 연결 덩어리를 우세로 읽는 휴리스틱으로 보인다.
+   - 이 국면은 엔진이 실제 대국에서 진 국면이다. 엔진이 마주치는 국면에서 value가 이렇게 틀린다는 뜻이므로 무시할 수 없다.
+4. **RenjuNet 위에서 더 깊은 증명 라벨만 늘리는 것으로는 부족할 수 있다.** RenjuNet에는 P93·P94 같은 국면이 거의 없다. 엔진 대국 국면에서 나온 깊은 라벨이 필요할 가능성이 크다. 엔진 대국 데이터는 H7(자기대국·hybrid 데이터)의 역할과도 겹친다.
+5. **D4 평균 추론(8개 대칭 평균을 value로 쓰기)은 구조상 G3를 해결한다.** 다만 G3 정의를 결과를 본 뒤에 바꾸는 것은 허용되지 않는다. 이것은 "모델 변경"이므로 B에서 검증해야 한다. 또 P94는 8개 평균도 +0.89라서 G4는 해결되지 않는다.
+
+**다음 단계 (dev만 사용, B와 Final 세트는 열지 않음): H6-3D 진단** — 원인을 숫자로 나눈 뒤에 수정 방향을 정한다.
+- **D1 D4 분해(A):** 종류·ply·흑백·|v| 구간별 D4 표준편차. 모든 대칭에 고르게 흔들리는지, 특정 반사·회전에서만 흔들리는지 본다. H3 policy 자체의 D4 일관성(대칭 간 top-1 일치율)도 함께 재서 trunk 쪽 원인인지 가린다.
+- **D2 엔진 국면 깊은 패배 세트:** E1·E1-S manifest의 10M truth를 쓴다. `PROVEN_LOSS` 157수(e1 74, e1s 83)의 수 뒤 국면은 "상대 차례에서 상대 승리"(value > 0)여야 한다. 부호 정확도와 평균 value를 잰다.
+  - 이 국면들은 probe라서 학습에서 빠졌다. 그래서 dev 진단에는 쓸 수 있다.
+  - `VCT2_CLEAR`는 value 라벨이 아니므로 쓰지 않는다.
+  - 깊은 패배가 P94 한 국면만의 문제인지, 엔진 국면 전반의 문제인지 가린다.
+- **D3 D4 평균 추론의 효과(A, D2):** G1·G2·G5 지표와 D2 정확도가 어떻게 바뀌는지 본다.
+- 진단 결과에 따른 갈림:
+  - D2가 나쁘면 엔진 국면 데이터가 필요하다. 깊은 증명 라벨은 TB-Engine-v1 자기대국에서 새 seed로 만든다(예약 seed 제외).
+  - D2가 괜찮고 D4만 문제면 학습 방식을 고친다. 후보는 8개 대칭 일관성 학습, D4 평균 추론, pooling head(구조 변경)이다.
+  - H6-2b(trunk 미세조정)는 G2가 통과했으므로 아직 근거가 없다. D1에서 trunk 쪽 원인이 보이면 다시 검토한다.
+- 바뀐 모델의 최종 gate는 **B와 새 깊은 승리·패배 probe**로 한다. A와 P93·P94는 이제 dev다.
+
+## H6-2a′ 계획 (확정 2026-10-15): 부모 단위 패배 라벨 하나만 바꾸는 재학습
+
+목표: G4(부모 단위 깊은 패배)를 고친다. **바꾸는 변수는 라벨 하나**(v2 → v3, `vcf_loss` 추가)다. 추론은 D4 평균으로 고정한다(G3 해결, 학습은 바꾸지 않음). D4 일관성 학습은 이번 실험에 넣지 않는다. H6-4에서 D4 평균이 실제로 비쌀 때 별도 arm으로 한다.
+
+**순서 (앞 단계가 끝나야 다음으로 간다)**
+1. **fresh-final probe의 seed와 규칙을 동결한다(이 커밋).**
+   - seed 8601–8610을 `RESERVED_SEEDS`에 미리 추가했다(`FRESH_PROBE_SEEDS`). 이 seed의 대국은 H6, H7, 자기대국 어떤 학습 데이터에도 넣지 않는다.
+2. **fresh probe를 생성하고 봉인한다.**
+   - TB-Engine-v1(`puct_policy_vct2_50k`, c 1.5)과 `v8:full`의 대국을 seed 8601부터 돌린다. 그 대국에서 `scripts/make_h6_fresh_probes.py`로 probe를 뽑는다. 모델은 쓰지 않고 solver truth만 쓴다.
+   - 증명이 없는 깊이 0 패턴(즉시 승리, 막을 수 없는 4, VCF, `forced_loss`, `vcf_loss`)은 제외한다.
+   - +1: 상대의 즉시 위협이 없고, 둘 차례에게 증명된 깊이 1 VCT 공격(`vct1_win`)이 있는 국면.
+   - −1: `defense_label`이 `vct_loss`를 증명한 국면. VCF를 버티는 모든 수가 깊이 1에서 진다는 뜻이며, P94와 같은 종류다.
+   - **한 대국에서 probe는 최대 1개**다. 대국마다 가장 이른 후보를 고르고, 대국 순서대로 개수가 적은 부호에 배정한다(동률이면 −1).
+   - 기존 probe·평가 국면과 D4로 같은 국면은 제외한다.
+   - **멈추는 규칙(truth 개수만 본다):** seed를 차례로 추가해 +1과 −1이 **각각 서로 다른 대국 10개 이상**이 되면 멈춘다. 목표는 각 20대국이다. 8610까지 가도 10개에 못 미치면 멈추고 다시 설계한다.
+   - **8601 결과(2026-10-15, truth 개수만):**
+     - 20판 중 승리 후보가 있는 대국 17판, 패배 후보가 있는 대국 16판.
+     - 한 대국에 1개 규칙을 적용해 뽑은 probe는 +1 8개, −1 9개(17대국). 나머지 3판은 후보가 없거나 기존 probe와 D4로 겹쳤다.
+     - 깊은 국면은 대부분의 엔진 대국에 있다. 개수를 막는 것은 후보 부족이 아니라 "대국당 1개" 규칙이다. 따라서 대국 1판당 probe는 약 0.85개다.
+   - **추가 결정(모델을 보기 전, 개수만 보고 정함):**
+     - 부호당 10개면 오답 하나가 정확도 10%p다. 그래서 목표치(부호별 약 20대국)에 맞춰 **seed 8602와 8603을 모두 돌리고 거기서 멈춘다**(최대 60판, 예상 probe는 부호별 약 25개).
+     - 그래도 어느 부호든 10개에 못 미치면 8604부터 하나씩 추가한다.
+   - **8601–8603 결과(2026-10-16, 60판, truth 개수만): +1 28개, −1 28개(서로 다른 56대국). 기준(부호별 10대국 이상)과 목표(약 20)를 모두 넘었으므로 여기서 멈춘다.**
+     - 후보가 있는 대국: 승리 52판, 패배 45판. probe가 없는 대국 4판.
+     - 상한에 걸려 건너뛴 국면 37개(17판). 대부분 길고 위협이 많은 후반 국면이다. 다른 국면에서 후보가 나와 probe 수에는 거의 영향이 없었다.
+     - 탐색 버전: v2 52판, v3 8판. 처음 v3로 시도했다가 멈춘 판과 마지막 1판이 v3다. 두 버전은 노드 300,000을 넘는 국면에서만 결과가 다를 수 있고, 두 버전 모두 모델 없이 solver 판정만 쓴다.
+     - 최종 G4의 판정 범위: 부호당 28개이므로 정확도 0.80 기준이면 각 부호에서 오답 5개까지 허용된다(6개부터 실패).
+   - 파일 `docs/h6/h6_fresh_final_probes_v1.json`을 커밋한다. 이 파일은 기본 probe 파일 목록에 들어가므로, 이후 라벨 생성에서 이 국면을 지나는 RenjuNet 대국이 빠진다.
+   - **최종 gate 전에는 이 파일로 어떤 모델도 평가하지 않는다.** 개발 중에는 A, D2, P93·P94만 본다.
+3. **`--prove-losses-last-n`의 N을 train 표본 pilot으로 정한다.**
+   - `--splits train --sample-every 50 --prove-losses`(모든 ply). 결과에 따라 고르지 않는 해시 표본, 약 1,900판이다.
+   - 보고서의 `proof_by_distance_to_end.vcf_loss`에서 **`vcf_loss`의 95% 이상을 포함하는 가장 작은 N**을 고른다.
+   - **결과: N = 12** (2026-10-17, 아래 "3단계 pilot 결과").
+   - N을 정할 때 val·test와 모델은 보지 않는다.
+4. **v3 라벨과 캐시를 만든다.** v2 설정에 `--prove-losses --prove-losses-last-n N`만 더한다(N = 4 probe 정책 그대로).
+5. **H6-2a′를 학습한다.**
+   - 같은 H3 checkpoint에서 value head를 처음부터 다시 학습한다. H6-2a에서 이어 학습하지 않는다.
+   - seed, optimizer, epoch, 학습률 schedule은 H6-2a와 같다. 바뀌는 것은 캐시와 out_dir뿐이다.
+6. **dev 비교:** H6-2a + D4 평균 대 H6-2a′ + D4 평균을 A, D2, P93·P94에서 비교한다(`h6_diagnose.py`).
+7. **최종 gate(한 번):** 후보 하나로 **part B + fresh probe + D4 평균 추론**을 실행한다.
+   - G1·G2·G3·G5는 H6-3 기준 그대로다. G3는 D4 평균이라 구조상 0에 가깝다.
+   - **G4는 fresh probe로 판정한다.** +1과 −1 각각 서로 다른 대국 10개 이상, 각 부호 정확도 ≥ 0.80. 실행 스크립트(`h6_offline_gate.py`)는 part B를 `--fresh-probes`와 `--d4-average` 없이는 실행하지 않는다.
+   - ECE와 λ는 B에서 다시 계산한다. A의 λ = 1.0을 이어받지 않는다.
+   - P93·P94는 dev이므로 최종 판정에서 뺀다.
+
+**실행 명령 (2단계: fresh probe 대국과 추출)**
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "$PWD\src"
+git status --short
+git pull --ff-only
+New-Item -ItemType Directory -Force runs\h6_fresh | Out-Null
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full --seed 8601 --pairs 10 `
+  --workers 6 --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt `
+  --games-jsonl runs\h6_fresh\fresh_8601.jsonl --output runs\h6_fresh\fresh_8601.json 2>&1 | Tee-Object runs\h6_fresh\fresh_8601.log
+python -u scripts\make_h6_fresh_probes.py --games runs\h6_fresh\fresh_8601.json --workers 12 `
+  --jsonl runs\h6_fresh\scan.jsonl --output runs\h6_fresh\count_8601.json
+```
+- `--jsonl`에 대국별 탐색 결과가 끝나는 대로 저장된다. 중단돼도 같은 명령을 다시 실행하면 끝난 대국은 건너뛴다(2026-10-15 추가).
+  - 첫 실행은 저장 기능이 없어서, 20판 중 19판을 끝낸 뒤 중단되어 결과를 모두 잃었다.
+  - 같은 날 탐색도 빠르게 했다. VCF를 버티는 수가 8개를 넘으면 그 자리에서 멈추고, `vcf_loss` 확인과 `vct_loss` 확인이 이 한 번의 탐색을 같이 쓴다. 판정은 이전과 같고 약 3배 빠르다.
+- **국면당 VCF 호출 상한 5,000(2026-10-15, scan v2):**
+  - 상황: seed 8601–8603 추출에서 60판 중 58판은 78분 안에 끝났지만, 마지막 2판이 2시간 넘게 끝나지 않았다. CPU는 계속 쓰고 있었으므로 멈춘 것이 아니라 계산이 폭증한 것이다.
+  - 원인: 깊이 1 분류(`classify`, vct_depth = 1)에는 국면 전체의 상한이 없다. 위협수가 많은 후반 국면에서는 후보 × 응수 × VCF 검색이 끝없이 늘어난다.
+  - 조치: 한 국면의 모든 검사가 공유하는 **캐시되지 않은 VCF 호출 상한 5,000회**를 둔다. P94는 약 550회가 든다. 상한을 넘은 국면은 probe 후보에서 빠진다.
+  - 실행 시간이 아니라 호출 횟수로 정하므로, 어느 컴퓨터에서 돌려도 결과가 같다. 상한을 넘은 국면 수는 보고서에 남긴다.
+  - v1(상한 없음) 탐색 결과는 다시 쓰지 않는다. 이어서 실행할 때 `scan_version`이 다른 행은 버리고 다시 탐색한다. 8601의 개수(8 / 9)도 v2로 다시 센다.
+- **국면당 VCF 노드 상한 300,000 추가(2026-10-16, scan v3):**
+  - 상황: v2에서도 마지막 1판이 100분 넘게 끝나지 않았다.
+  - 원인: 호출 횟수 상한만으로는 시간이 묶이지 않는다. 호출 하나가 최대 20,000노드를 쓰는데, 이 solver는 초당 1–2천 노드 정도만 처리한다(P94 측정: 552회 호출, 19,799노드, 10.5초). 그래서 호출 5,000회도 최악이면 수 시간이다.
+  - 조치: 노드 상한(300,000, P94의 15배)을 더했다. 호출 상한과 노드 상한 중 하나라도 넘으면 그 국면은 건너뛴다. 이것으로 국면 하나가 최악의 경우에도 수 분 안에 끝난다.
+  - 60초 넘게 걸린 국면은 `[slow position] 대국 ply 시간 -> 결과` 줄로 출력해, 상한이 실제로 작동하는지 보이게 했다.
+  - **v2로 끝난 59판은 그대로 쓰고, 남은 1판만 v3로 탐색한다.** v3와 v2는 노드 300,000을 넘는 국면에서만 결과가 다를 수 있다. 탐색은 모델 없이 solver 판정만 쓰므로 버전이 섞여도 평가 독립성은 그대로다. 어느 대국을 어느 버전으로 탐색했는지는 출력의 `games_by_scan_version`에 남긴다.
+- `count_8601.json`은 개수 확인용이다(`counts`).
+  - +1과 −1이 각각 10대국에 못 미치면 seed 8602, 8603… 대국을 추가한다. 그다음 **모든 seed 파일을 함께** 넣어 다시 추출한다.
+  - 기준을 채우면 최종 추출 결과를 `docs/h6/h6_fresh_final_probes_v1.json`으로 출력해 커밋한다.
+
+**3단계 pilot 첫 실행 중단과 수정 (2026-10-16)**
+- 첫 실행: 3시간 반 동안 묶음이 하나도 끝나지 않았다.
+- 원인: `label_position(prove_losses=True)`가 국면마다 **모든 합법수**를 끝까지 검사했고, 국면 전체에 대한 상한이 없었다.
+- 수정(`6321d4d` 이후):
+  - 버티는 수가 하나 나오면 바로 멈춘다. 판정은 이전과 같다(합성 761행, P92–P94 대국 전 국면에서 일치).
+  - 국면당 상한: VCF 호출 5,000회, 노드 100,000. 이 solver는 초당 1–2천 노드를 처리하므로, 국면 하나가 최악이어도 약 1분이다. 상한에 걸린 국면은 라벨 없이 건너뛰고 `prove_losses_budget_cuts`로 보고한다. **v3 라벨도 같은 상한으로 만든다.**
+  - 진행률 묶음은 4판 단위로 줄였다.
+
+**실행 명령 (3단계: pilot, CPU)**
+```powershell
+..\renju-alphazero\.venv-cpu\Scripts\Activate.ps1
+python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --splits train --sample-every 50 --prove-losses `
+  --probe-game-min-ply 4 --output data\tactical\h6\pilot_prove_losses.jsonl.gz --report runs\h6\h6_pilot_prove_losses.json 2>&1 | Tee-Object runs\h6\h6_pilot.log
+```
+- 보고서는 개수만 담는다. `docs/h6/`에 복사해 커밋한다. 이것을 보고 N을 정한다.
+
+**solver 가속: `--fast off|fast2|fast3` (2026-10-16)**
+
+- 방향: native 확대 순서는 `web-ser5.md` §9.9를 따른다. 이미 검증된 정확 가속(fast2, X1-A)을 먼저 재사용한다.
+  그래도 부족하면 X1-B(금수 판정 native, C)로 가고, VCF 전체 C++17은 마지막이다. C++ Game/PUCT, Windows MSVC 빌드는 지금 하지 않는다.
+- `feat/Web_SER5`에서 정확 가속만 가져왔다(`src/rt30/fast*.py`, `src/rt30/native/`, 파일 내용 그대로). deadline, X2 helper, engine_v3, 웹 코드는 가져오지 않았다.
+- `hybrid.h6_fast`가 모드를 설치한다. frozen 파일은 고치지 않고, 이 프로세스의 이름만 바꿔 끼운다.
+  - `off`: frozen Python solver. 기본값이고, 지금 pilot과 같다.
+  - `fast2`: `rt30.fast`(numpy window scan + 4 연장 규칙). 컴파일러가 필요 없다.
+  - `fast3`: fast2 + C window scan. **엄격하다.** native가 빌드되지 않았거나 낡았으면(`build.stale()`) 시작 전에 오류로 멈춘다. fast2로 조용히 내려가지 않는다.
+- worker마다 설치한다(`ProcessPoolExecutor(initializer=h6_fast.install)`). Windows spawn과 Python 3.14 Linux forkserver worker는 부모의 바꿔 끼움을 물려받지 않기 때문이다.
+  묶음마다 worker가 실제로 쓴 함수를 함께 돌려보낸다. 하나라도 요청한 모드와 다르면 builder가 실패한다.
+- 보고서에 `acceleration`을 기록한다: 요청 모드, 실제 함수 이름, fast3면 native 빌드 기록(Python, SOABI, 컴파일러, 플래그, 소스·모듈 SHA256).
+  라벨 의미와 row 형식은 바뀌지 않으므로 라벨 버전도 바꾸지 않는다.
+- 동일성 테스트(`tests/test_h6_fast.py`):
+  - `_find_vcf_with_stats`의 결과·노드 수·exhausted 비교. 노드 상한 50과 3,000에서 잰다.
+  - `vcf_loss_status`의 loss/budget/None 비교. 국면 예산 300과 100k에서 잰다.
+  - builder 전체(작은 예산으로 budget cut이 실제로 나는 설정 포함)의 row와 summary 비교. summary에는 `prove_losses_budget_cuts`와 `proof_by_distance_to_end`가 들어 있다.
+  - pool worker와 spawn worker 설치, 다른 모드로 돈 worker의 거부.
+  - 이 모든 비교에서 세 모드가 같다.
+- 컨테이너 실측(E3-A 엔진 대국 12판, 마지막 8수 prove-losses, 4 workers, `scripts/check_h6_fast.py`):
+
+| 모드 | 시간 | 국면/초 | off 대비 | 결과 |
+|---|---|---|---|---|
+| off | 75.0초 | 3.7 | 1.0배 | 기준 |
+| fast2 | 17.4초 | 15.8 | 4.3배 | 같음 |
+| fast3 | 8.8초 | 31.4 | 8.6배 | 같음 |
+
+- 엔진 대국은 RenjuNet보다 전술 국면이 많다. 그래서 위 배수는 v3 시간 추정에 그대로 쓰지 않는다. 실제 RenjuNet 표본으로 다시 잰다(아래).
+
+**실측 명령 (pilot이 끝난 뒤. 같은 기계에서 pilot과 동시에 돌리지 않는다)**
+```powershell
+# Desktop (Windows): off, fast2
+python -u scripts\check_h6_fast.py --games $GAMES --modes off fast2 --sample-every 500 --workers 12 `
+  --report runs\h6\h6_fast_check_desktop.json 2>&1 | Tee-Object runs\h6\h6_fast_check_desktop.log
+```
+```bash
+# SER5 (Linux): native를 먼저 빌드한다 (.venv-ser5 Python의 헤더 필요, web-ser5.md §9.9)
+cd src && ../.venv-ser5/bin/python -m rt30.native.build --if-stale && cd ..
+.venv-ser5/bin/python -u scripts/check_h6_fast.py --games $GAMES --modes off fast2 fast3 --sample-every 500 \
+  --workers 8 --report runs/h6/h6_fast_check_ser5.json 2>&1 | tee runs/h6/h6_fast_check_ser5.log
+```
+- 판정:
+  - `same: true`가 아니면 그 모드는 쓰지 않는다(종료 코드 1).
+  - 기계 비교는 배수가 아니라 같은 표본의 **절대 국면/초**로 한다.
+  - pilot의 N이 정해지면 `--prove-losses-last-n N`을 붙여 다시 잰다. 그 국면/초로 v3 전체 시간을 다시 계산한다.
+- v3 생성: 위에서 고른 기계·모드로 기존 명령에 `--fast fast2` 또는 `--fast fast3`만 더한다.
+
+**3단계 pilot 결과 (2026-10-17, `docs/h6/h6_pilot_prove_losses.json`, 실행 코드 `fa4de82`, 결과 커밋 `ed5a2a8`): N = 12**
+
+- 표본 구성:
+  - 입력 108,011판 중 train·표본·probe 제외를 거쳐 1,961판, 64,353국면을 검사했다.
+  - `prove_losses_last_n = 0`이므로 표본 대국의 대상 ply를 모두 검사했다.
+  - 손실 증명 예산은 VCF 호출당 20,000 노드, 국면당 100,000 노드, 5,000 호출이다.
+- 라벨:
+  - 64,353행 중 54,757행이 value label을 가진다. 부호는 +1 27,897 · −1 26,860이다.
+  - proof는 `vcf_loss` 587, `vcf` 1,835, `unstoppable_four` 512, `immediate_win` 409, `forced_loss` 321개다.
+  - budget cut은 988국면이다(전체 국면의 1.54%).
+- `vcf_loss`의 종료까지 거리(`scripts/h6_last_n.py`로 계산):
+
+| N | 2 | 4 | 6 | 8 | 10 | **12** | 14 | 16 |
+|---|---|---|---|---|---|---|---|---|
+| N 이내 | 150 | 298 | 446 | 516 | 547 | **560** | 574 | 580 |
+| 비율 | 25.6% | 50.8% | 76.0% | 87.9% | 93.2% | **95.4%** | 97.8% | 98.8% |
+
+- **사전 규칙("관측 `vcf_loss`의 95% 이상을 포함하는 가장 작은 N")에 따라 N = 12로 정한다.**
+  `vcf_loss`는 종국에 강하게 몰려 있다. 따라서 모든 ply에 prove-losses를 돌릴 필요가 없다는 가설이 지지된다.
+- **budget cut은 N 결정을 바꾸지 않는다.**
+  - 규칙이 세는 것은 "100k 예산의 builder가 만드는 `vcf_loss` 라벨" 가운데 마지막 N수가 남기는 몫이다.
+  - v3도 같은 예산을 쓴다. cut 국면은 모든 ply를 돌려도, 마지막 N수만 돌려도 라벨이 없다. 그래서 N 밖의 cut이 사실은 패배였더라도, last-N이 v3에서 잃는 라벨 비율은 그대로다.
+  - cut이 답하는 질문은 따로 있다. **"예산 때문에 깊고 먼 패배가 학습 데이터에서 체계적으로 빠지는가"**이다. 이는 라벨 범위(coverage) 문제이고 N과는 무관하다.
+  - 더 높은 예산(300k, 1M)의 tail 감사로 N을 다시 고르면, v3 builder가 만들지도 않을 라벨에 N을 맞추는 셈이다. 그래서 감사는 N의 gate가 아니라 H6-3에서 −1 쪽을 해석할 때 쓰는 진단으로 둔다.
+- **N = 12의 진짜 불확실성은 표본 크기다.**
+  - 587개에서 95.4%다. 이항 표준오차가 약 0.9%p이고, 대국 단위로 묶여 있어 실제로는 더 크다. 그래서 여유 0.4%p는 표본 잡음 안에 있다.
+  - N = 14(97.8%)로 올리면 대국당 prove-losses 국면이 2개 늘어난다. 얻는 라벨은 `vcf_loss`의 약 2.4%다.
+  - 규칙은 결과를 보기 전에 정했으므로 그대로 12를 쓴다. 이 단서만 기록한다.
+- 참고: 이 보고서에는 cut의 종료 거리가 없었다. 지금 builder는 다음을 남긴다.
+  - 보고서: `prove_losses_budget_cuts_by_distance_to_end`
+  - row 파일 옆: `<output>.budget_cuts.jsonl` manifest(game_id, ply, distance_to_end). RenjuNet 파생이므로 `data/`·`runs/`에만 둔다.
+  - 각 증명 row의 `solver_budget`: `prove_losses` 예산과 `prove_losses_last_n`. 라벨 의미는 바뀌지 않는다.
+
+**다음 순서**
+
+1. 실제 RenjuNet 표본 속도 측정(위 `check_h6_fast.py`, Desktop off·fast2 / SER5 off·fast2·fast3). 실행 기계와 모드를 고른다.
+2. **같은 pilot을 fast로 재실행해 대조한다.** 실패한 실행의 재실행이 아니라, 64k 국면 규모의 정확성 검사다. cut 거리도 함께 얻는다.
+   `--expect`가 공통 summary 키(587 / 988 / 거리 분포 포함)와 설정이 모두 같다고(SAME) 해야 v3로 간다.
+
+```powershell
+python -u scripts\build_h6_labels.py --games $GAMES --workers 12 --splits train --sample-every 50 --prove-losses `
+  --probe-game-min-ply 4 --fast fast2 --output data\tactical\h6\pilot_prove_losses_fast.jsonl.gz `
+  --report runs\h6\h6_pilot_prove_losses_fast.json 2>&1 | Tee-Object runs\h6\h6_pilot_fast.log
+python scripts\h6_last_n.py runs\h6\h6_pilot_prove_losses_fast.json --expect docs\h6\h6_pilot_prove_losses.json
+```
+
+   - 출력에는 N별 `cuts>N`과 최악의 경우 비율(N 밖 cut이 모두 패배일 때)도 나온다. 이 값은 기록만 한다(위 이유).
+3. N = 12로 last-N 속도를 잰다: `check_h6_fast.py --prove-losses-last-n 12 --modes <고른 모드>`. 이 값으로 v3 전체 시간을 계산한다.
+4. v3 라벨과 캐시를 만든다. v2 설정에 `--prove-losses --prove-losses-last-n 12 --fast <모드>`만 더한다.
+5. H6-2a′ 학습 → dev 비교 → 최종 gate(위 5–7단계).
+
+**v3 라벨 전체 생성 결과 (2026-10-17, `docs/h6/h6_1_report_v3.json`, 실행 코드 `4ec548e`, 결과 커밋 `f16292b`)**
+
+- 설정: v2와 같은 전체(train·val·test, `sample_every 0`)에 `--prove-losses --prove-losses-last-n 12 --fast fast3`만 더했다.
+  손실 증명 예산은 pilot과 같다(VCF 호출당 20,000 노드, 국면당 100,000 노드, 5,000 호출).
+- 실행: Desktop WSL2(Ubuntu 24.04, i5-12600K, Python 3.14.8, gcc 13.3, workers 16), **416.8분**.
+  - native 빌드의 C 소스 SHA256 `2a1e309c…`는 SER5와 같다. `.so` hash는 컴파일러가 달라 다르다.
+  - 같은 작업을 SER5(5800H, fast3)에서도 돌리고 있다. 631.3분에 85%이므로 끝나면 약 740분으로 본다. Desktop WSL2가 **약 1.7–1.8배** 빠르다.
+
+| | v2 | v3 | 차이 |
+|---|---|---|---|
+| 국면(rows) | 3,499,207 | 3,499,207 | 0 |
+| 라벨 있는 국면 | 2,893,475 | 2,894,077 | +602 |
+| outcome 라벨 | 2,725,718 | 2,696,327 | −29,391 |
+| proof `vcf` / `unstoppable_four` / `immediate_win` / `forced_loss` | 99,783 / 28,852 / 22,064 / 17,058 | 같음 | 0 |
+| **proof `vcf_loss`** | 0 | **29,993** | +29,993 |
+| 부호 +1 / −1 | 1,477,042 / 1,416,433 | 1,476,725 / 1,417,352 | −317 / +919 |
+| flag `end_unknown` / `outcome_conflicts_proof` / `h2_masked` | 2,314,848 / 41,622 / 86,065 | 2,297,449 / 41,055 / 86,065 | −17,399 / −567 / 0 |
+| budget cut | — | 33,342 | |
+
+- **v3는 의도한 것만 바꿨다.**
+  - 국면, split별 개수, 제외된 대국(probe 888판), 기존 proof 4종의 개수가 v2와 같다.
+  - 새로 생긴 것은 `vcf_loss` 29,993개뿐이다.
+  - 그중 29,391개는 원래 outcome 라벨(가중치 0.1)이 있던 국면이고, 증명 라벨(가중치 1.0)로 바뀌었다. 602개는 라벨이 없던 국면에 새로 생겼다.
+  - outcome이 증명과 부딪혀 가려지던 국면(`outcome_conflicts_proof`)도 567개 줄었다.
+- **pilot 예측과 맞는다.** pilot은 1,961판에서 모든 ply로 `vcf_loss` 587개였다.
+  전체 107,123판이면 54.6배로 약 32,100개이고, N = 12가 그중 95.4%를 담으므로 약 30,600개를 예상했다. 실제는 29,993개(98%)다.
+- `vcf_loss`는 종료까지 거리가 짝수인 곳에 몰려 있다(2, 4, 6수가 각각 7–8천). 패배하는 쪽이 둘 차례인 국면이다.
+  budget cut도 같은 패턴이다(짝수 거리 26,099 / 33,342). cut은 패배 증명이 예산을 넘은 국면에 생기기 때문이다.
+- `proof_by_distance_to_end`의 합(예: `vcf_loss` 30,116)은 `by_kind`(29,993)보다 조금 크다. 이 분포는 `from_ply` 5 미만을 포함한 모든 증명을 센다. 그래서 다섯 종류 모두 같은 방식으로 조금씩 크다. 오류가 아니다.
+- **남은 확인: 기계가 달라도 라벨이 같은가.** v3 builder는 모델 없이 규칙과 solver만 쓴다(`model_hash` None). 그래서 SER5와 Desktop WSL2의 결과는 같아야 한다.
+  SER5가 끝나면 아래로 확인한다. 같으면 앞으로 CPU 라벨 작업은 Desktop WSL2에서 돌린다.
+
+```bash
+# 두 기계 각각: 행 내용 hash (gzip 헤더의 시각·파일명은 빼고 압축을 푼 내용으로 잰다)
+zcat <v3 labels>.jsonl.gz | sha256sum
+zcat <v3 labels>.jsonl.gz.budget_cuts.jsonl 2>/dev/null | sha256sum || sha256sum <v3 labels>.jsonl.gz.budget_cuts.jsonl
+# summary 비교 (SER5 보고서를 Desktop으로 가져온 뒤)
+python - <<'PY'
+import json
+a = json.load(open('docs/h6/h6_1_report_v3.json'))['summary']
+b = json.load(open('runs/h6/h6_1_report_v3_ser5.json'))['summary']
+diff = [k for k in set(a) | set(b) if a.get(k) != b.get(k)]
+print('SAME' if not diff else f'DIFFERENT: {diff}')
+PY
+```
+
+- 다음: v3 value 캐시 → H6-2a′ 학습 → dev 비교 → 최종 gate(위 5–7단계). 캐시는 v2와 같은 명령에 v3 라벨과 `docs/h6/h6_1_report_v3.json`을 주고, 출력 폴더만 `value_cache_v3`로 바꾼다.
+
+**v3 value 캐시 (2026-10-17, Desktop Windows `.venv-cpu`, 12 worker, 88.1초, `data/tactical/h6/value_cache_v3`)**
+
+- v2 캐시와 같은 환경·명령으로 만들었다. 라벨 파일과 보고서만 v3다(`labels_sha256` `b80f617f…`, `h6_report_sha256` `fc81b8ff…` = 커밋된 `docs/h6/h6_1_report_v3.json`).
+- 합계가 v3 보고서와 모두 맞는다.
+
+| | v2 캐시 | v3 캐시 | 차이 |
+|---|---|---|---|
+| 국면 train / val / test | 2,682,580 / 106,223 / 104,672 | 2,683,098 / 106,274 / 104,705 | +518 / +51 / +33 (합 +602 = 보고서 `labelled` 차이) |
+| 버린 mask 행 | 470,282 / 67,732 / 67,718 | 469,764 / 67,681 / 67,685 | 같은 수만큼 감소. 분할별 행(국면 + mask)은 그대로 |
+| 증명 +1 / −1 (합) | 150,699 / 17,058 | 150,699 / **47,051** | −1만 +29,993 (= `vcf_loss`) |
+| 결과 라벨 (합) | 2,725,718 | 2,696,327 | −29,391 |
+| 대국 수 | 98,993 | 98,996 | +3: 행이 모두 mask였던 대국에 `vcf_loss`가 생겼다 |
+
+| 분할 | 증명 weight 비중 v2 → v3 | 증명 중 −1 비율 v2 → v3 | 결과 +1 비율 v2 → v3 |
+|---|---|---|---|
+| train | 37.1% → 41.3% | 10.0% → 23.6% | 48.7% → 49.2% |
+| val | 50.0% → 54.3% | 12.3% → 25.1% | 48.1% → 48.9% |
+| test | 47.5% → 52.3% | 10.6% → 24.9% | 48.3% → 49.1% |
+
+- **바뀐 것은 계획한 변수 하나다.** 분할, 국면 집합, 기존 증명 라벨은 같다. `vcf_loss`가 결과 라벨(가중치 0.1)을 증명 라벨(1.0)로 바꿨다.
+  - 그래서 증명 −1이 2.8배가 되고, 증명 weight 비중이 4%p 안팎 오른다.
+  - 결과 +1 비율이 조금 오르는 것은, 바뀐 결과 라벨 대부분이 진 쪽(−1)의 국면이었기 때문이다.
+- **해석 주의: v2와 v3 모델을 val 손실로 비교하지 않는다.** val의 라벨 자체가 바뀌었다(증명 비중 50 → 54%, −1 증명 2.0배).
+  그래서 val weighted MSE는 두 실험 사이에 같은 잣대가 아니다. 각 실험 안에서 best를 고르는 데만 쓴다.
+  v2와 v3의 비교는 H6-3 gate(고정 probe, kind별·ply별 지표)로 한다.
+- 학습량: train 2,683,098국면, batch 1024면 epoch당 약 2,620 step, 3 epoch에 약 7,860 step이다(v2 7,857).
+
+H6-2a′ 실행(Desktop Windows, RTX 5070). 계획대로 캐시, 보고서, 출력 폴더만 바꾼다. 나머지는 `configs/hybrid/h6_value_head.yaml`(H6-2a와 같은 설정)이다.
+
+```powershell
+$H3 = "..\renju-alphazero\runs\h3_policy_64x4\best.pt"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+# smoke (GPU, 300 step, 결과는 쓰지 않음)
+python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml --h3-checkpoint $H3 `
+  --cache-dir data\tactical\h6\value_cache_v3 --h6-report docs\h6\h6_1_report_v3.json `
+  --out-dir runs\h6\value_v3_smoke --max-steps 300 --eval-every 100 --eval-max-states 50000 2>&1 | Tee-Object runs\h6\value_v3_smoke.log
+# 본 실행 (중단되면 같은 인자에 --resume)
+python -u scripts\train_h6_value.py --config configs\hybrid\h6_value_head.yaml --h3-checkpoint $H3 `
+  --cache-dir data\tactical\h6\value_cache_v3 --h6-report docs\h6\h6_1_report_v3.json `
+  --out-dir runs\h6_value_head_v3 2>&1 | Tee-Object runs\h6\value_v3.log
+```
+
+## H6-2a′ 학습 결과 (2026-10-17, `runs/h6_value_head_v3/best.json`, 커밋 `a5a3ea7`, `git_dirty false`)
+
+- 실행: RTX 5070, 7,860 step(2,620 × 3 epoch), 22,179 samples/s, 6.0분. best는 마지막 step이다(val weighted MSE 0.6227 → 0.5878 → 0.5766 → **0.5736**).
+- 통제: H6-2a(v2)와 같은 H3 부모(`efee4832…`), 같은 `frozen_state_sha256`(`c2fbaac3…`, trunk·policy head 고정), 같은 seed·optimizer·epoch·schedule이다. 바뀐 것은 라벨(`b80f617f…`)과 캐시뿐이다.
+
+**val 비교: 같은 잣대가 아닌 지표를 가려 읽는다.** v3는 val의 outcome −1 1,584행과 +1 18행을 `vcf_loss` 증명으로 바꿨다. 그래서 지표마다 비교 가능한 정도가 다르다.
+
+| 지표 | v2 | v3 | 비교 가능성 |
+|---|---|---|---|
+| 전체 sign acc / MSE (가중치 없음) | 65.56% / 0.8705 | 66.24% / 0.8593 | **거의 같은 국면·같은 목표값**: 바뀐 행도 목표 부호(−1)는 같다. 새 국면은 51개 |
+| 전체 평균 예측 − 평균 목표 | +0.130 | +0.082 | 같음. 낙관 편향이 줄었다 |
+| outcome −1 sign acc | 56.02% (50,106) | 61.22% (48,522) | **부분집합이 다르다.** 빠진 1,584행에서 v2가 모두 맞혔거나 모두 틀렸다고 해도, 남은 국면에서 v2는 54.6–57.9%다. 그래서 v3의 개선은 **+3.4–6.6%p**로 남는다 |
+| outcome +1 sign acc | 69.77% | 65.22% | 18행만 빠져 사실상 같다. **−4.5%p는 실제 손실이다** |
+| outcome 전체 | 62.63% / 0.9390 | 63.18% / 0.9288 | 위 두 가지가 섞인 값 |
+| proof −1 sign acc | 93.32% (1,182) | 87.20% (2,835) | **비교 불가.** v3에는 새 `vcf_loss` 1,653행이 더해졌다 |
+| proof +1 sign acc | 95.08% | 93.56% | 같은 8,462행. −1.5%p |
+| weighted MSE | 0.5620 | 0.5736 | **비교 불가.** 가중치(증명 비중 50 → 54%)와 목표가 다르다 |
+
+- 해석:
+  - value head의 균형점이 음수 쪽으로 옮겨 갔다. 결과 패배 쪽(+3.4–6.6%p)과 전체 편향은 좋아졌다. 결과 승리 쪽(−4.5%p)과 증명 승리 쪽(−1.5%p)은 대가를 치렀다.
+  - 전체 가중치 없는 지표는 소폭 좋아졌다.
+- `vcf_loss` 1,653행에서의 정확도는 best.json에 따로 없다.
+  forced_loss 1,182행에서 v2만큼(93%) 맞혔다고 가정하면, 남은 `vcf_loss`는 약 82%다. 추정일 뿐이다.
+  **v2가 같은 국면에서 몇 %였는지는 모른다.** 이것이 G4가 묻는 것이다.
+- ply별: 5–9수만 −1.47%p다. 2,797국면이라 표준오차가 약 0.9%p이므로 잡음 범위다. 10수 이후는 모든 구간에서 +0.5–0.85%p다.
+- side별: 백은 평균 예측이 목표와 거의 같아졌다(0.0767 대 0.0766). 흑은 낙관 편향이 남아 있다(+0.155 대 −0.010, v2 +0.194).
+- 포화(|v| > 0.95)는 3.39% → 3.48%로 같다.
+- **판정: 학습은 정상이고, 의도한 방향(패배 쪽 민감도)으로 움직였다. 우열은 아직 정하지 않는다.** epoch을 늘리는 등 설정은 바꾸지 않는다(H6-2a와 같은 조건 유지).
+
+**6단계 dev 비교 (같은 국면에서, part B·fresh probe는 열지 않는다)**
+
+1. `scripts/h6_cross_eval.py`: 두 모델을 **v3 캐시의 같은 국면**(val + test part A)에서 raw와 D4 평균으로 잰다.
+   - v3가 바꾼 것으로 나눈다: `new_loss`(v3가 더한 `vcf_loss`), `old_loss`(forced_loss), `proof_win`, `outcome_win`, `outcome_loss`, `all`.
+   - `new_loss`에서 v2와 v3를 직접 비교할 수 있다. G4와 같은 종류의 국면이다.
+2. `scripts/h6_diagnose.py`(v3 모델 + v3 캐시)를 돌린다. 기존 v2 결과 `docs/h6/h6_3d_diag.json`과 D2(엔진 대국의 깊은 패배)·P93·P94의 D4 평균을 비교한다. 이 셋은 라벨과 무관하므로 그대로 비교된다.
+
+```powershell
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONPATH = "$PWD\src"; $env:PYTHONIOENCODING = "utf-8"
+git pull --ff-only; git status --short
+python -u scripts\h6_cross_eval.py --model v2=runs\h6_value_head_v1\best.pt --model v3=runs\h6_value_head_v3\best.pt `
+  --v2-cache data\tactical\h6\value_cache_v2 --v3-cache data\tactical\h6\value_cache_v3 --device cuda `
+  --output docs\h6\h6_2a_prime_cross_eval.json 2>&1 | Tee-Object runs\h6\h6_cross_eval.log
+python -u scripts\h6_diagnose.py --checkpoint runs\h6_value_head_v3\best.pt `
+  --cache-dir data\tactical\h6\value_cache_v3 --device cuda --output docs\h6\h6_3d_diag_v3.json 2>&1 | Tee-Object runs\h6\h6_3d_diag_v3.log
+```
+
+- 7단계(최종 gate, 한 번)는 이 두 결과를 보고 후보 하나를 정한 뒤에만 한다. 후보는 part B + fresh probe + D4 평균으로 돈다.
+
+## H6-2a′ dev 비교 결과 (2026-10-17, `docs/h6/h6_2a_prime_cross_eval.json`, `docs/h6/h6_3d_diag_v3.json`, 커밋 `2d18616`)
+
+두 모델을 v3 캐시의 **같은 국면**(val 106,274, test part A 53,556)에서 raw와 D4 평균으로 쟀다(`h6_cross_eval.py`).
+H6-3D 진단은 v3 모델로 다시 돌려 v2 결과(`h6_3d_diag.json`)와 비교했다. part B와 fresh probe는 열지 않았다.
+
+**1. 같은 국면 비교 (D4 평균, 최종 gate와 같은 추론). sign 정확도**
+
+| subset | val v2 → v3 | testA v2 → v3 | 비고 |
+|---|---|---|---|
+| **new_loss** (v3가 더한 `vcf_loss`, 1,653 / 835) | 73.3% → **85.2%** (+11.9) | 72.7% → **85.1%** (+12.5) | MSE 0.850 → 0.553, 0.856 → 0.548 |
+| old_loss (forced_loss, 1,182 / 469) | 95.7% → 95.6% (−0.1) | 95.1% → 94.2% (−0.9) | raw에서는 −1.0 / −1.5 |
+| proof_win (8,462 / 4,022) | 96.5% → 95.2% (−1.3) | 96.8% → 94.9% (−1.9) | |
+| outcome_win (46,455 / 23,653) | 70.4% → 65.7% (−4.6) | 70.5% → 66.2% (−4.3) | |
+| outcome_loss (48,522 / 24,577) | 57.3% → 62.3% (+5.0) | 59.1% → 64.3% (+5.1) | |
+| outcome balanced (승·패 평균) | 63.8% → 64.0% (+0.2) | 64.8% → 65.2% (+0.4) | |
+| all | 66.8% → 67.1% (+0.3) | 67.5% → 68.0% (+0.5) | MSE 0.848 → 0.835, 0.835 → 0.820 |
+
+- **목표 부분집합은 크게 좋아졌다.** `new_loss`가 두 집합에서 모두 +12%p 안팎이다. 표준오차는 1–1.5%p라 잡음이 아니다.
+- **목표에 맞춘 이동이다. 전체 편향만 옮긴 것이 아니다.** `new_loss`의 평균 value는 −0.15 → −0.35(−0.20)로 움직였다. outcome 국면은 −0.03~−0.06, proof_win은 −0.03만 움직였다.
+- **outcome의 승·패 맞교환은 대부분 결정 경계 이동이다.**
+  - outcome 승 −4.5%p, 패 +5%p인데, 균형 정확도는 +0.2–0.4%p로 거의 같다.
+  - H6-3D에서도 outcome balanced accuracy가 0.6503 → 0.6523(D4)이다.
+  - 대신 calibration이 좋아졌다: outcome 편향 0.153 → 0.092, ECE 0.076 → 0.046(D4).
+  - 즉 v2의 낙관 편향을 줄인 것이고, 승패를 더 잘 가리게 된 것은 아니다.
+- D4 평균에서는 old_loss의 손실이 val에서 사라진다(−0.1%p). all의 이득은 raw(+0.7%p)보다 작은 +0.3–0.5%p다.
+
+**2. H6-3D: 깊은 전술은 좋아지지 않았다**
+
+| 진단 | v2 | v3 | 해석 |
+|---|---|---|---|
+| D2 깊은 승리 child 인식, D4 (157수, root 9개) | 96.8% (152) | **92.4%** (145) | **−4.5%p.** root 단위 97.1% → 91.4%, 패배 깊이 2: 96.9% → 92.2% |
+| D2 raw | 92.4% | 89.2% | 같은 방향 |
+| **P94** (흑 차례, 증명된 패배, **< 0이어야 함**) | 원래 +0.980, D4 +0.894 | 원래 +0.974, D4 **+0.983**(+0.94 ~ +1.00) | **여전히 FAIL, 오히려 더 확신한다** |
+| P93 (백 차례, 깊은 승리, > 0이어야 함) | 원래 −0.361, D4 −0.390 | 원래 +0.000, D4 −0.011 | 0 쪽으로 왔지만 여전히 FAIL |
+| D1 8개 부호 모두 같음 / 표준편차 평균 | 56.5% / 0.136 | 60.6% / 0.140 | 거의 같다 |
+
+- D2는 진 수 뒤의 국면(상대 차례, +여야 함)을 맞히는지 보는 child 단위 진단이다. v3가 패배 쪽으로 옮겨 가면서 깊은 **승리** 인식이 7수 줄었다. 표본이 157수(9 root)라 크기는 불확실하지만, 방향은 outcome 승·proof 승의 손실과 같다.
+- **P94는 이 실험이 고치려던 G4의 바로 그 종류(부모 단위 깊은 패배, 모든 수가 VCT1에서 진다)인데 개선되지 않았다.**
+  - `vcf_loss`는 깊이 0 증명(VCF로 지는 국면)이다. P94의 패배는 그보다 깊다(§H6-3A의 3번).
+  - 이번 결과는 그 우려와 맞는다: v3는 RenjuNet 분포의 VCF 패배를 배웠지만, 깊은 패배 표현으로는 옮겨 가지 않았다.
+  - 단서: P93·P94는 한 대국의 두 국면이다. 이것만으로 일반화할 수는 없다.
+
+**3. 최종 gate 기준에 비춘 dev 추정 (test part A, D4)**
+
+| gate | 기준 | v3 dev 값 | 판단 |
+|---|---|---|---|
+| G1 | proof BA ≥ 0.90, proof −1 ≥ 0.85 | 0.916 / 0.884 | 통과 예상(여유 1.6 / 3.4%p) |
+| G2 | outcome MSE < 1.0, BA ≥ 0.60 | 0.883 / 0.652 | 통과 예상 |
+| G3 | D4 흔들림 | D4 평균이라 구조상 0 | 통과 |
+| G5 | 흑·백 BA ≥ 0.55, 차이 ≤ 0.05 | 0.641 / 0.665, 차이 0.024 | 통과 예상 |
+| **G4** | fresh probe 부호별 정확도 ≥ 0.80(28개 중 오답 5개까지) | dev 근거: P94 FAIL(더 확신), D2 승리 쪽 −4.5%p | **불확실. 가장 큰 위험** |
+
+- fresh probe의 −1은 `defense_label`이 `vct_loss`를 증명한 국면이다. P94와 같은 종류다. +1은 깊이 1 VCT 승리라 D2·P93 쪽과 가깝다.
+- 최종 gate는 한 번뿐이다. 실패하면 part B를 다시 쓸 수 없다(`FAILURE_PATHS['G4_fresh']`: "no B re-run").
+
+**4. D4 평균의 비용.** D4는 처리량이 12.9배 줄어든다(125.6k → 9.7k positions/s). 그런데 국면 하나의 지연은 오히려 같거나 짧다(raw 1.19ms, D4 8개 batch 0.88ms).
+PUCT처럼 leaf를 하나씩 평가하면 GPU가 놀고 있으므로 D4 비용이 거의 없다. H6-4에서 batch 크기별로 잰다.
+
+**판정 (dev).**
+
+- v3는 학습 목표였던 `vcf_loss` 국면을 크게 개선했다(+12%p, 같은 국면). 낙관 편향과 calibration도 좋아졌다.
+- 그러나 outcome 판별력은 거의 그대로이고, 승리 쪽(outcome 승 −4.5%p, proof 승 −1.3~1.9%p, D2 깊은 승리 −4.5%p)을 내줬다.
+- **H6-2a′의 목적인 G4(부모 단위 깊은 패배)는 dev에서 개선된 증거가 없다**(P94 여전히 +0.98).
+- 그래서 "v3를 그대로 최종 gate에 올린다"는 초안의 결론은 보류한다. G1·G2·G3·G5는 통과가 예상되지만, G4가 실패할 가능성이 높아 보인다. 실패하면 최종 집합(part B·fresh probe)을 써 버리게 된다.
+- 다음 결정은 아래 "다음 단계 선택지"로 한다. 결정 규칙은 dev deep probe를 보기 전에 정한다.
+
+**다음 단계 선택지**
+
+- **A. 계획대로 최종 gate(v3, part B + fresh probe + D4)를 지금 한 번 돌린다.**
+  - 사전 프로토콜에 가장 충실하다. dev 결과로 후보를 바꾸지 않는다.
+  - 대신 G4 실패 위험을 안고 최종 집합을 쓴다.
+- **B. (권장) 최종 gate 전에 dev용 깊은 probe 집합을 따로 만든다.**
+  - 같은 생성기(`make_h6_fresh_probes.py`)에 새 seed(예: 8611–8613, 학습 데이터에서 영구 제외)를 쓴다.
+  - v2+D4와 v3+D4를 부호별로 잰다.
+  - 규칙은 지금 정한다: **v3의 dev deep-win·deep-loss 정확도가 둘 다 0.80 이상이면 최종 gate로 간다.** 아니면 최종 집합을 쓰지 않고, 엔진 대국에서 나온 깊은 라벨(H6-2b/H7, §H6-3A의 4번)로 간다.
+  - 비용: 엔진 대국 60판(8601–8603과 같은 규모)과 probe 추출. 모델 학습은 없다.
+- **결정(2026-10-17): B안.** 프로토콜과 판정 규칙은 아래 "H6-2a′ B안" 절에 결과 보기 전에 고정했다.
+
+## H6-2a′ B안: dev deep-probe 사전 점검 (2026-10-17, 결과 보기 전에 동결)
+
+사용자가 B안을 골랐다. 아래 프로토콜과 판정 규칙은 **dev probe 대국을 하나도 두기 전에** 이 커밋으로 고정한다. 결과를 본 뒤에는 바꾸지 않는다.
+
+**동결하는 것**
+
+- **모델:** v3 checkpoint를 지금 것으로 동결한다(`runs\h6_value_head_v3\best.pt`, sha256 `a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca`). 평가 스크립트가 sha256을 확인하고, 다르면 실행하지 않는다.
+- **재조정 금지:** 결과가 나빠도 LR, epoch, loss weight 등을 바꿔 같은 dev probe에 다시 맞추지 않는다. 통과하면 추가 튜닝 없이 바로 최종 gate로 간다.
+- **seed:** 기본 8611–8613, 확장 8614–8616(아래 확장 규칙으로만 사용). 여섯 개 모두 `RESERVED_SEEDS`에 넣었다(`DEV_PROBE_SEEDS`, `DEV_PROBE_EXTENSION_SEEDS`). 쓰든 안 쓰든 이 seed의 대국은 H6, H7, 자기대국 어떤 학습 데이터에도 **영구히** 넣지 않는다.
+- **대국:** 8601–8603과 같은 설정이다. TB-Engine-v1(`puct_policy_vct2_50k`, c 1.5) 대 `v8:full`, seed당 20판(`--pairs 10`).
+- **probe 생성:** `make_h6_fresh_probes.py --dev`. 탐색과 truth는 최종 fresh probe와 같다(scan v3, 같은 상한). from-ply 10.
+  - +1 = 깊이 0 라벨이 없고 `vct1_win`이 증명된 국면. −1 = `defense_label`이 `vct_loss`를 증명한 국면(P94 종류).
+  - 최종 probe와 다른 점은 하나다. 표본을 늘리려고 **대국마다 부호별로 하나씩**(가장 이른 깊은 승리, 가장 이른 깊은 패배) 뽑는다. 부호 안에서는 여전히 대국당 하나이므로, 부호별 판정의 독립성은 최종 probe와 같다.
+  - 최종 fresh probe와 D4로 같은 국면, 기존 probe·평가 국면은 뺀다.
+  - 출력 `docs/h6/h6_fresh_dev_probes_v1.json`은 `purpose: dev`, `sealed: false`로 표시된다. 최종 gate(`h6_offline_gate.py`)는 이 파일을 `--fresh-probes`로 받지 않는다. 기본 probe 파일 목록에는 들어가므로, 이후 라벨 생성에서 이 국면을 지나는 RenjuNet 대국이 빠진다.
+
+**확장 규칙 (개수만 보고 정한다. 모델은 아직 돌리지 않는다)**
+
+1. 8611–8613(60판)으로 추출해 `counts`의 win·loss 개수만 확인한다.
+2. 두 부호가 모두 50개 이상이면 그대로 평가한다.
+3. 어느 한 부호라도 50개 미만이면 8614–8616(60판)을 추가하고, **여섯 seed 파일을 함께** 넣어 다시 추출한다. 확장은 이 한 번뿐이다.
+4. 확장 뒤에도 어느 부호가 20개 미만이면 판정할 표본이 없는 것으로 보고 **FAIL**로 처리한다(최종 집합은 열지 않는다).
+- 참고: 최종 probe 추출(60판)에서 깊은 승리가 있는 대국은 52판, 깊은 패배가 있는 대국은 45판이었다. 그래서 기본 60판으로는 loss 쪽이 50개에 못 미쳐 확장될 가능성이 높다.
+
+**판정 규칙 (D4 평균 추론만, v3만 판정)**
+
+| 판정 | 조건 | 다음 단계 |
+|---|---|---|
+| **PASS** | deep-win 정확도 ≥ 0.80 **그리고** deep-loss 정확도 ≥ 0.80, 각 부호 20개 이상 | 추가 튜닝 없이 최종 gate(v3, part B + sealed fresh probe + D4) 한 번 |
+| **FAIL** | 어느 한 부호라도 0.80 미만, 또는 20개 미만 | 최종 집합(part B·fresh probe)은 열지 않는다. H6-2b/H7(더 좋은 깊은 라벨)로 간다 |
+
+- 정확도는 value와 기대 부호의 곱이 양수인 비율이다(`h6_gate.fresh_probes`와 같다. value 0은 오답).
+- 결과는 반드시 표본 수와 함께 적는다. 예: `48 / 57 = 84.2%`. 스크립트가 이 형식으로 출력한다.
+- v2+D4도 같은 probe로 재지만 **참고용**이다. 판정에는 쓰지 않는다.
+- 이 점검은 한 번만 돈다. 같은 출력 파일이 있으면 실행하지 않는다.
+
+**실행 명령 (Windows, 8601–8603 때와 같은 환경)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "$PWD\src"
+git pull --ff-only
+git status --short
+New-Item -ItemType Directory -Force runs\h6_dev | Out-Null
+
+# 1) 엔진 대국: 기본 seed 8611-8613 (seed당 20판)
+foreach ($seed in 8611, 8612, 8613) {
+  python -u scripts\run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full --seed $seed --pairs 10 `
+    --workers 6 --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt `
+    --games-jsonl runs\h6_dev\dev_$seed.jsonl --output runs\h6_dev\dev_$seed.json 2>&1 | Tee-Object runs\h6_dev\dev_$seed.log
+}
+
+# 2) 개수만 확인 (모델 없음). runs\ 아래 임시 출력
+python -u scripts\make_h6_fresh_probes.py --dev --games runs\h6_dev\dev_*.json --workers 12 `
+  --jsonl runs\h6_dev\scan.jsonl --output runs\h6_dev\count_base.json
+```
+
+- `count_base.json`의 `counts.win`, `counts.loss`가 둘 다 50 이상이면 3)으로 간다. 하나라도 50 미만이면 1)을 seed 8614, 8615, 8616으로 돌린 뒤 2)를 `--output runs\h6_dev\count_ext.json`으로 다시 돌려 개수를 확인한다(`dev_*.json`이 여섯 파일을 모두 잡고, 끝난 대국은 `scan.jsonl`에서 건너뛴다).
+
+```powershell
+# 3) 확정 probe 파일 (개수 확인과 같은 입력) -> 커밋
+python -u scripts\make_h6_fresh_probes.py --dev --games runs\h6_dev\dev_*.json --workers 12 `
+  --jsonl runs\h6_dev\scan.jsonl --output docs\h6\h6_fresh_dev_probes_v1.json
+git add docs\h6\h6_fresh_dev_probes_v1.json
+git commit -m "H6-2a' option B: dev deep probes (truth only)"
+
+# 4) 평가 (깨끗한 worktree에서 한 번)
+python -u scripts\h6_dev_probe_eval.py --model v3=runs\h6_value_head_v3\best.pt --model v2=runs\h6_value_head_v1\best.pt `
+  --probes docs\h6\h6_fresh_dev_probes_v1.json --device cuda `
+  --output docs\h6\h6_dev_probe_eval.json 2>&1 | Tee-Object runs\h6_dev\dev_eval.log
+```
+
+- 마지막 줄 `decision: PASS` 또는 `decision: FAIL`이 판정이다. PASS면 다음은 최종 gate 명령 하나다. FAIL이면 최종 집합을 열지 않고 H6-2b/H7 설계로 간다.
+
+## H6-2a′ B안 중간 결과와 프로토콜 이탈 (2026-10-17, `docs/h6/h6_fresh_dev_probes_v1.json`, 커밋 `4e824a4`)
+
+**개수 (seed 8611–8613, 60판, scan v3, 모델 없음)**
+- probe: win 50, loss 41. 깊은 승리가 있는 대국 50판, 깊은 패배가 있는 대국 41판이다.
+- 상한을 넘어 빠진 국면은 120개(30판)다. 최종 probe 추출(37개, 17판)보다 많다. 이런 국면은 probe 후보에서 빠지므로, probe는 "상한 안에서 증명되는 국면" 쪽으로 치우친다. 최종 probe도 같은 규칙이라 둘은 비교할 수 있다.
+
+**프로토콜 이탈**
+- 확장 규칙 3번에 따르면 loss 41 < 50이므로 8614–8616을 추가한 뒤 평가했어야 한다. 실제로는 확장 없이 확정 파일을 만들고 평가까지 실행했다.
+- 그래서 아래 결과는 **중간 결과(interim)**로 기록한다. 공식 판정은 사전에 정한 평가 집합(여섯 seed)으로 한 번 더 한다.
+- 이렇게 해도 사후 조작은 아니다. 확장 여부는 결과가 아니라 개수(41 < 50)로 이미 정해져 있었고, 확장 seed도 미리 고정되어 있었다. 공식 판정 결과가 FAIL이면 그대로 따른다.
+
+**중간 결과 (D4 평균, `docs/h6/h6_dev_probe_eval.json`)**
+
+| 모델 | deep win | deep loss | 규칙 |
+|---|---|---|---|
+| **v3 (판정)** | **50 / 50 = 100.0%** (Wilson 95% 92.9–100%) | **39 / 41 = 95.1%** (83.9–98.7%) | PASS |
+| v2 (참고) | 50 / 50 = 100.0% | 35 / 41 = 85.4% (71.6–93.1%) | PASS |
+
+- 두 부호 모두 95% 구간의 하한이 0.80을 넘는다. 표본이 41개라도 우연히 통과했을 가능성은 낮다.
+- 확장으로 loss가 약 40개 늘어도, 그중 26개 이상(약 65%)만 맞히면 합계가 0.80 이상이다. 그래서 공식 판정도 PASS일 가능성이 높다.
+- v3는 deep loss에서 v2보다 4개를 더 맞혔다(+9.8%p). H6-2a′의 목적과 같은 방향이다. 다만 41개에서 4개 차이라 우열을 단정하지는 않는다.
+- P94(v3 +0.98, 실패)는 이 probe 종류의 대표가 아니었던 것으로 보인다. 같은 종류의 국면 41개 중 v3는 39개, v2는 35개를 맞혔다. P93·P94는 대국 하나에서 나온 국면이라는 기존 해석(D2)과 맞는다.
+
+**공식 판정 (사전 규칙대로)**
+1. seed 8614–8616 대국을 추가한다.
+2. 여섯 seed로 `docs/h6/h6_fresh_dev_probes_v2.json`을 만든다. dev 파일끼리는 서로 제외하지 않으므로(`--dev`는 이전 dev 파일을 제외 목록에서 뺀다), v1의 probe가 그대로 포함된다.
+3. 같은 규칙으로 한 번 평가한다(`docs/h6/h6_dev_probe_eval_v2.json`). 이 결과가 판정이다. PASS면 튜닝 없이 최종 gate로 가고, FAIL이면 최종 집합을 열지 않는다.
+
+## H6-2a′ B안 공식 판정: PASS (2026-10-18, `docs/h6/h6_fresh_dev_probes_v2.json`, 커밋 `008589b`, `docs/h6/h6_dev_probe_eval_v2.json`)
+
+사전 규칙대로 seed 8614–8616을 더해 여섯 seed(120판)로 한 번 평가했다. 이 결과가 B안의 판정이다.
+
+**개수 (모델 없음)**
+- probe: win 93, loss 81(깊은 승리가 있는 대국 93판, 깊은 패배가 있는 대국 81판). 두 부호 모두 최소 20을 넘고, loss는 목표 50도 넘었다.
+- 상한을 넘어 빠진 국면 254개(58판). 3 seed 때와 비율이 같다(대국의 약 절반에서 한 국면 이상).
+
+**결과 (D4 평균)**
+
+| 모델 | deep win | deep loss | 판정 |
+|---|---|---|---|
+| **v3 (판정)** | **93 / 93 = 100.0%** (Wilson 95% 96.0–100%) | **78 / 81 = 96.3%** (89.7–98.7%) | **PASS** |
+| v2 (참고) | 93 / 93 = 100.0% | 70 / 81 = 86.4% (77.3–92.2%) | PASS |
+
+- 확장분만 따로 보면(3 seed 결과를 뺀 값): v3 deep win 43 / 43, deep loss 39 / 40. v2 deep loss 35 / 40. 중간 결과와 같은 경향이 새 대국에서도 재현됐다.
+- **판정: PASS.** 규칙대로 튜닝 없이 v3로 최종 gate를 한 번 돈다.
+
+**해석과 주의점**
+- deep loss: v3가 v2보다 8개 더 맞혔다(+9.9%p). 같은 probe에 대한 쌍대 비교이고, 3 seed와 확장분에서 모두 같은 방향이다. `vcf_loss` 라벨 추가가 부모 단위의 깊은 패배(`vct_loss`) 인식에도 옮겨 간 것으로 보인다. 다만 v2도 0.80을 넘으므로, 이 probe에서 v2가 "실패"했던 것은 아니다.
+- deep win은 두 모델 모두 100%다. 이 종류(깊이 0 위협이 없는 상태의 `vct1_win`)는 이 망에게 쉬워서 모델을 구별하지 못한다. D2 깊은 승리(엔진 국면, v3 D4 92.4%)와 종류가 다르다는 점은 남는다.
+- P94 실패(v3 +0.98)는 같은 종류 81개 중 3개 오답에 해당하는 드문 경우로 보인다. G4를 대국 하나(P93·P94)로 판정하지 않고 fresh probe로 바꾼 결정이 맞았다.
+- probe는 계산 상한 안에서 증명되는 국면만 담는다(약 절반의 대국에서 한 국면 이상이 상한으로 빠짐). 최종 fresh probe도 같은 생성기라서 dev 결과는 최종 G4를 잘 예측할 것으로 보지만, 아주 복잡한 국면에 대해서는 말하지 않는다.
+- 최종 gate의 G4 기준은 dev보다 표본이 작다(부호별 28개). 28개 중 오답 5개까지 허용된다. dev 오답률(loss 3.7%)이 그대로라면 기대 오답은 약 1개다.
+
+**다음: 최종 gate (한 번, 후보 v3)**
+- part B + 봉인된 fresh probe(`h6_fresh_final_probes_v1.json`) + D4 평균. 결과에 따라 모델·설정을 바꾸지 않는다.
+- PASS면 H6-4(Value → PUCT)로 간다. FAIL이면 실패한 gate의 `next_steps_if_failed`를 따르고, part B는 다시 쓰지 않는다.
+
+## H6-3 최종 gate: PASS (2026-10-18, `docs/h6/h6_final_gate.json`, v3 + D4 평균, part B 1회)
+
+H6-2a′ B안의 공식 판정(PASS) 뒤, 튜닝 없이 봉인된 최종 gate를 한 번 실행했다. 대상은 v3 checkpoint(`a0fcccc4…`) + D4 평균 추론이다. part B(test split 중 개발에 쓰지 않은 절반)와 봉인된 fresh probe를 처음 열었다.
+
+| 항목 | 결과 |
+|---|---|
+| 판정 | **PASS** (G1–G5 모두 통과) |
+| part B | 2,637대국, 51,149국면 (part A 2,795대국과 겹치지 않음) |
+| G1 proof (5,015국면) | balanced 91.94%, +1 94.77%, −1 89.10% (1,266국면), MSE 0.248 |
+| G2 outcome (46,134국면) | balanced 64.28%, +1 65.66%, −1 62.89%, MSE 0.906 |
+| G3 D4 (2,000국면) | 평균 std 4.2e−9, p95 3.0e−8, 확신 국면 부호 일치 100% |
+| G4 fresh probe | deep win **28 / 28 = 100%**(평균 +0.807), deep loss **26 / 28 = 92.9%**(평균 −0.566, 오답 F29 +0.04, F38 +0.54) |
+| G5 색별 outcome | 흑 64.08%, 백 64.84% (차이 0.77%p) |
+| ECE / λ | 0.0495 → **λ = 1.0** (ECE ≤ 0.10, 사전 규칙: leaf는 value만, rollout 혼합 없음) |
+
+**1. held-out에서도 재현된다.**
+- dev(part A, D4)와 비교하면 proof balanced 91.6% → 91.9%, outcome balanced 65.2% → 64.3%, ECE 0.046 → 0.049다. 차이는 1%p 안팎이다. 개발 partition에 맞춰진 모델이라는 근거는 없다.
+- proof −1 89.1%는 **깊이 0 패배**(`forced_loss`, `vcf_loss`)의 정확도다. v3가 더한 `vcf_loss` 학습이 새 대국에도 일반화됐다는 뜻이다.
+  - 깊은 패배(부모 단위 `vct_loss`)는 학습 라벨에 없다. 이 능력의 근거는 G4(fresh probe)와 dev deep probe(78 / 81)뿐이다. proof −1 수치를 깊은 패배의 근거로 쓰지 않는다.
+
+**2. outcome 판별력은 중간 수준이다.**
+- 증명 국면에서는 강하지만(약 92%), 일반 국면의 승패 방향은 약 64%만 맞힌다.
+- 따라서 value는 solver나 전술 veto를 대신하지 않는다. 증명된 결과(V8 Stage, VCF/VCT 판정, PROVEN_LOSS veto)가 항상 우선이고, value는 tree leaf 평가만 맡는다.
+
+**3. G3는 구성상 통과한다. 망이 대칭에 불변해진 것은 아니다.**
+- D4 평균은 8개 대칭의 평균이므로 수학적으로 정확히 불변이다. std 1e−8은 부동소수점 오차다. 이 수치는 구현이 맞다는 확인이지, 망 자체가 개선됐다는 증거가 아니다.
+- 망의 raw 출력은 여전히 방향에 따라 흔들린다(v2 dev 기준 국면별 std 평균 0.136).
+- 그래서 검증된 것은 **"v3 + D4 평균" evaluator**다. raw 단일 추론은 다른 evaluator다. part B를 이미 썼으므로 raw로 바꾸면 offline gate로 다시 검증할 수 없고, 대국 평가로만 판단해야 한다. H6-4·H6-5는 D4 평균으로 고정한다.
+
+**4. P93·P94 실패는 G4를 뒤집지 않는다.**
+- P93 −0.010(기대 +, 사실상 0), P94 +0.983(기대 −, 확신 오답). dev 값과 같다.
+- 사전에 G4를 대국 하나(P93·P94)가 아니라 fresh probe로 판정하기로 바꿨고, 같은 종류 81개 dev probe에서 v3는 78개를 맞혔다. P93·P94는 회귀 관찰용 진단 국면으로 남긴다.
+
+**5. P92는 policy 순위가 아니라 value 순위다. 그리고 크게 좋아졌다.**
+- `h6_gate.probes`의 P92는 흑의 모든 합법수 뒤 국면을 value로 매긴 순위다(점수 = −v(child), 1위가 value의 최선). policy head와는 무관하다.
+- 실제 진 수 (3,4)의 순위는 v2에서 **6 / 133**(value가 거의 최선으로 봄)이었고, v3에서는 **126 / 133**이다. value는 이제 이 수를 최하위권으로 본다.
+- 단, (3,4) 뒤 국면이 P93이므로 그 점수(+0.010)는 P93 value(−0.010)의 부호만 바꾼 값이다. 순위가 낮은 이유는 "(3,4)가 진다"고 확신해서가 아니라, 다른 수 대부분을 흑에게 더 좋게 보기 때문이다. 또 P92의 참값은 아직 UNRESOLVED다(§12.20). 그래서 "개선 신호"로만 기록하고, 판정은 H6-4/5에서 search 단위로 한다.
+
+**6. 색별 bias.**
+- outcome bias(평균 v − 평균 t)는 흑 차례 +0.177, 백 차례 +0.013이다. 흑 차례 국면을 실제보다 낙관한다. balanced accuracy는 흑·백이 같아 G5는 통과했다.
+- PUCT에서 같은 부모의 자식들이 모두 같은 색 차례 leaf로 끝나면 일정한 offset은 형제 비교에서 상쇄된다. 하지만 leaf 깊이가 섞이면 상쇄되지 않고, Q와 탐색항(U)의 균형도 바뀐다. H6-4에서 leaf의 차례 색별 value 평균을 기록하고, H6-5의 색별 점수 guard(흑·백 각 ≥ 0.45)로 본다.
+
+**결론.**
+- H6-3은 PASS다. **"offline evaluator 검증 완료"이지 "value 모델 완성"이 아니다.** 다음은 search 단위의 효용 검증(H6-4, H6-5)이다.
+- H6 value head 자체의 추가 튜닝은 하지 않는다. H6-2b(trunk 미세조정)는 로드맵대로 H6-5 ADOPT 뒤에만 고려한다.
+- λ = 1.0로 고정한다(사전 규칙). 대국 후보는 하나(v3 + D4, value-only leaf)다.
+
+## H6-4 설계 방향 (2026-10-18, 초안)
+
+목표: TB-Engine-v1의 tree route에서 **leaf 평가 하나만** rollout → value로 바꾼다. 나머지(V8 Stage 1–5, own VCF, V8-A/B/C, VCT2 veto, H3 policy prior, c 1.5, 시뮬레이션 50/100)는 그대로 둔다.
+
+**1. 엔진 버전 단계로 진행한다(사용자 확인 필요).**
+- `mcts_v8.py`가 `puct_v8.search_tree_puct`를 직접 부르므로, 동결 파일을 건드리지 않고는 leaf를 바꿀 수 없다. 모듈 전역 함수를 바꿔치기하는 방식은 다중 slot·테스트에서 위험하므로 쓰지 않는다.
+- 제안:
+  - 새 파일 `src/analysis/puct_value_v1.py`: `search_tree_puct`를 복사하고 leaf만 바꾼 함수. `puct_v8.py`는 그대로 둔다.
+  - `mcts_v8.py`에 **추가만** 한다: `tree_mode="puct_value"` 분기와 `leaf_value` 인자. 기존 `tree_mode` 경로의 코드는 바꾸지 않는다.
+  - 새 설정 `TB_V1_VALUE`(TB-Engine-v1 설정 + `tree_mode: puct_value` + value checkpoint sha)로 별도 config hash를 갖는다. TB-Engine-v1 자체는 바뀌지 않는다.
+  - 회귀 증명: 기존 `tests/test_tb_engine_v1.py`와 고정 국면에서 TB-Engine-v1의 착수가 비트 단위로 같아야 한다.
+
+**2. leaf 계약(§12.18).**
+- 종국이면 기존과 같다(승자 기준 ±1, 무승부 0).
+- 아니면 leaf 국면 s에서 v = V_D4(s)(둘 차례 관점, [−1, 1])를 구하고, leaf 노드 값(그 노드로 둔 쪽 관점) = **−v**. 부호 변환은 한 함수(`leaf_value`)에서만 한다.
+- backup은 실수 값을 받는 별도 함수로 한다(기존 `_backpropagate`는 승자만 받는다). 부모 방향으로 부호를 바꿔 가며 더한다.
+- solver 우선: leaf에서 둘 차례가 즉시 5목을 만들 수 있으면 value 대신 확정값을 쓴다. 이 검사는 싸므로 넣는다. 그보다 깊은 증명은 leaf에서 하지 않는다(root 모듈이 이미 한다).
+- λ = 1.0이므로 rollout은 돌리지 않는다. 그러면 tree route는 seed와 무관하게 결정적이 된다. 다양성은 상대(rollout 사용)와 opening에서 나온다. H6-5에서 같은 대국이 반복되는 비율을 기록한다.
+
+**3. evaluator.**
+- `ValueLeaf`: H6-2a checkpoint 로더(`h4_policy.RootPolicy`는 value checkpoint를 거부하므로 따로 만든다). 기대 sha256을 확인하고, D4 평균, eval 모드, `torch.no_grad`로 동작한다.
+- policy prior는 기존 H3 `RootPolicy`를 그대로 쓴다. value 망과 trunk·policy head가 같으므로 한 번의 forward로 둘 다 얻을 수 있지만, 이것은 속도 최적화다. 정확성 검증 뒤 별도 단계로 한다(batch 구성이 바뀌면 policy 출력이 비트 단위로 같다는 보장이 깨질 수 있다).
+- 캐시: 같은 국면(정규화 hash)의 value를 수 단위로 재사용한다. 결과가 바뀌지 않으므로 넣어도 된다.
+
+**4. 부호 테스트(H6-4 통과 조건, 로드맵 그대로).**
+- 즉시 5목, 상대 5목 허용, 1·2수 강제승, 부모·자식 부호, 무승부.
+- 추가: `leaf_value`의 부호를 뒤집은 가짜 evaluator로는 1수 강제승을 놓치는지 확인한다(부호 버그가 테스트에 잡히는지 확인).
+- 추가: 값이 상수인 evaluator(v ≡ 0)에서는 탐색이 prior만 따르는지 확인한다.
+
+**5. 대국 전 오프라인 점검(H6-4b, 대국 없이).**
+- 고정 국면 집합(P92, e1 tree-route 국면, 웹 패배 국면)에서 TB-Engine-v1과 후보를 같은 seed로 돌려 다음을 기록한다.
+  - tree route를 타는 수의 비율. value는 tree route에서만 작용하므로, 이 비율이 효과의 상한이다.
+  - 착수 변경률, root visit 분포, C4 지표(root Q range, std, |Q| > 0.95 비율), leaf value의 차례 색별 평균.
+  - 수당 시간(value 호출 수 × 호출당 시간 vs rollout 시간). CPU와 CUDA 둘 다 잰다. SER5는 CPU뿐이다.
+  - P92: 10 seed에서 (3,4)를 고른 횟수(기준선 `puct_policy`의 S1 결과와 비교).
+- 이 점검은 판정이 아니라 고장 확인이다. 여기서 설정을 바꾸지 않는다.
+
+**6. H6-5 전에 고칠 사전 규칙.**
+- 로드맵의 H6-5 guard "P93·P94 부호 유지"는 그대로 적용하면 v3가 무조건 실패한다(offline 값이 이미 틀림). G4가 fresh probe로 바뀐 것과 맞춰, 대국 전에 다음으로 바꾸는 것을 제안한다: "P92에서 (3,4)를 고른 seed 수가 기준선 이하".
+- 주 상대: §12.19의 `v8:puct_policy`는 TB-Engine-v1 이전 기준이다. value 효과만 분리하려면 **TB-Engine-v1 자체**(rollout leaf)가 주 상대여야 한다(0.5 = 동등). 보조 상대는 `v8:full`. seed는 8403, 8404, 예비 8405로 한다(예약됨). 이 선택은 결과 전에 고정한다.
+- 시간 guard(≤ 1.5배)는 GPU 기준으로 판정하고, CPU 시간은 따로 기록한다(웹 반영 판단용).
+
+**7. 범위 밖(H6-5 ADOPT 뒤).**
+- 웹(TB-RT30-v3) 반영: 시간 제한 탐색이라 시뮬레이션 수가 고정되지 않는다. CPU에서 value 비용을 보고 따로 정한다. RenjuNet으로 학습한 망은 로컬 전용 제약(§12.1)이 있으므로 공개 범위도 같이 정한다.
+- raw 단일 추론, policy·value 한 번에 forward, batch leaf 평가 같은 속도 최적화.
+- H6-2b(trunk 미세조정), H7.
+
+## H6-4 확정 사항과 H6-4a 구현 (2026-10-18)
+
+위 "H6-4 설계 방향"의 세 질문을 사용자가 모두 승인했다. 아래는 **H6-5 대국 전에** 고정한 규칙이다.
+
+**1. H6-5 guard: P93·P94 → P92 non-regression**
+- 로드맵(§12.19)의 "P93·P94 부호 유지"는 **승격 guard에서 뺀다.** 결과표에는 계속 출력하고 `diagnostic_only`로 표시한다.
+- 대신 P92 guard를 쓴다: **같은 10 seed**(`run_s1_probes.py`, base seed 9201, c 1.5)에서 후보가 (3,4)를 고른 횟수 ≤ TB-Engine-v1이 고른 횟수.
+  - 판정: `PASS` / `FAIL`. TB-Engine-v1이 10 / 10을 고르면 판별력이 없으므로 `NOT_DISCRIMINATING`으로 기록하고 대국 결과를 따른다(통과 증거로 쓰지 않음).
+  - non-regression guard일 뿐, H6-4의 성공 증거가 아니다. P92 참값은 UNRESOLVED다.
+  - 참고: S1에서 `puct_policy`는 (3,4)를 0 / 10 골랐다. TB-Engine-v1도 0이면 후보도 0이어야 통과한다.
+- 나머지 guard는 로드맵 그대로: 안전 위반 0, tree not-SAFE ≤ 기준선 + 0.03, 시간 비율 ≤ 1.5, 흑·백 각 ≥ 0.45.
+
+**2. H6-5 상대와 seed**
+- 주 상대: **TB-Engine-v1**(`--opponent v8:puct_policy_vct2_50k --opponent-puct-c 1.5`). leaf만 다르므로 점수 차이는 value leaf의 효과로 읽는다(0.5 = 동등).
+- 보조 상대: `v8:full`(역사적 기준선에 대한 회귀 확인). 같은 seed로 TB-Engine-v1 대 `v8:full`도 돌려 쌍 비교와 tree not-SAFE 기준선으로 쓴다.
+- 각 25쌍. 공식 seed는 **8403, 8404**다.
+- **8405 사용 조건:** 로드맵 표의 INCONCLUSIVE(8403+8404 점수 ≥ 0.55이고 쌍 bootstrap 하한 ≤ 0.5)일 때만, 한 번. 8403에서 점수 < 0.50이면 8404 없이 REJECT, 8403+8404가 0.50–0.55이면 REJECT다. 결과를 본 뒤 다른 이유로 seed를 추가하지 않는다.
+- 시간 비율 guard는 value를 CUDA로 돌린 대국으로 판정한다. CPU 비용은 H6-4b에서 따로 기록한다(웹 반영 판단용).
+
+**3. 엔진 버전 단계(승인됨)**
+- `src/analysis/puct_v8.py`: 그대로(동결).
+- `src/analysis/puct_value_v1.py`(신규): `search_tree_puct_value`. `search_tree_puct`와 행동 집합·prior·선택 규칙·착수 선택이 같고 leaf만 다르다.
+  - 종국: 결과 그대로(±1, 무승부 0).
+  - 정확한 지름길(value보다 우선): 둘 차례가 5목을 만들 수 있으면 둘 차례 승, 아니면 상대의 5목 자리가 2개 이상이면 둘 차례 패. 상대 5목 자리가 1개면 막을 수 있으므로 value에 맡긴다.
+  - 그 외: v = V_D4(s)(둘 차례 관점), 노드 값 = **−v**. 실수 값 backup(`backup`).
+  - λ = 1.0: rollout 없음.
+- `src/analysis/mcts_v8.py`: `TREE_MODES`에 `"puct_value"`를 더하고 `leaf_value` 인자와 분기, 진단 필드(`v8_value_*`)만 추가했다. `V8_DEFAULTS`의 키는 바꾸지 않았다(새 값은 `tree_mode`의 허용값 하나).
+- `src/analysis/mcts_v8_agent.py`: `leaf_value` 인자. `puct_value`일 때만 받고, 그때는 반드시 받는다.
+- `src/analysis/tb_v1_value.py`: `TB_V1_VALUE` = TB-Engine-v1 설정에서 `tree_mode`만 `puct_value`. value checkpoint sha256, D4 평균, λ를 포함한 `config_hash`.
+- `src/hybrid/h6_value_leaf.py`: `ValueLeaf`. gate를 통과한 v3 checkpoint만 받는다(sha256 확인). D4 평균, 정확한 국면 단위 캐시(결과 불변).
+- 회귀: 고치기 **전에** TB-Engine-v1(`tree_mode="puct"`)의 결정값(착수, 경로, root 자식 방문·평균, NN 호출 수, V8-C·VCT2 상태)을 고정 국면 6개에서 기록했다(`tests/fixtures/tb_engine_v1_puct_regression.json`, 커밋 `60239c4`). 고친 뒤 같은지 테스트한다. 시간 값은 비교하지 않는다.
+
+**runner와 점검 도구**
+- `run_mcts_v8_benchmark.py`: arm `puct_value_vct2_50k`(c 1.5에서 `TB_V1_VALUE`와 같음). `--value-checkpoint`, `--value-device`. value arm은 상대로 쓸 수 없다. 수마다 `value` 기록(호출 수, 시간, 지름길·종국 leaf, 색별 leaf 평균)과 모든 tree 수의 `root_q`(C4: range, std, |Q| > 0.95 비율). 요약에 `root_q`, `value`, `distinct_games`(rollout이 없어 같은 대국이 반복되는지)를 넣었다.
+- `run_s1_probes.py`: value arm 지원. TB-Engine-v1과 후보를 함께 돌리면 요약에 `h6_5_p92_guard`가 나온다.
+- `scripts/h6_value_leaf_check.py`(H6-4b): TB-Engine-v1이 실제 대국에서 tree route로 둔 국면(E1-holdout 8417·8418 기록, 학습에 쓰지 않음)을 두 엔진으로 같은 seed에서 탐색한다. tree route 비율, 착수 변경 수, 수당 시간과 비율, root C4, 색별 leaf value 평균을 기록한다. 판정 없음(`verdict: null`).
+
+**테스트** (`tests/test_h6_value_leaf.py`)
+- 지름길: 자기 5목 → +1, 상대 5목 하나 → value에 맡김, 상대 열린 4(5목 자리 둘) → −1.
+- backup 부호(부모·자식, 무승부 0).
+- 탐색 부호: 상대에게 나쁜 leaf로 가는 수를 고른다. 같은 탐색에서 value 부호를 뒤집으면 다른 수를 고른다(부호 버그를 테스트가 잡는지 확인).
+- 즉시 승리는 value와 무관하게 고른다. value가 상수면 prior를 따른다. 범위 밖 value는 거부한다.
+- TB-Engine-v1 `puct` 경로 회귀 fixture 일치, 후보 설정은 `tree_mode`만 다름, runner arm = `TB_V1_VALUE`.
+- `ValueLeaf`: 다른 checkpoint 거부, D4 불변(좌우 반사·회전에서 같은 값), 캐시, 범위.
+- runner: value arm은 상대 불가, checkpoint 필수. P92 guard 판정(PASS / FAIL / NOT_DISCRIMINATING).
+
+**H6-4b 실행 명령 (Windows, 대국 없음)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"; $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONPATH = "$PWD\src"
+git pull --ff-only; git status --short
+New-Item -ItemType Directory -Force runs\h6_4 | Out-Null
+
+# 0) 테스트
+python -m unittest tests.test_h6_value_leaf tests.test_tb_engine_v1 tests.test_mcts_v8_benchmark
+
+# 1) P92 guard (TB-Engine-v1 vs 후보, 같은 10 seed). H6-5 guard 값으로 그대로 쓴다
+python -u scripts\run_s1_probes.py --arms puct_policy_vct2_50k puct_value_vct2_50k --seeds 10 --puct-c 1.5 `
+  --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt --value-checkpoint runs\h6_value_head_v3\best.pt `
+  --value-device cuda --output docs\h6\h6_4b_s1_probes.json 2>&1 | Tee-Object runs\h6_4\s1_probes.log
+
+# 2) 고정 국면 점검: CPU(SER5와 같은 조건)와 CUDA
+python -u scripts\h6_value_leaf_check.py --games docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8417.json `
+  docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8418.json --per-game 3 --workers 6 `
+  --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt --value-checkpoint runs\h6_value_head_v3\best.pt `
+  --value-device cpu --output docs\h6\h6_4b_check_cpu.json 2>&1 | Tee-Object runs\h6_4\check_cpu.log
+python -u scripts\h6_value_leaf_check.py --games docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8417.json `
+  docs\mcts-v8-results\e1h\puct_policy_vct2_50k_8418.json --per-game 3 --workers 6 `
+  --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt --value-checkpoint runs\h6_value_head_v3\best.pt `
+  --value-device cuda --output docs\h6\h6_4b_check_cuda.json 2>&1 | Tee-Object runs\h6_4\check_cuda.log
+```
+
+- 결과 파일에는 국면(엔진 대국 수순)과 지표만 있고 RenjuNet 데이터는 없으므로 커밋한다.
+- H6-4b는 고장 확인이다. 여기서 설정을 바꾸지 않는다. 고장(부호 이상, 예외, 시간 폭증)이 보이면 고친 뒤 다시 돌리고, 그 사실을 기록한다.
+- H6-5 대국 명령은 H6-4b 결과를 본 뒤 정리한다(규칙은 위에서 이미 고정).
+
+## H6-4b 결과: 고장 없음, H6-5로 진행 (2026-10-18, 커밋 `7c56033`)
+
+결과 파일: `docs/h6/h6_4b_s1_probes.json`, `h6_4b_check_cpu.json`, `h6_4b_check_cuda.json`. 모두 코드 `b6595d8`, `git_dirty: false`, value sha256 `a0fcccc4…`, D4 평균으로 실행했다. H6-4b는 판정 단계가 아니다(`verdict: null`).
+
+**1. P92 guard (H6-5 공식 기준값으로 고정)**
+
+| 엔진 | (3,4) 선택 | 최종 착수 | 방문한 root 자식 | root 포화 |
+|---|---|---|---|---|
+| TB-Engine-v1 | 0 / 10 | (1,5) 10 / 10 | 20 | 10 / 10 |
+| TB-V1-Value | **0 / 10** | (1,5) 10 / 10 | 2 | 0 / 10 |
+
+- `h6_5_p92_guard = PASS`(0 ≤ 0). 기준선이 10 / 10이 아니므로 `NOT_DISCRIMINATING`도 아니다. 이 값을 H6-5의 P92 guard로 쓴다.
+- 내부는 크게 다르다. rollout tree는 모든 자식이 Q = −1(흑 패)로 포화되어 20개에 방문이 흩어졌다. value tree는 50회 중 49회를 (4,4)에 쓰고 Q = +0.82로 봤다. 흑이 실제로 진 국면을 value는 흑에게 크게 유리하다고 본다(P93 ≈ 0, 흑 차례 bias +0.18과 같은 방향).
+- 최종 착수가 같은 것은 tree 뒤의 검증 단계가 같은 수를 골랐기 때문이다. value의 확신이 틀린 국면에서 전술 안전망이 실제로 막는 역할을 한다는 사례다. 진단으로만 기록한다.
+- P93 (13,11) 10 / 10, P94 stage4 10 / 10(모든 검사 수 UNSAFE)은 두 엔진이 같다(진단).
+
+**2. 고정 국면 298개 (E1-holdout 8417·8418, 100대국 1,890수)**
+
+| 항목 | TB-Engine-v1 | TB-V1-Value |
+|---|---|---|
+| tree route 비율(원 대국) | 55.2% | — |
+| 경로가 달라진 국면 | — | **0 / 298** |
+| 최종 착수 변경 | — | **157 / 298 (52.7%)** (tree 착수 158) |
+| root Q range / std (평균) | 1.156 / 0.454 | 0.335 / 0.125 |
+| root 자식 중 \|Q\| > 0.95 비율 | 39.1% | 1.0% |
+| 방문한 root 자식 수 평균 (2개 이하 국면) | 7.93 (14) | 5.39 (29) |
+| tree 시간 평균 CPU / CUDA | 1.25 s / 1.18 s | 1.44 s / 0.95 s |
+| 수당 시간 평균 CPU / CUDA | 9.98 s / 9.44 s | 10.56 s / 9.47 s |
+| 수당 시간 p95 CPU / CUDA | 34.6 s / 31.6 s | **50.9 s / 45.7 s** |
+| 전체 시간 비율 CPU / CUDA | — | 1.058 / 1.004 |
+| value 호출당 CPU / CUDA | — | 11.7 ms / 2.6 ms |
+
+- **고장 없음.** 경로 차이 0, 예외 0, 회귀 fixture 일치. value는 tree 안에서만 행동을 바꿨다.
+- **지름길 계약이 실제로 작동한다.** leaf 16,050개 중 지름길 1,411개, 종국 93개(합 9.4%), 망 호출 14,546개다(초안의 10.3%는 망 호출만 분모로 잡은 값).
+- **CPU와 CUDA의 최종 착수는 298개 국면 모두 같았다**(두 엔진 모두, 국면별 대조). root Q 값이 비트 단위로 같은 국면은 47개뿐이다(부동소수점 차이). 착수 수준에서는 장치 무관, 내부 값은 비트 동일이 아니다.
+- **색별 leaf 평균:** 흑 차례 +0.280, 백 차례 +0.135(CPU·CUDA 같음). 둘 다 양수다(leaf에서는 둘 차례가 유리하다고 보는 경향). 차이 0.144는 정답이 없는 예측 평균의 차이이지 bias 측정이 아니다. final gate의 흑 bias(+0.177 대 +0.013)와 방향은 같다.
+
+**3. 초안과 다르게 보는 점**
+- **시간: 평균은 같지만 꼬리가 45% 늘었다.** p95가 34.6 → 50.9 s(CPU), 31.6 → 45.7 s(CUDA)다.
+  - 원인은 tree가 아니다(tree는 CUDA에서 오히려 20% 빠름). **착수가 바뀐 157개 국면에서만** tree 밖 모듈 시간 p95가 32.7 → 48.5 s로 늘었다. 착수가 같은 141개 국면은 31.3 → 31.1 s로 그대로다.
+  - tree가 다른 수(또는 다른 root 순서)를 내면 V8-C·VCT2 검증이 더 많은 자식을 검사하게 된다. 최대 사례는 같은 최종 착수에서 16.8 → 138.8 s다.
+  - H6-5 시간 guard(평균 비율 ≤ 1.5)에는 영향이 작다. 하지만 시간 제한이 있는 웹(TB-RT30)에서는 꼬리가 중요하므로, 웹 반영은 H6-5 뒤 따로 잰다.
+- **52.7%를 전부 value의 정보로 읽을 수는 없다.**
+  - rollout 엔진은 seed마다 착수가 달라지는 확률적 탐색이다. 같은 TB-Engine-v1을 다른 seed로 돌렸을 때의 변경률(잡음 바닥)을 아직 모른다. value 엔진은 rollout이 없어 seed와 무관하게 결정적이다.
+  - value tree는 Q 차이가 작고(std 0.125 대 0.454) 덜 흔들리므로, c 1.5(rollout 기준으로 보정)에서는 prior를 더 따르고 소수 자식에 집중한다(방문 자식 7.9 → 5.4). 변경의 일부는 "value의 판단"이 아니라 "prior 쪽으로 기운 탐색"일 수 있다.
+  - 어느 쪽이든 판정은 H6-5 대국으로 한다. c와 λ는 바꾸지 않는다(사전 규칙).
+- **Q 포화 감소(39% → 1%)는 목적에 맞는 변화지만, 연속값이 맞는 값이라는 뜻은 아니다.** P92처럼 확신이 틀린 경우가 있다.
+
+**판정:** H6-4b에서 구조적 고장이나 즉시 멈출 시간 회귀는 없다. H6-5로 간다. λ = 1.0, c 1.5, D4 평균 그대로다.
+
+## H6-5 설계 (2026-10-18, 대국 전 고정)
+
+질문: 같은 TB-Engine-v1 tree에서 rollout leaf를 검증된 v3 + D4 value leaf로 바꾸면 대국에서 더 강한가, 그리고 전술 안전성을 지키는가.
+
+**대국 (seed마다 세 run, 각 25쌍 = 50대국, 같은 opening)**
+
+| run | 엔진 | 상대 | 쓰임 |
+|---|---|---|---|
+| A (main) | TB-V1-Value (`puct_value_vct2_50k`, c 1.5, value CUDA) | TB-Engine-v1 (`v8:puct_policy_vct2_50k`, c 1.5) | 점수 판정, 시간 비율, 색별 점수 |
+| B (aux) | TB-V1-Value | `v8:full` | tree not-SAFE, 안전 위반, 쌍 비교 보고 |
+| C (aux) | TB-Engine-v1 (`puct_policy_vct2_50k`, c 1.5) | `v8:full` | B의 기준선 |
+
+- seed: 8403 → (조건부) 8404 → (INCONCLUSIVE일 때만) 8405.
+
+**판정표 (`scripts/summarize_h6_5.py`, 로드맵 §12.19 + H6-4 확정 사항)**
+
+| 단계 | 조건 | 판정 |
+|---|---|---|
+| 8403 | guard 실패 또는 A 점수 < 0.50 | REJECT |
+| 8403 | A 점수 ≥ 0.50 | 8404 진행 |
+| 8403+8404 | 점수 ≥ 0.55, 쌍 bootstrap 하한 > 0.5 | **ADOPT** |
+| 8403+8404 | 점수 ≥ 0.55, 하한 ≤ 0.5 | INCONCLUSIVE → 8405 한 번, 세 seed에 같은 기준 |
+| 8403+8404 | 점수 < 0.55 | REJECT |
+
+- guard(모든 단계): 세 run 모두 안전 위반 0, B의 tree not-SAFE ≤ C + 0.03, A의 시간 비율(후보 / TB-Engine-v1, 같은 대국) ≤ 1.5, A의 흑·백 각 ≥ 0.45, P92 guard ≠ FAIL(H6-4b 값 PASS).
+- 보조 상대 쌍 비교(B − C)는 보고만 하고 점수 판정에 쓰지 않는다.
+- 보고(판정 무관): `distinct_games`(결정적 탐색이라 같은 대국이 반복되는지), 색별 leaf 평균, root 포화, 방문 자식 수, 수당 시간 p95, tree가 prior 1위를 고른 비율(B 대 C).
+- 결과가 나빠도 같은 seed로 λ, c, checkpoint를 바꿔 다시 돌리지 않는다. 바꾼 후보는 새 arm이고 새 seed가 필요하다.
+
+**H6-5 뒤**
+- ADOPT: H6 종료. TB-V1-Value를 value 엔진 후보로 기록하고, 웹(TB-RT30) 반영은 CPU 시간 꼬리를 따로 재서 정한다. 엔진 기준선 교체(TB-Engine-v2)는 track-b-post-e1.md §2 규칙대로 H7 주기 경계에서 한다.
+- REJECT: 원인 분석(시간 꼬리, 패배 국면에서 value의 확신, prior 쏠림, 색별 차이). 후속 후보(예: c 재보정, value와 rollout 혼합)는 새 arm과 새 seed로만 한다.
+
+**실행 명령 (Windows, 8403 먼저)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"; $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONPATH = "$PWD\src"
+git pull --ff-only; git status --short
+New-Item -ItemType Directory -Force runs\h6_5 | Out-Null
+$pol = "..\renju-alphazero\runs\h3_policy_64x4\best.pt"; $val = "runs\h6_value_head_v3\best.pt"; $seed = 8403
+
+# A: TB-V1-Value vs TB-Engine-v1
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:puct_policy_vct2_50k `
+  --opponent-puct-c 1.5 --seed $seed --pairs 25 --workers 6 --policy-checkpoint $pol --value-checkpoint $val --value-device cuda `
+  --games-jsonl runs\h6_5\value_vs_tb1_$seed.jsonl --output runs\h6_5\value_vs_tb1_$seed.json 2>&1 | Tee-Object runs\h6_5\value_vs_tb1_$seed.log
+# B: TB-V1-Value vs v8:full
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:full `
+  --seed $seed --pairs 25 --workers 6 --policy-checkpoint $pol --value-checkpoint $val --value-device cuda `
+  --games-jsonl runs\h6_5\value_vs_full_$seed.jsonl --output runs\h6_5\value_vs_full_$seed.json 2>&1 | Tee-Object runs\h6_5\value_vs_full_$seed.log
+# C: TB-Engine-v1 vs v8:full
+python -u scripts\run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full `
+  --seed $seed --pairs 25 --workers 6 --policy-checkpoint $pol `
+  --games-jsonl runs\h6_5\tb1_vs_full_$seed.jsonl --output runs\h6_5\tb1_vs_full_$seed.json 2>&1 | Tee-Object runs\h6_5\tb1_vs_full_$seed.log
+
+# 판정 (8403 단계)
+python scripts\summarize_h6_5.py --main runs\h6_5\value_vs_tb1_8403.json `
+  --aux runs\h6_5\value_vs_full_8403.json runs\h6_5\tb1_vs_full_8403.json `
+  --p92 docs\h6\h6_4b_s1_probes.json --output docs\h6\h6_5_summary_8403.json
+```
+
+- 중단되면 같은 명령을 다시 실행한다. `--games-jsonl`에서 끝난 대국을 건너뛴다.
+- `RUN_8404`가 나오면 `$seed = 8404`로 A·B·C를 돌리고, 판정은 두 seed 파일을 모두 넣어 `--output docs\h6\h6_5_summary.json`으로 한다.
+- 대국 기록(run 파일)은 엔진끼리의 대국이라 RenjuNet 데이터가 아니므로 `docs/h6/h6_5/`로 옮겨 커밋해도 된다. 요약 파일은 반드시 커밋한다.
+- (선택, 판정 무관) 잡음 바닥: `h6_value_leaf_check.py`를 `--seed 20261019 --value-device cuda --output docs\h6\h6_4b_check_seed2.json`으로 한 번 더 돌리면, TB-Engine-v1이 seed만 바꿔 착수를 바꾸는 비율을 알 수 있다(value 엔진은 결정적이므로 같다). 52.7% 해석에 쓴다.
+
+## H6-5 8403 결과: REJECT (2026-10-19, `docs/h6/h6_5_summary_8403.json`, 커밋 `c3ed1f2`)
+
+사전에 고정한 `summarize_h6_5.py`의 판정은 **REJECT**다. 이유는 하나다: B(후보 대 `v8:full`)의 tree not-SAFE **6.85%**(61 / 891)가 C(TB-Engine-v1 대 `v8:full`) **3.62%**(38 / 1,050) + 3.00%p = 6.62%를 넘었다. 규칙대로 이 후보(v3, D4, λ = 1.0, c 1.5)로는 8404를 돌리지 않는다. TB-Engine-v1이 기준 엔진으로 남는다. 판정은 결과를 본 뒤 바꾸지 않는다.
+
+**대국 결과**
+
+| run | W/D/L | 점수 (쌍 95%) | 흑 / 백 | tree not-SAFE | 시간 비율 | 안전 위반 |
+|---|---|---|---|---|---|---|
+| A 후보 대 TB-Engine-v1 | 26 / 0 / 24 | **0.52** (0.40–0.64) | 0.56 / 0.48 | 9.2% (44 / 477) | **1.378** | 0 |
+| B 후보 대 `v8:full` | 41 / 6 / 3 | 0.88 (0.80–0.95) | 0.92 / 0.84 | **6.85%** | 1.232 | 0 |
+| C TB-Engine-v1 대 `v8:full` | 36 / 7 / 7 | 0.79 (0.70–0.88) | 0.76 / 0.82 | **3.62%** | 0.868 | 0 |
+
+- P92 guard PASS(H6-4b 값). 시간·색 guard 통과. B − C 쌍 차이 +0.09(95% −0.05 – +0.22, 보고용).
+- guard 실패가 없었다면 A 점수 0.52 ≥ 0.50이므로 `RUN_8404`였다.
+
+**초안과 다르게 보는 점 (진단: `scripts/h6_5_diagnose.py` → `docs/h6/h6_5d_8403.json`, 기록된 대국만 사용)**
+
+1. **"0.23%p 근소 초과"도, "후보가 확실히 더 위험"도 이 표본으로는 말할 수 없다.**
+   - 한 대국 안의 수들은 독립이 아니다. 같은 opening끼리 대국 단위로 bootstrap하면 차이는 +3.23%p, **95% 구간 −0.5 – +7.3%p**다. 차이가 margin 3%p를 넘는 비율은 52%다. 이 guard는 50대국에서 사실상 동전 던지기에 가까운 판별력을 가졌다.
+   - 그래도 판정은 사전 규칙대로 REJECT다. 이 사실은 다음 후보의 guard를 설계할 때 쓴다.
+2. **not-SAFE는 판이 꽉 찬 무승부에 몰려 있다.**
+   - 무승부는 모두 225수(판이 다 참)다. 그 대국들의 tree 수에서 not-SAFE는 후보 44 / 559(7.9%), 기준선 26 / 673(3.9%)이다.
+   - 승패가 난 대국에서는 후보 17 / 332(5.1%), 기준선 12 / 377(3.2%), 차이 +1.9%p다.
+   - 한 대국(8403/13/white, 무승부)이 61개 중 18개다. 이 대국을 빼면 후보는 5.4%다.
+   - 이것은 사후 부분집합이라 판정을 바꾸는 근거로 쓰지 않는다. 원인 진단의 출발점이다.
+3. **증가분은 대부분 UNKNOWN이고, 그 절반은 V8-C 예산 소진이다.**
+   - UNKNOWN 55 대 35, UNSAFE 6 대 3.
+   - V8-C 예산(400k 노드)을 다 쓴 수가 후보 30개, 기준선 13개이고, 모두 not-SAFE 수 안에 있다.
+   - not-SAFE 수는 느린 수와 같은 수다(수당 시간 중앙값 141 s, tree 수 전체는 2.1 s). **H6-4b의 시간 꼬리와 이번 not-SAFE 증가는 같은 현상**(V8-C가 끝내지 못하는 국면)이다. A의 시간 비율 1.378도 같은 원인으로 1.5에 가까워졌다.
+4. **안전 관점에서 중요한 수는 tree 수가 아니라 실제로 둔 수다.**
+   - not-SAFE tree 수 뒤 V8-C가 고른 수의 상태: 후보 SAFE 26 / UNKNOWN 33 / UNSAFE 2, 기준선 24 / 13 / 1.
+   - UNSAFE로 둔 수는 모두 다른 수도 전부 진 국면이었다(안전 위반 0).
+   - 결국 차이는 **"증명되지 않은 수를 둔 횟수 33 대 13"**이다.
+5. **prior 쏠림은 확인됐지만 not-SAFE의 직접 원인으로 보이지는 않는다.**
+   - tree가 prior 1위를 고른 비율: 후보 75.1%, 기준선 65.0%(A 72.3%). H6-4b의 가설(value tree는 prior를 더 따른다)과 맞다. `summarize_h6_5`의 요약은 `puct_value` 수를 빼고 세어 None으로 나왔다. 보고 항목 `tree_prior_top_rate`를 고쳤다(판정 무관).
+   - not-SAFE 수만 보면 prior 1위 비율이 후보 55.7%, 기준선 47.4%로 둘 다 평균보다 낮다. prior를 따른 수가 위험한 수였던 것은 아니다.
+6. **색별 leaf 평균은 안정된 bias로 읽기 어렵다.** A 흑 +0.350 / 백 +0.152, B 흑 +0.265 / 백 +0.342로 상대에 따라 방향이 바뀐다.
+7. **A의 not-SAFE 9.2%는 대부분 진 대국에서 나왔다**(44개 중 38개, 60수 이후 17 / 31). 이미 진 국면에서는 SAFE 수가 없는 것이 정상이다. 기준선(상대 쪽)의 같은 값은 기록되지 않아 비교하지 않는다.
+
+**판정과 해석**
+- REJECT는 그대로다. 현재 후보는 승격하지 않는다.
+- 근거가 말하는 것: 기력 저하의 증거는 없다(A 0.52, B − C +0.09, 둘 다 구간이 넓다). guard 실패는 "V8-C가 증명하지 못하는 국면(주로 꽉 찬 판의 무승부 종반)에 더 자주 들어가거나 그런 수를 더 자주 고른다"는 쪽이다. 이것이 "value가 실제로 진 수를 고른다"인지 "증명이 어려운 수를 고른다"인지는 아직 모른다.
+
+## H6-5D 설계: 실패 원인 분해 (2026-10-19, 대국 없이)
+
+목표: not-SAFE 증가의 원인을 아래 셋 중 하나로 가른다. 결과를 보기 전에 대응을 정해 둔다.
+
+| 원인 | 뜻 | 다음 후보 |
+|---|---|---|
+| A. value의 오판 | 같은 국면에서 value tree가 실제로 지는 수를 더 자주 고른다 | 깊은 패배 라벨(`vct_loss`) 보강 → 새 value(H6-2b/H7 데이터) |
+| B. 탐색 균형 | 같은 국면에서 고른 수의 상태는 비슷하다. 대신 Q 폭이 좁아 prior·소수 자식에 쏠려 대국 흐름이 달라진다 | c 재보정 또는 λ = 0.5 혼합 중 **하나**를 새 arm으로 |
+| C. 증명 예산 | UNKNOWN 대부분이 큰 예산에서 SAFE로 풀린다(어려운 수일 뿐 지는 수가 아님) | value 문제가 아니다. 예산·종반 처리는 두 엔진 공통의 엔진 변경으로 별도 검토하고, guard는 그 결과로 다시 정의 |
+
+**D1 (끝남, 기록 분해):** `docs/h6/h6_5d_8403.json`(위 표의 수치).
+
+**D2 UNKNOWN 해소 (탐색만, 대국 없음):**
+- 대상은 B와 C의 not-SAFE tree 수 99개(61 + 38)다. 그 국면에서 tree 수의 상태를 V8-C 예산의 10배(4M 노드)로 다시 판정한다.
+- 결과는 SAFE / UNSAFE / 여전히 UNKNOWN 중 하나다. UNSAFE로 풀리는 비율이 후보에서 뚜렷이 높으면 A, 대부분 SAFE면 C다.
+
+**D3 같은 국면 반사실 비교 (대국 없음):**
+- 국면은 B와 C의 not-SAFE 국면 99개와, 같은 run에서 고정 seed로 뽑은 SAFE 국면 99개다.
+- 두 엔진을 같은 국면·같은 seed로 돌려, 각자 tree 수의 V8-C 상태를 표준 예산으로 기록한다.
+- 같은 국면에서 후보의 not-SAFE가 기준선보다 많으면 수 선택 문제(A 또는 B)다. 비슷하면 국면 분포 문제(대국 흐름, B)다.
+
+**공통 규칙**
+- 진단은 판정을 바꾸지 않는다. 8403 결과는 REJECT로 남는다.
+- 다음 후보는 **하나만**, 새 arm 이름과 새 config hash로 만든다.
+- 다음 후보의 평가 seed는 쓰지 않은 **8404, 8405(공식)와 8406(예비)**다. 8406은 이번 커밋에서 `RESERVED_SEEDS`에 넣었다. 8403은 다시 쓰지 않는다.
+- not-SAFE guard는 50대국에서 판별력이 낮다(D1). 다음 후보의 guard를 바꿀지(예: 대국 단위 구간 사용, 두 seed 합산 뒤 판정)는 D2·D3 결과로 정하고, **다음 후보의 대국 전에** 문서로 고정한다. 기준선에도 같은 정의를 적용한다.
+- D2·D3 도구는 이 설계를 확정한 뒤 구현한다. D2는 국면당 수 분, D3는 국면당 두 엔진 탐색이므로 둘 다 수 시간 규모다.
+
+## H6-5D 확정 (2026-10-19, D2·D3 실행 전)
+
+위 설계에 대한 사용자 검토 네 가지(D2는 UNKNOWN 90개가 본 표본, 4M 결과는 "V8-C@4M" 판정, D3 control 매칭, 수치 판정 규칙과 INCONCLUSIVE 가지)를 사실 확인 뒤 모두 반영했다. 구현은 `scripts/h6_5d.py`(`d2`, `d3`, `judge`)이고, 테스트는 `tests/test_h6_5d.py`다.
+
+**사실 확인과 보정**
+- 표본 구성: 후보 UNKNOWN 55 + UNSAFE 6, 기준선 UNKNOWN 35 + UNSAFE 3. **D2 본 표본은 UNKNOWN 90개**이고, UNSAFE 9개는 control이다. UNSAFE는 증명이므로 4M에서도 UNSAFE여야 한다. 그렇지 않으면 도구 이상으로 보고 INCONCLUSIVE로 처리한다.
+- **"400k UNKNOWN"은 정확하지 않다.** V8-C는 tree 수를 먼저 **예산의 절반**(VCF 노드 200k, 캐시 안 된 VCF 호출 5,000회)만으로 검사한다. 400k는 다른 자식까지 포함한 전체 예산이다.
+- **UNKNOWN의 원인은 셋이다.** 노드 몫 소진, 호출 몫 소진, VCF 호출 하나의 노드 상한(20k) 도달.
+  - 표본 확인 결과(재현 일치): 기준선 8403/14/black ply 10은 호출 몫 5,000회에서 멈췄다(노드 5,260개, 6초). 후보 8403/15/white ply 11은 노드 몫 200k에서 멈췄다(호출 177회 중 상한 도달 9회, 123초).
+  - 그래서 LARGE는 **세 상한을 모두 10배**로 둔다: 호출당 200k 노드, 호출 100k회, 노드 4M, 몫 없음. 노드만 늘리면 호출 몫으로 멈춘 UNKNOWN은 풀리지 않는다.
+  - 각 검사에 멈춘 원인(`cut_kind`: calls / nodes / per_call_limit)을 기록한다.
+- **결과 표기:** `V8-C@4M SAFE / UNSAFE / UNKNOWN`. V8-C 정의(VCT1, 상대의 깊이 1 공격)에서 그 예산 안의 판정이다. 게임 이론상 참값이 아니다. 4M에서도 UNKNOWN이면 미해결로 남긴다.
+- **D2 재현:** 먼저 V8-C와 똑같이(새 solver, 같은 몫) 다시 검사해 기록된 상태와 같은지 확인한다. 하나라도 다르면 INCONCLUSIVE다. 표본 4개(UNSAFE 2, UNKNOWN 2)는 모두 일치했다.
+- **D3 control 매칭:** not-SAFE 국면마다 같은 run·같은 대국에서 ply가 가장 가까운 SAFE tree 국면 하나를 쓴다(동률이면 이른 ply, 한 번만 사용). 없으면 같은 run·같은 대국 종류(승패 / 225수 무승부)에서 고른다.
+  - 8403에서는 99개 모두 같은 대국에서 매칭됐다. ply 차이 평균 5.1, ply 중앙값은 not-SAFE 76, control 81이다.
+- **D3 교차 검사:** 두 엔진이 고른 tree 수를 **같은 solver로** 모두 검사한다. 표준 몫으로 먼저 보고, SAFE가 아니면 LARGE로 본다. D2에서 이미 검사한 (국면, 수)는 재사용한다.
+  - 엔진별로 tree 수의 prior 순위, 방문 수, Q, 방문한 root 자식 수, root Q std, prior 1위 여부를 기록한다.
+
+**판정 규칙 (`RULES`, 이 순서로 적용, 실행 전에 고정)**
+
+| 순서 | 조건 | 원인 | 다음 후보 |
+|---|---|---|---|
+| 0 | D2 재현 불일치, 또는 control UNSAFE가 4M에서 UNSAFE가 아님 | INCONCLUSIVE | 도구 점검 |
+| 1 | D3 전체(198국면): (value의 tree 수 V8-C@4M UNSAFE) − (기준선의 같은 값), 대국 단위 bootstrap **95% 하한 > 0** | **A** value 오판 | 깊은 패배 라벨(`vct_loss`) 보강 → 새 value |
+| 2 | D2 본 표본(90개 합산): 4M에서도 UNKNOWN **> 1/3** | INCONCLUSIVE (미해결) | 억지로 분류하지 않음. 사용자와 다음 조치 결정 |
+| 3 | D2 본 표본: V8-C@4M SAFE **≥ 2/3** 그리고 UNSAFE **≤ 0.10** | **C** 증명 예산 | value는 그대로 둔다. V8-C 예산·종반 처리와 guard 정의를 두 엔진 공통으로 검토 |
+| 4 | D3 전체: 표준 몫 not-SAFE 차이(value − 기준선)의 95% 구간이 **0을 포함** | **B** 탐색 결합 | 새 arm 하나: **λ = 0.5**(value + rollout) |
+| 5 | 그 외 | INCONCLUSIVE | 사용자와 결정 |
+
+- bootstrap은 출처 대국 단위로 10,000회(seed 0)다. 같은 대국의 국면은 함께 뽑는다.
+- B의 대응은 c 재보정이 아니라 λ = 0.5로 미리 정한다. 로드맵에 이미 있는 대안(H6-3 λ 규칙의 0.5)이고, 데이터로 맞출 새 매개변수가 없다. c 재보정은 별도 보정 프로토콜이 필요하다.
+- 진단 결과는 8403 판정을 바꾸지 않는다.
+- 새 후보는 하나, 새 arm과 새 config hash로 만든다. seed는 8404·8405, 예비 8406이다. `summarize_h6_5.py`의 seed 목록은 새 후보 프로토콜과 함께 고친다.
+- C가 나와 guard를 다시 정의하는 경우, 그 정의는 다음 대국 전에 문서로 고정하고 기준선에도 같게 적용한다.
+
+**비용 추정**
+- solver 속도는 약 1.6k 노드/초다(위 표본).
+- D2: SAFE로 끝나면 빠르다. 4M을 다 쓰는 국면은 하나에 최대 약 40분이다. 99개를 12 worker로 돌리면 최악 3–4시간이다.
+- D3: 198국면 × 두 엔진 탐색(어려운 국면은 엔진당 약 140초) + D2에 없던 수의 검사다. 6 worker로 수 시간이다.
+
+**실행 명령 (Windows, D2 → D3 → judge)**
+
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"; $env:PYTHONIOENCODING = "utf-8"; $env:PYTHONPATH = "$PWD\src"
+git pull --ff-only; git status --short
+New-Item -ItemType Directory -Force runs\h6_5d | Out-Null
+python -m unittest tests.test_h6_5d
+
+# D2: UNKNOWN 90 + UNSAFE control 9 (CPU만, torch 불필요)
+python -u scripts\h6_5d.py d2 --runs runs\h6_5\value_vs_full_8403.json runs\h6_5\tb1_vs_full_8403.json `
+  --workers 12 --jsonl runs\h6_5d\d2.jsonl --output docs\h6\h6_5d_d2.json 2>&1 | Tee-Object runs\h6_5d\d2.log
+
+# D3: not-SAFE 99 + 매칭 control 99, 두 엔진 같은 seed
+python -u scripts\h6_5d.py d3 --runs runs\h6_5\value_vs_full_8403.json runs\h6_5\tb1_vs_full_8403.json `
+  --d2 docs\h6\h6_5d_d2.json --policy-checkpoint ..\renju-alphazero\runs\h3_policy_64x4\best.pt `
+  --value-checkpoint runs\h6_value_head_v3\best.pt --value-device cuda --workers 6 `
+  --jsonl runs\h6_5d\d3.jsonl --output docs\h6\h6_5d_d3.json 2>&1 | Tee-Object runs\h6_5d\d3.log
+
+# 판정
+python scripts\h6_5d.py judge --d2 docs\h6\h6_5d_d2.json --d3 docs\h6\h6_5d_d3.json --output docs\h6\h6_5d_verdict.json
+```
+
+- 중단되면 같은 명령을 다시 실행한다. `--jsonl`에서 끝난 국면은 건너뛴다.
+- 결과 파일 세 개(`h6_5d_d2.json`, `h6_5d_d3.json`, `h6_5d_verdict.json`)를 커밋한다. 엔진 대국 국면과 판정만 들어 있다.
+
+## H6-5D 결과: Cause C (2026-10-19, `docs/h6/h6_5d_d2.json`, `h6_5d_d3.json`, `h6_5d_verdict.json`, 커밋 `f9aba7c`)
+
+사전에 고정한 `h6_5d.py judge`의 판정은 **C(증명 예산)**다. 재현 불일치 0, UNSAFE control 9 / 9 유지로 sanity를 통과했다. 사전 규칙대로 value checkpoint는 바꾸지 않는다. λ = 0.5와 새 value도 만들지 않는다. 8403은 REJECT로 남는다.
+
+**D2: 표준 예산 UNKNOWN 90개를 세 상한 ×10(4M)으로 재검사**
+
+| | n | V8-C@4M SAFE | UNSAFE | 여전히 UNKNOWN |
+|---|---|---|---|---|
+| 합산(판정 대상) | 90 | **64 (71.1%)** | **1 (1.1%)** | 25 (27.8%) |
+| 후보의 수 | 55 | 32 (58.2%) | 0 | **23 (41.8%)** |
+| 기준선의 수 | 35 | 32 (91.4%) | 1 (2.9%) | 2 (5.7%) |
+
+- 표준 단계에서 멈춘 원인은 노드 77, 호출 13이다. 4M에서 남은 25개는 노드 24, 호출당 상한 1이다. 큰 예산에서는 호출 수가 아니라 노드 폭발이 병목이다.
+
+**D3: 같은 국면 198개(not-SAFE 99 + 같은 대국 control 99)에서 두 엔진 비교**
+
+| | 표준 not-SAFE (기준선 / value) | 4M UNSAFE | 4M UNKNOWN | value − 기준선, 대국 단위 95% |
+|---|---|---|---|---|
+| not-SAFE 국면 99 | 76 / **88** | 14 / **7** | 20 / 24 | 표준 +12.1%p (+4.0 – +20.5) · 4M UNSAFE −7.1%p (−15.8 – −0.8) |
+| control 99 | 7 / 5 | 0 / 0 | 3 / 1 | 표준 −2.0%p (−9.2 – +6.4) |
+| 전체 198 | 83 / 93 | 14 / 7 | 23 / 25 | 4M UNSAFE −3.5%p (−7.9 – −0.4) |
+
+- 같은 tree 수를 고른 국면은 88 / 198이다. 방문한 root 자식은 9.27 대 5.95, prior 1위 선택은 99 대 124다(탐색 집중 재확인).
+- 수가 달랐던 110국면에서 4M UNSAFE는 기준선 9, value 2다.
+- 출처별로 보면, 후보 대국에서 나온 어려운 국면 61개에서 4M UNSAFE가 기준선 10, value 6이다. 기준선 대국에서 나온 38개에서는 4, 1이다. 방향이 같다.
+- 이 어려운 국면들에서 수당 시간 중앙값은 기준선 88초, value 144초다.
+
+**초안 검토**
+1. **C는 합산 기준으로만 성립한다.** 후보의 수만 보면 4M에서도 41.8%(23 / 55)가 미해결이다. 엔진별로 판정했다면 후보 쪽은 미해결(1/3 초과) 가지였다.
+   - 사전 규칙이 합산이었으므로 공식 판정은 C로 유지한다.
+   - 그러나 "value가 고른 수는 안전하다"는 23개 국면에 대해서는 말할 수 없다. 정확한 표현은 "4M에서 UNSAFE로 증명된 value의 수는 0개이고, 23개는 여전히 모른다"이다.
+2. **D3의 7 대 14는 미해결 수가 가린 결과로 보이지 않는다.** 4M UNKNOWN이 24 대 20으로 비슷하고, 출처별·수가 다른 국면별로도 같은 방향이다.
+   - 다만 상한이 −0.8%p로 0에 가깝고, 미해결 수까지 모두 UNSAFE라고 가정하면(31 대 34) 차이를 단정할 수 없다. "A를 지지하지 않는다"까지는 말할 수 있지만, "value가 더 안전하다"는 확정이 아니다.
+3. **메커니즘 해석(탐색 집중 → 증명이 어려운 수 → UNKNOWN·시간 꼬리)은 데이터와 맞는다.** 공식 원인은 C이고, B(탐색 결합)는 그 앞단의 2차 메커니즘이라는 초안의 정리가 적절하다.
+4. **"같은 증명을 더 적은 노드로"는 두 종류로 나눠야 한다.**
+   - **노드당 비용만 줄이는 정확한 가속:** 같은 입력에서 같은 노드를 같은 순서로 방문한다. 결과·노드 수·예산 cut이 그대로이므로 엔진 동작이 바뀌지 않는다.
+   - **방문 노드 자체를 줄이는 변경:** transposition, move ordering, proof 재사용 등은 같은 예산에서 SAFE / UNKNOWN 결과가 달라진다. **엔진 변경**이다.
+   - 예산이 시간이 아니라 노드·호출 수이므로, 정확한 가속만으로는 UNKNOWN이 하나도 줄지 않는다. 시간이 줄 뿐이고, 그 시간으로 더 큰 예산을 감당할 수 있게 된다.
+5. **정확한 가속은 이미 있다.** `rt30.fast3`(fast2 + native C threat-window scan, X1-A)는 frozen 함수와 같은 결과·노드 수를 내도록 검증됐다. 엔진 대국 국면에서 8.6배 빨랐다(H6 v3 라벨 생성 때 측정).
+   - 그런데 `run_mcts_v8_benchmark.py`와 `h6_5d.py`는 이것을 설치하지 않는다. **H6-5 대국과 D2·D3는 모두 가속 없이(off) 돌았다.** D2의 46분짜리 4M 검사도 fast3라면 수 분 수준일 가능성이 크다.
+6. 기타:
+   - `h6_2a_prime_cross_eval.json`과 `h6_3d_diag_v3.json`이 함께 커밋된 것은 문제없다. 둘 다 RenjuNet 행이 없는 지표 파일이고, 이 문서가 인용하는 dev 결과다.
+   - run 파일을 추적에서 뺀 것(`6e25e32`)도 괜찮다. 요약·진단 파일에 sha256이 남아 있다.
+
+**결론**
+- value v3 + D4는 유지한다. H6-5 실패는 "value가 지는 수를 더 고른다"가 아니라 "V8-C가 정해진 예산 안에 증명하지 못하는 수를 더 고른다"에 가깝다.
+- 후보의 수 23개는 4M에서도 미해결로 남아 있다. 그래서 안전하다고 단정하지는 않는다.
+
+## H6-6 설계 방향 (2026-10-19, 초안)
+
+목표: value leaf의 효과를, 증명 예산과 guard 정의에 휘둘리지 않고 다시 판정한다. 원칙은 지금까지와 같다. 한 번에 한 변수만 바꾸고, 판정 규칙은 새 seed의 대국 전에 고정한다.
+
+**H6-6a 정확한 가속 연결 (엔진 동작 불변)**
+- `run_mcts_v8_benchmark.py`, `run_s1_probes.py`, `h6_value_leaf_check.py`, `h6_5d.py`에 `--fast off|fast2|fast3`을 넣는다(worker 초기화에서 설치, 기본 off, 결과 파일에 기록). `hybrid.h6_fast`를 재사용한다.
+- 동일성 확인:
+  - TB-Engine-v1 회귀 fixture가 off·fast3에서 같은지 본다.
+  - D2 국면 일부에서 상태·노드 수·호출 수·cut 종류가 같은지 본다.
+  - TB-V1-Value 고정 국면에서 착수가 같은지 본다.
+- 측정: D2 국면의 표준·4M 검사 시간을 off 대비로 잰다. 이 수치가 H6-6b의 비용 근거다.
+
+**H6-6b 예산 정책 오프라인 평가 (대국 없음)**
+- D2 국면에서 tree 수 검사 예산을 2×, 5×, 10×로 올리면 UNKNOWN이 얼마나 풀리고 fast3로 얼마나 걸리는지 표로 만든다.
+- 이것은 결정을 위한 자료일 뿐이다. 엔진은 바꾸지 않는다.
+
+**결정 지점 (사용자): 둘 중 하나**
+
+| | (b) 권장: 엔진은 그대로, guard v2 | (a) 엔진 변경: 증명 예산 확대 |
+|---|---|---|
+| 내용 | TB-Engine-v1 그대로(가속만). guard를 "증명된 위험"과 "미해결"로 나눈다. 대국 뒤 not-SAFE tree 수를 4M + fast3로 오프라인 재검사한다 | V8-C가 tree 수 UNKNOWN일 때 예산을 한 번 올려 다시 검사(escalation). 두 엔진 모두 적용 |
+| 바뀌는 변수 | value leaf 하나(H6의 원래 질문) | V8-C와 value leaf. 기준 엔진도 바뀐다 |
+| 절차 | guard v2 고정 → v3 후보 재평가(8404, 8405, 예비 8406) | 먼저 "TB-Engine-v1 + escalation" 대 TB-Engine-v1을 따로 평가 → 통과하면 그 위에서 value 재평가 |
+| 로드맵 | H6 범위 안 | 엔진 변경은 track-b-post-e1 §2상 H7 주기 경계에서 채택. escalation은 H7 엔진 후보로 등록 |
+
+- (b)를 권하는 이유: H6의 질문(같은 엔진에서 leaf만 바꾸면 강해지는가)을 그대로 유지한다. 엔진 변경은 로드맵 규칙대로 H7로 보낸다.
+- (b)의 위험: 시간 꼬리가 남는다. A의 시간 비율이 1.378이었으므로 fast3를 양쪽에 똑같이 켜고 시간 guard를 판정한다.
+
+**guard v2 초안 ((b)를 고를 때, 8404 대국 전에 문서와 코드로 고정)**
+- 안전 위반 0(그대로).
+- **증명된 위험:** 대국 뒤 표준 not-SAFE tree 수를 모두 4M(+ fast3)로 재검사한다. 4M UNSAFE 비율의 차이(후보 − 기준선, 같은 opening 쌍의 대국 단위 bootstrap)가 점추정 ≤ +1%p이고, 95% 하한 ≤ 0(초과가 확립되지 않음)이어야 한다.
+- **미해결:** 4M에서도 UNKNOWN인 tree 수 비율이 기준선 + 3%p 이하(기존 margin 유지).
+- 시간: 평균 비율 ≤ 1.5(fast3 양쪽 동일). p95 비율은 보고한다.
+- 나머지(점수 단계, 색, P92)는 그대로다.
+- 주의: 이 정의는 8403 결과를 본 뒤에 만든다. 그래서 8403 판정에는 절대 쓰지 않고 새 seed에만 적용한다. margin은 8403에 맞춘 값이 아니라 원칙(기존 3%p 유지, 증명된 위험은 "확립된 초과 없음")으로 정한다. 그래도 8403 수치를 알고 만든 규칙이라는 점은 기록으로 남긴다.
+
+**하지 않는 것**
+- 4M을 그대로 엔진 기본값으로 쓰는 것(국면 하나 46분).
+- transposition·ordering 같은 노드 절감 변경을 H6 안에서 하는 것(엔진 변경, H7 후보).
+- λ = 0.5, value v4(H6-5D 판정 C의 사전 대응에 따라 보류).
+
+## H6-6 확정 프로토콜 (2026-10-19, 8404 대국 전에 고정)
+
+사용자 결정: **(b) 엔진은 그대로 + fast3 정확 가속 + guard v2로 새 seed 재평가.** 후보는 그대로다(v3 + D4, λ = 1.0, c 1.5, 기존 V8-C 예산). 두 엔진 모두 fast3로 돌린다. 실행 환경은 데스크톱 Ubuntu(WSL2)다.
+
+**사용자 검토 반영과 보정**
+- **guard v2 통계 기준 수정(사용자 지적이 맞음).** 앞 초안의 "95% 하한 ≤ 0"은 비열등 판정에 맞지 않는다. 후보가 얼마나 더 나쁠 수 있는지를 봐야 하므로 **상한**을 쓴다.
+  - 상한 ≤ +3%p면 PASS, 하한 > +3%p면 REJECT, 그 사이는 INCONCLUSIVE.
+  - margin은 H6-5에서 쓰던 3%p를 그대로 옮긴다(새로 맞추지 않음).
+- **4M UNSAFE와 4M UNKNOWN을 따로 판정한다.** UNKNOWN은 위험이 아니라 증명 난이도·비용이다.
+- **첫 seed에서는 4M guard로 탈락시키지 않는다.** 8403에서 50대국 구간이 너무 넓었기 때문이다. 8404에서는 계산·보고만 하고, 8404 + 8405(100대국)부터 적용한다.
+- **H6-6b(예산 2× / 5× / 10× 표)는 H6에서 뺀다.** 엔진 변경 설계 자료이므로 H7 엔진 후보 작업으로 넘긴다. H6-6b는 guard v2를 고정하는 단계로 바꾼다.
+- **fast3 가속 배수는 엔진마다 다를 수 있다**(value 쪽이 어려운 V8-C 검사를 더 만난다). 그래서 시간 비교는 H6-6 안에서 fast3 대 fast3로만 한다. H6-5(Windows, off)의 절대 시간과 비교해 판정하지 않는다.
+- **확인하지 못한 전제:** "같은 데스크톱에서 Ubuntu fast3가 Windows보다 빠르다"는 이 저장소에 측정 기록이 없다(기록된 1.7–1.8배는 데스크톱 대 SER5). 판정에는 영향이 없으므로 따로 재지 않는다. OS 비교 실험은 하지 않는다.
+
+**H6-6a 구현과 검증 (이 커밋)**
+- `--fast off|fast2|fast3`(기본 off)을 `run_mcts_v8_benchmark.py`, `run_s1_probes.py`, `h6_value_leaf_check.py`, `h6_5d.py`(`d2`, `d3`)에 넣었다.
+  - 모든 worker에서 `hybrid.h6_fast.install`을 실행한다. native 빌드가 없거나 낡았으면 시작 전에 멈춘다.
+  - 결과 파일에 `fast`(요청 모드, 실제로 바인딩된 함수, fast3면 native 빌드 기록: Python, SOABI, 컴파일러, 플래그, 소스·모듈 SHA256)를 남긴다.
+  - off로 돈 결과 파일은 바뀌지 않는다(게임 기록에도 off면 아무것도 더하지 않음).
+- 동일성 검증 도구: `scripts/h6_6_fast_check.py`. 세 부분이 모두 같아야 통과한다.
+  - TB-Engine-v1 회귀 fixture
+  - H6-5D d2의 V8-C 재검사 전부(표준 99개 + 4M 일부): 상태, 노드 수, 호출 수, cut 여부와 종류, 호출당 상한 횟수
+  - H6-5D d3 국면에서 두 엔진의 tree 수·최종 수·방문·Q(checkpoint 필요)
+- **컨테이너(Linux, Python 3.13, gcc -O2) 결과 `docs/h6/h6_6a_fast_check_container.json`: 통과.**
+  - fixture 6 / 6 같음, V8-C 102 / 102 같음(표준 99 + 4M 3).
+  - 시간: 표준 1,065초 대 off 기록 9,465초(8.9배), 4M 51초 대 549초(10.8배). off 기록은 사용자 데스크톱(Windows)에서 쟀으므로 기계 차이가 섞여 있다.
+  - engines 부분은 checkpoint가 없어 여기서 돌리지 않았다. 데스크톱에서 돌린다.
+- 테스트: `tests/test_h6_6_fast.py`(off와 fast2·fast3의 V8-C 결과 동일, native가 없으면 fast3는 건너뜀).
+
+**H6-6b guard v2 (`scripts/summarize_h6_6.py`, 테스트 `tests/test_h6_6_summary.py`)**
+
+| 단계 | 조건 | 판정 |
+|---|---|---|
+| 모든 단계 | 안전 위반 > 0(A·B·C), A의 흑 또는 백 < 0.45, A 시간 비율 > 1.5, P92 guard FAIL | REJECT |
+| 8404 | A 점수 < 0.50 | REJECT |
+| 8404 | A 점수 ≥ 0.50 | 8405 진행. 4M guard는 계산·보고만 |
+| 8404+8405 | 점수 < 0.55, 또는 4M guard 중 하나라도 REJECT | REJECT |
+| 8404+8405 | 점수 ≥ 0.55, 쌍 bootstrap 하한 > 0.5, 4M guard 둘 다 PASS | **ADOPT** |
+| 8404+8405 | 그 외(하한 ≤ 0.5 또는 4M guard INCONCLUSIVE) | INCONCLUSIVE → 8406 한 번 |
+| +8406 | 같은 기준, INCONCLUSIVE면 | REJECT |
+
+- **4M guard:** B·C의 표준 not-SAFE tree 수를 모두 `h6_5d.py d2 --fast fast3`로 4M 재검사한다. 표준에서 SAFE였던 수는 SAFE로 둔다.
+  - 4M UNSAFE 비율과 4M UNKNOWN 비율 각각에 대해 차이(B − C)를 같은 opening(seed / pair / 색) 단위로 bootstrap한다(10,000회, seed 0).
+  - 재검사가 빠진 수가 있거나, d2가 기록된 상태를 재현하지 못하거나, fast3가 아니면 판정하지 않는다.
+- 모든 run과 d2가 `--fast fast3`인지 확인한다. P92 guard는 H6-4b 값(PASS, 0 / 10 대 0 / 10)을 쓴다. 결과가 fast 모드와 무관하므로 다시 재지 않는다.
+- 이 규칙은 8403과 H6-5D 결과를 본 뒤 만들었다. 그래서 8403에는 쓰지 않고 8404부터만 적용한다.
+
+**하지 않는 것:** λ = 0.5, value v4, c 변경, V8-C 예산 변경, transposition·ordering·proof 재사용·종반 solver. 탐색 결과를 바꾸는 V8-C 개선은 모두 H7 엔진 후보로 넘긴다.
+
+**실행 명령 (데스크톱 Ubuntu / WSL2, bash)**
+
+```bash
+cd ~/renju-h6                     # WSL 쪽 checkout (경로는 환경에 맞게)
+git pull --ff-only && git status --short
+source .venv/bin/activate         # Linux venv (Windows .venv-cuda는 쓰지 않는다)
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+python -c "import torch; print(torch.__version__, torch.cuda.is_available())"   # True여야 함
+(cd src && CC=gcc python -m rt30.native.build --if-stale)                      # Ubuntu용 fast3 빌드
+
+# checkpoint와 8403 run 파일을 Windows에서 복사 (경로는 환경에 맞게)
+W="/mnt/c/오목 강화학습"
+mkdir -p runs/h3_policy_64x4 runs/h6_value_head_v3 runs/h6_5 runs/h6_6
+cp "$W/renju-alphazero/runs/h3_policy_64x4/best.pt" "$W/renju-alphazero/runs/h3_policy_64x4/best.json" runs/h3_policy_64x4/
+cp "$W/renju-h6/runs/h6_value_head_v3/best.pt" "$W/renju-h6/runs/h6_value_head_v3/best.json" runs/h6_value_head_v3/
+cp "$W/renju-h6/runs/h6_5/"*_8403.json runs/h6_5/
+sha256sum runs/h6_value_head_v3/best.pt   # a0fcccc4… 이어야 함
+
+# H6-6a: 테스트와 동일성 검증 (짧다)
+python -m unittest tests.test_h6_6_fast tests.test_h6_6_summary tests.test_h6_value_leaf tests.test_tb_engine_v1
+python -u scripts/h6_6_fast_check.py --runs runs/h6_5/value_vs_full_8403.json runs/h6_5/tb1_vs_full_8403.json \
+  --d2 docs/h6/h6_5d_d2.json --d3 docs/h6/h6_5d_d3.json --policy-checkpoint runs/h3_policy_64x4/best.pt \
+  --value-checkpoint runs/h6_value_head_v3/best.pt --value-device cuda --workers 8 \
+  --output docs/h6/h6_6a_fast_check.json 2>&1 | tee runs/h6_6/fast_check.log
+# "pass": true 가 아니면 멈추고 결과를 보여준다
+```
+
+```bash
+# H6-6c: seed 8404 (A, B, C 모두 fast3)
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; SEED=8404; W=8
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:puct_policy_vct2_50k \
+  --opponent-puct-c 1.5 --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --value-checkpoint $VAL --value-device cuda --games-jsonl runs/h6_6/value_vs_tb1_$SEED.jsonl \
+  --output runs/h6_6/value_vs_tb1_$SEED.json 2>&1 | tee runs/h6_6/value_vs_tb1_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h6_6/value_vs_full_$SEED.jsonl --output runs/h6_6/value_vs_full_$SEED.json 2>&1 | tee runs/h6_6/value_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h6_6/tb1_vs_full_$SEED.jsonl --output runs/h6_6/tb1_vs_full_$SEED.json 2>&1 | tee runs/h6_6/tb1_vs_full_$SEED.log
+
+# 4M 재검사 (B, C의 표준 not-SAFE tree 수)
+python -u scripts/h6_5d.py d2 --runs runs/h6_6/value_vs_full_$SEED.json runs/h6_6/tb1_vs_full_$SEED.json \
+  --fast fast3 --workers 12 --jsonl runs/h6_6/d2_$SEED.jsonl --output docs/h6/h6_6_d2_$SEED.json 2>&1 | tee runs/h6_6/d2_$SEED.log
+
+# 판정 (8404 단계)
+python scripts/summarize_h6_6.py --main runs/h6_6/value_vs_tb1_8404.json \
+  --aux runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+  --d2 docs/h6/h6_6_d2_8404.json --p92 docs/h6/h6_4b_s1_probes.json --output docs/h6/h6_6_summary_8404.json
+```
+
+- `RUN_8405`가 나오면 `SEED=8405`로 A·B·C와 d2를 돌린다. 판정은 두 seed를 모두 넣는다(`--main …8404.json …8405.json`, `--aux` 네 파일, `--d2` 두 파일, `--output docs/h6/h6_6_summary.json`).
+- 중단되면 같은 명령을 다시 실행한다. `--games-jsonl`과 `--jsonl`에서 끝난 것은 건너뛴다.
+- `W=8`은 i5-12600K(6P + 4E, 16스레드) 기준 제안이다. 각 worker가 CUDA로 value를 올리므로 GPU 메모리가 부족하면 줄인다.
+- 커밋할 것: `docs/h6/h6_6a_fast_check.json`, `docs/h6/h6_6_d2_*.json`, `docs/h6/h6_6_summary*.json`. run 파일은 `runs/`에 두고, 요약에 sha256을 남긴다.
+
+## H6-6 8404 결과: RUN_8405 (2026-10-19, `docs/h6/h6_6_summary_8404.json`, `h6_6_d2_8404.json`, `h6_6a_fast_check.json`, 커밋 `d8e1bba`)
+
+**H6-6a 동일성 검증 (데스크톱 Ubuntu, Python 3.12.3, fast3): 통과**
+- fixture 6 / 6 같음, V8-C 102 / 102 같음.
+- **두 엔진 착수 6국면 × 2엔진 모두 같음**(tree 수, 최종 수, 방문, Q, 방문 자식). 컨테이너에서는 못 돌렸던 부분이다.
+- 시간은 off 기록(Windows) 대비 표준 13.5배, 4M 19.8배다. OS·기계 차이가 섞인 참고값이다.
+
+**대국 결과 (모두 fast3)**
+
+| run | W/D/L | 점수 (쌍 95%) | 흑 / 백 | 시간 비율 | 안전 위반 |
+|---|---|---|---|---|---|
+| A 후보 대 TB-Engine-v1 | 32 / 2 / 16 | **0.66** (0.53–0.79) | 0.76 / 0.56 | 1.182 | 0 |
+| B 후보 대 `v8:full` | 47 / 1 / 2 | 0.95 | 0.96 / 0.94 | 1.378 | 0 |
+| C TB-Engine-v1 대 `v8:full` | 46 / 3 / 1 | 0.95 | 0.90 / 1.00 | 1.136 | 0 |
+
+- 판정: **RUN_8405**(사전 규칙: 8404는 기본 guard만 적용). P92 PASS.
+
+**4M 재검사와 guard v2 (보고용, 8404+8405부터 적용)**
+
+| | 후보(B) | 기준선(C) | 차이 (95%) | 8404 단독이었다면 |
+|---|---|---|---|---|
+| 표준 not-SAFE | 48 / 443 (10.8%) | 36 / 777 (4.6%) | — | — |
+| 표준 UNKNOWN → 4M | 47 → SAFE 25 / UNSAFE 0 / UNKNOWN 22 | 30 → 25 / 0 / 5 | — | — |
+| 4M UNSAFE 비율 | 0.23% | 0.77% | −0.55%p (−1.34 – +0.08) | PASS |
+| 4M UNKNOWN 비율 | 4.97% | 0.64% | **+4.32%p (−0.23 – +7.92)** | INCONCLUSIVE |
+
+- UNSAFE control 7 / 7 유지, 재현 불일치 0. 4M에서 남은 UNKNOWN은 모두 노드 소진이다.
+
+**초안 검토**
+- 수치와 판정은 모두 맞다. 해석(실제 위험 증가가 아니라 증명 난이도 증가, H6-5D 원인의 재현)도 데이터와 맞다.
+- **8403과 8404의 점수 차이(0.52 → 0.66)는 seed 분산이다.** 엔진과 모델이 같고, fast3는 결과를 바꾸지 않는다(위 검증). 그래서 초안의 "개선됐다고 말하면 안 된다"가 맞다. 판단은 두 seed 합산으로 한다.
+- **보조 대국의 tree 수 수가 다르다**(443 대 777, 대국 시간 60분 대 92분). 비율의 분모가 다르므로, 비율 차이는 "같은 대국 수에서 몇 번"이 아니라 "tree 수 하나당"으로 읽는다.
+
+**초안에 없는 중요한 예측: 4M UNKNOWN guard는 통과하기 어렵다**
+- 8404 단독(50 opening)의 구간 반폭은 약 4.1%p다. 8404+8405(100 opening)이면 약 2.9%p, 세 seed(150)면 약 2.4%p로 본다(√n 축소 가정, 근사).
+- 상한 ≤ +3%p로 PASS하려면 합산 점추정이 대략 **0%p(두 seed) / +0.6%p(세 seed) 이하**여야 한다.
+- 지금까지의 점추정은 +4.3%p(8404)다. 8403에서도 같은 방향이었다(+2.4%p, off 실행, 같은 엔진). 따라서 8405에서 차이가 크게 뒤집히지 않는 한 PASS는 어렵다.
+- REJECT(하한 > +3%p)도 합산 점추정이 약 +6%p 이상이어야 나온다. 그래서 가장 가능성 높은 경로는 **8405 INCONCLUSIVE → 8406 → 세 seed에서도 구간이 열려 있으면 REJECT**다.
+- 이것은 규칙을 바꿀 이유가 아니다. 8404를 본 뒤에 margin이나 지표를 바꾸면 사후 조정이 된다. 규칙은 그대로 두고, 이 예측을 지금 기록해 둔다.
+- 의미: 4M UNKNOWN guard는 "증명 난이도·비용"의 guard다. value leaf가 강하더라도, V8-C가 그 수들을 증명하지 못하는 한 이 guard로 막힌다. 이것을 풀려면 엔진 쪽 변경(V8-C 예산 escalation, 노드 절감)이 필요하고, 그것은 H7 엔진 후보 작업이다.
+
+**다음 단계**
+1. 프로토콜대로 **8405**를 같은 설정으로 돌린다(A·B·C + d2). 아무것도 바꾸지 않는다.
+2. 두 seed로 판정한다. INCONCLUSIVE면 8406을 한 번 돌린다.
+3. 결과와 무관하게 남는 가치: 같은 엔진 위에서 value leaf의 기력 효과를 2–3 seed로 추정한 값. REJECT로 끝나더라도, 그 사유가 4M UNKNOWN 하나뿐이라면 다음 작업은 H7 엔진 후보(V8-C 증명 예산)다. value v3는 바꾸지 않는다.
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; SEED=8405; W=8
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:puct_policy_vct2_50k \
+  --opponent-puct-c 1.5 --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --value-checkpoint $VAL --value-device cuda --games-jsonl runs/h6_6/value_vs_tb1_$SEED.jsonl \
+  --output runs/h6_6/value_vs_tb1_$SEED.json 2>&1 | tee runs/h6_6/value_vs_tb1_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h6_6/value_vs_full_$SEED.jsonl --output runs/h6_6/value_vs_full_$SEED.json 2>&1 | tee runs/h6_6/value_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h6_6/tb1_vs_full_$SEED.jsonl --output runs/h6_6/tb1_vs_full_$SEED.json 2>&1 | tee runs/h6_6/tb1_vs_full_$SEED.log
+python -u scripts/h6_5d.py d2 --runs runs/h6_6/value_vs_full_$SEED.json runs/h6_6/tb1_vs_full_$SEED.json \
+  --fast fast3 --workers 12 --jsonl runs/h6_6/d2_$SEED.jsonl --output docs/h6/h6_6_d2_$SEED.json 2>&1 | tee runs/h6_6/d2_$SEED.log
+
+# 두 seed 판정
+python scripts/summarize_h6_6.py --main runs/h6_6/value_vs_tb1_8404.json runs/h6_6/value_vs_tb1_8405.json \
+  --aux runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+        runs/h6_6/value_vs_full_8405.json runs/h6_6/tb1_vs_full_8405.json \
+  --d2 docs/h6/h6_6_d2_8404.json docs/h6/h6_6_d2_8405.json --p92 docs/h6/h6_4b_s1_probes.json \
+  --output docs/h6/h6_6_summary_8404_8405.json
+```
+
+## H6-6 d2 재현 검사 수정 (2026-10-19, 8406 d2의 mismatch 2건)
+
+**현상:** 8406 d2에서 재현 불일치 2건이 나왔고, 다시 돌려도 같은 2건이 나왔다. 둘 다 control(기록이 UNSAFE)이다. `puct_value…/8406/10/black` ply 28, `puct_policy…/8406/2/white` ply 41.
+- summary상 두 control 집합에서 표준 검사가 예산에서 멈춘 수가 각각 1개(호출 몫)이고, 4M에서는 모두 UNSAFE다.
+
+**원인 (사용자 분석이 맞음, 코드와 재현으로 확인):**
+- V8-C(`_verify_root_choice`)는 tree 수를 먼저 새 solver, 절반 예산으로 검사한다. UNKNOWN이면 그 수는 `_search_root_children` → `_proven`의 대기 목록에 그대로 남는다. 그리고 **같은 solver와 캐시로** 다음 라운드에서 추가 몫을 받아 다시 검사된다. 그래서 기록된 최종 상태는 첫 검사보다 진전될 수 있다(UNKNOWN → UNSAFE 또는 SAFE).
+- d2의 표준 검사는 그 첫 검사만 재현한다. 그런데 결과를 기록된 최종 상태와 같아야 한다고 비교했다. 이 전제가 틀렸다.
+- 재현: P94 국면에서 노드 예산 800이면 절반(400) 단발 검사는 UNKNOWN이고, V8-C 본 절차는 같은 수를 UNSAFE로 끝낸다(`tests/test_h6_5d.py::test_v8c_continues_an_unknown_first_check`).
+- 대국 결과, 4M 재검사 결과, 비결정성 문제가 아니다. 대국은 다시 돌릴 필요가 없다.
+
+**수정 (`h6_5d.replay_kind`):** 표준 검사는 V8-C 첫 검사의 정확한 재현이므로, 기록과의 관계를 셋으로 나눈다.
+
+| 종류 | 조건 |
+|---|---|
+| exact | 첫 검사 = 기록 |
+| continued | 첫 검사 UNKNOWN, 기록은 SAFE 또는 UNSAFE(V8-C가 이어서 판정), **4M 재검사가 기록과 같음** |
+| mismatch | 그 외(결정된 첫 검사가 기록과 다름, 기록 UNKNOWN을 첫 검사가 결정함, continued인데 4M이 기록과 다름) |
+
+- mismatch가 하나라도 있으면 지금처럼 판정하지 않는다. 검사를 약하게 만든 것이 아니라, 원래 의도한 sanity("d2가 기록과 모순되지 않는다")를 V8-C의 실제 절차에 맞게 고친 것이다. 첫 검사가 기록과 다르게 결정되면 여전히 걸린다.
+- `summarize_d2`와 `summarize_h6_6.py`는 저장된 `replay_mismatches`를 믿지 않고 행(기록, 표준, 4M 상태)에서 다시 계산한다. 그래서 8404·8405·8406 모두 같은 규칙과 같은 코드로 판정된다. 상태 계산 자체는 바뀌지 않았으므로 d2 검사를 다시 할 필요는 없다.
+- 기존 파일 확인: H6-5D d2(8403) 99행, H6-6 d2 8404 84행은 새 규칙에서도 모두 exact다. H6-5D 판정과 8404 판정은 영향이 없다.
+
+## H6-6 최종: REJECT (2026-10-19, `docs/h6/h6_6_summary_8404_8406.json`, 커밋 `8f51e76`)
+
+| | 8404 | 8404+8405 | 8404–8406 (최종) |
+|---|---|---|---|
+| A 점수 (쌍 95%) | 0.66 (0.53–0.79) | 0.67 (0.575–0.76) | **0.700 (0.630–0.767)**, 98 / 14 / 38 |
+| 흑 / 백 | 0.76 / 0.56 | 0.73 / 0.61 | 0.78 / 0.62 |
+| 시간 비율 | 1.182 | 1.155 | 1.149 |
+| 4M UNSAFE 차이 (95%) | −0.55%p (−1.34 – +0.08) | −0.35%p (−0.87 – +0.10) | −0.10%p (−0.59 – +0.36) **PASS** |
+| 4M UNKNOWN 차이 (95%) | +4.32%p (−0.23 – +7.92) | +2.31%p (−0.24 – +4.94) | **+2.61%p (+0.60 – +4.58) INCONCLUSIVE** |
+| 판정 | RUN_8405 | INCONCLUSIVE → 8406 | **REJECT**(세 seed에서도 미결정) |
+
+- 안전 위반 0, P92 PASS. d2 재현: 불일치 0, continued 2(8406, 위 수정 규칙).
+- 보조(`v8:full`): 후보 0.943, 기준선 0.887(서술용, 판정 무관). tree 수는 1,425 대 2,385다.
+- 공식 판정 **REJECT**는 바꾸지 않는다. TB-Engine-v1(rollout leaf)이 기준 엔진으로 남는다.
+
+**초안 검토**
+- 수치·판정·해석(기력은 강하게 확인, 4M UNSAFE 비열등 확인, 4M UNKNOWN 하나로 탈락, H6-5D 원인 C 재현)이 모두 맞다.
+- 덧붙일 점 네 가지:
+  1. **기력 비교는 같은 시뮬레이션 수 기준이고, 같은 시간 기준이 아니다.** 후보는 평균 1.15배 시간을 썼다(guard 1.5 이내). "같은 시간에서도 0.70"이라고 말하지 않는다.
+  2. **UNKNOWN 증가는 이제 0이 아니다(하한 +0.60%p).** "증명이 어려운 수를 더 고른다"는 경향은 확인됐다. 다만 4M UNKNOWN은 "안전"이 아니라 "모름"이다. UNSAFE 비열등은 증명된 수에 대한 말이고, 2.6%p의 미해결 수 안에 지는 수가 섞여 있을 가능성은 이 데이터로 배제되지 않는다.
+  3. **seed 간 차이가 크다.** 8405 d2는 표준 UNKNOWN이 6 대 12로 적었고, 8404·8406은 47 대 30, 50 대 29였다. UNKNOWN 지표는 대국 흐름(긴 종반이 몇 판 나오는가)에 크게 좌우된다.
+  4. **가장 중요한 점: 4M 재검사 결과는 "V8-C 예산을 10배로 올린 엔진"의 tree 수 판정과 거의 같은 값이다.** d2의 LARGE는 V8-C의 세 상한을 모두 10배로 둔 검사다. 그런데 그 예산에서도 후보의 미해결 비율이 기준선보다 +2.6%p 높았다. 따라서 **V8-C 예산만 키우는 엔진 변경으로는 이 guard의 차이가 닫히지 않을 가능성이 크다.** 차이가 예산 부족이 아니라 국면의 증명 난이도 자체에서 오기 때문이다(4M에서도 남은 UNKNOWN은 전부 노드 소진).
+- 그래서 초안의 "다음은 V8-C proof capacity" 방향은 맞지만, 단순 예산 확대가 아니라 **같은 노드로 더 많이 증명하는 변경**(transposition, ordering, proof 재사용)이거나, **미해결이 실제 위험인지 먼저 확인하는 것**이 먼저다.
+
+## H6 결론과 다음 단계 설계 (2026-10-19, 초안)
+
+**H6 결론**
+- value v3 + D4 leaf는 같은 엔진 위에서 기력을 크게 올렸다(150판 0.70). 증명된 위험(4M UNSAFE)은 늘리지 않았다.
+- 대신 V8-C가 4M으로도 판정하지 못하는 수를 더 자주 고른다. 사전 guard로는 그 차이가 +3%p 이하라고 확인하지 못해 REJECT됐다.
+- value v3는 보존한다. 재학습, λ = 0.5, c 변경은 지금 근거가 없다. H6-2b는 로드맵상 ADOPT 뒤에만 하므로 하지 않는다.
+
+**다음 단계 선택지 (사용자 결정)**
+
+| 경로 | 내용 | 비용 | 판단 |
+|---|---|---|---|
+| **D. 미해결 수의 실제 위험 측정 (H6-6D, 권장, 먼저)** | 이미 둔 대국에서 tree 수를 상태별(SAFE / 4M UNSAFE / 4M UNKNOWN)로 나누고, 그 뒤 상대가 실제로 응징했는지 잰다 | 기록 데이터 + 오프라인 탐색, 대국 없음 | 남은 질문("UNKNOWN은 실제 위험인가")에 직접 답한다 |
+| E1. V8-C 예산 확대 엔진 (TB-Engine-v2 후보) | fast3로 생긴 시간 여유를 V8-C 예산에 쓴다 | 오프라인 표 + 엔진 대국 | 위 4번 때문에 guard 차이를 닫지 못할 가능성이 크다. 단독으로는 권하지 않는다 |
+| E2. V8-C 증명 효율 (TB-Engine-v2 후보) | VCF/VCT transposition, move ordering, proof 재사용 | 구현 큼. 동일성이 아니라 건전성 검증 필요 | UNKNOWN을 실제로 줄일 수 있는 유일한 엔진 쪽 경로 |
+| H7-c1 바로 시작 | TB-Engine-v1(rollout)로 self-play 주기를 시작하고, value 엔진은 다음 주기 경계 후보로 둔다 | 큼 | value의 +0.20 점수를 버리고 시작하게 된다 |
+
+**권장 순서**
+1. **H6-6D (대국 없음, 보고용).** 결과는 H6-6 판정을 바꾸지 않는다. 다음 엔진 후보와 guard v3를 설계하는 근거로만 쓴다.
+   - **표본:** B·C(대 `v8:full`) 세 seed의 tree 수 전부. 4M 상태는 이미 있다(d2).
+   - **측정 1: 대국 결과.** tree 수 뒤 12수 안에 진 비율을 상태별로 잰다. k = 12는 지금 고정한다.
+   - **측정 2: 상대 공격 검사.** 우리 수 직후 국면에서 상대 쪽 V8-B 공격 검사(`attack_status`, `v8:full`과 같은 예산)가 WIN을 찾는지 잰다. 상대가 실제로 쓰는 모듈이므로 "응징 가능성"을 직접 잰다. 4M UNKNOWN 수만 하면 수백 개다.
+   - **읽는 법(미리 고정):**
+     - 4M UNKNOWN 수의 응징률이 SAFE 수와 비슷하면, UNKNOWN은 증명 장부의 문제다. 다음 guard v3는 "응징 가능성"(측정 2)으로 미해결 수를 판정하는 방향을 검토한다.
+     - 4M UNSAFE 수에 가깝게 높으면 실제 위험이다. E2(증명 효율)나 value의 깊은 패배 학습이 필요하다.
+2. **H6-6D 결과에 따라 TB-Engine-v2 후보를 하나 정한다.** 판정은 track-b-post-e1 §2.3 gate다(건전성, holdout, 빈도, 기력 비열등 하한 ≥ −0.05, 비용 ≤ 1.5, 기본값 off). H7-c1을 아직 시작하지 않았으므로 지금이 주기 경계다.
+3. **value 재진입:** TB-Engine-v2(또는 v1) 위에서 value leaf를 다시 평가한다. 새 arm, 새 seed(예: 8407–8409, 프로토콜 고정 때 예약), 그리고 결과를 보기 전에 고정한 guard v3로 한다. H6-6의 seed와 판정은 다시 쓰지 않는다.
+4. 그 결과로 H7-c1 엔진(B-engine + B-net 조합)을 정한다.
+
+**하지 않는 것:** H6-6 판정 변경, 8404–8406 재사용, guard v2 margin 사후 조정, value 재학습(근거 없음), 4M 예산을 그대로 엔진 기본값으로 쓰는 것(국면당 수 분).
+
+## H6-6D 확정 프로토콜 (2026-10-19, 실행 전 고정)
+
+사용자 검토를 사실 확인 뒤 반영했다. 구현은 `scripts/h6_6d.py`, 테스트는 `tests/test_h6_6d.py`다.
+
+**사실 확인**
+- **맞음: selective VCT2 공격은 이미 예정된 H7 B-engine 후보다.** track-b-post-e1.md §3에 "H7 B-engine에 selective VCT2 공격(증명된 WIN만)을 넣는다. E2 상대와 같은 모듈"이 있다. 모듈은 `analysis.vct2_attack.own_vct2_attack`(E2 예산)다. 사후 아이디어가 아니므로 H6-6D의 세 번째 지표와 다음 엔진 후보로 쓴다.
+- **맞음: "4M = 예산 10배 엔진"은 근사다.** d2는 이미 고른 수 하나를 새 solver로 검사한다. 실제 V8-C는 자식 사이에 예산을 나누고 solver를 이어 쓰며, 고르는 수 자체도 달라질 수 있다. 정확한 표현: "고정된 선택 수에 대해 예산을 10배로 해도 UNKNOWN 차이가 닫히지 않았다. 그래서 예산만 키우는 변경은 기대가 낮다. 엔진 전체를 10배로 돌린 경우까지 증명된 것은 아니다."
+- **보정: 12수 내 패배는 실제로 둔 수에 대한 것이다.** V8-C가 tree 수를 다른 수로 바꾸면, tree 수의 상태와 대국 결과가 서로 다른 수에 대한 정보가 된다. 그래서 loss12는 V8-C가 바꾸지 않은 tree 수에만 매기고, 바뀐 수는 따로 센다. 공격 검사(아래 2·3)는 tree 수 자체에 대한 가정 검사이므로 모든 tree 수에 매긴다.
+- **확인한 사례:** 웹 대국 P92에서 흑의 (3,4)(ply 92) 뒤, V8-B는 백의 승리를 찾지 못하고 VCT2 공격은 찾는다(테스트로 고정). V8-B만으로는 VCT2 패배수를 "위험 없음"으로 잘못 읽을 수 있다는 검토 지적과 맞다.
+
+**지표 (tree 수마다, B·C 세 seed)**
+
+| 지표 | 질문 | 정의 |
+|---|---|---|
+| `loss12` | 기록된 상대가 실제로 응징했나 | 그 수를 둔 쪽이 12수 안에 졌다(마지막 5목이 그 수 뒤 12수 이내). V8-C가 바꾸지 않은 수만. 관측값이지 참값이 아니다 |
+| `v8_win` | TB-Engine-v1의 공격층이 지금 응징할 수 있나 | 그 수 뒤 상대가 5목, V8 own VCF(TB-Engine-v1 한도), 또는 V8-B 증명 VCT1 공격 중 하나를 가진다 |
+| `vct2_win` | 예정된 H7 공격층이면 응징할 수 있나 | `v8_win` 또는 E2 selective VCT2 공격 |
+
+- 찾은 WIN은 증명이다(방어자 응수를 전부 둔다). **못 찾은 것은 SAFE가 아니다**(두 공격 모두 선택적 탐색이다).
+- **상태 묶음:** `safe`(표준 SAFE), 4M 재검사로 `resolved_safe` / `unknown4m` / `unsafe4m`.
+- **공격 검사 대상:** 표준 not-SAFE tree 수 전부와, 그 수마다 매칭한 SAFE control 하나(같은 run·같은 대국에서 ply가 가장 가까운 수, `h6_5d.match_controls`).
+- **통계:** 묶음별 비율과 95% 구간(대국 단위 bootstrap). 판독은 `unknown4m`과 매칭 control의 짝 차이(국면 짝, 대국 단위 bootstrap)로 한다.
+
+**판독 규칙 (후보 arm 기준, 미리 고정)**
+- 후보 arm으로 판독하는 이유는 guard를 넘은 것이 후보의 초과 UNKNOWN이기 때문이다. 기준선과 합산도 함께 보고한다.
+
+| 판독 | 조건 | 다음 |
+|---|---|---|
+| `danger` | `loss12`와 `vct2_win` 모두 control보다 높음(95% 하한 > 0) | 실제 전술 위험이 섞여 있다. E2 selective VCT2 공격(예정 후보)을 1순위 TB-Engine-v2 후보로 |
+| `proof_hard` | `loss12`와 `vct2_win` 모두 control과 구분되지 않음(95% 구간이 0 포함) | 주로 증명 난이도다. 같은 노드로 더 증명하는 후보(transposition → proof 재사용 → ordering) 하나 |
+| `mixed` | 그 외, 또는 짝 < 20 | 엔진을 승격하지 않는다. 최소 후보 하나만 오프라인 비교 |
+
+- `unsafe4m`은 표본이 작다(세 seed B·C 표준 UNSAFE 17개). 비율 하나로 "UNKNOWN이 UNSAFE와 비슷하다"고 판정하지 않고, n과 구간을 함께 본다.
+- H6-6D는 보고용이다. H6-6 REJECT를 바꾸지 않는다. 8404–8406은 진단에만 쓰고, 엔진 승격 판정에는 쓰지 않는다.
+
+**이후 순서 (검토 반영)**
+1. H6-6D 결과로 UNKNOWN의 성격을 판독한다.
+2. **E2 selective VCT2 공격**을 먼저 §2.3 관점에서 다시 검토한다(이미 예정된 후보, E2 비용·품질 측정이 있다). `danger`면 1순위다.
+3. 필요할 때만 증명 효율 후보를 하나 추가한다(`proof_hard`일 때).
+4. 후보 하나를 새 holdout seed에서 §2.3 gate로 TB-Engine-v2 승격을 판정한다.
+5. 승격된 엔진(또는 v1) 위에서 value v3를 새 seed(8407–8409, 프로토콜 고정 때 예약)와 미리 고정한 guard v3로 다시 평가한다.
+6. 그 조합(B-engine + B-net)을 고정하고 H7-c1을 시작한다.
+- **value v3의 상태:** "강한 기력 이득이 확인된 보존 후보, 새 B-engine과 guard v3에서 재평가 대기". 안전한 기본값으로 선언하지 않는다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python -m unittest tests.test_h6_6d
+python -u scripts/h6_6d.py \
+  --runs runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+         runs/h6_6/value_vs_full_8405.json runs/h6_6/tb1_vs_full_8405.json \
+         runs/h6_6/value_vs_full_8406.json runs/h6_6/tb1_vs_full_8406.json \
+  --d2 docs/h6/h6_6_d2_8404.json docs/h6/h6_6_d2_8405.json docs/h6/h6_6_d2_8406.json \
+  --fast fast3 --workers 12 --jsonl runs/h6_6/h6_6d.jsonl --output docs/h6/h6_6d.json 2>&1 | tee runs/h6_6/h6_6d.log
+```
+
+- 공격 검사는 약 380개(표준 not-SAFE 약 190 + control 같은 수)다. fast3로 국면당 수 초 수준이므로 12 worker로 수십 분 안쪽으로 본다. 중단되면 같은 명령을 다시 실행한다(`--jsonl`).
+- 커밋할 것: `docs/h6/h6_6d.json`.
+
+## H6-6D 결과: proof_hard (2026-10-19, `docs/h6/h6_6d.json`, 커밋 `2c6e517`)
+
+사전 판독 규칙의 결과(후보 arm)는 **`proof_hard`**다. 합산도 `proof_hard`, 기준선은 `mixed`(짝 18 < 20)다. H6-6 REJECT는 그대로다.
+
+| 묶음 (후보) | n | loss12 | v8_win | vct2_win |
+|---|---|---|---|---|
+| safe | 1,317 | 0.46% | 0 | 0 |
+| resolved_safe | 53 | 0 | 0 | 0 |
+| **unknown4m** | **48** | **0 / 38** | **0 / 48** | **0 / 48** |
+| unsafe4m | 7 | 0 | 57.1% | 57.1% |
+
+- 짝 비교(unknown4m − 같은 대국 SAFE control, 후보 48짝): loss12 −5.3%p (−21.4 – 0, 7대국), v8_win 0 (0 – 0, 11대국), vct2_win 0 (0 – 0, 11대국).
+- 합산 unsafe4m 21개에서는 v8_win·vct2_win이 71.4%다. 공격 검사가 위험 수를 잡는 능력이 있다는 대조군이다.
+- tree 수 3,810개 중 V8-C가 바꾼 수는 119개다.
+
+**초안 검토 (수치·판독은 맞음, 해석 보정 세 가지)**
+1. **loss12는 이번 표본에서 정보가 거의 없다.**
+   - 후보 unknown4m 48개 중 30개가 225수 무승부 대국에 있다(8404: 11 / 22, 8405: 2 / 2, 8406: 17 / 24). 모두 ply 150 미만이다.
+   - 후보는 `v8:full`에게 150판 중 6판만 졌고, safe 수의 loss12 기준율도 0.46%다.
+   - 그래서 "12수 안에 진 적 없음"은 상대가 거의 응징하지 못한다는 사실과 구분되지 않는다. `proof_hard` 판독은 사실상 **공격 검사**(unknown4m 0 / 48 대 unsafe4m 57–79%)에 기대고 있다.
+2. **표본은 11대국에 몰려 있다.** 공격 검사의 짝 48개는 11대국에서 나왔다. 유효 표본은 48보다 훨씬 작다. 초안의 "48개는 독립이 아니다" 지적이 맞다.
+3. **결론 표현.** "UNKNOWN이 안전하다"가 아니라 "현재 공격층(5목, VCF, VCT1, selective VCT2)으로는 미해결 수의 추가 위험이 보이지 않는다"이다. 초안의 표현이 맞다.
+
+**다음 엔진 축에 대한 판단 (초안에 동의)**
+- E2 selective VCT2는 이번 미해결 수 48개 중 하나도 잡지 못했다. 따라서 **H6 병목(4M UNKNOWN)을 직접 줄이는 수단이 아니다.**
+- 다만 VCT2는 기준선 safe control 일부(2.4%)에서 V8-B가 못 보는 승리를 찾았다. 예정대로 H7 self-play의 전술 품질 후보로 따로 평가한다.
+- H6 병목을 겨냥하는 축은 **같은 노드로 더 많이 증명하는 것**이다.
+
+**새로 확인한 구조적 사실: 현재 VCF 탐색에는 transposition이 없다**
+- `search.mcts_v7._find_vcf_recursive`는 깊이 우선 탐색이고, 방문한 국면을 기억하지 않는다. 같은 돌 배치가 다른 순서로 나오면 매번 다시 푼다.
+- 캐시는 `ThreatSolver._vcf_cache` / `_after_cache`뿐이다. VCF **호출의 시작 국면** 단위이고, 결정(착수) 하나 안에서만 산다.
+- 4M에서 남은 UNKNOWN은 전부 노드 소진이었다. 노드 소진의 상당 부분이 transposition 재방문이라면, VCF 내부 transposition table이 같은 예산에서 판정을 늘릴 여지가 크다. 다만 아직 측정하지 않았다.
+
+## H7-E 설계 방향: 증명 효율 엔진 후보 (2026-10-19, 초안)
+
+목표: 같은 노드·호출 예산에서 V8-C가 더 많은 tree 수를 SAFE / UNSAFE로 판정하게 한다. 증명 건전성(§2.3-1)은 절대 깨지 않는다.
+
+**E0: 효과 측정 (엔진 변경 없음, 오프라인)**
+- **대상:** H6-6 d2의 표준 not-SAFE tree 수(세 seed B·C), 특히 4M UNKNOWN 66개와 매칭 SAFE control.
+- **측정:** 표준 첫 검사 안에서 VCF 노드 중 transposition 재방문(같은 국면, 같은 공격 측, 남은 four 수 이상)의 비율. 계측용 복사본으로 잰다. frozen 파일은 고치지 않는다.
+- **목적:** PE 후보들의 기대 효과를 구현 전에 비교한다.
+  - transposition: VCF 내부 재방문 제거
+  - proof 재사용: 같은 대국의 이전 결정에서 정확히 끝난 결과를 이어 쓰기
+  - ordering: 탐색 순서만 바꾸기
+
+**E1: 후보 하나 구현 (예상 1순위: VCF transposition table)**
+- **건전성 규칙:** 정확하게 끝난 결과만 저장한다.
+  - "VCF 없음"은 그 하위 탐색이 노드 상한에 잘리지 않았고, 남은 four 수가 저장 때 이상일 때만 재사용한다.
+  - 예산에 잘린 결과는 저장하지 않는다. 기존 `_BudgetedSolver`가 cut을 캐시하지 않는 원칙과 같다.
+- **결정성:** table은 탐색 호출(또는 결정) 단위로 만든다. 프로세스 전체나 대국 사이에서 공유하지 않는다. worker 순서에 따라 결과가 바뀌면 안 되기 때문이다.
+- **구현 위치:** frozen 파일(`threats.py`, `mcts_v8.py`)과 frozen lock 파일은 고치지 않는다. 새 모듈에 두고, 엔진 설정 옵션(기본 off)으로 바꿔 끼운다. 이것은 결과가 바뀌는 변경이므로 `--fast`가 아니라 **엔진 버전 단계**다.
+- **오프라인 검증 (대국 전):**
+  - **건전성:** d2 전 국면에서 새 solver의 판정이 결정된 경우(SAFE / UNSAFE), 기존 solver의 4M 판정이 결정됐다면 그것과 모순이 0이어야 한다. UNSAFE는 witness를 검증한다.
+  - **off 동일성:** off에서는 TB-Engine-v1 회귀 fixture와 착수가 같아야 한다.
+  - **효과:** 표준 예산에서 4M UNKNOWN 66개 중 몇 개가 판정되는가. 표준 not-SAFE 전체 UNKNOWN은 얼마나 줄어드는가. 검사 시간(fast3 기준)은 어떤가.
+  - 효과 기준(예: 4M UNKNOWN의 판정 비율)은 E0 결과를 본 뒤, E1 측정 전에 고정한다.
+
+**E2: TB-Engine-v2 후보 판정 (§2.3 gate, 새 holdout seed)**
+- TB-Engine-v1 + PE 옵션 on 대 TB-Engine-v1을 비교한다(rollout leaf, value 없음).
+- gate:
+  - 건전성: `unsound_witness` 0
+  - holdout: 새 seed. 8404–8406은 쓰지 않는다
+  - 빈도: tree not-SAFE·UNKNOWN 감소가 반복되는가
+  - 기력: 짝 비교 하한 ≥ −0.05
+  - 비용: ≤ 1.5
+  - 격리: 기본 off
+- selective VCT2(E2 모듈)는 **별도 후보로 따로** 판정한다. 한 번에 한 변경만 보기 위해서다.
+
+**E3: value 재평가 (새 엔진 위)**
+- TB-Engine-v2(채택 시) 위에서 value v3를 새 arm, 새 seed(8407–8409, 프로토콜 고정 때 예약)로 다시 평가한다.
+- **guard는 v2를 그대로 쓰는 것을 권한다.** margin 3%p, 4M 재검사의 상한 판정, 단계 규칙을 그대로 둔다. 바뀐 것이 엔진(증명 능력)뿐이어야 결과를 믿을 수 있다. 엔진이 좋아져서 통과하는 것은 정당하지만, guard를 바꿔서 통과하는 것은 아니다. 4M 재검사는 새 solver의 10배 예산으로 한다.
+- 통과하면 B-engine + B-net 조합을 고정하고 H7-c1을 시작한다.
+
+**하지 않는 것:** H6-6 판정 변경, guard v2 margin 변경, value 재학습, VCT2와 PE를 한 후보로 묶는 것, 노드 예산만 늘리는 것.
+
+## H7-E0 확정: VCF 중복 작업 계측 (2026-10-19, 실행 전 고정)
+
+사용자 검토(키 정의, 노드 절약량, `resolved_safe` 추가, 결과 불변, 재사용 가능 여부 분리, go / no-go 기준)를 사실 확인 뒤 모두 반영했다. 구현은 `scripts/h7_e0_vcf_transpositions.py`, 테스트는 `tests/test_h7_e0.py`다. 보고용이다.
+
+**사실 확인**
+- frozen `search.mcts_v7._find_vcf_recursive`는 깊이 우선 재귀다. `_VCFState`에는 `node_limit / nodes / exhausted`만 있고 방문 기록이 없다.
+- 결과는 `(국면, 공격 측, max_fours − fours_used)`에 의존한다. 그래서 키를 이 셋으로 잡는다. 정확한 국면만 쓰고 D4는 쓰지 않는다.
+- 재귀는 매번 돌을 더 놓으므로 순환이 없다. 그래서 같은 키를 다시 만나면 첫 방문은 이미 끝나 있고 결과를 알 수 있다.
+- `mcts_v7.py`는 frozen baseline 해시 잠금 대상이다. 그래서 계측본은 별도 스크립트 안의 복사본이다. V8-C solver가 부르는 `analysis.mcts_v8._find_vcf_with_stats` 이름만 검사 동안 바꿔 끼운다(fast3와 같은 방식). frozen 파일은 고치지 않는다.
+
+**측정 정의**
+- **첫 방문 결과:** `win`(VCF 찾음), `no_win`(노드 상한에 잘리지 않고 끝남, 그 키에서 완전 탐색), `cut`(노드 상한에 잘림). 앞의 둘만 재사용 가능하다.
+- **재사용 가능 노드:** 재사용 가능한 키를 다시 방문했을 때 그 방문이 쓴 노드다. 가장 바깥 중복에서만 센다(안쪽 중복을 두 번 세지 않음).
+  - 아낀 노드는 다른 곳에 쓰이므로, 이 값은 상한 성격의 추정이지 예측이 아니다.
+- **범위 두 가지:**
+  - `call`: VCF 호출 하나 안. E1 후보의 범위다.
+  - `check`: V8-C 검사 하나의 모든 VCF 호출. 참고용이다.
+- **결과 불변:** 국면마다 계측 없는 검사와 계측 검사를 둘 다 돌린다. 상태, 노드 수, 호출 수, cut 여부와 종류가 모두 같아야 한다(`identical`). 하나라도 다르면 판정은 `tool_error`다.
+- **기록 항목:** VCF 호출 수, 재귀 진입 수, 고유 상태, 중복 진입, 중복률, 총 노드, 재사용 가능 노드와 비율(call / check), 첫 방문 결과별 중복 수, 중복의 남은 four 수(중앙값, p90, 최대).
+
+**표본**
+- H6-6 B·C 세 seed의 표준 not-SAFE tree 수를 4M 상태로 묶는다: `resolved_safe`, `unknown4m`, `unsafe4m`(`unsafe4m`은 보고용).
+- 각 수마다 매칭 SAFE control 하나를 붙인다(같은 run·대국, 가장 가까운 ply).
+- 표준 검사는 V8-C가 tree 수를 처음 검사할 때와 같다(`h6_5d.STANDARD`). `--large`를 주면 not-SAFE 묶음에 4M 검사도 잰다.
+
+**E1 진입 판정 (call 범위, 표준 검사 기준, 실행 전 고정. E1 채택 기준은 E1 측정 전에 따로 고정)**
+
+| 판정 | 조건 |
+|---|---|
+| `strong_go` | unknown4m 재사용 가능 노드 비율 ≥ 20%, 그리고 매칭 control보다 높음(국면 짝 차이, 대국 단위 95% 하한 > 0) |
+| `weak_go` | 10% ≤ 비율 < 20%, 그리고 control보다 높음 → 시제품만 |
+| `no_go` | 10% 미만, 또는 control보다 높지 않음 → proof 재사용 / ordering 쪽 E0로 |
+
+- 해석은 세 묶음(unknown4m, resolved_safe, safe_control)을 함께 본다.
+  - unknown4m > resolved_safe > control이면 transposition이 병목과 직접 맞는다.
+  - 셋이 비슷하면 핵심 병목이 아니다.
+  - resolved_safe만 높으면 가장 어려운 수는 다른 원인일 수 있다.
+
+**사전 점검 (판정 아님):**
+- WEB 국면 4개와 8403 기록 UNKNOWN 3개에서 계측본과 원본이 모두 같았다.
+- 8403 UNKNOWN 3개에서는 표준 검사 노드 200k 중 **84–93%**가 이미 `no_win`으로 끝난 상태의 재방문이었다(중복률 90–97%).
+- 8403은 E0 표본(8404–8406)이 아니므로 판정에 쓰지 않는다. 신호의 크기만 미리 본 것이다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python -m unittest tests.test_h7_e0
+mkdir -p runs/h7 docs/h7
+python -u scripts/h7_e0_vcf_transpositions.py \
+  --runs runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+         runs/h6_6/value_vs_full_8405.json runs/h6_6/tb1_vs_full_8405.json \
+         runs/h6_6/value_vs_full_8406.json runs/h6_6/tb1_vs_full_8406.json \
+  --d2 docs/h6/h6_6_d2_8404.json docs/h6/h6_6_d2_8405.json docs/h6/h6_6_d2_8406.json \
+  --fast fast3 --workers 12 --jsonl runs/h7/e0.jsonl --output docs/h7/h7_e0_vcf_transpositions.json 2>&1 | tee runs/h7/e0.log
+```
+
+- 국면은 약 380개다(not-SAFE 약 190 + control). 국면마다 계측 없는 검사와 계측 검사를 둘 다 하므로, UNKNOWN 국면은 하나에 수십 초다. 12 worker로 수십 분 안쪽으로 본다.
+- `--large`(4M 계측)는 판정에 쓰지 않는다. 국면당 수 분이므로 필요할 때만 따로 돌린다(출력 파일 이름을 바꿔서).
+- 끝나면 `docs/h7/h7_e0_vcf_transpositions.json`을 커밋한다. 마지막 줄의 `identical`이 true가 아니면 결과를 보여 달라.
+
+## H7-E0 결과: strong_go (2026-10-19, `docs/h7/h7_e0_vcf_transpositions.json`, 커밋 `05ed888`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 해석 두 가지를 고치고, 초안에 없던 사실 세 가지를 더했다.
+
+**확인한 수치 (call 범위, 표준 검사)**
+- `identical` true: 382개 국면 모두에서 계측본과 원본의 상태, 노드, 호출 수, cut이 같았다.
+- unknown4m(66개, 22국)의 재사용 가능 노드 비율은 **85.97%**다(value 86.29%, 기준 85.12%). 중복률은 92.19%이고, 중복은 모두 첫 방문이 `no_win`이었다(`win` 0, `cut` 0).
+- 다른 묶음: resolved_safe 75.39%(104개), safe_control 74.21%(191개), unsafe4m 60.43%(21개).
+- control과의 짝 차이(대국 단위 bootstrap):
+  - unknown4m +35.91%p [25.54, 44.85], 22국
+  - resolved_safe +31.80%p [22.94, 39.62], 53국
+  - unsafe4m −2.0%p [−23.9, +19.4], 18국
+- check 범위 절약(86.19%)은 call 범위와 거의 같다. 따라서 call 단위 table로 충분하다.
+- 판정은 `strong_go`다: 비율 ≥ 20%, 짝 차이 하한 > 0.
+
+**해석 수정**
+1. **"86% 절약"은 속도 예측이 아니다.** 재사용 가능 노드는 가장 바깥 중복의 노드만 센 값이다. table이 있으면 아낀 노드는 더 깊은 새 탐색에 쓰이고, 그 탐색에도 중복이 생긴다.
+   - 그래서 같은 200k 예산이 frozen 기준 몇 배의 예산이 되는지는 이 값으로 정해지지 않는다. 단순 환산(1 / (1 − 0.86) ≈ 7배)은 참고값일 뿐이다.
+   - 이 효과는 E1에서 판정 수로 직접 잰다.
+2. **unknown4m 비율이 높다는 것이 "unknown4m이 풀린다"는 뜻은 아니다.** unknown4m은 frozen 4M(노드 20배, 호출 20배, 호출당 10배)에서도 UNKNOWN이었다. 4M 검사도 같은 중복을 안고 있다.
+   - 그래서 E1의 1차 지표는 "표준 UNKNOWN 전체 중 판정되는 비율"로 잡는다. unknown4m은 4M + table로 따로 본다(아래).
+   - 다만 결과는 열어 둔다(사용자 검토). 중복 제거의 효과는 예산에 선형이 아니고, 4M frozen의 재사용 비율은 아직 재지 않았다. 세 결과 모두 의미가 있다.
+     - 표준 + table에서 풀림: 중복 제거만으로 4M frozen보다 효율적인 경우가 있다.
+     - 표준에서는 안 풀리고 4M + table에서 풀림: table은 맞지만 예산도 여전히 중요하다.
+     - 4M + table에서도 UNKNOWN: VCF 중복 밖의 병목이 크다.
+
+**추가 사실 (결과 파일과 코드에서 확인)**
+1. **표준 UNKNOWN의 cut 원인이 섞여 있다.** E0의 not-SAFE 191개 중 표준 UNKNOWN은 176개다. 그 가운데 150개는 노드 예산(200k)에, 26개는 호출 상한(5k)에 잘렸다.
+   - 묶음별 호출 상한 cut: resolved_safe 23/104, unknown4m 1/66, unsafe4m 2/6.
+   - **(사용자 검토로 수정)** 이 26개는 최종적으로 호출 상한에서 멈춘 국면이라, 노드 절약만으로 풀린다고 보장할 수 없다. 그러나 풀 수 없는 것도 아니다.
+     - table은 호출 수를 직접 줄이지는 않는다.
+     - 하지만 호출당 노드 상한에 잘려 `VCF_UNKNOWN`이던 호출을 같은 상한 안에서 `NONE` / `WIN`으로 끝낼 수 있다. 그러면 바깥 VCT 검사가 5k번째 호출 전에 끝날 수 있다.
+     - 그래서 "최대 해결률 85%" 같은 상한은 없다. 이 26개는 따로 관찰한다.
+   - 반대로, table이 노드를 줄이면 같은 노드 예산 안에서 호출이 더 많이 일어나므로 병목이 호출 상한으로 옮겨갈 수 있다. E1은 cut 이동(off cut 원인 → on 결과)을 함께 기록한다.
+2. **no_win 전용 table은 순수한 가지치기다.** 정확히 끝난 `no_win` 키를 다시 만나면, frozen 재귀는 그 하위에서 반드시 None을 돌려준다.
+   - 그 하위를 건너뛰어도 깊이 우선 순서와 처음 찾는 VCF는 바뀌지 않고, 노드 수만 줄어든다.
+   - 따라서 **frozen 호출이 노드 상한에 잘리지 않고 끝난 경우, table 호출은 결과·witness가 똑같고 노드는 같거나 적다.** 결과가 달라질 수 있는 곳은 frozen 호출이 잘린 곳뿐이다.
+   - 이 성질은 호출 단위로 정확하게 시험할 수 있다. E1 건전성 검사의 핵심이다.
+   - 조건: 키 (국면, 공격 측, 남은 four 수)가 **정확히 같을 때만** 재사용한다(E0가 잰 것과 같음). 첫 방문 하위에 노드 상한 cut(`exhausted`)이 한 번도 없었어야 한다.
+   - "남은 four 수가 저장 때 이하이면 재사용"하는 단조 일반화는 E0가 재지 않은 추가 최적화다. E1에 섞지 않고, E1 효과를 확인한 뒤 E1b로 따로 본다(사용자 검토).
+   - VCF 보조 함수(`_window_candidates`, `_winning_moves`, `_is_legal_for_player`, `_wins_for_player`, `_legal_completions`, `_placed_completions`)는 history와 to_play를 쓰지 않는다(`inspect`로 확인). 그래서 키 (국면, 공격 측, 남은 four 수)로 충분하다.
+   - 중복 중 `win`이 0이므로, 첫 버전은 `win`을 저장하지 않는다. 저장하면 witness 재조립이 필요한데 얻는 것이 없다.
+3. **VCF 호출 지점이 둘이다.** `analysis.mcts_v8`의 `_find_vcf_with_stats`는 V8-C solver(`_BudgetedSolver.vcf`)와 루트의 자기 VCF(V8-B 앞, `own_vcf`)에서 함께 쓰인다.
+   - 모듈 이름을 통째로 바꿔 끼우면 착수 선택도 바뀐다(자기 VCF가 cut 대신 찾아질 수 있음).
+   - E0가 잰 것은 V8-C 검사뿐이다. 그래서 **E1 범위는 V8-C solver 하나로 한정**한다. 한 번에 한 변경만 보기 위해서다.
+
+## H7-E1 확정: V8-C solver의 VCF no_win table (2026-10-19, 실행 전 고정)
+
+사용자 검토에서 방향, D 기준(30% / 10%), V8-C solver 한정 범위, no_win 전용, E2 / E3 순서가 승인됐다. 수정 두 가지(정확한 키, 호출 상한 26개의 표현)와 보고 항목 추가(D의 arm별 값, cut 이동)를 사실 확인 뒤 반영했다.
+- 구현: `src/analysis/vcf_tt_v1.py`(table VCF), `scripts/h7_e1_vcf_table.py`(검증)
+- 테스트: `tests/test_h7_e1.py`
+
+**후보:** TB-Engine-v1의 V8-C 검사(`_BudgetedSolver.vcf`)에서만, VCF 호출 하나 안에 table을 둔다.
+- 키는 E0와 같은 정확한 `(국면, 공격 측, 남은 four 수)`다. 하위 탐색이 노드 상한에 잘리지 않고 VCF 없이 끝난 키만 저장한다. 같은 키를 다시 만나면 노드 0개로 "VCF 없음"을 돌려준다.
+- `win`과 cut 결과는 저장하지 않는다. 단조 일반화(E1b)도 하지 않는다.
+- 결정성: table은 호출마다 새로 만든다. worker, 대국, 결정 사이에서 공유하지 않는다.
+- 예산(호출당 20k, 검사 몫 200k 노드와 5k 호출)과 다른 규칙은 그대로다.
+- 보조 함수는 호출 때 `search.mcts_v7`에서 읽는다. 그래서 fast3의 정확한 가속이 그대로 적용된다.
+
+**구현 위치**
+- frozen 파일(`mcts_v7.py`, `mcts_v8.py`, `threats.py`, `tb_engine_v1.py`)은 고치지 않는다.
+- 검증 스크립트는 E0처럼 검사 동안 `analysis.mcts_v8._find_vcf_with_stats`만 바꿔 끼운다.
+  - 이 이름은 V8-C solver와 루트의 `own_vcf`가 함께 쓴다.
+  - 검증의 검사(`h6_5d.check_status`)는 solver만 부르므로, 이 검증의 범위는 V8-C solver 하나다.
+- **대국에 쓰려면(E2) 엔진 연결이 필요하다.** 이것은 결과가 바뀌는 변경이므로 엔진 버전 단계다. E1 통과 뒤 연결 방식을 따로 승인받는다.
+  - `_BudgetedSolver`는 V8-A stage 안전 검사, V8-B 공격 검사, V8-C 루트 검사가 함께 쓰는 클래스다.
+  - 연결은 V8-C 루트 solver에만 해야 한다. 예: 기본 off인 `root_vcf_table` 옵션.
+
+**사전 점검 (판정 아님, 컨테이너)**
+- 합성 국면(서로 독립인 막힌 삼 여러 개, 백 공격): four 순서만 다른 경로가 같은 국면에 모인다.
+  - 막힌 삼 4개: frozen 632노드, table 216노드. 결과는 같다(VCF 없음).
+  - 막힌 삼 6개, 호출 상한 1만: frozen은 cut(UNKNOWN), table은 2,916노드로 끝났다(VCF 없음). frozen에 10만 노드를 주면 75,972노드로 끝나 같은 답을 낸다.
+  - 막힌 삼 4개 + 열린 삼 1개: 같은 VCF witness를 frozen 6,332노드, table 812노드로 찾았다.
+- WEB 국면(ply 40–96)의 실제 V8-C 검사에서는 on과 off의 상태·노드·호출이 같았다. 이 국면들에는 중복이 거의 없다.
+
+**검증 (`scripts/h7_e1_vcf_table.py`)**
+- **표본:** E0와 같다. H6-6 B·C 세 seed의 표준 not-SAFE tree 수 191개와 매칭 SAFE control 191개.
+- **국면마다 표준 검사를 세 번 한다.**
+  - `off`: frozen solver. d2 표준 상태를 재현해야 한다.
+  - `on`: table. 시간을 잰다(비용 E).
+  - `shadow`: table로 다시 하되, 모든 VCF 호출을 frozen으로도 돌려 비교한다. 상태·노드·호출·cut이 `on`과 같아야 한다.
+- `--large`: unknown4m 66개는 4M 검사도 table로 한다. 이 4M 검사에서는 모든 VCF line을 재생해 검증한다.
+
+| 검사 | 기준 | 실패 시 |
+|---|---|---|
+| A. 호출 동일성 | frozen이 노드 상한에 잘리지 않고 끝낸 모든 VCF 호출에서, table의 결과·witness가 같고 노드가 같거나 적음(`shadow`). 100% | `tool_error` |
+| B. 건전성 | ① table의 결정된 상태(표준, 4M)가 off 표준이나 d2 4M의 결정된 상태와 모순 0 ② table이 찾은 VCF line은 모두 frozen 규칙으로 재생됨(`verify_line`) ③ frozen이 cut했고 table이 "VCF 없음"으로 끝낸 호출은 검사당 앞의 3개를, frozen에 호출 상한 10배를 줘서 다시 푼다. frozen이 VCF를 찾으면 모순 | `unsound`, E1 기각 |
+| C. off 재현 | not-SAFE 전부에서 off가 d2 표준 상태와 같음. `shadow`와 `on`이 같음. frozen 파일은 그대로(`scripts/check_frozen_baseline.py`, `tests.test_tb_engine_v1`) | `tool_error` |
+| D. 1차 효과 | off 표준이 UNKNOWN인 not-SAFE 국면 중 table 표준에서 SAFE / UNSAFE로 판정되는 비율(E0 기준 176개) | 아래 표 |
+| E. 비용 | on / off 검사 시간 합의 비 ≤ 1.5 (fast3, 같은 worker에서 같은 국면을 연달아) | `cost_fail`, E1 기각 |
+
+| 판정 | 조건 (A–C, E 통과 전제) |
+|---|---|
+| `go` | D ≥ 30% → E2로 |
+| `weak` | 10% ≤ D < 30% → E2로 가되, E2 빈도 조건을 더 엄격하게 확인 |
+| `no_go` | D < 10% → proof 재사용(같은 대국의 이전 결정) E0로 |
+
+- 30% / 10%는 통계적 유의성 기준이 아니라 시제품 효과 크기 기준이다. 채택은 E2의 새 holdout이 정한다.
+- **보고 항목 (실행 전 고정, 판정에는 쓰지 않음)**
+  - **D의 arm별 값:** pooled, value arm, baseline arm, 그리고 묶음별(resolved_safe / unknown4m / unsafe4m).
+    - H6의 문제는 value가 증명하기 어려운 수를 더 많이 고르는 것이었다. 그래서 pooled가 `go`여도 value arm만 낮으면 기계적으로 받아들이지 않는다.
+    - 예: pooled 35%에 value 5%, baseline 70%라면 그대로 받기 어렵다. pooled 35%에 value 38%, baseline 30%라면 H6 병목과 직접 맞는다.
+  - **cut 이동:** off cut 원인(nodes / calls / per_call_limit) → on 결과(resolved, 또는 on의 cut 원인)
+  - 상태 전이표(묶음별 off → on), off에서 결정됐는데 on에서 UNKNOWN이 된 국면
+  - 호출 단위 수치: frozen이 cut한 호출이 table에서 win / none / cut으로 끝난 수, 노드 합(frozen / table), table 저장 수와 hit 수
+  - unknown4m: table 표준에서 판정된 수, table 4M에서 판정된 수(SAFE / UNSAFE / UNKNOWN)
+- **D의 분모**는 4M 결과로 고르지 않은 전체다. 4M 결과로 표본을 골라 기준을 정하면 효과를 과대평가하기 쉽기 때문이다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e1 tests.test_h7_e0 tests.test_tb_engine_v1
+mkdir -p runs/h7 docs/h7
+python -u scripts/h7_e1_vcf_table.py \
+  --runs runs/h6_6/value_vs_full_8404.json runs/h6_6/tb1_vs_full_8404.json \
+         runs/h6_6/value_vs_full_8405.json runs/h6_6/tb1_vs_full_8405.json \
+         runs/h6_6/value_vs_full_8406.json runs/h6_6/tb1_vs_full_8406.json \
+  --d2 docs/h6/h6_6_d2_8404.json docs/h6/h6_6_d2_8405.json docs/h6/h6_6_d2_8406.json \
+  --large --fast fast3 --workers 12 --jsonl runs/h7/e1.jsonl --output docs/h7/h7_e1_vcf_table.json 2>&1 | tee runs/h7/e1.log
+```
+
+- **실행 시간:** 국면은 382개다.
+  - 표준 검사는 국면마다 세 번이다(`shadow`는 frozen도 함께 돌아 약 두 배). UNKNOWN 국면은 하나에 1분 안팎이다.
+  - 4M 검사 66개는 각각 수 분이다. 이것을 먼저 시작해 끝에 남지 않게 했다.
+  - 12 worker로 1–2시간을 본다. 진행 상황은 1분마다 출력된다. 중간에 멈추면 같은 명령으로 이어서 돈다(`--jsonl`).
+- `E_cost`는 같은 worker에서 같은 국면을 off와 on으로 연달아 잰 시간의 합이다. 다른 작업을 같이 돌리지 않는다.
+- 끝나면 `docs/h7/h7_e1_vcf_table.json`을 커밋한다. `tool_error`나 `unsound`가 나오면 마지막 출력 전체를 보여 달라.
+
+**E2 이후 (E1 통과 시, 변경 없음)**
+- E2: TB-Engine-v1 + table(V8-C 루트 solver만) 대 TB-Engine-v1을 §2.3 gate(6개 모두)로 비교한다. 새 holdout seed를 쓰고, seed는 프로토콜 고정 때 예약한다(예: 8421–8423).
+- E3: 채택 시 그 위에서 value v3를 guard v2 그대로, seed 8407–8409로 다시 평가한다.
+- E1b(남은 four 수 단조 일반화)와 selective VCT2는 각각 따로 판정한다.
+
+**하지 않는 것**
+- `win` 저장
+- 단조 키(E1b)를 E1에 섞기
+- 대국·결정 사이 table 공유
+- 자기 VCF(`own_vcf`)와 `threats.py`, V8-A / V8-B solver에 table 적용
+- ordering 변경을 같은 후보에 섞기
+- 예산 변경
+
+## H7-E1 결과: go (2026-10-19, `docs/h7/h7_e1_vcf_table.json`, 커밋 `ad92838`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 판정 `go`와 "E2로 진행, H6-6 REJECT 유지"에 동의한다. 해석 네 군데를 고치고, 초안에 없던 사실 두 가지를 더했다.
+
+**확인한 수치**
+- A 호출 동일성: frozen이 잘리지 않고 끝낸 VCF 호출 382,682개가 모두 같았다(불일치 0).
+- B 건전성:
+  - 상태 모순 0, VCF line 재생 실패 0(표준과 4M 모두)
+  - deep 재풀이: 확인 183, 미확인 97, 모순 0
+- C off 재현: d2와 다른 것 0, `shadow`와 `on`이 다른 것 0
+- D 1차 효과: **78 / 176 = 44.32%** → `go`
+  - value arm 47 / 104 = 45.19%, baseline arm 31 / 72 = 43.06%
+  - 묶음별: resolved_safe 62 / 104(59.62%, 모두 SAFE), unknown4m 14 / 66(21.21%, 모두 SAFE), unsafe4m 2 / 6(모두 UNSAFE)
+- E 비용: on 1,707.0초 / off 2,624.7초 = **0.65**
+- cut 이동: nodes → resolved 78, nodes → nodes 65, nodes → calls 7, calls → calls 26. 남은 not-SAFE UNKNOWN 98개는 노드 cut 65개, 호출 cut 33개다.
+- 4M + table (unknown4m 66개): SAFE 42, UNSAFE 7, UNKNOWN 17. 판정 49 / 66 = 74.24%.
+- control: SAFE 189개는 모두 SAFE로 남았다. off에서 결정된 상태가 on에서 UNKNOWN이 된 경우는 0이다.
+
+**해석 수정**
+1. **"value 특화가 아니다"는 표준 판정률에만 맞다. 남은 꼬리는 value 쪽에 몰려 있다.**
+   - 표준 판정률은 value 45.19%, baseline 43.06%로 비슷하다. 그래서 VCF 중복은 solver 자체의 구조적 비효율이라는 해석은 맞다.
+   - 그러나 4M + table 뒤에도 UNKNOWN인 17개 중 **15개가 value arm**이다.
+     - value: unknown4m 48개 중 15개 남음(31%)
+     - baseline: 18개 중 2개 남음(11%)
+   - 즉 value가 고르는 수 중에는 table로도 풀리지 않는 더 어려운 수가 상대적으로 많다. "value는 기존 병목을 더 자주 드러냈을 뿐"이라는 설명은 남은 꼬리에는 그대로 적용되지 않는다.
+   - **E3에 주는 의미:** guard v2의 4M UNKNOWN 검사가 table로 자동 통과된다고 볼 수 없다.
+     - H6-6 기록에 대략 대입하면 4M UNKNOWN 차이는 +2.61%p에서 약 +1%p로 줄어든다(value 15 / 약 1,420수, baseline 2 / 약 2,400수).
+     - 이것은 frozen 엔진의 대국을 다시 검사한 참고값일 뿐이다. table 엔진에서는 대국 자체가 달라진다. 판정은 E3에서 새 seed로 한다.
+2. **시간 35% 감소는 판정된 국면과 SAFE 국면에서만 나왔다. 여전히 UNKNOWN인 국면은 시간이 그대로다.**
+
+   | off → on | 국면 | off 초 | on 초 | off 노드 | on 노드 |
+   |---|---:|---:|---:|---:|---:|
+   | UNKNOWN → UNKNOWN | 99 | 1,089 | 1,100 | 16.48M | 15.62M |
+   | UNKNOWN → SAFE / UNSAFE | 79 | 1,062 | 410 | 15.80M | 5.41M |
+   | SAFE → SAFE | 189 | 433 | 178 | 5.20M | 1.34M |
+   | UNSAFE → UNSAFE | 15 | 41 | 19 | 0.54M | 0.22M |
+
+   - 초안의 설명(새 가지 탐색, lookup 비용, VCT 논리 비용)보다 단순한 이유가 크다. 끝까지 풀리지 않는 검사는 table이 있든 없든 예산(200k)을 다 쓴다. 그래서 그 국면의 시간은 같다.
+   - 웹 대국에서 가장 오래 걸리는 어려운 수의 시간은 줄지 않는다. 평균 시간만 줄어든다.
+   - 호출 단위 노드 81% 감소(119.95M → 22.59M)는 table 경로의 각 호출을 frozen으로 다시 돌린 반사실 비교다. 검사 전체의 노드 감소가 아니다.
+3. **4M + table의 SAFE 42개는 독립 확인이 없다.**
+   - 4M에는 비교할 frozen 결정 상태가 없다(66개 모두 frozen 4M UNKNOWN). deep 재풀이도 표준 `shadow`에서만 했다.
+   - 이 판정의 근거는 두 가지다. 하나는 정확한 no_win 가지치기의 성질, 다른 하나는 표준에서 이를 대규모로 확인한 A 검사(382,682개 일치)다. 이것은 충분히 강한 근거지만 독립 확인은 아니다.
+   - UNSAFE 7개는 그 근거가 된 VCF line을 모두 재생해 확인했다.
+4. **deep 미확인 97개는 건전성의 증거가 아니다.**
+   - frozen에 호출당 노드 10배를 줘도 끝나지 않은 호출이다. table이 그 호출에서 10배 이상 효율적이었다는 뜻이지, 결과가 독립적으로 확인됐다는 뜻은 아니다.
+   - deep 재풀이는 검사당 3개 상한이라, frozen이 cut했고 table이 "없음"으로 끝낸 호출 912개 중 280개만 봤다. 모순은 0이다.
+   - frozen이 cut했고 table이 VCF를 찾은 호출 1,847개는 모두 line 재생을 통과했다.
+
+**추가 사실**
+1. **새로 증명된 UNSAFE 7개는 즉각 공격 검사로는 보이지 않던 패배다.**
+   - H6-6D의 공격 검사(상대의 five / VCF / V8-B, VCT2)는 이 7개에서 모두 승리를 찾지 못했다.
+   - 7개는 value 3개, baseline 4개로 양쪽에 다 있다(8404 / 8405 / 8406 모두 포함). value 특화가 아니다.
+   - 그래서 H6-6D `proof_hard`의 단서("NOT_FOUND는 SAFE가 아니다")가 실제로 확인됐다. `proof_hard`는 "안전하지만 증명이 어려움"이 아니라 "그때의 증명 능력으로는 어느 쪽인지 판정하기 어려움"으로 읽어야 한다.
+2. **4M + table 뒤 남은 17개의 cut 원인:** 노드 16개, 호출 1개. 4M에서는 여전히 노드가 병목이다. 표준에서 호출 상한이 다음 병목 후보로 보이는 것(33개)과 다르다. 호출 상한 조정은 기록만 하고 E1 후보에 섞지 않는다(초안과 같음).
+
+**결론**
+- E1 `go`. table 단독 후보는 E2(§2.3 gate, 새 holdout)로 간다.
+- H6-6 REJECT는 그대로 둔다. H6-6은 당시 frozen 엔진과 guard v2에서 정당한 판정이었다.
+- H6 실패 원인의 상당 부분이 VCF 중복이었다는 해석은 강해졌다. 그러나 남은 꼬리(17개 중 value 15개)는 table로 설명되지 않는다. 그래서 E3에서 value v3가 통과한다고 미리 기대하지 않는다.
+
+## H7-E2 설계 방향: table 엔진 후보 판정 (2026-10-19, 초안 → 아래 "H7-E2 확정"으로 대체)
+
+**엔진 버전 단계 (승인 필요)**
+- `analysis.mcts_v8`에 기본 off 옵션 `root_vcf_table`을 더한다. on이면 V8-C 루트 solver(`_verify_root_choice`가 만드는 `_BudgetedSolver`)만 `analysis.vcf_tt_v1`의 VCF를 쓴다.
+- V8-A / V8-B solver, `own_vcf`, `threats.py`는 그대로다.
+- off는 지금 코드 경로 그대로여야 한다. TB-Engine-v1 회귀 fixture로 결정 필드가 비트 단위로 같은지 확인하고, `mcts_v7.py` 해시는 바꾸지 않는다. H6-4의 `puct_value` 추가와 같은 방식이다.
+- 후보 엔진 이름은 `TB-Engine-v1-T`(TB-Engine-v1 + `root_vcf_table`), arm은 `puct_policy_vct2_50k_tt`.
+
+**§2.3 gate 대응 (실행 전 고정)**
+
+| §2.3 | E2에서 |
+|---|---|
+| 1. 건전성 | 대국 중 V8-C가 낸 UNSAFE의 VCF line 재생 실패 0. aux run의 tree 수를 off 4M(frozen)으로 다시 검사했을 때 결정 상태 모순 0 |
+| 2. holdout | 새 seed 8421, 8422, 8423. 프로토콜 고정 때 `RESERVED_SEEDS`에 넣는다 |
+| 3. 빈도 | 목표 실패 유형은 "V8-C가 tree 수를 판정하지 못함"(기록 상태 UNKNOWN). aux run(후보와 기준이 각각 v8:full 상대)에서 후보의 tree UNKNOWN 비율이 기준보다 낮아야 한다. 대국 단위 짝 bootstrap 95% 상한 < 0이고 seed마다 같은 방향이어야 한다 |
+| 4. 기력 | 후보 대 TB-Engine-v1, 짝 지은 opening의 양 색. 점수 차 95% 하한 ≥ −0.05(비열등) |
+| 5. 비용 | 대국 전체 착수 시간 비 ≤ 1.5 |
+| 6. 격리 | 기본 off, off 동일성(위 회귀 fixture) |
+
+- 단계 규칙은 H6-6과 같은 형식을 제안한다. 8421에서 기본 조건(건전성, 비용)을 보고, 8421 + 8422에서 전부 판정한다. 결론이 나지 않으면 8423을 한 번 더 돌린다. 세 seed에서도 결론이 나지 않으면 REJECT다.
+- 기력은 개선을 기대하는 검사가 아니다. 비열등만 본다. table은 UNSAFE veto를 늘리고 SAFE 확인을 빠르게 하므로 착수가 바뀔 수 있다.
+- 보고 항목(판정 아님): tree SAFE / UNSAFE / UNKNOWN 비율, UNSAFE veto 수, 착수 교체 수, 수당 시간의 분포(p50 / p90 / 최대). 시간 분포는 위 해석 2 때문에 넣는다.
+
+**E2 이후 (변경 없음)**
+- E3: TB-Engine-v1-T 채택 시 value v3를 그 위에서 guard v2 그대로, seed 8407–8409로 다시 평가한다. 4M 재검사는 4M + table로 한다.
+- 호출 상한 조정, E1b(단조 키), proof 재사용, ordering, selective VCT2는 각각 따로 판정한다.
+
+## H7-E2 확정: TB-Engine-v1-T 판정 (2026-10-19, 실행 전 고정)
+
+사용자 검토에서 후보, 범위, seed, 빈도 지표, 기력·비용 기준, E3 방식이 승인됐다. 실행 전에 고정하라고 한 세 가지(UNKNOWN 비교 단위, 모순 정의, seed 단계 규칙)와 추천 항목을 사실 확인 뒤 반영했다.
+- 엔진: `src/analysis/tb_engine_v1_t.py`, `analysis.mcts_v8`(엔진 버전 단계, 추가만), `analysis.mcts_v8_agent`
+- arm: `scripts/run_mcts_v8_benchmark.py`의 `puct_policy_vct2_50k_tt`
+- 판정 도구: `scripts/h7_e2_soundness.py`, `scripts/summarize_h7_e2.py`
+- 테스트: `tests/test_h7_e2.py`
+- seed: 8421–8423을 `RESERVED_SEEDS`에 넣었다.
+
+**엔진 (`TB-Engine-v1-T`)**
+- TB-Engine-v1에 `root_vcf_table`만 켠다. V8-C 루트 solver(`_verify_root_choice`가 만드는 `_BudgetedSolver`)의 VCF 호출만 `analysis.vcf_tt_v1`을 쓴다.
+- 그대로인 것: V8-A / V8-B solver, `own_vcf`, `threats.py`, PUCT, H3 policy, 예산(value 없음).
+- **연결 방식 (사실 확인 결과):**
+  - `root_vcf_table`을 `V8_DEFAULTS`에 넣으면 frozen 검사가 깨진다. 넣으면 `set(TB_ENGINE_V1) == set(V8_DEFAULTS)`와 E3 / E1-holdout run의 `v8_config` 비교가 실패하고, TB-Engine-v1의 설정 해시도 바뀐다.
+  - 그래서 `leaf_value`처럼 설정 밖 인자로 넣었다(`mcts_search_v8(root_vcf_table=...)`, `MCTSV8Agent(root_vcf_table=...)`, `_BudgetedSolver.vcf_search`).
+  - TB-Engine-v1의 설정과 해시는 바뀌지 않는다. `TB-Engine-v1-T`의 `config_hash`는 설정, `ENGINE_OPTIONS`, table 모듈을 함께 덮는다.
+  - run 파일의 `v8_config`에는 후보만 `root_vcf_table: true`가 들어간다.
+- **off 동일성:** off일 때 `vcf_search`는 None이고, solver는 지금처럼 모듈의 `_find_vcf_with_stats`를 부른다(E0 / E1 도구의 바꿔 끼우기도 그대로 동작한다).
+  - TB-Engine-v1 회귀 fixture(`tests.test_h6_value_leaf`), `tests.test_tb_engine_v1`, `tests.test_mcts_v8`이 그대로 통과한다.
+  - 후보도 fixture 6국면에서 착수와 V8-C 판정이 fixture와 같았다. 그 국면의 검사는 frozen 예산 안에서 끝나므로 table은 노드 수만 바꾼다.
+- 기록: tree 수마다 `root.table`(hit, store)을 남긴다. `TB-Engine-v1-T`는 시험 arm일 뿐이고, 상대(opponent)로는 쓸 수 없다.
+
+**실행 (seed마다, 같은 opening)**
+- `puct_policy_vct2_50k_tt` 대 `v8:full`, `puct_policy_vct2_50k` 대 `v8:full`. 둘 다 `--puct-c 1.5 --fast fast3`이고 **opening pair는 50개(100국)**다.
+- H6-6의 25 pair에서 늘렸다. 이유는 아래 기력 항목에 있다.
+- 후보 대 TB-Engine-v1 직접 대국은 하지 않는다(사용자 검토 4).
+
+**gate (`scripts/summarize_h7_e2.py`)**
+
+| §2.3 | 정의 | PASS | 명확한 FAIL |
+|---|---|---|---|
+| 1. 건전성 (hard) | `h7_e2_soundness.py`: 후보의 tree 수 전부를 frozen 표준으로 다시 검사한다. 기록이 결정됐는데 frozen 표준이 UNKNOWN이면 frozen 4M으로도 검사한다. 기록 UNSAFE는 table로 재생한다(표준, UNKNOWN이면 4M). 모든 VCF line을 `verify_line`으로 검증한다. 양 arm의 safety violation도 본다 | 모순 0, UNSAFE 재생 100%(line 실패 0), safety violation 0 | 하나라도 어긋나면 REJECT(어느 단계든) |
+| 2. holdout | seed 8421, 8422, 8423 | — | — |
+| 3. 빈도 | 대국마다 tree 수 중 UNKNOWN(기록) 비율. 같은 opening·색의 후보 − 기준 차이(양쪽 다 tree 수가 있는 대국만). opening(seed, pair) 단위 bootstrap | 95% 상한 < 0, 그리고 seed마다 반올림 전 평균 차이 < 0 | pooled 또는 어느 seed든 차이 ≥ 0 |
+| 4. 기력 | 같은 상대(`v8:full`), 같은 opening·색. opening(양 색) 단위 점수 차 후보 − 기준, bootstrap | 95% 하한 ≥ −0.05 | 점수 차 < −0.05 |
+| 5. 비용 | 짝 대국의 V8 착수 시간 합, 후보 / 기준 | ≤ 1.5 | > 1.5 |
+| 6. 격리 | 기본 off. off = frozen 경로(위 테스트). 기준 run의 설정이 TB-Engine-v1과 같고 table 기록이 없음, 후보는 반대(도구가 검사) | — | 어긋나면 도구가 판정을 거부 |
+
+- **모순 정의:** 결정된 상태끼리 반대일 때만이다(SAFE ↔ UNSAFE).
+  - frozen UNKNOWN 대 후보 SAFE / UNSAFE는 모순이 아니다. table이 더 판정한 것이기 때문이다.
+  - UNKNOWN은 어느 쪽에 있어도 모순이 아니다.
+- **단계 규칙**
+
+| seed | 결과 |
+|---|---|
+| 8421 | 건전성 FAIL → REJECT. 그 밖에는 무조건 8422를 돌린다(나머지 gate는 보고만) |
+| 8421 + 8422 | 건전성 FAIL 또는 명확한 FAIL 하나 → REJECT. 모든 gate PASS → ADOPT. 그 밖(OPEN) → 8423 |
+| 8421 + 8422 + 8423 | 모든 gate PASS → ADOPT(TB-Engine-v2로 승격). 그 밖 → REJECT |
+
+  - 빈도의 "seed마다 차이 < 0"은 seed를 더해도 되돌릴 수 없다. 그래서 두 seed에서 어느 하나라도 차이 ≥ 0이면 바로 REJECT다.
+- **보고 항목 (판정 아님)**
+  - 수당 시간 p50 / p90 / p95 / p99 / 최대: 모든 V8 수, tree 수, V8-C 검사
+  - tree 상태 분포, V8-C 교체(proven_loss / unknown), table hit
+  - 같은 opening에서 두 엔진의 수순이 완전히 같은 대국 수
+  - 후보 tree 수의 상태 전이(frozen 표준 → 후보 기록): UNKNOWN → SAFE / UNKNOWN → UNSAFE / UNKNOWN → UNKNOWN / SAFE → SAFE / UNSAFE → UNSAFE
+  - legacy frozen 4M 결과(table이 결정한 수)
+  - 전이표 설명: 두 엔진의 대국은 첫 차이 이후 갈라진다. 그래서 같은 국면의 비교는 후보 국면을 frozen으로 다시 검사해서 얻는다.
+
+**기력 검정력 (사실 확인 결과, 25 → 50 pair의 이유)**
+- H6-6 aux에서 TB-Engine-v1의 `v8:full` 상대 점수는 0.887이었다(150국, 25 pair × 3 seed). 상한에 가까워 대부분의 짝 차이는 0이고, 지는 대국 몇 개가 분산을 만든다.
+- 대략 계산하면 짝 점수 차의 표준편차는 0.2–0.3이다.
+  - 25 pair × 2 seed(50 opening): 95% 구간 반폭이 0.06–0.08이다. 실제 차이가 0인 같은 기력의 엔진도 하한 ≥ −0.05를 넘기 어렵다.
+  - 50 pair × 2 seed(100 opening): 반폭 0.04–0.06
+  - 50 pair × 3 seed: 반폭 0.03–0.05
+- 그래서 같은 기력이면 대개 2–3 seed에서 판정이 나도록 50 pair로 정했다. 실행 전 고정이다. 수순이 같은 대국은 차이가 정확히 0이라 실제 분산은 이보다 작을 수 있다.
+- 비용: H6-6 기준 대국당 약 1.8분(게임 시간 합)이다. arm·seed당 100국 ≈ 180분이고, 8 worker로 약 25–30분이다.
+
+**E3 (E2 ADOPT 시, 사용자 검토 8)**
+- guard v2의 통계 기준과 판정 논리(margin 3%p, 상한 판정, bootstrap, seed 단계, 기력·시간 기준)는 그대로다.
+- 공식 4M 재검사는 채택된 TB-Engine-v2의 solver(4M + table)로 한다. legacy frozen 4M 결과도 함께 보고한다. guard를 느슨하게 바꾼 것이 아니라 새 frozen B-engine을 평가하는 것이다.
+- 이를 위해 E3 때 d2 도구에 4M + table 옵션을 더한다. 지금은 구현하지 않는다.
+- E1 결과의 참고값(4M UNKNOWN 차이 약 +1%p, 남은 꼬리 17개 중 value 15개) 때문에 E3 통과를 미리 기대하지 않는다.
+
+**하지 않는 것:** selective VCT2, 호출 상한 증가, ordering, 결정 사이 proof 재사용, E1b(단조 키)를 E2에 섞는 것. 각각 따로 판정한다.
+
+**실행 명령 (데스크톱 Ubuntu, seed마다)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e2 tests.test_h7_e1 tests.test_tb_engine_v1 tests.test_h6_value_leaf tests.test_mcts_v8
+mkdir -p runs/h7_e2 docs/h7
+POL=runs/h3_policy_64x4/best.pt; SEED=8421; W=8
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h7_e2/tt_vs_full_$SEED.jsonl --output runs/h7_e2/tt_vs_full_$SEED.json 2>&1 | tee runs/h7_e2/tt_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h7_e2/tb1_vs_full_$SEED.jsonl --output runs/h7_e2/tb1_vs_full_$SEED.json 2>&1 | tee runs/h7_e2/tb1_vs_full_$SEED.log
+python -u scripts/h7_e2_soundness.py --runs runs/h7_e2/tt_vs_full_$SEED.json --fast fast3 --workers 12 \
+  --jsonl runs/h7_e2/sound_$SEED.jsonl --output docs/h7/h7_e2_soundness_$SEED.json 2>&1 | tee runs/h7_e2/sound_$SEED.log
+python scripts/summarize_h7_e2.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7_e2/tb1_vs_full_8421.json \
+  --soundness docs/h7/h7_e2_soundness_8421.json --output docs/h7/h7_e2_summary_8421.json
+```
+
+- 두 arm의 시간을 비교하므로, 두 run은 같은 기계에서 같은 worker 수로 **차례로** 돌린다(동시에 돌리지 않는다).
+- 8422 단계에서는 `SEED=8422`로 위 세 명령을 다시 돌리고, 요약은 두 seed의 run과 soundness 파일을 모두 넘겨 `docs/h7/h7_e2_summary_8421_8422.json`으로 쓴다.
+- 커밋할 것: `docs/h7/h7_e2_soundness_*.json`, `docs/h7/h7_e2_summary_*.json`. run 파일은 `runs/`에 둔다.
+
+## H7-E2 결과: ADOPT → TB-Engine-v2 (2026-10-19, `docs/h7/h7_e2_summary_8421_8422.json`, 커밋 `faf4ebc`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. ADOPT, 8423 미실행(두 seed에서 모든 gate PASS), "기력 상승이 아니라 비열등", H6-6 REJECT 유지에 동의한다. 해석 세 군데를 고치고, 초안에 없던 사실 세 가지를 더했다.
+
+**확인한 수치 (8421 + 8422, arm당 200국, 100 opening)**
+- 8421 단독: 건전성 PASS → `RUN_8422`. 두 seed: 모든 gate PASS → `ADOPT`.
+- 기력: 후보 0.887(171-13-16), 기준 0.880(169-14-17). 짝 차이 +0.0075, 95% [−0.015, +0.030] → PASS.
+- 빈도: 대국별 UNKNOWN 비율 차이 −0.0095, 95% [−0.0170, −0.0022]. seed별 8421 −0.0116, 8422 −0.0073 → PASS.
+  - 단순 합계로는 3.07%(92 / 2,998) 대 5.38%(168 / 3,123)다. 그러나 공식 수치는 대국별 짝 차이다.
+- 비용: 10,650.2초 / 11,921.7초 = 0.893 → PASS.
+- 건전성: 모순 0, UNSAFE 30개 모두 재생(line 실패 0), safety violation 0 / 0.
+- 전이(후보 국면, frozen 표준 → 후보 기록): SAFE → SAFE 2,763, UNKNOWN → SAFE 113, UNKNOWN → UNKNOWN 92, UNKNOWN → UNSAFE 7, UNSAFE → UNSAFE 23.
+- legacy frozen 4M(table이 결정한 120개): SAFE / 4M SAFE 103, SAFE / 4M UNKNOWN 10, UNSAFE / 4M UNSAFE 5, UNSAFE / 4M UNKNOWN 2.
+- 수순이 완전히 같은 대국: 172 / 200.
+- 시간: V8-C 검사 합 67.9분 → 48.4분.
+
+  | V8-C 검사 시간 | p50 | p90 | p95 | p99 | 최대 |
+  |---|---:|---:|---:|---:|---:|
+  | 기준 | 0.221 | 2.445 | 9.999 | 18.754 | 23.634 |
+  | 후보 | 0.225 | 1.085 | 4.075 | 18.794 | 31.850 |
+
+  | 수당 착수 시간 | p50 | p90 | p95 | p99 | 최대 |
+  |---|---:|---:|---:|---:|---:|
+  | 기준 | 1.165 | 5.726 | 11.058 | 22.393 | 36.345 |
+  | 후보 | 1.187 | 5.126 | 9.340 | 21.620 | 43.667 |
+
+**해석 수정**
+1. **"4M frozen보다 더 풀었다"의 SAFE 10개는 독립 확인이 없다.** E1 해석 3과 같은 단서다.
+   - frozen 4M이 UNKNOWN이므로 비교할 결정 상태가 없다. 근거는 no_win 가지치기의 정확성과 E1의 호출 동일성(382,682개)이다.
+   - UNSAFE 2개는 VCF line을 재생해 확인했다.
+   - 또 12개는 독립 표본이 아니다. 대국 6개에 몰려 있다(8422/35/white 5개, 8421/1/white 3개 등).
+   - 그래서 "중복 제거가 4M 예산보다 효율적인 국면이 있다"는 E1의 관찰을 다시 본 것이다. 새로운 크기의 증거는 아니다.
+2. **"table이 UNKNOWN을 단순히 SAFE로 밀지 않았다"의 근거는 전이표가 아니라 모순 0과 UNSAFE 재생이다.**
+   - 전이표는 후보가 무엇을 결정했는지 보여 줄 뿐이다.
+   - 그 결정이 맞다는 근거는 두 가지다. 하나는 frozen의 결정 상태와 반대인 경우가 0이라는 것, 다른 하나는 UNSAFE 30개의 VCF line이 모두 재생된 것이다.
+   - SAFE 113개 중 103개는 frozen 4M도 SAFE였다. 이것이 SAFE 쪽의 독립 확인이다.
+3. **최대 시간 증가는 표본 하나의 값이다.**
+   - 두 엔진은 28국에서 갈라져 서로 다른 국면을 검사한다. 그래서 최대값은 같은 국면 비교가 아니다.
+   - 다만 방향은 E1과 맞다. 끝까지 UNKNOWN인 검사는 table이 있어도 예산을 다 쓰고(E1: 1,089초 대 1,100초), table이 노드를 줄여 같은 노드 예산 안에서 호출을 더 하면 시간이 늘 수도 있다.
+   - 결론은 초안과 같다. 넓은 꼬리(p90–p95)는 줄었고, 극단 꼬리(p99, 최대)는 그대로다.
+
+**추가 사실**
+1. **V8-C 교체가 바뀌었다.** "UNKNOWN이라 교체"는 73 → 48로 줄고, "증명된 패배 veto"는 21 → 29로 늘었다.
+   - aggressive 모드는 tree 수가 UNKNOWN이면 증명된 SAFE 자식으로 바꾼다. table로 tree 수가 SAFE로 증명되면 tree가 고른 수를 그대로 둔다.
+   - 기력이 떨어지지 않은 이유 중 하나로 볼 수 있다. 다만 인과는 검정하지 않았다(보고용).
+2. **웹 30초 deadline은 두 엔진 모두 이미 넘는다.** 데스크톱에서도 최대 착수 시간이 기준 36.3초, 후보 43.7초다. p99는 21–22초다. 로드맵의 착수 시간 최적화와 웹 deadline 판은 이 극단 꼬리를 다뤄야 한다.
+3. **PUCT 자체 속도는 같다**(초당 시뮬레이션 54.2 대 56.0, tree 중앙값 0.987초 대 0.947초). 시간 이득은 V8-C 검사에서만 나왔다. 엔진 차이가 `root_vcf_table` 하나뿐이라는 설계와 맞는다.
+
+**결론:** TB-Engine-v1-T를 **TB-Engine-v2**로 채택한다. 동결 절차와 E3는 아래 설계를 따른다. H6-6 REJECT는 그대로다.
+
+## TB-Engine-v2 동결과 H7-E3 설계 방향 (2026-10-19, 초안 → 아래 확정으로 대체)
+
+**1. TB-Engine-v2 동결 (E3 전에)**
+- `src/analysis/tb_engine_v2.py`를 만든다.
+  - TB-Engine-v1처럼 설정을 모두 적는다: `TB_ENGINE_V1` 그대로에 `ENGINE_OPTIONS = {'root_vcf_table': True}`.
+  - `config_hash`, `FREEZE_EVIDENCE`(E2 summary), `make_agent`를 둔다.
+- `analysis/vcf_tt_v1.py`의 해시를 테스트로 잠근다(예: `tests/test_tb_engine_v2.py`). 이 파일이 바뀌면 TB-Engine-v2가 바뀌기 때문이다.
+- CLAUDE.md의 frozen 목록에 `tb_engine_v2.py`, `vcf_tt_v1.py`를 더한다.
+- 웹 로그용 `run_web_play.py`의 엔진 등록은 웹 단계에서 한다. 지금은 하지 않는다.
+
+**2. E3: value v3를 TB-Engine-v2 위에서 다시 평가 (guard v2 그대로)**
+- 후보: **TB-V2-Value** = TB-Engine-v2 + value leaf v3(`tree_mode="puct_value"`, λ 1.0, D4 평균). 새 arm은 `puct_value_vct2_50k_tt`다.
+- 기준과 주 상대: **TB-Engine-v2.** 그러려면 `v8:puct_policy_vct2_50k_tt`를 상대로 쓸 수 있게 해야 한다(지금은 시험 arm 전용). 상대 agent에도 `root_vcf_table`을 넘긴다.
+- run 구성: H6-6과 같다.
+  - A: 후보 대 TB-Engine-v2
+  - B: 후보 대 `v8:full`
+  - C: TB-Engine-v2 대 `v8:full`
+  - seed마다 25 pair, `--fast fast3`, `--puct-c 1.5`
+- **guard v2는 숫자와 논리를 하나도 바꾸지 않는다.**
+  - hard: safety violation 0
+  - basic: A의 흑·백 각각 ≥ 0.45, 시간 비 ≤ 1.5, P92 guard가 FAIL이 아님
+  - proof: 4M UNSAFE와 4M UNKNOWN 비율 차이(B − C), opening 짝 bootstrap. 상한 ≤ +3%p면 PASS, 하한 > +3%p면 REJECT, 나머지는 INCONCLUSIVE
+  - 단계: H6-6과 같은 형식이다.
+    - 8407에서 score < 0.50이면 REJECT
+    - 8407 + 8408에서 score ≥ 0.55, 짝 하한 > 0.5, proof PASS면 ADOPT
+    - 결론이 안 나면 8409를 한 번 돌린다. 세 seed에서도 INCONCLUSIVE면 REJECT
+- **공식 4M 재검사는 4M + table이다.** d2 도구에 `--table`을 더한다.
+  - d2의 표준 재현 검사(`replay_kind`)도 table로 한다. 기록 상태가 table solver에서 나왔기 때문이다.
+  - legacy frozen 4M도 같은 수에 대해 돌려서 보고만 한다(판정에는 쓰지 않음).
+- P92 guard는 후보(TB-V2-Value)로 다시 잰다. `run_s1_probes.py`에 새 arm을 더한다.
+- seed 8407, 8408, 8409를 지금 `RESERVED_SEEDS`에 넣는다. 지금은 들어 있지 않다(사실 확인).
+- **기대치:**
+  - E1 참고값으로는 4M UNKNOWN 차이가 +2.61%p에서 약 +1%p로 줄어든다.
+  - 그러나 H6-6의 구간 폭(약 ±2%p)이면 상한이 +3%p 근처일 수 있다. 남은 꼬리 17개 중 15개가 value 쪽이었다.
+  - 그래서 통과를 기대하지 않는다. 이 실험은 table로 개선된 엔진에서 같은 guard를 통과하는지 보는 판정이다.
+
+**3. 이후 (변경 없음)**
+- E3 결과로 B-engine + B-net 조합을 정한다.
+  - ADOPT면 TB-V2-Value, REJECT면 TB-Engine-v2(rollout).
+- 그다음 같은 착수 시간 단축 최적화(정확 가속만), 동결, 웹 deadline 판(미니 PC 30초)과 H7-c1 self-play를 병행한다.
+
+## TB-Engine-v2 동결 (2026-10-19, 커밋 `2e25a5f`)
+
+사용자 검토의 잠금 조건 셋을 반영했다.
+- **설정을 모두 적었다.** `src/analysis/tb_engine_v2.py`의 `TB_ENGINE_V2`는 TB-Engine-v1과 같은 방식으로 모든 값을 문자 그대로 적었다. `TB_ENGINE_V1`에서 파생하지 않는다. `ENGINE_OPTIONS = {'root_vcf_table': True}`.
+- **table 구현이 엔진 identity에 들어간다.**
+  - `VCF_TABLE_SHA256`은 `src/analysis/vcf_tt_v1.py`의 SHA-256이다(`68937a5f…`).
+  - `config_hash`는 설정, `ENGINE_OPTIONS`, table 모듈 이름, table SHA를 함께 덮는다.
+  - `tests/test_tb_engine_v2.py`가 실제 파일 SHA와 상수가 같은지 검사한다.
+- 같은 테스트가 다음도 검사한다.
+  - 설정이 TB-Engine-v1 / TB-Engine-v1-T와 같은지, 키가 `V8_DEFAULTS`와 같은지
+  - 근거 파일(E1 `go`, E2 `ADOPT` 8421 + 8422)
+  - agent 설정
+  - fixture 국면의 착수
+- CLAUDE.md의 frozen 목록에 `tb_engine_v2.py`, `vcf_tt_v1.py`를 더했다.
+- 동결 커밋은 E3 도구 커밋과 분리했다. 이후 E3에 필요한 기능은 runner와 진단 도구에만 넣는다(frozen 파일 미수정).
+
+## H7-E3 확정: value v3를 TB-Engine-v2 위에서 (2026-10-19, 실행 전 고정)
+
+사용자 검토에서 동결 절차와 E3 프로토콜이 승인됐다. 추가 잠금 조건(d2 `--table`은 실제 엔진과 같은 call-local 의미)을 반영했다.
+- 도구: `scripts/summarize_h7_e3.py`, `h6_5d.py d2 --table --legacy-frozen`, `run_mcts_v8_benchmark.py`(arm과 상대), `run_s1_probes.py`(`h7_e3_p92_guard`)
+- 테스트: `tests/test_h7_e3.py`
+- seed: 8407, 8408, 8409를 `RESERVED_SEEDS`에 넣었다.
+
+**엔진**
+- 후보 **TB-V2-Value**(`puct_value_vct2_50k_tt`) = TB-Engine-v2 + value leaf v3
+  - `tree_mode="puct_value"`, λ 1.0, D4 평균, v3 checkpoint SHA 검사
+  - H3 policy, c 1.5, VCT2 50k, `root_vcf_table` on
+- 기준과 주 상대 **TB-Engine-v2**(`puct_policy_vct2_50k_tt`, `--opponent v8:puct_policy_vct2_50k_tt --opponent-puct-c 1.5`)
+  - 상대 agent에도 `root_vcf_table`이 넘어간다.
+  - value arm은 여전히 상대로 쓸 수 없다.
+
+**run (seed마다)**
+- A: 후보 대 TB-Engine-v2
+- B: 후보 대 `v8:full`
+- C: TB-Engine-v2 대 `v8:full`
+- 모두 25 pair, `--fast fast3`, `--puct-c 1.5`. H6-6과 같다.
+
+**guard v2 (숫자와 논리 그대로)**
+- `summarize_h7_e3.py`는 `summarize_h6_6`의 `RULES`를 그대로 가져온다.
+- 판정은 `summarize_h6_6.decide`를 같은 입력으로 부른 결과다. seed 8407 / 8408 / 8409를 8404 / 8405 / 8406 자리에 둔다.
+- 테스트가 H6-6 판정 사례 전부에서 두 결과가 같은지 확인한다.
+
+| 항목 | 기준 |
+|---|---|
+| hard | safety violation 0(모든 run) |
+| basic | A의 흑·백 각각 ≥ 0.45, 시간 비 ≤ 1.5, P92 guard가 FAIL이 아님 |
+| proof | 4M UNSAFE와 4M UNKNOWN 각각, 비율 차이 B − C, opening 짝 bootstrap. 상한 ≤ +3%p PASS, 하한 > +3%p REJECT, 그 사이 INCONCLUSIVE |
+| 8407 | hard / basic FAIL 또는 score < 0.50 → REJECT, 아니면 8408(proof는 보고만) |
+| 8407 + 8408 | hard / basic FAIL, score < 0.55, proof REJECT → REJECT. score ≥ 0.55, 짝 하한 > 0.50, 두 proof PASS → ADOPT. 그 밖 → 8409 한 번 |
+| 세 seed | 같은 ADOPT 조건, 그 밖 → REJECT |
+
+**엔진을 따라 바뀌는 것 두 가지 (그 밖은 그대로)**
+1. **공식 4M 재검사 = TB-Engine-v2의 solver at 4M.** `h6_5d.py d2 --table`이다.
+   - 국면마다 새 solver를 만들고, VCF 호출마다 새 table을 쓴다(`make_find()`). 국면, 수, 결정 사이에 아무것도 공유하지 않는다. 대국 중 V8-C 루트 solver와 같은 call-local 의미다.
+   - 예산(STANDARD, LARGE)은 그대로다.
+   - 표준 재현 검사(`replay_kind`)도 table로 한다. 기록 상태가 table solver에서 나왔기 때문이다.
+2. **legacy frozen 4M**(`--legacy-frozen`)도 같은 수를 table 없이 다시 검사한다. 같은 두 proof guard를 계산하되 보고만 한다(`proof_4m_legacy_frozen`).
+- P92 guard: 같은 규칙으로 TB-V2-Value 대 TB-Engine-v2를 본다(`h7_e3_p92_guard`, 10 seed, c 1.5).
+- 요약 도구는 거부 조건을 검사한다: run이 TB-Engine-v2(`root_vcf_table`)가 아님, c ≠ 1.5, fast3가 아님, d2가 `--table --legacy-frozen`이 아님, d2 재현 불일치. 하나라도 걸리면 판정하지 않는다.
+
+**기대치:** E1 참고값(4M UNKNOWN 차이 약 +1%p)은 예측이 아니다. value가 다른 수를 고르면 증명 분포 자체가 달라질 수 있다. 남은 꼬리 17개 중 15개가 value 쪽이었다. 통과를 기대하지 않는다.
+
+**실행 명령 (데스크톱 Ubuntu, 8407)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_tb_engine_v2 tests.test_h7_e3 tests.test_h7_e2 tests.test_tb_engine_v1 tests.test_h6_value_leaf
+mkdir -p runs/h7_e3 docs/h7
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; SEED=8407; W=8
+# P92 guard (한 번만)
+python -u scripts/run_s1_probes.py --arms puct_policy_vct2_50k_tt puct_value_vct2_50k_tt --seeds 10 --puct-c 1.5 \
+  --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda --fast fast3 \
+  --output docs/h7/h7_e3_p92.json 2>&1 | tee runs/h7_e3/p92.log
+# A, B, C
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k_tt --puct-c 1.5 --opponent v8:puct_policy_vct2_50k_tt \
+  --opponent-puct-c 1.5 --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --value-checkpoint $VAL --value-device cuda --games-jsonl runs/h7_e3/value_vs_tb2_$SEED.jsonl \
+  --output runs/h7_e3/value_vs_tb2_$SEED.json 2>&1 | tee runs/h7_e3/value_vs_tb2_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h7_e3/value_vs_full_$SEED.jsonl --output runs/h7_e3/value_vs_full_$SEED.json 2>&1 | tee runs/h7_e3/value_vs_full_$SEED.log
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_policy_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 25 --workers $W --fast fast3 --policy-checkpoint $POL \
+  --games-jsonl runs/h7_e3/tb2_vs_full_$SEED.jsonl --output runs/h7_e3/tb2_vs_full_$SEED.json 2>&1 | tee runs/h7_e3/tb2_vs_full_$SEED.log
+# 4M 재검사 (공식: table, 보고: frozen)
+python -u scripts/h6_5d.py d2 --runs runs/h7_e3/value_vs_full_$SEED.json runs/h7_e3/tb2_vs_full_$SEED.json \
+  --table --legacy-frozen --fast fast3 --workers 12 --jsonl runs/h7_e3/d2_$SEED.jsonl \
+  --output docs/h7/h7_e3_d2_$SEED.json 2>&1 | tee runs/h7_e3/d2_$SEED.log
+python scripts/summarize_h7_e3.py --main runs/h7_e3/value_vs_tb2_$SEED.json \
+  --aux runs/h7_e3/value_vs_full_$SEED.json runs/h7_e3/tb2_vs_full_$SEED.json \
+  --d2 docs/h7/h7_e3_d2_$SEED.json --p92 docs/h7/h7_e3_p92.json --output docs/h7/h7_e3_summary_$SEED.json
+```
+
+- A·B·C는 H6-6처럼 차례로 돌린다. 시간 비는 A에서 상대와 비교한다.
+- d2는 H6-6보다 약 두 배 걸린다(not-SAFE 수마다 4M을 table과 frozen으로 두 번).
+- 커밋할 것: `docs/h7/h7_e3_p92.json`, `docs/h7/h7_e3_d2_8407.json`, `docs/h7/h7_e3_summary_8407.json`
+- 판정이 `RUN_8408`이면 `SEED=8408`로 A·B·C·d2를 돌린다(P92는 다시 돌리지 않음). 그다음 요약에 두 seed의 파일을 모두 넘겨 `docs/h7/h7_e3_summary_8407_8408.json`으로 쓴다.
+
+## H7-E3 결과: ADOPT → TB-V2-Value (2026-10-20, `docs/h7/h7_e3_summary_8407_8408.json`, 커밋 `f3e9691`)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. ADOPT, 8409 미실행(두 seed에서 ADOPT 조건 충족), H6-6 REJECT 유지, "table이 H6-6 실패를 해결했다고 인과적으로 단정하지 않는다"에 동의한다. 해석 두 군데를 고치고, 초안에 없던 사실 네 가지를 더했다.
+
+**확인한 수치**
+- 8407 단독 → `RUN_8408`(score 0.69, 짝 95% [0.57, 0.80]). 8407 + 8408 → `ADOPT`, 남은 사유 없음.
+- A(후보 대 TB-Engine-v2, 100국):
+  - 67-6-27, score **0.700**, 짝 95% [0.620, 0.775]
+  - 흑 0.800, 백 0.600
+  - 시간 비 1.032(상대 대비), safety violation 0
+- B / C(`v8:full` 상대, 각 100국):
+  - B(TB-V2-Value) 96-3-1, 0.975, tree UNKNOWN 19 / 994
+  - C(TB-Engine-v2) 81-6-13, 0.840, tree UNKNOWN 37 / 1,394
+  - safety violation 0 / 0
+- proof (공식 4M + table, opening 100개):
+  - UNSAFE 0.30% 대 1.22%, 차이 −0.92%p [−2.11, −0.07] → PASS
+  - UNKNOWN 0.20% 대 0.36%, 차이 −0.16%p [−0.51, +0.18] → PASS
+- legacy frozen 4M (보고만):
+  - UNSAFE 같음
+  - UNKNOWN 0.91% 대 1.43%, 차이 −0.53%p [−1.76, +0.47]
+- P92: TB-Engine-v2 0 / 10, 후보 0 / 10 → PASS
+- d2: 75행(8407 44행, 8408 31행), 재현 불일치 0, continued 1, `--table --legacy-frozen`, fast3
+
+**해석 수정**
+1. **UNKNOWN guard 통과는 공식 재검사를 4M + table로 바꾼 덕분이 아니다.** legacy frozen 4M으로 판정했어도 상한 +0.47%p로 PASS였다. 큰 변화는 재검사가 아니라 **대국 중 기록된 UNKNOWN**에 있다.
+
+   | aux tree 수 기록 UNKNOWN | H6-6 (TB-Engine-v1 위) | E3 (TB-Engine-v2 위) |
+   |---|---:|---:|
+   | value arm | 103 / 1,425 = 7.2% | 19 / 994 = 1.9% |
+   | 기준 arm | 71 / 2,385 = 3.0% | 37 / 1,394 = 2.7% |
+
+   - value arm에서 −74%다. E1 오프라인에서 table이 value arm 표준 UNKNOWN의 45%를 풀었던 것보다 크다. 그래서 대국 중 table만으로는 다 설명되지 않는다.
+   - seed(새 opening)와 대국 경로 차이도 섞여 있다. 두 요인을 이 데이터로는 나눌 수 없다.
+   - 결론은 초안과 같다. table 도입 뒤 H6-6의 실패 양상이 holdout에서 **재현되지 않았다**는 것이지, 원인을 분리해 보인 것은 아니다.
+2. **proof 수치는 사건 수가 매우 적다.**
+   - 4M + table UNKNOWN은 후보 2개, 기준 5개(d2 main), UNSAFE는 후보 3개, 기준 17개다.
+   - 구간이 좁은 것은 비율이 0 근처라서다. +3%p margin의 비열등 판정에는 충분하다. 그러나 "후보가 더 안전하다"(UNSAFE −0.92%p)를 기력과 무관한 성질로 읽으면 안 된다.
+   - B는 `v8:full`을 0.975로 이겨 불리한 국면 자체가 적다. 상대를 압도하는 쪽은 증명된 패배 수를 만날 일도 적다. 선택 효과일 수 있다.
+
+**추가 사실**
+1. **기력 효과가 그대로 재현됐다.** H6-6(TB-Engine-v1 위, 150국)의 A는 0.700 [0.630, 0.767], 흑 0.78 / 백 0.62였다. E3(TB-Engine-v2 위, 100국)는 0.700 [0.620, 0.775], 흑 0.80 / 백 0.60이다. 엔진이 바뀌어도 value v3의 이득 크기가 같다.
+2. **E1의 걱정(남은 꼬리가 value 쪽)은 E3에서 보이지 않았다.**
+   - E1에서는 4M + table 뒤 남은 UNKNOWN 17개 중 15개가 value arm이었다.
+   - E3에서는 4M + table UNKNOWN이 후보 2개, 기준 5개다. 다만 둘 다 사건 수가 작다.
+3. **table과 frozen 4M 사이에 모순이 없다.**
+   - d2 75행에서 table 4M과 frozen 4M이 SAFE ↔ UNSAFE로 갈린 경우는 0이다.
+   - table만 SAFE로 결정한 수가 22개(frozen 4M UNKNOWN) 있다. 이 22개는 E1·E2와 같은 단서를 갖는다. 근거는 정확한 가지치기이고, 독립 확인은 없다.
+4. **P92 PASS는 약한 증거다.** 두 엔진 모두 0 / 10이라 "후보가 기준보다 나빠지지 않았다"는 뜻일 뿐이다. 판별력 있는 통과가 아니다(기준이 10 / 10이었다면 NOT_DISCRIMINATING).
+
+**남은 위험 (웹 단계로 넘김)**
+- 시간 비 1.032는 GPU(CUDA) value로 잰 것이다.
+- H6-4b의 고정 국면 점검(CPU, SER5 조건)에서 value leaf는 평균 시간을 거의 바꾸지 않았다. 그러나 **p95를 34.6초에서 50.9초로 45% 늘렸다**(value 호출당 CPU 11.7 ms, CUDA 2.6 ms).
+- 미니 PC의 30초 deadline에서는 이 꼬리가 1순위 위험이다. E3 요약에는 수당 시간 분포가 없으므로 A run에서 따로 뽑아 둔다(아래 명령).
+- **(2026-10-20 정정)** 위 두 줄의 해석은 틀렸다.
+  - H6-4b는 데스크톱(fast 없음)에서 CPU와 CUDA로 잰 것이다. "SER5 조건"은 CPU 전용이라는 뜻일 뿐이다.
+  - p95 증가는 CUDA에서도 같았다(31.6 → 45.7초). 원인은 tree 밖(V8-C / VCT2 검사)이었다. 그때 기록에 이미 "원인은 tree가 아니다"라고 적혀 있다.
+  - 그래서 그 꼬리는 value 추론 비용이 아니다. 아래 기준선 측정도 같은 결론이다.
+- **배포 제약:** value v3와 H3 policy는 RenjuNet으로 학습한 망이라 로컬 전용이다(track-b-post-e1 §2, mcts-v8-teacher §12.1). 미니 PC 웹 대국은 지금까지처럼 로컬 범위에서만 연다. 공개 배포에는 RenjuNet 없이 학습한 변형이 따로 필요하다.
+
+**결론:** TB-V2-Value를 Track-B의 B-engine + B-net 조합으로 채택한다. H6-6 REJECT는 그대로다.
+
+## 다음 단계 설계 방향 (2026-10-20, 초안 → 아래 동결·최적화 정의로 확정)
+
+**1. TB-V2-Value 동결 (먼저, 별도 커밋)**
+- `src/analysis/tb_v2_value.py`를 만든다. TB-Engine-v2처럼 설정을 모두 적는다(`tree_mode='puct_value'` 포함). 함께 고정하는 것:
+  - `ENGINE_OPTIONS = {'root_vcf_table': True}`
+  - `VCF_TABLE_SHA256`, `VALUE_CHECKPOINT_SHA256`(v3 `a0fcccc4…`), `VALUE_INFERENCE='d4_average'`, `VALUE_LAMBDA=1.0`
+  - `FREEZE_EVIDENCE`(E3 summary)
+- `config_hash`는 위 전부를 덮는다. 테스트는 설정, table SHA, 근거 파일, agent를 검사한다.
+- CLAUDE.md frozen 목록에 더한다.
+
+**2. 같은 착수 시간 단축 최적화 (로드맵 단계, 실행 전 정의 고정)**
+- **기준선 측정 (먼저):** 동결 엔진으로 고정 국면 세트의 수당 시간 분포(p50 / p90 / p95 / p99 / 최대)를 잰다.
+  - 국면 세트: E3 A의 tree 수 중 시간이 긴 국면과 무작위 표본
+  - 조건: 데스크톱 CPU 전용, CUDA, 미니 PC CPU
+  - 30초를 넘는 비율도 기록한다.
+- **"같은 기력" 정의 (승인 필요):**
+  - 탐색 부분(VCF, threat, V8): 착수·진단·노드·호출이 비트 단위로 같아야 한다. fast3와 같은 방식이다.
+  - value 망 부분(추론 백엔드, 스레드, 정밀도): 비트 단위 동일은 불가능하다. H6-4b에서 CPU와 CUDA도 Q 값이 비트 단위로 같지 않았다(298국면 중 47국면). 대신 **고정 국면 세트에서 착수 100% 동일**을 기준으로 제안한다. 정밀도를 바꾸는 최적화(fp16, int8)는 착수가 달라질 수 있으므로 새 엔진으로 보고 §2.3 gate를 거친다.
+- 대상 후보(예상 효과 순): value 추론의 꼬리(CPU), V8-C 검사의 UNKNOWN 꼬리. 어느 것이든 착수를 바꾸면 이 단계가 아니다.
+  - (2026-10-20 정정) 기준선 측정 결과로는 순서가 반대다. 데스크톱 CPU의 극단 꼬리는 V8-C(root) 검사다(아래 결과).
+
+**3. 동결 → 웹 deadline 판(미니 PC 30초)과 H7-c1 self-play 병행:** 로드맵 그대로.
+
+**바로 할 수 있는 측정 (판정 아님): E3 A run의 수당 시간 분포**
+
+```bash
+cd ~/renju-h6 && source .venv/bin/activate
+python - <<'PY'
+import json
+def pct(v):
+    v = sorted(v); n = len(v)
+    return {q: round(v[min(n - 1, int(f * n))], 2) for q, f in (('p50', .5), ('p90', .9), ('p95', .95), ('p99', .99))} | {'max': round(v[-1], 2), 'n': n}
+for seed in (8407, 8408):
+    r = json.load(open(f'runs/h7_e3/value_vs_tb2_{seed}.json', encoding='utf-8'))
+    cand = [m['seconds'] for g in r['games'] for m in g['v8_moves']]
+    opp = [s for g in r['games'] for s in g['opponent_move_seconds']]
+    print(seed, 'TB-V2-Value', pct(cand), 'over30', sum(x > 30 for x in cand))
+    print(seed, 'TB-Engine-v2', pct(opp), 'over30', sum(x > 30 for x in opp))
+PY
+```
+
+## TB-V2-Value 동결 (2026-10-20, 커밋 `9c94676`)
+
+- `src/analysis/tb_v2_value.py`: 설정을 문자 그대로 적었다. TB-Engine-v2와 `tree_mode='puct_value'`만 다르다.
+- `config_hash`가 덮는 것:
+  - 설정과 `ENGINE_OPTIONS = {'root_vcf_table': True}`
+  - `VCF_TABLE_SHA256`(`68937a5f…`)
+  - `VALUE_CHECKPOINT_SHA256`(`a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca`)
+  - `VALUE_INFERENCE='d4_average'`, `VALUE_LAMBDA=1.0`
+- `FREEZE_EVIDENCE`: E2 ADOPT, E3 ADOPT
+- `make_agent`는 다른 checkpoint의 value leaf를 거부한다.
+- `tests/test_tb_v2_value.py`가 검사하는 것:
+  - 설정과 benchmark arm의 일치
+  - table SHA, value SHA·추론·λ(TB-V1-Value와 같음)
+  - 근거 파일, agent
+- value 경로의 코드(`puct_value_v1.py`, `hybrid/h6_value_leaf.py`)는 `config_hash`에 넣지 않았다. 대신 테스트에서 SHA로 잠그고, CLAUDE.md frozen 목록에 `tb_v2_value.py`와 함께 더했다. 이 두 파일이 바뀌어도 엔진이 바뀌기 때문이다.
+
+## 같은 착수 시간 단축 최적화: 정의와 도구 (2026-10-20, 실행 전 고정)
+
+사용자 검토에서 확정한 정의다. 이름은 "기력이 같음의 증명"이 아니라 **행동 동일성 gate**(semantics-preserving 최적화로 인정하는 조건)다.
+
+| 계층 | 해당 변경 | 기준 |
+|---|---|---|
+| 탐색·전술 (VCF, threat, V8-A / B / C, VCT2, PUCT 탐색 코드) | 정확 가속(fast3 방식), 자료구조, 캐시 | **비트 단위 동일:** 착수, route, tree 수, root 방문·Q, V8-C / VCT2 / V8-A / V8-B 상태, VCF·V8 노드와 호출 수 |
+| value 추론 (FP32 그대로) | 장치(CPU / CUDA), 스레드, 추론 백엔드, batch 실행 방식 | **equivalence corpus에서 최종 착수 100% 동일.** 하나라도 다르면 semantics-preserving이 아니다 |
+| 정밀도·모델 함수 변경 | fp16, int8, 양자화, 모델 구조, pruning | 처음부터 새 엔진 후보 → §2.3 gate |
+
+- 원칙: `tb_v2_value.py`와 그 identity를 이루는 frozen 파일은 최적화를 위해 고치지 않는다.
+- 최적화는 별도 runtime / 구현 후보로 만든다. 순서는 다음과 같다.
+  1. equivalence gate 통과
+  2. 최적화 판을 새로 동결
+  3. 그 판으로 웹 deadline 판과 H7-c1로 간다
+
+**도구: `scripts/h7_timing.py`** (테스트 `tests/test_h7_timing.py`)
+1. `positions`: 기본 국면 집합을 만든다.
+   - E3 A run에서 TB-V2-Value가 둔 모든 수(모든 route)
+   - 웹 probe P92 / P93 / P94
+   - H6-4b의 298국면(E1-holdout 대국, 저장소에 있음)
+   - 엔진 대국과 웹 probe에서 나온 국면이므로 RenjuNet 파생 데이터가 아니다. 커밋해도 된다.
+2. `measure`: 동결 TB-V2-Value로 국면마다 한 번 둔다.
+   - 국면마다 새 agent를 만들고, seed는 국면 id로 고정한다.
+   - value cache는 국면마다 비운다(cold). 그래서 국면 순서가 시간에 영향을 주지 않는다.
+   - 기록: 착수, 모든 결정 필드, 시간(전체 / tree / V8-C / VCT2 / value)
+   - 장치, 스레드, worker, fast, 기계 정보도 남긴다.
+   - **지연 측정은 `--workers 1`로 한다.** worker를 늘리는 것은 결정만 보는 run에서만이다.
+   - 요약: p50 / p90 / p95 / p99 / 최대, 30초 초과 수(출처별, tree route별, 구성 시간별)
+3. `corpus`: 기준선 measure 하나에서 equivalence corpus를 고정한다. 규칙은 지금 고정한다(`RULES['corpus']`).
+   - near_tie: tree route에서 1·2위 방문 비 ≥ 0.9 또는 Q 차이 ≤ 0.02
+   - V8-C의 tree 수가 UNKNOWN / UNSAFE이거나 교체가 일어난 국면
+   - VCT2가 교체한 국면
+   - probe 전부, H6-4b 전부
+   - 시간 상위 5%
+   - 위에 들지 않은 E3 A 국면 중 무작위 200개(seed 0)
+   - H6-4b 298국면이 CPU / CUDA에서 Q 값이 달랐던 국면 묶음 역할을 한다. 그때 기록에는 자식별 Q가 없어서 "Q 차이가 큰 국면"만 골라낼 수 없다. 그래서 전부 넣었다.
+4. `compare --mode search|value`: 기준선과 후보 measure를 corpus에서 비교한다.
+   - 차이가 하나도 없을 때만 PASS다.
+   - 엔진 identity(`config_hash`)가 다르면 비교하지 않는다.
+   - 시간 분포와 합의 비를 보고한다.
+
+**기준선 측정 순서**
+1. 데스크톱 CPU 전용(`--device cpu --threads 1 --workers 1`): 공식 기준선이다. corpus는 이 결과로 고정한다.
+2. 데스크톱 CUDA(`--device cuda`, corpus 국면만 해도 됨): 같은 FP32 value를 장치만 바꾼 것이다.
+   - `compare --mode value`로 CPU 대 CUDA를 비교하면 **gate 자체의 점검**이 된다.
+   - H6-4b에서는 298 / 298 착수가 같았다. 여기서 FAIL이 나면 "착수 100% 동일" 기준이 장치 차이에도 너무 엄격하다는 뜻이다. 그때는 최적화 전에 다시 논의한다.
+3. 미니 PC(웹 서버 기계) CPU: 30초 deadline 판단의 기준선이다. deadline 없이 잰다.
+   - 전체가 오래 걸리면 corpus 국면만 잰다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_tb_v2_value tests.test_h7_timing
+mkdir -p runs/h7_timing docs/h7
+python scripts/h7_timing.py positions --runs runs/h7_e3/value_vs_tb2_8407.json runs/h7_e3/value_vs_tb2_8408.json \
+  --output docs/h7/h7_timing_positions.json
+# 1) 공식 기준선: CPU, 1 worker (수 시간; 1분마다 진행 출력, --jsonl로 이어서 돌 수 있음)
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --device cpu --threads 1 \
+  --workers 1 --fast fast3 --jsonl runs/h7_timing/base_cpu.jsonl --output runs/h7_timing/base_cpu.json 2>&1 | tee runs/h7_timing/base_cpu.log
+python scripts/h7_timing.py corpus --measure runs/h7_timing/base_cpu.json --output docs/h7/h7_equiv_corpus.json
+# 2) CUDA (corpus 국면) + gate 점검
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cuda --workers 1 --fast fast3 --jsonl runs/h7_timing/base_cuda.jsonl --output runs/h7_timing/base_cuda.json 2>&1 | tee runs/h7_timing/base_cuda.log
+python scripts/h7_timing.py compare --mode value --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --candidate runs/h7_timing/base_cuda.json --output docs/h7/h7_equiv_cpu_vs_cuda.json
+```
+
+- 커밋할 것: `docs/h7/h7_timing_positions.json`, `docs/h7/h7_equiv_corpus.json`, `docs/h7/h7_equiv_cpu_vs_cuda.json`
+- 측정 요약도 커밋한다. `runs/h7_timing/base_cpu.json`은 크므로 `summary`와 `settings`만 `docs/h7/h7_timing_base_cpu_summary.json`으로 옮겨 커밋한다.
+- 미니 PC는 같은 positions / corpus 파일과 checkpoint로 `measure --corpus …`를 돌린다(`--fast fast3`이면 native를 먼저 빌드한다).
+
+## 기준선 시간 측정과 CPU ↔ CUDA 행동 동일성 결과 (2026-10-20, 커밋 `17c1a53`)
+
+**파일:** `docs/h7/h7_timing_base_cpu_summary.json`, `docs/h7/h7_equiv_corpus.json`, `docs/h7/h7_equiv_cpu_vs_cuda.json`
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 다음 네 가지에 동의한다.
+- CPU ↔ CUDA gate는 FAIL이다. 결과를 본 뒤 100% 기준을 완화하지 않는다.
+- FAIL이어도 E3 ADOPT와 동결은 유효하다.
+- 착수가 다른 3개를 먼저 분석한다.
+- 극단 꼬리의 주원인은 V8-C다.
+
+해석 두 군데를 고치고, 빠진 점검 하나를 더했다.
+
+**확인한 수치**
+- 공식 기준선(i5-12600K, WSL2, CPU, threads 1, workers 1, fast3): 2,594국면.
+  - mean 1.952초, p50 1.083, p90 4.897, p95 8.674, p99 18.575, 최대 26.208. 30초 초과 0.
+- E3 A 2,293국면: p95 9.014, p99 18.768, 최대 26.208.
+- tree route 1,590국면: p99 19.557.
+  - 구성 시간 p99: tree 2.436, root(V8-C) 15.938, VCT2 2.923, value 1.347.
+- corpus 827국면. 그룹 수(겹침 포함): near_tie 233, V8-C 75, VCT2 4, probe 3, H6-4b 298, slow 131(기준 8.665초 이상), random 200.
+- CPU ↔ CUDA(value 모드): 차이 3 / 827 → **FAIL.** 세 국면 모두 `near_tie` 그룹 하나에만 속하고, 모두 E3 A 국면이다.
+  - 시간 합의 비 0.830. p50 1.213 → 0.743, p99 20.599 → 20.448, 최대 26.208 → 26.406.
+
+**해석 수정**
+1. **구성 시간은 더하는 값이 아니다.** value 시간은 tree 시간 안에 들어 있다(leaf 평가는 tree 탐색 중에 일어남). 그래서 "tree 1.04 + value 0.55"처럼 합치면 안 된다.
+   - 결론은 그대로다. p99에서 V8-C 15.9초가 tree 전체(value 포함) 2.4초보다 훨씬 크다.
+2. **H6-4b와의 관계는 "모순되지 않는다"가 아니라 "같은 결론"이다.**
+   - H6-4b의 꼬리 증가(+45%)는 CPU와 CUDA에서 똑같이 나타났고, 원인은 tree 밖 검사였다.
+   - E3 결과 검토에서 이를 "CPU value 비용"으로 읽은 것은 내 잘못이다. 정정을 그 절에 적었다.
+   - 미니 PC에서 value 비용이 커질 가능성은 남지만, 지금까지 그것을 가리키는 측정은 없다.
+   - 참고: 같은 H6-4b 298국면의 p95가 50.9초(TB-V1-Value, Windows, fast 없음)에서 4.6초(TB-V2-Value, WSL2, fast3)로 줄었다. OS, fast3, table, 측정 방식이 모두 달라 원인을 나눌 수 없다.
+
+**빠진 점검: 같은 장치 반복 동일성**
+- gate는 "같은 장치에서 두 번 돌리면 착수가 같다"는 전제 위에 있다. 이 전제를 아직 재지 않았다.
+  - CUDA는 커널 선택이나 원자 연산 때문에 실행마다 값이 조금 달라질 수 있다. CPU도 스레드 수가 바뀌면 합산 순서가 바뀐다.
+- 그래서 3개 차이를 해석하기 전에 **CPU 대 CPU, CUDA 대 CUDA**를 corpus에서 한 번씩 더 잰다.
+  - 둘 다 0이면: 3개는 장치 차이다(초안의 가설과 맞음).
+  - CUDA 대 CUDA에서도 차이가 나면: CUDA 실행 자체가 비결정적이다. 그러면 "장치 A 대 장치 B 착수 100% 동일"이라는 gate는 정의부터 다시 봐야 한다. 기준 완화가 아니라, 반복 잡음 위에서 무엇을 비교할지의 문제다.
+- 비용: corpus 827국면을 두 번, CPU 약 50분, CUDA 약 40분.
+
+**canonical backend (사실 확인)**
+- E3의 A·B run은 `--value-device cuda`였다. 채택 근거가 된 대국은 CUDA value로 둔 것이다.
+- 그래서 TB-V2-Value의 canonical backend는 CUDA로 기록하는 것이 맞다(초안 방안 A).
+- 반면 지금 equivalence corpus의 공식 기준선은 CPU다. 이것은 웹(CPU) 쪽 기준선으로 의미가 있다. 다만 이후 최적화 비교는 **같은 backend끼리**(CPU 후보 대 CPU 기준선, CUDA 후보 대 CUDA 기준선) 한다.
+- 웹 CPU backend는 strict-equivalent가 아니다. 그래서 반복 점검과 3국면 분석 뒤 아래 중 하나로 정한다(지금 정하지 않음).
+  - **(a) CPU backend 변형 판정:** CPU value 대 CUDA value를 같은 상대, 같은 opening으로 짝 대국해 비열등을 본다(E2 방식).
+    - 99.6%가 같은 착수이므로 대부분의 대국이 수순까지 같다. 그런 대국은 짝 차이가 정확히 0이라 구간이 좁고, 적은 대국으로 판정이 난다.
+  - **(b) 웹 대국을 CUDA 기계에서 연다:** 미니 PC 대신 데스크톱이다. 웹 단계의 기계 계획이 바뀐다.
+- 기준을 99%로 낮추는 안(초안 방안 C)은 하지 않는다(동의).
+
+**3국면 분석 도구:** `h7_timing.py explain`을 더했다(보고용). 국면마다 다음을 나란히 보여 준다.
+- 달라진 결정 필드 목록
+- root 자식 집합이 같은지, 공통 자식 Q의 최대 차이
+- tree 수가 같은지
+- 상위 5자식(방문, Q)과 1·2위 차이
+- V8-C / VCT2 상태, 노드·호출 수
+
+판정 기준(사전): route, V8-C / VCT2 상태, 노드·호출이 같고 root 방문 순위만 바뀌었으면 "FP32 차이가 near-tie에서 뒤집힘"으로 본다. 그 밖이면 더 깊게 본다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+python -m unittest tests.test_h7_timing
+# 1) 3국면 분석 (로컬 측정 파일 사용)
+python scripts/h7_timing.py explain --baseline runs/h7_timing/base_cpu.json --candidate runs/h7_timing/base_cuda.json \
+  --compare docs/h7/h7_equiv_cpu_vs_cuda.json --output docs/h7/h7_equiv_cpu_vs_cuda_explain.json
+# 2) 같은 장치 반복 (corpus만, workers 1)
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cpu --threads 1 --workers 1 --fast fast3 --jsonl runs/h7_timing/rep_cpu.jsonl --output runs/h7_timing/rep_cpu.json 2>&1 | tee runs/h7_timing/rep_cpu.log
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cuda --workers 1 --fast fast3 --jsonl runs/h7_timing/rep_cuda.jsonl --output runs/h7_timing/rep_cuda.json 2>&1 | tee runs/h7_timing/rep_cuda.log
+python scripts/h7_timing.py compare --mode search --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --candidate runs/h7_timing/rep_cpu.json --output docs/h7/h7_equiv_cpu_vs_cpu.json
+python scripts/h7_timing.py compare --mode search --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cuda.json --candidate runs/h7_timing/rep_cuda.json --output docs/h7/h7_equiv_cuda_vs_cuda.json
+```
+
+- 반복 비교는 `search` 모드(모든 결정 필드)로 한다. 같은 장치라면 착수뿐 아니라 Q 값까지 같아야 결정적이라고 말할 수 있다.
+- 커밋할 것: `docs/h7/h7_equiv_cpu_vs_cuda_explain.json`, `docs/h7/h7_equiv_cpu_vs_cpu.json`, `docs/h7/h7_equiv_cuda_vs_cuda.json`
+- 미니 PC 측정은 그대로 필요하다. 이 점검과 상관없이 돌려도 된다.
+
+## backend 반복 동일성과 CPU ↔ CUDA 착수 차이 분석 (2026-10-20, 커밋 `2a37751`)
+
+**파일:** `docs/h7/h7_equiv_cpu_vs_cpu.json`, `docs/h7/h7_equiv_cuda_vs_cuda.json`, `docs/h7/h7_equiv_cpu_vs_cuda_explain.json`
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 다음 결론에 동의한다.
+- 같은 backend 반복은 CPU와 CUDA 모두 PASS(search 모드, 0 / 827)다.
+- 세 차이는 PUCT의 tree 수 선택에서 이미 생겼다. V8-C / VCT2가 같은 수에 대해 서로 모순된 증명을 낸 것이 아니다.
+- CPU ↔ CUDA FAIL은 그대로 둔다. canonical backend는 CUDA다.
+- 시간 비교는 한 번의 run으로 하지 않는다.
+- "node / call도 같다"는 사전 조건은 문자 그대로는 충족되지 않았다. tree 수가 먼저 달라 다른 수를 검사했기 때문이다.
+
+해석 하나를 고치고, 초안의 다음 단계 목록에서 두 항목을 정리한다.
+
+**확인한 수치 (explain)**
+
+| 국면 | CPU (tree 수 = 착수) | CUDA (tree 수 = 착수) | 공통 자식 Q 최대 차이 | V8-C / VCT2 |
+|---|---|---|---|---|
+| 8407/8/white ply 5 | (8,8): 방문 13, (7,6) 13 | (7,6): 13, (8,8) 12 | 0.0049 | 양쪽 SAFE, 교체 없음 |
+| 8408/22/black ply 6 | (6,6): 21, (10,7) 19 | (10,7): 21, (6,6) 19 | 0.0245 | 양쪽 SAFE, 교체 없음 |
+| 8408/24/white ply 187 | (1,2): 24, (0,6) 22 | (0,6): 25, (1,2) 21 | 0.0658 | 양쪽 SAFE, 교체 없음 |
+
+- 세 국면 모두 root 자식 집합은 같고, value 호출은 양쪽 50번이다. 다른 것은 방문 분포와 그 뒤의 검사 대상이다.
+- 반복 시간 비: CPU 0.877, CUDA 0.940. 결정 필드는 827 / 827 같다.
+
+**해석 수정**
+- **Q 최대 차이(0.005–0.066)는 FP32 오차의 크기가 아니다.** 탐색 경로가 갈라진 뒤의 결과다.
+  - root 자식의 Q는 그 아래 방문한 leaf value의 평균이다. 경로가 한 번 갈리면 서로 다른 leaf 집합의 평균이 된다.
+  - 예: 8408/22 국면에서 (10,7)의 Q는 CPU 0.351(19방문), CUDA 0.326(21방문)이다. 방문이 다르니 평균 대상이 다르다.
+  - 장치 간 leaf value 자체의 차이는 측정하지 않았다. 그것은 이보다 훨씬 작을 것이다(FP32 합산 순서 차이 수준).
+  - 그래서 정확한 서술은 "아주 작은 leaf value 차이가 PUCT 선택을 한 번 바꾸면 그 뒤 경로가 달라지고, 방문 순위가 근접한 국면에서는 그것이 착수 차이로 남는다"이다.
+  - 첫 국면은 CPU에서도 13 대 13 동률이었다(같은 방문이면 Q가 높은 수). 세 국면 모두 근접 방문(13 / 13, 21 / 19, 24 / 22)이다.
+- 이 해석은 gate 판정을 바꾸지 않는다. FAIL은 그대로다.
+
+**초안의 다음 단계 목록 정리**
+- **"call 사이 중복 상태 측정"은 이미 E0에서 쟀다.** check 범위(호출 사이 포함) 재사용 가능 비율 86.19%는 call 범위 85.97%와 거의 같았다(+0.2%p). 호출 사이 중복은 작다.
+- **"check 단위 no_win table"은 정확 가속이 아니다.**
+  - call 단위 table과 같은 논리로 frozen이 cut되지 않은 호출의 결과는 같다. 그러나 노드 수가 바뀌므로 cut된 곳에서 결과가, 따라서 착수가 바뀔 수 있다.
+  - 그래서 search-equivalence gate가 아니라 새 엔진 후보(§2.3)다. E0 수치로는 얻을 것도 작다. 우선순위에서 뺀다.
+- 정확 가속 후보는 노드 수와 결과를 바꾸지 않는 것만이다. 예: native 구현, 같은 결과의 helper cache.
+
+## 다음 단계 설계 방향: V8-C 꼬리 profiling과 정확 가속 (2026-10-20, 초안 → 아래 P0–P2 확정)
+
+**목표:** 착수와 결정 필드가 비트 단위로 같으면서 V8-C 검사의 p95 / p99 / 최대를 줄인다. 대상은 canonical CUDA와 웹 CPU 둘 다다. V8-C는 CPU 계산이라 장치와 무관하다.
+
+**P0. 꼬리 profiling (보고용, 엔진 변경 없음)**
+- 표본: corpus의 `slow`(131)와 `v8c_not_safe_or_switch`(75) 묶음. 비교용으로 random 50도 넣는다.
+- 방법: 국면마다 V8-C 검사를 그대로 재현하면서 경계 타이머로 시간을 나눈다. cProfile은 쓰지 않는다. 작은 함수 비중을 부풀리기 때문이다(native-core-plan §1).
+  - VCF 호출 안(`find`): table 조회와 저장, 재귀, 후보 생성
+  - VCF 밖의 threat solver 논리(`after_move` / `decision`): 방어 후보 생성, 금수 판정, 상태 결합
+  - solver cache hit / miss 수, 호출당 노드 분포, cut 종류
+- 판정(사전):
+  - VCF 안 비율 p ≥ 0.6이면 P1a로 간다: **native VCF core에 table을 포함해 옮긴다.** `vcf_tt_v1`과 노드 단위로 같아야 한다.
+  - p < 0.6이면 P1b로 간다: VCF 밖(금수 판정 X1-B, 방어 후보 생성)을 native로 옮기거나 같은 결과의 cache를 둔다.
+  - 둘 다 native-core-plan의 원칙(Python이 기준 oracle, 함수 단위 차분 테스트, fallback, provenance)을 따른다.
+
+**P1. 정확 가속 후보 (P0 결과로 하나 고름)**
+- frozen 파일은 고치지 않는다. fast3처럼 실행 중에 바꿔 끼우는 별도 모드(`--fast fast4` 등)로 둔다.
+- 함수 단위 동일성: 무작위 국면과 corpus 국면에서 결과, 노드, cut 여부가 기준 구현과 같아야 한다.
+
+**P2. 판정: 동일성과 속도를 따로 본다**
+- **동일성(hard):** `h7_timing.py compare --mode search`, corpus 827국면, 차이 0. CPU와 CUDA 각각 같은 backend 기준선과 비교한다.
+- **속도:** 같은 프로세스에서 국면마다 기준 구현과 후보를 번갈아 돈다(ABBA 순서, 같은 seed). 바꿔 끼우기가 가능하므로 시점 차이(온도, 부하)를 짝 안에서 지운다.
+  - 보고: 국면별 시간 비의 중앙값과 95% bootstrap, p95 / p99 / 최대(짝 국면 기준), 30초 초과 수
+  - 반복: 전체를 2회 돈다. 두 회의 결론 방향이 같아야 한다.
+  - 채택 기준(제안): 동일성 PASS, 그리고 짝 시간 비 중앙값의 95% 상한 < 1.0
+  - 꼬리 개선(p99)은 보고만 한다. 정확 가속은 기력을 바꾸지 않으므로 속도 기준은 "느려지지 않고 빨라짐"이면 충분하다.
+- 이번 반복 측정에서 같은 결정인데 시간 합이 6–12% 흔들렸다. 그래서 따로 잰 두 run의 비율은 최적화 판정에 쓰지 않는다.
+
+**P3. 이후**
+- 정확 가속 판으로 동결(optimized pre-RL freeze)한다.
+- 미니 PC에서 CPU 기준선과 30초 초과를 측정한다. 이 측정은 P0–P2와 상관없이 지금 돌려도 된다. 측정 명령은 위 기준선 절과 같고 `--corpus`를 붙인다.
+- 그다음 웹 CPU backend 결정(CPU 대 CUDA 짝 비열등, 또는 CUDA 기계)과 H7-c1 병행으로 간다.
+
+## P0–P2 확정 (2026-10-20, 실행 전 고정)
+
+사용자 검토에서 P0 범위, P1 원칙, P2 채택 기준이 승인됐다. 추가 규칙을 반영했다.
+
+**P0 (`scripts/h7_p0_profile.py`, 테스트 `tests/test_h7_p0.py`, 보고용)**
+- 표본: corpus의 `slow` 131 + `v8c_not_safe_or_switch` 75(겹침 제외), 그리고 `random` 묶음에서 50(seed 0).
+- 국면마다 동결 TB-V2-Value로 두 번 둔다(`h7_timing.decide`: 새 agent, 고정 seed, cold value cache).
+  - **coarse:** V8-C(`_verify_root_with`)와 그 solver의 VCF 호출마다 타이머를 둔다. 호출당 타이머 둘이라 부담이 작다. **분기는 이 결과로 정한다.**
+  - **fine:** helper에도 타이머를 둔다. VCF 호출 중인지로 나눈다.
+    - VCF 안: table key, five / 후보 / 합법성 / four helper. 나머지는 재귀 자체다.
+    - VCF 밖: `threats._winning_moves`, `ordered_moves`(방어 후보), `_board_key`, `Game.legal_moves / play / undo`(금수와 합법성은 여기 있다). 나머지는 solver 논리(cache, 상태 결합)다.
+    - 각 helper는 자기 시간(자식 helper 시간을 뺀 값)으로 센다. 그래서 겹쳐 세지 않는다.
+    - fine은 해석용이다. 타이머 부담 비(`timer_overhead_ratio`)도 보고한다.
+- 타이머는 실행 중에 이름을 바꿔 끼운다. frozen 파일은 고치지 않는다.
+  - coarse와 fine의 결정 필드가 같아야 한다(`timers_transparent`).
+  - `--baseline`을 주면 기준선 measure와 같은 국면 수를 보고한다.
+- 국면별 기록: V8-C의 VCF 요청 수(solver cache hit = 요청 − 호출), 호출 수, 노드, 호출당 최대 노드, cut 호출, table hit / store, tree 수 상태
+- **분기 (사전):** coarse의 VCF 안 시간 합 / V8-C 시간 합 ≥ 0.6이면 P1a(table을 포함한 native VCF core), 아니면 P1b(VCF 밖: 금수, 방어 후보). 국면별 중앙값 / p75 / p90과 묶음별 값은 해석용으로만 보고한다.
+- 한 프로세스, 한 worker로 돈다. 시간 비율을 재기 때문이다. 약 256국면 × 2회로, 1–2시간을 본다(1분마다 진행 출력, `--jsonl`로 이어서 돌 수 있음).
+
+**P1 (P0 결과로 하나)**
+- frozen 파일(`tb_v2_value.py`, `vcf_tt_v1.py` 등)은 고치지 않는다. fast3처럼 바꿔 끼우는 후보다.
+- P1a의 기준은 Python `vcf_tt_v1`이 oracle이다. 다음이 같아야 한다.
+  - 결과, witness, 노드, 호출, cut 종류
+  - table 의미(정확한 키, no_win만, 호출 단위)
+- 같은 노드를 더 빨리 계산하는 최적화여야 한다. 탐색량을 줄이는 최적화가 아니다. P1b(helper cache / native)도 같다.
+
+**P2 판정**
+
+| 구분 | 기준 |
+|---|---|
+| HARD 의미 | `h7_timing.py compare --mode search`, corpus 827국면, 차이 0. 같은 backend 기준선과 비교한다(CPU끼리, CUDA끼리) |
+| HARD 속도 | 같은 backend, 같은 프로세스, 국면별 짝. 순서는 국면 id의 SHA-256 첫 바이트가 짝수면 A B B A, 홀수면 B A A B다. 실행마다 같은 seed, 새 agent, cold value cache, 후보 정의에 맞는 새 VCF / table 상태로 시작한다. 독립 측정 2회. 회마다 국면별 시간 비(후보 / 기준, 각 두 번의 평균)의 중앙값을 내고, 국면 bootstrap 95% 상한 < 1.0이어야 한다. **두 회 모두** 만족하면 PASS |
+| 주 지표 | 전체 착수 시간(사용자 체감). V8-C(root) 시간 비는 보조 지표다. V8-C가 빨라져도 전체 착수가 느려지면 채택하지 않는다 |
+| 보고만 | mean, p50 / p90 / p95 / p99 / 최대, 30초 초과 수, 구성 시간 |
+
+- 최대값 하나가 커졌다고 정확 가속을 기각하지 않는다. 같은 결정에서도 wall-clock이 6–12% 흔들렸기 때문이다.
+- P2 도구(ABBA 짝 측정)는 P1 후보가 생기면 함께 만든다. 후보를 실행 중에 바꿔 끼울 수 있어야 같은 프로세스 짝 측정이 가능하다.
+
+**실행 명령 (데스크톱 Ubuntu, CPU 기준선과 같은 조건)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_p0 tests.test_h7_timing tests.test_tb_v2_value
+python -u scripts/h7_p0_profile.py --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --device cpu --threads 1 --fast fast3 \
+  --jsonl runs/h7_timing/p0.jsonl --output docs/h7/h7_p0_profile.json 2>&1 | tee runs/h7_timing/p0.log
+```
+
+- 다른 무거운 작업과 동시에 돌리지 않는다(시간 비율 측정).
+- 커밋할 것: `docs/h7/h7_p0_profile.json`. 마지막 출력의 `timers_transparent`가 true가 아니면 결과를 보여 달라.
+- 미니 PC 기준선 측정은 이와 별개로 병행해도 된다.
+
+## SER5 기준선과 P0 결과 (2026-10-20, 커밋 `c91b643`, `9be27d6`)
+
+**파일:** `docs/h7/h7_timing_mini_cpu_summary.json`(SER5, corpus 827), `docs/h7/h7_p0_profile.json`(데스크톱, 205국면)
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 다음 결론에 동의한다.
+- SER5에서 30초를 넘는 국면이 있다(8 / 827, 모두 E3 A).
+- 꼬리는 V8-C가 지배한다.
+- P0 분기는 **P1a**다(aggregate 0.9411 ≥ 0.6, `timers_transparent` true, 기준선과 205 / 205 같음).
+- table key 최적화는 핵심이 아니다.
+- P1b(VCF 밖)와 호출 사이 cache 확장은 우선순위가 낮다.
+- 827국면 비율을 실제 대국의 timeout 확률로 읽지 않는다.
+
+세 군데를 고치고, 초안에 없던 사실 두 가지를 더했다. 그리고 P1a를 두 단계로 나누자고 제안한다.
+
+**고칠 부분**
+1. **`_is_legal_for_player` 33.8%의 실체는 흑 금수 판정이다.**
+   - 이 함수는 빈 칸 확인 뒤 흑이면 `renju.rules.forbidden_reason`을 부른다(백은 바로 참).
+   - `forbidden_reason`에는 따로 타이머를 두지 않았으므로 그 시간이 이 함수의 자기 시간에 들어 있다.
+   - `_legal_completions`(18.1%)도 같은 합법성 검사와 `_placed_completions`, 정렬을 포함한다.
+   - 그래서 P0가 가리키는 1순위는 "VCF 안의 렌주 금수 판정"이다. 초안의 P1b가 "VCF 밖 금수"였는데, 금수 비용은 실제로 VCF 안에 있었다.
+   - 결과적으로 native core는 렌주 금수 규칙(정확한 5, 장목, 33, 44, 재귀 삼)을 포함해야 한다. 이 부분이 포팅 위험이 가장 크다(native-core-plan §7의 G0).
+2. **fine 비중은 대략값이다.**
+   - 타이머가 붙은 호출이 2억 2,142만 개이고, 호출당 부담이 약 0.94 μs(합 208초, 비 1.207)다.
+   - 호출당 자기 시간이 짧은 항목은 대부분 타이머 부담이다(`_reverse_four_after_block` 0.87 μs, table key 1.13 μs).
+   - 큰 항목(`_is_legal_for_player` 6.4 μs, `_legal_completions` 5.4 μs)은 부담이 15–20% 섞인 값이다. 순위는 믿을 만하지만 정확한 백분율은 아니다.
+3. **"SER5가 1.45–1.5배 느리다"는 범위로 써야 한다.**
+   - 데스크톱 corpus 값은 첫 측정(mean 3.435)과 반복 측정(3.013)이 12% 달랐다. 그래서 비는 1.44(첫 측정 대비)–1.64(반복 대비)다.
+   - SER5에서는 웹 서버도 돌고 있었다. 이 값은 배포 환경 전체의 관측치다(초안의 단서에 동의).
+   - SER5 요약 파일에는 엔진 해시(`engine`)가 빠져 있다. 다음 측정부터 요약에 넣는다(measure 출력에는 있다).
+
+**추가 사실**
+1. **느린 꼬리는 노드 예산을 다 쓴 V8-C 검사다.**
+   - P0의 가장 느린 8국면 중 7개가 V8-C 노드 예산 400k를 모두 썼다. 나머지 하나도 386,731이다.
+   - 대부분 tree 수가 UNKNOWN이고, 호출당 상한 20k에 걸린 호출이 8–18개다.
+   - 그래서 꼬리 시간 ≈ 노드 예산 × 노드당 비용이고, **최악 시간에는 예산이 정하는 상한이 있다.**
+   - 정확 가속은 노드 수를 바꾸지 않으므로, 노드당 비용을 k배 줄이면 꼬리도 거의 k배 준다. 목표를 노드당 속도로 잡을 수 있다.
+2. **SER5 목표를 숫자로 고정할 수 있다.**
+   - SER5 최대 38.5초 중 V8-C가 최대 27.7초다. 나머지(tree 약 3초, VCT2 약 3–5초, value 등)는 거의 고정이다.
+   - V8-C 시간의 94%가 VCF이므로, VCF가 k배 빨라지면 V8-C는 27.7 × (0.06 + 0.94 / k)다.
+     - k = 2이면 약 14.7초 → 최대 착수 약 26초
+     - k = 3이면 약 10.3초 → 약 21초
+   - 30초에 여유를 두려면 VCF **2배 이상**이 필요하다.
+
+**P1a를 두 단계로 (제안, 승인 필요)**
+- native-core-plan의 확정 방향(`feat/Web_SER5` web-ser5.md §9.8–9.9)은 "함수 단위 native(X1-A threat window, X1-B 금수)를 먼저, VCF 전체 native는 그것으로 부족할 때만"이다.
+  - X1-A 하나로 V8-C 2.15배가 나온 전례가 있다. 경계 비용이 생각보다 작았다.
+- **P1a-1 (먼저): 금수 판정 native(X1-B)**
+  - `forbidden_reason`(또는 `_is_legal_for_player`의 흑 경로)을 C로 옮긴다. fast3의 threat window처럼 판 list를 그 자리에서 읽는다.
+  - 바꿔 끼우는 모드(`fast4` 후보)로 둔다.
+  - 함수 단위 차분 테스트: 무작위 판과 corpus 국면의 모든 빈 칸에서 `rules.forbidden_reason`과 결과가 같아야 한다(G0).
+  - 효과 상한(fine 기준 대략): `_is_legal_for_player` 자기 시간 34%의 대부분과 `_legal_completions`의 합법성 부분이다. V8-C 1.4–1.6배 정도로 본다.
+- **P1a-2 (P1a-1로 부족하면): VCF 전체 native core**
+  - table을 포함해 Python `vcf_tt_v1`을 oracle로 한다. 결과, witness, 노드, 호출, cut, table 의미가 같아야 한다.
+  - 호출 하나가 경계다.
+- **P1a-1 뒤 P1a-2로 갈지의 기준(사전):**
+  - P1a-1이 P2(의미 0 / 827, 속도 2회 PASS)를 통과한다.
+  - 그 상태로 SER5 corpus에서 30초 초과 0이고 최대 ≤ 25초면 P1a-2를 하지 않는다.
+  - 아니면 P1a-2로 간다.
+  - 25초는 웹 서버 동시 부하와 측정 흔들림(6–12%)을 감안한 여유다.
+- 판정 gate(P2)는 바꾸지 않는다. 최종 확인은 SER5에서 같은 corpus로 다시 잰다.
+
+## P1a-1 확정과 구현: 금수 판정 native (`fast4`) (2026-10-20, 실행 전 고정)
+
+사용자 검토에서 P1a 단계 분할과 P1a-1 시작이 승인됐다. 추가 규칙 셋을 반영했다.
+1. SER5 종료 기준은 독립 2회다.
+2. 실패 분기를 둔다.
+3. 1.4–1.6×는 예상치일 뿐 gate가 아니다. SER5 계산(VCF 2× → 약 26초, 3× → 약 21초)도 구성 시간이 선형으로 줄어든다는 근사다.
+
+**구현 (frozen 파일 미수정)**
+- `src/rt30/native/forbidden.c`: `renju.rules.forbidden_reason`을 단계마다 그대로 옮겼다.
+  - 같은 quiet 판정(축별 ±3 / ±4 개수)과 같은 정확 분류기를 쓴다. 분류기는 축별 5 / 장목, four는 서로 다른 4돌 집합, 열린 삼은 straight-four 연장의 재귀 합법성까지 본다.
+  - 검사 순서가 같으므로 여러 금수가 겹칠 때도 같은 이유를 낸다.
+  - 둔 곳이 이미 차 있거나 판 밖이면 같은 ValueError(같은 메시지)를 낸다. 판은 쓰지 않는다.
+  - quiet 판정은 Python 판 list에서 ±4 칸만 읽는다. 정확 분류가 필요할 때만 판을 복사한다.
+- `src/rt30/fast4_forbidden.py`: 로드된 모든 모듈의 `forbidden_reason` 이름을 native로 바꿔 끼운다.
+  - `renju.rules` 자신은 바꾸지 않는다. 그래서 `rules.forbidden_reason`은 Python oracle로 남고, `legal_black_points`는 자기 분류기를 그대로 쓴다.
+- `hybrid.h6_fast`: 모드 `fast4` = fast3 + native 금수. fast3처럼 엄격하다(native가 없거나 stale이면 설치 실패, fast3로 조용히 내려가지 않음).
+  - `state()`는 실제로 묶인 함수를 확인한다. 금수 키는 native가 묶였을 때만 있다.
+  - provenance에는 native 빌드 기록이 들어간다.
+- `rt30/native/build.py`에 `_forbidden`을 더했다. 소스가 바뀌었으므로 **모든 기계에서 다시 빌드한다**(`--if-stale`).
+- **컨테이너 사전 점검(판정 아님):** 공용 rule corpus 3,000국면의 빈 칸 491,799개에서 native와 Python 결과가 모두 같았다(`장목` 6,949, `사사` 6,299, `삼삼` 2,771). 호출당 약 10배 빨랐다(타이머 포함).
+
+**함수 단위 점검 (`scripts/h7_p1a_check.py`)**
+- `cells`: timing positions(E3 A, probe, H6-4b) 판 전부와 공용 rule corpus 판 전부에서, 빈 칸마다 Python과 native를 비교한다. rule corpus에는 손으로 만든 5 / 장목 / 44 / 33 / 재귀 삼 fixture가 회전 4개씩 들어 있다.
+- `trace`: corpus 국면마다 기준선의 tree 수를 V8-C 검사(fast3 + table)로 다시 확인한다. 이때 `forbidden_reason` 호출마다 둘 다 계산하고 Python 결과를 쓴다. 엔진이 실제로 묻는 판을 그대로 본다.
+- 차이가 하나라도 있으면 FAIL이다.
+
+**엔진 단위 의미 + 속도 (`h7_timing.py paired` / `judge`, P2)**
+- 한 프로세스에서 국면마다 A = fast3, B = fast4를 4번 돈다. 순서는 국면 id SHA-256 첫 바이트가 짝수면 ABBA, 홀수면 BAAB다.
+- 실행마다 새 agent, 같은 seed, cold value cache, 호출 단위 새 table로 시작한다.
+- 의미: 네 실행의 결정 필드(착수, route, 방문·Q, V8-C / VCT2 / V8-A / V8-B 상태, 노드·호출)가 모두 같아야 한다. 827국면 전부에서 차이 0이어야 한다. 같은 프로세스 비교라 search 모드 compare보다 엄격하다.
+- 속도: 국면별 (B 평균 / A 평균) 전체 착수 시간 비의 중앙값, 국면 bootstrap 95% 상한 < 1.0. V8-C 시간 비는 보조 지표다.
+- 독립 2회(`--round 1`, `--round 2`)를 돌리고 `judge`가 둘 다 의미·속도 PASS인지 본다.
+- backend: 공식 판정은 CPU(웹 대상, 기준선과 같은 조건)다. canonical CUDA는 의미 확인을 1회 한다. 금수 판정은 CPU 계산이라 장치와 무관하지만, CUDA backend의 결정도 확인해 둔다.
+
+**종료 / 분기 규칙 (사전)**
+
+| 결과 | 다음 |
+|---|---|
+| 함수 단위 FAIL 또는 P2 의미 FAIL | 최적화 버그다. P1a-2로 넘어가지 않고 원인부터 고친다 |
+| 의미 PASS, 속도 FAIL | P1a-1을 채택하지 않는다. P1a-2를 진행할 수 있다 |
+| P2 PASS, SER5 목표 FAIL | P1a-2를 진행한다 |
+| P2 PASS, SER5 목표 PASS | P1a-1을 동결하고 P1a-2는 하지 않는다 |
+
+- **SER5 목표:** 같은 827 corpus, CPU, threads 1, workers 1, fast4로 독립 2회 잰다. **두 회 모두** 30초 초과 0이고 최대 ≤ 25초여야 한다.
+  - p50 / p90 / p95 / p99 / 최대와 구성 시간(tree / V8-C / VCT2 / value)을 모두 기록한다.
+- 동결: 엔진 identity(`tb_v2_value.config_hash`)는 바뀌지 않는다. "TB-V2-Value + fast4 runtime"으로, 실행 모드와 native 빌드 기록을 함께 남긴다.
+
+**실행 명령 — 데스크톱 Ubuntu**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_fast4 tests.test_h6_fast tests.test_h7_timing tests.test_tb_v2_value
+# 1) 함수 단위 (수십 분)
+python -u scripts/h7_p1a_check.py --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline runs/h7_timing/base_cpu.json --workers 12 --output docs/h7/h7_p1a_check.json 2>&1 | tee runs/h7_timing/p1a_check.log
+# 2) P2: CPU 2회 (각 약 3시간, 다른 작업 없이) + 판정
+for R in 1 2; do
+python -u scripts/h7_timing.py paired --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline-mode fast3 --candidate-mode fast4 --round $R --device cpu --threads 1 \
+  --jsonl runs/h7_timing/p1a_cpu_r$R.jsonl --output docs/h7/h7_p1a_paired_cpu_r$R.json 2>&1 | tee runs/h7_timing/p1a_cpu_r$R.log
+done
+python scripts/h7_timing.py judge --rounds docs/h7/h7_p1a_paired_cpu_r1.json docs/h7/h7_p1a_paired_cpu_r2.json \
+  --output docs/h7/h7_p1a_p2_cpu.json
+# 3) CUDA 의미 확인 1회
+python -u scripts/h7_timing.py paired --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --baseline-mode fast3 --candidate-mode fast4 --round cuda1 --device cuda \
+  --jsonl runs/h7_timing/p1a_cuda.jsonl --output docs/h7/h7_p1a_paired_cuda.json 2>&1 | tee runs/h7_timing/p1a_cuda.log
+```
+
+**실행 명령 — SER5 (P2 PASS 뒤, 2회)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate   # SER5의 저장소 경로에 맞춘다
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python -m unittest tests.test_fast4
+for R in 1 2; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --device cpu --threads 1 --workers 1 --fast fast4 --label fast4_r$R \
+  --jsonl runs/h7_timing/mini_fast4_r$R.jsonl --output runs/h7_timing/mini_fast4_r$R.json 2>&1 | tee runs/h7_timing/mini_fast4_r$R.log
+done
+```
+
+- 커밋할 것:
+  - `docs/h7/h7_p1a_check.json`
+  - `docs/h7/h7_p1a_paired_cpu_r1.json`, `docs/h7/h7_p1a_paired_cpu_r2.json`, `docs/h7/h7_p1a_p2_cpu.json`
+  - `docs/h7/h7_p1a_paired_cuda.json`
+  - SER5 두 회의 요약: `summary`, `settings`, `engine`, `label`만 담은 `docs/h7/h7_timing_mini_fast4_r1_summary.json`, `…_r2_summary.json`
+- paired 출력 파일은 국면 행을 포함해 크다(수 MB). 크기가 문제면 `summary`와 `settings`만 옮겨 커밋한다.
+
+## P1a-1 결과: PASS, P1a-2 보류 (2026-10-21, 커밋 `548ebad`, `ce441a4`)
+
+**파일**
+- 데스크톱: `docs/h7/h7_p1a_check.json`, `h7_p1a_paired_cpu_r1.json`, `h7_p1a_paired_cpu_r2.json`, `h7_p1a_p2_cpu.json`, `h7_p1a_paired_cuda.json`
+- SER5: `h7_p1a_ser5_fast4_r1_summary.json`, `h7_p1a_ser5_fast4_r2_summary.json`
+
+**검토 결과:** 초안의 수치는 모두 결과 파일과 맞다. 다음 결론에 동의한다.
+- 판정은 PASS다.
+- 종료 규칙에 따라 P1a-2는 하지 않는다(필요 없어진 것이지, 효과가 없다고 판정한 것이 아니다).
+- value 시간은 그대로다.
+- 두 SER5 회는 재현성이 높다.
+
+하나는 크게 고치고, 사실 둘을 더했다.
+
+**확인한 수치**
+- 함수 단위:
+  - 판 5,594개, 빈 칸 956,774개에서 불일치 0
+  - V8-C trace 705국면, 금수 호출 25,302,024회에서 불일치 0(이 중 사사 226,931, 장목 46,142, 삼삼 2,580)
+- 데스크톱 P2(CPU):
+  - 두 회 모두 의미 PASS(차이 0 / 827), 속도 PASS
+  - 국면별 시간 비 중앙값 0.9615, 95% [0.9555, 0.9649] / [0.9543, 0.9679]
+- CUDA: 의미 PASS(0 / 827), 중앙값 0.9444
+- SER5 fast4(두 회):
+  - mean 3.505 / 3.507, p99 17.407 / 17.315, 최대 22.277 / 22.323, 30초 초과 0 / 0 → 종료 기준 두 회 모두 충족
+  - engine 해시는 `tb_v2_value.config_hash`와 같다.
+  - native 소스 SHA(`forbidden.c` `211fd89d…`, `threat_windows.c` `2a1e309c…`)가 저장소와 같다.
+
+**크게 고칠 부분: 데스크톱 P2도 큰 꼬리 감소를 보여 준다. SER5의 감소는 부하 차이가 아니다.**
+- 초안은 "인과 효과는 데스크톱 약 4%, SER5의 30–40%는 측정 시점·부하 차이가 섞였을 수 있다"고 읽었다. 결과 파일은 그렇지 않다.
+- 약 4%(0.9615)는 **국면별 비의 중앙값**이다. corpus의 절반 이상은 V8-C가 거의 일하지 않는 빠른 국면이고, 거기서는 비가 1에 가깝다. 중앙값은 꼬리를 보지 않는 통계다(gate로는 보수적이라 맞다).
+- 같은 데스크톱 P2(같은 프로세스, ABBA / BAAB, 같은 국면 짝)의 다른 수치:
+
+  | 데스크톱 CPU P2 (r1 / r2) | fast3 | fast4 | 비 |
+  |---|---:|---:|---:|
+  | 시간 합 | — | — | **0.7105 / 0.7104** |
+  | mean | 2.914 / 2.895 | 2.070 / 2.056 | 0.71 |
+  | p99 | 18.256 / 17.859 | 10.677 / 10.664 | 0.58–0.60 |
+  | 최대 | 22.613 / 22.545 | 13.279 / 13.232 | 0.59 |
+
+  - 국면을 나눠 보면: 가장 느린 10%의 국면별 비 중앙값은 **0.59**(약 1.69배), 빠른 절반은 0.98이다.
+- SER5 기준선 대비 fast4: mean 0.71, p99 0.58, 최대 0.58. **데스크톱 짝 측정과 거의 같은 크기**다.
+  - 그래서 SER5의 감소는 짝 측정이 보인 인과 효과와 맞다. 측정 시점의 부하로 설명할 필요가 없다.
+  - 다만 SER5 자체는 짝 측정이 아니므로 SER5에서의 정확한 배율은 "관측치"로 쓴다.
+- VCT2 시간이 줄어든 것(SER5 mean 0.808 → 0.524)도 이상한 점이 아니다. VCT2 검사도 VCF와 흑 합법성 검사를 쓴다.
+- **정정된 결론:** fast4는 쉬운 국면에서는 거의 차이가 없고, 어려운 국면(V8-C가 노드 예산을 다 쓰는 국면)을 약 1.7배 빠르게 한다.
+  - P0 뒤에 적은 예상치(V8-C 1.4–1.6배)를 꼬리에서는 조금 넘었다.
+  - 앞으로 속도 보고에는 중앙값 gate와 함께 **시간 합의 비와 짝 분위수(p90 / p99 / 최대)**를 같이 쓴다. gate 통계는 바꾸지 않는다.
+
+**추가 사실**
+- P2 순서 배치는 ABBA 401 / BAAB 426이다(국면 id SHA 기준, 의도대로 거의 반반).
+- 데스크톱 CPU 대 CUDA에서 fast4의 효과(시간 합 비 0.71 / 0.68)가 같은 방향이다. 금수 판정은 CPU 계산이라 장치와 무관하다는 예상과 맞다.
+
+## 다음 단계 설계 방향: 실행판 동결, 웹 CPU backend, 웹 연결 (2026-10-21, 초안 → 아래 P3 확정)
+
+**1. 실행판 동결: "TB-V2-Value + fast4" (먼저, 별도 커밋)**
+- 엔진 identity(`tb_v2_value.config_hash`, `256e5abe…`)는 그대로다. 바뀐 것은 실행 경로뿐이다. 그래서 엔진 파일은 고치지 않고 새 파일 `src/analysis/tb_v2_runtime.py`에 실행판을 적는다.
+  - `ENGINE = tb_v2_value` (해시 고정)
+  - `FAST_MODE = 'fast4'`
+  - `NATIVE_SOURCES = {threat_windows.c: 2a1e309c…, forbidden.c: 211fd89d…}`
+  - `EVIDENCE` = 위 P1a-1 파일들
+  - `make_agent`는 fast4 설치를 확인한 뒤 TB-V2-Value agent를 만든다. native가 없거나 stale이면 거부한다.
+- 테스트로 잠그는 것: native 소스 SHA, `fast4_forbidden.py`와 `h6_fast`의 fast4 경로가 기대한 함수를 묶는지, 근거 파일
+- CLAUDE.md frozen 목록에 `tb_v2_runtime.py`, `rt30/native/forbidden.c`, `rt30/native/threat_windows.c`, `rt30/fast4_forbidden.py`를 더한다.
+- P1a-2(VCF 전체 native)는 보류로 기록한다. 다시 꺼낼 조건은 "웹 실측에서 30초 초과가 생기거나, 탐색 예산을 늘리는 새 엔진 후보가 생길 때"로 둔다.
+
+**2. 웹 CPU backend 결정 (SER5에는 CUDA가 없다)**
+- 앞서 정한 대로, CPU backend는 canonical(CUDA)과 착수가 3 / 827 달라 semantics-preserving이 아니다. SER5에서 웹을 열려면 별도 판정이 필요하다.
+- **제안: CPU backend 비열등 짝 판정(E2 방식)**
+  - arm: TB-V2-Value + fast4, value CPU 대 value CUDA. 데스크톱에서 같은 상대(`v8:full`), 같은 opening·색으로 둔다.
+  - seed: 새로 예약한다(예: 8431, 8432). 50 pair × 2 seed.
+  - 기준: 점수 차(CPU − CUDA) 95% 하한 ≥ −0.05, safety violation 0
+  - 보고: 수순이 완전히 같은 대국 수(착수 99.6%가 같으므로 대부분 같을 것으로 예상하지만 예측일 뿐이다), 시간
+  - 이 판정은 "CPU backend가 기력을 잃지 않는다"만 묻는다. 엔진 채택 판정이 아니다.
+- 대안: 웹을 CUDA 기계(데스크톱)에서 연다. 그러면 이 판정은 필요 없지만, 미니 PC 계획이 바뀐다.
+
+**3. 웹 연결 (`feat/Web_SER5` 쪽 작업, 설계만)**
+- 웹 서버 코드는 deadline을 검사하는 VCF(`rt30.vcf`, native core)를 쓴다. 이 브랜치의 `fast4`와 table(`vcf_tt_v1`)은 거기에 없다. 연결할 때 두 가지를 정한다(결정 필요).
+  - **(a) deadline 없이 동결판 그대로 돌리고, 30초는 감시만 한다(권장).**
+    - SER5 corpus에서 최대가 22.3초이므로 대부분 deadline에 닿지 않는다.
+    - 30초를 넘으면 그 수를 기록하고 정해 둔 대체 수를 둔다(예: 그때까지의 V8-C 판정으로 고른 수, 또는 tree 수). 대체 수 규칙은 연결 때 정한다.
+    - 장점: 웹 대국이 동결 엔진의 행동과 같다. 같은 기록으로 재현할 수 있다.
+  - **(b) deadline 판 VCF에 table과 native 금수를 다시 옮긴다.**
+    - deadline이 없을 때 `vcf_tt_v1`과 노드 단위로 같음을 다시 증명해야 한다. 작업이 크고, deadline이 걸린 수는 시간에 따라 달라진다.
+- 어느 쪽이든 웹 대국 로그에 다음을 남긴다: 엔진 해시, 실행 모드, native SHA, value 장치, 수당 시간, 30초 감시 발동 여부.
+- 배포 제약은 그대로다. RenjuNet으로 학습한 망이므로 로컬 범위에서만 연다.
+
+**4. H7-c1 self-play (병행)**
+- 데스크톱 GPU에서 canonical CUDA backend + fast4로 시작한다. 웹 쪽과 독립이다.
+- self-play 설계(주기, 데이터 형식, 학습 gate)는 따로 정한다. track-b-post-e1 §2–3과 external-engine §9의 모니터링 상대를 따른다.
+
+**승인이 필요한 것**
+1. 실행판 동결 방식(새 파일 `tb_v2_runtime.py`, native SHA 잠금)
+2. 웹 CPU backend: 비열등 짝 판정(seed 예약) 또는 CUDA 기계
+3. 웹 deadline 방식: (a) 감시 + 대체 수(권장) 또는 (b) deadline 판 재포팅
+4. H7-c1 설계를 다음 단계로 시작할지
+
+## P3 확정: 실행판 동결, CPU backend 인증, 웹 감시 방식 (2026-10-21)
+
+사용자 검토에서 네 가지가 승인됐다.
+- 실행판 동결: runtime hash를 따로 두고, dispatcher를 잠그거나 바인딩을 검사한다. `.so`는 provenance로만 남긴다.
+- CPU backend 비열등 판정: seed 8431–8432를 미리 예약한다.
+- 웹: (a)를 택하되 **30초 soft monitor**로 한다. 강제 대체 수는 두지 않는다.
+- H7-c1 설계를 시작한다.
+
+P1a-1 성능 결론의 표현도 고정한다: "쉬운 국면은 거의 같고, 전체 계산량은 약 29% 줄고, 어려운 꼬리는 약 1.7배 빨라진다." "중앙값 4% 개선"으로 요약하지 않는다.
+
+**1. 실행판 동결 (커밋 `46ebcf7`, `src/analysis/tb_v2_runtime.py`, 테스트 `tests/test_tb_v2_runtime.py`)**
+- 두 identity를 나눈다.
+  - 엔진: `tb_v2_value.config_hash` = `256e5abe…`. P1a-1로 바뀌지 않았다.
+  - 실행판: `runtime_hash(device)` = 엔진 해시 + `fast4` + native C 소스 SHA + 바인딩 Python 모듈 SHA + value 장치를 함께 해시한 값이다.
+- 바인딩 Python 모듈 SHA: `rt30/fast.py`, `fast_windows.py`, `fast_extensions.py`, `fast3.py`, `fast3_windows.py`, `fast4_forbidden.py`
+- 같은 엔진이라도 CUDA(self-play, canonical)와 CPU(웹)는 runtime hash가 다른 두 실행판이다.
+- `install()`은 fast4를 설치한 뒤 실제 바인딩을 검사한다.
+  - 엔진 모듈(`mcts_v5`, `mcts_v7`, `mcts`)이 native threat window와 native 금수를 묶었는가
+  - native 빌드가 stale이 아니고, 빌드 기록의 소스 SHA가 동결값과 같은가
+  - `make_agent`는 이것이 아니면 agent를 만들지 않는다. 그래서 `h6_fast`의 fast4 매핑이 나중에 바뀌어도 잘못된 실행판으로는 돌 수 없다.
+- `.so` SHA, 빌드 Python, 컴파일러는 기계마다 다르므로 gate가 아니라 `provenance(device)`로 기록한다.
+- `CERTIFICATION`: CUDA는 canonical(E3가 CUDA value로 둠), CPU는 인증 전(None)이다.
+- CLAUDE.md에 실행판 잠금(`src/rt30/native/*.c`, `src/rt30/fast*.py`)을 적었다.
+- 벤치마크 run 파일에 `value_device`와, TB-V2-Value + fast4 run이면 `runtime` provenance(엔진 해시, runtime 해시, native 기록)가 들어간다.
+- P1a-2 보류. 다시 꺼낼 조건: 웹 실측 30초 초과, 또는 탐색 예산을 늘리는 엔진 후보
+
+**2. CPU backend 인증 (실행 전 고정, `scripts/summarize_h7_cpu_cert.py`, 테스트 `tests/test_h7_cpu_cert.py`)**
+- 질문은 "value를 CPU로 돌리면 CUDA(canonical)보다 기력을 잃는가" 하나다. 엔진 채택이 아니라, 같은 B-engine의 웹용 실행판 인증이다.
+- run: TB-V2-Value + fast4(`puct_value_vct2_50k_tt`, `--puct-c 1.5 --fast fast4`) 대 `v8:full`, 50 pair
+  - seed **8431, 8432** 둘 다(지금 `RESERVED_SEEDS`에 넣음, 실행 뒤 seed 추가 없음)
+  - `--value-device cpu`와 `cuda`로 같은 opening·색
+- PASS 조건: 점수 차(CPU − CUDA), opening(양 색) 단위 bootstrap 95% 하한 ≥ −0.05, 그리고 두 backend 모두 safety violation 0
+- PASS 뒤 기록: `CERTIFICATION['cpu']`를 갱신하는 커밋을 따로 한다. 표현은 "web-certified runtime: TB-V2-Value + fast4 / CPU"다.
+- FAIL이면 CPU는 인증되지 않는다. 웹은 CUDA 기계에서 연다.
+- 보고: 수순이 완전히 같은 대국 수, 색별 점수, 대국 시간
+- 요약 도구가 거부하는 것:
+  - 동결 설정과 다른 run
+  - fast4가 아닌 run
+  - value 장치가 맞지 않는 run
+  - runtime 해시가 동결값과 다른 run
+  - pair 수가 50이 아닌 run
+  - seed가 빠지거나 opening이 어긋난 경우
+
+**3. 웹 (Web_SER5) 방식: 30초 soft monitor**
+- 동결 실행판(TB-V2-Value + fast4)을 deadline 없이 그대로 돌린다. 30초는 감시 기준일 뿐이다.
+  - 30초를 넘으면 `over_30` 표시만 남기고 계산을 끝까지 한다. 정상 착수를 돌려준다.
+  - 그래서 웹 대국은 벤치마크 엔진과 행동이 같다.
+  - 동기 계산 중에는 30초에 대체 수를 둘 수 없다(사용자 지적). 강제 대체 수는 두지 않는다.
+- `over_30`이 한 번이라도 생기면: 국면과 실행판 로그를 저장하고 재현한다. 그다음 P1a-2 또는 hard-timeout 실행판을 다시 검토한다.
+  - "반드시 30초 안에 착수"가 서비스 요구가 되면 그때 따로 설계한다. VCF 안 deadline을 다시 포팅하기 전에, 엔진 프로세스 바깥의 hard watchdog과 그 대체 수의 안전성 검증을 먼저 본다.
+- AI 착수 계산은 **worker 1개로 직렬화**한다(적어도 초기 검증 동안). SER5 측정이 threads 1, workers 1이었기 때문이다. 여러 대국을 동시에 CPU에 넣으면 22초 최대를 기대할 수 없다.
+- 웹 로그 필드: `engine_hash`, `runtime_hash`, `fast_mode`, native 소스 SHA, native 바이너리 SHA, `value_device`, 수당 시간, `over_30`. `tb_v2_runtime.provenance(device)`가 앞의 여섯을 준다.
+- 웹 연결 작업은 `feat/Web_SER5` 쪽에서 한다. CPU 인증 PASS 뒤에 시작한다. 로컬 전용 배포 제약은 그대로다.
+
+**실행 명령 — CPU backend 인증 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_tb_v2_runtime tests.test_h7_cpu_cert tests.test_fast4
+mkdir -p runs/h7_cert docs/h7
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; W=8
+for SEED in 8431 8432; do
+for DEV in cuda cpu; do
+python -u scripts/run_mcts_v8_benchmark.py --arm puct_value_vct2_50k_tt --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast4 --policy-checkpoint $POL --value-checkpoint $VAL --value-device $DEV \
+  --games-jsonl runs/h7_cert/${DEV}_$SEED.jsonl --output runs/h7_cert/${DEV}_$SEED.json 2>&1 | tee runs/h7_cert/${DEV}_$SEED.log
+done; done
+python scripts/summarize_h7_cpu_cert.py --cpu runs/h7_cert/cpu_8431.json runs/h7_cert/cpu_8432.json \
+  --cuda runs/h7_cert/cuda_8431.json runs/h7_cert/cuda_8432.json --output docs/h7/h7_cpu_cert.json
+```
+
+- 이 판정은 시간을 재지 않는다. 그래서 worker 수를 늘려도 된다.
+  - CPU run에서 worker마다 torch 스레드는 1개다(`ValueLeaf` 기본값).
+  - 400국 × 대국당 약 1.5–2분이므로, 8 worker로 run당 수십 분 정도다.
+- 커밋할 것: `docs/h7/h7_cpu_cert.json`. run 파일은 `runs/`에 둔다.
+
+## H7-c1 설계 방향 (2026-10-21, 초안, 승인 대기)
+
+**이미 고정된 것** (track-b-b1-b2 §13, track-b-post-e1 §2, mcts-v8-teacher §12.18, external-engine §9)
+- 1주기 = self-play 1,000판이다. 최소 3주기다.
+- 승급: 직전 checkpoint와 50쌍
+- 수렴: 연속 2주기 동안 직전 checkpoint 대비 향상 하한 ≤ 0, 그리고 전술 회귀 없음
+- Monitoring Arena: 상대 3종 × 25쌍 + 직전 checkpoint 50쌍. 여기에 Rapfi L_mid 25쌍(seed 8710 + c, 기록만)
+- 주기 안에서는 B-engine을 바꾸지 않는다. 바꾸는 것은 주기 경계에서 §2.3 gate를 거친 것만이다.
+- 라벨 계약:
+  - value는 둘 차례 관점이다.
+  - 증명된 결과가 대국 결과보다 우선한다.
+  - 행마다 `game_id`, `canonical_hash`, `engine_config_hash`, `model_hash`를 남긴다.
+  - probe가 든 대국은 통째로 뺀다.
+  - 한 대국 안에서는 model / config가 고정이다.
+- 엔진·실행판: TB-V2-Value + fast4 / CUDA(canonical). 행에는 `runtime_hash`도 남긴다.
+
+**결정이 필요한 것 (제안 포함)**
+1. **selective VCT2 공격을 c1 엔진에 넣을지 (track-b-post-e1 §3, §8 질문 2. 아직 열려 있음)**
+   - 근거:
+     - 같은 엔진끼리의 self-play에서는 VCT2 패배수를 둬도 상대가 응징하지 못한다(8411 p22, 웹 `161802`).
+     - 그 국면이 대국 결과 라벨로는 반대 부호가 된다.
+     - TB-V2-Value에는 VCT2 **방어** veto는 있지만 **공격**(E2 모듈 `analysis.vct2_attack.own_vct2_attack`, 증명된 WIN만)은 없다.
+   - **제안:** c1 전에 E4로 판정한다. TB-V2-Value + VCT2 공격 대 TB-V2-Value, §2.3 gate 6개, 새 holdout seed.
+     - 주기 안에서는 엔진을 바꿀 수 없다. c1 데이터 품질에 바로 영향을 주는 변경이라서다.
+     - 이 판정은 기력 비열등, 비용 ≤ 1.5, 건전성(거짓 WIN 0)을 본다. 빈도 지표는 "상대의 증명된 VCT2 패배를 응징한 수"다.
+   - 대안: c1을 지금 시작하고, VCT2 공격은 c1 → c2 경계 후보로 둔다. 더 빠르지만, c1 데이터에 미응징 라벨 오류가 남는다. 증명 라벨이 일부를 덮어 줄 뿐이다.
+2. **self-play 기반 코드 (새로 만든다)**
+   - 지금 있는 self-play 코드(`src/training/self_play.py` 등)는 Track A(AlphaZero)용이라 solver와 RenjuNet 금지 규칙이 다르다. Track B용은 새로 만든다.
+   - 구성:
+     - self-play 생성기: 양쪽 같은 엔진·같은 checkpoint, opening 프로토콜, 대국마다 provenance
+     - 증명 라벨러: H6 label builder 재사용, 예산 고정
+     - replay buffer: 허용 세대 범위를 명시
+     - 학습: policy와 value를 함께 학습할지, H6처럼 value만 학습할지
+     - 승급 Arena, Monitoring Arena
+   - 이 중 "policy도 학습하는가"는 큰 결정이다. 지금 B-net은 H3 policy(RenjuNet)와 H6 value다.
+3. **self-play의 탐색 설정**
+   - 대국용 실행판(50 simulation, VCT2 veto 등)을 그대로 쓸지
+   - 탐색 다양성(root noise, 온도, opening 무작위)을 어떻게 줄지. 엔진 동결 원칙과 맞추려면 이것들은 "self-play 프로토콜" 설정으로 고정하고, 엔진 identity에는 넣지 않는다.
+4. **처리량**
+   - 1,000판 × 대국당 약 1.5–2분 ÷ worker 수로 계산한다. 데스크톱 12코어면 주기당 수 시간이다.
+   - 학습과 Arena를 더하면 주기 하나가 하루 안쪽이다. c1 전에 짧은 시험 run(예: 20판)으로 확인한다.
+
+**순서 제안**
+1. CPU 인증 run과 H7-c1 설계 확정을 병행한다.
+2. (승인 시) E4 VCT2 공격 판정을 한다.
+3. self-play 기반 코드를 구현한다.
+4. c1을 시작한다.
+5. 웹 연결은 CPU 인증 PASS 뒤 `feat/Web_SER5`에서 한다.
+
+## H7-E4 설계 방향: selective VCT2 공격과 웹 대국 국면 (2026-10-21, 초안, 승인 대기)
+
+사용자 결정:
+- H7-c1 전에 E4(엔진 개선)를 한다.
+- self-play는 policy와 value를 함께 학습한다.
+- CPU 인증 결과는 데스크톱을 쓸 수 있을 때 커밋한다.
+- 웹 DB 백업(`web-db-backup.zip`)을 E4 개발에 쓰는 초안을 검토했다.
+
+**백업 사실 확인 (원본 DB, 컨테이너에서 읽기만 함)**
+- 게임 89판, 수 2,755개. undo로 취소된 수 248개를 빼면 활성 수는 2,507개다.
+- 활성 사람 수 1,205개, 사람 수 → AI 차례 1,191국면. 초안의 수치가 맞다.
+- AI 엔진은 대부분 TB-RT30-v3(1,109국면)이다. 나머지는 MCTS-v8 34, v7 19, TB-RT30-v1 18, TB-Engine-v1 11이다.
+- 결과: AI 승 48, 사람 승 14, 미완 20, 포기 5, 진행 중 2
+- **session이 33개이고 크기가 고르지 않다.** 가장 큰 session이 212국면(18%)이고, 다음이 102, 91, 91, 89다. 한 session 안의 대국은 같은 사람의 습관을 공유한다.
+- 원본에는 `session_hash`, 시각, 로그 경로가 있다. RenjuNet 파생 데이터는 아니지만 원본 DB는 커밋하지 않는다(`data/web/`).
+
+**초안 검토: 동의하는 것**
+- 웹 승패를 정답으로 쓰지 않는다. 국면만 가져와 오프라인 증명으로 참값을 다시 낸다.
+- 증명된 WIN만 positive로 쓴다. UNKNOWN과 NOT_FOUND는 "패배 아님"이 아니다.
+- 웹 국면은 E4의 개발용 / probe corpus다. 학습 데이터가 아니다.
+- dev / holdout을 위치가 아니라 묶음 단위로 나눈다.
+- veto 5건은 방어 사례다. positive가 아니라 회귀 시험용이다.
+- 최종 채택은 웹 데이터만으로 하지 않는다. §2.3 gate(건전성, 새 seed 대국, 비열등, 비용)를 거친다.
+- E4 뒤에 H7-c1을 하고, policy와 value를 함께 학습한다.
+
+**초안 수정 (8가지)**
+1. **E4는 새 휴리스틱을 처음부터 만드는 것이 아니라, 이미 있는 E2 모듈에서 시작한다.**
+   - `analysis.vct2_attack.own_vct2_attack` / `VCT2AttackAgent`(E2, §12.25)가 이미 "증명된 WIN만 두는 selective VCT2 공격"이다.
+     - 후보는 V8-B의 four / 열린 삼이다.
+     - 방어자의 응수는 전부 검사한다.
+     - 우리 quiet 수는 위협수로만 제한한다. 그래서 불완전하지만 건전하다.
+     - 예산은 노드와 호출 수다.
+   - E2 / E2b에서 상대 wrapper(`+vct2atk`, 200k / 400k)로 비용과 착수 품질을 이미 쟀다.
+   - 그래서 E4 후보 = TB-V2-Value + 이 모듈(실행 경로, 예산)이다. dev에서 조정하는 것은 **미리 정한 작은 매개변수 집합**뿐이다.
+     - 예산 200k / 400k
+     - 실행 route(tree만 / stage4·5 포함)
+     - 발동 조건(예: 상대의 직전 수가 위협을 만들었을 때만)
+   - 후보 선별 규칙을 국면을 보며 새로 만들면 과적합이다. 웹 국면 수가 적어서 더 그렇다.
+2. **참값 탐색은 E4보다 넓어야 한다.** 그렇지 않으면 "놓친 것"이 예산 차이일 뿐이다.
+   - 참값: 모든 합법 첫 수를 시도한다. 우리 quiet 수도 제한하지 않는 `ThreatSolver`(selective 아님)로 VCT2를 보고, 예산을 크게 잡는다(예: 국면당 10M 노드, §12.27 방식). witness를 기록한다.
+   - 분류: `PROVEN_WIN`(witness 있음) / `NOT_FOUND`(범위 안에서 못 찾음) / `UNKNOWN`(예산 끝)
+   - 깊이 등급도 기록한다: 5목, VCF, VCT1(V8-B 범위), VCT2.
+     - 이미 TB-V2-Value가 찾는 VCF / VCT1 승리는 E4 목표가 아니다. 그 국면은 회귀 검사용이다.
+     - **E4 목표 = VCT2에서만 이기는 국면**이다.
+3. **"응징"의 정의를 고친다.** 참값 witness의 첫 수와 같은 수를 뒀는지가 아니다.
+   - 둔 수 뒤에 상대가 증명된 패배(VCF, 또는 depth 1 안의 패배)이면 응징이다.
+   - 다른 승리 수(더 긴 VCF 등)도 응징으로 센다. 이 검사는 둔 수 뒤 국면을 같은 참값 solver로 본다.
+   - 지표: VCT2 전용 목표 국면 중 응징 비율(기준 엔진 대 E4)
+4. **웹 holdout만으로는 빈도 근거가 모자란다.** 웹에서 VCT2에서만 이기는 국면은 많아야 수십 개일 것이다(참값을 돌려야 안다).
+   - 그래서 §2.3-3(빈도)의 주 근거는 **새 seed 대국**에서 잰다.
+     - `v8:full`은 VCT2 방어 veto가 없다. 그래서 VCT2 패배수를 자연스럽게 둔다(E2의 발견, §12.25).
+     - 기준(TB-V2-Value + fast4)과 E4가 같은 opening·색으로 `v8:full`을 상대한다.
+     - 상대가 둔 직후 국면마다 참값을 보고, 응징한 비율을 짝으로 비교한다.
+   - 웹 holdout은 **분포가 다른 추가 검사**다.
+     - 사람이 만든 비정형 국면이다.
+     - 기준: E4가 기준 엔진보다 응징 수가 줄지 않을 것
+     - 사건 수가 적으면 판정이 아니라 보고로 둔다(사전 고정).
+5. **나누는 단위는 game이 아니라 session이다.**
+   - 같은 사람의 여러 대국이 dev와 holdout에 나뉘면 습관이 새어 들어간다.
+   - 규칙(사전 고정): session을 `sha256(session_hash)` 순서로 늘어놓고, 국면 수가 전체의 25% 이상이 될 때까지 holdout에 넣는다. 나머지는 dev다.
+   - 커밋하는 분할 파일에는 `game_id → split`만 둔다(`session_hash`는 넣지 않는다).
+   - 가장 큰 session(212국면)이 어느 쪽으로 가든 규칙대로 둔다. 결과를 보고 바꾸지 않는다.
+6. **E4는 엔진 변경이다. 실행판과 CPU 인증 순서가 바뀐다.**
+   - E4가 채택되면 엔진 identity가 새로 생긴다(TB-V2-Value-A 또는 TB-Engine-v3 + value). 실행판(fast4) runtime hash도 다시 만든다.
+   - **지금 하려던 CPU 인증은 E4 전 엔진을 인증하는 것**이다. 웹이 E4 엔진을 쓸 계획이면, CPU 인증은 E4 동결 뒤로 미루는 편이 낫다(같은 도구, 새 seed).
+   - 이미 데스크톱 결과가 있다면 E4 전 엔진의 인증 기록으로 커밋한다.
+   - E4는 수마다 공격 검사를 더한다. 그래서 SER5 시간을 다시 재야 한다. 비용 gate(≤ 1.5)와 SER5 30초 감시 기준(2회, 초과 0, 최대 ≤ 25초)을 E4 동결판에 다시 적용한다.
+7. **policy + value 학습과 맞물리는 점 하나: E4가 둔 수의 policy target**
+   - E4(와 own VCF, V8-B)의 수는 탐색 뒤에 덮어쓴 수다. 그래서 root 방문 분포는 그 수를 반영하지 않는다.
+   - 방문 분포를 그대로 policy target으로 쓰면, 증명된 승리 수를 두고도 다른 분포를 배우게 된다.
+   - H7-c1 설계에서 정할 것: 증명된 승리로 둔 국면의 policy target을 승리 수 one-hot으로 둘지(또는 그 국면을 policy 학습에서 뺄지)
+   - value target은 라벨 계약대로 증명이 우선이다.
+8. **웹 국면의 데이터 규칙**
+   - 웹 국면(D4 정규형)은 probe / holdout 목록에 올린다. 그 국면이 든 대국은 모든 학습 데이터에서 뺀다(기존 누출 규칙).
+   - 원본 DB는 `data/web/`에 둔다. 커밋하는 것은 파생 corpus뿐이다(수순, game_id, split, 참값 결과).
+   - undo로 취소된 사람 수 뒤의 국면도 실제로 나온 판이다. dev 전용 추가 묶음으로 쓸 수 있다(holdout에는 넣지 않는다).
+
+**E4 흐름 (수정안)**
+
+```
+웹 DB (data/web/, 커밋 안 함)
+  → corpus builder: 활성 수순에서 사람 수 → AI 차례 1,191국면 (+ undo된 국면은 dev 추가 묶음)
+  → session 단위 split (sha256 순서, holdout ≥ 25%) → 분할 파일 커밋
+  → 참값 scan (전폭 VCT2, 큰 예산, witness, 깊이 등급)
+  → 기준 엔진(TB-V2-Value + fast4) 응징 보고: VCF / VCT1 승리 회귀, VCT2 전용 놓침
+  → dev에서만: E2 모듈의 매개변수(예산, route, 발동 조건) 고정, 매개변수 후보는 미리 정한 목록 안에서
+  → E4 후보 동결
+  → gate:
+      ① 건전성: 거짓 WIN 0. E4가 둔 모든 공격 수를 참값 solver로 재검증
+      ② 빈도: 새 seed v8:full 짝 대국에서 응징 비율 상승
+      ③ 기력: 같은 대국, 점수 차 하한 ≥ −0.05
+      ④ 비용: ≤ 1.5
+      ⑤ 격리: 기본 off
+      웹 holdout(보고 또는 비회귀)
+  → PASS: 새 엔진 동결 → 실행판(fast4) → SER5 2회 재측정 → (웹 쓸 경우) CPU 인증
+  → H7-c1 (policy + value)
+```
+
+**먼저 만들 도구 (승인 후)**
+1. `scripts/h7_e4_web_corpus.py`: DB → 국면 corpus + session split
+   - 입력: DB 경로. 활성 수순을 재생해 판을 복원하고 합법성을 검사한다.
+   - 출력(커밋): 국면 id, 수순, 둘 차례, 사람 수, AI 엔진 이름, split
+2. `scripts/h7_e4_truth.py`: 참값 scan
+   - 전폭 VCT2, witness, 깊이 등급
+   - resume 가능, 진행 출력, worker
+3. `scripts/h7_e4_baseline.py`: 기준 엔진을 국면마다 두고, 둔 수가 응징인지 참값 solver로 확인한다(dev / holdout 따로 보고).
+
+**결정이 필요한 것**
+1. 위 8가지 수정(특히 E2 모듈에서 시작, 참값은 전폭, session 분할, 빈도 주 근거는 새 seed 대국)
+2. 웹 holdout의 역할: 비회귀 기준(사건 ≥ 10이면 판정, 미만이면 보고)으로 둘지, 보고만 할지
+3. CPU 인증을 E4 뒤로 미룰지(제안)
+4. 참값 예산(제안: 국면당 10M 노드, 1,191국면이면 데스크톱에서 수 시간 – 하루)
+
+## H7-E4 확정: 프로토콜과 첫 도구 세 개 (2026-10-21, 결과 전 고정)
+
+위 설계의 8가지 수정과 결정 1–4가 모두 승인됐다. 사용자가 더한 결정은 아래와 같다.
+
+**목표와 순서**
+- 목표는 최강 기력이다. 순서는 E4 → H7-c1이고, self-play는 policy와 value를 함께 학습한다.
+- E4는 E2 모듈(`own_vct2_attack`)에서 시작한다. 목표는 상대가 둔 "VCT2에서만 지는 수"를 응징하는 것이다.
+- 웹 데이터는 개발과 probe에만 쓴다. 학습에는 쓰지 않는다.
+
+**참값 (`scripts/h7_e4_truth.py`)**
+- 전폭 VCT2: 공격자의 quiet 수는 합법 수 전부, 방어자의 응수도 전부다(`ThreatSolver` 의미).
+- 예산은 국면 하나에 하나다. 개수로만 센다(시간 제한 없음).
+  - VCF 노드 합계 10M (`node_budget`)
+  - VCF 호출 1M (`call_limit`). 노드 합계가 먼저 닿도록 크게 잡았다.
+  - VCF 한 번에 100k 노드 (`node_limit`, `ThreatSolver` 기본값)
+- 분류
+  - `PROVEN_WIN`: 어느 깊이에서 사람 수가 UNSAFE다. AI의 첫 수 witness를 남긴다.
+  - `NOT_FOUND`: depth 2까지 SAFE로 끝났다. "탐색 범위 안에 승리 없음"이지 "승리 없음"이 아니다.
+  - `UNKNOWN`: 예산이나 VCF 한 번의 노드 한도에 잘렸다. **negative로 쓰지 않는다.**
+- 깊이 등급
+  - `WIN_5`: 바로 5목
+  - `WIN_VCF`: depth 0
+  - `WIN_VCT1`: depth 0이 SAFE로 끝나고 depth 1에서 승리
+  - `WIN_VCT2_ONLY`: depth 0과 1이 모두 SAFE로 끝나고 depth 2에서 승리. **E4 목표는 이것뿐이다.**
+  - 더 얕은 깊이가 UNKNOWN이면 가장 작은 깊이를 모른다. 그때는 `WIN_VCT1_OR_LESS` / `WIN_VCT2_OR_LESS`로 두고 목표에 넣지 않는다.
+- 공격자 quiet 수의 순서: 위협수(4, 열린 삼·띈 삼, `selective_vct.threat_moves`)를 먼저 두고 나머지 합법 수를 뒤에 둔다(`TruthSolver`).
+  - 수 집합이 같으므로 SAFE와 UNSAFE의 뜻은 바뀌지 않는다.
+  - 순서는 예산 안에서 승리를 먼저 찾게 할 뿐이다. 측정은 아래에 있다.
+- 깊이 0, 1, 2는 solver cache를 공유한다. 같은 판(돌 + 둘 차례)은 한 번만 탐색한다. corpus 1,291국면은 판 1,182개다(10-21 추가 뒤 1,467국면 / 판 1,356개).
+- resume용 jsonl의 줄마다 예산을 적는다. 예산이 다른 줄은 거부한다.
+- 비용 측정(컨테이너, fast4, 1 프로세스, main 국면 무작위 5개). 예산을 정하는 데 쓰지 않고 시간 추정에만 쓴다.
+
+  | 수 | 결과 | 시간 | VCF 호출 | 노드 |
+  |---|---|---|---|---|
+  | 9 | NOT_FOUND | 52초 | 32k | 0.15M |
+  | 13 | UNKNOWN (depth 0, 1 SAFE, depth 2에서 예산 소진) | 492초 | 245k | 10M |
+  | 22 | NOT_FOUND | 341초 / 354초 (기존 순서 / 위협수 우선) | 27k | 6.87M |
+  | 37 | UNKNOWN (사람의 4 → 막은 뒤 모든 응수 열거, depth 0부터 예산 소진) | 413초 | 2.9k | 10M |
+  | 51 | NOT_FOUND | 100초 | 31k | 0.57M |
+
+  - 22수 국면에서 두 순서의 판정과 호출 수가 같았다. SAFE는 수 집합 전체를 봐야 하므로 순서가 비용을 바꾸지 않는다.
+  - depth 2 전폭은 SAFE 하나에 최소 "quiet 수 ~200 × 응수 1개 × quiet 수 ~200" 번의 VCF 호출이 든다. 그래서 초반 국면도 싸지 않다.
+  - 판당 평균은 약 4–5분(컨테이너)이다. 데스크톱 12 worker로 1,182판이면 **약 5–8시간**으로 본다(밤샘 1회). 추가 뒤 1,356판이면 약 6–9시간이다.
+  - **UNKNOWN이 적지 않을 것이다**(표본 5개 중 2개). 예산은 고정값(10M)대로 두고 UNKNOWN 비율을 그대로 보고한다. UNKNOWN 국면의 VCT2 승리는 이 corpus에서 보이지 않는다. 빈도의 주 근거가 새 seed 대국인 이유가 하나 더 생긴 셈이다.
+
+**응징 (`scripts/h7_e4_baseline.py`)**
+- witness와 같은 수인지 보지 않는다. 둔 수 뒤 사람의 모든 응수가 depth 1 안에서 지는지(VCT2 범위의 승리를 유지하는지) 참값 solver와 같은 예산으로 확인한다. 5목도 응징이다.
+  - `PUNISH`: 모든 응수가 진다
+  - `MISS`: 어떤 응수가 SAFE로 끝났다
+  - `UNCLEAR`: 예산에 잘렸다. MISS로 세지 않는다.
+- 기준 엔진: 동결 실행판 TB-V2-Value + fast4 (`tb_v2_runtime.check_bound`). value는 CUDA(canonical)다.
+  - 국면마다 seed는 `derive_seed(8440, 'h7-e4', 국면 id)`로 고정한다.
+- 웹에서 실제로 둔 AI 수(대부분 TB-RT30-v3)도 같은 검사를 한다. 참고용이다.
+- `WIN_5` / `WIN_VCF` / `WIN_VCT1` 국면에서 B가 응징하지 못하면 회귀 flag로 보고한다. B에는 own VCF와 V8-B가 있으므로 0개가 기대값이다.
+
+**corpus와 분할 (`scripts/h7_e4_web_corpus.py`, 실행 결과 `docs/h7/h7_e4_web_corpus.json`)**
+- 기록된 모든 수(무른 수 포함)를 "그 수가 기록될 때 판에 있던 수"로 다시 세운다.
+  - `ply`, `board_hash`, 둘 차례를 기록과 맞추고, `renju.Game`으로 합법성과 금수를 검사한다.
+  - 하나라도 어긋나면 그 대국 전체를 뺀다.
+  - 결과: 2,755수 전부 일치했고, 빠진 대국은 0이다.
+- 묶음
+  - `main`: 무르지 않은 사람 수 뒤에 무르지 않은 AI 수가 이어진 국면이다. **1,191국면**
+  - `undone`: 나중에 무른 사람 수 뒤 AI 차례 국면이다. **DEV 보조 묶음 100국면**
+    - HOLDOUT 대국의 무른 국면 13개는 뺐다. session 분할을 깨끗하게 두기 위해서다.
+    - main 국면이나 앞의 undone 국면과 판이 같은 11개도 뺐다.
+- 분할(결과 전 고정): session을 `sha256(session_hash)` 순서로 늘어놓고, main 국면이 25% 이상이 될 때까지 HOLDOUT에 통째로 넣는다.
+  - 결과: HOLDOUT 20판 / 320국면(26.9%), DEV 69판 / 871국면
+  - HOLDOUT 판 중 DEV에도 있는 판은 19개다. 대부분 초반 공통 국면이다.
+- 커밋하는 파일: 대국마다 split, 실제 수순, 사람 색, 웹 엔진 이름, 결과. 국면마다 사람 수와 웹 AI의 응수(수, route)
+  - 넣지 않는 것: `session_hash`, 시각, 로그 경로, diagnostics
+  - 원본 DB는 `data/web/`에 둔다(gitignore).
+
+**E4 gate (DEV 전에 고정)**
+- DEV 매개변수 격자: 최대 8조합. DEV에서 하나를 고른 뒤 동결하고, HOLDOUT을 본 뒤에는 다시 조정하지 않는다.
+  - 예산: 200k / 400k
+  - route: tree만 / tree + stage4·5
+  - 발동: 모든 해당 국면 / 상대의 직전 수가 전술 위협을 만들었을 때만
+  - DEV 선택 순서: VCT2 전용 응징률 → 기력·안전 → 비용
+- 판정
+  - 건전성: 거짓 증명 0. E4가 둔 모든 공격 수를 참값 solver로 다시 검증한다.
+  - 빈도: 새 seed **8441, 8442**(각 50 pair, `v8:full` 상대)에서 응징 비율이 오른다. 이것이 주 근거다.
+  - 기력: 같은 대국에서 점수 차 짝 비교 95% 하한 ≥ −0.05
+  - 비용 ≤ 1.5
+  - 격리: off이면 기존과 같다.
+  - 웹 HOLDOUT: VCT2 전용 사건이 10개 이상이면 비회귀 판정(E 응징 수 ≥ B 응징 수)이다. 10개 미만이면 보고만 한다(`HOLDOUT_MIN_EVENTS`).
+- PASS 뒤
+  - 새 B-engine identity(예: TB-Engine-v3 + Value)를 만든다. 엔진 해시와 runtime 해시도 새로 만든다.
+  - SER5에서 2회 다시 잰다(30초 초과 0, 최대 ≤ 25초). SER5 실패는 웹 배포만 막는다. E4 엔진 채택은 그대로다.
+  - CPU 인증은 새 seed **8451, 8452**로 E4 엔진에 대해 한다. 8431/8432 결과가 나오면 E4 전 엔진의 기록으로만 커밋한다. 그 뒤 Web_SER5로 간다.
+- seed 예약: `RESERVED_SEEDS`에 8441, 8442, 8451, 8452를 더했다.
+
+**H7-c1 policy target 계약 (E4와 함께 고정)**
+- 보통 국면: root 방문 분포를 정규화한 것
+- PROVEN_WIN 덮어쓰기(own VCF, V8-B, E4): 실제로 둔 증명된 승리 수 one-hot
+- PROVEN_LOSS인 root 후보: 확률 0으로 두고 나머지를 다시 정규화
+- one-hot은 적어도 c1이 끝날 때까지 고정한다. "증명된 승리 수 전체에 분포"는 c2 이후 cycle 경계에서 검토할 후보다.
+- 웹 국면은 probe 목록에 올린다. 그 국면이 든 self-play 대국(D4 기준)은 학습에서 뺀다. 무른 국면은 DEV 보조 묶음에만 쓴다.
+
+**실행 명령 — 참값과 기준 엔진 (데스크톱 Ubuntu)**
+
+corpus(`docs/h7/h7_e4_web_corpus.json`)는 커밋돼 있다. 그래서 데스크톱에 웹 DB가 없어도 된다.
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4 tests.test_tb_v2_runtime
+mkdir -p runs/h7_e4
+# 1) truth: about 5-8 h with 12 workers; rerun the same command to resume (runs/h7_e4/truth.jsonl)
+python -u scripts/h7_e4_truth.py --corpus docs/h7/h7_e4_web_corpus.json --workers 12 --fast fast4 \
+  --jsonl runs/h7_e4/truth.jsonl --output docs/h7/h7_e4_truth.json 2>&1 | tee -a runs/h7_e4/truth.log
+# 2) baseline: frozen TB-V2-Value + fast4 (CUDA value) on the PROVEN_WIN positions only
+python -u scripts/h7_e4_baseline.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \
+  --device cuda --jsonl runs/h7_e4/baseline.jsonl --output docs/h7/h7_e4_baseline.json 2>&1 | tee -a runs/h7_e4/baseline.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4_truth.json`, `docs/h7/h7_e4_baseline.json`. jsonl과 log는 `runs/`에 둔다.
+- 먼저 볼 숫자
+  - truth 요약의 `DEV/main`·`HOLDOUT/main`별 `grade.WIN_VCT2_ONLY`와 `class.UNKNOWN`
+  - baseline 요약의 `target`(VCT2 전용 국면 중 B가 응징한 수·놓친 수)
+  - `shallow_flags`(0개 기대)와 `holdout_gate`
+- truth가 중간에 끊기면 같은 명령을 다시 실행한다. `--output` 파일은 전부 끝나야 써진다.
+
+## 웹 대국 추가 (2026-10-21 두 번째 백업)와 사람 승리 3판 검토
+
+**추가 (`docs/h7/h7_e4_web_corpus.json` 갱신)**
+- 새 백업: 100판, 3,132수. 앞 백업의 89판은 그대로 들어 있고 기록도 바뀌지 않았다. 새 대국은 11판이다.
+  - 엔진은 모두 TB-RT30-v3다(웹은 아직 TB-V2-Value가 아니다).
+  - 결과: AI 승 5, **사람 승 3**, 미완 3(2수에서 끝남)
+  - 새 session 2개
+- 3,132수 전부 다시 세우기 검사(`ply`, `board_hash`, 합법성)를 통과했다.
+- **분할 규칙을 그대로 처음부터 적용하면 기존 9판의 split이 바뀐다.** 새 session이 sha 순서의 앞쪽에 들어가기 때문이다. 커밋된 분할은 고정이므로 증분 규칙을 더했다(`--previous`).
+  - 커밋된 대국은 split을 그대로 유지한다. 기존 session에 새 대국이 생기면 그 session의 split을 따른다.
+  - 새 session만 `sha256(session_hash)` 순서로 늘어놓는다. 새 session의 main 국면 중 25% 이상이 될 때까지 HOLDOUT에 넣는다.
+  - 커밋된 국면이 바뀌거나 사라지면 거부한다. 커밋된 대국이 DB에서 없어져도 거부한다. 이전 corpus의 SHA는 `increments`에 남긴다.
+  - 결과
+    - 기존 대국의 split 변화 0
+    - 새 3판 session(56국면, 새 국면의 32.6%) → HOLDOUT
+    - 새 8판 session(116국면, 사람 승 3판 포함) → DEV
+- 갱신 뒤 corpus: main 1,363국면(DEV 987 / HOLDOUT 376, 27.6%), undone 104국면(DEV)
+- 원본 DB는 `data/web/renju_web_full_20261021a.db`(첫 번째)와 `..._20261021b.db`(두 번째)에 둔다(커밋 안 함).
+- 데스크톱에서 참값을 이미 돌리기 시작했다면, 같은 jsonl로 새 corpus를 넣어 다시 실행한다. 새 판만 탐색한다(판 key와 예산이 같기 때문). `--output`은 새 corpus의 SHA로 써진다.
+
+**사람 승리 3판 검토 (`scripts/h7_web_loss_review.py`, 결과 `docs/h7/h7_web_losses_20261021.json`)**
+- 방법
+  - AI 수를 끝에서 거꾸로 따라가며 참값 solver(전폭 VCT2, 10M)로 "그 수 뒤 사람에게 증명된 강제승이 있는가"를 본다.
+  - 증명된 패배가 끊기지 않고 이어지는 마지막 구간의 첫 수를 "첫 패배수"로 둔다.
+  - 그 직전 국면에서 AI의 모든 합법 수를 depth ≤ 1(VCF / VCT1)로 분류한다(수당 2M 노드).
+- 좌표는 웹 화면처럼 1부터 센다(행, 열).
+
+| 대국 | 사람 | 첫 패배수 | 등급 | 직전 국면의 대안 | 직전 AI 수 |
+|---|---|---|---|---|---|
+| 8fcbd265 | 흑, 55수 | 46수 (3,5) | VCT1 | **SAFE 4개**: (2,6), (4,10), (1,5), (3,10) | 44수: depth 0·1 SAFE, depth 2 UNKNOWN |
+| 0bd2800b | 흑, 59수 | 52수 (9,12) | VCT1 | SAFE 0개(지는 수 171, UNKNOWN 3) | 50수: depth 0·1 SAFE, depth 2 UNKNOWN |
+| c10508db | 백, 62수 | 53수 (12,8) | VCT1 | 173수 전부 depth 1 안에서 짐 | 51수: depth 0 SAFE, depth 1·2 UNKNOWN |
+
+- **8fcbd265: 예산과 deadline 때문에 놓친 방어다.**
+  - tree가 고른 (4,3)을 V8-C가 UNSAFE로 증명했다. 그래서 다른 root 후보로 바꾸려 했다.
+  - 남은 후보 (3,5), (2,6), (5,3)이 모두 UNKNOWN인 채 root 예산이 끝났다(367k 노드). RT30 deadline으로 `root` 단계도 잘렸다.
+  - 남은 후보 중 첫째인 (3,5)를 뒀다. 그런데 후보였던 (2,6)은 참값으로 VCT1-SAFE다. 예산이 더 있었으면 피할 수 있었다.
+  - (2,6)이 depth 2에서도 안전한지는 이 검토가 보지 않았다.
+- **0bd2800b, c10508db: 직전 국면이 이미 VCT1 범위에서 거의 또는 완전히 졌다.**
+  - 0bd2800b의 52수에서 root 자식은 (9,12) 하나뿐이었다(policy 1.0). V8-C가 그 수를 UNSAFE로 증명했지만, 대안이 없어 그대로 뒀다.
+  - c10508db의 53수는 stage4(상대 위협 방어)였다. V8-A 예산(200k)이 끝난 상태에서 수를 골랐다.
+  - 진짜 실수는 그 전 AI 수(50수, 51수)에 있다. 그 수 뒤 사람의 승리는 depth 2 이상이거나 10M 예산 안에서 증명되지 않았다(UNKNOWN). 즉 **VCT2 깊이의 방어 실패**일 가능성이 크지만 증명은 아니다.
+- E4와의 관계
+  - E4는 상대의 VCT2 패배수를 **응징**하는 공격 쪽 변경이다. 이 세 판은 **방어** 실패다. E4의 목표 지표에는 들어가지 않는다.
+  - 세 판의 국면은 corpus DEV에 들어갔다. 그래서 참값 scan 대상이다. 사람이 둔 수 뒤 국면 중 AI가 이길 수 있었던 곳이 있으면 baseline에 잡힌다.
+  - 첫 패배수 국면 3개는 방어 회귀 probe로 쓸 수 있다. 데스크톱에서 `--engine`으로 TB-V2-Value + fast4가 같은 국면에서 무엇을 두는지 확인한다.
+    - 8fcbd265에서 VCT1-SAFE 수를 두면, E2 이후의 root VCF table(같은 예산에서 V8-C가 더 많이 판정)과 deadline 없음이 효과를 낸 것이다.
+
+```bash
+python -u scripts/h7_web_loss_review.py --corpus docs/h7/h7_e4_web_corpus.json --games 8fcbd265 0bd2800b c10508db \
+  --workers 3 --engine --device cuda --output docs/h7/h7_web_losses_20261021_engine.json 2>&1 | tee runs/h7_e4/loss_review.log
+```
+
+## H7-E4 웹 truth / frozen baseline 결과와 shallow miss 분석 (2026-10-21, 결과 커밋 `9f2d6dd`)
+
+E4는 아직 채택된 것이 아니다. 여기까지는 truth와 baseline의 관측, 그리고 원인 분석이다.
+
+좌표 표기: 이 절의 국면 좌표는 내부 표기(0부터, 행·열)다. 4번(사람 승리 3판)만 웹 화면 표기(1부터)다.
+
+### 1. 100판 웹 corpus truth (`docs/h7/h7_e4_truth.json`)
+
+- corpus: 2026-10-21 두 번째 백업까지(SHA-256 `5ea219a8…f3673`)
+  - main 1,363국면(DEV 987 / HOLDOUT 376), undone 104국면(DEV), 판 1,356개
+- 예산: VCF 한 번 100k 노드, 국면당 호출 1M, 국면당 노드 10M. `fast4`, 12 worker, git `b6b9f92`
+- torn line 0, 제한 실행 아님
+
+| split / set | 국면 | PROVEN_WIN | NOT_FOUND | UNKNOWN | WIN_5 | WIN_VCF | WIN_VCT1 | WIN_VCT2_ONLY | WIN_VCT2_OR_LESS |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| DEV/main | 987 | 220 | 671 | 96 | 38 | 114 | 28 | **40** | 0 |
+| HOLDOUT/main | 376 | 120 | 195 | 61 | 15 | 86 | 11 | **8** | 0 |
+| DEV/undone | 104 | 52 | 28 | 24 | 0 | 44 | 6 | **1** | 1 |
+
+- main 합계
+  - PROVEN_WIN 340 / 1,363 (24.9%)
+  - UNKNOWN 157 (11.5%)
+  - WIN_VCT2_ONLY 48 (3.5%)
+- 웹 실전 국면에 E4 목표(VCF / VCT1로는 증명되지 않고 VCT2에서 처음 증명되는 승리)가 실제로 있다.
+- 비용 표본(5국면)에서는 UNKNOWN이 2/5였지만, main 전체에서는 11.5%였다.
+- **HOLDOUT의 WIN_VCT2_ONLY는 8개다.** 사전 고정값 `HOLDOUT_MIN_EVENTS = 10`에 못 미친다. 그래서 웹 HOLDOUT은 E4 판정이 아니라 보고(report-only)다. 빈도와 기력의 주 근거는 예정대로 새 seed 8441/8442 arena다.
+
+### 2. Frozen TB-V2-Value + fast4 baseline (`docs/h7/h7_e4_baseline.json` → 재검사 `docs/h7/h7_e4_baseline_v2.json`)
+
+- PROVEN_WIN 392국면 전부에서 엔진을 돌렸다.
+  - 엔진 해시 `256e5abe…`, runtime 해시 `d9c51824…`, CUDA value(canonical), seed 8440
+- **검토에서 응징 검사의 오류 하나를 찾아 고쳤다(baseline v2).**
+  - truth(`ThreatSolver.after_move`)에서는 사람의 4 하나를 막는 강제 수가 깊이를 쓰지 않는다. 막은 뒤에도 depth 2가 남는다.
+  - 그런데 v1의 `check_move`는 모든 수 뒤를 depth 1로만 봤다. 그래서 VCT2_ONLY 국면에서 강제 block을 두면, 승리를 유지해도 MISS로 셀 수 있었다.
+  - `86c1383d…:11`(DEV)에서 B는 truth witness와 같은 block `(12,13)`(route stage2)을 뒀다. 그런데 v1은 MISS로 셌다.
+  - v2(`remaining_depth`): 사람의 유일한 4를 막는 수는 depth 2로 검사한다.
+  - `--recheck`로 엔진을 다시 돌리지 않고, 규칙이 바뀌는 검사 30개(B 15, 웹 AI 15)만 다시 했다.
+    - 바뀐 것은 이 국면 하나다. B와 웹 AI 모두 MISS → PUNISH가 됐다.
+    - 나머지 14국면은 VCF / VCT1 국면의 block으로, 그대로 PUNISH다.
+- WIN_VCT2_ONLY (v2)
+
+| split / set | 국면 | B PUNISH | B MISS | B UNCLEAR | 웹 AI PUNISH (참고) |
+|---|---:|---:|---:|---:|---:|
+| DEV/main | 40 | **16** | **23** | 1 | 11 |
+| HOLDOUT/main | 8 | 4 | 4 | 0 | 2 |
+| DEV/undone | 1 | 1 | 0 | 0 | 1 |
+
+- main 합계: B PUNISH 20 / 48 (41.7%), MISS 27 (56.3%), UNCLEAR 1 (2.1%)
+  - 웹에서 실제로 둔 AI(대부분 TB-RT30-v3)는 13 / 48이었다. 현재 B가 이미 더 많이 응징한다. 그래도 절반 넘게 놓친다.
+  - B가 놓친 DEV 23국면은 모두 route `tree`였다. 그래서 E2 모듈의 실행 경로(`ATTACK_ROUTES`)에 든다.
+- WIN_5 53국면과 WIN_VCF 244국면은 전부 PUNISH다(own VCF, stage1–3).
+- HOLDOUT은 8국면뿐이므로 4 PUNISH / 4 MISS로 보고만 한다.
+
+### 3. shallow flag 2건 (WIN_VCT1인데 B가 MISS)
+
+| 국면 | split | 웹 엔진 | truth witness | B의 수 (route) |
+|---|---|---|---|---|
+| `8b68bc87…:35` | **DEV** | TB-RT30-v3 | `(13,8)` | `(12,7)` (tree) |
+| `9040d79e…:25` | **HOLDOUT** | MCTS-v8 | `(5,12)` | `(6,11)` (tree) |
+
+**3.1 `8b68…:35` (DEV): V8-B 후보 부족**
+- witness `(13,8)`은 합법이지만 4도 열린 삼도 만들지 않는다(`four = 0`, `open_three = 0`). 그래서 V8-B `_attack_candidates`(4 또는 열린 삼)에 들어가지 않는다.
+- 하지만 그 수를 두면, 상대가 수를 쉬는 경우 AI에게 VCF가 있다(VCF 위협수, `docs/h7/h7_e4_dev_coverage.json`).
+- 사용자 추가 검사: witness의 `check_move`는 PUNISH였다(793,341 노드, VCF 호출 17,056).
+- truth는 4·열린 삼 수를 먼저 시도한다(`TruthSolver`). 그러므로 V8-B 후보 중 어느 것도 truth 예산 안에서 승리로 증명되지 않았다.
+- 원인은 예산이 아니라 **후보 범위**다. 예산을 늘려도 풀리지 않는다.
+
+**3.2 `9040…:25` (HOLDOUT): V8-B 호출 예산 (사용자 추가 검사)**
+- witness `(5,12)`는 열린 삼이므로 V8-B 후보에 있었다. 하지만 B의 V8-B는 호출 9,997 / 10k에서 예산이 끝났고, witness는 UNKNOWN이었다.
+- `attack_call_limit`만 바꾼 진단에서 10k / 20k는 그대로였다. 40k / 80k에서는 `(5,12)`를 WIN으로 증명하고 `own_vct` route로 뒀다.
+  - 80k가 40k보다 호출이 적은 것은 `_first_proven`의 공정 분배 때문이다. 오류가 아니다.
+- **이 국면은 HOLDOUT이다.** 그래서 이 진단을 E4 후보의 매개변수(예: `attack_call_limit = 40k`)를 고르는 근거로 쓰지 않는다.
+  - 고정 규칙은 "DEV에서만 선택, HOLDOUT을 본 뒤 조정 없음"이다.
+  - 이 국면은 "DEV 전에 열어 본 HOLDOUT 국면"으로 기록한다. HOLDOUT 보고에서 따로 표시한다.
+  - HOLDOUT은 이미 report-only이므로 판정에는 영향이 없다.
+- DEV에는 예산 때문에 생긴 VCT1 MISS가 없다(DEV VCT1 34국면, main 28 + undone 6 중 MISS는 3.1의 1건).
+
+### 4. 사람 승리 3판, 현재 엔진 재검사 (`docs/h7/h7_web_losses_20261021_engine.json`, 웹 좌표)
+
+| 대국 | 과거 첫 증명 패배수 | 현재 TB-V2-Value + fast4 |
+|---|---|---|
+| `8fcbd265` | 46수 `(3,5)`, VCT1 패배 | **`(2,6)` tree, SAFE**(depth ≤ 1) |
+| `0bd2800b` | 52수 `(9,12)`, VCT1 패배 | `(9,12)` tree, LOST_D1 |
+| `c10508db` | 53수 `(12,8)`, VCT1 패배 | `(12,8)` stage4, LOST_D1 |
+
+- `8fcbd265`에서 현재 엔진은 VCT1-SAFE 대안 4개 중 하나를 뒀다. 과거 TB-RT30-v3는 root 예산과 30초 deadline 때문에 이 대안들을 판정하지 못했다. 같은 국면에서 현재 동결 실행판은 그 실패를 피한다.
+  - (2,6)이 depth 2에서도 안전한지는 보지 않았다.
+- 나머지 두 판은 그 국면에서 이미 depth 1 안에서 졌다(또는 거의 졌다). 그래서 현재 엔진도 같은 결과다. 원인은 더 앞의 수다. 그 수 뒤 depth 2는 10M에서도 UNKNOWN이므로 VCT2 방어 실패로 확정하지 않는다.
+- 세 판은 방어 실패다. E4(공격) 목표 지표에는 넣지 않는다.
+
+### 5. DEV 원인 분석: 놓친 승리의 첫 수가 어디에 있나 (`scripts/h7_e4_coverage.py`, DEV만)
+
+| DEV 묶음 | 국면 | block witness | witness ∈ V8-B 후보 | V8-B 밖, VCF 위협수 | 그 밖 |
+|---|---:|---:|---:|---:|---:|
+| main WIN_VCT2_ONLY, B MISS | 23 | 0 | **20** | **3** | 0 |
+| main WIN_VCT2_ONLY, B PUNISH | 16 | 1 | 14 | 1 | 0 |
+| main WIN_VCT1, B MISS | 1 | 0 | 0 | 1 | 0 |
+| main WIN_VCT1, B PUNISH | 27 | 0 | 26 | 1 | 0 |
+
+- DEV의 VCT1 / VCT2_ONLY witness(block 제외) 첫 수는 **전부 VCF 위협수**다. 대부분(20 / 23)은 4·열린 삼, 즉 E2 모듈이 시작하는 후보 안에 있다.
+- 첫 수만 본 상한이다. E2 모듈은 depth 1의 우리 quiet 수도 위협수로 제한한다. 그래서 실제로 찾을 수 있는 수는 DEV 실행으로만 안다.
+
+### 6. 현재 판단
+
+1. E4 목표는 실제로 있다. main 1,363국면 중 WIN_VCT2_ONLY 48개다.
+2. 현재 B가 놓치는 기회가 많다. main 48개 중 MISS 27개, DEV에서는 23개(모두 tree route)다.
+3. E4와 따로, V8-B(VCT1 공격)에도 두 종류의 구멍이 관측됐다.
+   - 후보 범위 부족: DEV 1건
+   - 호출 예산 부족: HOLDOUT 1건, 그래서 매개변수 근거로 쓰지 않음
+4. 동결 TB-V2-Value는 바꾸지 않는다. 다음 설계는 아래에 있다.
+
+## H7-E4 DEV 설계 수정안 (2026-10-21, 초안, 승인 대기)
+
+위 결과(DEV 관측만)를 반영해, DEV를 돌리기 전에 격자와 측정을 고친다. HOLDOUT 관측(`9040…:25`)은 근거로 쓰지 않는다.
+
+**1. 격자 수정 (8조합 유지)**
+- route 축을 뺀다. `ATTACK_ROUTES = (stage4, stage5, tree)`(E2 모듈 기본값)로 고정한다.
+  - DEV에서 B가 놓친 23국면은 모두 tree다. route 축은 DEV에서 구별력이 없다.
+- 새 축: **첫 수 후보 범위**
+  - (a) E2 그대로(4 / 열린 삼)
+  - (b) (a) + **VCF 위협수**. 정의(DEV 전 고정):
+    - 돌에서 체비쇼프 거리 2 이내의 합법 수 중 (a)에 없는 수
+    - 그 수를 두고 상대가 쉰다고 할 때 우리에게 VCF가 있는 수(board 기준 VCF, 호출당 20k 노드)
+    - (a) 뒤에 V3.2.1 priority 순서로 붙인다.
+    - 이 판별에 드는 VCF 호출과 노드는 공격 예산에서 센다.
+  - 건전성은 그대로다. 증명은 여전히 방어자의 모든 응수를 본다. 후보를 늘리는 것은 완전성만 바꾼다.
+  - 근거(DEV): VCT2_ONLY MISS 중 3건, VCT1 MISS 1건(`8b68…:35`)의 첫 수가 이 범위다.
+  - depth 1 안의 우리 quiet 수는 지금처럼 위협수(4 / 열린 삼)로 둔다. 비용을 묶기 위해서다.
+- 예산 축: 노드 200k / 400k. 호출 한도는 노드 / 10(20k / 40k)으로 함께 움직인다.
+  - E2 기본값이 200k / 20k다.
+  - E1에서 호출 한도에 걸린 국면(26개)이 있었다. 그래서 "예산"은 노드와 호출을 함께 뜻한다. HOLDOUT 관측과 무관한 근거다.
+- 발동 축: (i) 해당 route의 모든 국면 / (ii) 상대의 직전 수가 4 또는 열린 삼을 만든 국면만
+  - (ii)의 정의는 `_fast_pattern_features_for_move`로 고정한다.
+- 조합: 예산 2 × 후보 2 × 발동 2 = 8
+- **V8-B(`attack_call_limit`)는 바꾸지 않는다.**
+  - E4 모듈의 WIN 검사(우리 수 뒤 모든 응수가 depth 1 안에서 짐)는 VCT1 승리를 포함한다. 그래서 V8-B가 놓친 VCT1 승리도 tree route에서는 E4가 잡을 수 있다(`8b68…:35`는 (b)의 범위).
+  - V8-B 호출 예산 문제는 HOLDOUT에서만 관측됐다. 그래서 매개변수로 다루지 않는다.
+
+**2. DEV 측정 (`scripts/h7_e4_dev.py`, 만들 도구, 엔진 모델 불필요)**
+- E4 wrapper는 기준 엔진의 수를 바꾸지 않는다. 기준 엔진은 국면마다 seed가 고정돼 있다. 그래서 DEV 국면에서 E4의 수는 다음과 같이 정해진다.
+  - baseline에 기록된 B의 route가 `ATTACK_ROUTES`이고 발동 조건이 맞으면 → 공격 결과(WIN이면 그 수)
+  - 아니면 → B가 기록한 수
+  - 정책망과 value 없이 CPU에서 돌릴 수 있다.
+- 대상: DEV main 987 + undone 104. 조합마다 공격을 돌린다.
+- 지표
+  - **응징**: DEV WIN_VCT2_ONLY 41국면에서 E의 수를 `check_move`(v2)로 검사한 PUNISH 수(B 17)
+  - **얕은 회귀**: DEV WIN_5 / VCF / VCT1에서 B는 PUNISH인데 E는 아닌 국면 수(0이어야 함)
+  - **건전성**: 공격이 WIN이라 한 모든 수를 `check_move`로 다시 본다.
+    - PUNISH가 아니면 거짓 증명이다.
+    - truth가 NOT_FOUND인 국면에서 WIN이 나오면 모순이다.
+    - 둘 중 하나라도 있으면 그 조합은 탈락하고 원인을 조사한다.
+  - **비용**: 발동한 국면마다 공격 시간과 노드 / 호출. 분포(중앙값, p95, 최대)와 합계를 본다.
+    - B의 수당 시간 대비 비율은 arena 비용 gate에서 최종 판정한다.
+- 선택 순서(고정 규칙 그대로)
+  1. 응징 수 최대. 차이가 1국면 이내면 동률로 본다.
+  2. 얕은 회귀 0, 거짓 증명 0
+  3. 비용(평균 추가 시간)이 작은 것
+- DEV만으로는 기력을 잴 수 없다. 기력은 동결 후 arena에서 본다.
+
+**3. 동결과 엔진 구성**
+- 후보 엔진 = TB-V2-Value + E4 공격 wrapper(선택한 조합, 리터럴 설정)
+- 새 동결 파일을 만든다(예: `analysis/tb_v3_value.py`, VCF 위협수 후보는 새 모듈). 기존 동결 파일(`tb_v2_value.py`, `mcts_v8.py`, `vct2_attack.py` 등)은 고치지 않는다.
+- runtime(fast4) 해시도 새로 만든다.
+- 끄면 TB-V2-Value와 같은 수(격리)
+
+**4. arena 빈도 측정의 구체화 (결정 필요)**
+- 새 seed 8441 / 8442 대국(100 pair × 2색)의 상대 수 뒤 국면은 arm마다 약 6,000개다. 이것을 웹 truth(전폭, 판당 수 분)로 보면 수백 CPU시간이 든다.
+- 제안: arena에서는 **기준 solver**로 사건을 정한다.
+  - 기준 solver: selective VCT2, 후보 (b), depth 1 quiet도 VCF 위협수까지, 노드 2M. E4의 어떤 조합보다 넓다.
+  - 사건 = 기준 solver가 WIN을 증명한 상대 수 뒤 국면
+  - 응징 = 그 국면에서 둔 수가 `check_move` PUNISH
+  - 두 arm은 대국이 갈라지므로 사건 수가 다르다. 그래서 opening(양 색) 단위로 "응징 수 / 사건 수"를 모아 bootstrap으로 비교한다(E − B, 95% 하한 > 0).
+  - 웹 truth와 같은 전폭이 아니다. 그래서 웹 DEV에서 기준 solver가 전폭 truth의 VCT2_ONLY를 얼마나 다시 찾는지(재현율)를 먼저 보고한다.
+
+**5. 결정이 필요한 것**
+1. 격자 수정: route 축 제거, 후보 범위 축(VCF 위협수) 추가, 호출 한도를 예산과 함께 움직임
+2. V8-B는 동결 그대로 두고, VCT1 구멍은 E4 범위에서 다룸
+3. `9040…:25`를 "DEV 전에 열어 본 HOLDOUT 국면"으로 표시하는 방식(보고 유지, 표시만)
+4. arena 빈도: 기준 solver 방식과 opening 단위 bootstrap
+5. DEV 기력 확인을 생략하고 arena에서만 볼지, 동결 전에 짧은 DEV arena(새 seed 8443, 25 pair)를 둘지(제안: 생략)
+
+## H7-E4 DEV 확정과 도구 (2026-10-21, DEV 실행 전 고정)
+
+위 수정안의 결정 1–5가 모두 승인됐다. 사용자 보완 두 가지를 더해 아래처럼 고정한다.
+
+**보완 1: arena 빈도 통계**
+- opening별 비율을 먼저 내서 평균하지 않는다. 한 arm의 사건이 0인 opening이 생길 수 있기 때문이다.
+- opening(양 색)을 cluster(복원추출 단위)로만 쓴다. bootstrap 표본마다 다음을 다시 계산한다.
+  - `rate_B = Σ punish_B / Σ event_B`
+  - `rate_E = Σ punish_E / Σ event_E`
+  - `diff = rate_E − rate_B`
+- 판정: diff의 95% 하한 > 0. 사건 0인 opening도 버리지 않는다.
+
+**보완 2: 기준 solver는 arena 전에 동결**
+- 정의: selective VCT2, 첫 수 후보 (b), depth 1 quiet 수도 VCF 위협수까지, 노드 2M
+- 먼저 웹 DEV의 WIN_VCT2_ONLY 41개(main 40 + undone 1)에서 재현율을 잰다(예: 34 / 41).
+- 재현율이 낮아 예산을 바꾸더라도(2M → 4M 등) 그 변경은 DEV에서 끝낸다. 8441 / 8442를 보기 전이다.
+
+**고정한 E4 흐름**
+1. DEV 8조합 비교 → 1개 선택(아래 규칙). 짧은 DEV arena(8443)는 두지 않는다.
+2. 새 E4 엔진 동결
+3. 기준 solver DEV 재현율 측정 → 기준 solver 동결
+4. seed 8441 / 8442, 총 100 pair
+5. 판정: 빈도(opening cluster bootstrap), 기력 비열등(짝 비교 하한 ≥ −0.05), 건전성, 비용 ≤ 1.5, 격리 → ADOPT / REJECT
+- 8441 / 8442가 실패하면 결과를 보고 고치지 않는다. 다음 실험(E4-v2)으로 따로 간다.
+
+**구현 (이번 커밋)**
+- `src/analysis/e4_attack.py`(개발 모듈, 엔진 아님)
+  - `GRID`: 예산(200k / 20k, 400k / 40k) × 첫 수 후보(`four_three`, `vcf_threat`) × 발동(`all`, `threat`) = 8
+  - `ROUTES` = E2의 `ATTACK_ROUTES`(stage4, stage5, tree)
+  - `vcf_threat_moves`: 돌에서 체비쇼프 거리 2 이내, 기존 후보에 없는 합법 수 중에서, 상대가 쉰다고 할 때 VCF가 있는 수. V3.2.1 priority 순서로 기존 후보 뒤에 붙인다. 판별 비용은 공격 예산에서 낸다.
+  - `opponent_threat`: 상대의 직전 수가 4 또는 열린 삼을 만들었는가
+  - `e4_attack`: E2 `own_vct2_attack`과 같은 증명(`_depth2_attack_check`, 방어자 응수 전부)과 공정 분배(`_first_proven`)를 쓴다. 바뀌는 것은 첫 수 집합뿐이다.
+  - `vct2_attack.py`(E2)와 V8-B는 바꾸지 않았다.
+- `scripts/h7_e4_dev.py`
+  - **DEV만 읽는다.** 국면이 처리·채점·순위 경로에 들어갈 때마다 `dev_only`가 `split == 'DEV'`를 검사한다. HOLDOUT 국면이 들어오면 AssertionError로 멈춘다. 테스트로 확인했다.
+  - 공격은 (예산, 후보) 쌍마다 국면당 한 번 돌린다. 발동 조건은 채점할 때 적용한다.
+  - 증명된 승리 국면에서 기록된 B route가 `ROUTES` 밖이면 공격을 돌리지 않는다. E4도 B의 수를 둔다.
+  - B route가 기록되지 않은 국면(증명된 승리가 아닌 국면)은 공격을 돌린다고 가정한다. 비용 상한과 더 넓은 건전성 검사가 된다.
+  - 공격이 WIN이면 그 수를 `check_move` v2로 바로 검사한다.
+  - 조합마다 보는 것
+    - 응징 수(DEV WIN_VCT2_ONLY 41개)
+    - 얕은 회귀
+    - 거짓 증명: 공격 WIN인데 MISS
+    - 모순: truth NOT_FOUND 국면에서 WIN
+    - 미검증: 검사가 UNCLEAR
+    - 비용: 공격한 국면의 노드 / 호출 / 초. 평균, p95, 최대, 그리고 DEV 국면당 노드
+  - 선택 규칙(고정)
+    1. 거짓 증명 0, 모순 0, 얕은 회귀 0인 조합만 남긴다.
+    2. 응징 수가 최대인 조합, 그리고 최대와 1국면 이내인 조합을 동률로 본다.
+    3. 동률 안에서 **DEV 국면당 공격 VCF 노드**가 가장 적은 조합을 고른다(그다음 격자 순서).
+    - 노드를 쓰는 이유: 기계와 worker 부하에 따라 초가 흔들리기 때문이다. 초는 보고한다.
+  - resume용 jsonl, 진행 출력(`run_chunks`)
+- 표본(컨테이너, DEV MISS 국면 2개)
+  - 공격 1회는 0.5–15초였다.
+  - 한 국면에서는 400k / `four_three`만 승리 수를 증명했고, 그 수의 `check_move`는 PUNISH였다.
+  - 데스크톱 12 worker로 DEV 전체(약 1,050국면 × 4쌍)는 1시간 안팎으로 본다.
+
+**실행 명령 — E4 DEV (데스크톱, 모델 불필요)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4
+python -u scripts/h7_e4_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \
+  --baseline docs/h7/h7_e4_baseline_v2.json --workers 12 --fast fast4 \
+  --jsonl runs/h7_e4/dev.jsonl --output docs/h7/h7_e4_dev.json 2>&1 | tee -a runs/h7_e4/dev.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4_dev.json`
+- 먼저 볼 것: `selection`과, 조합별 응징 수 / 거짓 증명 / 모순 / 얕은 회귀 / DEV 국면당 노드
+- 다음 도구(DEV 선택 뒤): E4 엔진 동결 파일, 기준 solver와 그 DEV 재현율, arena 사건 추출과 cluster bootstrap
+
+## H7-E4 DEV grid 결과와 후보 선택 (2026-10-22, 결과 커밋 `c65cd62`)
+
+**E4는 아직 채택된 엔진이 아니다.** 이 단계는 결과 전에 고정한 DEV 절차로 8조합을 비교하고, 공식 arena에 보낼 후보 하나를 고른 단계다.
+- HOLDOUT은 읽지 않았다(`dev_only` 검사, 결과 파일 `split = DEV`).
+- 이름은 "E4 후보"로 쓴다. "TB-Engine-v3" 같은 채택 이름은 쓰지 않는다.
+
+**실행 확인 (`docs/h7/h7_e4_dev.json`)**
+- 도구 git `1ec482c`, `fast4`, 제한 실행 아님
+- corpus / truth / baseline v2의 SHA가 커밋된 파일과 같다.
+- DEV 1,091국면(main 987 + undone 104)
+  - 공격 실행: 867국면 × (예산, 후보) 4쌍 = 3,468회
+  - 공격 생략: 224국면. 증명된 승리 국면 중 기록된 B route가 stage1–3 / own_vcf / own_vct라 wrapper가 돌지 않는다.
+- 목표: DEV WIN_VCT2_ONLY 41국면. baseline v2의 B는 17 / 41 (41.5%)
+
+**결과**
+
+| 조합 | 응징 | 얕은 회귀 | 거짓 증명 | 모순 | 미검증 | 수 바뀜 | DEV 국면당 노드 | 공격 초 평균 / p95 / 최대 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 200k/four_three/all | 29 | 0 | 0 | 0 | 0 | 17 | 24,711 | 1.6 / 9.4 / 10.8 |
+| **200k/vcf_threat/all** | **30** | 0 | 0 | 0 | 0 | 17 | **32,136** | 2.1 / 10.2 / 12.1 |
+| 400k/four_three/all | 30 | 0 | 0 | 0 | 0 | 20 | 41,993 | 2.5 / 17.6 / 19.5 |
+| 400k/vcf_threat/all | **31** | 0 | 0 | 0 | 0 | 20 | 54,535 | 3.3 / 18.3 / 20.6 |
+| 200k/four_three/threat | 17 | 0 | 0 | 0 | 0 | 0 | 15,322 | 3.1 / 9.9 / 10.8 |
+| 200k/vcf_threat/threat | 17 | 0 | 0 | 0 | 0 | 0 | 17,526 | 3.7 / 10.4 / 12.1 |
+| 400k/four_three/threat | 17 | 0 | 0 | 0 | 0 | 0 | 26,735 | 5.1 / 18.2 / 19.2 |
+| 400k/vcf_threat/threat | 17 | 0 | 0 | 0 | 0 | 0 | 30,571 | 5.9 / 18.8 / 20.5 |
+
+- 응징은 41국면 기준이다.
+- 공격 초는 공격한 국면의 평균이다. 데스크톱 12 worker 동시 실행이므로 부하의 영향을 받는다. 그래서 보고만 하고, 선택에는 쓰지 않는다.
+- `threat` 조합의 초 평균은 발동한 소수 국면(258)의 평균이다. 총비용 비교는 "DEV 국면당 노드"로 한다.
+
+**선택: `200k/vcf_threat/all` (고정 규칙 그대로)**
+- 8조합 모두 거짓 증명 0, 모순 0, 얕은 회귀 0, 미검증 0이었다.
+- 응징 최대는 `400k/vcf_threat/all`의 31이다. 그와 1국면 이내인 동률 묶음은 다음 셋이다.
+  - `200k/vcf_threat/all` 30
+  - `400k/four_three/all` 30
+  - `400k/vcf_threat/all` 31
+- 묶음 안에서 DEV 국면당 노드가 가장 적은 `200k/vcf_threat/all`(32,136)을 골랐다.
+  - `400k/vcf_threat/all`(54,535)보다 41% 적다.
+  - `400k/four_three/all`(41,993)보다 23% 적다.
+- 이 규칙은 DEV 결과 전에 고정했다. 31이 최대였다는 사실은 그대로 기록한다. 400k가 약하다는 뜻이 아니다. 최종 기력과 비용은 arena에서 본다.
+- 선택 후보 설정(동결 대상)
+  - 노드 200,000, 호출 20,000, VCF 한 번 20,000 노드
+  - 첫 수 후보: 4 / 열린 삼 + 국소 VCF 위협수
+  - 발동: 해당 route 전부
+  - route: stage4, stage5, tree
+- DEV 응징: 17 / 41 → **30 / 41 (73.2%)**, +13국면(+31.7%p)
+
+**축별 관찰**
+- VCF 위협수 확장: 두 예산에서 모두 +1국면(29 → 30, 30 → 31). 앞선 coverage 분석(4·열린 삼 밖의 VCF 위협수)이 실제로 한 국면을 더 풀었다.
+- 예산 200k → 400k: 두 후보 범위에서 모두 +1국면. 대신 노드는 약 1.7배다.
+- **`threat` 발동은 효과가 0이다.** 네 조합 모두 17 / 41이고, 수가 바뀐 국면이 없다.
+  - 원인: DEV 목표 41국면 중 상대(사람)의 직전 수가 4나 열린 삼을 만든 국면은 **1개**뿐이다. 사람의 VCT2 패배수는 대부분 조용한 수다.
+  - 그래서 이 발동 조건은 E4 목표와 맞지 않는다. 기각한다.
+
+**건전성 결과의 해석 (초안 수정)**
+- 거짓 증명 0: E4가 WIN이라 한 수(조합마다 23–27개)는 전부 truth `check_move`에서 PUNISH였다.
+- 얕은 회귀 0: B가 이미 응징하던 WIN_5 / VCF / VCT1 국면을 E4가 놓치게 만든 예는 없다.
+- **모순 0은 "보수적인 이름"이 아니라 실제 검사다.**
+  - truth의 NOT_FOUND는 같은 VCT2 범위를 전폭으로 끝까지 탐색해 SAFE로 끝났다는 뜻이다(잘린 탐색은 UNKNOWN). 깊이 3 이상의 승리를 배제하지는 않는다.
+  - E4의 WIN도 같은 범위 안의 증명이다(같은 VCF 탐색, 방어자 응수 전부).
+  - 그래서 NOT_FOUND 국면에서 E4가 WIN을 내면 둘 중 하나가 틀렸다는 뜻이다. 0이 나온 것은 실제로 확인된 일치다.
+
+**아직 남은 DEV 놓침 11국면 (MISS 10, UNCLEAR 1, 선택 후보 기준, E4-v2용 기록)**
+- 8국면: 200k 예산 소진
+  - 1국면은 400k에서 풀렸다(witness 첫 수가 V8-B 후보 밖).
+  - 1국면은 400k에서도 소진이다(witness 첫 수가 V8-B 후보 밖).
+- 3국면: 예산 안에서 탐색을 끝냈지만 WIN 없음. depth 1의 우리 quiet 수를 4·열린 삼으로 제한한 selective 탐색의 불완전성이다.
+- 이 관찰로 현재 후보를 바꾸지 않는다.
+
+**비용 위험 (arena 전에 알려 둘 것)**
+- 선택 후보의 공격 시간(발동한 867국면): 평균 2.09초, 중앙값 0.24초, 5초 초과 18.5%. 200k 예산을 다 쓴 경우가 143회다.
+- 같은 엔진의 timing 기준선(`docs/h7/h7_timing_base_cpu_summary.json`, fast4 이전, CPU value)에서 B의 수당 평균은 1.95초, tree route는 2.63초다. tree route가 전체 수의 61%다.
+- 단순 추정은 이렇다: 추가 시간 ≈ 0.61 × 2.09 ≈ 1.3초 / 수. B ≈ 1.4–2.0초 / 수(fast4 / off). 그러면 비용 비율은 약 **1.6–1.9**로, gate(≤ 1.5)를 넘을 수 있다.
+- 단, 확실하지 않다. 국면 분포가 다르고(웹 사람 국면 대 arena), 공격 초는 12 worker 부하 아래 쟀고, B 시간은 다른 국면·다른 모드 값이다.
+- 그래서 arena 전에 같은 프로세스에서 짝으로 잰 비용 사전 검사를 제안한다(아래).
+
+## H7-E4 다음 단계 설계: 후보 동결, 비용 사전 검사, 기준 solver, arena (2026-10-22, 초안, 승인 대기)
+
+**1. 후보 동결 (구현)**
+- `src/analysis/tb_v2_value_e4.py`(이름은 후보 표기)
+  - 기준 엔진: TB-V2-Value(엔진 해시 `256e5abe…`)를 그대로 쓴다.
+  - 공격 설정을 리터럴로 둔다: `200k/vcf_threat/all`, route stage4 / 5 / tree
+  - 공격 모듈 SHA: `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`
+  - 후보 해시 = 위 셋 + 기준 엔진 해시
+  - wrapper `E4AttackAgent`: B가 먼저 둔다. route가 해당하면 공격하고, 증명된 WIN이면 바꾼다.
+  - diag에 남길 것: 공격 수, B 수, 노드, 호출, 초, 후보 수
+- 실행판: fast4 바인딩 검사(`tb_v2_runtime.check_bound`)를 재사용한다. 새 runtime 해시를 만든다.
+- CLAUDE.md 동결 목록에 `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`, 후보 파일을 더한다.
+- 격리 시험: 공격을 끈 wrapper는 TB-V2-Value와 같은 수를 둔다(단위 시험, timing corpus 일부에서 수 일치).
+- 벤치마크 arm `puct_value_vct2_50k_tt_e4`(시험 arm 전용). 수마다 위 diag를 run 파일에 기록한다.
+
+**2. 비용 사전 검사 (제안, arena 전, 결과 전 규칙 고정)**
+- 질문: 이 후보를 arena에 보내면 비용 gate(대국 총 V8 시간 비율 ≤ 1.5)를 통과할 가능성이 있는가
+- 국면: `docs/h7/h7_timing_positions.json`(E3 대국 등 2,594국면). DEV / HOLDOUT / arena seed와 겹치지 않는다.
+- 방법: P2와 같다. 같은 프로세스, ABBA / BAAB, fresh state, B(TB-V2-Value + fast4) 대 E4 후보, CUDA value
+- 보고: 합계 비율(주 지표), 중앙값 비율, p95 / 최대
+- 규칙
+  - 합계 비율 bootstrap 95% 하한 > 1.5 → **arena를 돌리지 않는다.** 이 후보는 "비용 사전 검사 FAIL"로 기록하고 REJECT한다. 비용을 고려한 E4-v2로 간다.
+  - 그 밖에는 arena로 간다. arena의 비용 gate가 최종 판정이다.
+- 근거: 결과가 거의 정해진 arena(데스크톱 수 시간)를 아낀다. 이 검사는 응징 지표와 HOLDOUT을 보지 않는다. 후보 설정도 바꾸지 않는다(통과 / 중단만 정함).
+
+**3. 기준 solver (DEV, 모델 불필요)**
+- 정의: selective VCT2
+  - 첫 수: 4 / 열린 삼 + 국소 VCF 위협수
+  - depth 1 quiet: 4 / 열린 삼 + 국소 VCF 위협수
+  - 노드 2M, 호출 200k, VCF 한 번 20k
+  - 방어자 응수 전부
+- DEV 재현율: DEV WIN_VCT2_ONLY 41개 중 기준 solver가 WIN을 증명한 수. 건전성 검사로 NOT_FOUND 국면의 WIN 0도 본다.
+- 재현율이 낮으면 DEV에서만 예산을 한 번 바꿀 수 있다(2M → 4M). 그 뒤 동결한다.
+- 도구: `scripts/h7_e4_reference.py`(DEV only assertion 포함)
+
+**4. arena (데스크톱)**
+- 두 arm 모두 `v8:full` 상대, `--puct-c 1.5 --fast fast4`, CUDA value, seed 8441 / 8442, 각 50 pair, 같은 opening·색
+  - B: `puct_value_vct2_50k_tt`
+  - E: `puct_value_vct2_50k_tt_e4`
+- `scripts/summarize_h7_e4.py`
+  - 기력: opening(양 색) 단위 점수 차 bootstrap, 95% 하한 ≥ −0.05(E2 / E3 방식)
+  - 비용: 총 V8 수 시간 E / B ≤ 1.5
+  - 건전성: E4가 공격으로 바꾼 모든 수를 truth `check_move`(10M)로 검사. MISS 0이어야 한다.
+  - 빈도
+    - 사건: `v8:full`이 둔 직후 국면 중 기준 solver가 WIN을 증명한 국면
+    - 응징: 그 국면에서 arm이 둔 수의 `check_move` PUNISH
+    - opening cluster bootstrap, 표본마다 Σ응징 / Σ사건을 다시 계산. E − B의 95% 하한 > 0
+  - 격리: 단위 시험과 후보 파일의 off 경로
+- 실패하면 이 후보는 고치지 않는다. E4-v2로 간다.
+
+**5. 결정이 필요한 것**
+1. 후보 동결 방식(새 후보 파일, 공격 모듈 SHA 잠금, 동결 목록 추가)
+2. 비용 사전 검사를 둘지, 그리고 그 중단 규칙(합계 비율 하한 > 1.5면 arena 생략, REJECT)
+3. 기준 solver 정의(양 깊이에 VCF 위협수, 2M)와 DEV 재현율 측정 후 동결
+4. arena 사건 추출을 상대(`v8:full`) 수 직후 국면 전부에 기준 solver로 하는 것(arm마다 약 6,000국면, 데스크톱 수 시간)
+
+## H7-E4 다음 단계 확정: 후보 동결, 기준 solver, 비용 사전 검사 (2026-10-22)
+
+결정 1–4가 승인됐다. 사용자 보완 두 가지를 더해 아래처럼 고정한다.
+
+**순서 (고정)**
+1. `c65cd62` 후보 선택
+2. 후보 동결 + 공격 의존 파일 SHA 잠금 + OFF 격리
+3. 기준 solver 2M DEV 검사
+   - 선택 후보가 DEV에서 WIN을 증명한 국면을 전부 포함하면 → 동결
+   - 하나라도 빠지면 → 4M으로 한 번 올림
+     - 4M에서 전부 포함하면 → 동결
+     - 여전히 빠지면 → 기준 측정기를 조사하고, arena는 보류
+4. 짝 비용 사전 검사
+   - 대국 cluster bootstrap 95% 하한 > 1.5 → E4 후보 REJECT
+   - 그 밖 → arena
+5. seed 8441 / 8442 arena → 기력 + 비용 + 건전성 + 빈도 + 격리 → ADOPT / REJECT
+
+**보완 1: 기준 solver의 동결 규칙은 "포함"이다**
+- 재현율에 임의 기준(예: 80%)을 두지 않는다.
+- 기준 solver가 후보보다 넓다는 것을 직접 확인한다. 기준 solver는 선택 후보가 DEV에서 WIN으로 증명한 모든 국면을 다시 WIN으로 증명해야 한다.
+- DEV WIN_VCT2_ONLY 41국면 재현율은 보고만 한다.
+
+**보완 2: 비용 사전 검사의 통계**
+- bootstrap 단위는 국면이 아니라 원래 대국이다. 같은 대국의 연속 국면은 시간이 서로 상관돼 있다.
+- 표본마다 `Σ E 시간 / Σ B 시간`을 다시 계산한다.
+- 실행 전에 timing corpus와 웹 corpus(DEV + HOLDOUT)가 D4 정규형으로 겹치지 않음을 assert한다.
+  - **실제 확인: 69국면이 겹친다.** 모두 3–7수의 초반 국면이다(E3 대국과 웹 대국의 같은 초반).
+  - 규칙: 겹치는 국면을 먼저 빼고, 남은 집합에 겹침 0을 assert한다.
+  - 이 검사는 시간만 잰다. 그래서 빼도 측정의 뜻은 같다. 뺀 id는 결과 파일에 남긴다(`dropped_web_boards`).
+
+**1. 후보 동결 (`fb1e887`)**
+- `src/analysis/tb_v2_value_e4.py`: 이름은 `TB-V2-Value+E4`이고, 후보 identity다(채택 엔진 아님).
+  - 기준 엔진 해시: `256e5abe…`(TB-V2-Value)
+  - 공격 설정 리터럴 `ATTACK`: `200k/vcf_threat/all`, 노드 200k / 호출 20k / VCF 한 번 20k, route stage4 / 5 / tree
+  - 공격 코드 SHA (`ATTACK_SOURCES`)
+    - `e4_attack.py` `73b0902d…`. DEV 실행(`1ec482c`) 때와 같은 파일이다.
+    - `vct2_attack.py` `ad263e3f…`
+    - `selective_vct.py` `b0b3a063…`
+  - `candidate_hash` = `5e359f42…0ba8`
+  - `runtime_hash('cuda')` = `cad1c03e…44a0`. tb_v2_runtime의 native / 바인딩 소스에 후보 해시를 묶은 값이다.
+  - `check_sources`: SHA, 기준 엔진 해시, 선택 설정 중 하나라도 다르면 agent를 만들지 않는다.
+  - `E4AttackAgent`
+    - B가 먼저 둔다.
+    - route가 stage4 / 5 / tree이면 공격한다.
+    - 증명된 WIN이면 그 수로 바꾼다(route `own_vct2`).
+    - `attack=False`이면 B의 수를 그대로 둔다(격리).
+- 시험
+  - SHA와 DEV 선택 일치(결과 파일의 `selection`과 리터럴 비교)
+  - OFF가 TB-V2-Value와 같은 수
+  - 강제 stage에서는 공격하지 않음
+  - tree 수를 증명된 WIN만으로 바꿈
+- 벤치마크 arm `puct_value_vct2_50k_tt_e4`(시험 arm 전용, 상대로 쓸 수 없음)
+  - 수마다 `e4_attack` 기록(B 수, B route, 노드, 호출, 초)
+  - fast4 run에는 후보 runtime provenance
+- CLAUDE.md: arena 판정 전까지 후보 파일, 공격 의존 파일, 기준 solver를 고치지 않는다.
+
+**2. 기준 solver (`src/analysis/e4_reference.py`, SHA `cf580000…b02b`) — DEV 검사 결과: FREEZE**
+- 정의
+  - 첫 수: 4 / 열린 삼 + 국소 VCF 위협수
+  - depth 1 quiet: 4 / 열린 삼 + 국소 VCF 위협수(`ReferenceSolver.quiet_moves`)
+  - 방어자 응수 전부
+  - 2M 노드 / 200k 호출 / VCF 한 번 20k
+- DEV 검사 (`docs/h7/h7_e4_reference_2m.json`, 코드 `fb1e887`, 컨테이너 3 worker, `fast4`; `git_dirty`는 커밋 전 문서 수정 때문이다. 커밋 전 실행과 수·노드가 국면마다 같았다)
+  - **포함: 23 / 23.** 선택 후보의 DEV WIN 23국면 모두에서 WIN이었다. → 규칙대로 2M으로 동결한다. 4M은 쓰지 않는다.
+  - 거짓 증명 0, 모순 0, 미검증 0. 기준 solver의 모든 WIN을 truth `check_move`로 다시 검사했다.
+  - 재현율(보고): DEV WIN_VCT2_ONLY 41국면 중 **32**(78%)
+    - 놓친 9국면 중 8국면은 2M 예산 소진, 1국면은 탐색을 끝냈지만 WIN 없음
+    - `86c1383d…:11`(사람의 4를 막는 강제 수가 첫 수인 국면)도 놓쳤다. 이런 "block으로 시작하는 VCT2" 사건은 arena 빈도에서 덜 세어질 수 있다. 두 arm에 똑같이 적용되므로 비교는 공정하다.
+  - 비용: 국면당 평균 19초, 최대 81초. 42국면 중 8국면이 2M을 다 썼다.
+    - arena 사건 추출(arm마다 약 6,000국면)은 데스크톱 12 worker로 수 시간이 걸릴 것으로 본다.
+
+**3. 비용 사전 검사 (`scripts/h7_e4_precheck.py`, 데스크톱, CUDA)**
+- 국면: `docs/h7/h7_timing_positions.json` 2,594 − 웹 겹침 69 = **2,525국면**, 대국 cluster
+- 국면마다 같은 호출 안에서 잰다.
+  - 후보의 wrapper는 B를 먼저 그대로 돌린다. 그래서 B 시간과 공격 시간을 같은 계산에서 나눠 잰다.
+  - B = B 착수 시간, E = B + 공격 시간. 위치와 계산이 완전히 짝이 된다.
+  - P2처럼 따로 두 번 돌리는 것보다 잡음이 적다(같은 B 계산을 두 번 하지 않음).
+- 판정: 비율 Σ E / Σ B. 대국 cluster bootstrap 10,000회, 95% 하한 > 1.5면 `PRECHECK_FAIL`(REJECT), 아니면 `PROCEED`
+- 보고: 공격한 국면 수, 수가 바뀐 국면 수, 공격 초(평균 / p95 / 최대), B 초, 중앙값 비율
+
+**실행 명령 — 비용 사전 검사 (데스크톱 Ubuntu, 1 프로세스, 약 2시간)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python -m unittest tests.test_h7_e4 tests.test_tb_v2_runtime
+python -u scripts/h7_e4_precheck.py --positions docs/h7/h7_timing_positions.json \
+  --corpus docs/h7/h7_e4_web_corpus.json --device cuda \
+  --jsonl runs/h7_e4/precheck.jsonl --output docs/h7/h7_e4_precheck.json 2>&1 | tee -a runs/h7_e4/precheck.log
+```
+
+- 다른 무거운 작업과 동시에 돌리지 않는다(시간 측정).
+- 커밋할 것: `docs/h7/h7_e4_precheck.json`
+- `PROCEED`이면 다음은 arena 명령과 `summarize_h7_e4.py`(사건 추출 포함)다. 그 도구는 사전 검사 결과를 본 뒤가 아니라 지금 정의대로 만든다.
+
+## H7-E4 비용 사전 검사 결과: PRECHECK_FAIL, E4-v1 REJECT (2026-10-22, 결과 커밋 `2049ca6`)
+
+**확인 (`docs/h7/h7_e4_precheck.json`)**
+- 코드 `ea3f020`, 후보 해시 `5e359f42…`, runtime 해시 `cad1c03e…`(CUDA)
+- 데스크톱 i5-12600K / WSL2, 1 프로세스, 제한 실행 아님
+- 국면: timing corpus 2,594 − 웹 겹침 69 = 2,525국면, 201대국. 남은 집합의 웹 겹침 0은 assert로 확인했다.
+
+| 항목 | 값 |
+|---|---|
+| ΣE / ΣB | **1.7752** |
+| 대국 cluster bootstrap 95% | **[1.6677, 1.9126]** |
+| 국면별 비율 중앙값 | 1.067 |
+| 공격한 국면 | 1,858 / 2,525 (73.6%) |
+| 수가 바뀐 국면 | 52 (2.1%) |
+| 공격 초 평균 / p95 / 최대 | 1.167 / 5.00 / 6.31 |
+| B 초 평균 / p95 | 1.108 / 4.64 |
+
+- 하한 1.6677 > 1.5다. 사전 규칙대로 **PRECHECK_FAIL → `TB-V2-Value+E4`(200k/vcf_threat/all) REJECT**다.
+  - 경계 사례가 아니다. 구간 전체가 1.5 위다.
+- seed 8441 / 8442 arena는 돌리지 않았다. 그래서 **이 seed는 아직 아무 결과도 본 적 없는 상태로 남아 있다.** E4-v2의 공식 arena에 그대로 쓸 수 있다.
+- 결과를 보고 현재 후보를 고쳐 같은 실험으로 이어가지 않는다. canonical은 TB-V2-Value + fast4 그대로다.
+- 단순 분해(평균): E / B ≈ 1 + 0.736 × 1.167 / 1.108 ≈ 1.78. 측정과 맞는다.
+
+**초안 검토: 고친 것**
+1. **"많은 국면에서 고르게 내는 추가 비용"이 아니라 "소진된 실패 공격의 꼬리"가 주원인이다.** (`docs/h7/h7_e4v2_cost_analysis.json`, `scripts/h7_e4v2_cost_analysis.py`)
+
+   | 공격 결과 | timing 국면: 공격 수 / 시간 비중 / 평균 초 | DEV: 공격 수 / 시간 비중 / 평균 초 |
+   |---|---|---|
+   | WIN(수 바뀜 52 + B와 같은 수 27) | 79 / 6.5% / 1.78 | 23 / 2.4% / 1.90 |
+   | WIN 없음, 200k 소진 | **312 / 68.4% / 4.75** | **143 / 76.3% / 9.65** |
+   | WIN 없음, 끝까지 탐색 | 1,467 / 25.1% / 0.37 | 701 / 21.3% / 0.55 |
+
+   - 중앙값 1.067과 합계 1.775의 차이가 바로 이것이다. 대부분의 공격은 싸다. 전체 국면의 12%에 해당하는 소진 공격이 시간의 2/3 이상을 쓴다.
+   - "공격 1,858번에 수가 바뀐 것 52번"을 비교하는 것보다 **"WIN 79번 대 소진 실패 312번"**을 비교해야 비용 원인이 보인다.
+2. 수가 바뀌지 않은 WIN도 27번 있었다. 공격이 증명한 WIN이 B의 수와 같았던 경우다. 공격 WIN은 모두 79번이다.
+3. **timing corpus는 이제 E4-v2의 설계 데이터다.** 아래 분석이 이 국면들의 비용 구조를 보고 수단을 골랐다. 그래서 E4-v2의 공식 비용 사전 검사는 **새 timing corpus**로 해야 한다. 아직 쓰지 않은 대국으로, 측정 전에 정한다.
+
+**비용 절감 수단 분석 (설계 입력, 재실행 없이 기록으로 추정)**
+
+timing 국면 기준이다. 시간은 데스크톱 실측이다. 예산 상한은 "시간 × 상한 / 사용 노드"로 근사했다. 실제 공정 분배 순서가 예산에 따라 달라지므로 근사일 뿐이다.
+
+| 수단 | ΣE / ΣB 추정 | 남는 수 바뀜 (52 중) | DEV 응징 |
+|---|---:|---:|---:|
+| 현재 (200k, 항상) | 1.775 | 52 | 30 / 41 |
+| **상대 VCF 문턱**(우리가 쉬면 상대가 VCF로 이기는 국면에서는 공격 안 함) | 1.545 | 51 | **30 / 41**(공격 시간 38.9%만 남음) |
+| 예산 150k | 1.637 | 47 | — |
+| 예산 100k | 1.482 | 34 | — |
+| 상대 VCF 문턱 + 150k | 1.448 | 47 | — |
+| 상대 VCF 문턱 + 100k | 1.341 | 34 | — |
+| tree route만 (+ 문턱) | 1.530 | 51 | — |
+
+- **상대 VCF 문턱이 가장 값싼 수단이다.**
+  - VCF 한 번(2만 노드)이면 판별된다.
+  - 소진 실패에 몰려 있다. DEV 소진 143번 중 94번, timing 소진 312번 중 93번이 이 국면이다. 반대로 WIN 중에는 DEV 1 / 23, timing 2 / 79뿐이다.
+  - 근거: 상대가 강제수를 쥐고 있으면, 우리의 depth-2 증명이 상대의 4 연쇄를 모두 받아내야 해서 길어지고 대부분 실패한다.
+  - 건전성은 그대로다. 공격을 시도할지만 정한다.
+  - 하지만 혼자서는 부족하다(1.545). engine 대국에는 상대 VCF 국면이 웹 국면보다 적다.
+- **예산 축소는 비싸다.** engine 대국의 WIN은 노드를 많이 쓴다(수 바뀜 중앙값 약 55k, 최대 181k). 100k면 수 바뀜의 1/3을 잃는다. DEV에서 400k가 1국면 더 풀었던 것과도 맞는다.
+- **소진은 연달아 나온다.**
+  - 같은 대국에서 소진 공격 다음 수(2 ply 뒤)가 다시 소진일 확률은 142 / 287 = 49%다. 전체 비율은 17%다.
+  - 소진 다음 수에서 수가 바뀐 것은 4 / 287이다.
+  - "직전 수가 소진이면 이번 수는 쉰다(cooldown)"는 규칙은 소진 비용의 절반 가까이를 거의 손실 없이 줄일 수 있다. 다만 agent가 대국 상태를 들고 다녀야 한다.
+
+- **탐색 순서(killer reply)는 효과가 작다**(시제품, timing 국면 표본 100개, 컨테이너).
+  - 방법: 공격을 막은 방어 응수를 다음 후보에서 먼저 시도한다. 수 집합과 건전성은 같다.
+  - 소진 40개: 시간 −22%, 그중 15개가 예산 안에서 끝남, WIN 1개 추가
+  - WIN 20개: −20%, 같은 수 19개
+  - 원래 싸던 40개: +21%
+  - 시간 비중으로 합치면 공격 시간 약 −11%다. 보조 수단이다.
+- **조합 (기록 시뮬레이션, timing 국면)**
+
+  | 조합 | ΣE / ΣB 추정 | 수 바뀜 (52 중) | 공격 수 |
+  |---|---:|---:|---:|
+  | 상대 VCF 문턱 + cooldown, 200k | **1.414** | **48** | 1,425 |
+  | 상대 VCF 문턱 + cooldown, 150k | 1.339 | 42 | 1,414 |
+  | cooldown만, 200k | 1.575 | 49 | 1,710 |
+
+  - killer 순서를 더하면 약 1.37로 본다(공격 시간 −11% 가정).
+- **비용 모형**
+  - 데스크톱 공격 초 ≈ 2.218 × (노드 / 100k) + 0.0957 × (호출 / 1k) + 0.064
+  - v1 사전 검사 1,858회로 맞춘 식이다. R² = 0.987이고 합계 비율은 1.000이다.
+  - 그래서 후보 공격의 비용은 노드와 호출만으로 결정론적으로 추정할 수 있다. 모델과 데스크톱이 필요 없다.
+
+**결론: 가장 효율적인 방법**
+1. **상대 VCF 문턱**(채택 권장, 축이 아니라 고정)
+   - 판별에 VCF 한 번이면 된다. 실패 공격에 몰려 있고, WIN과 응징을 거의 잃지 않는다.
+   - DEV 30 / 41 유지. timing 수 바뀜은 51 / 52가 남는다.
+2. **소진 후 cooldown**(대국 상태 1비트)
+   - 비싼 실패가 연달아 나오는 구조를 바로 겨냥한다. 남은 소진 비용을 거의 손실 없이 줄인다.
+3. 그다음이 killer 순서(−11%)다.
+4. 예산 축소는 마지막이다. engine 대국의 WIN은 깊어서 잃는 것이 크다.
+
+## E4-v2 설계 제안 (2026-10-22, 초안, 승인 대기)
+
+**목표**: DEV 응징 30 / 41 수준 유지 + 공식 비용 ≤ 1.5를 여유 있게 통과
+
+**후보 구조**
+- E4-v1의 공격 그대로: 4·열린 삼 + VCF 위협수 첫 수, 증명 방식, route stage4 / 5 / tree
+- 그 위에 다음을 더한다.
+  - **G1 상대 VCF 문턱(고정)**: 우리가 쉬면 상대에게 VCF가 있는 국면(`ThreatSolver.vcf`, 2만 노드)에서는 공격하지 않는다. VCF 판별이 UNKNOWN이면 공격한다.
+  - **C cooldown(축)**: 같은 대국에서 직전 우리 수의 공격이 예산을 다 쓰고 WIN 없이 끝났으면, 이번 수는 공격하지 않는다(다음 수부터 다시 공격). 대국마다 1비트, 새 대국에서 초기화
+  - **K killer 응수 순서(축)**: 공격 안에서, 앞에서 공격을 막은 방어 응수를 먼저 시도한다(깊이와 둘 차례별 최근 8개). 건전성은 같다.
+  - **예산(축)**: 200k / 150k (호출은 노드 / 10)
+- 격자: C {off, on} × K {off, on} × 예산 {200k, 150k} = 8. G1은 모두에 들어간다.
+- 새 모듈 `src/analysis/e4v2_attack.py`. v1 파일(`e4_attack.py` 등)은 그대로 둔다.
+
+**자료와 역할 (누출 방지)**
+
+| 묶음 | 쓰는 곳 |
+|---|---|
+| 웹 DEV(1,091국면) | 응징, 건전성, 얕은 회귀. cooldown은 같은 대국의 연속 AI 국면으로 재생한다. undone 국면은 직전 상태 없음 |
+| COSTDEV = v1 timing 2,525국면 | 비용 설계. 후보별 비용 = B 초(v1 실측) + 비용 모형(노드, 호출). 컨테이너에서 계산 |
+| COSTTEST = 새 timing corpus | 공식 사전 검사만. E2 holdout(seed 8421 / 8422) 대국의 시험 arm 국면에서 sha256(id) 순서로 2,500국면을 고른다. 웹과 COSTDEV의 D4 겹침은 뺀다. 측정 전에 고정 |
+| arena seed 8441 / 8442 | 아직 본 적 없음. E4-v2 공식 판정 |
+| 웹 HOLDOUT | 보고만(사건 8개) |
+
+**선택 규칙 (DEV 실행 전 고정)**
+1. 거짓 증명 0, 모순 0, 얕은 회귀 0
+2. COSTDEV 비용 추정 ≤ 1.35. 1.5와의 여유는 표본 차이와 arena 상대 차이를 위한 것이다.
+3. 그중 DEV 응징 최대. 1국면 이내는 동률
+4. 동률이면 COSTDEV 비용이 가장 낮은 조합
+- 2를 만족하는 조합이 없으면 E4-v2는 거기서 멈춘다(REJECT). 결과를 보고 조합을 늘리지 않는다.
+
+**그 뒤 (v1과 같은 절차)**
+1. 후보 동결: 새 후보 파일, SHA 잠금, OFF 격리
+2. 기준 solver(2M, 이미 동결)가 새 후보의 DEV WIN을 모두 포함하는지 확인한다. 빠지면 기준 측정기를 조사하고 arena를 보류한다. v1 규칙대로 4M 한 번까지 허용한다.
+3. COSTTEST 사전 검사: 대국 cluster bootstrap 하한 > 1.5 → REJECT
+4. 8441 / 8442 arena → ADOPT / REJECT
+
+**만들 것**
+- `src/analysis/e4v2_attack.py`: G1, C, K, 예산
+- `scripts/h7_e4v2_dev.py`: DEV 채점(cooldown 재생 포함)과 COSTDEV 비용 추정, 선택 규칙. COSTDEV 계산은 B route가 기록된 v1 사전 검사 행을 쓴다.
+- `scripts/h7_e4v2_costtest.py` 또는 `h7_timing.py positions` 확장: E2 holdout 대국에서 COSTTEST를 만든다(데스크톱에 run 파일이 있음).
+- 사전 검사는 `h7_e4_precheck.py`를 후보만 바꿔 다시 쓴다.
+
+**결정이 필요한 것**
+1. E4-v2로 간다(또는 E4를 미루고 H7-c1로 먼저 간다)
+2. G1을 축이 아니라 고정으로 둔다
+3. 격자(C × K × 예산 = 8)와 선택 규칙(COSTDEV ≤ 1.35, 응징 최대, 동률은 비용)
+4. COSTDEV / COSTTEST 분리. COSTTEST는 E2 holdout 대국에서 만든다.
+5. 비용 모형(노드, 호출 → 초)을 COSTDEV 비용 추정에 쓴다. 공식 판정은 COSTTEST의 실측이다.
+
+## E4-v2 설계 확정과 도구 (2026-10-22, DEV 실행 전 고정)
+
+위 초안이 승인됐다. 아래가 확정 내용이다.
+
+**순서와 목표**
+- E4-v2를 먼저 끝낸다(ADOPT / REJECT까지). H7-c1은 그 뒤에 시작한다.
+  - E4-v2 ADOPT → 그 엔진으로 H7-c1을 한다.
+  - REJECT → TB-V2-Value + fast4로 H7-c1을 한다.
+- 목표는 더 많은 승리를 찾는 것이 아니다. E4-v1의 전술 성능(DEV 30 / 41)을 최대한 유지하면서, 비용의 대부분인 "예산을 다 쓰고 실패한 공격"을 줄여 공식 비용 ≤ 1.5를 통과하는 것이다.
+- 남은 DEV MISS를 더 푸는 것은 우선순위가 아니다.
+
+**고정한 구조 (`src/analysis/e4v2_attack.py`)**
+- E4-v1 그대로인 것
+  - 첫 수: 4 / 열린 삼 + 국소 VCF 위협수
+  - 방어자 응수 전부를 검사하는 selective VCT2 증명
+  - 증명된 WIN일 때만 B의 수를 바꾼다.
+  - route: stage4 / 5 / tree
+  - 공정 분배
+  - 시험: `200k`·killer off의 `attack`은 v1 `e4_attack`과 같은 수, 노드, 호출, 후보 수를 낸다.
+- **G1 상대 VCF 문턱 (모든 조합에 고정)**
+  - 우리가 쉬면 상대에게 VCF가 있는 국면(`opponent_vcf`, VCF 한 번, 2만 노드)에서는 공격하지 않는다.
+  - VCF 판별이 잘리면(UNKNOWN) 공격한다.
+  - 판별 비용(노드, 호출 1)도 비용에 넣는다.
+- **C cooldown (축)**
+  - 우리의 직전 공격이 예산을 다 쓰고 WIN을 증명하지 못했으면, 우리 다음 수에서 공격을 한 번 건너뛴다.
+  - 대국마다 1비트다(`Cooldown`).
+  - "같은 대국의 우리 다음 수"는 기록된 수순에 지금 수순이 두 수 더해진 경우다.
+  - 비트는 다음 수에서 무슨 일이 있든 해제한다. 그 수가 강제 route라 공격 자체가 없어도 해제한다.
+  - 상대 VCF 문턱으로 시작하지 않은 공격, 끝까지 탐색했지만 WIN 없이 끝난 공격, 건너뛴 수는 비트를 세우지 않는다.
+- **K killer 응수 순서 (축)**
+  - 앞에서 공격을 막은 방어 응수를 먼저 시도한다(`KillerSolver`, 깊이·둘 차례별 최근 8개).
+  - 합법 수 집합과 방어 응수 집합은 줄이지 않는다.
+  - 시험: 예산을 충분히 주면 후보마다 killer 유무로 WIN / REFUTED가 같다(4국면, 후보 최대 6개씩).
+- **예산 (축)**: 200k / 20k 호출, 150k / 15k 호출(VCF 한 번 20k). 100k는 쓰지 않는다.
+- 격자: 예산 × C × K = 8 (`GRID`)
+
+**DEV 선택 규칙 (결과 전 고정, `scripts/h7_e4v2_dev.py`)**
+1. 거짓 증명 0
+2. 모순 0
+3. 얕은 회귀 0
+4. COSTDEV 비용 추정 ≤ 1.35
+5. 그중 DEV 응징(WIN_VCT2_ONLY 41) 최대
+6. 1국면 이내는 동률
+7. 동률이면 COSTDEV 비용이 가장 낮은 조합(그다음 격자 순서)
+- 1–4를 통과하는 조합이 없으면 E4-v2는 DEV에서 REJECT다. 기준은 바꾸지 않는다.
+
+**자료 역할**
+- 웹 DEV(`dev_only`): 응징, 건전성, 얕은 회귀. cooldown은 같은 웹 대국의 연속 main 국면으로 재생한다. undone 국면은 직전 상태가 없다.
+- COSTDEV = E4-v1 사전 검사 2,525국면(설계용)
+  - 비용 = v1에서 잰 B 초 + 비용 모형
+  - 비용 모형: 초 = a·노드 + b·호출 + c. v1 사전 검사의 공격 1,858회로 도구 안에서 맞춘다.
+    - a = 2.218e-5, b = 9.57e-5, c = 0.0644, R² 0.987, 범위 노드 0–200k, 호출 0–20k
+    - 계수, R², 범위는 결과 파일에 남긴다.
+    - G1 판별에는 상수 c를 붙이지 않는다(VCF 한 번이라 공격 준비 비용이 없다).
+  - cooldown은 대국 id와 ply 순서로 재생한다.
+  - E4-v1이 공격한 국면이 대상이다(B route가 해당).
+  - 이 비용은 선택용 추정일 뿐이다. 공식 판정이 아니다.
+- **COSTTEST (`scripts/h7_e4v2_costtest.py`, 측정 전 고정)**
+  - E2 holdout `runs/h7_e2/tt_vs_full_8421.json`, `_8422.json`(TB-Engine-v2 대 `v8:full`)
+  - 시험 arm이 둔 수 직전 국면 전부에서, 웹 corpus와 COSTDEV의 D4 겹침을 뺀다(남은 집합 겹침 0 assert).
+  - **대국 단위로** sha256(대국 key) 순서로 2,500국면이 될 때까지 넣는다(대국을 쪼개지 않으므로 2,500을 조금 넘을 수 있다).
+  - 국면 단위로 뽑지 않는 이유: cooldown은 같은 대국의 연속된 수에서만 작동한다. 공식 사전 검사도 대국마다 수 순서대로, 대국당 상태 하나로 잰다(E4-v2 사전 검사 도구는 후보 동결 때 만든다).
+- arena: seed 8441 / 8442(본 적 없음)
+- 웹 HOLDOUT: 보고만
+
+**그 뒤 (고정)**
+1. 후보 동결: 리터럴 설정, 의존 SHA 잠금, candidate / runtime 해시, OFF 격리
+2. 기준 solver(2M, 동결)가 새 후보의 DEV WIN을 모두 포함하는지 확인. 빠지면 v1 규칙(4M 한 번, 그래도 빠지면 조사)
+3. COSTTEST 실측: 대국 cluster bootstrap 하한 > 1.5 → REJECT
+4. 8441 / 8442 arena → ADOPT / REJECT → E4 종료 → H7-c1
+
+**도구 검토 반영 (사용자 검토 7항목, 사실 확인 후)**
+
+| # | 지적 | 판단 | 조치 |
+|---|---|---|---|
+| 1 | 강제 route 수에서 cooldown 비트가 해제되지 않아 뒤늦게 적용된다 | **늦게 적용되지는 않는다.** `Cooldown.blocks`는 "기록된 수순 + 정확히 2수"일 때만 막는다. 그래서 한 수 늦은 tree 수에서는 막지 않고 해제만 한다(재현으로 확인). 다만 비트가 남아 있는 것은 정의의 문자와 다르다. | 비트를 route 판정보다 먼저 소비하도록 `decide`와 `replay`를 바꿨다. 회귀 시험 추가: 소진 → 강제 수에서 소비 → 다음 tree 수는 막히지 않음 / 소진 → 바로 다음 수는 막힘 |
+| 2 | COSTTEST에서 국면만 빼면 cooldown 재생이 깨진다 | 사실이다. 빠진 국면의 소진이 다음 수를 쉬게 하는 효과가 사라진다. 측정이 비용을 높게 잡는 쪽(보수적)이지만, 대국 단위로 뽑은 목적과 어긋난다. | 웹 / COSTDEV 판이 하나라도 있는 대국은 통째로 뺀다. 깨끗한 대국만 sha256 순서로 넣는다. 2,500국면에 못 미치면 오류로 멈춘다. |
+| 3 | COSTDEV 출처 검사 부족 | 사실이다. | 사전 검사의 `positions_sha256`, `corpus_sha256`, `candidate_hash`(동결 E4-v1)가 넘긴 파일과 맞지 않으면 거부한다(시험 추가). |
+| 4 | resume에 낡은 행이 섞일 수 있다 | 사실이다. | 행마다 fingerprint(`e4v2_attack.py` / `e4_attack.py` SHA, truth SHA, 검사 예산, 예산 표, G1 노드 한도)를 넣는다. 하나라도 다르면 거부한다(시험 추가). fingerprint가 없는 이전 행도 거부된다. |
+| 5 | 비용 모형이 killer를 과소평가할 수 있다 | 측정했다(컨테이너, 1 프로세스, COSTDEV 150국면). killer 보정 = **0.988**이다. 과소평가가 아니고 약 1% 과대평가다. | `scripts/h7_e4v2_calibrate.py`: 데스크톱에서 같은 150국면으로 잰 보정값을 `h7_e4v2_dev.py --calibration`이 killer 공격과 G1 판별 비용에 곱한다. 순서를 결과 전에 고정한다(아래 명령). |
+| 6 | G1 판별 비용에 상수항을 뺀 것 | 측정 보정 = **0.877**(모형이 약간 과대평가). 판별 시간 합은 공격 시간의 1.6%라 선택에 영향이 없다. | 5와 같은 보정을 적용한다. |
+| 7 | COSTTEST의 `recorded.route`는 E4-v2 base의 route가 아니다 | 사실이다(출처 엔진은 TB-Engine-v2). | `source_recorded`로 이름을 바꾸고, 사전 검사가 TB-V2-Value를 직접 돌려 route를 얻어야 한다고 docstring에 적었다. |
+
+- 보정 방식
+  - 보정값 = (실측 / 모형) / (plain 실측 / plain 모형)
+  - plain 대비 상대값이므로 기계 속도는 상쇄된다.
+  - 컨테이너는 plain 1.68배, killer 1.66배, 판별 1.47배였다.
+
+**실행 명령 (데스크톱, 모델 불필요)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_h7_e4 tests.test_track_b_guard
+mkdir -p runs/h7_e4v2
+rm -f runs/h7_e4v2/dev.jsonl docs/h7/h7_e4v2_calibration.json docs/h7/h7_e4v2_dev.json   # nothing from older code
+# 1) COSTTEST positions (fixed now, before any E4-v2 measurement)
+python scripts/h7_e4v2_costtest.py --runs runs/h7_e2/tt_vs_full_8421.json runs/h7_e2/tt_vs_full_8422.json \
+  --corpus docs/h7/h7_e4_web_corpus.json --costdev docs/h7/h7_timing_positions.json \
+  --output docs/h7/h7_e4v2_costtest_positions.json
+# 2) cost-model calibration (one process, nothing else running, about 4 min)
+python -u scripts/h7_e4v2_calibrate.py --precheck docs/h7/h7_e4_precheck.json \
+  --positions docs/h7/h7_timing_positions.json --fast fast4 --output docs/h7/h7_e4v2_calibration.json
+# 3) DEV + COSTDEV, the eight configurations and the selection (about 20-40 min with 12 workers)
+python -u scripts/h7_e4v2_dev.py --corpus docs/h7/h7_e4_web_corpus.json --truth docs/h7/h7_e4_truth.json \
+  --baseline docs/h7/h7_e4_baseline_v2.json --precheck docs/h7/h7_e4_precheck.json \
+  --positions docs/h7/h7_timing_positions.json --calibration docs/h7/h7_e4v2_calibration.json \
+  --workers 12 --fast fast4 --jsonl runs/h7_e4v2/dev.jsonl --output docs/h7/h7_e4v2_dev.json 2>&1 | tee -a runs/h7_e4v2/dev.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4v2_costtest_positions.json`, `docs/h7/h7_e4v2_calibration.json`, `docs/h7/h7_e4v2_dev.json`
+- 1)이 "clean 국면 부족"으로 멈추면 E4-v2를 멈추고 COSTTEST 출처를 다시 정한다. 규칙을 조용히 바꾸지 않는다.
+- 먼저 볼 것
+  - `selection`
+  - 조합별 DEV 응징 / 거짓 증명 / 모순 / 얕은 회귀 / COSTDEV 비율과 수 바뀜
+  - `cost_model`, `correction`
+- 확인용
+  - `200k/nocd/plain`의 COSTDEV 비율은 앞선 분석의 "상대 VCF 문턱만" 추정(1.545)에 G1 판별 비용을 더한 값 근처여야 한다.
+  - `200k/cd/plain`은 "문턱 + cooldown" 추정(1.414) 근처여야 한다.
+  - 크게 다르면 재생 코드를 먼저 조사한다.
+
+## 동결 보증 점검: TB-V2-Value + fast4 (2026-10-22)
+
+사용자 검토 8항목을 코드로 확인했다. 동결 파일(`tb_v2_value.py`, `tb_v2_runtime.py`)은 고치지 않았다(canonical identity 보존). 그 바깥에 가드와 통합 검사기를 더했다.
+
+| # | 지적 | 사실 여부 | 조치 |
+|---|---|---|---|
+| 1 | policy SHA가 `ENGINE_HASH`에 없다 | **사실**. `config_hash` payload에 policy가 없다. docstring의 "policy도 identity"와 어긋난다(TB-Engine-v1 / v2도 같다). | 다음 엔진 동결 때 hash에 넣는다. 지금은 가드가 실행 시 검사한다. |
+| 2 | `make_agent`가 policy를 검사하지 않는다 | **사실**. `check_checkpoint`를 import만 한다. `RootPolicy`는 policy-only 여부만 본다. 벤치마크의 `load_policy`도 SHA를 보지 않는다(웹 / 외부 대국 / E1 도구는 본다). | `track_b_guard.check_policy_checkpoint`: 두 SHA와 "그 파일에서 로드했는지"를 검사한다. canonical 경로에 강제한다. |
+| 3 | SHA 없는 value leaf 통과 | **사실**(fail-open). 실제 `ValueLeaf`는 기본으로 V3 SHA를 강제하므로 정상 경로는 막혀 있었다. | `check_leaf`: SHA가 없거나 다르면 거부한다(fail-closed). |
+| 4 | 벤치마크가 동결 factory를 우회한다 | **사실**. `MCTSV8Agent`를 직접 만들었다. | `is_canonical`(arm ∈ value_tt / value_tt_e4, fast4, 설정이 동결값과 정확히 같음)이면 `make_canonical_agent` → `tb_v2_runtime.make_agent`로 만든다. 같은 kwargs이므로 수는 같다. runtime provenance는 이 경우에만 기록한다(`canonical_factory: true`). 설정이 다른 실험 run은 예전처럼 generic이다. |
+| 5 | binding Python SHA를 실행 시 검사하지 않는다 | **사실**. native C는 `build.stale()`가 실행 시 확인하지만, binding 파일은 시험에서만 확인한다. | `check_runtime_sources`(native + binding 파일 SHA)를 canonical 경로와 검사기에서 실행한다. |
+| 6 | `check_frozen_baseline.py`의 범위 | **사실**. v6 / v7 벤치마크 파일만 본다. | `scripts/check_track_b_frozen.py`(아래)를 만들었다. |
+| 7 | V8-B 후보 범위가 좁다 | 사실(이미 관측, completeness) | 엔진은 그대로 둔다. E4 범위에서 다룬다. |
+| 8 | V8-B 호출 10k 한계 | 사실(HOLDOUT 관측) | 그대로 둔다. DEV 근거가 있을 때 다음 cycle에서 다룬다. |
+
+**검토 중 찾은 더 큰 구멍: 엔진 해시는 코드를 덮지 않는다**
+- `config_hash`는 설정, 표, 체크포인트만 해시한다. `mcts_v8.py`, `threats.py`, `puct_value_v1.py`, 모델 코드(`src/model/*`), 규칙(`src/renju/*`)이 바뀌어도 같은 해시가 나온다.
+- CLAUDE.md의 "고치지 말 것"만 있었고 강제하는 장치가 없었다(`src/search`는 `frozen_baseline`이 덮는다).
+- 확인 결과
+  - canonical import closure의 파일 중 TB-V2-Value 동결(`9c94676`) 이후 바뀐 파일은 `src/hybrid/h6_labels.py`(seed 예약, 엔진 아님)뿐이다.
+  - fast4 관련 3개는 실행판 동결(`46ebcf7`) 전의 변경이다.
+  - 그래서 지금 파일이 canonical 코드다. 과거 결과는 영향을 받지 않았다.
+  - 과거 run과 웹 DB에 기록된 policy SHA도 모두 동결값 `efee4832…`다.
+- 조치
+  - `tests/track_b_frozen.sha256`에 canonical import closure 56개 파일의 SHA를 고정했다. closure는 하위 프로세스에서 진입 모듈과 fast4 설치로 계산한다.
+  - 도구용 모듈(`h6_labels`, `progress`, `renjunet`, `h3_cache`, `h6_value_cache`)은 뺐다.
+  - `check_code`가 이 목록과 대조한다.
+
+**`src/analysis/track_b_guard.py`**
+- `check_policy_checkpoint(path, policy)`, `check_leaf(leaf)`, `check_runtime_sources()`, `check_code()`
+- `make_canonical_agent(policy, leaf, seed, policy_checkpoint)`: 위 넷을 모두 통과한 뒤 `tb_v2_runtime.make_agent`(엔진 해시, fast4 바인딩)
+- 쓰는 곳(구현됨)
+  - 벤치마크 canonical arm: `make_canonical_agent`로 agent를 만든다.
+  - `h7_e4_baseline.py`, `h7_e4_precheck.py`(실모델일 때): `check_all`(모델, 실행판 소스, 코드 manifest)을 통과해야 시작한다.
+    - agent는 예전처럼 `tb_v2_value.make_agent`와 `tb_v2_value_e4.make_runtime_agent`로 만든다. 엔진 해시와 fast4 바인딩은 그 안에서 검사된다.
+    - 그래서 `make_canonical_agent`와 같은 검사 범위다. 다만 같은 함수 경로는 아니다.
+- 앞으로(아직 구현 전): E4-v2 사전 검사, arena, H7-c1 self-play는 처음부터 `make_canonical_agent`로 만든다.
+
+**`scripts/check_track_b_frozen.py`**
+- 검사 항목
+  - code(manifest와 closure)
+  - engine(`config_hash` = `ENGINE_HASH`, VCF 표 SHA)
+  - runtime sources
+  - runtime binding(fast4 설치·바인딩)
+  - policy checkpoint
+  - value checkpoint(`--no-models`로 생략)
+  - E4-v1 후보 소스
+- FAIL이 하나라도 있으면 종료 코드 1
+- 컨테이너(`--no-models`): 모두 PASS. 모델 검사는 데스크톱에서 확인한다.
+- `--write-manifest`는 명시적 엔진 / 실행판 동결 단계에서만 쓴다.
+
+**2차 검토 반영 (사실 확인 후)**
+
+| 지적 | 판단 | 조치 |
+|---|---|---|
+| E4 baseline / precheck는 가드 일부만 거친다(코드 manifest 없음). 문서 표현도 부정확 | 사실 | 두 도구에 `check_all`(모델 + 실행판 소스 + 코드 manifest)을 적용했다. 문서를 실제 경로대로 고쳤다(위). |
+| value `best.json` SHA가 고정돼 있지 않다(`ValueLeaf`가 그 `model_config`로 망을 만든다) | 사실 | `VALUE_METADATA_SHA256 = 51fd3fa4…`를 가드에 넣었다. 이 값은 E3 run provenance(`docs/h7/h7_e3_p92.json`)에 동결 value `a0fcccc4…`와 함께 기록된 값이다(시험으로 대조). `check_value_checkpoint`(두 파일)를 가드와 검사기가 쓴다. |
+| 가짜 객체가 SHA 속성만 맞추면 통과한다 | 사실(실수 방지 수준) | `check_models`: 진짜 `RootPolicy` / `ValueLeaf`여야 하고, value leaf도 넘긴 경로에서 로드했어야 한다. |
+| manifest 파일 수 57 → 56 | 문서는 이미 56(57은 첫 채팅 답에만 있었다) | 없음 |
+| DEV resume fingerprint에 `vct2_attack.py`, `selective_vct.py`가 없다 | 사실 | fingerprint의 `code`에 `e4v2_attack.py`, `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`, `h7_e4_baseline.py`(WIN 재검사), `h7_e4v2_dev.py`(재생, 비용 모형), `tests/track_b_frozen.sha256`(엔진 코드 전체)의 SHA를 넣었다. |
+| 보정 파일이 코드와 fast 모드에 묶여 있지 않다 | 사실 | 보정 파일에 같은 `code` SHA와 `fast`를 기록한다. DEV는 사전 검사 SHA, fast(= 이번 run의 `--fast`), code 중 하나라도 다르면 거부한다(시험 추가). |
+
+**다음 엔진 동결 때 반드시 넣을 것 (E4-v2 ADOPT 시 또는 별도 identity 단계)**
+- `config_hash`에 `POLICY_CHECKPOINT_SHA256`, `POLICY_METADATA_SHA256`, value `best.json` SHA를 포함
+- 새 `make_agent`에서 policy checkpoint 검사, value SHA fail-closed
+- 실행판 `check_bound`에서 binding 파일 SHA 검사
+- code manifest를 identity에 포함(엔진 해시 또는 runtime 해시)
+- 벤치마크 / self-play는 동결 factory만 사용(지금 가드 경로를 그 factory로 바꿈)
+
+**실행 명령 (데스크톱, 모델 포함 확인)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_track_b_frozen.py
+python -m unittest tests.test_track_b_guard
+```
+
+- 기대: 모든 항목 PASS. policy `efee4832…`, value `a0fcccc4…`
+- FAIL이면 E4-v2 DEV 실행 전에 원인을 먼저 본다. DEV 단계 명령은 모델을 쓰지 않으므로 FAIL과 무관하게 돌릴 수 있다. 다만 사전 검사와 arena는 이 검사가 PASS여야 한다.
+
+## H7-E4-v2 DEV / COSTDEV 결과: `150k/cd/killer` 선택 (2026-10-22, 결과 커밋 `77901c7`)
+
+**아직 채택이 아니다.** 결과 전에 고정한 DEV 절차로 후보 하나를 고른 단계다(DEV-SELECTED).
+
+**검산 (`docs/h7/h7_e4v2_dev.json`, `docs/h7/h7_e4v2_calibration.json`)**
+- 코드 `7caf38a`, `fast4`, 제한 실행 아님
+- corpus / truth / baseline v2 / 사전 검사 / 보정 파일 SHA가 커밋 파일과 같다.
+- 보정 파일과 DEV의 코드 fingerprint가 같고, 둘 다 fast4다.
+- 비용 모형: v1 공격 1,858회, R² 0.987
+- 데스크톱 보정: plain 1.028, killer 1.022, 판별 0.898 → 상대 보정 killer **0.9936**, 판별 **0.8735**
+- COSTTEST 국면 파일 `docs/h7/h7_e4v2_costtest_positions.json`은 DEV 결과 뒤에 따로 커밋됐다(`7390e59`).
+  - 이 파일은 E2 holdout 대국에서 규칙으로만 정해지고 E4-v2 결과와 무관하다. 그래서 누출은 없다.
+  - 검산
+    - 94대국, **2,513국면**(2,500 목표, 대국 단위라 초과)
+    - 겹침 때문에 통째로 뺀 대국 100개
+    - 쓴 대국은 모두 통째이고 ply 순서
+    - 웹 corpus / COSTDEV와의 D4 겹침 0(다시 계산)
+    - corpus / COSTDEV SHA 일치, `source_recorded`만 있음
+
+**결과**
+
+| 조합 | DEV 응징 | COSTDEV 비율 | COSTDEV 수 바뀜 | COSTDEV 공격 / cooldown / 문턱 생략 | 선택 |
+|---|---:|---:|---:|---|---|
+| 200k/nocd/plain | 30 / 41 | 1.5498 | 51 | 1,518 / 0 / 340 | 비용 탈락 |
+| 200k/nocd/killer | 30 / 41 | 1.5177 | 56 | 1,518 / 0 / 340 | 비용 탈락 |
+| 200k/cd/plain | 30 / 41 | 1.4190 | 48 | 1,425 / 109 / 324 | 비용 탈락 |
+| 200k/cd/killer | 30 / 41 | 1.4097 | 53 | 1,442 / 88 / 328 | 비용 탈락 |
+| 150k/nocd/plain | 30 / 41 | 1.4581 | 47 | 1,518 / 0 / 340 | 비용 탈락 |
+| 150k/nocd/killer | 30 / 41 | 1.4333 | 51 | 1,518 / 0 / 340 | 비용 탈락 |
+| 150k/cd/plain | 30 / 41 | **1.3457** | 42 | 1,413 / 120 / 325 | 통과 |
+| **150k/cd/killer** | **30 / 41** | **1.3407** | **47** | 1,430 / 101 / 327 | **선택** |
+
+- 8조합 모두 거짓 증명 0, 모순 0, 얕은 회귀 0, 미검증 0이다. 조합을 가른 것은 비용뿐이다.
+- 선택 규칙 검산
+  - 1–4를 통과한 조합은 `150k/cd/plain`(1.3457), `150k/cd/killer`(1.3407) 둘이다.
+  - 둘 다 30으로 최대다. 비용이 낮은 `150k/cd/killer`가 선택됐다. 결과 파일의 `selection`과 같다.
+- sanity: `200k/nocd/plain` 1.5498(예상 1.545), `200k/cd/plain` 1.4190(예상 1.414). 재생과 비용 모형이 앞선 기록 분석과 0.005 안에서 맞는다.
+
+**초안 검토: 고친 것과 더한 것**
+1. **"30 / 41이 같다"는 같은 30국면이라는 뜻이 아니다.** 응징 집합을 직접 비교했다.
+   - plain 4조합: E4-v1 선택 후보와 **정확히 같은 30국면**이다.
+   - killer 4조합(선택 후보 포함): `c94bc588…:16`을 새로 응징하고 `28f3cce0…:26`을 놓친다.
+     - killer 순서가 예산 배분을 바꾼 결과다.
+     - `c94b…:16`은 v1에서 400k에서만 풀리던 국면이다.
+   - 따라서 선택 후보는 v1과 같은 개수이고, 1국면이 바뀐 30국면이다.
+2. 비용 비교의 단위
+   - E4-v1 1.7752는 실측이다. E4-v2 1.3407은 모형 추정이다.
+   - 같은 모형은 v1 공격을 합계 비율 1.000으로 재현한다. 그래서 "추가 비용 +77.5% → +34.1%(약 56% 감소)"는 모형 기준으로 같은 잣대의 비교다.
+   - 공식 값은 COSTTEST 실측이다.
+3. killer의 효과
+   - 모든 짝에서 비용이 조금 낮고 수 바뀜이 많다.
+   - 최종 두 후보의 차이는 0.005뿐이다. 선택 이유는 동률 규칙이다. "killer가 크게 좋다"는 결론은 아니다.
+4. 모순 0의 뜻: truth NOT_FOUND는 같은 범위를 전폭으로 끝까지 본 결과다. 그래서 0은 실제 일치다(E4-v1 절과 같다).
+
+**기준 solver 포함 예측 (사전 규칙 적용)**
+- 선택 후보가 DEV에서 WIN을 증명한 국면: 21개
+- 동결된 기준 solver 2M(`docs/h7/h7_e4_reference_2m.json`)이 WIN으로 증명한 것: 20개
+- 빠진 국면: **`c94b…:16`**(기준 2M에서 예산 소진)
+- 규칙: "빠지면 4M으로 한 번, 그래도 빠지면 조사, arena 보류"
+- 그래서 **기준 solver를 4M으로 한 번 올려 다시 검사**해야 한다. 4M이 21개를 모두 포함하면 4M으로 동결한다.
+  - arena 사건 추출 비용은 약 2배가 된다(국면당 평균 20–40초 예상, 12 worker로 수 시간).
+
+## 코드 감사 반영 (2026-10-22, 사실 확인 후)
+
+| # | 지적 | 판단 | 조치 |
+|---|---|---|---|
+| 1 | E4-v2 fingerprint가 manifest **파일**의 SHA만 묶고 실제 엔진 파일 상태는 묶지 않는다. `h7_e4v2_calibrate.py`, `h7_e4_truth.py`(WIN 재검사의 solver)도 빠져 있다 | **사실**. 이번 실행은 시작 전 검사기 통과로 안전했다. | `code_shas`가 `experiment`(실험 코드 9개, 보정 / truth 도구 포함)와 `engine`(manifest가 가리키는 56개 파일의 **현재** SHA)를 함께 기록한다. 시험: 엔진 파일 SHA 하나만 달라도 resume 거부, 보정 도구 SHA가 다르면 보정 파일 거부 |
+| 2 | `ThreatSolver`: 막는 수가 마지막 합법점을 채워 무승부가 되면 UNSAFE로 판정한다 | **실제 결함(재현됨)**. 판이 W 하나만 남은 fixture에서 `after_move` = `UNSAFE ('block', W)`, 실제로는 막은 뒤 `done` + 승자 없음(무승부). 원인: 끝난 판의 `decision`이 빈 Counter를 내고 `decision_status`가 UNSAFE로 읽는다. 일어나는 조건은 판이 가득 차거나 흑에게 금수점만 남는 경우뿐이다. corpus에서는 나올 수 없다(웹 최대 73수). | `threats.py`는 동결이므로 고치지 않는다. `tests/test_known_defects.py`에 재현 fixture와 `expectedFailure`(올바른 기대값 SAFE)를 남겼다. 다음 proof cycle에서 "막은 뒤 `done`이면 SAFE"로 고친다. 고쳐지면 시험이 예상 밖 통과로 알려 준다. |
+| 3 | `mcts_v8`: `puct_c`가 inf도 통과 | 사실(canonical은 1.5 고정이라 영향 없음) | 다음 비동결 validator에서 `isfinite` |
+| 4 | E4-v2 실행 wrapper에서 Cooldown을 수마다 새로 만들면 안 된다 | 맞다(아직 구현 전) | 후보 동결 때 대국당 하나를 유지하는 통합 시험을 필수로 둔다(아래) |
+| 5 | `legal_moves`와 `has_legal_move`의 불변식 | 문제 없음 | 무작위 대국 30판, 매 수에서 일치 시험 추가 |
+| 6 | `child_priors`의 inf / NaN | 사실(정상 `RootPolicy`에서는 영향 없음) | 다음 비동결 버전에서 finite 검사 |
+| 7–8 | value leaf 캐시 키, VCF 표 | 문제 없음 | 다음 엔진 동결 때 identity 내부화(앞 절 목록) |
+
+## E4-v2 다음 단계 제안 (2026-10-22, 승인 대기)
+
+고정된 순서(후보 동결 → 기준 solver → COSTTEST → arena)를 그대로 따른다. 구체안은 다음과 같다.
+
+**1. 후보 동결: `src/analysis/tb_v2_value_e4v2.py` (이름 `TB-V2-Value+E4v2`, 후보 identity)**
+- 기준 엔진 해시 `256e5abe…`
+- 리터럴 설정
+  - `150k` / 15k 호출 / VCF 한 번 20k
+  - cooldown on, killer on
+  - G1 2만 노드
+  - route stage4 / 5 / tree
+- 소스 SHA 잠금: `e4v2_attack.py`, `e4_attack.py`, `vct2_attack.py`, `selective_vct.py`
+- 후보 해시, runtime 해시
+- `E4v2AttackAgent`
+  - B가 먼저 둔다. 그다음 `e4v2_attack.decide`로 공격한다.
+  - **`Cooldown`은 agent 하나에 하나이고 대국 내내 유지한다.** 새 대국은 수순 접두어로 구별한다.
+- 시험
+  - OFF 격리(TB-V2-Value와 같은 수)
+  - 한 대국 안에서 소진 → 다음 수 생략이 실제 agent로 재현됨
+  - 다른 대국의 상태가 넘어오지 않음
+  - DEV 재생(`replay`)과 agent의 판정 순서가 같음
+- 만드는 경로: `track_b_guard.make_canonical_agent` → wrap. 벤치마크 arm `puct_value_vct2_50k_tt_e4v2`(canonical 경로 전용)
+
+**2. 기준 solver 포함 검사(4M)**
+- `h7_e4_reference.py`를 E4-v2 DEV 결과에서 후보 WIN 집합을 읽도록 넓힌다(cooldown 재생 포함). 기준 solver 코드(`e4_reference.py`)는 그대로 둔다.
+- 2M은 위 예측대로 21 중 20이다. 그래서 4M을 돌린다.
+  - 21개 전부 포함하고 거짓 증명이 0이면 4M으로 동결한다.
+  - 아니면 조사하고 arena를 보류한다.
+- 모델이 필요 없다. 컨테이너에서 약 15–30분
+
+**3. COSTTEST 실측 (`scripts/h7_e4v2_precheck.py`, 새로 만듦)**
+- COSTTEST 국면 파일은 커밋돼 있다(2,513국면, 94대국).
+- 대국마다 수 순서대로 잰다.
+  - 대국마다 후보 agent 하나(Cooldown 유지)
+  - 국면마다 B는 새로 만든다(cold, v1과 같음)
+  - B의 route는 TB-V2-Value를 실제로 돌려 얻는다(`source_recorded`는 쓰지 않는다).
+- 같은 호출 안에서 B 시간과 E4 추가 시간(판별 + 공격)을 나눠 잰다.
+- 대국 cluster bootstrap, 하한 > 1.5 → REJECT
+- 데스크톱 1 프로세스, 약 2시간
+
+**4. arena 8441 / 8442**
+- B(`puct_value_vct2_50k_tt`)와 E(`_e4v2`), 각 50 pair, `v8:full`, fast4, CUDA
+- 둘 다 canonical factory로 만든다.
+- `summarize_h7_e4.py`: 기력, 비용, 건전성(공격으로 바꾼 수 전부 truth 재검사), 빈도(기준 solver 4M 사건 + opening cluster bootstrap), 격리
+
+**결정이 필요한 것**
+1. 위 동결 설계(특히 Cooldown 수명과 그 통합 시험)
+2. 기준 solver 4M 검사를 사전 규칙대로 진행
+3. COSTTEST 사전 검사의 측정 방식(대국 순서, 대국당 후보 agent 하나, 국면마다 B는 cold)
+
+## E4-v2 후보 동결과 기준 solver 4M (2026-10-22)
+
+사용자 승인(세 항목)에 따라 진행했다. DEV 결과를 본 뒤 추가 조정은 없다. `150k/cd/killer` 그대로다.
+
+**1. 후보 동결 (`6ea3f3c`, `src/analysis/tb_v2_value_e4v2.py`, 이름 `TB-V2-Value+E4v2`, 후보 identity)**
+- 기준 엔진: TB-V2-Value(`256e5abe…`). `track_b_guard.make_canonical_agent`로만 만든다. 그 위에 E4-v2 wrapper를 씌운다.
+- 리터럴 설정 `ATTACK`
+  - `150k/cd/killer`: 150k 노드 / 15k 호출 / VCF 한 번 20k
+  - cooldown on, killer on
+  - G1 2만 노드
+  - route stage4 / 5 / tree
+- 잠금 SHA
+  - `e4v2_attack.py` `dd61f5af…`
+  - `e4_attack.py` `73b0902d…`
+  - `vct2_attack.py` `ad263e3f…`
+  - `selective_vct.py` `b0b3a063…`
+  - code manifest `7b73005d…`
+  - 이 값들은 DEV 실행의 fingerprint와 같다. DEV에서 잰 바로 그 코드다.
+- `candidate_hash`, `runtime_hash`, `provenance`. `check_sources`가 SHA, manifest 대상 파일, 기준 엔진 해시, 선택 설정을 확인한다.
+- **상태**
+  - 수와 수 사이에 남는 것은 `E4v2AttackAgent.cooldown` 하나다(agent 하나, 곧 대국 하나).
+  - 공격은 호출마다 solver를 새로 만든다. 기준 엔진은 수마다 tree를 새로 만든다.
+  - 기준 엔진에 남는 것은 동결 TB-V2-Value가 원래 갖는 것뿐이다: 난수 흐름, 그리고 value leaf의 결과 캐시. 결과 캐시는 같은 입력에 같은 값을 주는 순수 캐시라 판정을 바꾸지 않는다.
+  - 둘 다 B와 E가 똑같다.
+- 통합 시험(`tests/test_tb_v2_value_e4v2.py`, 실제 wrapper, 공격 결과는 각본으로 대체)
+  - 예산 소진 실패 → 다음 자기 수에서 정확히 한 번 생략 → 그다음 수는 다시 공격
+  - 다음 수가 강제 route여도 cooldown은 소비된다.
+  - 문턱 생략, 끝까지 탐색한 실패는 비트를 세우지 않는다.
+  - `new_game` 초기화. 서로 다른 agent / 대국 사이에 누출 없음
+  - 실제 wrapper의 판정 순서 = DEV `replay`
+  - cooldown off = 상태 없음, attack off = 기준 수
+  - WIN일 때만 수 교체(route `own_vct2`)
+  - agent 속성은 base / attack / config / name / cooldown / attack_info뿐
+- 벤치마크 arm `puct_value_vct2_50k_tt_e4v2`: canonical(fast4, 동결 설정) run에서만 실행된다. 그 밖에는 거부한다.
+- CLAUDE.md: E4-v2 후보 파일과 잠금 파일은 판정 전까지 고치지 않는다.
+- `ThreatSolver`의 판 가득 참 결함은 이 단계에서 고치지 않는다. 이번 proof cycle은 기존 동결 의미로 끝낸다.
+
+**2. 기준 solver 4M 검사: FREEZE (`docs/h7/h7_e4v2_reference_4m.json`)**
+- 규칙(사전 고정): 2M이 후보 DEV WIN 21개 중 20개만 포함했다(`c94b…:16` 누락). 그래서 4M으로 한 번 올렸다.
+- 결과
+  - **포함 21 / 21**
+  - 거짓 증명 0, 모순 0, 미검증 0
+  - 재현율(보고): DEV WIN_VCT2_ONLY 41국면 중 **37**(2M은 32)
+  - 비용: 국면당 평균 33초, 최대 213초(컨테이너 3 worker). 41국면 중 3국면이 4M을 다 썼다.
+- 실행 조건
+  - 코드 `6ea3f3c`, `fast4`
+  - 기준 solver SHA `cf580000…`(2M 때와 같은 파일, 예산 `4m`)
+  - `git_dirty`는 실행 중 다음 단계 도구를 쓰던 중이라 생겼다. 기준 solver와 공격 파일 SHA는 결과 파일에 기록돼 있고 커밋본과 같다.
+- **arena 사건 검출기는 `e4_reference.reference_attack(game, '4m')`로 동결한다.** 후보의 150k 예산은 그대로다.
+- arena 사건 추출 비용은 2M 때보다 크다. arm마다 약 6,000국면이고, 데스크톱 12 worker로 수 시간을 본다.
+
+**3. COSTTEST 실측 도구 (`scripts/h7_e4v2_precheck.py`, 승인된 방식)**
+- COSTTEST 94대국 / 2,513국면 그대로
+  - 파일의 corpus / COSTDEV SHA를 대조한다.
+  - D4 겹침 0을 다시 확인한다.
+  - 대국은 파일 순서(sha256), 대국 안은 ply 순서다.
+- 대국마다 후보 wrapper 하나(Cooldown 하나)
+  - 국면마다 기준 엔진은 `make_canonical_agent`로 새로 만든다(seed는 국면 id에서, value 캐시 비움). tree / 캐시 / 탐색 상태는 국면을 넘지 않는다.
+- 시간: 후보 호출 안에서 잰다.
+  - B = 기준 엔진의 `select_move`(그 route가 E4-v2 단계를 정한다. `source_recorded`는 쓰지 않는다)
+  - E = 호출 전체(기준 + cooldown + 상대 VCF 문턱 + 공격)
+  - 모델 로딩, native build, agent 생성은 둘 다 밖이다.
+- 판정
+  - 대국 cluster bootstrap 95% 하한 > 1.5 → `PRECHECK_FAIL`(REJECT, arena 없음)
+  - 아니면 `PROCEED`
+  - `PROCEED`는 비용 통과가 아니다. 점추정이 1.5를 넘으면 "비용은 아직 열려 있음"으로 결과 파일(`interpretation`)에 적는다.
+- resume은 대국 단위다(cooldown이 대국을 따라 흐르므로). fingerprint는 후보 해시, COSTTEST SHA, 장치다.
+- 시험: 대국 순서와 ply 순서 유지, 대국 단위 resume, E ≥ B, fast 모드 복원(stand-in 모델)
+
+**실행 명령 — E4-v2 COSTTEST 사전 검사 (데스크톱, 1 프로세스, 약 2–3시간, 다른 작업 없이)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_tb_v2_value_e4v2 tests.test_track_b_guard tests.test_h7_e4
+mkdir -p runs/h7_e4v2
+python -u scripts/h7_e4v2_precheck.py --positions docs/h7/h7_e4v2_costtest_positions.json \
+  --corpus docs/h7/h7_e4_web_corpus.json --costdev docs/h7/h7_timing_positions.json --device cuda \
+  --jsonl runs/h7_e4v2/precheck.jsonl --output docs/h7/h7_e4v2_precheck.json 2>&1 | tee -a runs/h7_e4v2/precheck.log
+```
+
+- 커밋할 것: `docs/h7/h7_e4v2_precheck.json`
+- 먼저 볼 것
+  - `verdict`, `interpretation`, `ratio`, `ci95`
+  - `report`: 공격 수, 수 바뀜, 생략 사유별 수(route / cooldown / opponent_vcf), 공격 초
+- `PRECHECK_FAIL`이면 여기서 E4-v2 REJECT다. `PROCEED`이면 다음은 arena 명령과 `summarize_h7_e4.py`다(기준 4M 사건 추출 포함).
+
+## E4-v2 COSTTEST 사전 검사 결과: PROCEED (2026-10-22, `docs/h7/h7_e4v2_precheck.json`)
+
+**검증**
+- 코드 `daf97ca`, 데스크톱(i5-12600K, WSL2), CUDA, fast4, `restricted: false`
+- 대조한 것
+  - `candidate_hash` `f5e43aca…`, 후보 `runtime_hash('cuda')`: 현재 동결 후보와 같다.
+  - COSTTEST / 웹 corpus / COSTDEV SHA: 커밋된 파일과 같다.
+  - 행의 국면 id와 순서: COSTTEST 파일과 같다(2,513개).
+- 비율과 구간은 행에서 다시 계산해 같았다.
+
+**결과**
+- E/B = **1.4617**, 대국 cluster 95% CI **[1.3956, 1.5518]**, 94대국 / 2,513국면
+- 사전 규칙: 하한 1.3956 ≤ 1.5이므로 중단하지 않는다 → **PROCEED** → seed 8441 / 8442 arena
+- **비용 통과가 아니다.** 구간이 1.5를 포함한다. 비용의 최종 판정은 arena의 비용 gate다.
+- 합계: B 2,592.0초, E 3,788.7초, 공격 추가 1,196.6초
+
+**E4-v2 단계 (2,513국면이 정확히 한 경로씩)**
+- 공격 실행: 1,564(62.2%)
+- 생략: route 623(24.8%), 상대 VCF 문턱 190(7.6%), cooldown 136(5.4%)
+- 문턱 결과: NONE 1,546, UNKNOWN 18(UNKNOWN도 공격한다, 설계대로), WIN 190(생략)
+- 공격 WIN 89. 그중 59개가 기준 수를 바꿨다(전체의 2.35%, 공격 국면의 3.77%). 나머지 30개는 기준 엔진이 이미 같은 수를 골랐다.
+
+**시간 분포**
+- B: 국면당 평균 1.031초, p95 3.637초
+- 공격 추가 시간은 **공격한 1,564국면 기준**으로 평균 0.765초, p95 4.121초, 최대 5.678초다. 전체 국면 기준 평균은 0.476초다.
+  - 그래서 E/B = 1 + 0.476 / 1.031 = 1.4617이다. 공격 국면 평균(0.765)을 전체에 대입하면 1.74가 나와 맞지 않는다.
+- 국면별 E/B 중앙값은 1.023이다. 대부분의 국면에서 추가 비용은 작다.
+- 꼬리
+  - 공격 국면 상위 10%가 공격 시간의 54.2%를 차지한다.
+  - 예산을 다 쓴 공격은 161개(공격의 10.3%)다. 이들이 공격 시간의 54.5%다.
+  - E4-v1 비용 분석의 진단("비용의 주원인은 소진된 실패 공격")이 E4-v2에서도 그대로다. 크기만 줄었다.
+
+**초안 검토에서 고친 것**
+1. **E4-v1 1.7752와 E4-v2 1.4617은 같은 국면 집합의 짝 비교가 아니다.**
+   - E4-v1 사전 검사는 COSTDEV(v1 timing 2,525국면, `187c70b7…`)에서 쟀다.
+   - E4-v2는 COSTTEST(E2 holdout 대국, `6c133883…`)에서 쟀다.
+   - 같은 집합에서 비교할 수 있는 것은 COSTDEV의 E4-v1 실측 1.7752 대 E4-v2 모형 추정 1.3407뿐이다.
+   - 그래서 "1.7752 → 1.4617, 총 비율 17.7% 감소, 추가 overhead 77.5% → 46.2%(40.4% 감소)"는 산술로는 맞다. 다만 국면 집합이 다르다. **감소 방향의 근거이지, 확정된 감소량은 아니다.**
+2. **COSTDEV 추정 1.3407 대 COSTTEST 실측 1.4617의 차이 0.121은 모형 오차만이 아니다.** 국면 집합의 차이도 섞여 있다. 결론은 같다. COSTDEV는 후보 선택에만 쓰고 최종 비용 근거로는 쓰지 않는다.
+3. 공격 시간 평균 0.765초는 공격한 국면 기준이다(위 시간 분포).
+4. 수 교체 59는 공격 WIN 89 중 일부다. WIN이 곧 교체는 아니다.
+5. 나머지 수치는 결과 파일과 같다: 비율, CI, 단계별 수와 비율, 59 / 2,513, 59 / 1,564, B 평균 / p95, 공격 p95 / 최대, 중앙값.
+- 후행 조정은 없었다. DEV 선택 → 후보 동결(`6ea3f3c`) → COSTTEST 실측 순서이고, 결과를 본 뒤 후보는 바뀌지 않았다.
+
+**E4-v2 현재 상태**
+
+```
+DEV                 150k/cd/killer SELECTED
+candidate freeze    PASS (6ea3f3c)
+reference 4M        candidate WIN 21/21, false proof 0 -> FREEZE
+COSTTEST            1.4617 [1.3956, 1.5518] -> PROCEED (not a cost pass)
+next                seed 8441 / 8442 arena: validity -> strength / cost / soundness / frequency / isolation
+```
+
+## E4-v2 arena 요약 도구 (2026-10-22, arena 전 고정)
+
+`scripts/summarize_h7_e4.py`(시험 `tests/test_h7_e4v2_arena.py`). 승인된 arena 규칙을 그대로 옮겼다. 사전 검사가 `PROCEED`일 때만 쓴다.
+
+**입력 검사 (하나라도 어긋나면 요약하지 않는다)**
+- run 4개: B `puct_value_vct2_50k_tt`, E `puct_value_vct2_50k_tt_e4v2`
+  - 각각 seed 8441, 8442 한 번씩. 다른 seed는 받지 않는다.
+  - `v8:full` 상대, 50 pair, `--fast fast4`, CUDA value, `canonical_factory: true`
+- 설정
+  - B = `TB_V2_VALUE + ENGINE_OPTIONS`
+  - E = B 설정 + `e4v2_attack`
+- runtime 기록
+  - B: 동결 엔진 해시, `tb_v2_runtime.runtime_hash('cuda')`
+  - E: `candidate_hash`, 후보 `runtime_hash('cuda')`, 기준 runtime 해시
+- 단계 기록
+  - E는 모든 수에 E4-v2 단계 기록(`e4_attack`)이 있어야 한다.
+  - B에는 하나도 없어야 한다.
+  - 공격 WIN은 route `own_vct2`이고, 실제로 둔 수와 같아야 한다.
+- 같은 seed의 두 arm은 opening이 같아야 하고, (seed, pair, 색) 집합도 같아야 한다.
+- 요약 시점의 코드
+  - `tb_v2_value_e4v2.check_sources()`
+  - code manifest 검사
+  - 기준 solver: `docs/h7/h7_e4v2_reference_4m.json`이 `FREEZE` / `4m`이고, 그 `reference_sha256`이 지금 `e4_reference.py`와 같아야 한다.
+
+**판정 (두 seed를 합쳐 한 번)**
+- 먼저 유효성(아래 격리 6, 7)을 본다. 하나라도 FAIL이면 `INVALID`다. 이때는 ADOPT도 REJECT도 내리지 않는다.
+- 유효하면 모든 gate PASS → ADOPT, 하나라도 아니면 REJECT
+- 기력: opening(seed, pair, 양 색) 단위 점수 차 E − B, bootstrap 10,000(seed 0, E2와 같음). 95% 하한 ≥ −0.05
+- 비용: 짝 대국 전체 V8 수 시간 합 E / B ≤ 1.5
+- 건전성
+  - E4-v2 공격이 WIN을 증명한 수 전부를 truth `check_move`(10M)로 다시 검사한다. 수가 바뀌지 않은 WIN도 포함한다. MISS 0이어야 한다. UNCLEAR는 보고만 한다.
+  - 두 arm 모두 안전 위반(`summarize_h4.safety`) 0. E2 / CPU 인증과 같은 불변식이다.
+- 빈도
+  - 사건 국면: arm이 둘 차례이고, 직전 수가 `v8:full`의 수인 국면이다. opening 마지막 수 직후 국면은 넣지 않는다.
+  - 그 국면에서 기준 solver(`reference_attack(game, '4m')`)가 WIN을 증명하면 사건이다.
+  - 응징: 그 국면에서 arm이 둔 수가 `check_move` PUNISH
+  - cluster는 opening(seed, pair)이다. 양 색과 두 arm을 함께 묶는다.
+  - bootstrap 표본마다 arm별 `Σ응징 / Σ사건`을 다시 계산한다. opening별 비율의 평균은 쓰지 않는다. 사건 0인 opening도 남긴다.
+  - E − B의 95% 하한 > 0이면 PASS다.
+  - 한 arm의 사건이 0인 표본은 비율이 정의되지 않는다. 그런 표본은 빼고, 그 수를 `degenerate_samples`로 남긴다.
+- 격리 (7항목)
+  1. 동결 설정
+  2. runtime identity
+  3. canonical factory
+  4. 후보 SHA(+ code manifest, 기준 엔진 해시)
+  5. 단계 기록(E는 모든 수, B는 없음, 공격 WIN = 둔 수)
+     - 1–5는 입력 검사다. 하나라도 어긋나면 요약 자체를 거부한다.
+  6. off 경로 단위 시험: 요약할 때 `tests.test_tb_v2_value_e4v2`를 subprocess로 실제로 돌려 통과해야 한다.
+  7. `left_before_first_switch == 0`
+     - E 대국이 E의 첫 수 교체보다 먼저 B 대국과 갈라진 경우의 수다.
+     - 첫 교체 전까지 E는 같은 기보 위의 같은 기준 엔진이다. CUDA 반복 측정(`h7_equiv_cuda_vs_cuda.json`)도 차이 0이었다. 그래서 허용값은 0뿐이다.
+
+**유효성 gate (2026-10-22, arena 결과를 보기 전에 사용자 결정으로 고정)**
+- 6, 7은 후보 성능을 재는 채택 gate가 아니다. 실험이 유효한지를 보는 integrity gate다.
+- 6 또는 7이 FAIL이면 `INVALID` / STOP이다. 결과를 ADOPT / REJECT에 쓰지 않고, 원인을 먼저 분류한다.
+  - 후보 wrapper의 상태 누출이면(기준 엔진의 난수, 탐색 캐시, 전역 VCF / native 상태를 바꿈): 후보 결함이다. 동결 E4-v2를 REJECT한다. 고친 판은 별도 후보 cycle이다.
+  - runner 또는 계측 오류이면(seed 전달, agent 수명, opening 정렬, 요약 비교): runner를 고친다. 같은 동결 후보로 같은 seed 8441 / 8442를 다시 돌린다. 후보 설정은 그대로다.
+  - 같은 엔진 / 장치 / 설정에서 CUDA 비결정성이 재현되면: 재현성 문제를 조사한다. 해결 전에는 기력·빈도 결과를 채택하지 않는다.
+- 곧바로 REJECT로 두지 않는 이유가 있다. 첫 교체 전 분기는 후보의 기력 부족이 아니라 실험 인프라 문제일 수 있기 때문이다.
+
+**보고만 하는 것**
+- arm별 점수, 색별 점수, 대국 분
+- E4-v2 단계: 생략 사유별 수, 공격 수, 예산 소진, WIN, 수 바뀜, 공격 초
+- 응징 검사 UNCLEAR 수, opening별 사건 / 응징
+- B와 같은 대국 수
+
+**계산 방식**
+- 국면은 수순(history)마다 한 번만 푼다. 두 arm과 두 seed를 합친다.
+  - E 대국은 첫 교체 전까지 B와 같으므로, 국면의 상당수가 겹친다.
+- 한 국면에서 하는 일
+  - 기준 solver는 항상 돌린다.
+  - WIN이면 그 수순에서 둔 수를 모두 `check_move`로 검사한다.
+  - 공격 WIN 수는 항상 검사한다.
+- worker pool(`run_chunks`)로 돌리고, 끝난 국면을 바로 `--jsonl`에 쓴다(resume).
+  - fingerprint: 예산 `4m`, 검사 예산(10M), fast 모드, 기준 solver / truth / `check_move` / 공격 의존 파일 / code manifest의 SHA
+- 두 solver는 시간이 아니라 노드로 끊는다. 그래서 국면 결과가 기계에 따라 달라지지 않는다.
+  - 기계를 나눠 돌릴 수 있다: `--shard K/N`으로 나눠 풀고, 마지막에 `--merge`로 합쳐 요약한다.
+- `--plan`: 입력만 검사하고 국면 수를 센다.
+- 비용 추정: COSTTEST 국면(E2 대국, 같은 종류) 33개 표본에서 기준 solver 4M은 국면당 평균 35초였다(컨테이너 1코어).
+  - 분포가 한쪽으로 길다. 33개 중 6개가 4M을 다 써서 175–205초가 걸렸다. 나머지는 대부분 수 초 이내다.
+  - 사건 국면의 `check_move`(10M)가 더 붙는다.
+  - 국면 수는 arm·seed마다 100대국 × 약 27수다. 겹침을 빼면 수천 국면이다. 실제 수는 `--plan`이 알려 준다.
+
+**실행 명령 — arena (데스크톱, 사전 검사가 `PROCEED`일 때만)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_tb_v2_value_e4v2 tests.test_track_b_guard tests.test_h7_e4v2_arena
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; W=8
+mkdir -p runs/h7_e4v2
+for SEED in 8441 8442; do
+for SIDE in b e; do
+ARM=puct_value_vct2_50k_tt; [ $SIDE = e ] && ARM=puct_value_vct2_50k_tt_e4v2
+python -u scripts/run_mcts_v8_benchmark.py --arm $ARM --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast4 --policy-checkpoint $POL --value-checkpoint $VAL --value-device cuda \
+  --games-jsonl runs/h7_e4v2/${SIDE}_$SEED.jsonl --output runs/h7_e4v2/${SIDE}_$SEED.json 2>&1 | tee runs/h7_e4v2/${SIDE}_$SEED.log
+done; done
+RUNS="runs/h7_e4v2/b_8441.json runs/h7_e4v2/b_8442.json runs/h7_e4v2/e_8441.json runs/h7_e4v2/e_8442.json"
+python scripts/summarize_h7_e4.py --runs $RUNS --plan
+python -u scripts/summarize_h7_e4.py --runs $RUNS --workers 10 --fast fast4 \
+  --jsonl runs/h7_e4v2/arena_positions.jsonl --output docs/h7/h7_e4v2_arena.json 2>&1 | tee runs/h7_e4v2/arena_summary.log
+```
+
+- 요약 단계는 GPU가 필요 없다. 중간에 끊겨도 같은 명령을 다시 실행하면 이어서 푼다.
+- SER5와 나눠 돌릴 때
+  - run 파일 4개를 SER5에 복사한다.
+  - 각 기계에서 `--shard 0/2`(데스크톱)과 `--shard 1/2`(SER5)를 `--jsonl`과 함께 실행한다.
+  - 마지막에 데스크톱에서 `--merge <두 jsonl>`로 요약한다.
+- 커밋할 것: `docs/h7/h7_e4v2_arena.json`. run 파일과 jsonl은 `runs/`에 둔다.
+- 먼저 볼 것
+  - `verdict`
+  - `gates`의 각 `verdict`, `diff`, `ci95`, `ratio`, `rate`, `miss`
+  - `gates.isolation`: `items` 7개가 모두 PASS이고 `left_before_first_switch`가 비어 있어야 한다. `INVALID`면 판정하지 않고 원인부터 본다.
+
+## E4-v2 최종 arena: ADOPT (2026-10-22, `docs/h7/h7_e4v2_arena.json`)
+
+**상태: 채택 판정 완료 → canonical 승격 대기.** 코드상 `TB-V2-Value+E4v2`는 아직 후보 identity다. canonical은 아래 승격 단계가 끝난 뒤다.
+
+**검증**
+- 요약 실행: 코드 `e0f926f`, `git_dirty: false`
+- 대조한 것
+  - `candidate_hash` `f5e43aca…`: 현재 동결 후보와 같다.
+  - 기준 solver 결과 파일 SHA: `h7_e4v2_reference_4m.json`과 같다.
+  - fingerprint: 현재 파일로 다시 계산한 값과 같다(4M, 10M 검사, fast4, 기준 solver / truth / 공격 / manifest SHA).
+- 판정 형식: `verdict` = ADOPT, "every gate PASS"
+- 아래 수치는 모두 결과 파일에서 다시 읽은 값이다. run 파일 4개는 `runs/`에 있어 그 SHA만 기록돼 있다.
+
+**gate**
+
+| gate | 결과 | 값 |
+|---|---|---|
+| 유효성 / 격리 | PASS | 7 / 7. off 경로 시험 13개 통과. `left_before_first_switch` 없음 |
+| 기력 | PASS | E − B +0.040, CI95 [+0.0175, +0.0650](100 opening, 200쌍) |
+| 비용 | PASS | E / B 0.941(7,858.1초 / 8,355.0초) |
+| 건전성 | PASS | 공격 WIN 132개 모두 PUNISH. MISS 0, UNCLEAR 0. 안전 위반 B 0 / E 0 |
+| 빈도 | PASS | B 1,184 / 1,354 = 0.8744, E 1,206 / 1,262 = 0.9556. 차이 +0.0812, CI95 [+0.0625, +0.1020]. degenerate 0 |
+
+- 기력
+  - B 178승 9무 13패(0.912), E 188승 5무 7패(0.953)
+  - 색별: 흑 0.905 → 0.945, 백 0.920 → 0.960
+- 보조(판정 아님)
+  - 상대 VCT 뒤 패배 11 → 6
+  - `proven_loss_in_lost_position_per_move` 0.0044 → 0.0025
+- 빈도의 seed별 값(보조): 8441 0.8927 → 0.9493, 8442 0.8565 → 0.9616. 두 seed 모두 같은 방향이다.
+
+**E4-v2 단계 (E의 3,201수가 정확히 한 경로씩)**
+- 공격 1,693(52.9%)
+- 생략: route 1,155, 상대 VCF 문턱 228, cooldown 125
+- 공격 중 WIN 132(7.8%), 수 교체 91(공격의 5.4%, 전체 수의 2.84%), 예산 소진 150(8.9%)
+- 공격 시간 합 2,256.6초
+- 200대국 중 109대국은 B와 끝까지 같고, 91대국이 갈라졌다.
+  - 교체는 모두 91번이다. 갈라진 대국은 첫 교체 전에는 B와 같았다(유효성 7).
+  - 그래서 갈라진 91대국마다 교체가 정확히 한 번씩이다. 첫 교체 뒤에 다시 교체한 대국은 없다.
+- WIN 132 중 41개는 기준 엔진이 이미 같은 수를 골랐다. 증명이 기준 엔진의 선택을 확인한 경우다.
+
+**초안 검토**
+- 초안의 수치는 모두 결과 파일과 같다. 결론(ADOPT, 승격 대기 구분)도 맞다. 고치거나 더할 것은 다섯 가지다.
+1. **빈도의 UNCLEAR**: 응징 검사가 UNCLEAR인 사건이 B 8, E 5개 있다. 규칙대로 응징이 아닌 것으로 셌다.
+   - B의 8개가 모두 PUNISH였다고 해도 B는 0.8804가 되고, 차이 +0.0752가 남는다. 판정은 바뀌지 않는다.
+2. **빈도는 사건 단위 비율이다.**
+   - 100 opening 중 36개는 두 arm의 사건·응징 수가 같다. 차이는 대부분 나머지 64 opening에서 나온다.
+   - B가 응징을 놓치면 대국이 이어지고, 다음 사건이 다시 생긴다. E는 응징하고 곧 끝난다. 그래서 "+8.12%p"는 "사건당 응징 비율"이다. "대국당 기회를 잡은 비율"이 아니다.
+   - 사전 고정 지표가 원래 이 정의다. 판정에는 문제가 없다. 해석할 때만 이렇게 읽는다.
+3. **arena 비용 0.941과 COSTTEST 1.4617은 수치로도 맞는다.**
+   - `time_ratio`(V8 초 / 상대 초)는 B 1.37, E 1.93이다. 상대 수 시간 합은 B 약 6,099초, E 약 4,072초다. E 대국의 상대 수가 약 33% 적다는 뜻이다(상대 수당 시간이 비슷하다고 보면).
+   - 그러면 자기 수 하나당 비용 E / B는 약 0.941 / 0.668 ≈ 1.41이다. COSTTEST의 1.46과 가깝다.
+   - E의 tree 수 1,664 대 B 2,297도 같은 방향이다.
+   - 결론: 수당 추가 비용(약 1.4배)은 그대로 있다. 대국이 짧아져 대국 전체 계산량이 늘지 않았다. **웹처럼 수마다 deadline이 있는 곳에서는 0.941이 아니라 수당 비용(그리고 꼬리)이 기준이다.**
+4. 기력 하한 +0.0175 > 0은 사전 gate(비열등, ≥ −0.05)가 아니라 같은 자료의 기술적 관찰이다. 우월성은 사전 가설이 아니었다. 그래서 "이 arena에서 양의 차이가 관측됐다"까지만 쓴다. 초안 표현이 이미 그렇다.
+   - 초안의 "기존 엔진보다 5% 이상 약해지지 않았다"는 "점수 0.05(5%p) 이상"이 정확하다.
+5. 대국 분(240.9 / 198.8)은 상대 시간까지 포함한 전체 대국 시간이다. V8 시간만은 위 비용 행이다.
+
+**E4 흐름 (사전 규칙 그대로, 결과를 본 뒤 조정 없음)**
+
+```
+E4-v1 200k/vcf_threat/all   DEV 30/41, cost pre-check 1.7752 [1.6677, 1.9126]   -> REJECT
+E4-v2 DEV                   150k/cd/killer                                       -> SELECTED
+candidate freeze            6ea3f3c                                              -> PASS
+reference 4M                candidate WIN 21/21, false proof 0                   -> FREEZE
+COSTTEST                    1.4617 [1.3956, 1.5518]                              -> PROCEED (not a cost pass)
+final arena 8441 / 8442     validity, strength, cost, soundness, frequency       -> ADOPT
+```
+
+## 다음 단계 제안: E4-v2 canonical 승격 (명시적 엔진 동결 단계)
+
+원칙은 **행동 불변**이다. 수, 예산, cooldown, killer, 문턱, route를 하나도 바꾸지 않는다. 바뀌는 것은 identity와 검사 장치뿐이다. 그래서 같은 수 동등성 gate로 확인한다.
+
+**1. 새 엔진 identity (이름 제안: `TB-V3-Value`)**
+- 새 동결 파일 `src/analysis/tb_v3_value.py`
+  - 리터럴: TB-V2-Value 설정 + E4-v2 `ATTACK`
+  - 계보: 채택 근거 `candidate_hash f5e43aca…`, `h7_e4v2_arena.json` SHA
+- "다음 엔진 동결 때 반드시 넣을 것"(동결 보증 점검 절)을 이번에 넣는다.
+  - `config_hash`에 policy checkpoint / metadata SHA, value `best.pt` / `best.json` SHA
+  - code manifest SHA를 identity에 포함
+  - 새 `make_agent`는 fail-closed: policy / value / 실행판 소스 / binding / manifest를 안에서 검사한다(지금 `track_b_guard`가 바깥에서 하는 일).
+- 실행판: `tb_v3_runtime`(fast4). native / binding SHA는 그대로, 새 runtime 해시
+- 기존 파일(`tb_v2_value.py`, `tb_v2_runtime.py`, `tb_v2_value_e4v2.py`, 공격 파일)은 고치지 않는다. 새 파일이 import해서 쓴다.
+
+**2. 동결 목록과 가드**
+- code manifest를 새로 쓴다(`--write-manifest`, 이 단계에서만). 새 엔진의 import closure에 공격 파일이 들어간다.
+- CLAUDE.md
+  - 새 동결 파일을 추가한다.
+  - E4-v2 후보 잠금 줄을 "TB-V3-Value에 동결"로 바꾼다.
+- `check_track_b_frozen.py`가 새 엔진을 검사한다.
+- 벤치마크 arm(예: `puct_value_vct2_50k_tt_v3`)과 상대 이름(`v8:` 계열)을 추가한다. self-play / 웹은 새 factory만 쓴다.
+- 결정 필요: `make_canonical_agent`를 새 엔진으로 바꿀지, 아니면 `make_canonical_agent_v3`를 따로 두고 기존 것은 기록 재현용으로 남길지
+  - 제안: 이름을 버전으로 고정하고(`v2`, `v3`) "canonical"은 한 곳(상수)에서만 가리킨다.
+
+**3. 같은 수 동등성 gate (승격의 판정)**
+- arena E 대국 200개(3,201수)를 새 factory로 다시 둔다.
+  - 대국마다 agent 하나, 같은 seed(`derive_seed(seed, 'v8')`)를 쓴다. 기록된 기보 위에서 자기 수 차례마다 고른다.
+- 판정: 3,201수 모두 같은 수, 같은 E4-v2 단계 기록(생략 사유, WIN, 교체)이면 PASS다. 하나라도 다르면 승격하지 않고 원인을 본다.
+- 근거: CUDA 반복은 차이 0이었고, arena 유효성 7도 통과했다. 기록과 같아야 한다.
+- 비용: arena E의 V8 시간 약 2.2시간. 대국 병렬(8 worker)이면 1시간 이내
+- 보조: B 대국 200개를 기존 canonical로 다시 둬서 같은 방식으로 확인한다(재현성 대조군).
+
+**4. 승격 뒤 (예전에 고정한 순서)**
+- SER5 시간 2회
+  - 기준: 30초 초과 0, 최대 ≤ 25초
+  - E4-v2는 수당 꼬리 비용을 더한다(COSTTEST 공격 최대 5.7초, 데스크톱). 그래서 다시 재야 한다.
+  - SER5 실패는 웹 배포만 막는다. 엔진 채택은 그대로다.
+- CPU 인증: 새 seed 8451 / 8452로 새 엔진에 대해 한다.
+- 웹(`feat/Web_SER5`): 웹은 deadline이 있는 VCF 경로를 쓴다. E4-v2 공격에도 deadline 판을 만들어야 한다. deadline이 없을 때 같은 수인지 확인하는 G3 방식이다. 별도 단계로 둔다.
+- H7-c1: self-play는 새 factory로만 만든다. policy target 계약(E4 PROVEN_WIN 덮어쓰기 = one-hot)은 이미 고정돼 있다.
+
+**이번 승격에 넣지 않는 것 (행동이 바뀌므로 다음 proof cycle)**
+- `ThreatSolver` 판 가득 참 결함(`expectedFailure` 시험)
+- `puct_c` / `child_priors` 유한성 검사
+- V8-B 후보 범위, 호출 한도
+
+**결정이 필요한 것**
+1. 새 엔진 이름(`TB-V3-Value` 제안)과 파일 구성(새 identity 파일 + 새 runtime 파일)
+2. canonical factory 이름 정책(버전 고정 이름 + canonical 상수)
+3. 승격 gate = arena E 200대국 재생, 3,201수 같은 수 + 같은 단계 기록(보조: B 200대국 재생)
+4. identity 강화 범위(위 1의 네 항목)를 이번에 모두 넣는 것
+5. 승격 뒤 순서: SER5 시간 → CPU 인증 8451 / 8452 → H7-c1(웹 deadline 공격은 별도로 병행)
+
+## TB-V3 Resolve 승격: 확정안과 구현 (2026-10-22)
+
+**현재 상태**
+
+```
+TB-V2-Value + fast4   current canonical
+TB-V3 Resolve         ADOPT-approved, promotion pending
+```
+
+- 3,201수 재생(PROMOTION_PASS)과 canonical alias 변경이 끝나야 "TB-V3 Resolve = canonical"로 쓴다.
+
+**확정한 것 (사용자 승인)**
+- 이름
+  - Engine ID `TB-V3`, codename `Resolve`, 표시 이름 `TB-V3 Resolve`
+  - 파일 이름에는 codename을 넣지 않는다.
+- factory
+  - 버전 고정 factory(`make_tb_v2_agent`, `make_tb_v3_agent`)는 뜻이 바뀌지 않는다.
+  - "canonical"은 한 곳(`analysis.canonical.CANONICAL_ENGINE_ID`)에서만 가리킨다.
+- 승격 gate: arena E 200대국 재생
+  - 3,201수 모두 같은 수
+  - E4-v2 단계 기록의 결정 필드 불일치 0
+  - 하나라도 다르면 PROMOTION_FAIL이다. 승격을 멈추고 원인을 본다. 이것은 후보 REJECT가 아니다. arena의 ADOPT는 그대로이고, 새 factory가 후보와 같지 않다는 뜻이다.
+- B 200대국 재생은 재현성 보조 검사다(gate 아님).
+- identity 강화 네 항목을 모두 넣는다. 확인할 수 없으면 거부한다(fail closed).
+- 순서
+  1. TB-V3 구현
+  2. identity / manifest 동결
+  3. E 200대국 재생
+  4. canonical alias → TB-V3
+  5. 동결 검사 전체 PASS
+  6. SER5 시간 2회
+  7. CPU 인증 8451 / 8452
+  8. H7-c1
+- SER5 시간은 배포 인증이다. 실패해도 TB-V3의 canonical 지위는 그대로이고, "SER5 배포 미인증"이 된다.
+- CPU 인증은 기력·안전 인증이다. CUDA canonical의 정의를 바꾸지 않는다.
+- 보류(다음 proof / 엔진 변경 cycle): ThreatSolver 판 가득 참 결함, `puct_c` / `child_priors` 유한성 검사
+
+**구현 (이번 커밋, 행동 변화 없음)**
+- `src/analysis/tb_v3.py`(identity)
+  - `ENGINE_ID`, `ENGINE_CODENAME`, `ENGINE_NAME`
+  - 리터럴 `ATTACK`, `ATTACK_SOURCES`(후보와 같음), `BASE_ENGINE_HASH`(TB-V2-Value)
+  - `MODELS`: policy `best.pt` / `best.json`, value `best.pt` / `best.json`의 SHA-256
+  - `CODE_MANIFEST_SHA256`: `tests/tb_v3_frozen.sha256`의 SHA
+  - `ADOPTION`: 후보 해시, arena / 사전 검사 / 기준 solver 결과 파일 SHA
+  - `ENGINE_HASH` **`d0ef0da6…`**: 위 설정, 공격, 모델, code manifest를 모두 덮는다.
+  - `check_identity`가 확인하는 것
+    - 엔진 해시, 기준 엔진, 채택 후보와 같음(설정, 소스, 후보 해시, 후보 `check_sources`)
+    - 모델 상수
+    - manifest 파일 SHA, manifest의 모든 파일
+- `tests/tb_v3_frozen.sha256`: TB-V3 factory의 import closure 63개 파일
+  - TB-V2-Value의 56개에 7개를 더했다(공격 4, 후보 wrapper, `tb_v3_runtime.py`, `track_b_guard.py`). 56개는 SHA까지 같다.
+  - `tb_v3.py`는 manifest 해시를 담고 있어 넣을 수 없다. 대신 runtime 해시가 이 파일의 SHA를 덮는다.
+  - TB-V2-Value manifest(`tests/track_b_frozen.sha256`)는 그대로다. E4-v2 후보와 TB-V3가 그 SHA를 잠근다. `--write-manifest`는 이제 `tb-v3`만 쓴다.
+- `src/analysis/tb_v3_runtime.py`
+  - `runtime_hash(device)`: 엔진 해시, `tb_v3.py` SHA(`b275f762…`), fast4, native / binding 소스, 장치. CUDA는 `51e3579a…`이다.
+  - `make_tb_v3_agent`: identity → 모델(진짜 `RootPolicy` / `ValueLeaf`, 그 경로에서 로드, 네 파일 SHA = `MODELS`) → 실행판 소스 → fast4 바인딩 순으로 검사한다. 경로가 없거나 파일을 읽을 수 없으면 거부한다.
+  - 그 뒤 동결 TB-V2-Value agent에 후보의 `E4v2AttackAgent`(설정 `tb_v3.ATTACK`)를 씌운다. 대국마다 agent 하나다.
+  - `CERTIFICATION`: CUDA canonical, CPU 미인증. `DEPLOYMENT`: SER5 미인증
+- `src/analysis/canonical.py`
+  - `CANONICAL_ENGINE_ID = 'TB-V2-Value'`(승격 전)
+  - `factory(engine_id)`, `make_canonical_agent`, `provenance`
+- `track_b_guard`
+  - `make_tb_v2_agent`(기존 함수, 이름만 버전 고정)
+  - `make_canonical_agent`는 `make_tb_v2_agent`의 별칭으로 남긴다. 동결 E4-v2 후보 파일이 이 이름으로 기준 엔진을 만들기 때문이다. alias가 TB-V3로 바뀌어도 이 이름은 TB-V2-Value다. 후보 파일은 고치지 않는다.
+- 벤치마크
+  - arm `tb_v3`: fast4와 동결 설정일 때만, `make_tb_v3_agent`로 만든다. runtime provenance는 TB-V3 것이다.
+  - `v8:tb_v3`와 `v8:..._e4v2`는 상대로 쓰지 못한다. 그렇게 하면 wrapper 없는 V8이 조용히 만들어지기 때문이다.
+- `check_track_b_frozen.py`: `tb-v3 code`(manifest = closure), `tb-v3 identity`, `tb-v3 promotion`
+  - promotion: alias가 TB-V3이면 승격 기록이 PROMOTION_PASS이고, 지금 runtime 해시와 `tb_v3.py` SHA여야 한다. 승격 전에는 "pending"이다.
+  - 컨테이너(`--no-models`): 전부 PASS
+- `scripts/tb_v3_promotion.py`(승격 재생)
+  - 입력: arena 요약(SHA = `ADOPTION['arena_sha256']`, ADOPT)과 그 run 파일. run 파일은 요약에 기록된 SHA로 확인한다.
+  - 대국마다 버전 factory로 agent 하나, arena와 같은 seed(`derive_seed(seed, 'v8')`)
+  - 기록된 수를 순서대로 두며, 자기 차례마다 고른 수와 기록을 비교한다.
+    - 수: 고른 수 = 기록된 수
+    - 결정 필드: `route`, `changed`, `v7_move`, E4-v2 단계의 `base_route`, `base_move`, `ran`, `skip`, `gate.status`, `move`, `exhausted`. cooldown 전이는 `exhausted`와 `skip`으로 정해진다.
+    - 나머지 기록 필드(시간 제외): 보고만 한다.
+  - 판정: E 200대국 / 3,201수(arena `e4v2_steps.moves`), 수와 결정 불일치 0 → PROMOTION_PASS
+  - CUDA만 허용한다. 대국 단위 worker pool, 끝난 대국마다 jsonl(resume)
+- 시험 `tests/test_tb_v3.py`(13개)
+  - identity와 해시가 모델·코드·공격 설정을 덮는지
+  - manifest = closure, TB-V2 56개 포함
+  - fail closed(경로 없음, 읽을 수 없는 파일, 가짜 모델 객체, identity 불일치)
+  - stand-in 모델에서 TB-V3와 후보가 같은 수, 같은 단계 기록, 같은 cooldown
+  - alias와 버전 factory, 벤치마크 arm, 상대 금지
+  - 재생 도구: 기록과 일치, 결정 필드 변경 검출, 기록과 기보 불일치 거부, 판정, 다른 arena 거부
+
+**실행 명령 — 승격 재생 (데스크톱, GPU, 8 worker, 약 1시간 이내)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_tb_v3 tests.test_track_b_guard tests.test_tb_v2_value_e4v2 tests.test_h7_e4v2_arena
+mkdir -p runs/tb_v3
+python -u scripts/tb_v3_promotion.py --runs runs/h7_e4v2/e_8441.json runs/h7_e4v2/e_8442.json \
+  --baseline-runs runs/h7_e4v2/b_8441.json runs/h7_e4v2/b_8442.json --workers 8 --device cuda \
+  --jsonl runs/tb_v3/promotion.jsonl --output docs/h7/tb_v3_promotion.json 2>&1 | tee runs/tb_v3/promotion.log
+```
+
+- `check_track_b_frozen.py`는 모델까지 모두 PASS여야 한다. `tb-v3 promotion`은 "pending"이 정상이다.
+- 커밋할 것: `docs/h7/tb_v3_promotion.json`
+- 먼저 볼 것
+  - `verdict`, `reasons`
+  - `tb_v3`: `games` 200, `moves` 3,201, `moves_matched`, `decision_mismatches`
+  - `record_mismatch_moves`(보고)
+  - `baseline`: REPRODUCED / DIFFERS(보고)
+- PROMOTION_PASS가 나오면 다음 커밋에서 할 것
+  - `CANONICAL_ENGINE_ID = 'TB-V3'`
+  - `check_track_b_frozen.py`가 승격 기록을 요구한다.
+  - 문서 상태를 "TB-V3 Resolve = canonical"로 바꾼다.
+  - 그 뒤 SER5 시간 측정으로 간다.
+
+**SER5 시간 측정의 병행 (사용자 요청 검토)**
+- 병행할 수 있다.
+  - 기계가 다르다(데스크톱 GPU / SER5 CPU). 서로 자원을 나누지 않는다.
+  - SER5 결과는 코드 identity(엔진 해시, runtime 해시 = `tb_v3.py` SHA 포함)에만 달려 있다. 승격 재생은 코드를 바꾸지 않는다. PASS 뒤의 alias 변경은 `canonical.py`와 검사기만 고치므로 runtime 해시도 그대로다.
+- 조건
+  - SER5 결과는 PROMOTION_PASS 뒤에만 판정에 쓴다. 측정 파일의 `runtime_hash`와 `identity_sha256`이 승격 기록과 같아야 한다.
+  - PROMOTION_FAIL로 코드가 바뀌면 SER5는 다시 잰다.
+  - 순서(승격 → SER5)의 뜻은 그대로다. 측정만 먼저 하고, 판정은 승격 뒤에 한다.
+- 도구: `h7_timing.py measure --engine tb-v3`(새로 추가)
+  - 국면마다 `make_tb_v3_agent`로 새 agent를 만든다(검사는 시계 밖). 그래서 cooldown이 한 번도 공격을 건너뛰지 않는다. 시간으로는 최악 조건이다.
+  - fast4만 허용한다.
+  - 결과에 엔진 해시, runtime 해시(cpu), `tb_v3.py` SHA, E4-v2 단계 기록, `ser5_check`를 남긴다.
+  - 다른 엔진의 jsonl은 이어 쓰지 않는다.
+- 기준(그대로): 827 corpus, CPU, threads 1, workers 1, fast4, 독립 2회. 두 회 모두 30초 초과 0, 최대 ≤ 25초
+  - 참고: TB-V2-Value fast4는 SER5에서 평균 3.5초, 최대 22.3초였다. E4-v2는 수당 약 1.4배이고 꼬리를 더한다(COSTTEST 공격 최대 5.7초, 데스크톱). 그래서 25초 기준은 빠듯할 수 있다.
+  - 실패해도 엔진 채택과 canonical 지위는 그대로다. "SER5 배포 미인증"이 되고, 웹용 deadline 공격 단계로 간다.
+
+**실행 명령 — SER5 (CPU, 1 프로세스, 회당 약 1–1.5시간, 다른 작업 없이 2회)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate   # SER5의 저장소 경로에 맞춘다
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale)
+python scripts/check_track_b_frozen.py
+python -m unittest tests.test_fast4 tests.test_tb_v3 tests.test_h7_timing
+mkdir -p runs/tb_v3
+for R in 1 2; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --engine tb-v3 --device cpu --threads 1 --workers 1 --fast fast4 --label tb_v3_ser5_r$R \
+  --jsonl runs/tb_v3/ser5_r$R.jsonl --output runs/tb_v3/ser5_r$R.json 2>&1 | tee runs/tb_v3/ser5_r$R.log
+python -c "import json,sys; d=json.load(open(sys.argv[1])); json.dump({k: d[k] for k in ('format','engine','engine_name','runtime_hash','identity_sha256','label','ser5_check','settings','summary')}, open(sys.argv[2],'w'), indent=1)" \
+  runs/tb_v3/ser5_r$R.json docs/h7/tb_v3_ser5_r${R}_summary.json
+done
+```
+
+- `check_track_b_frozen.py`는 모델까지 모두 PASS여야 한다. `tb-v3 promotion`은 "pending"이 정상이다.
+- 커밋할 것: `docs/h7/tb_v3_ser5_r1_summary.json`, `docs/h7/tb_v3_ser5_r2_summary.json`
+- 먼저 볼 것: 두 회의 `ser5_check`(`over_deadline`, `max`, `pass`), `summary.all`, `summary.tree_route`
+
+## TB-V3 Resolve 승격 재생: PROMOTION_PASS, SER5: NOT CERTIFIED (2026-10-22, `9cd83d4`)
+
+**상태 (이번 커밋부터)**
+
+```
+TB-V3 Resolve         canonical (analysis.canonical.CANONICAL_ENGINE_ID = 'TB-V3')
+TB-V2-Value + fast4   previous canonical (make_tb_v2_agent, unchanged)
+SER5 deployment       NOT CERTIFIED (TB-V3, max > 25 s in both rounds)
+```
+
+- `check_track_b_frozen.py`는 이제 승격 기록을 요구한다. 컨테이너(`--no-models`)에서 `tb-v3 promotion: canonical, promotion replay PASS`
+- CUDA canonical은 그대로다. CPU는 미인증(8451 / 8452 예정)이고, SER5 배포도 미인증이다.
+
+**검증 (`docs/h7/tb_v3_promotion.json`, `tb_v3_ser5_r1/r2_summary.json`)**
+- 승격 기록
+  - 코드 `cd2795e`, `git_dirty: false`, CUDA
+  - 엔진 해시 `d0ef0da6…`, `tb_v3.py` SHA `b275f762…`, manifest `eb15dedc…`, runtime 해시 `51e3579a…`. 모두 현재 파일로 다시 계산한 값과 같다.
+  - arena SHA는 `ADOPTION`과 같다. B runtime 해시는 TB-V2-Value CUDA 값과 같다.
+- E: 200대국, 3,201 / 3,201수. 수·결정·기록 불일치 0, `PROMOTION_PASS`
+- B: 200대국, 3,876 / 3,876수. 불일치 0, `REPRODUCED`
+- SER5 두 회
+  - 엔진 해시와 `tb_v3.py` SHA가 같다. runtime 해시 `ef21b7bf…`는 현재 파일로 계산한 CPU 값과 같다.
+  - R1: 평균 4.699초, p99 22.705초, 최대 29.432초, 30초 초과 0 → 기준(최대 ≤ 25초) FAIL
+  - R2: 평균 4.687초, p99 22.662초, 최대 29.151초, 30초 초과 0 → FAIL
+- 초안의 수치는 모두 결과 파일과 같다. 결론(승격 PASS, SER5 미인증, 두 판정 분리)에 동의한다.
+
+**초안에서 고칠 것**
+1. **CUDA와 SER5의 runtime 해시가 다른 이유는 value 장치 하나다.**
+   - `runtime_hash`가 덮는 것: 엔진 ID, 엔진 해시, `tb_v3.py` SHA, fast 모드, native C 소스와 binding 파일의 SHA, value 장치(cuda / cpu)
+   - Python 판, 컴파일러, 빌드된 `.so`의 SHA는 덮지 않는다. 이것들은 `provenance`에 기록만 한다(기계마다 다르므로).
+   - 확인: 컨테이너(Python 3.13, 다른 빌드)에서 계산한 `runtime_hash('cpu')`도 SER5와 같은 `ef21b7bf…`다.
+   - 그래서 규칙은 이렇다.
+     - 같은 엔진: 엔진 해시와 `tb_v3.py` SHA
+     - 같은 실행판: runtime 해시(fast 모드, 잠긴 소스, 장치). CPU에서 잰 기계끼리는 같은 값이 정상이다.
+     - 같은 기계 빌드: provenance의 `native_binaries`, `native_python`, `native_compiler`(기록만)
+2. **E4 단계 시간은 분해할 수 있다.**
+   - 기준 엔진 부분은 TB-V2-Value SER5 측정(`h7_p1a_ser5_fast4_r1/r2`)과 같은 계산이다. 같은 엔진, 같은 국면, 국면마다 같은 seed다.
+   - 실제로 tree route의 기준 엔진 부분 평균이 같다: tree 1.533 / 1.528, root 1.219 / 1.204, vct2 0.507 / 0.524, value 0.762 / 0.758(TB-V3 R1 / TB-V2 R1).
+   - 그래서 늘어난 시간은 E4-v2 단계(상대 VCF 문턱 + 공격)다.
+     - 국면당 평균 +1.19초(3.505 → 4.699초, +34%)
+     - 최대 22.3 → 29.4초. 가장 느린 국면이 같은 국면인지는 요약 파일만으로 알 수 없다.
+   - tree route 국면이 705 → 676으로 29개 줄었다. 공격이 WIN을 증명하면 route가 `own_vct2`로 바뀌기 때문이다.
+   - 국면별 분해: SER5의 전체 출력(`runs/tb_v3/ser5_r*.json`)의 각 행에 `e4_seconds`(공격 solver 시간)와 단계 기록이 있다. TB-V2 출력과 짝지어 보는 도구 `scripts/tb_v3_ser5_tail.py`를 더했다(아래 명령).
+3. 승격 재생 시간을 비용 근거로 쓰지 않는다는 초안 판단이 맞다.
+
+**SER5 실패의 사전 규칙상 의미**
+- P1a 단계에서 고정한 규칙이 있다: "P1a-1 뒤 SER5에서 30초 초과 0이고 최대 ≤ 25초면 P1a-2(VCF 전체 native core)를 하지 않는다. 아니면 P1a-2로 간다."
+- TB-V2-Value + fast4는 이 기준을 통과했다(최대 22.3초). TB-V3는 같은 기준에서 실패했다.
+- 그래서 사전 규칙에 따른 다음 단계는 **P1a-2: VCF 전체 native core**다(아래 최적화 계획의 1순위와 같다).
+
+**실행 명령 — SER5 꼬리 분해 (SER5, 몇 초)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate   # SER5의 저장소 경로에 맞춘다
+python scripts/tb_v3_ser5_tail.py --tb-v3 runs/tb_v3/ser5_r1.json runs/tb_v3/ser5_r2.json \
+  --tb-v2 runs/h7_timing/mini_fast4_r1.json runs/h7_timing/mini_fast4_r2.json --output docs/h7/tb_v3_ser5_tail.json
+```
+
+- TB-V2 파일 이름은 P1a-1 SER5 측정 때 쓴 이름이다. 다르면 그 경로로 바꾼다.
+  - 측정의 `--output` `.json`과 `--jsonl` 둘 다 받는다. 파일이 어느 엔진의 측정인지 확인한다(TB-V3 파일을 `--tb-v2`에 넣으면 거부).
+  - 찾기: `find ~ -name '*fast4_r*.json*' -path '*runs*'`
+  - 없으면 `--tb-v2`를 빼도 된다(짝 비교 열과 `what_if`만 빠진다). 또는 TB-V2-Value를 SER5에서 한 번 다시 잰다(약 50분).
+  - (2026-10-22) 첫 실행은 SER5의 `~/renju-h7-timing`에 `runs/h7_timing/mini_fast4_r1.json`이 없어 실패했다. 파일이 없으면 이제 위 안내와 함께 멈춘다.
+- 커밋할 것: `docs/h7/tb_v3_ser5_tail.json`(국면 행 없이 요약과 가장 느린 25국면만)
+- 보는 것
+  - `step_seconds`(E4 단계 시간 분포)
+  - `over_rule`(25초 초과 국면)
+  - `what_if.step_beside_base`(E4를 기준 엔진과 동시에 돌렸다면)
+  - `attack_capped_*`(공격 시간 상한을 두었다면). 둘 다 행에서 계산한 추정이지 측정이 아니다.
+
+## TB-V3 실행 최적화 제안: SER5와 데스크톱 (2026-10-22, 결정 필요)
+
+**목표**
+- SER5: 같은 827 corpus에서 2회 모두 30초 초과 0, 최대 ≤ 25초(지금 29.4초, −15% 이상 필요)
+- 데스크톱: H7-c1 self-play 처리량(대국 / 시간). 계산의 대부분이 CPU solver라서, 같은 정확 가속이 두 기계에 모두 듣는다.
+
+**근거: 컨테이너 profiling (보고용, cProfile)**
+- cProfile은 Python 함수 호출마다 부담을 더한다(공격 25국면: 데스크톱 실측 123초 → profile 541초). 순위는 믿을 만하지만, 비율은 Python 쪽이 부풀려진 값이다.
+- E4-v2 공격: COSTTEST에서 공격 시간이 가장 긴 25국면(`decide`)
+  - VCF(`_find_vcf_with_stats`) 61%
+  - 조용한 수 생성(`threat_moves`: 열린 삼 판별 `_fast_open_three_in_direction`) 24%
+  - 수 정렬(`threats.ordered_moves`) 14%
+  - 자기 시간 상위 원시 함수
+    - `run_length` + `inside` 18%
+    - `winning_extensions_in_direction` 9%
+    - native threat window 8%. 1,058만 번 호출이라 대부분 호출 경계 비용이다.
+    - `ordered_moves`의 거리 계산 9%
+- 기준 엔진: timing corpus E3A 40국면(stand-in 모델이라 수는 실제와 다를 수 있다. 경로와 원시 함수의 비중을 보는 용도다)
+  - 측정 구간: V8-C root 52%, tree 19%, VCT2 17%
+  - root VCF(`vcf_tt_v1`) 38%, 열린 삼 판별 20%, `ordered_moves` 12%
+  - 원시 함수는 공격과 같은 묶음이다: `run_length`, `winning_extensions_in_direction`, threat window, 금수
+- 한 수 안의 VCF 중복(30국면, 기준 엔진 + E4)
+  - 같은 (판, 공격자, max_fours) VCF가 다시 불린 경우는 호출의 1.7%(290 / 16,705)다. 그런데 **VCF 시간의 32%**를 차지한다.
+  - 대부분은 공정 라운드(`_proven`)가 예산이 모자라 끊긴 VCF를 두 배 예산으로 다시 처음부터 돌린 것이다.
+  - 끝난 결과를 그대로 다시 쓸 수 있는 몫은 6.3%뿐이다.
+- 수 정렬과 합법 수 생성(42수 판): `ordered_moves` 1.6 ms, `Game.legal_moves` 0.77 ms. 결정 노드마다 Python으로 다시 계산한다.
+
+**정확 가속 후보 (같은 수, 같은 노드·호출·cut. 엔진 의미 불변)**
+
+| # | 후보 | 대상 | 방식 | 위험 | 기대(대략) |
+|---|---|---|---|---|---|
+| X2-A | 규칙 원시 함수 native | `run_length`, `_wins_for_player`, `winning_extensions_in_direction`, `_placed_completions`, `_legal_completions`, `_fast_open_three_in_direction` | fast3 / fast4처럼 함수 단위 C. 판 list를 그 자리에서 읽는다 | 낮음(함수 단위 차분 시험) | 공격·root·VCT2 전반. 원시 함수 자기 시간 30–45%의 대부분 |
+| X2-B | `ordered_moves` 정확 대체 | E4 공격, 진실 solver, threats 계열 전부 | 돌 둘레의 Chebyshev 거리 지도를 한 번에 계산(팽창). 정렬 키 `(near > 2, near, 마지막 수 거리, move)`가 같다 | 낮음(같은 list 비교) | 공격 약 10%, 기준 엔진 약 10% |
+| X2-C | threat window 일괄 계산 | `_window_candidates` 호출 1천만 회 | 한 번의 native 호출로 후보 좌표 집합과 정렬까지(경계 비용 제거) | 낮음 | 약 5–8% |
+| X2-D | 이어서 하는 VCF (resumable) | `_proven`의 라운드 재시도 | 예산으로 끊긴 DFS의 스택을 보관했다가 더 큰 예산으로 이어 간다. 결과와 노드 수는 처음부터 다시 돌린 것과 같다 | 중간(상태 보관, 같은 solver 객체 안에서만) | VCF 시간의 약 10–20%(중복 32% 중 접두부 재탐색 몫) |
+| X2-E | 노드 청구 VCF memo | 서로 다른 solver(V7 안전, V8-A/B/C, VCT2, 문턱, 공격) | VCF는 판만 읽는다(이력·차례를 읽지 않음, 확인함). (판, 공격자, max_fours) → (결과, 노드, 완료 여부)를 저장한다. 다시 부를 때는 원래 노드 수를 그대로 청구한다. 완료된 결과는 한도 ≥ 노드면 같은 답이고, 한도 < 노드면 "한도에서 cut"이다 | 낮음–중간(순수 함수 논증 + 차분 시험) | 이번 측정으로는 6.3%. X2-D와 합치면 중복 대부분 |
+| X2-F | VCF 전체 native core (P1a-2) | V7 / V8 / VCT2 / E4 / 기준 solver / truth의 모든 VCF | 사전 규칙상 다음 단계다. VCF 한 호출이 경계이고, Python VCF와 `vcf_tt_v1`이 oracle이다. 결과, witness, 노드, cut, table 의미가 같아야 한다 | 높음(금수 재귀 포함, native-core-plan G0) | VCF 38–61%의 대부분. X2-A, X2-C, X2-D를 흡수한다 |
+| X2-G | 비트보드와 선 패턴 표 | X2-F 내부 | 방향별 선 비트마스크와 3^k / 2×2^k 패턴 표로 5 / 4 / 열린 삼 판정을 표 조회로 | X2-F 안에서 | X2-F 속도의 핵심 |
+| X2-H | E4 단계 동시 실행 (SER5 지연용) | E4 문턱 + 공격 | 공격은 판만의 함수다. 그래서 기준 엔진 탐색과 동시에 별도 프로세스에서 미리 돌리고, 기준 엔진이 끝나면 `decide`와 같은 순서(cooldown 소비 → route → cooldown → 문턱 → 공격)로 결과를 고른다 | 낮음–중간(프로세스 관리, 결과 순서) | SER5 최대 ≈ max(기준, 단계). 추정은 `what_if.step_beside_base`. 처리량은 늘지 않는다(데스크톱 self-play에는 무의미) |
+| X2-I | Python 3.12 → 3.13 / 3.14 (데스크톱) | 전체 | SER5는 이미 3.14다 | 낮음(재생 gate) | 5–15%(일반적인 값, 측정 전) |
+| X2-J | native 빌드 플래그 `-O3 -march=native` | native 부분 | 소스 SHA는 그대로, 바이너리만 바뀜(provenance 기록) | 낮음 | native 비중이 커지는 X2-A / X2-F 뒤에 의미 |
+
+- 원칙: 동결 파일은 고치지 않는다. fast3 / fast4처럼 새 파일이 이름을 바꿔 끼운다(`fast5` 후보).
+  - TB-V3의 63개 manifest 파일은 그대로 두고, 새 파일만 더한다.
+  - 엔진 identity(`ENGINE_HASH`)는 그대로다. 새 실행판(runtime) identity를 만든다. TB-V2-Value와 fast4의 관계와 같다.
+- 정확성 gate(사전 제안)
+  - G0 함수 단위 차분 시험: 무작위 판 + corpus 국면의 모든 빈 칸 / 모든 VCF 호출에서 Python 원본과 결과(노드·cut 포함)가 같다.
+  - G1 재생: arena E 200대국 3,201수를 새 실행판으로 다시 둔다. 수·결정 필드·**기록 전체(노드, 호출, 상태)** 불일치 0. 승격 재생보다 엄격하다.
+  - G2 속도: 데스크톱 짝 측정(같은 corpus) + SER5 2회(30초 초과 0, 최대 ≤ 25초)
+- X2-H(동시 실행)는 결과가 같다. 다만 시간이 아니라 "수 선택 순서"가 같은지를 G1처럼 재생으로 확인한다.
+
+**정확하지 않은 후보 (엔진 또는 배포 판이 바뀜. 따로 gate가 필요)**
+
+| # | 후보 | 효과 | 필요한 판정 |
+|---|---|---|---|
+| Y-A | 웹용 시간 제한 E4 | 경과 시간이 T를 넘으면 공격을 건너뛰거나 끊는다. 제한에 걸린 수만 달라진다 | 배포 판(TB-V3 Resolve / web). 제한에 걸리지 않은 수는 같은 수, 제한 발동 비율 보고. 엔진 채택은 그대로 |
+| Y-B | SER5용 작은 공격 예산(예: 100k) | 꼬리 감소 | 새 엔진. arena 필요 |
+| Y-C | 노드를 청구하지 않는 solver 간 표 공유 | 큰 가속 | 새 엔진(예산 소비가 바뀜). arena 필요 |
+| Y-D | 데스크톱 self-play용 value 서버(여러 대국의 국면을 한 번에 GPU로) | GPU 활용, 처리량 | batch 크기에 따라 부동소수점이 달라질 수 있다. value-mode 동일성 검사(최종 수 같음) 또는 인증 |
+| Y-E | SER5 value를 여러 스레드로(torch threads 2–4) | value 평균 0.76초 → 절반 이하 | 스레드 수에 따라 값이 달라질 수 있다. value-mode 동일성 검사 |
+
+**데스크톱 self-play 처리량 (H7-c1)**
+- 계산의 대부분이 CPU solver다. 그래서 X2-A–X2-F가 그대로 처리량을 올린다.
+- worker 수
+  - 지금 arena는 8 worker다. i5-12600K는 16 스레드(P 6 × 2 + E 4)다.
+  - worker 10–14를 짧게 재서 처리량이 가장 큰 값을 고른다(결과는 같고 속도만 다르다).
+  - 프로세스마다 CUDA context가 하나씩 있다(약 0.3–0.5 GB, 12 GB 안).
+- X2-H(동시 실행)는 처리량에 도움이 안 된다. 대국 병렬이 낫다.
+- Y-D(value 서버)는 처리량에 크지만 정확하지 않다. 측정 뒤 결정한다.
+
+**제안 순서**
+1. X2-B(`ordered_moves`) + X2-A(규칙 원시 함수 native) + X2-C(window 일괄): 함수 단위라 위험이 낮다. `fast5` 후보 하나로 묶는다. G0 → G1 → G2
+2. 1로 SER5 최대 ≤ 25초가 되면 X2-F는 보류한다(P1a의 단계 규칙과 같은 방식). 안 되면 X2-F(+ X2-D, X2-E, X2-G)로 간다.
+3. X2-H는 SER5 배포 판에만 쓰는 선택지로 따로 둔다. 1과 2로 부족할 때, 또는 웹 지연을 더 줄이고 싶을 때 쓴다.
+4. 데스크톱: X2-I(Python 3.13 / 3.14)와 worker 수 측정은 1과 함께 한다. Y-D는 H7-c1 설계 때 결정한다.
+5. CPU 인증 8451 / 8452는 지금 실행판으로 먼저 해도 된다. 정확 가속은 G1(수와 기록이 같음)을 통과해야 하므로 인증 결과가 그대로 이어진다.
+6. 그 전에 SER5 꼬리 분해(`tb_v3_ser5_tail.py`)를 커밋하면, 25초 초과 국면에서 E4와 V8-C의 몫을 확정할 수 있다.
+
+**결정이 필요한 것**
+1. 정확 가속은 엔진 identity를 그대로 두고 새 실행판 identity로 다룬다(`fast5` 실행판, gate G0–G2).
+2. 1단계 범위: X2-A + X2-B + X2-C
+3. X2-F(VCF 전체 native)로 갈지의 기준: 1단계 뒤 SER5 최대 ≤ 25초면 보류
+4. X2-H(동시 실행)를 SER5 배포 선택지로 둘지
+5. CPU 인증을 최적화와 병행할지
+
+## TB-V3 SER5 꼬리 분석과 실행 최적화 승인 (2026-10-23, `docs/h7/tb_v3_ser5_tail.json`, `c88033f`)
+
+**꼬리 분석 결과 (진단, gate 아님)**
+- 827국면, TB-V3 2회와 TB-V2 2회를 국면별로 짝지었다. 초안의 수치는 모두 결과 파일과 같다.
+- TB-V3(두 회 평균): 평균 4.693초, p99 22.683초, 최대 29.291초. 25초 초과 5국면, 30초 초과 0
+- E4-v2 단계
+  - 실행 683(82.6%), 생략: route 71, 상대 VCF 문턱 73, cooldown 0
+  - 예산 소진 116(실행의 17.0%)
+  - 공격 solver 자체 시간(`e4_seconds`, 실행 국면 기준): 평균 1.409초, p50 0.169초, p90 5.718초, 최대 8.358초. 전체 국면으로 환산하면 1.16초다.
+  - 짝 추가 시간(`step_seconds` = TB-V3 − TB-V2): 평균 +1.187초, p50 +0.110초, p99 +7.209초, 최대 +8.402초
+    - 서로 독립인 두 측정의 차이다. 그래서 함수 단위 profiler 값이 아니라 짝 추가 비용 추정이다. 문턱, 공격, wrapper와 측정 흔들림을 모두 포함한다.
+- **25초 초과 5국면은 모두 같은 구조다:** E3A, route tree, 공격 실행, **예산 소진(약 150k 노드)**
+  - TB-V2 기준 엔진만으로도 18.9–22.3초가 걸린다(root 11.1–12.8초).
+  - 여기에 E4가 5.0–7.0초를 더한다.
+  - 가장 느린 국면(`8408/3/white|39`): TB-V3 29.291 = TB-V2 22.300 + 6.992. E4 solver 6.704초, 노드 149,983, VCF 호출 4,066, 후보 23
+- 결론에 동의한다. 병목은 "E4만 느리다"가 아니다. **기준 엔진의 root VCF와 E4의 VCF가 어려운 국면에서 연달아 크게 도는 구조**다.
+
+**초안에 더할 사실 (결과 파일에서 확인)**
+1. **5국면 중 3개는 한 대국의 연속된 자기 수다**(`8407/14/white`, ply 105 / 107 / 111).
+   - 시간 측정은 국면마다 새 agent를 만든다. 그래서 cooldown이 공격을 건너뛰지 않는다(의도한 최악 조건).
+   - 실제 대국이었다면 ply 105의 소진 실패 뒤 ply 107은 cooldown으로 생략된다.
+   - 사전 기준(827 corpus, 국면별 측정)은 그대로다. 해석할 때만 "실제 대국의 빈도는 이보다 낮다"고 읽는다.
+2. **그 3국면은 150k 노드를 VCF 호출 8번에 썼다.** 호출 하나가 VCF 한 번의 상한(20k)까지 간 것이다.
+   - 이런 국면에서는 다시 쓰기(X2-D, X2-E)가 거의 도움이 안 된다. **노드당 속도(X2-F)**만이 이 꼬리를 줄인다.
+3. 5국면 중 4개는 상대 VCF 문턱이 UNKNOWN(2만 노드에서 끊김)이었다. 설계대로 공격한다(진단 기록만).
+4. `what_if`의 cap 항목은 공격 solver를 끊은 값이 아니다. 짝 추가 시간을 잘라 본 것이다. 그래서 이름을 `step_capped_*`로 바꿨다. 실제로 solver를 시간으로 끊으면 증명 결과가 바뀔 수 있다. 이것은 정확 가속이 아니라 SER5 배포 정책 후보다.
+- 이번 분석은 판정을 바꾸지 않는다.
+  - TB-V3 Resolve: canonical, PROMOTION_PASS 그대로
+  - SER5 배포: NOT CERTIFIED 그대로
+
+**tail 도구 보강 (사용자 요청 두 가지)**
+- 회차 사이 비교: 최종 수뿐 아니라 다음이 같아야 한다. 다르면 분석을 거부한다.
+  - `decision.route`
+  - E4 단계의 `base_route`, `base_move`, `ran`, `skip`, `move`, `exhausted`, `nodes`, `calls`, `gate.status`
+- 짝 분석: TB-V3의 `base_move` / `base_route`가 TB-V2의 수 / route와 같아야 한다. 다르면 짝 추가 비용 계산을 거부한다.
+- 추가: 예산 소진 공격만의 시간 분포(`e4_seconds_exhausted`), 결과 파일의 `checks` 항목
+- **커밋된 `tb_v3_ser5_tail.json`은 이 검사 전에 만든 것이다.** SER5에서 같은 명령으로 다시 만들어 커밋한다(몇 초). 검사를 통과하면 수치는 같다.
+
+**실행 최적화 승인 (사용자 최종안, 2026-10-23)**
+- 이 절이 위 "실행 최적화 제안"의 "제안 순서"와 "결정이 필요한 것"을 대체한다.
+1. **fast5 identity: 승인**
+   - TB-V3 Resolve의 엔진 해시는 그대로 둔다.
+   - fast5는 별도 runtime 해시를 갖는 새 정확 실행판이다.
+   - fast4는 oracle이자 되돌릴 곳으로 그대로 보존한다.
+   - TB-V3 manifest의 기존 파일은 고치지 않는다. fast5는 새 native / runtime 파일과 자기 provenance로 더한다.
+2. **공식 다음 단계는 X2-F(VCF 전체 native core)다.**
+   - P1a에서 결과 전에 고정한 규칙("SER5 최대 > 25초면 P1a-2")이 TB-V3 결과(29.432 / 29.151초)로 이미 발동했다.
+   - 그래서 "A+B+C 뒤 25초 이하면 X2-F 보류"는 쓰지 않는다. 그렇게 하면 사전 규칙을 사후에 바꾸는 것이 된다.
+   - X2-A / X2-C는 X2-F 구현 안의 내부 단계로 쓸 수 있다. X2-B(`ordered_moves`)는 VCF 밖에도 효과가 있으므로 X2-F 뒤 별도 정확 실행판 단계로 둔다.
+3. **X2-F 진입 기준은 다시 정하지 않는다(이미 충족).** X2-F 뒤 G2에서 SER5 두 회 모두 30초 초과 0, 최대 ≤ 25초를 본다.
+   - PASS → "TB-V3 / fast5 SER5 runtime certification PASS"
+   - FAIL → 다음 정확 가속(X2-B, X2-E 등) 또는 SER5 배포 정책을 검토한다.
+4. **fast5 동일성 gate**
+   - G0 함수 / solver 차분: native와 Python을 직접 비교한다.
+     - 비교 대상: VCF 결과, 증명 witness, 후보 순서, 렌주 금수, 판 가장자리, 판 가득 참 / 종국, cut 상태
+     - 국면: 무작위 판과 기존 corpus의 전술 판
+   - G1 재생: E4-v2 arena 200대국 3,201수. 수 / 결정 / 증명 불일치 0. solver의 논리적 예산 회계도 같아야 한다.
+     - **같아야 하는 것:** VCF 청구 노드, 캐시되지 않은 VCF 호출 수(call budget), cut 종류, 증명 상태, 결정에 영향을 주는 증명 기록(witness)
+     - **달라도 되는 것:** 저수준 Python / C 함수 호출 횟수. X2-C처럼 경계 호출을 묶는 것이 최적화의 목적이다.
+     - 승격 재생의 "기록 불일치"는 이동 기록(노드, 호출, 상태, table hit / store)만 비교한다. 저수준 호출 수는 기록에 없다.
+   - G2 성능: G1을 통과한 실행판만 잰다.
+     - SER5: 827 corpus, CPU, threads 1, workers 1, 2회. 30초 초과 0, 최대 ≤ 25초
+     - 데스크톱: 같은 작업량으로 fast4 대 fast5. 벽시계 시간, 국면 / 초(또는 대국 / 시간), 꼬리
+     - **보고에 반드시 넣는 것:** 위 25초 초과 5국면의 fast4 → fast5 시간 표, E4 실행 / 소진 집단의 분포
+   - G0 / G1을 통과하지 못한 구현은 아무리 빨라도 채택하지 않는다.
+5. **X2-H(동시 실행): SER5 배포 전용 실험으로 승인**
+   - 최종 수와 증명의 우선순위가 같아야 한다.
+   - 벽시계 시간 제한으로 결과를 바꾸지 않는다. 모든 작업이 끝난 뒤 기존 규칙대로 정한다.
+   - SER5에서는 두 작업이 CPU를 다툰다. 그래서 `what_if.step_beside_base`로 채택하지 않는다. 구현 뒤 실제로 잰다.
+6. **CPU 인증 8451 / 8452: 병행 승인**
+   - 지금 실행하면 "TB-V3 Resolve / fast4 / CPU" 인증이다.
+   - **fast5에는 자동으로 이어지지 않는다.** fast5를 CPU 기본 실행판으로 올릴 때는 CPU에서 native 차분 / 동일성을 다시 확인하고, 필요하면 CPU 인증을 다시 한다.
+   - 위 실행 최적화 제안의 "인증 결과가 그대로 이어진다"는 문장은 이것으로 철회한다.
+
+```
+TB-V3 Resolve (canonical)
+   ├── CPU certification 8451 / 8452 (fast4, 병행)
+   ▼
+P1a-2 trigger (이미 충족)
+   ▼
+X2-F VCF full native core (내부 단계로 X2-A / X2-C 활용 가능)
+   ▼
+fast5 → G0 → G1 (3,201수) → G2 (데스크톱 + SER5)
+   ├── SER5 최대 ≤ 25초 → SER5 CERTIFIED
+   └── 아직 > 25초 → X2-B / X2-E 등 정확 가속, X2-H 배포 실험 따로
+```
+
+## X2-F 구현: fast5 실행판 (2026-10-23, G0 진행 중)
+
+**구성 (동결 파일과 TB-V3 manifest 63개는 그대로)**
+- `src/rt30/vcfcore/vcf_core.c`
+  - `search.mcts_v7._find_vcf_with_stats`(table 0)와 `analysis.vcf_tt_v1`(table 1)을 C로 그대로 옮겼다.
+  - 같은 후보, 같은 순서다. 후보마다 합법성 검사 전에 노드 하나를 청구하고, 반환도 같다.
+  - 렌주 금수는 동결된 `rt30/native/forbidden.c`를 그대로 `#include`해서 같은 C 분류기를 쓴다.
+  - 속도 장치: 창(5칸)마다 돌 수를 재귀의 착수 / 무르기 때 갱신한다. "5를 만들 수 있는 창" 수가 0이면 승리 수 검사를 건너뛴다(그런 창이 없으면 후보가 없으므로 같은 답).
+  - V8-C 표: (판, 공격자, 남은 4 수) 키, Zobrist 해시 + 판 전체 비교(충돌 없음). hit / store 수가 Python과 같다.
+  - 검사용 `probe`: 창 후보, 승리 수, 완성점, 합법, 5 판정을 하나씩 노출한다.
+- `src/rt30/vcfcore/build.py`
+  - 자기 `build_info.json`을 쓴다. 두 소스(`vcf_core.c`, `forbidden.c`) SHA를 기록하고, 어느 쪽이 바뀌어도 stale이다.
+  - `rt30/native/build.py`(동결 manifest 안)는 고치지 않았다.
+- `src/rt30/fast5.py`: Python 쪽 그대로 대체(같은 서명, 같은 오류 문구, 같은 `VCFResult`, 같은 `TableStats` 누적).
+  - `install`: fast4 위에 두 탐색을 이름 바꿔 끼우기로 올린다. `uninstall`: 되돌린다.
+  - `h7_timing.restore_fast_mode`도 fast5를 되돌린다.
+- `src/analysis/tb_v3_fast5.py`(실행판 identity)
+  - 이름 `TB-V3 Resolve/fast5`. 엔진 해시는 TB-V3 그대로다.
+  - `FAST5_SOURCES`(5개 파일 SHA 잠금)
+  - `runtime_hash`: 엔진 해시, `tb_v3.py`, 이 파일, fast4 소스 / binding, fast5 소스, 장치. CUDA 값은 `7c727150…`이다(fast4 `51e3579a…`와 다름. 아래 gate 보강으로 fast5 파일이 바뀐 뒤의 값).
+  - `make_tb_v3_fast5_agent`: fast4 factory와 같은 fail-closed 검사에 fast5 소스와 native 빌드 검사를 더한 뒤, 같은 agent(`tb_v3_runtime._build`)를 만든다.
+  - `CERTIFICATION`: CUDA / CPU 모두 None
+- `analysis.canonical`
+  - `CANONICAL_RUNTIME = 'fast4'`(G1 / G2 전)
+  - `factory(engine, runtime)`, `RUNTIMES = {'TB-V3': ('fast4', 'fast5')}`
+- 도구
+  - `scripts/fast5_g0.py`(G0 shadow)
+    - 실제 solver 실행 중 모든 VCF 호출을 동결 Python(fast4)이 답한다. 같은 판으로 C도 돌려서 결과, witness, 노드, cut, 표 hit / store, 판 불변을 비교한다.
+    - 작업 종류: `e4`(문턱 + 공격), `base`(TB-V3 한 수 전체: V7 / V8-A / V8-B / V8-C 표 / VCT2 / E4), `ref`(기준 solver 4M)
+  - `scripts/tb_v3_promotion.py --runtime fast5`(G1): 수·결정에 더해 시간 밖의 기록 필드 전부가 같아야 `G1_PASS`다. B는 TB-V2 factory를 C VCF 위에서 다시 둔다(V8-C 표 경로 교차 확인, 보고).
+  - `scripts/h7_timing.py measure --engine tb-v3 --runtime fast5`(G2 측정)
+  - `scripts/fast5_g2.py`(G2 비교)
+    - fast4 대 fast5. 모든 회차, 모든 국면에서 수·결정 필드·E4 단계(시간 제외)가 같아야 비교한다.
+    - 보고: 전체 / 부분별 / E4 실행·소진 집단의 비율과 분포, 25초 초과 국면 표(+ `--tail`의 `over_rule`), SER5 규칙
+    - `--machine ser5`면 판정이 `SER5_CERTIFIED` / `SER5_NOT_CERTIFIED`다.
+  - `check_track_b_frozen.py`: `tb-v3 fast5 runtime`(소스 잠금, 빌드되어 있으면 설치·바인딩까지)
+
+**컨테이너 결과 (G0 일부, 보고)**
+- 단위 시험 `tests/test_fast5.py`(9개) 통과
+  - 원시 함수: 무작위 판 40개의 모든 칸 / 두 색
+  - VCF: 무작위 판 300개(가장자리 위주 포함) × 두 색 × 노드 한도 1 / 7 / 300 / 20,000, 작은 `max_fours`, 판 가득 참, COSTTEST 국면
+  - 오류 문구, 설치와 복원
+  - fast5 identity와 factory fail-closed
+  - **기록된 대국을 fast5로 다시 두면 기록 필드 전부가 같다(G1 논리)**
+  - G2 도구
+- G0 shadow(`e4`, COSTTEST 252국면): VCF 호출 89,413번(노드 543만, VCF 발견 72,225, cut 616). **불일치 0**
+- G0 shadow(`base`, stand-in 모델, timing corpus 130국면): **불일치 0**
+  - 일반 VCF 97,779번(노드 425만, 발견 85,670, cut 342)
+  - V8-C 표 VCF 51,050번(노드 225만, 발견 34,959, cut 43)
+  - 모델이 stand-in이므로 탐색하는 국면은 실제와 다르다. 실제 모델의 G0는 데스크톱에서 한다(아래 명령).
+- 속도(컨테이너, 비공식)
+  - VCF 단독: COSTTEST 국면에서 fast4 Python 대비 **약 22.8배**(같은 노드 110,795개)
+  - TB-V3 한 수 전체(stand-in 모델, E3A 15국면): fast5 / fast4 = **0.20**, 수 같음
+  - 실제 모델에서는 value와 tree가 남는다. 그래서 SER5 비율은 G2에서 잰다.
+
+**실행 명령 — 데스크톱: G0 → G1 (G1 PASS 뒤 G2)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale && CC=gcc python -m rt30.vcfcore.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_fast5 tests.test_tb_v3 tests.test_h7_timing tests.test_track_b_guard
+mkdir -p runs/tb_v3
+# G0: 실제 모델로 timing 국면 2,594개(기준 엔진 + E4), COSTTEST 2,513개(E4)의 모든 VCF 호출
+python -u scripts/fast5_g0.py --positions docs/h7/h7_timing_positions.json --parts e4 base --workers 8 --device cuda \
+  --jsonl runs/tb_v3/fast5_g0_base.jsonl --output docs/h7/tb_v3_fast5_g0_base.json 2>&1 | tee runs/tb_v3/fast5_g0_base.log
+python -u scripts/fast5_g0.py --positions docs/h7/h7_e4v2_costtest_positions.json --parts e4 --workers 12 \
+  --jsonl runs/tb_v3/fast5_g0_e4.jsonl --output docs/h7/tb_v3_fast5_g0_e4.json 2>&1 | tee runs/tb_v3/fast5_g0_e4.log
+# G1: arena 200대국 3,201수를 fast5로 (B 200대국은 교차 확인)
+python -u scripts/tb_v3_promotion.py --runtime fast5 --runs runs/h7_e4v2/e_8441.json runs/h7_e4v2/e_8442.json \
+  --baseline-runs runs/h7_e4v2/b_8441.json runs/h7_e4v2/b_8442.json --workers 8 --device cuda \
+  --jsonl runs/tb_v3/fast5_g1.jsonl --output docs/h7/tb_v3_fast5_g1.json 2>&1 | tee runs/tb_v3/fast5_g1.log
+```
+
+- 커밋할 것: `docs/h7/tb_v3_fast5_g0_base.json`, `tb_v3_fast5_g0_e4.json`, `tb_v3_fast5_g1.json`
+- 먼저 볼 것: G0의 `verdict`, `mismatches`, `calls`. G1의 `verdict`(`G1_PASS`), `tb_v3.record_mismatch_moves` 0, `baseline`
+
+**G1 PASS 뒤 — G2 데스크톱 (827 corpus, CUDA, workers 1, 같은 기계에서 연달아)**
+
+```bash
+for RT in fast4 fast5; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --engine tb-v3 --runtime $RT --device cuda --threads 1 --workers 1 --fast fast4 --label tb_v3_desktop_$RT \
+  --jsonl runs/tb_v3/desktop_$RT.jsonl --output runs/tb_v3/desktop_$RT.json 2>&1 | tee runs/tb_v3/desktop_$RT.log
+done
+python scripts/fast5_g2.py --fast4 runs/tb_v3/desktop_fast4.json --fast5 runs/tb_v3/desktop_fast5.json \
+  --tail docs/h7/tb_v3_ser5_tail.json --output docs/h7/tb_v3_fast5_g2_desktop.json
+```
+
+**G1 PASS 뒤 — G2 SER5 (2회, 다른 작업 없이, fast4 비교는 이미 있는 `runs/tb_v3/ser5_r1/r2.json`)**
+
+```bash
+cd ~/renju-h7-timing && git pull --ff-only && source .venv-ser5/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale && CC=gcc python -m rt30.vcfcore.build --if-stale)
+python scripts/check_track_b_frozen.py
+python -m unittest tests.test_fast5 tests.test_h7_timing
+for R in 1 2; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --engine tb-v3 --runtime fast5 --device cpu --threads 1 --workers 1 --fast fast4 --label tb_v3_fast5_ser5_r$R \
+  --jsonl runs/tb_v3/ser5_fast5_r$R.jsonl --output runs/tb_v3/ser5_fast5_r$R.json 2>&1 | tee runs/tb_v3/ser5_fast5_r$R.log
+done
+python scripts/fast5_g2.py --fast4 runs/tb_v3/ser5_r1.json runs/tb_v3/ser5_r2.json \
+  --fast5 runs/tb_v3/ser5_fast5_r1.json runs/tb_v3/ser5_fast5_r2.json --tail docs/h7/tb_v3_ser5_tail.json \
+  --machine ser5 --output docs/h7/tb_v3_fast5_g2_ser5.json
+```
+
+- 커밋할 것: `docs/h7/tb_v3_fast5_g2_desktop.json`, `docs/h7/tb_v3_fast5_g2_ser5.json`(국면 행 없음)
+- 먼저 볼 것
+  - `same_decisions`
+  - `ratio_total`, `ratio_by_part`, `ratio_e4`
+  - `tracked`: 25초 초과 5국면의 fast4 → fast5 표
+  - `ser5_rounds`, `verdict`
+- SER5에서는 tail 도구도 새 검사로 한 번 다시 돌려 `tb_v3_ser5_tail.json`을 갱신한다(몇 초).
+
+## fast5 gate 보강 (2026-10-23, 공식 G0 / G1 / G2 전, 사용자 검토 반영)
+
+C VCF core 자체에서는 고칠 의미 차이를 찾지 못했다는 검토에 동의한다. 아래는 검증 도구가 잘못된 PASS를 낼 수 있는 곳이다. 코드와 대조한 결과 모두 사실이었고, 모두 고쳤다. 엔진 동작은 바뀌지 않는다.
+
+| # | 지적 | 사실 여부 | 조치 |
+|---|---|---|---|
+| 1 | G2가 runtime 해시를 보지 않고, 불완전한 입력으로도 SER5 인증을 낼 수 있다 | 사실. `check_file`은 엔진 / identity / 모드만 봤다. 판정은 "2회 이상 + 각 회 기준 통과"뿐이었다. jsonl(출처 정보 없음)도 받았다 | 공식 조건(`official_checks`)을 모두 만족할 때만 판정을 낸다. 아니면 `DIAGNOSTIC`이다. 조건: 전체 `.json`만, 엔진 해시 / `tb_v3.py` SHA / 각 실행판의 runtime 해시(그 장치 기준), 모든 파일이 같은 장치·같은 기계, threads 1 / workers 1 / fast4, `--corpus`(기본 827 corpus)의 id와 정확히 같음(중복·누락·추가 없음), SER5는 fast5 정확히 2회 + CPU + 깨끗한 tree |
+| 2 | G0 resume fingerprint가 약하다 | 사실(부분 / 소스 / stand-in만) | fingerprint에 도구 형식과 SHA, 엔진 해시, `tb_v3.py` SHA, fast4 / fast5 runtime 해시, fast5 소스, 국면 파일 SHA, stride / limit, 부분, 모델 네 파일 SHA(실제 모델일 때), 장치를 넣었다 |
+| 3 | G1 resume이 다른 비교 규칙의 행을 다시 쓸 수 있다 | 사실(runtime 해시와 장치만) | fingerprint에 `GATE_VERSION`, 도구 SHA, arena SHA, 실행판 모드를 넣었다. fast5 결과의 형식은 따로 `tb-v3-fast5-g1-v1`이다 |
+| 4 | G0가 V8-C 표 호출 0번이어도 PASS할 수 있다 | 사실(일반 호출만 요구) | `base`를 돌렸으면 표 호출 > 0도 요구한다(E4만이면 일반 호출만) |
+| 5 | `canonical.provenance`가 runtime을 구분하지 않는다 | 사실(지금은 호출처가 없어 영향 없음. fast5로 바꾸는 순간 버그) | `provenance(device, engine, runtime)`. factory와 같은 실행판의 runtime 해시를 낸다. `canonical` 표시는 엔진과 실행판이 모두 canonical일 때만 참이다 |
+| 6 | `h7_timing` resume이 다른 설정의 행을 다시 쓸 수 있다 | 사실(엔진 / 모드만) | 행마다 fingerprint: 도구 형식과 SHA, 엔진, identity, 모드, runtime 해시, 장치, threads, workers, fast, 국면·corpus SHA, 모델 네 파일 SHA. 다르면 거부한다. 잘린 마지막 줄은 건너뛴다. 출력에 `git_commit` / `git_dirty` / fingerprint를 기록한다 |
+| 추가 | 공식 gate는 깨끗한 tree에서만 | 동의 | G0 / G1은 tree가 dirty면 시작하지 않는다(`--allow-dirty`는 smoke용, 판정 `NOT_OFFICIAL`). G2는 fast5 회차가 `git_dirty: false`여야 공식이다 |
+| 추가 | mismatch 저장량 | 동의 | 국면마다 개수는 모두 세고, 내용은 20개까지만 저장한다 |
+| 추가 | fast5 바인딩 검사가 핵심 이름만 본다 | 사실 | `installed()`와 `install()`이 엔진 모듈 8개를 먼저 불러온 뒤 확인한다. 불러온 모든 모듈에 frozen 별칭이 하나라도 남으면 실패한다(`frozen_aliases`) |
+| 추가 | 표 모듈의 직접 함수(`vcf_tt_v1.find_vcf_with_stats`)를 G0가 보지 않는다 | 사실(지금 엔진은 쓰지 않음) | G0 shadow가 세 이름을 모두 감싼다. 남은 frozen 별칭이 있으면 G0를 멈춘다 |
+
+- 시험: `tests/test_fast5.py` 12개(G2 비공식 입력 7가지, G0 표 요구, provenance 포함), `tests/test_h7_timing.py`(설정이 다른 jsonl 거부). 관련 시험 모두 통과
+- fast5 소스 SHA를 다시 잠갔다(`fast5.py`가 바뀜). 그래서 runtime 해시가 바뀌었다(CUDA `7c727150…`).
+- 공식 실행 순서는 그대로다: 깨끗한 tree에서 실제 모델 G0 → G1(3,201수) → G2 데스크톱 → G2 SER5 2회. 명령은 위 "X2-F 구현" 절과 같다(G2는 `--corpus`가 기본값으로 827 corpus).
+- 컨테이너 smoke(stand-in, 7국면, `--allow-dirty`): 일반 5,618 / 표 1,103 호출, 불일치 0, 판정 `NOT_OFFICIAL`(의도대로)
+
+## fast5 G0 · G1: PASS (2026-10-23, `8ba51fc`)
+
+**상태: 정확성 검증 완료, G2(성능 인증) 진입 가능.** canonical 실행판은 G2 전까지 `fast4` 그대로다.
+
+**검증 (세 파일 모두 현재 코드로 다시 계산해 대조)**
+- 세 결과 모두 코드 `5a01b7d`, `git_dirty: false`, CUDA, 실제 모델(policy `efee4832…`, value `a0fcccc4…`, 두 메타데이터 포함)
+- G0 fingerprint
+  - 도구 SHA, 엔진 해시 `d0ef0da6…`, `tb_v3.py` SHA `b275f762…`
+  - fast4 / fast5 runtime 해시, `FAST5_SOURCES`
+  - 국면 파일 SHA: timing `187c70b7…`, COSTTEST `6c133883…`
+- G1
+  - runtime 해시 `7c727150…` = 현재 fast5 CUDA 값
+  - arena SHA = `ADOPTION`
+  - 도구 SHA = 현재 `tb_v3_promotion.py`
+  - run 파일 4개 SHA = arena 요약의 SHA
+  - 400행의 fingerprint는 두 종류뿐이다(TB-V3 / TB-V2). 중간에 규칙이 바뀐 행이 섞이지 않았다.
+
+**G0 결과**
+
+| 파일 | 국면 | 일반 VCF 호출 | 표 VCF 호출 | 노드 | 발견 | cut | 불일치 | 판정 |
+|---|---|---|---|---|---|---|---|---|
+| `tb_v3_fast5_g0_base.json`(기준 엔진 + E4) | 2,594 | 3,023,704 | 612,730 | 174,366,208 | 2,969,942 | 13,092 | 0 | G0_PASS |
+| `tb_v3_fast5_g0_e4.json`(E4) | 2,513 | 951,182 | 0 | 59,981,758 | 776,264 | 6,481 | 0 | G0_PASS |
+
+- 합계: VCF 호출 4,587,616번, 노드 2억 3,435만, 불일치 0
+- 표 경로(V8-C)는 base에서 612,730번 검사됐다. 보강한 G0 조건(base면 표 호출 > 0)을 만족한다. E4만 돌린 파일의 표 호출 0은 정상이다.
+
+**G1 결과 (`tb_v3_fast5_g1.json`, 형식 `tb-v3-fast5-g1-v1`, gate v2)**
+- TB-V3: 200대국, 3,201 / 3,201수. 수·결정·기록(시간 제외) 불일치 0 → **G1_PASS**
+- TB-V2-Value(교차 확인, C VCF 위의 TB-V2 factory): 200대국, 3,876 / 3,876수. 모든 불일치 0 → REPRODUCED
+
+**초안 검토**
+- 초안의 수치는 모두 결과 파일과 같다. 결론("정확성 검증 완료, 성능 인증 진입 가능"이지 "fast5 완료"가 아님)에 동의한다.
+- G1의 TB-V3 2,417.1초와 TB-V2 2,519.2초를 비교하지 않는다는 판단도 맞다. 서로 다른 엔진의 서로 다른 대국이다.
+- 더할 것: **같은 일의 비교는 따로 있다. 다만 비공식이다.**
+  - 승격 재생(fast4)과 G1(fast5)은 같은 200대국을 다시 둔 것이다. 문서의 명령은 둘 다 8 worker, CUDA다. 결과 파일에는 worker 수가 기록되지 않아 확인할 수는 없다.
+  - TB-V3: 7,448.2초 → 2,417.1초(0.32배)
+  - TB-V2: 5,809.1초 → 2,519.2초(0.43배)
+  - 다른 시점의 실행이고, 시간은 worker 8개가 동시에 도는 동안의 대국별 벽시계 합이다(CPU·GPU 경합 포함). 그래서 방향 참고로만 쓴다. 공식 성능은 G2(827 corpus, workers 1)에서 판정한다.
+- 용어 하나: G0의 "Python oracle"은 동결 Python VCF를 fast4 바인딩(native threat window, native 금수) 위에서 돌린 것이다. fast4는 이전 단계에서 Python 원본과 같음이 확인됐으므로 기준으로 쓸 수 있다.
+
+**다음: G2** (명령은 위 "X2-F 구현: fast5 실행판" 절)
+1. 데스크톱: 827 corpus, CUDA, workers 1. fast4와 fast5를 연달아 잰 뒤 `fast5_g2.py`로 비교한다.
+2. SER5: fast5로 2회 잰다(깨끗한 tree). 이미 있는 fast4 전체 결과(`runs/tb_v3/ser5_r1/r2.json`)와 `fast5_g2.py --machine ser5`로 비교한다.
+3. SER5 판정은 공식 조건을 모두 만족할 때만 나온다. 판정 기준은 두 회 모두 30초 초과 0, 최대 ≤ 25초다.
+4. PASS하면 "TB-V3 / fast5 SER5 runtime certification PASS"이다. 그 뒤 canonical 실행판 전환(`CANONICAL_RUNTIME = 'fast5'`)을 따로 결정한다.
+
+## fast5 G2: SER5_CERTIFIED (2026-10-23, `8022aa3`)
+
+**상태: TB-V3 / fast5 SER5 runtime certification PASS.** G0 · G1 · G2를 모두 통과했다. canonical 실행판은 아직 `fast4`다. 전환은 아래 정책 결정으로 따로 한다.
+
+**검증 (`tb_v3_fast5_g2_desktop.json`, `tb_v3_fast5_g2_ser5.json`)**
+- 두 파일 모두 도구 `tb-v3-fast5-g2-v2`, 코드 `58b1c71`
+  - corpus SHA는 커밋된 827 corpus와 같다.
+  - `same_decisions: true`, `official: true`, `not_official: []`
+  - 공식 조건(전체 `.json`, identity와 실행판별 runtime 해시, 같은 장치·기계, threads 1 / workers 1 / fast4, corpus id 정확히 일치, SER5 fast5 2회 + CPU + 깨끗한 tree)을 도구가 모두 확인했다.
+- SER5: fast5 2회(최대 6.873 / 6.802초, 30초 초과 0) → **`SER5_CERTIFIED`**
+- 데스크톱: 회차당 1회씩(인증 규칙 없음, 비교용). `official: true`는 출처 조건을 만족했다는 뜻이다.
+- 초안의 수치는 모두 결과 파일과 같다. 결론에 동의한다. 핵심은 "평균 2.3배"보다 "SER5 최악 29.3초 → 6.8초, 두 독립 회차 모두 기준 통과"다.
+
+| | 데스크톱 fast4 | 데스크톱 fast5 | SER5 fast4 | SER5 fast5 |
+|---|---|---|---|---|
+| 합계(초) | 2,114.7 | 742.8(0.351) | 3,881.3 | 1,689.2(0.435) |
+| 평균 | 2.557 | 0.898 | 4.693 | 2.043 |
+| p50 | 0.821 | 0.726 | 1.997 | 1.828 |
+| p99 | 13.429 | 2.977 | 22.683 | 5.674 |
+| 최대 | 17.950 | 3.682 | 29.291 | 6.838 |
+| E4 실행 국면 평균 / 최대 | 0.865 / 5.062 | 0.237 / 2.299 | 1.409 / 8.358 | 0.405 / 3.746 |
+| E4 예산 소진 국면 평균 | 3.634 | 0.802 | 5.858 | 1.353 |
+
+- 부분별 비(fast5 / fast4)
+  - 데스크톱: root 0.217, VCT2 0.246, E4 0.274, tree 0.978, value 0.944
+  - SER5: root 0.193, VCT2 0.260, E4 0.287, tree 0.995, value 0.997
+- 25초 초과였던 5국면(SER5): 29.291 → 4.881, 26.776 → 2.326, 26.767 → 2.508, 26.414 → 1.948, 25.311 → 5.971
+  - 최장 국면은 root 12.812 → 0.778, E4 6.704 → 2.298
+  - 데스크톱에서도 같은 5국면이 17.95–16.07초 → 1.08–3.10초
+
+**초안 검토에서 더할 것**
+1. **부분 시간은 더하면 안 된다.** `value`는 `tree` 안에서 잰 시간이다(tree 탐색 중 leaf 평가). 초안은 더하지 않았으므로 결론은 그대로다. 다만 남은 비용을 읽을 때 중요하다.
+2. **fast5 뒤 남은 비용은 VCF 밖이다.** 국면당 평균 중의 몫은 다음과 같다(E4는 전체 국면으로 환산).
+   - SER5: tree 1.298초(64%, 그 안에 value 0.645초 = 32%), E4 0.334초(16%), root 0.198초(10%), VCT2 0.116초(6%), 나머지 약 5%
+   - 데스크톱: tree 0.434초(48%, value 0.085초 = 9%), E4 0.196초(22%), root 0.145초(16%), VCT2 0.067초(7%)
+   - 그래서 p50이 거의 안 줄었다(0.88 / 0.92배). 보통 국면은 원래 tree와 value가 대부분이었다.
+   - 다음 정확 가속의 목표는 tree(Python MCTS, 열린 삼 판별, 수 정렬)와 SER5의 CPU value다. 웹 지연에도, self-play 처리량에도 같다.
+3. **SER5의 여유:** 최대 6.873초로 25초 기준의 약 27%, 30초 deadline의 약 23%다.
+   - 측정은 국면마다 새 agent라 cooldown이 공격을 건너뛰지 않는 최악 조건이다. 실제 대국은 이보다 짧다.
+   - 웹 서버 동시 부하는 이 측정에 없다. 배포 뒤 30초 soft monitor로 본다.
+4. 데스크톱 측정은 회차당 1회다. 인증이 아니라 비교용이므로 충분하다. 비율이 SER5와 같은 방향(root / VCT2 / E4만 크게 줄고 tree / value는 그대로)이라 측정 흔들림으로 보기 어렵다.
+5. `tb_v3_ser5_tail.json`을 새 검사(회차 결정 일치, TB-V2 짝 검사)로 다시 만드는 일은 아직 남아 있다. G2는 자체 검사로 fast4 / fast5 결정 일치를 확인했으므로 판정과는 무관하다.
+
+## 다음 단계 제안 (결정 필요)
+
+**1. 실행판 정책: canonical 실행판을 fast5로 전환 (코드 변경, 엔진 해시 그대로)**
+- 근거
+  - CUDA: G1(arena 3,201수 정확 재생)과 데스크톱 G2
+  - SER5 CPU: G2 공식 2회(827국면 모두 fast4 CPU와 같은 결정)
+- 바꾸는 것
+  - `analysis.canonical.CANONICAL_RUNTIME = 'fast5'`
+  - `check_track_b_frozen.py`: canonical 실행판이 fast5면 G0(두 파일) · G1 · G2(SER5) 기록이 모두 PASS / CERTIFIED이고, runtime 해시가 지금 값(CUDA / CPU)과 같아야 한다(승격 기록 검사와 같은 방식).
+  - `tb_v3_fast5.CERTIFICATION['cuda']`, `DEPLOYMENT['ser5']`에 근거 파일을 기록한다.
+  - 벤치마크 `tb_v3` arm에 `--runtime fast4|fast5`를 둔다(기본 canonical). 실행 기록의 provenance는 실제 실행판을 따른다(`canonical.provenance(device, 'TB-V3', runtime)`).
+- 되돌릴 곳: fast4는 그대로 남는다(`factory('TB-V3', 'fast4')`). 되돌림은 상수 한 줄과 검사기다.
+- 바꾸지 않는 것: 엔진 해시, 63개 manifest, 동결 파일
+
+**2. CPU 인증을 fast5로 (seed 8451 / 8452, 사전 고정 seed 그대로)**
+- TB-V3의 CPU 인증은 아직 하지 않았다. fast4로 먼저 하면 fast5에 이어지지 않는다(승인 규칙). 그래서 실제로 쓸 fast5로 한 번만 하자고 제안한다.
+- 방식은 기존 CPU 인증(8431 / 8432 설계)과 같다.
+  - 데스크톱에서 같은 opening·색으로 CPU value와 CUDA value 대국을 둔다(각 50 pair × 2 seed).
+  - 판정: opening 단위 점수 차 CPU − CUDA의 95% 하한 ≥ −0.05, 안전 위반 0
+- 필요한 도구: 벤치마크 `tb_v3` arm의 `--runtime fast5`, `summarize_h7_cpu_cert.py`의 TB-V3 / fast5 판(seed, arm, runtime 해시 검사)
+
+**3. H7-c1 self-play 설계**
+- 엔진: canonical TB-V3 / fast5(CUDA)
+- policy target 계약은 이미 고정했다(E4 증명 승리 덮어쓰기 = one-hot).
+- 처리량: 데스크톱 한 수 평균 0.9초(workers 1). worker 수(8–14)는 짧게 재서 고른다.
+- 데이터 provenance: 엔진 해시, fast5 runtime 해시, 모델 SHA를 대국마다 기록한다.
+
+**4. 웹 배포 (`feat/Web_SER5`, 별도 단계)**
+- TB-V3 / fast5가 SER5 시간 기준을 크게 여유 있게 통과했다. 그래서 앞서 계획한 "웹용 시간 제한 E4"는 지금은 필요 없어 보인다.
+  - 30초 soft monitor와 deadline cut 기록은 그대로 둔다.
+- 웹 서버의 엔진 생성 경로를 canonical factory로 바꾸는 작업은 그 브랜치에서 따로 계획한다.
+
+**5. 이후 정확 가속 (우선순위 낮음, 같은 G0–G2 방식)**
+- tree: 열린 삼 판별(`_fast_open_three_in_direction`)과 패턴 특징의 native화
+- `ordered_moves` 거리 지도(X2-B): E4 공격의 Python 몫
+- SER5 value: 스레드 수 / 추론 backend. 정확하지 않을 수 있으므로 value-mode 동일성 검사가 필요하다.
+
+**결정이 필요한 것**
+1. canonical 실행판 fast5 전환(1번 방식)
+2. CPU 인증을 fast5로 한 번만(8451 / 8452)
+3. 순서: 1 → 2(데스크톱) → 3 설계. 4는 병행 가능
+4. 5번 정확 가속은 H7-c1 처리량을 보고 결정
+
+## canonical 실행판 fast5 전환과 CPU 인증 준비 (2026-10-23, 사용자 승인: 1 → 2 → 3)
+
+**1. canonical 실행판 = fast5 (엔진 해시 그대로)**
+- `analysis.canonical`
+  - `CANONICAL_RUNTIME = 'fast5'`, `RUNTIMES = {'TB-V2-Value': ('fast4',), 'TB-V3': ('fast4', 'fast5')}`
+  - `factory(engine_id, runtime)`와 `provenance(device, engine_id, runtime)`는 실행판을 받는다.
+  - 기본값은 `default_runtime(engine_id)`다. canonical 엔진이면 canonical 실행판이고, TB-V2-Value처럼 예전 엔진은 동결 때의 fast4다.
+  - `provenance`의 `canonical`은 엔진과 실행판이 모두 canonical일 때만 참이다.
+  - 되돌림: `factory('TB-V3', 'fast4')`는 그대로 남는다. 상수 한 줄을 바꾸면 검사기도 fast5 근거 검사를 건너뛴다.
+- `check_fast5_evidence()` (검사기 `canonical runtime` 항목)는 커밋된 근거 5개를 이 checkout에 대해 다시 확인한다.
+  - G0 두 파일: G0_PASS, clean, 불일치 0, fingerprint의 fast5 runtime 해시 = 지금 값, 엔진·identity 일치, stand-in 아님. base 파일은 base · table 호출이 모두 0보다 크다.
+  - G1: G1_PASS, clean, CUDA runtime 해시 = 지금 값, 기록 불일치 0
+  - G2 두 파일: `official`, `same_decisions`. runtime 해시를 만드는 파일(`tb_v3.py`, `tb_v3_fast5.py`, `tb_v2_runtime.py`)이 각 G2 `git_commit`의 blob과 바이트 단위로 같다(G2 기록에는 fast5 해시가 직접 없으므로).
+  - SER5 판정은 `SER5_CERTIFIED`다.
+- 제안과 다른 점: 인증 근거를 `tb_v3_fast5.CERTIFICATION`에 쓰지 않았다. 그 파일의 SHA는 runtime 해시에 들어간다. 그래서 거기에 쓰면 근거를 잰 실행판과 다른 해시가 된다. 근거 목록은 `canonical.FAST5_EVIDENCE`에 둔다.
+- 벤치마크 `tb_v3` arm
+  - `--runtime fast4|fast5`(기본 canonical)를 받는다. 다른 arm에서는 거부한다.
+  - 대국 기록마다 `runtime`을 쓰고, 출력에 `runtime_mode`를 쓴다.
+  - provenance는 `canonical.provenance(device, 'TB-V3', runtime)`다.
+  - `--games-jsonl` 이어하기는 다른 실행판(또는 실행판 없는) 기록을 거부한다.
+- 검사 결과
+  - 검사기 전체 PASS: "canonical runtime fast5, evidence PASS (G0 4,587,616 calls, G1 3201 moves, SER5_CERTIFIED; cuda 7c727150922d, cpu 669c79992529)"
+  - `test_fast5`, `test_tb_v3`, `test_tb_v3_cpu_cert`, `test_track_b_guard`, `test_h7_timing`, `test_mcts_v8_benchmark`, `test_tb_v2_value_e4v2`, `test_h7_e4v2_arena` PASS
+  - 근거 변조 테스트: SER5 판정을 바꾸면 거부한다. G2 커밋의 blob이 다르면 거부한다.
+  - 전체 실행에서 회귀 하나를 찾아 고쳤다: `factory('TB-V2-Value')`가 canonical 실행판 fast5를 기본으로 잡아 실패했다(`tb_v3_promotion.py`의 TB-V2 재생도 같은 경로).
+
+**2. CPU 인증 (TB-V3 / fast5, seed 8451 / 8452, 사전 고정, 추가 seed 없음)**
+- 판정 도구: `scripts/summarize_tb_v3_cpu_cert.py` (형식 `tb-v3-fast5-cpu-cert-v1`)
+  - **PASS**: opening 단위 점수 차 CPU − CUDA(두 색 합), opening bootstrap 95% 하한 ≥ −0.05, 그리고 두 backend 모두 안전 위반 0
+  - **FAIL**: 그 밖. CPU는 TB-V3 / fast5에서 인증되지 않은 채로 남고, 웹은 value를 CUDA 기계에서 돌린다.
+  - 기록만: 같은 대국 수, 색별 점수, backend별 대국 시간
+- run 검사
+  - `tb_v3` arm 대 `v8:full`, seed 8451 / 8452
+  - 동결 설정(`TB_V2_VALUE + ENGINE_OPTIONS + tb_v3`), `--fast fast4 --runtime fast5`, 해당 value 장치
+  - canonical factory, TB-V3 엔진 해시, 그 장치의 fast5 runtime 해시
+  - 50 pair, 모든 대국에 `runtime: fast5`, 깨끗한 tree
+  - seed마다 두 backend의 opening이 같고, (opening, 색) 집합이 같다.
+- H7-c1 self-play는 이 판정을 확인한 뒤에 시작한다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale && python -m rt30.vcfcore.build --if-stale)
+python scripts/check_track_b_frozen.py && python -m unittest tests.test_fast5 tests.test_tb_v3 tests.test_tb_v3_cpu_cert
+mkdir -p runs/tb_v3_cert docs/h7
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; W=8
+for SEED in 8451 8452; do
+for DEV in cuda cpu; do
+python -u scripts/run_mcts_v8_benchmark.py --arm tb_v3 --runtime fast5 --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast4 --policy-checkpoint $POL --value-checkpoint $VAL --value-device $DEV \
+  --games-jsonl runs/tb_v3_cert/${DEV}_$SEED.jsonl --output runs/tb_v3_cert/${DEV}_$SEED.json 2>&1 | tee runs/tb_v3_cert/${DEV}_$SEED.log
+done; done
+python scripts/summarize_tb_v3_cpu_cert.py --cpu runs/tb_v3_cert/cpu_8451.json runs/tb_v3_cert/cpu_8452.json \
+  --cuda runs/tb_v3_cert/cuda_8451.json runs/tb_v3_cert/cuda_8452.json --output docs/h7/tb_v3_fast5_cpu_cert.json
+```
+
+- 시간을 재지 않는 판정이므로 worker 수를 늘려도 된다. CPU run에서 worker마다 torch 스레드는 1개다.
+- 중간에 끊기면 같은 명령을 다시 실행한다. `--games-jsonl`의 끝난 대국은 건너뛴다(같은 실행판 기록만).
+- 커밋할 것: `docs/h7/tb_v3_fast5_cpu_cert.json`. run 파일은 `runs/`에 둔다.
+
+**3. H7-c1 설계와 worker 수 처리량 측정**: CPU 인증 결과를 본 뒤에 한다.
+
+**웹 (`feat/Web_SER5`)**: 흑 금수 표시를 구현했다(아래 커밋은 그 브랜치에만 있다).
+- 흑 차례일 때 서버 상태에 `forbidden`이 들어간다: 빈 점 중 `renju.rules.forbidden_reason`(대국 규칙과 같은 판정)이 금지하는 점마다 `[행, 열, '33' | '44' | '6']`
+  - 보드 사본에서 계산한다(AI 작업이 실제 보드를 읽고 있을 수 있다). 국면마다 한 번만 계산한다(페이지가 polling한다).
+- 페이지: 빨간 원(바탕은 판 색이라 선이 가리지 않음) + 표시 + 사선. 그 점을 누르면 착수 대신 "J8: 흑 금수(삼삼) 자리입니다"를 띄운다. 범례에 설명을 더했다.
+- 웹 테스트 50개 PASS(새 테스트 2개: 금수 점 = `forbidden_reason` 전수, 백 차례·종국에는 빈 목록, 상태에 포함). 화면에서 33 · 44 · 6 표시를 확인했다.
+
+## fast5 CPU 인증: PASS (2026-10-23, `cd4a3b9`, `docs/h7/tb_v3_fast5_cpu_cert.json`)
+
+**상태: TB-V3 Resolve / fast5의 CPU value backend 인증 PASS.** CUDA(canonical)와 CPU 둘 다 쓸 수 있다.
+
+**검증 (결과 파일)**
+- 형식 `tb-v3-fast5-cpu-cert-v1`. 규칙은 사전 고정값 그대로다(하한 −0.05, seed당 50 pair, fast4 + fast5, bootstrap 10,000).
+- runtime 해시: CPU `669c7999…`, CUDA `7c727150…`. 둘 다 G0–G2와 검사기가 확인한 값과 같다.
+- run 4개(CPU / CUDA × 8451 / 8452)의 SHA가 기록돼 있다. 도구는 run마다 다음을 확인했다.
+  - 동결 설정, `--runtime fast5`(대국마다), canonical factory, 엔진 해시, 그 장치의 runtime 해시
+  - 50 pair, 깨끗한 tree, 두 backend의 opening·색 일치
+
+| | CPU | CUDA |
+|---|---|---|
+| 점수 | 0.948 | 0.943 |
+| 흑 / 백 | 0.965 / 0.930 | 0.965 / 0.920 |
+| 안전 위반 | 0 | 0 |
+| 대국 시간 합(분, 기록만) | 54.8 | 47.4 |
+
+- 짝 차이 CPU − CUDA: +0.005, 95% 구간 [0.000, 0.015], opening 100개, 200국
+- 수순까지 같은 대국: 197 / 200
+
+**초안 검토**: 수치는 모두 결과 파일과 같고, 결론에 동의한다. 아래를 더하거나 고친다.
+1. **실행 커밋.** `650357b`는 요약 도구를 돌린 커밋이다(그 커밋은 요약 스크립트의 import만 고쳤다). 대국 run은 그 전인 `1085d36`에서 돌았을 것이다.
+   - 인증 기록에는 run의 커밋이 없다. 대신 도구가 run마다 runtime 해시가 지금 값과 같고 tree가 깨끗했음을 확인했다. 그래서 판정과는 무관하다.
+   - 확인하려면: `jq -r .provenance.git_commit runs/tb_v3_cert/*.json`
+2. **하한 0.000의 뜻.** 200국 중 197국이 같아서 opening 대부분의 차이가 정확히 0이다. 나머지 몇 opening도 모두 0 이상이라 bootstrap 하한이 0이 된다.
+   - 즉 "CPU가 CUDA보다 강하다"가 아니라 "CPU가 진 쪽으로 갈린 opening이 하나도 없었다"는 뜻이다. 초안이 우월성으로 읽지 말라고 한 것이 맞다.
+   - 점수로는 +0.005 × 200국 = 1점이다. 모두 백 쪽이다(0.930 − 0.920 = 100국 중 1점).
+   - 흑 쪽에서 수순이 갈린 대국이 있었다면 결과는 같았다.
+3. **갈린 3국의 원인.** 초안은 "부동소수점 차이 등"이라고 했다. 구조상 원인은 하나로 좁혀진다.
+   - 두 run은 value 장치만 다르다. 엔진의 예산은 모두 노드 수라서 시간이 결정에 들어가지 않는다.
+   - CUDA끼리는 G1이 3,201수 정확 재생을 보였다.
+   - 그래서 3국의 갈림은 CPU와 CUDA의 value 출력 수치 차이가 근소한 국면의 순위를 바꾼 것이다. 어느 국면이었는지는 기록에 없다(필요하면 run 파일로 찾을 수 있다).
+   - 초안의 "CPU와 CUDA가 같다고 쓰지 않는다"에 동의한다. 이 인증은 동일성 증명이 아니라 비열등 판정이다.
+4. **SER5에의 적용 범위.** 대국은 데스크톱 CPU(i5-12600K)에서 돌았다. runtime 해시의 장치 구분은 `cpu`(종류)라서, 이 인증은 CPU value 전반을 덮는다.
+   - SER5 CPU의 value 수치가 데스크톱 CPU와 미세하게 다를 수 있다. 그 결과는 이번 시험이 본 것과 같은 종류의 near-tie 갈림이다. 그런 갈림이 기력을 잃지 않는다는 것이 이번 결과다.
+   - SER5의 결정 자체는 G2가 따로 확인했다(SER5에서 fast4 / fast5 CPU 결정이 827국면 모두 같음).
+   - 그래서 "SER5 배포 실행 환경으로 쓸 수 있다"는 결론에 동의한다. 배포 뒤 30초 soft monitor는 그대로 둔다.
+5. **시간.** 대국 시간 합은 데스크톱 8 worker(worker마다 torch 1스레드)에서 잰 값이다. 기록만 하는 항목이고, 대국 길이도 backend마다 같지 않다. 초안처럼 참고로만 읽는다.
+6. **인증 기록의 위치.** `tb_v3_runtime.CERTIFICATION['cpu']`는 `None`으로 남는다. 그 파일은 TB-V3 manifest와 runtime 해시에 들어가서 고칠 수 없다.
+   - 근거 목록은 fast5 G0–G2처럼 `canonical.FAST5_EVIDENCE`에 둔다. 아래 제안 0번이다.
+
+## 다음 단계 제안: H7-c1 설계 (결정 필요)
+
+**0. CPU 인증을 검사기에 넣는다 (작은 코드 변경, 엔진·runtime 해시 그대로)**
+- `canonical.FAST5_EVIDENCE['cpu_cert']`에 `docs/h7/tb_v3_fast5_cpu_cert.json`을 둔다.
+- `check_fast5_evidence`가 확인할 것: 형식, `verdict: PASS`, 안전 위반 0 / 0, run 4개, CPU / CUDA runtime 해시가 지금 값과 같음
+- 웹(`feat/Web_SER5`)은 엔진을 canonical factory(`TB-V3`, fast5, `cpu`)로 만든다. 서버 시작 때 이 근거 검사를 한 번 돌리게 한다.
+
+**1. c1에서 바뀌는 모델을 받는 factory (새 파일, 동결 파일은 그대로)**
+- 문제: `make_tb_v3_agent` / `make_tb_v3_fast5_agent`는 모델이 `tb_v3.MODELS`(H3 policy + H6 value)와 같지 않으면 거부한다.
+  - c1 self-play 자체는 지금 모델로 두므로 문제없다.
+  - 그러나 승급 Arena(c1 checkpoint 대 직전)와 c2 self-play는 TB-V3 엔진 코드에 새 모델을 얹어야 한다.
+- 제안: `analysis/tb_v3_net.py`의 `make_tb_v3_net_agent(policy, leaf, seed, policy_checkpoint, value_checkpoint, runtime)`
+  - 엔진 identity(코드 manifest, 엔진 해시)와 runtime 검사(fast5 근거)는 그대로 한다.
+  - 모델은 고정값과 비교하지 않는다. 대신 두 checkpoint와 metadata의 SHA를 기록하고, 구조(채널·블록·encoder 판)가 엔진의 것과 같은지만 확인한다.
+  - 이름: `TB-V3 Resolve/fast5 + net <policy sha 앞 8자>/<value sha 앞 8자>`
+  - provenance: 엔진 해시, runtime 해시, 모델 SHA 4개. self-play 행과 Arena 기록에 그대로 남는다.
+  - fast5의 runtime 해시는 모델을 담지 않으므로 G0–G2와 CPU 인증 근거는 그대로 이어진다. 모델은 그 위의 별도 identity다.
+
+**2. 망 구성: 두 망 유지 (제안)**
+- 지금 policy와 value는 따로 된 checkpoint다. value는 H3 trunk를 얼리고 value head만 학습했다(H6-2a).
+- **제안 (c1):**
+  - policy 망: H3에서 시작해 self-play policy target으로 fine-tune
+  - value 망: H6-2a 방식 그대로(H3 trunk 고정, value head만) self-play value 라벨 + 기존 RenjuNet 라벨로 다시 학습
+  - 이유: value 쪽은 검증된 도구(`h6_value_train`)와 gate를 그대로 쓴다. 바뀌는 것이 policy fine-tune 하나라서, 승급 Arena가 무엇 때문에 이기고 지는지 읽을 수 있다.
+- 대안: 한 망(공유 trunk)으로 policy + value 동시 학습. AlphaZero에 가깝지만 leaf와 policy 로더, 학습 코드를 새로 만들어야 한다. 위험이 커서 c2 이후 경계 후보로 둔다.
+- 이미 정한 "policy와 value를 함께 학습한다"는 두 안 모두 만족한다. 갈리는 것은 망을 하나로 합치느냐뿐이다.
+
+**3. policy target의 질 (결정 필요)**
+- 계약(고정)
+  - 보통 국면: root 방문 분포
+  - 증명된 승리로 덮어쓴 수: 그 수 one-hot
+  - PROVEN_LOSS 후보: 0으로 두고 다시 정규화
+- 걱정: 엔진의 tree는 50 simulation이다. 50방문 분포는 거칠고, H3 policy는 RenjuNet 고수 수로 학습했다. 거친 분포만 따라가면 policy가 오히려 나빠질 수 있다.
+- **제안:** policy 손실에 H3 고정 망과의 KL 항을 둔다. `λ`는 c1 전에 하나로 고정한다(제안 0.5).
+  - 함께 정할 DEV 점검: RenjuNet val의 top-1이 H3보다 2%p 넘게 떨어지면 그 checkpoint는 Arena에 올리지 않는다.
+  - 최종 판정은 승급 Arena(직전과 50쌍)다.
+- 기록용: `v8_root_visits`(수, 방문, 값)가 진단에 이미 있다. 행에는 방문 수 원본도 남긴다. 나중에 target 정의를 바꿔도 다시 두지 않아도 된다.
+
+**4. self-play 프로토콜 (엔진 identity 밖, c1 동안 고정)**
+- opening: 벤치마크와 같은 생성기(`make_opening`, 무작위 2수, 반경 2). seed는 새로 예약한 범위를 쓴다(제안 8800–8999, 다른 실험과 겹치지 않음).
+- 다양성: opening 뒤 처음 4수(흑·백 각 2수)는 root 방문 분포에 비례해 표본한다(T = 1). 증명된 승리 수와 PROVEN_LOSS 수는 표본하지 않는다. 그 뒤는 엔진 수.
+  - policy target은 표본과 무관하게 방문 분포다. value 라벨은 표본한 수 뒤의 국면에도 쓴다(증명 우선, 대국 결과 0.1).
+- 양쪽 같은 엔진·같은 checkpoint, 대국마다 새 agent(`seed`는 대국 seed에서 파생)
+- 라벨: H6 규칙 그대로
+  - 증명 라벨(`h6_labels.proof_label`, 예산 고정)이 1.0, 대국 결과가 0.1
+  - 행마다 `game_id`, `canonical_hash`, 엔진 해시, runtime 해시, 모델 SHA
+  - 웹 probe 국면(D4)이 든 대국은 통째로 뺀다.
+  - split은 `game_id` 기준으로 val 5%
+
+**5. 처리량 측정 (도구가 생긴 뒤 짧게)**
+- 결정은 노드 예산으로만 정해진다. 그래서 worker 수는 결과를 바꾸지 않고 속도만 바꾼다. 그래도 한 번은 확인한다.
+  - 같은 대국 4개를 worker 1과 worker 12로 두어 기록(시간 제외)이 같은지 본다.
+- 데스크톱 CUDA에서 worker 6 / 8 / 10 / 12 / 14로 각 20국(같은 대국 seed)을 둔다.
+  - 지표: 시간당 대국 수, 수당 평균·p99 시간, GPU 사용률, 메모리
+  - 가장 빠른 값의 95% 안에서 가장 적은 worker를 고른다(학습·Arena와 함께 돌 여유를 남긴다).
+- 이 측정은 판정이 아니다. 결과로 주기 하나(1,000국 + 라벨 + 학습 + Arena)의 시간을 잡는다.
+
+**6. 이미 고정된 주기 규칙 (그대로)**
+- 1주기 = self-play 1,000국, 최소 3주기
+- 승급: 직전 checkpoint와 50쌍(점수 차 하한 기준)
+- 수렴: 연속 2주기 동안 향상 하한 ≤ 0이고 전술 회귀 없음
+- Monitoring Arena: 상대 3종 × 25쌍 + 직전 50쌍, Rapfi L_mid 25쌍(기록만)
+- 주기 안에서 엔진은 바꾸지 않는다.
+
+**구현 순서 (승인 뒤)**
+1. 0번(CPU 인증 근거 검사)과 1번(`tb_v3_net` factory + 테스트)
+2. `scripts/h7_selfplay.py`
+   - 1,000국 생성, 이어하기, 진행 출력(`run_chunks`)
+   - 대국마다 provenance와 수별 방문 분포
+3. 라벨러(H6 label builder 재사용)와 학습 둘(policy fine-tune + KL, value head)
+4. 5번 처리량 측정 → worker 결정
+5. c1 실행
+
+**결정이 필요한 것**
+1. 0번을 지금 넣을지(제안: 예)
+2. 망 구성: 두 망 유지(제안) 또는 한 망
+3. policy KL 항과 `λ`, DEV top-1 점검(제안: KL 있음, λ = 0.5, −2%p)
+4. 다양성: 처음 4수 방문 비례 표본(제안), opening seed 범위 8800–8999
+5. 구현 순서
+
+## H7-c1 설계 승인과 0 · 1번 구현 (2026-10-23, 사용자 승인)
+
+**승인 요지**
+- CPU 인증 PASS를 승인했다. 현재 동결 실행판(TB-V3 / fast5 / H3 policy / H6 value)을 SER5 웹에서 CPU value로 쓰는 것도 승인했다.
+- 해석은 "CPU와 CUDA가 같다"가 아니다. 같은 실행판에서 CPU value backend가 허용 범위를 넘는 기력 저하·안전 회귀를 보이지 않았다는 배포 근거다(197 / 200국 수순 동일, 3국은 value 수치 차이에 따른 near-tie 갈림).
+- SER5 웹과 H7-c1은 따로 간다.
+  - 웹은 동결 모델이다.
+  - H7-c1은 다음 모델 후보를 만든다.
+  - H7-c1 checkpoint는 어떤 결과든 웹에 자동으로 들어가지 않는다. 승급 gate와 별도 배포 결정을 거친 경우에만 교체를 검토한다.
+
+**고정된 H7-c1 설계 (구현 전 고정)**
+- 망: 두 망 유지
+  - policy: H3에서 시작해 self-play root 방문 target으로 fine-tune
+  - value: H6-2a 구조(H3 trunk · policy head 고정, value head만) + self-play value 라벨 + 기존 허용 value 데이터
+  - 공유 trunk 한 망은 c2 이후 실험 경계
+- policy KL: λ = 0.5 (Arena를 본 뒤 바꾸지 않는다)
+  - 정의: teacher = 동결 H3, student = c1 policy. 같은 국면의 합법 수 분포에서 T = 1로 `KL(teacher ‖ student) = Σ p_T log(p_T / p_S)`
+  - 보통(root 방문 target) 국면에만 적용한다. 증명 덮어쓰기(PROVEN_WIN one-hot) 국면에는 적용하지 않는다(증명이 H3보다 우선).
+  - guard: RenjuNet val top-1이 H3보다 2%p 넘게 떨어지면 Arena에 올리지 않는다(붕괴 방지용, 판정은 Arena).
+  - 행에는 정규화 target과 원본 방문 수를 함께 저장한다.
+- self-play seed: 8800–8999는 **run seed 이름 공간**이다(대국 seed 200개가 아니다).
+  - 대국 seed = `derive_seed(run_seed, 'h7c', cycle, game_index)`(SHA-256, 벤치마크와 같은 함수)
+  - 같은 입력이면 같은 seed다. 생성기는 주기 안의 충돌을 검사하고 거부한다.
+  - 기록: run seed, cycle, game index, 대국 seed
+- opening: 벤치마크와 같은 생성기(`make_opening`, 무작위 2수, 반경 2)
+- opening 뒤 처음 4수
+  - root에 PROVEN_WIN이 있으면 표본하지 않는다. 증명된 승리 수를 두고, policy target은 one-hot이다.
+  - 보통 국면은 root 방문 분포에서 T = 1로 표본한다.
+  - PROVEN_LOSS 후보는 확률 0으로 두고 다시 정규화한다.
+  - 남는 확률이 없으면 엔진의 수로 대신하고 그 사건을 기록한다.
+  - 그 뒤는 엔진의 수
+- 라벨: `h6_labels`의 검증된 규칙을 그대로 쓴다(새로 단순 구현하지 않는다).
+  - 증명 1.0 / 대국 결과 0.1
+  - probe · D4 · 대국 단위 누출 규칙: 웹 · 평가 probe를 probe 목록에 더한다.
+  - split은 대국 단위다. Arena · probe · benchmark 대국은 학습과 완전히 분리한다.
+- 처리량
+  - 먼저 같은 4국을 worker 1 / 12로 두어 시간 외 기록이 같은지 본다.
+  - 다음 worker 6 / 8 / 10 / 12 / 14로 같은 20국을 둔다(시간당 대국, 수 평균 · p99, GPU 사용률 · 메모리, CPU 사용률).
+  - 최고의 95% 이상 중 가장 적은 worker를 고른다(운영 값, 판정 아님).
+- 주기 규칙은 그대로다: 1,000국 / 주기, 최소 3주기, 승급 50쌍, Monitoring Arena, 수렴 규칙, 주기 안 엔진 · runtime 변경 금지(fast6 등을 섞지 않음).
+
+**0. CPU 인증 근거 검사 (구현)**
+- `canonical.FAST5_EVIDENCE['cpu_cert']` = `docs/h7/tb_v3_fast5_cpu_cert.json`
+- `check_fast5_evidence`가 확인하는 것
+  - 형식 `tb-v3-fast5-cpu-cert-v1`, `PASS`
+  - 규칙이 고정값과 같음(`canonical.CPU_CERT_RULES`: 하한 −0.05, 50 pair, fast4, fast5, bootstrap 10,000, seed 0)
+  - 표본 200국 / opening 100, `ci95[0] ≥ −0.05`, 안전 위반 0 / 0
+  - CPU / CUDA runtime 해시 = 지금 값
+  - run 4개(`cpu_8451`, `cpu_8452`, `cuda_8451`, `cuda_8452`)의 서로 다른 SHA-256
+- 결과 형식은 바꾸지 않았고 다시 돌리지도 않았다. run의 커밋은 run 파일 provenance로 따로 감사한다.
+- 검사기: "fast5, evidence PASS (G0 4,587,616 calls, G1 3201 moves, SER5_CERTIFIED, CPU cert PASS 200 games low +0.000; …)"
+- 변조 테스트 6가지(판정, 규칙, 하한, 안전 위반, runtime 해시, run 누락)를 모두 거부한다.
+
+**1. `analysis/tb_v3_net.py` 후보 factory (구현)**
+- `make_tb_v3_net_agent(policy, leaf, seed, policy_checkpoint, value_checkpoint)`
+  - 엔진: `tb_v3.check_identity`(엔진 해시, 63개 manifest)
+  - runtime: fast4 · fast5 sources, fast5 binding
+  - 모델은 고정값과 비교하지 않는다. 대신 checkpoint · metadata SHA 4개를 identity로 남긴다(`agent.models`, `model_hash`, 이름 `TB-V3 Resolve/fast5 + net <policy 8자>/<value 8자>`).
+  - 호환성 검사
+    - policy-only `RootPolicy`, H6-2a `ValueLeaf`가 그 경로에서 로드됐는지
+    - 동결 구조(`ModelConfig` 기본값, 64 채널 · 4 블록). encoder · action index 판은 `load_checkpoint`가 강제한다.
+    - value head가 동결 H3 trunk 위에서 학습됐는지(`trunk_frozen`, `policy_head_frozen`, `parent_h3_checkpoint_sha256`)
+  - `provenance(device, identity)`: fast5 provenance + 모델 identity, `canonical: false`, `frozen_models`
+- **구현에서 드러난 점:** 동결 파일 `tb_v2_value.make_agent`는 동결 H6 외의 value checkpoint를 거부한다.
+  - 그 SHA는 TB-V2-Value `config_hash`의 한 항이고, 따라서 TB-V3 엔진 해시에도 들어 있다.
+  - 동결 파일은 고치지 않았다. 후보 factory는 같은 동결 설정으로 agent를 직접 만든다(`MCTSV8Agent(**TB_V2_VALUE, **ENGINE_OPTIONS)` + `E4v2AttackAgent(tb_v3.ATTACK)`).
+  - 같은 agent임은 테스트로 보였다. arena 기록 1국을 이 build로 재생하면 수 · 결정 · 모든 기록 필드가 같다. 데스크톱 전용 테스트는 동결 모델로 canonical factory와 이 factory의 수 · 기록이 같은지 본다.
+  - 그래서 후보 기록의 `engine_hash`는 "동결 탐색 설정(그 value 항은 동결 H6)"을 뜻한다. 실제로 쓴 모델은 `models` / `model_hash`로 읽는다.
+- canonical 경로와의 분리
+  - `canonical`은 이 factory를 돌려주지 않는다.
+  - 테스트가 `src/` · `scripts/` 안의 사용처를 검사한다. `scripts/h7c_*` 도구 밖(웹, 벤치마크, canonical)에서는 쓸 수 없다.
+- 테스트: `tests/test_tb_v3_net.py`
+  - 무작위 망 checkpoint로 identity · 거부(경로, 구조, trunk, 파일 변경)
+  - 실제 agent 생성과 착수, 재생 동일성
+  - 동결 모델(데스크톱)
+- 전체: 79개 PASS(동결 모델이 없는 이 환경에서 skip 2), 검사기 PASS(모델 파일 항목 제외)
+
+**웹(`feat/Web_SER5`) 배포 전에 결정할 것: 두 브랜치의 동결 파일 충돌**
+- `feat/Web_SER5`는 `f1cca21`에서 갈라졌다. TB-V2 / TB-V3 / fast5 / canonical 코드가 없다(그 뒤 `feat/h6-value` 157커밋).
+- 로컬 시험 병합의 충돌은 4개였다(push하지 않음).
+  - `ci.yml`, `.gitignore`, `CLAUDE.md`: 합치면 된다.
+  - **`src/rt30/native/build.py`: 두 동결 엔진이 서로 다른 판을 SHA로 잠근다.**
+    - TB-RT30-v3(지금 웹 엔진, `tests/frozen_tb_rt30_v3.sha256`): `4d596b17…`, `MODULES = {'_threat_windows'}`
+    - TB-V2 / TB-V3(`tests/track_b_frozen.sha256`, `tb_v3_frozen.sha256`, TB-V3 엔진 해시 안): `512c6a90…`, `'_forbidden'`(fast4) 추가
+    - 차이는 이 한 줄이다. threat_windows 빌드는 같다. 그러나 한 브랜치에서는 둘 중 하나의 동결 검사가 실패한다.
+    - TB-V3 쪽 manifest는 엔진 해시에 들어가므로 바꿀 수 없다.
+- 선택지
+  - **A (제안): 웹 브랜치에서 `build.py`를 TB-V3 판으로 두고, TB-RT30 쪽은 TB-RT30-v4로 기록하는 단계**
+    - TB-RT30-v3의 `config_hash`는 `build.py`를 담지 않는다. 그러나 그 파일의 규칙은 "잠긴 파일을 바꾸면 새 엔진(TB-RT30-v4)"이다. 그래서 v3 manifest를 고치지 않고 v4를 만든다.
+    - v4 = v3 설정 그대로 + 새 manifest(`build.py` 줄만 다름). 같은 수 확인(v3 동결 move 테스트와 SER5 대표 국면 재생)이 gate다.
+    - 근거: 바뀐 줄은 `_forbidden` 모듈을 더 빌드할 뿐이다. TB-RT30이 쓰는 `_threat_windows`의 소스 · 빌드 명령은 같다.
+  - B: 웹에서 TB-RT30-v3를 내리고 TB-V3 / fast5만 둔다. TB-RT30-v3 코드는 남기되 동결 검사를 끈다. 기록 보존이 약해진다.
+  - C: `feat/h6-value`에서 새 웹 브랜치를 만들고 웹 코드만 옮긴다. TB-RT30-v3는 옛 브랜치에만 남는다.
+- 결정 뒤 웹 작업
+  1. 병합
+  2. TB-V3 / fast5 슬롯: canonical factory, CPU value, worker 1
+  3. 서버 시작 때 `check_track_b_frozen`의 TB-V3 항목과 `check_fast5_evidence`(CPU 인증 포함), 동결 policy / value SHA를 확인한다.
+  4. 30초 soft monitor
+  5. smoke test
+
+**다음 (H7-c1)**: self-play 생성기 `scripts/h7c_selfplay.py`. 위 seed · 표본 · 기록 규칙, 이어하기, 진행 출력(`run_chunks`), 대국마다 provenance와 수별 방문 분포를 남긴다.
+
+## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
+
+```
+E2  TB-Engine-v1-T 판정 → ADOPT 시 TB-Engine-v2
+ ↓
+E3  value v3 재평가 (guard v2, 4M + table, legacy 4M 병행 보고)
+ ↓
+엔진 완성 (B-engine + B-net 고정)
+ ↓
+같은 기력 착수 시간 단축 최적화
+ ↓
+동결
+ ├─→ 미니 PC 서버에 웹 대국 모델 추가 (착수 30초 deadline 그대로)
+ └─→ H7-c1 self-play 강화학습 (병행 가능)
+```
+
+**검토 의견**
+1. **"같은 기력"은 "같은 착수"(정확 가속)로 정의하기를 권한다.**
+   - fast3처럼 deadline이 없을 때 착수·진단·노드·호출이 같은 최적화는 gate가 필요 없다(동일성 테스트만).
+   - 착수가 바뀌는 최적화(예산 조정, 가지치기 규칙)는 기력이 비슷해 보여도 새 엔진이다. §2.3 gate를 다시 거쳐야 한다.
+   - 이렇게 정하면 최적화 단계가 판정 단계로 번지지 않는다.
+2. **최적화 목표는 평균이 아니라 꼬리다.**
+   - E1에서 끝까지 UNKNOWN인 검사는 table이 있어도 시간이 같았다(1,089초 대 1,100초). 예산을 다 쓰기 때문이다.
+   - 30초 deadline에 걸리는 것은 이 꼬리다. E2에서 남기는 p95 / p99 / 최대가 최적화 단계의 기준선이 된다.
+3. **웹 경로에는 table을 다시 옮겨야 한다.**
+   - 웹 서버 코드(`feat/Web_SER5`)는 deadline을 검사하는 VCF(`rt30.vcf`, native core)를 쓴다. `analysis.vcf_tt_v1`은 deadline 검사가 없다.
+   - TB-Engine-v2를 웹에 올리려면 같은 table을 그 VCF에 넣고, deadline이 없을 때 `vcf_tt_v1`과 결과·노드가 같음을 확인해야 한다(native-core-plan의 G3 방식).
+   - deadline이 있으면 결과가 시간에 따라 달라진다. 그래서 웹 모델은 "동결 엔진의 deadline 판"으로 기록한다. 대국 로그에는 deadline cut 여부를 남긴다.
+4. **미니 PC에서 30초를 다시 잰다.** 데스크톱(i5-12600K)의 p99가 미니 PC에서 그대로 나오지 않는다. 동결 직후 미니 PC에서 고정 국면 세트(예: E2 tree 수 중 p99 국면)의 착수 시간을 재고, 30초 안에 드는 비율을 기록한다.
+5. **self-play와 병행은 가능하다.**
+   - 기계가 다르고(데스크톱 GPU / 미니 PC), 웹 모델은 동결 엔진 그대로이기 때문이다.
+   - 두 가지만 지킨다.
+     - H7-c 주기가 새 망을 만들어도 웹 모델은 바꾸지 않는다. 바꾸는 것은 주기 경계의 별도 단계다.
+     - 웹 대국 기록은 학습 데이터에 섞지 않는다. 쓰려면 RenjuNet 데이터처럼 출처와 누출 규칙을 정한 뒤에만 쓴다.
+
+## H6-3D 결과 (2026-10-15, `docs/h6/h6_3d_diag.json`, 커밋 `c8800c2`, part A 전체 53,531국면, 18초)
+
+**D1 D4 분해**
+- 처음부터 끝까지의 흔들림:
+  - 국면별 표준편차 평균은 0.136이다(95번째 백분위 0.276, 최대 0.631). 8개 부호가 모두 같은 국면은 56.5%다.
+  - **대칭별 흔들림은 고르다.** 원래 value와의 차이가 7개 대칭 모두 0.161–0.177이다. 특정 변환 하나만 튀는 패턴이 아니므로, 변환 버그일 가능성은 다시 한 번 낮아진다.
+  - ply가 늘수록 흔들림이 커진다(5–9수 0.084 → 50수 이상 0.179). \|v\|가 0.6 이상이면 오히려 작다(0.099). tanh가 포화되면서 눌리기 때문이다.
+- **policy top-1 일치율은 대칭마다 0.78, 8개 모두 같은 비율은 0.54다.** H3 망 전체(trunk + policy head)도 처음부터 끝까지 D4에 일관되지 않다. value head만의 문제가 아니다.
+- **"trunk 등변성"과 "value head만의 흔들림" 지표는 진단에 쓸 수 없다(측정 설계 오류, 철회).**
+  - 결과: 상대 L2 0.88, cosine 0.61, head만의 표준편차 0.54.
+  - 이 두 지표는 trunk feature가 회전해도 채널이 그대로인 스칼라장이라고 가정한다. 그런데 일반 CNN의 방향 선택적 채널(예: 가로선과 세로선 검출)은 회전하면 **서로 다른 채널로 옮겨 가는 것이 정상**이다. 그래서 출력이 완벽한 망이라도 이 값들은 크게 나온다.
+  - 실제로 좌우 반사(s = 4)만 값이 작다(L2 0.70, cosine 0.75). 이 해석과 맞는다.
+  - 따라서 "trunk 등변성이 나쁨 → H6-2b"라는 판단표는 적용하지 않는다. head만의 흔들림 0.54도 head가 학습 때 본 적 없는 입력(채널 그대로 회전한 feature)에 대한 반응일 뿐이다.
+- 결론: D4 흔들림은 고르고 체계적이다. H3 망 전체(policy 출력 포함)가 방향에 민감하다. 이것을 trunk 탓인지 head 탓인지 나누려면 측정이 아니라 실험이 필요하다. value head만 D4 일관성 학습을 했을 때 흔들림이 줄어드는지를 보면 된다.
+
+**D2 엔진 국면의 깊은 패배** (157수, root 9개, child는 모두 서로 다름)
+
+| | 수 단위 | root 평균 | 깊이 0 (78) | 깊이 1 (15) | 깊이 2 (64) | 평균 v |
+|---|---|---|---|---|---|---|
+| 원래 추론 | 0.924 | 0.907 | 0.923 | 1.000 | 0.906 | +0.54 |
+| D4 평균 | 0.968 | 0.971 | 0.962 | 1.000 | 0.969 | +0.53 |
+
+- **엔진 대국 국면에서 "둘 차례가 깊게 이긴다"는 child 단위 인식은 잘 된다.** 깊이 2에서도 0.91(D4 평균 0.97)이다. 흑·백(0.92 / 0.93), 출처(e1 0.92 / e1s 0.93)도 비슷하다.
+- 표본은 root 9개뿐이다. 157개를 독립으로 보면 Wilson 95% 구간이 원래 87.1–95.6%, D4 평균 92.8–98.6%다. 실제로는 같은 root의 child끼리 상관되어 있으므로 불확실성이 이보다 크다. "엔진 국면 전반이 분포 밖이라 실패한다"는 가설(H6-2c 근거)은 **지지되지 않는다.** 다만 "엔진 domain 문제가 없다"는 데까지는 말하지 않는다.
+- 그렇다면 P93의 실패(같은 종류의 child형 깊은 승리를 −0.36으로 판단)는 그 웹 대국 국면이 특이하기 때문으로 보인다(흑 덩어리, 백 격자). P93과 P94는 **같은 대국 하나**에서 나왔으므로, G4는 사실상 대국 1개에 걸린 판정이다.
+
+**D3 D4 평균 추론** (A 기준, 원래 → 평균)
+- 증명 balanced accuracy 0.945 → 0.959, 증명 −1 0.938 → 0.951
+- 결과 balanced accuracy 0.640 → 0.650, 결과 MSE 0.918 → 0.896
+- 흑 0.639 → 0.641, 백 0.643 → 0.660
+- ECE 0.0764 → 0.0764, 결과 편향 +0.153 → +0.153
+- D2 0.924 → 0.968
+- 정리:
+  - 모든 판별 지표가 조금씩 좋아진다. G3는 구조상 해결된다(표준편차 0).
+  - **calibration과 편향은 그대로다.** 대칭 평균으로는 상수 편향이 사라지지 않는다.
+  - **P93·P94는 평균해도 틀린다**(−0.39 / +0.89). G4는 D4 평균으로 해결되지 않는다.
+- **비용(RTX 5070):**
+  - 한 국면 지연은 1.00ms → 0.95ms로 사실상 같다(지연이 병목인 구간이라 8개를 한 batch로 돌려도 차이가 없다).
+  - batch 처리량은 110,103 → 9,483국면/초로 11.6배 느려진다. 최대 VRAM은 116MB → 609MB다.
+  - 이 측정은 미리 만든 plane에 대한 `value_forward`(고정된 trunk + value head)만 잰 microbenchmark다. 게임 인코딩, policy head, evaluator 전체는 포함하지 않는다. 현재 PUCT는 evaluator batch 1로 leaf를 하나씩 평가하므로 이 구조에서는 추가 지연이 관찰되지 않았다. **H6-4에서 실제 evaluator에 통합한 뒤 검색 전체 지연을 다시 잰다.** batch 처리량이 11.6배 떨어진다는 단서는 유지한다.
+
+**`--prove-losses` 해석 정정**
+- **고신뢰 증명 라벨(weight 1.0)에 부모 단위의 깊은 패배가 없다.** 결과 라벨(weight 0.1)에는 패배 국면이 −1로 많이 들어 있지만, 약한 지도다. v2 증명 167,757개 가운데 −1은 `forced_loss` 17,058개뿐이고 `vcf_loss`·`vct_loss`는 0개다. 증명만 보면 +1 대 −1이 8.8 : 1이다. 학습 데이터의 증명 −1(`forced_loss`)은 "상대가 다음 수에 오목을 두 군데 이상 만들 수 있다"(또는 막을 자리가 금수)는 가장 얕은 패턴뿐이다. val·test의 증명 −1 정확도 93–95%는 이 패턴을 맞힌 것이다.
+- `--prove-losses`가 추가하는 `vcf_loss`는 `solver.decision(game, 0)`이 UNSAFE인 국면이다. 즉 **"내 모든 수 뒤에 상대가 VCF로 이긴다"는 부모 국면 단위 패배 라벨**이다. P94(모든 수 뒤 상대 VCT1 승리)와 **같은 종류이고 깊이만 한 단계 얕다.** 앞서 "`--prove-losses`는 P94형이 아니다"라고 한 해석은 고친다.
+- P94 자체는 `--prove-losses`로도 라벨이 나오지 않는다(H6-3A 때 확인). 깊이 1의 부모 단위 패배는 **판정 함수가 이미 있다**(`analysis.tactical_labels.defense_label` → `vct_loss`). 다만 H6 builder에 연결되어 있지 않다. fresh probe 도구(아래)가 이 함수로 P94를 `vct_loss`로 판정하는 것을 확인했다.
+
+**종합**
+
+| 문제 | 근거 | 대응 후보 |
+|---|---|---|
+| G3 D4 흔들림 | 대칭 전반에 고르게 0.136 | D4 평균 추론(지연 비용 거의 없음). 또는 value head D4 일관성 학습 |
+| G4 부모 단위 패배(P94) | 고신뢰 증명 −1이 가장 얕은 패턴뿐. child형 깊은 승리는 잘 인식(D2) | 부모 단위 패배 라벨: `--prove-losses`(VCF). 필요하면 `defense_label`(`vct_loss`)을 builder에 연결 |
+| G4 P93(특이 국면) | 엔진 국면 전반은 정상(D2). 대국 1개의 특이 국면 | 새 fresh probe를 여러 대국에서 만들어 최종 판정의 표본을 넓힘 |
+| 양수 편향 +0.15 | D4 평균으로 변하지 않음 | 부모 단위 −1 라벨이 늘면 일부 줄어들 수 있음. 관찰 |
+
+## H6-3D 진단 (구현 2026-10-15, dev 데이터만)
+
+구현: `src/hybrid/h6_diag.py`, `scripts/h6_diagnose.py`, `tests/test_h6_diag.py`.
+- 쓰는 데이터는 test part A(dev)와 E1·E1-holdout·E1-S manifest뿐이다.
+- 스크립트가 분할을 A로 고정하므로 B는 열 수 없다.
+- 결과 파일은 지표만 담으므로 커밋한다.
+
+**D1 D4 원인 분해** (part A 전체 53,531국면 × 8개 대칭)
+- 처음부터 끝까지(end-to-end): 국면별 8개 value의 표준편차를 종류, 흑백, ply 구간, \|8개 평균\| 구간(0–0.1, 0.1–0.3, 0.3–0.6, 0.6–1)별로 본다. 대칭별 \|v_s − v_원래\| 평균과 8개 부호 일치율도 잰다.
+- **trunk 등변성:** 대칭 s마다 T_s⁻¹F(T_s x)와 F(x)의 상대 L2와 cosine을 잰다(F는 trunk feature).
+- **value head만의 방향 민감성:** 원래 feature F(x)를 8방향으로 변환해 value head에 넣고 국면별 표준편차를 잰다. 이때 feature는 구조상 정확히 등변이므로, 남는 흔들림은 head 몫이다.
+- 보조: policy top-1이 8개 대칭에서 일치하는 비율(원래 좌표로 되돌려 비교). policy head도 D4 불변이 아니므로 trunk 판단에는 쓰지 않는다.
+
+해석(**폐기**: 아래 H6-3D 결과의 측정 설계 오류 참조. 이 표로 판단하지 않는다):
+
+| trunk 등변성 | head만의 표준편차 | 해석 |
+|---|---|---|
+| 좋음 | 큼 | value head가 주원인 |
+| 나쁨 | 작음 | H3 trunk가 주원인 |
+| 나쁨 | 큼 | 둘 다 |
+| 좋음 | 작음, 그런데 end-to-end만 큼 | 예상 밖. 구현이나 BN을 다시 조사 |
+
+**D2 엔진 국면의 깊은 패배**
+- E1·E1-holdout·E1-S의 10M truth가 `PROVEN_LOSS`인 수를 둔 뒤의 국면을 쓴다. 상대 차례이고 상대가 이기므로 value > 0이어야 한다.
+- 표본은 **157수인데 root 국면은 9개뿐이다.** child 157개는 D4로 겹치는 것이 없다.
+  - 출처: e1 74, e1s 83
+  - 깊이: 0이 78, 1이 15, 2가 64
+  - child의 둘 차례: 흑 99, 백 58
+  - 실질적인 독립 표본은 root 9개 수준이다. 그래서 수 단위 정확도와 함께 **root별 평균 정확도**와 깊이별 정확도를 본다.
+- 이것은 child 단위로 깊은 승리를 알아보는지를 시험한다. P94처럼 부모 국면에서 "모든 수가 진다 → v < 0"을 판단하는 능력과는 다르다. 그래서 D2가 좋아도 P94 문제가 해결된다고 결론 내리지 않는다.
+- manifest에 `PROVEN_WIN` truth가 없어서 반대 부호 비교군은 없다.
+
+**D3 D4 평균 추론** V_D4(x) = 8개 대칭 value의 평균
+- 같은 A와 D2에서 원래 추론과 나란히 비교한다. 비교 항목은 다음과 같다.
+  - 증명 balanced accuracy, 증명 −1 정확도
+  - 결과 balanced accuracy와 MSE, 흑·백 결과 balanced accuracy
+  - **ECE**, 결과 편향
+  - D2 정확도(수 단위, child 단위, root 평균)와 평균 value
+- P93·P94 값은 dev 참고로만 남긴다.
+- **비용:** 한 국면 지연(원래 vs 8개를 한 batch로), batch 256 처리량, 최대 VRAM을 잰다. 클라우드 CPU smoke에서 한 국면 지연은 2.8배, 처리량은 약 13배 느려졌다. GPU 값은 실행 결과로 정한다.
+
+**진단 결과에 따른 갈림**
+- ~~trunk 등변성이 나쁘면: H6-2b(trunk 미세조정) 후보.~~ (폐기, 측정이 채널 이동을 반영하지 못함)
+- trunk는 괜찮고 head만의 흔들림이 크면: value head만 D4 일관성 학습을 한다(8개 대칭 모두 사용, 대칭 간 value 분산 penalty).
+- D4 평균 추론만으로 지표가 충분히 좋아지고 비용을 감당할 수 있으면: D4 평균 추론이 후보가 된다. 바뀐 모델이므로 B에서 검증한다.
+- D2도 나쁘면: 엔진 국면의 깊은 증명 데이터로 적응하는 **H6-2c**(H6-2b와 구분). TB-Engine-v1 자기대국에 새 seed를 쓰고, seed를 학습용 / dev probe용 / 최종 fresh probe용으로 미리 나눈다. 예약 seed는 제외한다.
+- D2는 좋은데 P94만 계속 틀리면: 부모 국면의 강제 패배 라벨과 그 학습 정의를 따로 설계한다.
+- 수정 우선순위: D4 평균 추론(학습 없이 상한 확인) → value head D4 일관성 학습 → pooling 등 head 구조 변경 → H6-2b.
+
+**실행** (깨끗한 worktree, GPU, A 전체 기준 수 분):
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "$PWD\src"
+git status --short
+git pull --ff-only
+python -u scripts\h6_diagnose.py --checkpoint runs\h6_value_head_v1\best.pt `
+  --cache-dir data\tactical\h6\value_cache_v2 --device cuda --output docs\h6\h6_3d_diag.json 2>&1 | Tee-Object runs\h6\h6_3d_diag.log
+```
+
+## H6-3 오프라인 gate (확정 2026-10-14, test를 열기 전)
+
+구현: `src/hybrid/h6_gate.py`(기준값 `THRESHOLDS` 상수), `scripts/h6_offline_gate.py`, `tests/test_h6_gate.py`.
+**아래 기준은 test를 처음 열기 전에 확정했다. 실행 뒤에는 바꾸지 않는다.**
+
+**test 분할 고정(H6-3A / H6-3B)**
+- test 대국(4,996판)을 대국 단위로 둘로 나눈다. 규칙은 `sha256("h6-3-v1:" + game_id)`가 짝수면 A, 홀수면 B다.
+- **H6-3A**는 첫 gate에 쓴다. **H6-3B**는 예비로 남겨 둔다.
+- A가 통과하면 B는 쓰지 않은 채로 둔다.
+- A가 실패한 뒤 모델을 바꾸면(`--prove-losses` v3, H6-2b 등) A는 그때부터 dev 집합이다. 바뀐 모델의 최종 gate는 B로 한다.
+- P93·P94도 마찬가지다. 이 probe를 보고 모델을 바꿨다면 그 뒤로는 dev probe다. 바뀐 모델에는 새 깊은 패배 probe가 따로 필요하다.
+- 결과 파일에는 분할의 대국 수, 국면 수, 대국 목록 SHA를 남긴다.
+
+| gate | 기준(모두 만족해야 PASS) | 참고(val) |
+|---|---|---|
+| G1 증명 부호 | 증명 balanced accuracy ≥ **0.90** 그리고 증명 −1 정확도 ≥ **0.85** | 0.942 / 0.933 |
+| G2 결과 판별 | 결과 MSE < **1.000** 그리고 결과 balanced accuracy ≥ **0.60** | 0.939 / 0.629 |
+| G3 D4 일관성 | 결과 1,000 + 증명 1,000국면(seed 20261014)에서 다음 셋을 모두 만족: 8개 대칭 value의 국면별 표준편차 **평균 ≤ 0.05**, 그 **95번째 백분위 ≤ 0.10**, \|8개 평균\| ≥ 0.10인 국면 중 **8개 부호가 모두 같은 비율 ≥ 0.95** | 처음 측정 |
+| G4 probe | **P93**(백 차례): 원래 방향 value > 0 그리고 8개 평균 > 0. **P94**(흑 차례): 원래 방향 < 0 그리고 8개 평균 < 0 | 처음 측정 |
+| G5 흑·백 | 결과 국면만으로: 흑 차례 balanced accuracy ≥ **0.55**, 백 차례 ≥ **0.55**, 둘의 차이 ≤ **0.05** | — |
+
+- balanced accuracy = (target +1 국면의 부호 정확도 + target −1 국면의 부호 정확도) / 2. 부호 정확도는 v > 0과 t > 0이 일치하는 비율이다.
+- 어떤 값을 계산할 표본이 없으면(예: 증명 −1이 0개) 그 gate는 FAIL로 처리한다.
+- G4는 크기 기준을 두지 않는다. 미리 정할 근거가 없기 때문이다. 대신 원래 방향 value, 8개 평균·최소·최대·표준편차를 모두 남긴다. 그래서 0에 가까운 약한 통과인지도 보인다.
+- G3에서 8개 부호 일치 비율은 확신 있는 국면(\|평균\| ≥ 0.10)으로만 판정한다. 0 근처 국면은 부호가 쉽게 뒤집히기 때문이다. 전체 국면의 일치 비율은 보고만 한다.
+
+보고만 하는 항목(gate 아님):
+- **결과 ECE.** 결과 국면만, p = (v+1)/2 대 y = (t+1)/2, 같은 폭 10구간, weight 없이 계산한다. 이 값으로 λ를 정한다(§12.19 규칙 그대로: ECE ≤ 0.10이면 1.0, 아니면 0.5).
+- 편향(평균 v − 평균 t): 전체, 결과, 증명, 흑·백 차례, ply 구간별, 결과의 ply 구간별.
+- 편향을 뺀 결과 부호 정확도.
+- P92: 흑의 각 합법수 뒤 국면의 value 순위. 실제로 진 수 (3,4)의 순위, 그리고 상위 5수.
+
+**실패했을 때의 경로**
+
+| 실패 | 해석 | 다음 행동 |
+|---|---|---|
+| G1 | 얕은 증명이나 −1 일반화 문제 | `--prove-losses`, −1 라벨 구성 검토 |
+| G2 | 고정 trunk의 장기 승패 표현 부족 가능성 | H6-2b 검토 |
+| G3 | D4 표현이나 추론 문제 | D4 변환·encoder·BN·증강 점검. 바로 재학습하지 않음 |
+| P94만 실패(G1–G3 통과) | 깊은 패배 표현 부족 | `--prove-losses` v3 우선 |
+| P94와 G1–G3 중 일부가 함께 실패 | — | 그 gate부터 해결. P94만으로 `--prove-losses`를 결정하지 않음 |
+| P93 실패 | 승리 쪽 부호나 probe 특유의 문제 | 원인 조사. `--prove-losses`로 바로 가지 않음 |
+| G5 | 색에 따라 일반화가 다른 문제 | 흑·백별 편향을 종류·ply별로 분석한 뒤 weight나 학습 수정 |
+
+결과 파일의 `next_steps_if_failed`에 실패한 gate별 경로가 적힌다.
+
+**실행(한 번만, 깨끗한 worktree)**
+```powershell
+cd "C:\오목 강화학습\renju-h6"
+..\renju-alphazero\.venv-cuda\Scripts\Activate.ps1
+$env:PYTHONUNBUFFERED = "1"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONPATH = "$PWD\src"
+git status --short
+git pull --ff-only
+python -u scripts\h6_offline_gate.py --checkpoint runs\h6_value_head_v1\best.pt `
+  --cache-dir data\tactical\h6\value_cache_v2 --part A --device cuda --output docs\h6\h6_3a_gate.json 2>&1 | Tee-Object runs\h6\h6_3a_gate.log
+```
+- 실행이 거부되는 경우: 같은 출력 파일이 이미 있을 때, worktree가 dirty일 때, checkpoint가 H6-2a가 아닐 때, 캐시 라벨이 학습에 쓴 라벨과 다를 때.
+- 결과 파일(`docs/h6/h6_3a_gate.json`)에는 국면 없이 지표와 해시만 들어 있으므로 커밋한다.
+- part B는 A가 실패하고 모델을 바꾼 뒤에만 실행한다.
+
 ## H6-2a: H3 망을 고정하고 value head만 학습 (2026-10-12)
 
 H3 policy 망의 trunk와 policy head를 그대로 두고 value head만 H6-1 라벨로 학습한다. 엔진 파일(`tb_engine_v1.py`, `mcts_v8.py`, `e3_arms.py`, `s3_vct2_v1.py`, `puct_v8.py`, `threats.py`)은 건드리지 않았고, PUCT leaf 통합은 H6-4에서 한다.

@@ -1,0 +1,212 @@
+{
+ "format": "h7-e3-summary-v1",
+ "rules": {
+  "stage1_min": 0.5,
+  "adopt_min": 0.55,
+  "pair_low_above": 0.5,
+  "proof_margin": 0.03,
+  "time_ratio_max": 1.5,
+  "colour_min": 0.45,
+  "fast": "fast3",
+  "bootstrap": 10000,
+  "seed": 0
+ },
+ "main": {
+  "arm": "puct_value_vct2_50k_tt",
+  "seeds": [
+   8407,
+   8408
+  ],
+  "games": 100,
+  "wins": 67,
+  "draws": 6,
+  "losses": 27,
+  "score": 0.7,
+  "ci95_wilson": [
+   0.604,
+   0.781
+  ],
+  "ci95_pairs": [
+   0.62,
+   0.775
+  ],
+  "by_colour": {
+   "black": 0.8,
+   "white": 0.6
+  },
+  "safety_violations": [],
+  "proven_loss_in_lost_position_per_move": 0.0179,
+  "losses_with_opponent_vct": 20,
+  "tree_moves": 1290,
+  "tree_status": {
+   "SAFE": 1224,
+   "UNKNOWN": 48,
+   "UNSAFE": 18,
+   "UNCHECKED": 0
+  },
+  "tree_not_safe_rate": 0.0512,
+  "v8c_changed": 33,
+  "root_check_minutes": 21.4,
+  "tree_seconds_median": 0.635,
+  "tree_simulations_per_second": 96.5,
+  "nn_calls_per_tree_move": 0,
+  "prior_fallbacks": 0,
+  "prior_entropy_mean": null,
+  "tree_chose_prior_top_rate": null,
+  "time_ratio": 1.032,
+  "total_game_minutes": 141.0
+ },
+ "aux": {
+  "puct_value_vct2_50k_tt": {
+   "arm": "puct_value_vct2_50k_tt",
+   "seeds": [
+    8407,
+    8408
+   ],
+   "games": 100,
+   "wins": 96,
+   "draws": 3,
+   "losses": 1,
+   "score": 0.975,
+   "ci95_wilson": [
+    0.923,
+    0.992
+   ],
+   "ci95_pairs": [
+    0.945,
+    0.995
+   ],
+   "by_colour": {
+    "black": 0.97,
+    "white": 0.98
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0012,
+   "losses_with_opponent_vct": 1,
+   "tree_moves": 994,
+   "tree_status": {
+    "SAFE": 972,
+    "UNKNOWN": 19,
+    "UNSAFE": 3,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.0221,
+   "v8c_changed": 17,
+   "root_check_minutes": 8.6,
+   "tree_seconds_median": 0.657,
+   "tree_simulations_per_second": 90.6,
+   "nn_calls_per_tree_move": 0,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": null,
+   "tree_chose_prior_top_rate": null,
+   "time_ratio": 1.101,
+   "total_game_minutes": 84.9
+  },
+  "puct_policy_vct2_50k_tt": {
+   "arm": "puct_policy_vct2_50k_tt",
+   "seeds": [
+    8407,
+    8408
+   ],
+   "games": 100,
+   "wins": 81,
+   "draws": 6,
+   "losses": 13,
+   "score": 0.84,
+   "ci95_wilson": [
+    0.756,
+    0.899
+   ],
+   "ci95_pairs": [
+    0.76,
+    0.91
+   ],
+   "by_colour": {
+    "black": 0.84,
+    "white": 0.84
+   },
+   "safety_violations": [],
+   "proven_loss_in_lost_position_per_move": 0.0078,
+   "losses_with_opponent_vct": 12,
+   "tree_moves": 1394,
+   "tree_status": {
+    "SAFE": 1341,
+    "UNKNOWN": 37,
+    "UNSAFE": 16,
+    "UNCHECKED": 0
+   },
+   "tree_not_safe_rate": 0.038,
+   "v8c_changed": 41,
+   "root_check_minutes": 18.6,
+   "tree_seconds_median": 0.899,
+   "tree_simulations_per_second": 61.7,
+   "nn_calls_per_tree_move": 65.1,
+   "prior_fallbacks": 0,
+   "prior_entropy_mean": 0.528,
+   "tree_chose_prior_top_rate": 0.583,
+   "time_ratio": 1.173,
+   "total_game_minutes": 137.6
+  }
+ },
+ "proof_4m_table": {
+  "UNSAFE": {
+   "target": "UNSAFE",
+   "openings": 100,
+   "candidate_rate": 0.003,
+   "baseline_rate": 0.0122,
+   "diff": -0.0092,
+   "ci95": [
+    -0.0211,
+    -0.0007
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  },
+  "UNKNOWN": {
+   "target": "UNKNOWN",
+   "openings": 100,
+   "candidate_rate": 0.002,
+   "baseline_rate": 0.0036,
+   "diff": -0.0016,
+   "ci95": [
+    -0.0051,
+    0.0018
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  }
+ },
+ "proof_4m_legacy_frozen": {
+  "UNSAFE": {
+   "target": "UNSAFE",
+   "openings": 100,
+   "candidate_rate": 0.003,
+   "baseline_rate": 0.0122,
+   "diff": -0.0092,
+   "ci95": [
+    -0.0211,
+    -0.0007
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  },
+  "UNKNOWN": {
+   "target": "UNKNOWN",
+   "openings": 100,
+   "candidate_rate": 0.0091,
+   "baseline_rate": 0.0143,
+   "diff": -0.0053,
+   "ci95": [
+    -0.0176,
+    0.0047
+   ],
+   "margin": 0.03,
+   "verdict": "PASS"
+  }
+ },
+ "p92_guard": "PASS",
+ "verdict": {
+  "decision": "ADOPT",
+  "reasons": []
+ }
+}

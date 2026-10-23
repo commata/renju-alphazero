@@ -1,0 +1,876 @@
+{
+ "format": "h6-5d-v1",
+ "step": "d2",
+ "standard": {
+  "node_limit": 20000,
+  "call_limit": 10000,
+  "node_budget": 400000,
+  "share": 200000,
+  "call_share": 5000
+ },
+ "large": {
+  "node_limit": 200000,
+  "call_limit": 100000,
+  "node_budget": 4000000,
+  "share": null,
+  "call_share": null
+ },
+ "sources": {
+  "runs/h6_6/value_vs_full_8405.json": "puct_value_vct2_50k",
+  "runs/h6_6/tb1_vs_full_8405.json": "puct_policy_vct2_50k"
+ },
+ "fast": {
+  "requested": "fast3",
+  "active": {
+   "threat_windows": "threat_windows_native",
+   "winning_extensions": "winning_extensions_in_direction"
+  },
+  "native_build": {
+   "python": "3.12.3",
+   "soabi": "cpython-312-x86_64-linux-gnu",
+   "ext_suffix": ".cpython-312-x86_64-linux-gnu.so",
+   "flags": [
+    "-O2",
+    "-shared",
+    "-fPIC"
+   ],
+   "sources": {
+    "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5"
+   },
+   "executable": "/home/tack/renju-h6/.venv/bin/python",
+   "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+   "compiler": "gcc",
+   "compiler_version": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+   "modules": {
+    "_threat_windows.cpython-312-x86_64-linux-gnu.so": "2c855e2ac4f15b729bc8c1088da73acaecd8e283da67938cab1421de73b3942b"
+   }
+  }
+ },
+ "summary": {
+  "replay_mismatches": [],
+  "main": {
+   "puct_value_vct2_50k": {
+    "n": 6,
+    "large_safe": 4,
+    "large_unsafe": 0,
+    "large_unknown": 2,
+    "share_safe": 0.6667,
+    "share_unsafe": 0.0,
+    "share_unknown": 0.3333,
+    "standard_budget_cut": 6,
+    "standard_cut_kind": {
+     "calls": 4,
+     "nodes": 2,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 2,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 2
+   },
+   "puct_policy_vct2_50k": {
+    "n": 12,
+    "large_safe": 8,
+    "large_unsafe": 1,
+    "large_unknown": 3,
+    "share_safe": 0.6667,
+    "share_unsafe": 0.0833,
+    "share_unknown": 0.25,
+    "standard_budget_cut": 12,
+    "standard_cut_kind": {
+     "calls": 5,
+     "nodes": 7,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 3,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 6
+   },
+   "pooled": {
+    "n": 18,
+    "large_safe": 12,
+    "large_unsafe": 1,
+    "large_unknown": 5,
+    "share_safe": 0.6667,
+    "share_unsafe": 0.0556,
+    "share_unknown": 0.2778,
+    "standard_budget_cut": 18,
+    "standard_cut_kind": {
+     "calls": 9,
+     "nodes": 9,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 5,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 8
+   }
+  },
+  "control": {
+   "puct_value_vct2_50k": {
+    "n": 1,
+    "large_safe": 0,
+    "large_unsafe": 1,
+    "large_unknown": 0,
+    "share_safe": 0.0,
+    "share_unsafe": 1.0,
+    "share_unknown": 0.0,
+    "standard_budget_cut": 0,
+    "standard_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 0
+   },
+   "puct_policy_vct2_50k": {
+    "n": 1,
+    "large_safe": 0,
+    "large_unsafe": 1,
+    "large_unknown": 0,
+    "share_safe": 0.0,
+    "share_unsafe": 1.0,
+    "share_unknown": 0.0,
+    "standard_budget_cut": 0,
+    "standard_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 0
+   },
+   "pooled": {
+    "n": 2,
+    "large_safe": 0,
+    "large_unsafe": 2,
+    "large_unknown": 0,
+    "share_safe": 0.0,
+    "share_unsafe": 1.0,
+    "share_unknown": 0.0,
+    "standard_budget_cut": 0,
+    "standard_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "large_cut_kind": {
+     "calls": 0,
+     "nodes": 0,
+     "per_call_limit": 0,
+     "other": 0
+    },
+    "standard_per_call_limit_hits": 0
+   }
+  }
+ },
+ "rows": [
+  {
+   "id": "puct_value_vct2_50k|puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/15/white|13",
+   "arm": "puct_value_vct2_50k",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/15/white",
+   "game_kind": "decisive",
+   "ply": 13,
+   "tree_move": [
+    4,
+    6
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 183413,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 13.14
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 390509,
+    "calls": 10131,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 26.1
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k|puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/15/white|17",
+   "arm": "puct_value_vct2_50k",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/15/white",
+   "game_kind": "decisive",
+   "ply": 17,
+   "tree_move": [
+    4,
+    6
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 73496,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.48
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 338496,
+    "calls": 13446,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 27.09
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k|puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/15/white|19",
+   "arm": "puct_value_vct2_50k",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/15/white",
+   "game_kind": "decisive",
+   "ply": 19,
+   "tree_move": [
+    3,
+    9
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 46363,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 4.47
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 327559,
+    "calls": 14335,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 27.31
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k|puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black|24",
+   "arm": "puct_value_vct2_50k",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black",
+   "game_kind": "draw_full_board",
+   "ply": 24,
+   "tree_move": [
+    6,
+    12
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 51379,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 4.06
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 155162,
+    "calls": 15418,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 12.59
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k|puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black|68",
+   "arm": "puct_value_vct2_50k",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black",
+   "game_kind": "draw_full_board",
+   "ply": 68,
+   "tree_move": [
+    12,
+    10
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 529,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 4,
+    "seconds": 11.57
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 3966,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 3,
+    "seconds": 135.55
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k|puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black|84",
+   "arm": "puct_value_vct2_50k",
+   "set": "control",
+   "game_key": "puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black",
+   "game_kind": "draw_full_board",
+   "ply": 84,
+   "tree_move": [
+    9,
+    3
+   ],
+   "recorded_status": "UNSAFE",
+   "standard": {
+    "status": "UNSAFE",
+    "nodes": 3,
+    "calls": 1,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.0
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNSAFE",
+    "nodes": 3,
+    "calls": 1,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 0.0
+   }
+  },
+  {
+   "id": "puct_value_vct2_50k|puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black|126",
+   "arm": "puct_value_vct2_50k",
+   "set": "main",
+   "game_key": "puct_value_vct2_50k[puct_c=1.5]@v8:full/8405/24/black",
+   "game_kind": "draw_full_board",
+   "ply": 126,
+   "tree_move": [
+    5,
+    7
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 31,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 4,
+    "seconds": 10.8
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 985,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 10,
+    "seconds": 136.72
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/13/black|16",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/13/black",
+   "game_kind": "decisive",
+   "ply": 16,
+   "tree_move": [
+    6,
+    6
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 11465,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 1.85
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 17963,
+    "calls": 10700,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 3.83
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/16/black|16",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/16/black",
+   "game_kind": "decisive",
+   "ply": 16,
+   "tree_move": [
+    7,
+    3
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 69329,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 4.28
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 98347,
+    "calls": 10828,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 6.84
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white|43",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white",
+   "game_kind": "draw_full_board",
+   "ply": 43,
+   "tree_move": [
+    3,
+    3
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 620,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 9,
+    "seconds": 15.68
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 709,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 0,
+    "seconds": 177.85
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white|45",
+   "arm": "puct_policy_vct2_50k",
+   "set": "control",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white",
+   "game_kind": "draw_full_board",
+   "ply": 45,
+   "tree_move": [
+    0,
+    7
+   ],
+   "recorded_status": "UNSAFE",
+   "standard": {
+    "status": "UNSAFE",
+    "nodes": 67898,
+    "calls": 1297,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.21
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNSAFE",
+    "nodes": 67898,
+    "calls": 1297,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 5.17
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white|47",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white",
+   "game_kind": "draw_full_board",
+   "ply": 47,
+   "tree_move": [
+    5,
+    5
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 1345,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 15.59
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 24823,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 1,
+    "seconds": 177.53
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white|49",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white",
+   "game_kind": "draw_full_board",
+   "ply": 49,
+   "tree_move": [
+    7,
+    10
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 879,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 3,
+    "seconds": 15.82
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNSAFE",
+    "nodes": 469670,
+    "calls": 3549,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 31.74
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white|57",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white",
+   "game_kind": "draw_full_board",
+   "ply": 57,
+   "tree_move": [
+    2,
+    10
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 2122,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 2,
+    "seconds": 15.67
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 604287,
+    "calls": 4483,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 38.68
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white|67",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/17/white",
+   "game_kind": "draw_full_board",
+   "ply": 67,
+   "tree_move": [
+    6,
+    4
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 24,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 2,
+    "seconds": 14.75
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "UNKNOWN",
+    "nodes": 4000000,
+    "calls": 3595,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": true,
+    "per_call_limit_hits": 13,
+    "seconds": 170.44
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/19/black|18",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/19/black",
+   "game_kind": "decisive",
+   "ply": 18,
+   "tree_move": [
+    7,
+    11
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 70796,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 4.01
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 210690,
+    "calls": 10930,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 12.19
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/2/black|66",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/2/black",
+   "game_kind": "decisive",
+   "ply": 66,
+   "tree_move": [
+    11,
+    9
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 43,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 7,
+    "seconds": 10.24
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 765970,
+    "calls": 179,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 2,
+    "seconds": 33.91
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/21/white|29",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/21/white",
+   "game_kind": "decisive",
+   "ply": 29,
+   "tree_move": [
+    4,
+    6
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 200000,
+    "calls": 1810,
+    "budget_cut": true,
+    "cut_kind": "nodes",
+    "exhausted": false,
+    "per_call_limit_hits": 7,
+    "seconds": 14.65
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 2418290,
+    "calls": 12254,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 1,
+    "seconds": 101.54
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/24/black|12",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/24/black",
+   "game_kind": "decisive",
+   "ply": 12,
+   "tree_move": [
+    6,
+    7
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 187184,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 9.77
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 307835,
+    "calls": 13257,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 16.6
+   }
+  },
+  {
+   "id": "puct_policy_vct2_50k|puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/6/black|14",
+   "arm": "puct_policy_vct2_50k",
+   "set": "main",
+   "game_key": "puct_policy_vct2_50k[puct_c=1.5]@v8:full/8405/6/black",
+   "game_kind": "decisive",
+   "ply": 14,
+   "tree_move": [
+    6,
+    4
+   ],
+   "recorded_status": "UNKNOWN",
+   "standard": {
+    "status": "UNKNOWN",
+    "nodes": 47529,
+    "calls": 5000,
+    "budget_cut": true,
+    "cut_kind": "calls",
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 3.36
+   },
+   "replay_matches": true,
+   "large": {
+    "status": "SAFE",
+    "nodes": 417566,
+    "calls": 46162,
+    "budget_cut": false,
+    "cut_kind": null,
+    "exhausted": false,
+    "per_call_limit_hits": 0,
+    "seconds": 28.1
+   }
+  }
+ ]
+}

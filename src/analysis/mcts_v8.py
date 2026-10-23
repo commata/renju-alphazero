@@ -66,6 +66,7 @@ from search.mcts_v7 import (
 from search.threat_patterns import placed
 
 from .puct_v8 import PUCT_PRIORS, PUCTStats, prior_entropy, search_tree_puct
+from .puct_value_v1 import PUCTValueStats, search_tree_puct_value
 from .threats import (
     SAFE, UNKNOWN, UNSAFE, VCF_NONE, VCF_UNKNOWN, VCF_WIN, ThreatSolver, _board_key,
     _unbounded_max_fours, decision_status,
@@ -77,7 +78,7 @@ Move = tuple[int, int]
 # by a depth-1 VCT within the budget", an UNSAFE move is a proven loss in that class.
 NOT_REFUTED_VCT1, PROVEN_LOSS_VCT1 = SAFE, UNSAFE
 ROOT_VCT_MODES = ("aggressive", "veto")
-TREE_MODES = ("v5", "puct")
+TREE_MODES = ("v5", "puct", "puct_value")
 
 # V8-B attack statuses (the side to move attacks; kept apart from V8-A's SAFE/UNSAFE).
 WIN, REFUTED = 'WIN', 'REFUTED'
@@ -111,6 +112,8 @@ V8_DEFAULTS = {
     # H5 (§12.16): the tree route's tree. "v5" = the V5 widening tree (V7's search);
     # "puct" = analysis.puct_v8 on the same action sets and rollouts, prior ``puct_prior``
     # ("uniform" / "heuristic" / "policy"; "policy" needs the ``root_policy`` callable).
+    # H6-4: "puct_value" = analysis.puct_value_v1, the same PUCT tree with a value leaf instead of
+    # the rollout (needs the ``leaf_value`` callable).
     "tree_mode": "v5",
     "puct_prior": "uniform",
     "puct_c": 1.5,
@@ -176,11 +179,24 @@ class SearchDiagnostics(V7Diagnostics):
     v8_puct_prior_entropy: float = 0.0           # root prior, normalized (1 = uniform)
     v8_puct_prior_top: Move | None = None        # root child with the highest prior
     v8_puct_prior_top_prob: float = 0.0
+    # H6-4 value leaf only (tree_mode "puct_value").
+    v8_value_calls: int = 0
+    v8_value_seconds: float = 0.0
+    v8_value_exact_leaves: int = 0
+    v8_value_terminal_leaves: int = 0
+    v8_value_black_leaves: int = 0
+    v8_value_black_sum: float = 0.0
+    v8_value_white_leaves: int = 0
+    v8_value_white_sum: float = 0.0
     v8_vct2_checked: tuple[tuple[Move, str], ...] = ()  # S3-VCT2: selective depth-2 status per checked move
     v8_vct2_check_nodes: tuple[int, ...] = ()  # nodes of each check above, same order (diagnostics only)
     v8_vct2_switched: bool = False
     v8_vct2_nodes: int = 0
     v8_vct2_seconds: float = 0.0
+    # H7-E2 (``root_vcf_table``): V8-C's root solver used the call-local VCF no-win table.
+    v8_root_vcf_table: bool = False
+    v8_root_table_hits: int = 0
+    v8_root_table_stores: int = 0
 
 
 class _BudgetExhausted(Exception):
@@ -203,6 +219,9 @@ class _BudgetedSolver(ThreatSolver):
     _cap: int = field(default=0, repr=False)  # absolute node cap for the current status_after
     _call_cap: int = field(default=0, repr=False)  # absolute VCF call cap for the current status_after
     last_cut: bool = field(default=False, repr=False)  # last status_after stopped by a budget/share cut
+    # H7-E2: the VCF search of this solver's calls; None = the frozen ``_find_vcf_with_stats``
+    # (looked up at call time). V8-C's root solver gets ``analysis.vcf_tt_v1`` with ``root_vcf_table``.
+    vcf_search: object = field(default=None, repr=False)
 
     def vcf(self, game: Game, attacker: int):
         key = (_board_key(game), attacker)
@@ -214,8 +233,8 @@ class _BudgetedSolver(ThreatSolver):
             self._stop()
         limit = min(self.node_limit, remaining)
         self.vcf_calls += 1
-        found, nodes, cut = _find_vcf_with_stats(
-            game, attacker, max_fours=_unbounded_max_fours(game), node_limit=limit)
+        find = _find_vcf_with_stats if self.vcf_search is None else self.vcf_search
+        found, nodes, cut = find(game, attacker, max_fours=_unbounded_max_fours(game), node_limit=limit)
         self.nodes_used += nodes
         if found is not None:
             result = (VCF_WIN, tuple(found.attack_moves))
@@ -325,7 +344,7 @@ def _validate_v8_config(*, stage_vct_safety, vct_vcf_node_limit, vct_call_limit,
                         ("vct2_node_budget", vct2_node_budget), ("vct2_max_children", vct2_max_children)):
         if isinstance(value, bool) or not isinstance(value, int) or value < 1:
             raise ValueError(f"{name} must be a positive integer")
-    if tree_mode == "puct" and (root_policy_order or root_policy_extra):
+    if tree_mode in ("puct", "puct_value") and (root_policy_order or root_policy_extra):
         # H5 keeps the action set fixed across priors (§12.16): no H4 options on PUCT.
         raise ValueError("tree_mode='puct' cannot be combined with root_policy_order / root_policy_extra")
 
@@ -504,7 +523,7 @@ def _own_vct_attack(game, context, diag, *, node_limit, call_limit, node_budget)
 
 
 def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit, node_budget,
-                        max_children=0, mode="aggressive") -> Move:
+                        max_children=0, mode="aggressive", vcf_table=False) -> Move:
     """V8-C: keep V7's tree move if it is proven VCT1-SAFE, otherwise the first proven SAFE child.
 
     Children are tried in the tree's own preference order (visits, mean value).
@@ -524,9 +543,27 @@ def _verify_root_choice(game, chosen, children, diag, *, node_limit, call_limit,
     never checked included) and does not lose at once, not the proven SAFE one;
     V7's move stands if every child is proven UNSAFE. The two modes therefore
     differ only in the selection rule, never in how the budget is spent (§12.8).
+
+    ``vcf_table`` (H7-E2): this solver's VCF calls use ``analysis.vcf_tt_v1`` (a call-local table of
+    exact no-win states); the same results wherever the frozen VCF finishes without a cut.
     """
     started = perf_counter()
     solver = _BudgetedSolver(node_limit=node_limit, call_limit=call_limit, node_budget=node_budget)
+    if vcf_table:
+        from .vcf_tt_v1 import TableStats, make_find
+
+        table_stats = TableStats()
+        solver.vcf_search = make_find(table_stats)
+        diag.v8_root_vcf_table = True
+    try:
+        return _verify_root_with(game, chosen, children, diag, solver, max_children, mode, started)
+    finally:
+        if vcf_table:
+            diag.v8_root_table_hits, diag.v8_root_table_stores = table_stats.hits, table_stats.stores
+
+
+def _verify_root_with(game, chosen, children, diag, solver, max_children, mode, started) -> Move:
+    call_limit, node_budget = solver.call_limit, solver.node_budget
     order = _root_order(chosen, children)
     statuses = {chosen: solver.status_after(game, chosen, node_budget // 2, call_limit // 2)}
     if statuses[chosen] == SAFE or (mode == "veto" and statuses[chosen] != UNSAFE):
@@ -714,8 +751,15 @@ def mcts_search_v8(
     root_vct2_check=False, vct2_node_limit=20_000, vct2_call_limit=20_000, vct2_node_budget=10_000,
     vct2_max_children=4,
     root_policy=None, random: Random | None = None, diagnostics: SearchDiagnostics | None = None,
+    leaf_value=None, root_vcf_table=False,
 ) -> Move:
-    """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules."""
+    """V7 decision flow (``search.mcts_v7.mcts_search_v7``) with the V8 modules.
+
+    ``root_vcf_table`` (H7-E2, not a ``V8_DEFAULTS`` option so TB-Engine-v1's configuration is unchanged):
+    V8-C's root solver uses the call-local VCF no-win table of ``analysis.vcf_tt_v1``. Off by default;
+    off is the frozen code path."""
+    if not isinstance(root_vcf_table, bool):
+        raise ValueError("root_vcf_table must be a bool")
     _validate_v5_config(
         simulations=simulations, tactical_simulations=tactical_simulations,
         tactical_score_threshold=tactical_score_threshold, exploration=exploration,
@@ -742,9 +786,11 @@ def mcts_search_v8(
                         vct2_call_limit=vct2_call_limit, vct2_node_budget=vct2_node_budget,
                         vct2_max_children=vct2_max_children)
     uses_policy = root_policy_order or root_policy_extra > 0
-    if (uses_policy or (tree_mode == "puct" and puct_prior == "policy")) and root_policy is None:
+    if (uses_policy or (tree_mode in ("puct", "puct_value") and puct_prior == "policy")) and root_policy is None:
         # Fail fast: a policy arm must never silently run as the baseline.
         raise ValueError("root_policy_order / root_policy_extra / puct_prior='policy' need a root_policy callable")
+    if tree_mode == "puct_value" and leaf_value is None:
+        raise ValueError("tree_mode='puct_value' needs a leaf_value callable")
     diag = diagnostics if diagnostics is not None else SearchDiagnostics()
     diag.__dict__.update(vars(SearchDiagnostics()))
     context = _RootContext(game.legal_moves(), diag)
@@ -853,6 +899,29 @@ def mcts_search_v8(
         diag.v8_puct_prior_entropy = prior_entropy([stats.root_prior[m] for m in moves])
         diag.v8_puct_prior_top = top
         diag.v8_puct_prior_top_prob = stats.root_prior[top]
+    elif tree_mode == "puct_value":
+        stats = PUCTValueStats()
+        chosen, children = search_tree_puct_value(
+            game, moves, budget, c_puct=puct_c, prior=puct_prior,
+            policy=root_policy if puct_prior == "policy" else None, leaf_value=leaf_value,
+            candidate_limit=candidate_limit, neighborhood_radius=neighborhood_radius,
+            priority_top_k=priority_top_k, random=random, stats=stats,
+        )
+        top = max(moves, key=lambda m: (stats.root_prior[m], -moves.index(m)))
+        diag.v8_puct_prior = puct_prior
+        diag.v8_puct_nn_calls = stats.nn_calls
+        diag.v8_puct_prior_fallbacks = stats.prior_fallbacks
+        diag.v8_puct_prior_entropy = prior_entropy([stats.root_prior[m] for m in moves])
+        diag.v8_puct_prior_top = top
+        diag.v8_puct_prior_top_prob = stats.root_prior[top]
+        diag.v8_value_calls = stats.value_calls
+        diag.v8_value_seconds = stats.value_seconds
+        diag.v8_value_exact_leaves = stats.exact_leaves
+        diag.v8_value_terminal_leaves = stats.terminal_leaves
+        diag.v8_value_black_leaves = stats.black_leaves
+        diag.v8_value_black_sum = stats.black_value_sum
+        diag.v8_value_white_leaves = stats.white_leaves
+        diag.v8_value_white_sum = stats.white_value_sum
     else:
         chosen, children = _search_tree_v8(
             game, moves, budget, exploration, candidate_limit,
@@ -870,7 +939,8 @@ def mcts_search_v8(
     if root_vct_safety:
         chosen = _verify_root_choice(game, chosen, children, diag, node_limit=root_vcf_node_limit,
                                      call_limit=root_call_limit, node_budget=root_node_budget,
-                                     max_children=root_max_children, mode=root_vct_mode)
+                                     max_children=root_max_children, mode=root_vct_mode,
+                                     vcf_table=root_vcf_table)
     if root_vct2_check:
         chosen = _vct2_veto(game, chosen, children, diag,
                             budget={'node_limit': vct2_node_limit, 'call_limit': vct2_call_limit,

@@ -1,0 +1,58 @@
+{
+ "format": "tb-v3-fast5-cpu-cert-v1",
+ "git_commit": "650357b831680946f056ba9863b37bfbf0c1ff23",
+ "rules": {
+  "low_min": -0.05,
+  "pairs_per_seed": 50,
+  "fast": "fast4",
+  "runtime": "fast5",
+  "bootstrap": 10000,
+  "seed": 0
+ },
+ "runtime_hash": {
+  "cpu": "669c79992529fe6f60f20922f9816baf9534f341563719c015d0f45b1f1f99f4",
+  "cuda": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e"
+ },
+ "runs": {
+  "runs/tb_v3_cert/cpu_8451.json": "bcec36f57b924540bfa6f882f929b48139cc5c53c6facfa4ff865411beddd0b4",
+  "runs/tb_v3_cert/cpu_8452.json": "462bb0be15dde405119baaa9f236836ccd9838b1ba0fcb4ca0c7d56c9110043a",
+  "runs/tb_v3_cert/cuda_8451.json": "e0ca27658f6e093d8b00d3d27aeec37f39b5c65d4e3fbf8749c7e31e900cc447",
+  "runs/tb_v3_cert/cuda_8452.json": "f69f0a0f595be5e4d9519e9840df63d1ad8faeb8a2efae63af7fbbb1079db948"
+ },
+ "verdict": "PASS",
+ "strength": {
+  "n": 200,
+  "openings": 100,
+  "diff": 0.005,
+  "ci95": [
+   0.0,
+   0.015
+  ]
+ },
+ "safety_violations": {
+  "cpu": 0,
+  "cuda": 0
+ },
+ "report": {
+  "identical_games": 197,
+  "games": 200,
+  "score": {
+   "cpu": 0.948,
+   "cuda": 0.943
+  },
+  "by_colour": {
+   "cpu": {
+    "black": 0.965,
+    "white": 0.93
+   },
+   "cuda": {
+    "black": 0.965,
+    "white": 0.92
+   }
+  },
+  "game_minutes": {
+   "cpu": 54.8,
+   "cuda": 47.4
+  }
+ }
+}

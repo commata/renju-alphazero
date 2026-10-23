@@ -1,0 +1,140 @@
+{
+  "format": "h7-p1a-ser5-fast4-summary-v1",
+  "source": "runs/h7_timing/ser5_fast4_r1.json",
+  "engine": "256e5abe028c694891d33b9be1b9f58287fe18b6d4af278822b03cf09b7ec5c1",
+  "label": "fast4_r1",
+  "settings": {
+    "device": "cpu",
+    "threads": 1,
+    "workers": 1,
+    "fast": {
+      "requested": "fast4",
+      "active": {
+        "threat_windows": "threat_windows_native",
+        "winning_extensions": "winning_extensions_in_direction",
+        "forbidden": "forbidden"
+      },
+      "native_build": {
+        "python": "3.14.4",
+        "soabi": "cpython-314-x86_64-linux-gnu",
+        "ext_suffix": ".cpython-314-x86_64-linux-gnu.so",
+        "flags": [
+          "-O2",
+          "-shared",
+          "-fPIC"
+        ],
+        "sources": {
+          "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5",
+          "forbidden.c": "211fd89d65db9963b8d1c31f09c4d235f927ad6744010672b0ae6c70d3435822"
+        },
+        "executable": "/home/deploy/renju-alphazero/.venv-ser5/bin/python",
+        "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+        "compiler": "gcc",
+        "compiler_version": "gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+        "modules": {
+          "_threat_windows.cpython-314-x86_64-linux-gnu.so": "46376708805575136816bb139b3e0eeaa64e8310f50c60913478c4146c01a2f3",
+          "_forbidden.cpython-314-x86_64-linux-gnu.so": "5912f8bb7d77d21db38733f97b77bf3cdddf158339d201569789117e5262c73b"
+        }
+      }
+    },
+    "machine": {
+      "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+      "cpu": "AMD Ryzen 7 5800H with Radeon Graphics",
+      "python": "3.14.4"
+    }
+  },
+  "summary": {
+    "all": {
+      "n": 827,
+      "mean": 3.505,
+      "p50": 1.761,
+      "p90": 9.656,
+      "p95": 12.949,
+      "p99": 17.407,
+      "max": 22.277,
+      "over_deadline": 0
+    },
+    "e3a": {
+      "n": 526,
+      "mean": 4.205,
+      "p50": 1.86,
+      "p90": 11.228,
+      "p95": 15.413,
+      "p99": 18.568,
+      "max": 22.277,
+      "over_deadline": 0
+    },
+    "h6_4b": {
+      "n": 298,
+      "mean": 2.281,
+      "p50": 1.728,
+      "p90": 3.538,
+      "p95": 5.121,
+      "p99": 11.352,
+      "max": 13.365,
+      "over_deadline": 0
+    },
+    "probe": {
+      "n": 3,
+      "mean": 2.338,
+      "p50": 1.529,
+      "p90": 4.772,
+      "p95": 4.772,
+      "p99": 4.772,
+      "max": 4.772,
+      "over_deadline": 0
+    },
+    "tree_route": {
+      "n": 705,
+      "mean": 3.741,
+      "p50": 1.802,
+      "p90": 9.984,
+      "p95": 13.289,
+      "p99": 17.665,
+      "max": 22.277,
+      "over_deadline": 0
+    },
+    "tree_route_parts": {
+      "tree": {
+        "n": 705,
+        "mean": 1.528,
+        "p50": 1.458,
+        "p90": 2.366,
+        "p95": 2.539,
+        "p99": 2.783,
+        "max": 2.9,
+        "over_deadline": 0
+      },
+      "root": {
+        "n": 705,
+        "mean": 1.204,
+        "p50": 0.166,
+        "p90": 4.181,
+        "p95": 8.048,
+        "p99": 12.835,
+        "max": 14.111,
+        "over_deadline": 0
+      },
+      "vct2": {
+        "n": 705,
+        "mean": 0.524,
+        "p50": 0.129,
+        "p90": 1.73,
+        "p95": 1.851,
+        "p99": 2.155,
+        "max": 3.052,
+        "over_deadline": 0
+      },
+      "value": {
+        "n": 705,
+        "mean": 0.758,
+        "p50": 0.732,
+        "p90": 1.227,
+        "p95": 1.376,
+        "p99": 1.476,
+        "max": 1.498,
+        "over_deadline": 0
+      }
+    }
+  }
+}

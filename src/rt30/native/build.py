@@ -25,7 +25,7 @@ import sysconfig
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-MODULES = {'_threat_windows': 'threat_windows.c'}
+MODULES = {'_threat_windows': 'threat_windows.c', '_forbidden': 'forbidden.c'}  # fast3 X1-A; fast4 (H7 P1a-1)
 FLAGS = ['-O2', '-shared', '-fPIC']
 INFO = HERE / 'build_info.json'
 

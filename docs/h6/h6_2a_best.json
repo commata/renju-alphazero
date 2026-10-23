@@ -1,0 +1,314 @@
+{
+ "stage": "H6-2a",
+ "track": "B",
+ "policy_trained": true,
+ "value_trained": true,
+ "trunk_frozen": true,
+ "policy_head_frozen": true,
+ "source": "RenjuNet (offline, non-commercial; do not publish online)",
+ "h3_checkpoint": "..\\renju-alphazero\\runs\\h3_policy_64x4\\best.pt",
+ "parent_h3_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "parent_h3_metadata_sha256": "33679875e0ece99b6590959b03cf95557868b93894936a89891cb98cd1177e4e",
+ "labels_sha256": "1e8a37b561b6bc1e1493d7c40dff2c452a6d2c3e3387dafdac441f2e926db6eb",
+ "h6_report_sha256": "bd7302676ce0e169acb75445010d588cb82e2b93301f386b392812fdf709ee67",
+ "cache_sha256": {
+  "train": "1212c599a621f24423cc33f39ca4bbdd86461234ee62222ae10ea2444a66c158",
+  "val": "ace71ef1a1377841411362fb0ecfa773966ebfca36c8ac1d9a3a4a86b32d4609"
+ },
+ "parent_h3_metadata": {
+  "stage": "H3",
+  "track": "B",
+  "policy_trained": true,
+  "value_trained": false,
+  "source": "RenjuNet (offline, non-commercial; do not publish online)",
+  "h2_output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+  "cache_sha256": {
+   "train": "b48a8735bc6d1c87d7efaca52e7c8bf2838c3090b7639f5e1db2682a89430277",
+   "val": "96f598810e46e9996317b11e13ff72d1e85a47f46666983cab719eca316bd3e7",
+   "test": "bb2f022b30822202c9a77e42c1d6bf4134aaedb3210847d2615d371d92abc8ae"
+  },
+  "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+  "step": 31030,
+  "config": {
+   "cache_dir": "data/external/renjunet/h3_cache",
+   "out_dir": "runs/h3_policy_64x4",
+   "device": "cuda",
+   "torch_threads": 4,
+   "seed": 20261003,
+   "channels": 64,
+   "blocks": 4,
+   "batch_size": 1024,
+   "epochs": 10,
+   "max_steps": 0,
+   "learning_rate": 0.002,
+   "weight_decay": 0.0001,
+   "warmup_steps": 1000,
+   "min_lr_ratio": 0.02,
+   "augment_d4": true,
+   "amp_bf16": false,
+   "eval_every": 3000,
+   "eval_max_states": 0,
+   "checkpoint_every": 1000,
+   "log_every": 100
+  },
+  "val": {
+   "states": 127316,
+   "ce": 1.5916649842000845,
+   "top1": 0.5241132300732037,
+   "top3": 0.762732099657545,
+   "top5": 0.8521631216814854,
+   "diagnostic": {
+    "raw_top1_legal_rate": 0.553504665556568,
+    "raw_illegal_mass": 0.45545746715403873
+   },
+   "top1_by_ply": {
+    "5-9": 0.47913769123783034,
+    "10-14": 0.5211739373155754,
+    "15-19": 0.5336681839585622,
+    "20-29": 0.5317754345967513,
+    "30-49": 0.5271481843907857,
+    "50-1000": 0.5039975863629507
+   },
+   "states_by_ply": {
+    "5-9": 2876,
+    "10-14": 12539,
+    "15-19": 19113,
+    "20-29": 35090,
+    "30-49": 37811,
+    "50-1000": 19887
+   }
+  }
+ },
+ "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+ "model_config": {
+  "board_size": 15,
+  "input_planes": 6,
+  "channels": 64,
+  "blocks": 4,
+  "policy_channels": 2,
+  "value_channels": 1,
+  "value_hidden": 64
+ },
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "git_commit": "ff4d93b34e497ac41bb336721552fc5da97e5a1a",
+ "git_dirty": false,
+ "config": {
+  "h3_checkpoint": "..\\renju-alphazero\\runs\\h3_policy_64x4\\best.pt",
+  "h3_metadata": "",
+  "cache_dir": "data/tactical/h6/value_cache_v2",
+  "h6_report": "docs/h6/h6_1_report_v2.json",
+  "out_dir": "runs/h6_value_head_v1",
+  "device": "cuda",
+  "torch_threads": 4,
+  "seed": 20261012,
+  "channels": 64,
+  "blocks": 4,
+  "optimizer": "adamw",
+  "batch_size": 1024,
+  "epochs": 3,
+  "max_steps": 0,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "warmup_steps": 500,
+  "min_lr_ratio": 0.05,
+  "augment_d4": true,
+  "eval_every": 2000,
+  "eval_max_states": 0,
+  "checkpoint_every": 1000,
+  "log_every": 100,
+  "require_clean_git": true
+ },
+ "step": 7857,
+ "best_step": 7857,
+ "val": {
+  "states": 106223,
+  "weighted_mse": 0.5620425939559937,
+  "all": {
+   "states": 106223,
+   "mse": 0.8705266118049622,
+   "sign_acc": 0.6556113362312317,
+   "mean_value": 0.16402208805084229,
+   "mean_target": 0.03433343023061752,
+   "saturated": 0.03392862156033516
+  },
+  "by_kind": {
+   "proof": {
+    "states": 9644,
+    "mse": 0.18451246619224548,
+    "sign_acc": 0.9486727714538574,
+    "mean_value": 0.5625491738319397,
+    "mean_target": 0.754873514175415,
+    "saturated": 0.21806304156780243
+   },
+   "outcome": {
+    "states": 96579,
+    "mse": 0.939029335975647,
+    "sign_acc": 0.6263473629951477,
+    "mean_value": 0.12422674894332886,
+    "mean_target": -0.037616875022649765,
+    "saturated": 0.015541681088507175
+   }
+  },
+  "by_kind_sign": {
+   "proof+1": {
+    "states": 8462,
+    "mse": 0.17621475458145142,
+    "sign_acc": 0.9508390426635742,
+    "mean_value": 0.7311773896217346,
+    "mean_target": 1.0,
+    "saturated": 0.24025052785873413
+   },
+   "proof-1": {
+    "states": 1182,
+    "mse": 0.243916317820549,
+    "sign_acc": 0.933164119720459,
+    "mean_value": -0.6446693539619446,
+    "mean_target": -1.0,
+    "saturated": 0.05922165885567665
+   },
+   "outcome+1": {
+    "states": 46473,
+    "mse": 0.712452232837677,
+    "sign_acc": 0.6976523995399475,
+    "mean_value": 0.25910335779190063,
+    "mean_target": 1.0,
+    "saturated": 0.026574570685625076
+   },
+   "outcome-1": {
+    "states": 50106,
+    "mse": 1.1491780281066895,
+    "sign_acc": 0.5602123737335205,
+    "mean_value": -0.0008704676874913275,
+    "mean_target": -1.0,
+    "saturated": 0.005308745428919792
+   }
+  },
+  "by_side": {
+   "black": {
+    "states": 53141,
+    "mse": 0.891531765460968,
+    "sign_acc": 0.6511544585227966,
+    "mean_value": 0.19412091374397278,
+    "mean_target": -0.008787941187620163,
+    "saturated": 0.03675128519535065
+   },
+   "white": {
+    "states": 53082,
+    "mse": 0.8494981527328491,
+    "sign_acc": 0.6600731015205383,
+    "mean_value": 0.1338898241519928,
+    "mean_target": 0.07750273495912552,
+    "saturated": 0.031102821230888367
+   }
+  },
+  "by_ply": {
+   "5-9": {
+    "states": 2797,
+    "mse": 0.9459435939788818,
+    "sign_acc": 0.5992134213447571,
+    "mean_value": 0.021101679652929306,
+    "mean_target": 0.013228459283709526,
+    "saturated": 0.0
+   },
+   "10-14": {
+    "states": 12004,
+    "mse": 0.9029034376144409,
+    "sign_acc": 0.6239587068557739,
+    "mean_value": 0.07480477541685104,
+    "mean_target": 0.03965345025062561,
+    "saturated": 0.0039153615944087505
+   },
+   "15-19": {
+    "states": 17888,
+    "mse": 0.8657130002975464,
+    "sign_acc": 0.6512187123298645,
+    "mean_value": 0.09841684997081757,
+    "mean_target": 0.007267442066222429,
+    "saturated": 0.01705053634941578
+   },
+   "20-29": {
+    "states": 31404,
+    "mse": 0.8526133894920349,
+    "sign_acc": 0.6633549928665161,
+    "mean_value": 0.15914930403232574,
+    "mean_target": 0.04018596187233925,
+    "saturated": 0.03426315262913704
+   },
+   "30-49": {
+    "states": 30593,
+    "mse": 0.881382405757904,
+    "sign_acc": 0.6577321887016296,
+    "mean_value": 0.21384917199611664,
+    "mean_target": 0.04108783230185509,
+    "saturated": 0.046187035739421844
+   },
+   "50-1000": {
+    "states": 11537,
+    "mse": 0.8459922671318054,
+    "sign_acc": 0.6823264360427856,
+    "mean_value": 0.27435627579689026,
+    "mean_target": 0.042038656771183014,
+    "saturated": 0.06613504141569138
+   }
+  }
+ },
+ "cache_summary": {
+  "train": {
+   "states": 2682580,
+   "games": 89044,
+   "weight_sum": 402735.10377470404,
+   "by_kind": {
+    "outcome": {
+     "states": 2533161,
+     "weight_sum": 253316.10377470404,
+     "weight_share": 0.6289893813587524,
+     "sign": {
+      "+1": 1233531,
+      "-1": 1299630,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 149419,
+     "weight_sum": 149419.0,
+     "weight_share": 0.3710106186412476,
+     "sign": {
+      "+1": 134466,
+      "-1": 14953,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 470282
+  },
+  "val": {
+   "states": 106223,
+   "games": 4953,
+   "weight_sum": 19301.900143913925,
+   "by_kind": {
+    "outcome": {
+     "states": 96579,
+     "weight_sum": 9657.900143913925,
+     "weight_share": 0.5003600719051048,
+     "sign": {
+      "+1": 46473,
+      "-1": 50106,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 9644,
+     "weight_sum": 9644.0,
+     "weight_share": 0.49963992809489516,
+     "sign": {
+      "+1": 8462,
+      "-1": 1182,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 67732
+  }
+ }
+}
