@@ -1,0 +1,64 @@
+{
+ "format": "tb-rt30-v4-same-move-v1",
+ "engine": "TB-RT30-v4",
+ "base_engine": "TB-RT30-v3",
+ "v4_lock": {
+  "src/rt30/engine.py": "b653d2a3d308976adf1e929e1e6c03932bf78c817483705912803e8308f9ad00",
+  "src/rt30/solver.py": "eb44b8298336a131c05d525a8aae17dcc1c140563423951ebaa097c2eebedd2e",
+  "src/rt30/deadline.py": "7371a6b09bc71974cf433e9c962b7939d0dfb66c271d085bccdbad313b0e26f3",
+  "src/rt30/vcf.py": "3d43107e3b5cdcf2af6e898d533fadfb85d5a4e383b353ab4f7ba75321aa42a0",
+  "src/rt30/fast.py": "7a3ce59f4abf9f4cc7fe8c7044b71a41632f6ead7caf04b209282263a630cfee",
+  "src/rt30/fast_windows.py": "b82d55957f9a8ccbb4c18c7a42bddac56613b1c092db3781d9b2f4977405d609",
+  "src/rt30/fast_extensions.py": "d935eb813db49d4c777ed20fc92f6723549c16ddafe63bb6b49ee9af6599662d",
+  "src/rt30/tb_rt30_v1.py": "7865d87681da3e19ff7616959bff749006fa86ce55df10e666d967d41429a43b",
+  "src/rt30/engine_v3.py": "4ad8c25057945b9b3dee4e6a74908cd6c3037d132badf4c9acb33f7349222ca7",
+  "src/rt30/attack_helper.py": "bfd0c2d666dd306cd022305ae6ae5a24df709b40967507f95462a7d09b38ef49",
+  "src/rt30/fast3.py": "36cc689639e7f5d67ef7b4a9969582f69ab2a7d7d8b3deae7c790428bb9d7f96",
+  "src/rt30/fast3_windows.py": "309473704e7ecdda1628043bc85f083857dabbf33c9ff44cd163388fe80181bc",
+  "src/rt30/native/__init__.py": "61eea9d98229355623a324bad1eb82a37f5b53a98708058cc1db4ca44462184b",
+  "src/rt30/native/threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5",
+  "src/rt30/native/build.py": "512c6a907a393c99de20c0721664abbada25d803b32c2b2790e67436f8bface6",
+  "src/rt30/tb_rt30_v3.py": "9bc04e81676c3191047a475d932540f91a8e8ba30056e8716a474fd60dd67b0b",
+  "src/rt30/tb_rt30_v4.py": "e8d6be50582ed7deb28f7542cc7859c0083da59a723f9c7b5124a3e919f4b225"
+ },
+ "v3_builder_sha256": "4d596b179d584826742e0496c3adf5c436ef8f0e015a41d4e78f3789dc592888",
+ "inputs": {
+  "runs/v4_gate/v4_equivalence_h3_8.json": "9c12eb4dbb85131a2433ad3d56ab23f775b7f05fc353a602e5e2389788e03829",
+  "runs/v4_gate/v3_slow-stratified-v1.json": "df96514f907a92fee34b754701a3f484a78f69b2bd8800294525120dd907e867",
+  "runs/v4_gate/v4_slow-stratified-v1.json": "000f2f03dda6f728b371f9da6e80dc2a391d888be9956df3149040025b9f8466",
+  "runs/v4_gate/v3_critical-regressions-v1.json": "439f1706cbd316cf97ea35b80fb6225545aea4216552428c72c320787117fe31",
+  "runs/v4_gate/v4_critical-regressions-v1.json": "5dd261877b3e30e55c38338717caee935f4c3e84f38487217919d618fb724e1e"
+ },
+ "verdict": "V4_SAME_MOVE_PASS",
+ "compared": 90,
+ "mismatched": 0,
+ "parts": {
+  "equivalence": {
+   "frozen": {
+    "positions": 8,
+    "mismatches": [],
+    "rt_differences": []
+   },
+   "fast3": {
+    "positions": 8,
+    "mismatches": [],
+    "rt_differences": []
+   },
+   "rt3": {
+    "positions": 8,
+    "mismatches": [],
+    "rt_differences": []
+   }
+  },
+  "slow-stratified-v1": {
+   "positions": 60,
+   "mismatches": [],
+   "rt_differences": []
+  },
+  "critical-regressions-v1": {
+   "positions": 6,
+   "mismatches": [],
+   "rt_differences": []
+  }
+ }
+}
