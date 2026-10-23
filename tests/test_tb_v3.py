@@ -102,9 +102,12 @@ class CanonicalTest(unittest.TestCase):
         record = json.loads((ROOT / 'docs/h7/tb_v3_promotion.json').read_text(encoding='utf-8'))
         self.assertEqual((record['verdict'], record['engine_hash'], record['identity_sha256'], record['runtime_hash']),
                          ('PROMOTION_PASS', tb_v3.ENGINE_HASH, v3rt.identity_sha256(), v3rt.runtime_hash('cuda')))
-        self.assertIs(canonical.factory(), v3rt.make_tb_v3_agent)
-        self.assertIs(canonical.factory('TB-V3'), v3rt.make_tb_v3_agent)
+        from analysis import tb_v3_fast5
+        self.assertIs(canonical.factory(), tb_v3_fast5.make_tb_v3_fast5_agent)  # the canonical runtime: fast5
+        self.assertIs(canonical.factory('TB-V3', 'fast4'), v3rt.make_tb_v3_agent)
         self.assertIs(canonical.factory('TB-V2-Value'), guard.make_tb_v2_agent)
+        self.assertEqual(canonical.default_runtime('TB-V2-Value'), 'fast4')  # older engines keep their runtime
+        self.assertFalse(canonical.provenance('cuda', 'TB-V2-Value')['canonical'])
         self.assertIs(guard.make_canonical_agent, guard.make_tb_v2_agent)  # the candidate's base, for good
         with self.assertRaises(ValueError):
             canonical.factory('TB-V4')
@@ -116,6 +119,15 @@ class CanonicalTest(unittest.TestCase):
         self.assertEqual(config, {**TB_V2_VALUE, **ENGINE_OPTIONS, 'tb_v3': True})
         self.assertTrue(is_canonical('tb_v3', 'fast4', config))
         self.assertFalse(is_canonical('tb_v3', 'fast3', config))
+        from scripts.run_mcts_v8_benchmark import load_finished, tb_v3_runtime_of
+        self.assertEqual(tb_v3_runtime_of({}), canonical.CANONICAL_RUNTIME)
+        self.assertEqual(tb_v3_runtime_of({'runtime': 'fast4'}), 'fast4')
+        with TemporaryDirectory() as tmp:
+            jsonl = Path(tmp) / 'games.jsonl'
+            jsonl.write_text(json.dumps({'key': 'k', 'runtime': 'fast4'}) + '\n', encoding='utf-8')
+            self.assertEqual(list(load_finished(jsonl, {'k'}, 'fast4')), ['k'])
+            with self.assertRaises(ValueError):  # a fast4 game is not resumed as a fast5 run
+                load_finished(jsonl, {'k'}, 'fast5')
         for name in ('v8:tb_v3', 'v8:puct_value_vct2_50k_tt_e4v2'):
             with self.assertRaises(ValueError):  # never a bare V8 without its wrapper
                 make_opponent(name, 1, {'puct_c': 1.5})

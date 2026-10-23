@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 from random import Random
+from tempfile import TemporaryDirectory
 import unittest
 
 from analysis import vcf_tt_v1
@@ -145,9 +146,9 @@ class Fast5RuntimeTest(unittest.TestCase):
         tb_v3_fast5.check_sources()
         self.assertNotEqual(tb_v3_fast5.runtime_hash('cuda'), tb_v3_runtime.runtime_hash('cuda'))
         self.assertNotEqual(tb_v3_fast5.runtime_hash('cuda'), tb_v3_fast5.runtime_hash('cpu'))
-        self.assertEqual(canonical.CANONICAL_RUNTIME, 'fast4')  # until fast5's G1 / G2
-        self.assertIs(canonical.factory('TB-V3', 'fast5'), tb_v3_fast5.make_tb_v3_fast5_agent)
-        self.assertIs(canonical.factory('TB-V3'), tb_v3_runtime.make_tb_v3_agent)
+        self.assertEqual(canonical.CANONICAL_RUNTIME, 'fast5')  # since G0 / G1 / G2
+        self.assertIs(canonical.factory('TB-V3'), tb_v3_fast5.make_tb_v3_fast5_agent)
+        self.assertIs(canonical.factory('TB-V3', 'fast4'), tb_v3_runtime.make_tb_v3_agent)  # the rollback
         with self.assertRaises(ValueError):
             canonical.factory('TB-V2-Value', 'fast5')
         tb_v3.check_identity()  # adding fast5 changed none of the engine's 63 files
@@ -163,11 +164,33 @@ class Fast5RuntimeTest(unittest.TestCase):
         from analysis import canonical, tb_v3_fast5, tb_v3_runtime
         self.assertEqual(canonical.provenance('cuda', 'TB-V3', 'fast5')['runtime_hash'],
                          tb_v3_fast5.runtime_hash('cuda'))
-        self.assertEqual(canonical.provenance('cuda', 'TB-V3')['runtime_hash'], tb_v3_runtime.runtime_hash('cuda'))
+        self.assertEqual(canonical.provenance('cuda', 'TB-V3', 'fast4')['runtime_hash'],
+                         tb_v3_runtime.runtime_hash('cuda'))
+        self.assertEqual(canonical.provenance('cuda')['runtime_hash'], tb_v3_fast5.runtime_hash('cuda'))
         self.assertTrue(canonical.provenance('cuda')['canonical'])
-        self.assertFalse(canonical.provenance('cuda', 'TB-V3', 'fast5')['canonical'])  # not canonical before G1 / G2
+        self.assertFalse(canonical.provenance('cuda', 'TB-V3', 'fast4')['canonical'])  # the rollback, not canonical
         with self.assertRaises(ValueError):
             canonical.provenance('cuda', 'TB-V2-Value', 'fast5')
+
+    def test_canonical_fast5_needs_its_evidence(self):
+        import json
+        from unittest import mock
+        from analysis import canonical
+        e = canonical.check_fast5_evidence()  # the committed G0 / G1 / G2 records, on this very runtime
+        self.assertEqual((e['g0_calls'], e['g1_moves'], e['ser5']), (4_587_616, 3201, 'SER5_CERTIFIED'))
+        real = canonical.FAST5_EVIDENCE
+        with TemporaryDirectory() as tmp:
+            for name, path in real.items():
+                d = json.loads((ROOT / path).read_text(encoding='utf-8'))
+                if name == 'g2_ser5':
+                    d['verdict'] = 'SER5_NOT_CERTIFIED'
+                (Path(tmp) / Path(path).name).write_text(json.dumps(d), encoding='utf-8')
+            fake = {k: str(Path(tmp) / Path(v).name) for k, v in real.items()}
+            with mock.patch.object(canonical, 'FAST5_EVIDENCE', fake), self.assertRaises(RuntimeError):
+                canonical.check_fast5_evidence()
+        with mock.patch.object(canonical, '_git_blob_sha256', lambda commit, path: 'f' * 64), \
+                self.assertRaises(RuntimeError):  # a runtime file changed since the G2 commit
+            canonical.check_fast5_evidence()
 
     def test_g0_needs_table_calls_when_the_base_runs(self):
         from scripts import fast5_g0 as g0

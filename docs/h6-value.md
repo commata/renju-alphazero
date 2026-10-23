@@ -5431,6 +5431,76 @@ C VCF core 자체에서는 고칠 의미 차이를 찾지 못했다는 검토에
 3. 순서: 1 → 2(데스크톱) → 3 설계. 4는 병행 가능
 4. 5번 정확 가속은 H7-c1 처리량을 보고 결정
 
+## canonical 실행판 fast5 전환과 CPU 인증 준비 (2026-10-23, 사용자 승인: 1 → 2 → 3)
+
+**1. canonical 실행판 = fast5 (엔진 해시 그대로)**
+- `analysis.canonical`
+  - `CANONICAL_RUNTIME = 'fast5'`, `RUNTIMES = {'TB-V2-Value': ('fast4',), 'TB-V3': ('fast4', 'fast5')}`
+  - `factory(engine_id, runtime)`와 `provenance(device, engine_id, runtime)`는 실행판을 받는다.
+  - 기본값은 `default_runtime(engine_id)`다. canonical 엔진이면 canonical 실행판이고, TB-V2-Value처럼 예전 엔진은 동결 때의 fast4다.
+  - `provenance`의 `canonical`은 엔진과 실행판이 모두 canonical일 때만 참이다.
+  - 되돌림: `factory('TB-V3', 'fast4')`는 그대로 남는다. 상수 한 줄을 바꾸면 검사기도 fast5 근거 검사를 건너뛴다.
+- `check_fast5_evidence()` (검사기 `canonical runtime` 항목)는 커밋된 근거 5개를 이 checkout에 대해 다시 확인한다.
+  - G0 두 파일: G0_PASS, clean, 불일치 0, fingerprint의 fast5 runtime 해시 = 지금 값, 엔진·identity 일치, stand-in 아님. base 파일은 base · table 호출이 모두 0보다 크다.
+  - G1: G1_PASS, clean, CUDA runtime 해시 = 지금 값, 기록 불일치 0
+  - G2 두 파일: `official`, `same_decisions`. runtime 해시를 만드는 파일(`tb_v3.py`, `tb_v3_fast5.py`, `tb_v2_runtime.py`)이 각 G2 `git_commit`의 blob과 바이트 단위로 같다(G2 기록에는 fast5 해시가 직접 없으므로).
+  - SER5 판정은 `SER5_CERTIFIED`다.
+- 제안과 다른 점: 인증 근거를 `tb_v3_fast5.CERTIFICATION`에 쓰지 않았다. 그 파일의 SHA는 runtime 해시에 들어간다. 그래서 거기에 쓰면 근거를 잰 실행판과 다른 해시가 된다. 근거 목록은 `canonical.FAST5_EVIDENCE`에 둔다.
+- 벤치마크 `tb_v3` arm
+  - `--runtime fast4|fast5`(기본 canonical)를 받는다. 다른 arm에서는 거부한다.
+  - 대국 기록마다 `runtime`을 쓰고, 출력에 `runtime_mode`를 쓴다.
+  - provenance는 `canonical.provenance(device, 'TB-V3', runtime)`다.
+  - `--games-jsonl` 이어하기는 다른 실행판(또는 실행판 없는) 기록을 거부한다.
+- 검사 결과
+  - 검사기 전체 PASS: "canonical runtime fast5, evidence PASS (G0 4,587,616 calls, G1 3201 moves, SER5_CERTIFIED; cuda 7c727150922d, cpu 669c79992529)"
+  - `test_fast5`, `test_tb_v3`, `test_tb_v3_cpu_cert`, `test_track_b_guard`, `test_h7_timing`, `test_mcts_v8_benchmark`, `test_tb_v2_value_e4v2`, `test_h7_e4v2_arena` PASS
+  - 근거 변조 테스트: SER5 판정을 바꾸면 거부한다. G2 커밋의 blob이 다르면 거부한다.
+  - 전체 실행에서 회귀 하나를 찾아 고쳤다: `factory('TB-V2-Value')`가 canonical 실행판 fast5를 기본으로 잡아 실패했다(`tb_v3_promotion.py`의 TB-V2 재생도 같은 경로).
+
+**2. CPU 인증 (TB-V3 / fast5, seed 8451 / 8452, 사전 고정, 추가 seed 없음)**
+- 판정 도구: `scripts/summarize_tb_v3_cpu_cert.py` (형식 `tb-v3-fast5-cpu-cert-v1`)
+  - **PASS**: opening 단위 점수 차 CPU − CUDA(두 색 합), opening bootstrap 95% 하한 ≥ −0.05, 그리고 두 backend 모두 안전 위반 0
+  - **FAIL**: 그 밖. CPU는 TB-V3 / fast5에서 인증되지 않은 채로 남고, 웹은 value를 CUDA 기계에서 돌린다.
+  - 기록만: 같은 대국 수, 색별 점수, backend별 대국 시간
+- run 검사
+  - `tb_v3` arm 대 `v8:full`, seed 8451 / 8452
+  - 동결 설정(`TB_V2_VALUE + ENGINE_OPTIONS + tb_v3`), `--fast fast4 --runtime fast5`, 해당 value 장치
+  - canonical factory, TB-V3 엔진 해시, 그 장치의 fast5 runtime 해시
+  - 50 pair, 모든 대국에 `runtime: fast5`, 깨끗한 tree
+  - seed마다 두 backend의 opening이 같고, (opening, 색) 집합이 같다.
+- H7-c1 self-play는 이 판정을 확인한 뒤에 시작한다.
+
+**실행 명령 (데스크톱 Ubuntu)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale && python -m rt30.vcfcore.build --if-stale)
+python scripts/check_track_b_frozen.py && python -m unittest tests.test_fast5 tests.test_tb_v3 tests.test_tb_v3_cpu_cert
+mkdir -p runs/tb_v3_cert docs/h7
+POL=runs/h3_policy_64x4/best.pt; VAL=runs/h6_value_head_v3/best.pt; W=8
+for SEED in 8451 8452; do
+for DEV in cuda cpu; do
+python -u scripts/run_mcts_v8_benchmark.py --arm tb_v3 --runtime fast5 --puct-c 1.5 --opponent v8:full \
+  --seed $SEED --pairs 50 --workers $W --fast fast4 --policy-checkpoint $POL --value-checkpoint $VAL --value-device $DEV \
+  --games-jsonl runs/tb_v3_cert/${DEV}_$SEED.jsonl --output runs/tb_v3_cert/${DEV}_$SEED.json 2>&1 | tee runs/tb_v3_cert/${DEV}_$SEED.log
+done; done
+python scripts/summarize_tb_v3_cpu_cert.py --cpu runs/tb_v3_cert/cpu_8451.json runs/tb_v3_cert/cpu_8452.json \
+  --cuda runs/tb_v3_cert/cuda_8451.json runs/tb_v3_cert/cuda_8452.json --output docs/h7/tb_v3_fast5_cpu_cert.json
+```
+
+- 시간을 재지 않는 판정이므로 worker 수를 늘려도 된다. CPU run에서 worker마다 torch 스레드는 1개다.
+- 중간에 끊기면 같은 명령을 다시 실행한다. `--games-jsonl`의 끝난 대국은 건너뛴다(같은 실행판 기록만).
+- 커밋할 것: `docs/h7/tb_v3_fast5_cpu_cert.json`. run 파일은 `runs/`에 둔다.
+
+**3. H7-c1 설계와 worker 수 처리량 측정**: CPU 인증 결과를 본 뒤에 한다.
+
+**웹 (`feat/Web_SER5`)**: 흑 금수 표시를 구현했다(아래 커밋은 그 브랜치에만 있다).
+- 흑 차례일 때 서버 상태에 `forbidden`이 들어간다: 빈 점 중 `renju.rules.forbidden_reason`(대국 규칙과 같은 판정)이 금지하는 점마다 `[행, 열, '33' | '44' | '6']`
+  - 보드 사본에서 계산한다(AI 작업이 실제 보드를 읽고 있을 수 있다). 국면마다 한 번만 계산한다(페이지가 polling한다).
+- 페이지: 빨간 원(바탕은 판 색이라 선이 가리지 않음) + 표시 + 사선. 그 점을 누르면 착수 대신 "J8: 흑 금수(삼삼) 자리입니다"를 띄운다. 범례에 설명을 더했다.
+- 웹 테스트 50개 PASS(새 테스트 2개: 금수 점 = `forbidden_reason` 전수, 백 차례·종국에는 빈 목록, 상태에 포함). 화면에서 33 · 44 · 6 표시를 확인했다.
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

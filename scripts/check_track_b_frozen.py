@@ -11,8 +11,10 @@
     tb-v3      its code manifest ``tests/tb_v3_frozen.sha256`` against its import closure, its identity
                (``tb_v3.check_identity``), and, once it is the canonical (``analysis.canonical``), the promotion
                record ``docs/h7/tb_v3_promotion.json`` (PROMOTION_PASS on this runtime hash and identity file)
-    fast5      the exact runtime candidate's sources (``tb_v3_fast5.check_sources``) and, when built, its native
-               VCF core (fresh, bound by ``tb_v3_fast5.install``); not built is reported, not a failure
+    fast5      the exact runtime's sources (``tb_v3_fast5.check_sources``) and, when built, its native VCF core
+               (fresh, bound by ``tb_v3_fast5.install``); not built is reported, not a failure. As the canonical
+               runtime (``analysis.canonical.CANONICAL_RUNTIME``) its gate records must all hold for this checkout
+               (``canonical.check_fast5_evidence``: G0 x2, G1, G2 desktop, G2 SER5_CERTIFIED, same runtime)
 Exit status 1 on any FAIL. Run it before benchmark, web or self-play work on a machine with the models.
 
     python scripts/check_track_b_frozen.py
@@ -194,8 +196,17 @@ def checks(models: bool, policy_checkpoint: Path, value_checkpoint: Path) -> lis
             h6_fast.install(previous)
         return f'bound, runtime {tb_v3_fast5.runtime_hash("cuda")[:12]} (cuda)'
 
+    def canonical_runtime():
+        from analysis import canonical
+        if canonical.CANONICAL_RUNTIME != 'fast5':
+            return f'canonical runtime {canonical.CANONICAL_RUNTIME}'
+        e = canonical.check_fast5_evidence()
+        return (f"fast5, evidence PASS (G0 {e['g0_calls']:,} calls, G1 {e['g1_moves']} moves, {e['ser5']}; "
+                f"cuda {e['runtime_hash_cuda'][:12]}, cpu {e['runtime_hash_cpu'][:12]})")
+
     run('tb-v3 promotion', v3_promotion)
     run('tb-v3 fast5 runtime', v3_fast5)
+    run('canonical runtime', canonical_runtime)
     return out
 
 

@@ -374,12 +374,16 @@ def play_one(task: dict) -> dict:
     seed, v8_color = task['seed'], task['v8_color']
     policy = load_policy(task.get('policy_checkpoint')) if needs_policy(config) else None
     leaf = load_value(task.get('value_checkpoint'), task.get('value_device', 'cpu')) if needs_value(config) else None
-    if config.get('tb_v3'):  # TB-V3 Resolve, only by its factory (identity, models, code, fast4 checked)
+    if config.get('tb_v3'):  # TB-V3 Resolve, only by its versioned factory on the chosen runtime (fail closed)
         if not is_canonical(task['arm'], task.get('fast', 'off'), config):
             raise ValueError(f"{task['arm']} runs only as frozen: --fast fast4 and the frozen configuration")
-        from analysis.tb_v3_runtime import make_tb_v3_agent
-        v8 = make_tb_v3_agent(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
-                              task.get('value_checkpoint'))
+        from analysis import canonical
+        runtime = tb_v3_runtime_of(task)
+        if runtime == 'fast5':
+            from analysis import tb_v3_fast5
+            tb_v3_fast5.install()  # fast4 plus the native VCF core, in this worker
+        v8 = canonical.factory('TB-V3', runtime)(policy, leaf, derive_seed(seed, 'v8'), task.get('policy_checkpoint'),
+                                                  task.get('value_checkpoint'))
     elif is_canonical(task['arm'], task.get('fast', 'off'), config):
         # the frozen TB-V2-Value: built by its factory after the policy / value / source / code checks
         from analysis.track_b_guard import make_tb_v2_agent
@@ -446,6 +450,7 @@ def play_one(task: dict) -> dict:
         **({'opponent_vct2_attack': opp_attack2} if opponent_attack_budget(opponent) is not None else {}),
         'game_seconds': round(perf_counter() - started_game, 2),
         **({'fast': task['fast']} if task.get('fast', 'off') != 'off' else {}),
+        **({'runtime': tb_v3_runtime_of(task)} if config.get('tb_v3') else {}),
     }
 
 
@@ -473,6 +478,7 @@ def build_tasks(args) -> tuple[list[dict], list[dict]]:
                 **({'fast': args.fast} if getattr(args, 'fast', 'off') != 'off' else {}),
                 **({'value_checkpoint': args.value_checkpoint, 'value_device': args.value_device}
                    if getattr(args, 'value_checkpoint', None) else {}),
+                **({'runtime': tb_v3_runtime_of(args)} if args.arm == 'tb_v3' else {}),
             })
     return tasks, openings
 
@@ -703,16 +709,24 @@ def file_sha256(path) -> str | None:
     return digest.hexdigest()
 
 
-def _runtime_provenance(device: str, arm: str = 'puct_value_vct2_50k_tt') -> dict:
+def tb_v3_runtime_of(task_or_args) -> str:
+    """The TB-V3 runtime of a task / the command line (``--runtime``): the canonical runtime unless given."""
+    from analysis import canonical
+
+    get = task_or_args.get if isinstance(task_or_args, dict) else (lambda k: getattr(task_or_args, k, None))
+    return get('runtime') or canonical.default_runtime('TB-V3')
+
+
+def _runtime_provenance(device: str, arm: str = 'puct_value_vct2_50k_tt', runtime: str | None = None) -> dict:
     if arm == 'puct_value_vct2_50k_tt_e4':
         from analysis.tb_v2_value_e4 import provenance as candidate_provenance
         return candidate_provenance(device)
     if arm == 'puct_value_vct2_50k_tt_e4v2':
         from analysis.tb_v2_value_e4v2 import provenance as candidate_v2_provenance
         return candidate_v2_provenance(device)
-    if arm == 'tb_v3':
-        from analysis.tb_v3_runtime import provenance as tb_v3_provenance
-        return tb_v3_provenance(device)
+    if arm == 'tb_v3':  # the runtime the games ran on, not only the canonical one
+        from analysis import canonical
+        return canonical.provenance(device, 'TB-V3', runtime)
     from analysis.tb_v2_runtime import provenance as runtime_provenance
     return runtime_provenance(device)
 
@@ -738,7 +752,9 @@ def provenance(policy_checkpoint, value_checkpoint=None) -> dict:
     return out
 
 
-def load_finished(path: Path | None, keys: set[str]) -> dict[str, dict]:
+def load_finished(path: Path | None, keys: set[str], runtime: str | None = None) -> dict[str, dict]:
+    """Finished games of ``keys`` in a ``--games-jsonl``; with ``runtime`` (the tb_v3 arm) a game recorded on another
+    runtime (or before runtimes were recorded) is refused."""
     finished = {}
     if path is None or not path.exists():
         return finished
@@ -746,6 +762,8 @@ def load_finished(path: Path | None, keys: set[str]) -> dict[str, dict]:
         if line.strip():
             record = json.loads(line)
             if record['key'] in keys:
+                if runtime is not None and record.get('runtime') != runtime:
+                    raise ValueError(f"{path}: {record['key']} ran on {record.get('runtime')}, this run on {runtime}")
                 finished[record['key']] = record
     return finished
 
@@ -788,11 +806,15 @@ def main(argv=None) -> int:
     parser.add_argument('--value-device', default='cpu', help='device of the value leaf (cpu / cuda)')
     parser.add_argument('--fast', choices=('off', 'fast2', 'fast3', 'fast4'), default='off',
                         help='exact solver speed-up in every worker (hybrid.h6_fast); results are the same')
+    parser.add_argument('--runtime', choices=('fast4', 'fast5'),
+                        help='tb_v3 arm only: its runtime (default: analysis.canonical.CANONICAL_RUNTIME)')
     parser.add_argument('--simulations', type=int, help='smoke tests only: both engines')
     parser.add_argument('--tactical-simulations', type=int, help='smoke tests only: both engines')
     args = parser.parse_args(argv)
     if args.pairs < 1 or args.workers < 1:
         parser.error('--pairs and --workers must be positive')
+    if args.runtime is not None and args.arm != 'tb_v3':
+        parser.error('--runtime is the tb_v3 arm\'s runtime (TB-V3 Resolve on fast4 / fast5)')
     try:
         parse_opponent(args.opponent)
     except ValueError as exc:
@@ -836,7 +858,11 @@ def main(argv=None) -> int:
         except RuntimeError as exc:
             parser.error(str(exc))
     tasks, openings = build_tasks(args)
-    finished = load_finished(args.games_jsonl, {t['key'] for t in tasks})
+    try:
+        finished = load_finished(args.games_jsonl, {t['key'] for t in tasks},
+                                 tb_v3_runtime_of(args) if args.arm == 'tb_v3' else None)
+    except ValueError as exc:
+        parser.error(str(exc))
     pending = [t for t in tasks if t['key'] not in finished]
     print(f'arm={args.arm} opponent={args.opponent} games={len(tasks)} finished={len(finished)} pending={len(pending)} '
           f'workers={args.workers}', flush=True)
@@ -880,7 +906,10 @@ def main(argv=None) -> int:
         'value_checkpoint': args.value_checkpoint,
         'value_device': args.value_device if args.value_checkpoint else None,
         # the frozen runtime profile's identities, when this run is it (TB-V2-Value + fast4)
-        **({'runtime': _runtime_provenance(args.value_device, args.arm), 'canonical_factory': True}
+        **({'runtime_mode': tb_v3_runtime_of(args)} if args.arm == 'tb_v3' else {}),
+        **({'runtime': _runtime_provenance(args.value_device, args.arm,
+                                           tb_v3_runtime_of(args) if args.arm == 'tb_v3' else None),
+            'canonical_factory': True}
            if is_canonical(args.arm, args.fast, v8_config(args.arm, {**args.search_overrides, **args.arm_overrides}))
            else {}),
         'v7_config': {**V7_FINAL, **args.search_overrides},

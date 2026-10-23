@@ -30,7 +30,9 @@
   change meaning.
 - Exact runtime speed-ups of TB-V3 keep its engine hash and get their own runtime identity: fast5
   (`src/analysis/tb_v3_fast5.py`, `src/rt30/fast5.py`, `src/rt30/vcfcore/`) locks its sources by SHA-256
-  (`FAST5_SOURCES`; the native VCF core includes the frozen `rt30/native/forbidden.c`). It stays a candidate
-  (`canonical.CANONICAL_RUNTIME = 'fast4'`) until G0 (native = Python differential), G1 (arena replay, every record
-  field but times equal) and G2 (desktop and SER5 timing) pass; a fast4 CPU certification does not carry over.
+  (`FAST5_SOURCES`; the native VCF core includes the frozen `rt30/native/forbidden.c`). It passed G0 / G1 / G2
+  (`docs/h7/tb_v3_fast5_*.json`) and is the canonical runtime (`canonical.CANONICAL_RUNTIME = 'fast5'`;
+  `canonical.check_fast5_evidence`, run by the checker, re-checks those records against the checkout). Never edit the
+  fast5 files or `tb_v3.py`: their SHA-256 is in the runtime hash the evidence was measured on. fast4 stays the
+  rollback. CPU use of fast5 needs its own certification (seeds 8451 / 8452); a fast4 one does not carry over.
   Build it with `python -m rt30.vcfcore.build --if-stale` (in `src/`); `rt30/native/build.py` stays untouched.
