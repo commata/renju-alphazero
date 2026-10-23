@@ -1,0 +1,48 @@
+{
+ "format": "h7c-throughput-v1",
+ "mode": "repro",
+ "identity": {
+  "format": "h7c-selfplay-v1",
+  "cycle": 1,
+  "run_seed": 8800,
+  "engine_id": "TB-V3",
+  "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+  "runtime": "fast5",
+  "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+  "value_device": "cuda",
+  "models": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+   "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  },
+  "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+  "frozen_models": true,
+  "opening_rule": {
+   "random_plies": 2,
+   "radius": 2
+  },
+  "sampling": {
+   "format": "h7c-sampling-v1",
+   "plies": 4,
+   "temperature": 1.0
+  },
+  "target_format": "h7c-target-v1",
+  "generator_git": {
+   "commit": "048bc04fb45c7720480470e252c7291f7c706784",
+   "dirty": false
+  }
+ },
+ "git": {
+  "commit": "048bc04fb45c7720480470e252c7291f7c706784",
+  "dirty": false
+ },
+ "workers": [
+  1,
+  12
+ ],
+ "games": 4,
+ "identical": 4,
+ "differences": {},
+ "verdict": "REPRO_PASS"
+}

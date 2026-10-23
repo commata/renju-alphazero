@@ -1,0 +1,112 @@
+{
+ "format": "h7c-throughput-v1",
+ "mode": "sweep",
+ "identity": {
+  "format": "h7c-selfplay-v1",
+  "cycle": 1,
+  "run_seed": 8800,
+  "engine_id": "TB-V3",
+  "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+  "runtime": "fast5",
+  "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+  "value_device": "cuda",
+  "models": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+   "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  },
+  "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+  "frozen_models": true,
+  "opening_rule": {
+   "random_plies": 2,
+   "radius": 2
+  },
+  "sampling": {
+   "format": "h7c-sampling-v1",
+   "plies": 4,
+   "temperature": 1.0
+  },
+  "target_format": "h7c-target-v1",
+  "generator_git": {
+   "commit": "048bc04fb45c7720480470e252c7291f7c706784",
+   "dirty": false
+  }
+ },
+ "git": {
+  "commit": "048bc04fb45c7720480470e252c7291f7c706784",
+  "dirty": false
+ },
+ "games": 20,
+ "rule": "fewest workers within 95% of the best games per hour, only if every worker count played the same games",
+ "rows": [
+  {
+   "workers": 6,
+   "wall_seconds": 140.0,
+   "games_per_hour": 514.2,
+   "moves": 782,
+   "move_seconds_mean": 0.5757,
+   "move_seconds_p99": 2.9289,
+   "same_games_as_first": 20,
+   "gpu_util_mean": 3.53,
+   "gpu_memory_max_mib": 2636.0,
+   "cpu_util_mean": 20.8,
+   "samples": 133
+  },
+  {
+   "workers": 8,
+   "wall_seconds": 141.2,
+   "games_per_hour": 510.1,
+   "moves": 782,
+   "move_seconds_mean": 0.6093,
+   "move_seconds_p99": 2.8336,
+   "same_games_as_first": 20,
+   "gpu_util_mean": 4.13,
+   "gpu_memory_max_mib": 3206.0,
+   "cpu_util_mean": 21.99,
+   "samples": 134
+  },
+  {
+   "workers": 10,
+   "wall_seconds": 143.8,
+   "games_per_hour": 500.8,
+   "moves": 782,
+   "move_seconds_mean": 0.681,
+   "move_seconds_p99": 3.2163,
+   "same_games_as_first": 20,
+   "gpu_util_mean": 4.31,
+   "gpu_memory_max_mib": 3736.0,
+   "cpu_util_mean": 24.21,
+   "samples": 137
+  },
+  {
+   "workers": 12,
+   "wall_seconds": 149.5,
+   "games_per_hour": 481.7,
+   "moves": 782,
+   "move_seconds_mean": 0.7223,
+   "move_seconds_p99": 3.3926,
+   "same_games_as_first": 20,
+   "gpu_util_mean": 4.06,
+   "gpu_memory_max_mib": 4266.0,
+   "cpu_util_mean": 25.48,
+   "samples": 137
+  },
+  {
+   "workers": 14,
+   "wall_seconds": 152.2,
+   "games_per_hour": 473.0,
+   "moves": 782,
+   "move_seconds_mean": 0.8216,
+   "move_seconds_p99": 3.9078,
+   "same_games_as_first": 20,
+   "gpu_util_mean": 3.73,
+   "gpu_memory_max_mib": 4797.0,
+   "cpu_util_mean": 27.23,
+   "samples": 143
+  }
+ ],
+ "verdict": "SWEEP_PASS",
+ "diverged_workers": [],
+ "chosen_workers": 6
+}
