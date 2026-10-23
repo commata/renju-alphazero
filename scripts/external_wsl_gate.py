@@ -51,6 +51,9 @@ def evaluate(engine_dir: Path, crosscheck: dict, repro: dict) -> dict:
         'repro_signature': repro.get('run_signature') == want['repro']['run_signature']
             and (repro.get('seed'), repro.get('pairs')) == (want['repro']['seed'], want['repro']['pairs']),
         'repro_fingerprint': repro['summary'].get('fingerprint') == want['repro']['fingerprint'],
+        # both runs name a clean code commit (dirty None = git unavailable: not clean either)
+        'clean_tree': crosscheck.get('git_dirty') is False and repro.get('git_dirty') is False
+            and bool(crosscheck.get('git_commit')) and bool(repro.get('git_commit')),
     }
     return {'format': FORMAT, 'result': 'PASS' if all(checks.values()) else 'FAIL', 'checks': checks,
             'files_sha256': files, 'crosscheck': {'summary': crosscheck.get('summary'), 'about':

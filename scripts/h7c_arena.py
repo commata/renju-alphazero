@@ -14,8 +14,14 @@ Seeds: every arm of cycle c uses seed 8730 + c (8731-8740 = cycles 1-10, in ``hy
 never training data). Openings and game seeds depend only on the seed and the pair index (the benchmark's
 ``derive_seed`` / ``make_opening``, 2 random plies within radius 2), so pair i of every arm has the same opening:
 P-only / V-only play the first 25 openings of the official arm. Each game is played twice per opening, colours
-swapped. A move the rule engine rejects (a black forbidden point, an occupied point) ends the game as a loss of the
-side that played it and is recorded (``illegal``): the tactical gate's forbidden-error count.
+swapped. A move the rule engine rejects (a black forbidden point, an occupied point) ends the game and is recorded
+(``illegal``): by the tested side it is a loss and fails the tactical gate (forbidden errors 0); by the opponent the
+game is not scored (``opponent_illegal``, its pair left out and listed), and in the official arm it makes the Arena
+invalid (no promotion).
+
+Lineage (fail closed): the candidate's policy and value metadata name this cycle and the one self-play source they were
+trained on (``source_models``), which must be the parent; cycle 1's parent is the frozen TB-V3 models, a later cycle's
+is the ``next_champion`` of the previous cycle's verdict (``--champion``), whose SHA-256 is in every run identity.
 
 Modes:
     play      one arm: games appended to ``--jsonl`` as they finish (resume; a file of another setup is refused),
@@ -24,16 +30,19 @@ Modes:
               (raw policy, ``tests/fixtures/stage7_probes_v1.json``), E1 dev suite metrics (``unsound_witness``)
     verdict   the arm outputs and the tactical record of one cycle: promotion, convergence signal, Monitoring
               and diagnosis tables (``--history``: the verdicts of the earlier cycles, for the convergence rule)
+    no-candidate  the cycle's record when the policy or value training gave ``NO_CANDIDATE``: no Arena,
+              ``KEEP_CHAMPION``, no improvement bound (such a cycle never counts towards convergence)
 
-Promotion (all three): official score > 0.50, pair-bootstrap 95% lower bound of (score - 0.50) >= -0.05, tactical
-gate PASS. Then the parent of cycle c + 1 is the candidate, else it stays the champion. Convergence (§9, separate):
-at least 3 cycles, the lower bound of (score - 0.5) <= 0 in 2 consecutive cycles, and the last one's tactical gate
-PASS. Bootstrap: 20,000 resamples of complete opening pairs, RNG seed 0.
+Promotion (all of them): a valid official arm, score > 0.50, pair-bootstrap 95% lower bound of (score - 0.50) >= -0.05,
+tactical gate PASS. Tactical gate: forbidden errors 0, ``unsound_witness`` 0, P93 / P94 sign, must_block >= max(9,
+parent - 2); the E1 ratios are reported beside the parent's. Then the parent of cycle c + 1 is the candidate, else it stays the champion. Convergence (§9, separate):
+at least 3 cycles, the lower bound of (score - 0.5) <= 0 in the last 2 cycles (a cycle without a valid official arm has
+no bound and breaks the run), and the last one's tactical gate PASS. Bootstrap: 20,000 resamples of complete opening pairs, RNG seed 0.
 
     python -u scripts/h7c_arena.py play --cycle 1 --arm official --device cuda --workers 6 \\
         --candidate-policy runs/h7c/c1/policy/best.pt --candidate-value runs/h7c/c1/value/best.pt \\
         --parent-policy runs/h3_policy_64x4/best.pt --parent-value runs/h6_value_head_v3/best.pt \\
-        --frozen-policy runs/h3_policy_64x4/best.pt \\
+        --frozen-policy runs/h3_policy_64x4/best.pt [--champion docs/h7c/c<c-1>_arena_verdict.json] \\
         --jsonl runs/h7c/c1/arena/official.jsonl --output runs/h7c/c1/arena/official.json
 """
 from __future__ import annotations
@@ -156,6 +165,7 @@ def run_identity(arm: str, cycle: int, models: dict, device: str, git: dict) -> 
             'engine_hash': tb_v3.ENGINE_HASH, 'runtime': RUNTIME, 'runtime_hash': tb_v3_fast5.runtime_hash(device),
             'value_device': device.split(':')[0],
             'candidate': models['candidate_identity'], 'parent': models['parent_identity'],
+            'champion_record_sha256': models.get('champion_record_sha256'),
             'tested': {'models': tested_identity, 'model_hash': tb_v3_net.model_hash(tested_identity),
                        'policy_from': ARMS[arm]['side'][0], 'value_from': ARMS[arm]['side'][1]},
             'opponent': opponent_identity(arm, models), 'git': git}
@@ -221,8 +231,8 @@ def play_game(task: dict, make_tested=None, make_opponent=None, max_plies: int |
                        'color': 'black' if game.to_play == BLACK else 'white',
                        'move': [int(move[0]), int(move[1])], 'reason': str(exc)}
             break
-    if illegal is not None:
-        result = 'loss' if illegal['side'] == 'tested' else 'win'
+    if illegal is not None:  # the opponent's illegal move never scores for the tested side
+        result = 'loss' if illegal['side'] == 'tested' else 'opponent_illegal'
     elif truncated:
         result = 'truncated'
     else:
@@ -293,27 +303,32 @@ def summarize_arm(games: list[dict]) -> dict:
         'pair_scores': {str(p): sum(SCORED[g['result']] for g in pair) / 2 for p, pair in pairs.items()},
         'illegal': {side: sum(bool(g['illegal']) and g['illegal']['side'] == side for g in games)
                     for side in ('tested', 'opponent')},
+        'opponent_illegal_pairs': sorted({g['pair'] for g in games if g['result'] == 'opponent_illegal'}),
         'truncated': sum(g['truncated'] for g in games),
         'length_mean': round(sum(lengths) / len(lengths), 1) if lengths else None,
         'bootstrap': BOOTSTRAP,
     }
 
 
-def promotion(official: dict, tactical_pass: bool) -> dict:
-    """§9 / docs/h7-c1.md: score > 0.50, lower bound of (score - 0.50) >= -0.05, tactical gate PASS."""
-    lower = official['improvement_ci95'][0] if official.get('improvement_ci95') else None
-    checks = {'score_above_0.50': official['score'] is not None and official['score'] > PROMOTION['score_above'],
+def promotion(official: dict, tactical_pass: bool, valid: bool = True) -> dict:
+    """§9 / docs/h7-c1.md: a valid official arm, score > 0.50, lower bound of (score - 0.50) >= -0.05, tactical gate
+    PASS. An invalid arm has no improvement bound."""
+    lower = official['improvement_ci95'][0] if valid and official.get('improvement_ci95') else None
+    checks = {'official_valid': bool(valid),
+              'score_above_0.50': official['score'] is not None and official['score'] > PROMOTION['score_above'],
               'improvement_lower_ge_-0.05': lower is not None and lower >= PROMOTION['improvement_lower_min'],
               'tactical_gate': bool(tactical_pass)}
     promoted = all(checks.values())
     return {'rule': PROMOTION, 'checks': checks, 'improvement_lower': lower,
             'decision': 'PROMOTE' if promoted else 'KEEP_CHAMPION',
+            'reason': 'PROMOTED' if promoted else 'OFFICIAL_INVALID' if not valid else 'NOT_PROMOTED',
             'next_parent': 'candidate' if promoted else 'parent'}
 
 
 def convergence(cycles: list[dict]) -> dict:
     """§9 over the verdicts of cycles 1..c (in order): at least 3 cycles, the improvement lower bound <= 0 in the
-    last 2, and the last one's tactical gate PASS."""
+    last 2 (a cycle without one, NO_CANDIDATE or an invalid official arm, breaks the run), and the last one's
+    tactical gate PASS."""
     lowers = [c['promotion']['improvement_lower'] for c in cycles]
     last = lowers[-CONVERGENCE['consecutive']:]
     checks = {'min_cycles': len(cycles) >= CONVERGENCE['min_cycles'],
@@ -330,6 +345,7 @@ PROBE_FILE = ROOT / 'docs' / 'mcts-v8-results' / 'probe_web_v8_loss_20261007.jso
 POLICY_PROBES = ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'
 E1_MANIFEST = ROOT / 'docs' / 'mcts-v8-results' / 'e1' / 'e1_manifest.json'
 E1_REPORT = ('rescue_rate', 'veto_recall', 'false_veto')  # compared with the parent, reported (not a gate)
+MUST_BLOCK_DROP = 2  # must_block hits may fall at most 2 (of 40) below the parent's
 
 
 def value_probes(value_checkpoint, device: str = 'cpu') -> dict:
@@ -394,9 +410,11 @@ def tactical_judge(candidate: dict, parent: dict) -> dict:
     """Gate items of the candidate (all must pass) and the E1 / must_block comparison with the parent (reported).
     The forbidden-error item comes from the Arena games and is added by the verdict."""
     e1 = candidate['e1']['metrics']
+    block = candidate['must_block']
+    block_min = max(block['anchor'], parent['must_block']['hits'] - MUST_BLOCK_DROP)
     items = {'unsound_witness == 0': e1['unsound_witness'] == 0,
              'P93 / P94 value sign': candidate['value_probes']['pass'],
-             'must_block >= B400 anchor': candidate['must_block']['pass']}
+             'must_block >= max(B400 anchor, parent - 2)': block['hits'] >= block_min}
     def value(metrics, name):
         m = metrics[name]
         return m['value'] if isinstance(m, dict) else m
@@ -407,8 +425,8 @@ def tactical_judge(candidate: dict, parent: dict) -> dict:
     regressions = sorted(
         name for name, c in compare.items() if c['candidate'] is not None and c['parent'] is not None
         and (c['candidate'] < c['parent'] if name in lower_is_worse else c['candidate'] > c['parent']))
-    return {'items': items, 'verdict': 'PASS' if all(items.values()) else 'FAIL', 'compare': compare,
-            'regressions_reported': regressions}
+    return {'items': items, 'verdict': 'PASS' if all(items.values()) else 'FAIL', 'must_block_min': block_min,
+            'compare': compare, 'regressions_reported': regressions}
 
 
 # --- commands ----------------------------------------------------------------------------------------------------
@@ -419,8 +437,50 @@ def _git() -> dict:
     return {'commit': _git_commit(), 'dirty': _git_dirty()}
 
 
+def _json(path) -> dict:
+    return json.loads(Path(path).read_text(encoding='utf-8'))
+
+
+def check_candidate(policy_checkpoint, value_checkpoint, cycle: int) -> dict:
+    """The candidate's two metadata name this cycle and one self-play source; returns that source's four SHA-256."""
+    from hybrid.h7c_train import POLICY_STAGE, SOURCE_MODEL_KEYS, VALUE_STAGE
+
+    policy_meta = _json(Path(policy_checkpoint).with_suffix('.json'))
+    value_meta = _json(Path(value_checkpoint).with_name('best.json'))
+    if policy_meta.get('stage') != POLICY_STAGE or policy_meta.get('cycle') != cycle:
+        raise ValueError(f'{policy_checkpoint}: not an H7-c policy candidate of cycle {cycle} '
+                         f"(stage {policy_meta.get('stage')}, cycle {policy_meta.get('cycle')})")
+    if value_meta.get('h7c_stage') != VALUE_STAGE or value_meta.get('cycle') != cycle:
+        raise ValueError(f'{value_checkpoint}: not an H7-c value candidate of cycle {cycle} '
+                         f"(stage {value_meta.get('h7c_stage')}, cycle {value_meta.get('cycle')})")
+    source = policy_meta.get('source_models')
+    if not isinstance(source, dict) or set(source) != set(SOURCE_MODEL_KEYS) or value_meta.get('source_models') != source:
+        raise ValueError('the candidate policy and value were not trained on the same self-play source')
+    return source
+
+
+def check_parent(cycle: int, parent_identity: dict, champion, allow_stand_in: bool = False) -> str | None:
+    """Cycle 1: the frozen TB-V3 models; cycle c > 1: the ``next_champion`` of cycle c - 1's verdict (its SHA-256)."""
+    from analysis import tb_v3
+
+    if cycle == 1:
+        if champion is not None:
+            raise ValueError('cycle 1 has no previous verdict (--champion)')
+        if parent_identity != tb_v3.MODELS and not allow_stand_in:
+            raise ValueError('cycle 1: the parent is the frozen TB-V3 models (H3 / H6 v3)')
+        return None
+    if champion is None:
+        raise ValueError(f'cycle {cycle} needs --champion: the verdict of cycle {cycle - 1}')
+    record = _json(champion)
+    if record.get('format') != f'{FORMAT}-verdict' or record.get('cycle') != cycle - 1:
+        raise ValueError(f'{champion} is not the verdict of cycle {cycle - 1}')
+    if record.get('next_champion') != parent_identity:
+        raise ValueError(f"the parent is not the champion that cycle {cycle - 1}'s verdict names")
+    return _file_sha(Path(champion))
+
+
 def check_models(args, need_frozen_policy: bool) -> dict:
-    """Paths and identities of the cycle's models; the frozen H3 for the puct_policy opponent (fail closed)."""
+    """Paths and identities of the cycle's models, their lineage, the frozen H3 for the puct_policy opponent."""
     from analysis import tb_v3, tb_v3_net
 
     models = {'candidate': {'policy': str(args.candidate_policy), 'value': str(args.candidate_value)},
@@ -429,8 +489,10 @@ def check_models(args, need_frozen_policy: bool) -> dict:
         models[f'{name}_identity'] = tb_v3_net.model_identity(models[name]['policy'], models[name]['value'])
     if models['candidate_identity'] == models['parent_identity']:
         raise ValueError('the candidate is the parent')
-    if args.cycle == 1 and models['parent_identity'] != tb_v3.MODELS and not args.allow_stand_in:
-        raise ValueError('cycle 1: the parent is the frozen TB-V3 models (H3 / H6 v3)')
+    if check_candidate(args.candidate_policy, args.candidate_value, args.cycle) != models['parent_identity']:
+        raise ValueError("the candidate was not trained on the parent's self-play")
+    models['champion_record_sha256'] = check_parent(args.cycle, models['parent_identity'],
+                                                    getattr(args, 'champion', None), args.allow_stand_in)
     if need_frozen_policy:
         if args.frozen_policy is None:
             raise ValueError('this arm needs --frozen-policy (the H3 policy of the H5 opponent)')
@@ -488,6 +550,7 @@ def tactical(args, log=print) -> dict:
     models = check_models(args, False)
     out = {'format': f'{FORMAT}-tactical', 'cycle': args.cycle, 'git': git, 'device': args.device,
            'candidate': models['candidate_identity'], 'parent': models['parent_identity'],
+           'champion_record_sha256': models['champion_record_sha256'],
            'files': {'value_probes': _file_sha(PROBE_FILE), 'policy_probes': _file_sha(POLICY_PROBES),
                      'e1_manifest': _file_sha(E1_MANIFEST)}}
     for name in ('candidate', 'parent'):
@@ -504,12 +567,27 @@ def _file_sha(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def load_history(paths, cycle: int, parent: dict, champion_sha256: str | None) -> list[dict]:
+    """The verdicts of cycles 1..c-1 in order, each cycle's parent the previous one's ``next_champion``, the last
+    one's ``next_champion`` this cycle's parent, and the last file the champion record this cycle's runs named."""
+    history = [_json(p) for p in paths]
+    if paths and _file_sha(Path(paths[-1])) != champion_sha256:
+        raise ValueError(f"{paths[-1]} is not the champion record this cycle's runs named (--champion)")
+    if [h.get('cycle') for h in history] != list(range(1, cycle)) or any(
+            h.get('format') != f'{FORMAT}-verdict' for h in history):
+        raise ValueError(f'--history must be the verdicts of cycles 1-{cycle - 1} in order')
+    for before, after in zip(history, history[1:] + [{'cycle': cycle, 'parent': parent}]):
+        if before['next_champion'] != after['parent']:
+            raise ValueError(f"cycle {after['cycle']}'s parent is not the champion named by cycle {before['cycle']}")
+    return history
+
+
 def verdict(args) -> dict:
     """One cycle's promotion record from its six arm outputs and its tactical record (all from one commit and
-    the same candidate / parent)."""
+    the same candidate / parent / champion record)."""
     arms, arm_sha = {}, {}
     for path in args.arms:
-        record = json.loads(Path(path).read_text(encoding='utf-8'))
+        record = _json(path)
         arm = record['identity']['arm']
         if arm in arms:
             raise ValueError(f'{path}: arm {arm} given twice')
@@ -521,45 +599,75 @@ def verdict(args) -> dict:
     missing = sorted(set(ARMS) - set(arms))
     if missing:
         raise ValueError(f'missing arms: {missing}')
-    tact = json.loads(Path(args.tactical).read_text(encoding='utf-8'))
-    shared = {(r['identity']['cycle'], r['identity']['git']['commit'], json.dumps(r['identity']['candidate'],
-              sort_keys=True), json.dumps(r['identity']['parent'], sort_keys=True)) for r in arms.values()}
-    shared.add((tact['cycle'], tact['git']['commit'], json.dumps(tact['candidate'], sort_keys=True),
-                json.dumps(tact['parent'], sort_keys=True)))
+    tact = _json(args.tactical)
+    key = ('cycle', 'candidate', 'parent', 'champion_record_sha256')
+    shared = {json.dumps([r['identity'].get(k) for k in key] + [r['identity']['git']['commit']], sort_keys=True)
+              for r in arms.values()}
+    shared.add(json.dumps([tact.get(k) for k in key] + [tact['git']['commit']], sort_keys=True))
     if len(shared) != 1:
-        raise ValueError('the arm and tactical records differ in cycle, commit, candidate or parent')
+        raise ValueError('the arm and tactical records differ in cycle, commit, candidate, parent or champion record')
     cycle = tact['cycle']
     official = arms['official']['summary']
-    if official['complete_pairs'] != ARMS['official']['pairs'] or official['truncated']:
+    invalid_pairs = official['opponent_illegal_pairs']
+    if official['complete_pairs'] + len(invalid_pairs) != ARMS['official']['pairs'] or official['truncated']:
         raise ValueError(f"the official arm has {official['complete_pairs']} complete pairs of "
                          f"{ARMS['official']['pairs']}")
     forbidden = sum(r['summary']['illegal']['tested'] for r in arms.values())
     gate = dict(tact['judge']['items'])
     gate['forbidden errors == 0 (all Arena games)'] = forbidden == 0
     tactical_record = {'items': gate, 'verdict': 'PASS' if all(gate.values()) else 'FAIL',
-                       'forbidden_errors': forbidden, 'compare': tact['judge']['compare'],
+                       'forbidden_errors': forbidden, 'must_block_min': tact['judge'].get('must_block_min'),
+                       'compare': tact['judge']['compare'],
                        'regressions_reported': tact['judge']['regressions_reported']}
     out = {'format': f'{FORMAT}-verdict', 'cycle': cycle, 'seed': arena_seed(cycle),
            'git_commit': tact['git']['commit'], 'candidate': tact['candidate'], 'parent': tact['parent'],
-           'official': {k: official[k] for k in ('score', 'score_ci95', 'improvement', 'improvement_ci95', 'elo',
-                                                  'wins', 'draws', 'losses', 'score_by_color', 'complete_pairs')},
+           'champion_record_sha256': tact['champion_record_sha256'],
+           'official': {**{k: official[k] for k in ('score', 'score_ci95', 'improvement', 'improvement_ci95', 'elo',
+                                                     'wins', 'draws', 'losses', 'score_by_color', 'complete_pairs')},
+                        'valid': not invalid_pairs, 'opponent_illegal_pairs': invalid_pairs},
            'tactical': tactical_record,
            'monitoring': {a: _brief(arms[a]['summary']) for a in ARMS if ARMS[a]['role'] == 'monitoring'},
            'diagnosis': {a: _brief(arms[a]['summary']) for a in ARMS if ARMS[a]['role'] == 'diagnosis'},
            'fingerprints': {a: arms[a]['fingerprint'] for a in ARMS},
            'arm_sha256': arm_sha,
            'tactical_sha256': _file_sha(Path(args.tactical))}
-    out['promotion'] = promotion(official, tactical_record['verdict'] == 'PASS')
-    history = [json.loads(Path(p).read_text(encoding='utf-8')) for p in args.history]
-    if [h['cycle'] for h in history] != list(range(1, cycle)):
-        raise ValueError(f'--history must be the verdicts of cycles 1-{cycle - 1} in order')
-    out['convergence'] = convergence(history + [out])
+    out['promotion'] = promotion(official, tactical_record['verdict'] == 'PASS', valid=not invalid_pairs)
+    out['next_champion'] = out['candidate'] if out['promotion']['decision'] == 'PROMOTE' else out['parent']
+    out['convergence'] = convergence(load_history(args.history, cycle, out['parent'], out['champion_record_sha256'])
+                                     + [out])
+    return out
+
+
+def no_candidate(args) -> dict:
+    """The record of a cycle whose policy or value training gave no candidate: no Arena, the champion stays."""
+    from analysis import tb_v3_net
+
+    records = {'policy': _json(args.policy_record), 'value': _json(args.value_record)}
+    parent = tb_v3_net.model_identity(args.parent_policy, args.parent_value)
+    for name, record in records.items():
+        if record.get('cycle') != args.cycle:
+            raise ValueError(f'the {name} training record is of cycle {record.get("cycle")}, not {args.cycle}')
+        if record['inputs']['parent_checkpoint_sha256'] != parent[f'{name}_checkpoint_sha256']:
+            raise ValueError(f'the {name} training did not start from the parent')
+    verdicts = {name: record['verdict'] for name, record in records.items()}
+    if 'NO_CANDIDATE' not in verdicts.values():
+        raise ValueError('both trainings gave a candidate: run the Arena')
+    champion = check_parent(args.cycle, parent, args.champion, args.allow_stand_in)
+    out = {'format': f'{FORMAT}-verdict', 'cycle': args.cycle, 'seed': arena_seed(args.cycle),
+           'git_commit': _git()['commit'], 'candidate': None, 'parent': parent, 'champion_record_sha256': champion,
+           'training': {'verdicts': verdicts, 'record_sha256': {'policy': _file_sha(args.policy_record),
+                                                                'value': _file_sha(args.value_record)}},
+           'official': None, 'tactical': {'verdict': None},
+           'promotion': {'rule': PROMOTION, 'decision': 'KEEP_CHAMPION', 'reason': 'NO_CANDIDATE',
+                         'improvement_lower': None, 'next_parent': 'parent'},
+           'next_champion': parent}
+    out['convergence'] = convergence(load_history(args.history, args.cycle, parent, champion) + [out])
     return out
 
 
 def _brief(summary: dict) -> dict:
     return {k: summary[k] for k in ('score', 'score_ci95', 'improvement_ci95', 'elo', 'wins', 'draws', 'losses',
-                                    'complete_pairs', 'score_by_color')}
+                                    'complete_pairs', 'score_by_color', 'opponent_illegal_pairs')}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -572,6 +680,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument('--candidate-value', type=Path, required=True)
         p.add_argument('--parent-policy', type=Path, required=True)
         p.add_argument('--parent-value', type=Path, required=True)
+        p.add_argument('--champion', type=Path, help='cycle c > 1: the verdict of cycle c - 1 (names the parent)')
         p.add_argument('--device', default='cuda', help='value device (cuda canonical; cpu certified)')
         p.add_argument('--workers', type=int, default=1)
         p.add_argument('--output', type=Path, required=True)
@@ -585,6 +694,16 @@ def build_parser() -> argparse.ArgumentParser:
     v.add_argument('--tactical', type=Path, required=True)
     v.add_argument('--history', nargs='*', default=[], help='the verdicts of cycles 1..c-1, in order')
     v.add_argument('--output', type=Path, required=True)
+    n = sub.add_parser('no-candidate')
+    n.add_argument('--cycle', type=int, required=True)
+    n.add_argument('--policy-record', type=Path, required=True, help="the policy training's record.json")
+    n.add_argument('--value-record', type=Path, required=True, help="the value training's record.json")
+    n.add_argument('--parent-policy', type=Path, required=True)
+    n.add_argument('--parent-value', type=Path, required=True)
+    n.add_argument('--champion', type=Path, help='cycle c > 1: the verdict of cycle c - 1')
+    n.add_argument('--history', nargs='*', default=[], help='the verdicts of cycles 1..c-1, in order')
+    n.add_argument('--allow-stand-in', action='store_true', help='tests only')
+    n.add_argument('--output', type=Path, required=True)
     return parser
 
 
@@ -594,7 +713,8 @@ def main(argv=None) -> int:
     if args.output.exists():
         parser.error(f'{args.output} exists')
     try:
-        payload = {'play': play, 'tactical': tactical, 'verdict': verdict}[args.mode](args)
+        payload = {'play': play, 'tactical': tactical, 'verdict': verdict,
+                   'no-candidate': no_candidate}[args.mode](args)
     except ValueError as exc:
         parser.error(str(exc))
     brief = (payload['summary'] if args.mode == 'play' else payload['judge'] if args.mode == 'tactical'

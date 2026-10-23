@@ -21,6 +21,20 @@ def game(pair, color, result, illegal=None):
             'illegal': illegal, 'truncated': result == 'truncated'}
 
 
+def write_candidate(directory, parent_policy, parent_value, cycle=1, seed=1):
+    """Stand-in candidate models whose metadata name the cycle and the parent's self-play as their source."""
+    from analysis import tb_v3_net
+    from tests.test_tb_v3_net import write_models
+
+    policy, value = write_models(directory, seed=seed)
+    source = tb_v3_net.model_identity(parent_policy, parent_value)
+    for path, extra in ((policy.with_suffix('.json'), {'stage': 'H7-c-policy'}),
+                        (value.with_name('best.json'), {'h7c_stage': 'H7-c-value'})):
+        meta = json.loads(path.read_text(encoding='utf-8'))
+        path.write_text(json.dumps({**meta, **extra, 'cycle': cycle, 'source_models': source}), encoding='utf-8')
+    return policy, value
+
+
 def arm_summary(pair_results):
     games = []
     for pair, (black, white) in enumerate(pair_results):
@@ -101,21 +115,25 @@ class VerdictRuleTest(unittest.TestCase):
         def side(unsound=0, sign=True, hits=12, rescue=0.6):
             return {'e1': {'metrics': {'unsound_witness': unsound, 'false_veto': 0,
                                        'rescue_rate': {'value': rescue, 'n': 'x'}, 'veto_recall': {'value': 1.0}}},
-                    'value_probes': {'pass': sign}, 'must_block': {'hits': hits, 'pass': hits >= 9}}
-        ok = ar.tactical_judge(side(rescue=0.5, hits=11), side())
-        self.assertEqual(ok['verdict'], 'PASS')
+                    'value_probes': {'pass': sign}, 'must_block': {'hits': hits, 'anchor': 9}}
+        ok = ar.tactical_judge(side(rescue=0.5, hits=10), side())  # 2 below the parent: allowed
+        self.assertEqual((ok['verdict'], ok['must_block_min']), ('PASS', 10))
         self.assertEqual(ok['regressions_reported'], ['must_block_hits', 'rescue_rate'])  # reported, not gated
-        for bad in (side(unsound=1), side(sign=False), side(hits=8)):
-            self.assertEqual(ar.tactical_judge(bad, side())['verdict'], 'FAIL')
+        self.assertEqual(ar.tactical_judge(side(hits=9), side(hits=10))['verdict'], 'PASS')  # the anchor 9 binds
+        for bad, parent in ((side(unsound=1), side()), (side(sign=False), side()), (side(hits=8), side(hits=8)),
+                            (side(hits=9), side(hits=12))):  # 3 below the parent
+            self.assertEqual(ar.tactical_judge(bad, parent)['verdict'], 'FAIL')
 
 
 def write_arm(tmp, arm, results, **identity):
     ident = {'arm': arm, 'cycle': 1, 'git': {'commit': 'abc'}, 'candidate': {'c': 1}, 'parent': {'p': 1},
-             **identity}
+             'champion_record_sha256': None, **identity}
     sig = ar.signature(ident)
     games = []
     for pair, (black, white) in enumerate(results):
-        games += [{**game(pair, 'black', black), 'signature': sig}, {**game(pair, 'white', white), 'signature': sig}]
+        for color, result in (('black', black), ('white', white)):
+            illegal = {'side': 'opponent'} if result == 'opponent_illegal' else None
+            games.append({**game(pair, color, result, illegal), 'signature': sig})
     path = Path(tmp) / f'{arm}.json'
     path.write_text(json.dumps({'identity': ident, 'signature': sig, 'games': games,
                                 'summary': ar.summarize_arm(games), 'fingerprint': arm}), encoding='utf-8')
@@ -129,17 +147,59 @@ class VerdictCommandTest(unittest.TestCase):
         self.tactical = Path(self.tmp.name) / 'tactical.json'
         self.tactical.write_text(json.dumps({
             'cycle': 1, 'git': {'commit': 'abc'}, 'candidate': {'c': 1}, 'parent': {'p': 1},
+            'champion_record_sha256': None,
             'judge': {'items': {'unsound_witness == 0': True}, 'compare': {}, 'regressions_reported': []}}))
 
-    def arms(self, official, **extra):
-        paths = [write_arm(self.tmp.name, 'official', official)]
+    def arms(self, official, monitoring=None, tmp=None, **extra):
+        tmp = tmp or self.tmp.name
+        paths = [write_arm(tmp, 'official', official, **extra.get('all', {}))]
         for arm in ar.ARMS:
             if arm != 'official':
-                paths.append(write_arm(self.tmp.name, arm, [('win', 'loss')] * 25, **extra.get(arm, {})))
+                paths.append(write_arm(tmp, arm, monitoring or [('win', 'loss')] * 25,
+                                       **{**extra.get('all', {}), **extra.get(arm, {})}))
         return paths
 
-    def run_verdict(self, arms, history=()):
-        return ar.verdict(argparse.Namespace(arms=arms, tactical=self.tactical, history=list(history)))
+    def run_verdict(self, arms, history=(), tactical=None):
+        return ar.verdict(argparse.Namespace(arms=arms, tactical=tactical or self.tactical, history=list(history)))
+
+    def test_official_opponent_illegal_makes_the_arena_invalid(self):
+        out = self.run_verdict(self.arms([('win', 'win')] * 49 + [('opponent_illegal', 'win')]))
+        self.assertEqual((out['official']['valid'], out['official']['opponent_illegal_pairs']), (False, [49]))
+        self.assertEqual((out['promotion']['decision'], out['promotion']['reason']), ('KEEP_CHAMPION', 'OFFICIAL_INVALID'))
+        self.assertIsNone(out['promotion']['improvement_lower'])  # never a convergence bound
+        self.assertEqual(out['next_champion'], {'p': 1})
+
+    def test_monitoring_opponent_illegal_leaves_the_pair_out(self):
+        out = self.run_verdict(self.arms([('win', 'win')] * 50,
+                                         monitoring=[('win', 'loss')] * 24 + [('opponent_illegal', 'win')]))
+        self.assertEqual(out['promotion']['decision'], 'PROMOTE')
+        e2 = out['monitoring']['mon_e2']
+        self.assertEqual((e2['complete_pairs'], e2['opponent_illegal_pairs'], e2['score']), (24, [24], 0.5))
+        self.assertEqual(out['next_champion'], {'c': 1})
+
+    def test_history_chain(self):
+        c1 = Path(self.tmp.name) / 'c1_verdict.json'
+        c1.write_text(json.dumps(self.run_verdict(self.arms([('win', 'win')] * 50))))  # promoted: champion {'c': 1}
+        sha = ar._file_sha(c1)
+        with TemporaryDirectory() as tmp:
+            def cycle2(parent, champion=sha, history=(str(c1),)):
+                tactical = Path(tmp) / 'tactical2.json'
+                tactical.write_text(json.dumps({
+                    'cycle': 2, 'git': {'commit': 'abc'}, 'candidate': {'c': 2}, 'parent': parent,
+                    'champion_record_sha256': champion,
+                    'judge': {'items': {'unsound_witness == 0': True}, 'compare': {}, 'regressions_reported': []}}))
+                ident = {'cycle': 2, 'candidate': {'c': 2}, 'parent': parent, 'champion_record_sha256': champion}
+                return self.run_verdict(self.arms([('win', 'loss')] * 50, tmp=tmp, all=ident), history, tactical)
+            out = cycle2({'c': 1})
+            self.assertEqual((out['cycle'], out['promotion']['decision'], out['next_champion']),
+                             (2, 'KEEP_CHAMPION', {'c': 1}))
+            self.assertEqual(out['convergence']['cycles'], [1, 2])
+            with self.assertRaises(ValueError):  # the parent is not cycle 1's champion
+                cycle2({'p': 1})
+            with self.assertRaises(ValueError):  # the history file is not the champion record the runs named
+                cycle2({'c': 1}, champion='f' * 64)
+            with self.assertRaises(ValueError):  # cycle 2 needs the history of cycle 1
+                cycle2({'c': 1}, history=())
 
     def test_promote_and_keep(self):
         promote = self.run_verdict(self.arms([('win', 'win')] * 30 + [('win', 'loss')] * 20))
@@ -168,12 +228,69 @@ class VerdictCommandTest(unittest.TestCase):
             self.run_verdict(self.arms([('win', 'win')] * 50, mon_e2={'candidate': {'c': 2}}))
         with self.assertRaises(ValueError):  # cycle 1 takes no history
             self.run_verdict(self.arms([('win', 'win')] * 50), history=[str(self.tactical)])
+        with self.assertRaises(ValueError):  # another champion record in one arm
+            self.run_verdict(self.arms([('win', 'win')] * 50, mon_e2={'champion_record_sha256': 'f' * 64}))
         paths = self.arms([('win', 'win')] * 50)
         record = json.loads(Path(paths[0]).read_text())
         record['games'][0]['signature'] = 'x'
         Path(paths[0]).write_text(json.dumps(record))
         with self.assertRaises(ValueError):  # a game of another setup
             self.run_verdict(paths)
+
+
+def dummy_models(directory, tag):
+    directory.mkdir(parents=True)
+    for name in ('p.pt', 'p.json', 'best.pt', 'best.json'):
+        (directory / name).write_text(f'{tag}:{name}', encoding='utf-8')
+    return directory / 'p.pt', directory / 'best.pt'
+
+
+class NoCandidateTest(unittest.TestCase):
+    def test_record(self):
+        from analysis import tb_v3_net
+
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy, value = dummy_models(tmp / 'parent', 'parent')
+            records = {}
+            for name, path, verdict in (('policy', policy, 'CANDIDATE'), ('value', value, 'NO_CANDIDATE')):
+                records[name] = tmp / f'{name}_record.json'
+                records[name].write_text(json.dumps({'cycle': 1, 'verdict': verdict, 'inputs': {
+                    'parent_checkpoint_sha256': ar._file_sha(path)}}), encoding='utf-8')
+            args = argparse.Namespace(cycle=1, policy_record=records['policy'], value_record=records['value'],
+                                      parent_policy=policy, parent_value=value, champion=None, history=[],
+                                      allow_stand_in=True)
+            out = ar.no_candidate(args)
+            parent = tb_v3_net.model_identity(policy, value)
+            self.assertEqual((out['promotion']['decision'], out['promotion']['reason']), ('KEEP_CHAMPION', 'NO_CANDIDATE'))
+            self.assertEqual((out['next_champion'], out['candidate'], out['promotion']['improvement_lower']),
+                             (parent, None, None))
+            self.assertEqual(out['training']['verdicts'], {'policy': 'CANDIDATE', 'value': 'NO_CANDIDATE'})
+            self.assertFalse(out['convergence']['converged'])
+            # a later cycle chains onto it: its history and champion record
+            c1 = tmp / 'c1.json'
+            c1.write_text(json.dumps(out), encoding='utf-8')
+            for name in records:
+                data = json.loads(records[name].read_text())
+                records[name].write_text(json.dumps({**data, 'cycle': 2}), encoding='utf-8')
+            two = ar.no_candidate(argparse.Namespace(**{**vars(args), 'cycle': 2, 'champion': c1,
+                                                        'history': [str(c1)]}))
+            self.assertEqual((two['cycle'], two['champion_record_sha256']), (2, ar._file_sha(c1)))
+            self.assertEqual(two['convergence']['improvement_lower'], [None, None])  # never two stalled cycles
+            with self.assertRaises(ValueError):  # cycle 2 without the previous verdict
+                ar.no_candidate(argparse.Namespace(**{**vars(args), 'cycle': 2, 'history': [str(c1)]}))
+            with self.assertRaises(ValueError):  # records of another cycle
+                ar.no_candidate(args)
+            for name in records:
+                data = json.loads(records[name].read_text())
+                records[name].write_text(json.dumps({**data, 'cycle': 1, 'verdict': 'CANDIDATE'}), encoding='utf-8')
+            with self.assertRaises(ValueError):  # both trainings gave a candidate: the Arena runs
+                ar.no_candidate(args)
+            other, _ = dummy_models(tmp / 'other', 'other')
+            with self.assertRaises(ValueError):  # the training did not start from the parent
+                data = json.loads(records['value'].read_text())
+                records['value'].write_text(json.dumps({**data, 'verdict': 'NO_CANDIDATE'}), encoding='utf-8')
+                ar.no_candidate(argparse.Namespace(**{**vars(args), 'parent_policy': other}))
 
 
 def play_args(tmp, policy, value, parent_policy, parent_value, **kw):
@@ -193,8 +310,8 @@ class GameTest(unittest.TestCase):
 
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
-        self.policy, self.value = write_models(Path(self.tmp.name) / 'c', seed=1)
         self.parent_policy, self.parent_value = write_models(Path(self.tmp.name) / 'p', seed=2)
+        self.policy, self.value = write_candidate(Path(self.tmp.name) / 'c', self.parent_policy, self.parent_value)
 
     def tearDown(self):
         from hybrid.h6_fast import install
@@ -246,6 +363,39 @@ class GameTest(unittest.TestCase):
                 ar.play(self.args(tmp, allow_stand_in=False), log=quiet)
             with self.assertRaises(ValueError):  # the H5 opponent needs the frozen H3
                 ar.play(self.args(tmp, arm='mon_puct_policy'), log=quiet)
+            with self.assertRaises(ValueError):  # the candidate's metadata name cycle 1
+                ar.check_models(self.args(tmp, cycle=2), False)
+            other_policy, other_value = write_candidate(Path(tmp) / 'x', self.policy, self.value)
+            with self.assertRaises(ValueError):  # trained on another self-play than the parent's
+                ar.check_models(self.args(tmp, candidate_policy=other_policy, candidate_value=other_value), False)
+            mixed = write_candidate(Path(tmp) / 'y', self.parent_policy, self.parent_value, seed=4)
+            meta = json.loads(mixed[1].with_name('best.json').read_text())
+            mixed[1].with_name('best.json').write_text(json.dumps({**meta, 'source_models': {'x': 1}}))
+            with self.assertRaises(ValueError):  # policy and value of two sources
+                ar.check_models(self.args(tmp, candidate_policy=mixed[0], candidate_value=mixed[1]), False)
+
+    def test_cycle_two_parent_is_the_previous_champion(self):
+        from analysis import tb_v3_net
+
+        with TemporaryDirectory() as tmp:
+            # cycle 1 promoted self.policy / self.value; cycle 2 trains on their self-play
+            c2_policy, c2_value = write_candidate(Path(tmp) / 'c2', self.policy, self.value, cycle=2, seed=7)
+            champion = Path(tmp) / 'c1_verdict.json'
+            champion.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 1, 'next_champion':
+                                            tb_v3_net.model_identity(self.policy, self.value)}))
+            args = self.args(tmp, cycle=2, candidate_policy=c2_policy, candidate_value=c2_value,
+                             parent_policy=self.policy, parent_value=self.value, champion=champion)
+            models = ar.check_models(args, False)
+            self.assertEqual(models['champion_record_sha256'], ar._file_sha(champion))
+            with self.assertRaises(ValueError):  # no previous verdict
+                ar.check_models(self.args(tmp, cycle=2, candidate_policy=c2_policy, candidate_value=c2_value,
+                                          parent_policy=self.policy, parent_value=self.value), False)
+            champion.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 1, 'next_champion':
+                                            tb_v3_net.model_identity(self.parent_policy, self.parent_value)}))
+            with self.assertRaises(ValueError):  # the verdict kept the old champion, not this parent
+                ar.check_models(args, False)
+            with self.assertRaises(ValueError):  # cycle 1 takes no --champion
+                ar.check_models(self.args(tmp, champion=champion), False)
 
     def test_illegal_move_is_a_recorded_loss(self):
         class Forbidden:
@@ -261,7 +411,7 @@ class GameTest(unittest.TestCase):
         self.assertEqual((row['result'], row['illegal']['side'], row['illegal']['color']), ('loss', 'tested', 'white'))
         row = ar.play_game({**task, **ar.build_tasks('official', 1, 1)[0][0]}, make_tested=lambda side, seed: Forbidden(),
                            make_opponent=lambda seed: Forbidden())
-        self.assertEqual((row['result'], row['illegal']['side']), ('win', 'opponent'))
+        self.assertEqual((row['result'], row['illegal']['side']), ('opponent_illegal', 'opponent'))  # never scored
 
     def test_value_and_policy_probes(self):
         probes = ar.value_probes(self.value)
@@ -283,14 +433,19 @@ class GameTest(unittest.TestCase):
             out = ar.tactical(self.args(tmp), log=lambda *a, **k: None)
         self.assertEqual(seen, [('candidate', str(self.policy)), ('parent', str(self.parent_policy))])
         self.assertEqual(set(out['judge']['items']), {'unsound_witness == 0', 'P93 / P94 value sign',
-                                                      'must_block >= B400 anchor'})
+                                                      'must_block >= max(B400 anchor, parent - 2)'})
         self.assertEqual(set(out['files']), {'value_probes', 'policy_probes', 'e1_manifest'})
 
     def test_x2_candidate_against_the_fake_engine(self):
+        from analysis import tb_v3_net
         import scripts.run_external_match as runner
 
         info = x2.candidate_info(1, self.policy, self.value, 'cpu')
         self.assertTrue(info['label'].startswith('h7c:c1:'))
+        self.assertEqual(info['provenance']['source_models'], tb_v3_net.model_identity(self.parent_policy,
+                                                                                       self.parent_value))
+        with self.assertRaises(ValueError):  # the candidate's metadata name cycle 1
+            x2.candidate_info(2, self.policy, self.value, 'cpu')
         self.assertFalse(info['provenance']['canonical'])
         with TemporaryDirectory() as tmp:
             out = Path(tmp) / 'x2.json'

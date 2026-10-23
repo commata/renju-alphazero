@@ -1,7 +1,8 @@
 """H7-c X2: the cycle's candidate against Rapfi L_mid, record only (docs/h7-c1.md, docs/external-engine.md).
 
 The candidate (c policy + c value) on the frozen TB-V3 / fast5, built by ``analysis.tb_v3_net.make_tb_v3_net_agent``
-in ``scripts/run_external_match.py``'s games (``--ours h7c``, which only this tool can give). Cycle c plays seed
+(its policy and value metadata must name this cycle and one self-play source) in ``scripts/run_external_match.py``'s
+games (``--ours h7c``, which only this tool can give). Cycle c plays seed
 8710 + c (``evaluation.external.MONITORING_SEEDS``; 8710 = cycle 0, the pre-RL baseline), 25 pairs, whatever the
 promotion verdict. Rapfi never decides a promotion. The candidate's engine, runtime and model identities go into
 ``ours`` and so into ``run_signature``; every other option (engine, INFO, engine files, opening, ``--forbid-check``,
@@ -38,12 +39,16 @@ def x2_seed(cycle: int) -> int:
 
 
 def candidate_info(cycle: int, policy_checkpoint, value_checkpoint, device: str) -> dict:
-    """Label and provenance of the candidate: the frozen engine identity, fast5 on this device, the four model SHA."""
+    """Label and provenance of the candidate: the frozen engine identity, fast5 on this device, the four model SHA,
+    and the self-play source both models were trained on (their metadata must name this cycle)."""
     from analysis import tb_v3, tb_v3_net
+    from h7c_arena import check_candidate
 
     tb_v3.check_identity()
+    source = check_candidate(policy_checkpoint, value_checkpoint, cycle)
     identity = tb_v3_net.model_identity(policy_checkpoint, value_checkpoint)
     provenance = {'cycle': cycle, 'engine_id': tb_v3.ENGINE_ID, 'engine_hash': tb_v3.ENGINE_HASH,
+                  'source_models': source,
                   **tb_v3_net.provenance(device, identity)}
     return {'label': f"h7c:c{cycle}:{provenance['model_hash'][:12]}" + ('' if device == 'cuda' else f'[{device}]'),
             'provenance': provenance}

@@ -27,7 +27,7 @@ def random_game(seed: int, plies: int) -> list[list[int]]:
     return [list(m) for m in game.history]
 
 
-def policy_rows(n_games=6, split='train'):
+def policy_rows(n_games=6, split='train', source=None, cycle=1):
     rows = []
     for g in range(n_games):
         moves = random_game(g + (100 if split == 'val' else 0), 12)
@@ -39,8 +39,9 @@ def policy_rows(n_games=6, split='train'):
             a, b = legal[0], legal[len(legal) // 2]
             kl = ply % 2 == 0
             target = [[*a, 0.75], [*b, 0.25]] if kl else [[*a, 1.0]]
-            rows.append({'game_id': f'h7c:c1:8801:{g}', 'ply': ply, 'moves': moves[:ply], 'target': target,
-                         'kl': kl, 'mask': False, 'split': split, 'format': 'h7c-policy-row-v1'})
+            rows.append({'game_id': f'h7c:c{cycle}:8801:{g}', 'ply': ply, 'moves': moves[:ply], 'target': target,
+                         'kl': kl, 'mask': False, 'split': split, 'format': 'h7c-policy-row-v1',
+                         **({'h7c_provenance': source} if source else {})})
     return rows
 
 
@@ -63,6 +64,27 @@ def value_split(seed: int, games: int, *, shared=None):
             records.append(rec)
             index.append(g)
     return _tensors(records, index), sources
+
+
+def source_of(policy, value):
+    """The ``h7c_provenance`` model fields of a self-play by these two checkpoints."""
+    from analysis import tb_v3_net
+    return {**tb_v3_net.model_identity(policy, value), 'runtime_hash': 'r' * 64, 'selfplay_git_commit': 'abc'}
+
+
+def cycle_value_rows(tmp: Path, name: str, policy, value, cycle=1, games=12):
+    """Self-play value rows of these models (scripts/h7c_labels.py) and their cache."""
+    from analysis import tb_v3_net
+    from hybrid.h6_value_cache import build_value_cache
+    from scripts.h7c_labels import value_row_dict, write_atomic
+    from tests.test_h7c_labels import build, game
+
+    models = tb_v3_net.model_identity(policy, value)
+    rows, _, _ = build([game(i, models=models, model_hash=tb_v3_net.model_hash(models), cycle=cycle)
+                        for i in range(games)])
+    write_atomic({tmp / f'{name}.jsonl.gz': [value_row_dict(r) for r in rows]})
+    build_value_cache(tmp / f'{name}.jsonl.gz', tmp / f'{name}_cache', progress_seconds=1e9)
+    return tmp / f'{name}.jsonl.gz', tmp / f'{name}_cache'
 
 
 def small_model(seed=0):
@@ -202,19 +224,17 @@ class CliTest(unittest.TestCase):
     """Both training commands end to end on stand-in networks and tiny data."""
 
     def test_value_cli(self):
+        from hybrid.h6_labels import game_rows
         from hybrid.h6_value_cache import build_value_cache
         from scripts import h7c_train_value as tv
-        from tests.test_h7c_labels import build, game
+        from scripts.h7c_labels import write_atomic
         from tests.test_tb_v3_net import write_models
 
+        quiet = lambda *a, **k: None  # noqa: E731
         with TemporaryDirectory() as tmp:
             tmp = Path(tmp)
-            rows, _, _ = build([game(i) for i in range(12)])
-            from scripts.h7c_labels import value_row_dict, write_atomic
-            write_atomic({tmp / 'cycle_rows.jsonl.gz': [value_row_dict(r) for r in rows]})
-            build_value_cache(tmp / 'cycle_rows.jsonl.gz', tmp / 'cycle_cache', progress_seconds=1e9)
-            # the replay: H6-format rows of random games, its own cache
-            from hybrid.h6_labels import game_rows
+            policy, value = write_models(tmp)
+            # the replay anchor: H6-format rows of random games, its own cache
             replay_rows = []
             for g in range(30):
                 moves = random_game(500 + g, 12)
@@ -223,31 +243,52 @@ class CliTest(unittest.TestCase):
                                          from_ply=3)
             write_atomic({tmp / 'replay_rows.jsonl.gz': [r.to_dict() for r in replay_rows]})
             manifest = build_value_cache(tmp / 'replay_rows.jsonl.gz', tmp / 'replay_cache', progress_seconds=1e9)
-            _, value = write_models(tmp)
             meta = json.loads(value.with_name('best.json').read_text(encoding='utf-8'))
-            meta['labels_sha256'] = manifest['labels_sha256']
+            meta['labels_sha256'] = manifest['labels_sha256']  # the stand-in H6 v3 trained on the anchor
             value.with_name('best.json').write_text(json.dumps(meta), encoding='utf-8')
+            cycle_rows, cycle_cache = cycle_value_rows(tmp, 'c1', policy, value)  # self-play of the final parent
             config = tmp / 'value.json'
             config.write_text(json.dumps({'batch_size': 16, 'epochs': 1.0, 'evaluations': 2, 'h6_guard_ratio': 100.0}),
                               encoding='utf-8')
-            args = argparse.Namespace(cycle=1, config=config, cycle_cache=tmp / 'cycle_cache',
+            args = argparse.Namespace(cycle=1, config=config, cycle_cache=cycle_cache, cycle_rows=cycle_rows,
                                       replay_cache=tmp / 'replay_cache', parent=value, device='cpu',
-                                      out_dir=tmp / 'out', allow_dirty=True)
-            record = tv.run(args, log=lambda *a, **k: None)
+                                      out_dir=tmp / 'out', allow_dirty=True, allow_stand_in=True)
+            again = lambda **kw: argparse.Namespace(**{**vars(args), **kw})  # noqa: E731
+            record = tv.run(args, log=quiet)
             self.assertEqual(record['verdict'], 'CANDIDATE')
             from hybrid.h6_value_leaf import ValueLeaf
             leaf = ValueLeaf(tmp / 'out' / 'best.pt', expected_sha256=None)  # the frozen loader takes it
-            self.assertEqual(leaf.meta['h7c_stage'], 'H7-c-value')
+            self.assertEqual((leaf.meta['h7c_stage'], leaf.meta['cycle']), ('H7-c-value', 1))
             self.assertEqual(leaf.meta['parent_h3_checkpoint_sha256'], meta['parent_h3_checkpoint_sha256'])
+            self.assertEqual(leaf.meta['training_sources'], {'cycle_labels_sha256': record['inputs']['cycle_labels_sha256'],
+                                                             'replay_anchor_labels_sha256': manifest['labels_sha256']})
+            self.assertEqual(leaf.meta['source_models'], {k: source_of(policy, value)[k] for k in tr.SOURCE_MODEL_KEYS})
+            self.assertNotIn('labels_sha256', leaf.meta)
             with self.assertRaises(ValueError):  # the same output directory twice
-                tv.run(args, log=lambda *a, **k: None)
-            meta['labels_sha256'] = 'f' * 64
-            value.with_name('best.json').write_text(json.dumps(meta), encoding='utf-8')
-            with self.assertRaises(ValueError):  # a replay cache that is not the parent's data
-                tv.run(argparse.Namespace(**{**vars(args), 'out_dir': tmp / 'out2'}), log=lambda *a, **k: None)
+                tv.run(args, log=quiet)
+            with self.assertRaises(ValueError):  # a stand-in parent is neither the frozen H6 v3 nor a candidate
+                tv.run(again(out_dir=tmp / 'o1', allow_stand_in=False), log=quiet)
             with self.assertRaises(ValueError):  # a cycle cache of other games
-                tv.run(argparse.Namespace(**{**vars(args), 'cycle': 2, 'out_dir': tmp / 'out3'}),
-                       log=lambda *a, **k: None)
+                tv.run(again(cycle=2, out_dir=tmp / 'o2'), log=quiet)
+            with self.assertRaises(ValueError):  # --cycle-rows is not the file the cache was built from
+                tv.run(again(cycle_rows=tmp / 'replay_rows.jsonl.gz', out_dir=tmp / 'o3'), log=quiet)
+            other_rows, other_cache = cycle_value_rows(tmp, 'other', policy, tmp / 'out' / 'best.pt')
+            with self.assertRaises(ValueError):  # rows played by another value than --parent
+                tv.run(again(cycle_rows=other_rows, cycle_cache=other_cache, out_dir=tmp / 'o4'), log=quiet)
+            with self.assertRaises(ValueError) as caught:  # a replay cache that is not the anchor
+                tv.run(again(replay_cache=other_cache, out_dir=tmp / 'o5'), log=quiet)
+            self.assertIn('anchor', str(caught.exception))
+
+            # cycle 2 continues from the cycle-1 candidate (promoted): its self-play rows, the same anchor
+            c1_value = tmp / 'out' / 'best.pt'
+            c2_rows, c2_cache = cycle_value_rows(tmp, 'c2', policy, c1_value, cycle=2)
+            record2 = tv.run(again(cycle=2, cycle_rows=c2_rows, cycle_cache=c2_cache, parent=c1_value,
+                                   out_dir=tmp / 'c2', allow_stand_in=False), log=quiet)
+            self.assertEqual(record2['verdict'], 'CANDIDATE')
+            meta2 = json.loads((tmp / 'c2' / 'best.json').read_text(encoding='utf-8'))
+            self.assertEqual((meta2['cycle'], meta2['training_sources']['replay_anchor_labels_sha256']),
+                             (2, manifest['labels_sha256']))
+            self.assertEqual(meta2['parent_value_checkpoint_sha256'], tr.file_sha256(c1_value))
 
     def test_policy_cli(self):
         from scripts import h7c_train_policy as tp
@@ -256,8 +297,9 @@ class CliTest(unittest.TestCase):
 
         with TemporaryDirectory() as tmp:
             tmp = Path(tmp)
-            policy, _ = write_models(tmp)
-            write_atomic({tmp / 'policy_rows.jsonl.gz': policy_rows(6) + policy_rows(2, 'val')})
+            policy, value = write_models(tmp)
+            source = source_of(policy, value)
+            write_atomic({tmp / 'policy_rows.jsonl.gz': policy_rows(6, source=source) + policy_rows(2, 'val', source)})
             config = tmp / 'policy.json'
             config.write_text(json.dumps({'batch_size': 16, 'epochs': 1.0, 'evaluations': 2, 'guard_drop': 1.0}),
                               encoding='utf-8')
@@ -270,10 +312,23 @@ class CliTest(unittest.TestCase):
                 self.assertEqual(record['verdict'], 'CANDIDATE')  # a guard drop of 1.0 admits every step
                 from hybrid.h4_policy import RootPolicy
                 loaded = RootPolicy(tmp / 'out' / 'best.pt')  # the policy loader takes it
-                self.assertEqual(loaded.meta['stage'], 'H7-c-policy')
+                self.assertEqual((loaded.meta['stage'], loaded.meta['cycle']), ('H7-c-policy', 1))
+                self.assertEqual(loaded.meta['source_models'], {k: source[k] for k in tr.SOURCE_MODEL_KEYS})
+                again = lambda **kw: argparse.Namespace(**{**vars(args), **kw})  # noqa: E731
                 with self.assertRaises(ValueError):  # the frozen H3 is required as the teacher
-                    tp.run(argparse.Namespace(**{**vars(args), 'out_dir': tmp / 'o2', 'allow_stand_in': False}),
-                           log=lambda *a, **k: None)
+                    tp.run(again(out_dir=tmp / 'o2', allow_stand_in=False), log=lambda *a, **k: None)
+                with self.assertRaises(ValueError):  # the rows are of cycle 1
+                    tp.run(again(out_dir=tmp / 'o3', cycle=2), log=lambda *a, **k: None)
+                other, _ = write_models(tmp / 'other', seed=5)
+                with self.assertRaises(ValueError):  # --parent did not play the self-play
+                    tp.run(again(out_dir=tmp / 'o4', parent=other), log=lambda *a, **k: None)
+                write_atomic({tmp / 'mixed.jsonl.gz': policy_rows(3, source=source)
+                              + policy_rows(3, source={**source, 'value_checkpoint_sha256': 'e' * 64})})
+                with self.assertRaises(ValueError):  # rows of two self-play sources
+                    tp.run(again(out_dir=tmp / 'o5', policy_rows=tmp / 'mixed.jsonl.gz'), log=lambda *a, **k: None)
+                write_atomic({tmp / 'bare.jsonl.gz': policy_rows(3)})
+                with self.assertRaises(ValueError):  # rows without provenance
+                    tp.run(again(out_dir=tmp / 'o6', policy_rows=tmp / 'bare.jsonl.gz'), log=lambda *a, **k: None)
 
 
 if __name__ == '__main__':

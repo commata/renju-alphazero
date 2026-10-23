@@ -5,7 +5,8 @@
         --h3-cache data/external/renjunet/h3_cache --device cuda --out-dir runs/h7c/c1/policy
 
 The teacher (KL) and the guard baseline are always the frozen H3 (``analysis.tb_v3.MODELS``); the parent is the
-cycle's starting policy (c1: the same H3). The output is a policy-only checkpoint ``best.pt`` with ``best.json``
+cycle's starting policy (c1: the same H3), and it must be the policy that played the cycle's self-play: the rows'
+``h7c_provenance`` (one model pair, every game id of this cycle) names it by SHA-256. The output is a policy-only checkpoint ``best.pt`` with ``best.json``
 (``hybrid.h4_policy.RootPolicy`` loads it; ``analysis.tb_v3_net`` takes it as a candidate) and ``record.json``. No
 eligible checkpoint (every one more than 2 points of RenjuNet top-1 below H3): ``NO_CANDIDATE``, no ``best.pt``,
 exit 1. A dirty tree is refused (``--allow-dirty`` for tests only).
@@ -61,6 +62,12 @@ def run(args, log=print) -> dict:
     cfg = tr.PolicyConfig.from_dict({**json.loads(Path(args.config).read_text(encoding='utf-8')), 'device': args.device})
     parent, parent_meta = load_policy_net(Path(args.parent), args.device)
     teacher, _ = load_policy_net(teacher_path, args.device)
+    source = tr.policy_rows_source(Path(args.policy_rows), args.cycle)
+    parent_shas = {'policy_checkpoint_sha256': tr.file_sha256(args.parent),
+                   'policy_metadata_sha256': tr.file_sha256(Path(args.parent).with_suffix('.json'))}
+    if {k: source['models'][k] for k in parent_shas} != parent_shas:
+        raise ValueError(f"{args.parent} is not the policy that played the cycle's self-play "
+                         f"({source['models']['policy_checkpoint_sha256'][:12]})")
     rows = tr.load_policy_rows(Path(args.policy_rows))
     train, val = tr.policy_tensors(rows['train']), tr.policy_tensors(rows.get('val', []))
     guard_data, _ = load_cache(Path(args.h3_cache), 'val', verify_hash=True)
@@ -71,7 +78,8 @@ def run(args, log=print) -> dict:
               'inputs': {'policy_rows': str(args.policy_rows), 'policy_rows_sha256': tr.file_sha256(args.policy_rows),
                          'parent_checkpoint_sha256': tr.file_sha256(args.parent),
                          'parent_metadata_sha256': tr.file_sha256(Path(args.parent).with_suffix('.json')),
-                         'teacher_checkpoint_sha256': shas['checkpoint'], 'h3_cache': str(args.h3_cache)},
+                         'teacher_checkpoint_sha256': shas['checkpoint'], 'h3_cache': str(args.h3_cache),
+                         'source': source},
               **result['record']}
     out.mkdir(parents=True, exist_ok=True)
     if result['state'] is not None:
@@ -82,6 +90,7 @@ def run(args, log=print) -> dict:
                                                    'blocks': parent_meta['config']['blocks'], **tr.config_dict(cfg)},
                 'parent_checkpoint_sha256': record['inputs']['parent_checkpoint_sha256'],
                 'teacher_checkpoint_sha256': shas['checkpoint'], 'policy_rows_sha256': record['inputs']['policy_rows_sha256'],
+                'source_models': source['models'], 'source_selfplay_git_commit': source['selfplay_git_commit'],
                 'best': result['record']['best'], 'teacher_guard_top1': result['record']['teacher_guard']['top1'],
                 'git': git}
         (out / 'best.json.tmp').write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')

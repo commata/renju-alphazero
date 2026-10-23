@@ -39,8 +39,10 @@ class WslGateTest(unittest.TestCase):
             with unittest.mock.patch.object(wg, '_sha', lambda p: (
                     want['executable_sha256'] if p.name == wg.EXECUTABLE else want['extra_files'].get(p.name))):
                 crosscheck = {'seed': 1, 'radius': 1, 'summary': want['crosscheck']['summary'],
-                              'engine': {'executable_sha256': want['executable_sha256'], 'about': 'Rapfi'}}
+                              'engine': {'executable_sha256': want['executable_sha256'], 'about': 'Rapfi'},
+                              'git_commit': 'abc', 'git_dirty': False}
                 repro = {'seed': 8703, 'pairs': 2, 'run_signature': want['repro']['run_signature'],
+                         'git_commit': 'abc', 'git_dirty': False,
                          'summary': {'fingerprint': want['repro']['fingerprint'], 'score': 0.75},
                          'engine': {'about': 'Rapfi'}}
                 self.assertEqual(wg.evaluate(engine, crosscheck, repro)['result'], 'PASS')
@@ -48,6 +50,10 @@ class WslGateTest(unittest.TestCase):
                 self.assertEqual(wg.evaluate(engine, crosscheck, bad)['result'], 'FAIL')
                 bad = {**crosscheck, 'summary': {**crosscheck['summary'], 'mismatch_positions': 1}}
                 self.assertEqual(wg.evaluate(engine, bad, repro)['result'], 'FAIL')
+                for dirty in (True, None):  # a dirty tree, or git unavailable: never a clean record
+                    out = wg.evaluate(engine, {**crosscheck, 'git_dirty': dirty}, repro)
+                    self.assertEqual((out['result'], out['checks']['clean_tree']), ('FAIL', False))
+                    self.assertEqual(wg.evaluate(engine, crosscheck, {**repro, 'git_dirty': dirty})['result'], 'FAIL')
             self.assertEqual(wg.evaluate(engine, crosscheck, repro)['checks']['executable'], False)  # no files
 
 

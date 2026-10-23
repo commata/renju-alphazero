@@ -17,13 +17,18 @@ the frozen H3):
 Value (``train_value``), from the parent value checkpoint (c1: the frozen H6 v3), H6-2a's contract kept:
     network    trunk and policy head frozen (parameters and BatchNorm, checked by hash before and after); only
                the value head trains; weighted MSE of the tanh value (proof 1.0, outcome 0.1 from the rows)
-    data       the cycle's value cache and the parent's own H6 replay cache (its labels SHA must be the parent's);
+    data       the cycle's value cache and the replay anchor: the frozen H6 v3 value cache in every cycle (its
+               labels SHA is the frozen H6 v3's, carried by every H7-c value candidate as
+               ``training_sources.replay_anchor_labels_sha256``);
                every epoch all cycle train rows plus as many H6 train rows drawn without replacement (seeded per
                epoch): 50 : 50 by source
     leakage    D4 canonical hashes over the union: a val row whose position is in either train split is dropped
                from its val set (train < val), and the check is repeated after
     selection  objective = mean of the two val weighted MSE (only the H6 one if the cycle val set is empty); eligible = H6 val weighted MSE at most
                ``h6_guard_ratio`` (1.05) times the parent's; best = the eligible evaluation with the lowest objective
+Source (``policy_rows_source`` / ``value_rows_source``): the label rows of one cycle carry the four model SHA-256 of
+the self-play that made them (``h7c_provenance``); both trainers require them to be one model pair whose policy
+(value) is the trainer's ``--parent``, and every game id to be of this cycle.
 """
 from __future__ import annotations
 
@@ -46,6 +51,56 @@ ACTIONS = BOARD_SIZE * BOARD_SIZE
 POLICY_STAGE = 'H7-c-policy'
 VALUE_STAGE = 'H7-c-value'
 VALUE_LOADER_STAGE = 'H6-2a'  # hybrid.h6_value_leaf's (frozen) loader contract: a value head on the frozen H3 trunk
+
+
+SOURCE_MODEL_KEYS = ('policy_checkpoint_sha256', 'policy_metadata_sha256', 'value_checkpoint_sha256',
+                     'value_metadata_sha256')
+
+
+def rows_source(provenances, game_ids, cycle: int) -> dict:
+    """The one self-play source of a cycle's label rows: its four model SHA-256, runtime and generator commit."""
+    prefix, sources, rows = f'h7c:c{cycle}:', set(), 0
+    for detail, game_id in zip(provenances, game_ids):
+        rows += 1
+        if not str(game_id).startswith(prefix):
+            raise ValueError(f'a row of game {game_id} is not of cycle {cycle}')
+        if not isinstance(detail, dict) or any(not detail.get(k) for k in SOURCE_MODEL_KEYS):
+            raise ValueError(f'a row of game {game_id} has no H7-c self-play provenance')
+        sources.add(json.dumps({k: detail[k] for k in (*SOURCE_MODEL_KEYS, 'runtime_hash', 'selfplay_git_commit')},
+                               sort_keys=True))
+    if rows == 0 or len(sources) != 1:
+        raise ValueError(f'the rows come from {len(sources)} self-play sources (one is required)')
+    source = json.loads(sources.pop())
+    return {'models': {k: source[k] for k in SOURCE_MODEL_KEYS}, 'runtime_hash': source['runtime_hash'],
+            'selfplay_git_commit': source['selfplay_git_commit'], 'rows': rows}
+
+
+def policy_rows_source(path: Path, cycle: int) -> dict:
+    """``rows_source`` over every policy row (masked ones too)."""
+    provenances, ids = [], []
+    with gzip.open(path, 'rt', encoding='utf-8') as handle:
+        for line in handle:
+            if line.strip():
+                row = json.loads(line)
+                provenances.append(row.get('h7c_provenance'))
+                ids.append(row.get('game_id'))
+    return rows_source(provenances, ids, cycle)
+
+
+def value_rows_source(path: Path, cycle: int, labels_sha256: str) -> dict:
+    """``rows_source`` over the value rows a cache was built from (their SHA-256 as ``h6_value_cache`` computes it
+    must be the cache's ``labels_sha256``)."""
+    from .h6_value_cache import iter_games
+
+    digest, provenances, ids = hashlib.sha256(), [], []
+    for game_id, rows in iter_games(Path(path), digest):
+        for row in rows:
+            provenances.append(row.get('h7c_provenance'))
+            ids.append(game_id)
+    if digest.hexdigest() != labels_sha256:
+        raise ValueError(f'{path} is not the label file of the cycle cache ({digest.hexdigest()[:12]} != '
+                         f'{labels_sha256[:12]})')
+    return rows_source(provenances, ids, cycle)
 
 
 def warmup_steps(total: int) -> int:
