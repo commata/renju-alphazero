@@ -10,7 +10,10 @@
   - 승급: TB-V3 promotion replay, fast5 G0 · G1 · G2 desktop
   - 배포: fast5 G2 SER5 `SER5_CERTIFIED`(worker 1), fast5 CPU 인증 PASS(seed 8451 / 8452)
 - 학습 중인 H7-c checkpoint는 자동으로 바뀌지 않는다. 새 승급·배포 단계가 `LATEST_CERTIFIED`를 바꿀 때만 바뀐다.
-- TB-RT30(`--rt30`, 지금은 v4 후보 = v3 + TB-V3 native builder)은 legacy / rollback 상대다. 지금 서비스에서는 켜지 않는다.
+- **이전 웹 모델**은 TB-RT30-v4 Legacy다. v4 = 예전 TB-RT30-v3 + TB-V3 native builder.
+  - same-move gate(§3.2)를 통과한 뒤에만 선택지에 나온다. 그 전에는 서버가 "not served"를 로그로 남기고 TB-V3만 서비스한다.
+  - 기본값이 되지는 않는다.
+  - worker는 처음 선택될 때 뜬다. 세션 TTL(1시간) 동안 쓰이지 않으면 닫힌다.
 
 ## 1. 환경
 
@@ -65,7 +68,7 @@ sudo systemctl enable --now renju-web
 journalctl -u renju-web -f      # "deployment check PASS", "worker ready", "Renju local web" 확인 후 Ctrl-C
 curl -s localhost:8000/api/health; echo     # "default_agent": "tbv3", "engine": {"engine": "TB-V3", ...}
 curl -s localhost:8000/api/engine; echo     # 엔진 · runtime 해시, 모델 SHA-256 4개, 근거 파일
-.venv-ser5/bin/python scripts/ser5/tbv3_smoke.py --base http://127.0.0.1:8000   # 한 판: AI 응답 6수, 시간
+curl -s localhost:8000/api/engines; echo    # 제공 중인 상대: tbv3 (latest-certified), rt30 (legacy-certified), worker 상태
 ```
 
 - 시작 전에 `rt30.native.build --if-stale`와 `rt30.vcfcore.build --if-stale`가 돈다. C 소스나 Python이 바뀌었을 때만 다시 빌드한다.
@@ -75,6 +78,67 @@ curl -s localhost:8000/api/engine; echo     # 엔진 · runtime 해시, 모델 S
   - TB-V3 identity, 동결 policy / value 파일 SHA, 두 native 빌드가 최신
 - TB-V3는 deadline이 없다(노드 예산, SER5 최대 6.9초). 30초는 soft monitor다: 넘으면 로그(`[tbv3] soft limit`)와 수 기록(`rt.soft_limit_exceeded`)만 남기고 그 수를 그대로 둔다.
 - 대체 수(fallback)는 없다. worker가 300초 동안 답하지 않거나 죽으면 그 수는 오류로 끝나고(브라우저에 오류 표시), worker는 교체된다.
+- 시간 기준 세 가지
+  - 30초: 엔진 성능 soft monitor. 기록만 한다.
+  - 120초: smoke 스크립트의 응답 한계. smoke 성능 timeout이지 엔진 장애가 아니다. worker는 아직 탐색 중일 수 있다.
+  - 300초: 서버의 worker hang 기준. 이 수는 오류가 되고 worker를 교체한다.
+
+### 3.1 smoke test
+
+운영 서비스는 `--secure-cookie`다. 그래서 `Secure` 세션 쿠키는 `http://`로는 돌아오지 않는다(브라우저도, smoke도 같다).
+- `http://127.0.0.1:8000`(운영 서비스)에 smoke를 돌리면 요청마다 새 세션이 된다.
+- smoke는 이것을 세션 검사에서 바로 거부한다. 운영 서비스의 `--secure-cookie`는 빼지 않는다.
+
+```bash
+# A. 배포 전: --secure-cookie 없는 임시 로컬 서버 (서비스와 다른 포트)
+PYTHONPATH=src .venv-ser5/bin/python scripts/run_web_play.py --port 8001 --tbv3 --ai-slots 1 &
+sleep 60; .venv-ser5/bin/python scripts/ser5/tbv3_smoke.py --base http://127.0.0.1:8001; kill %1
+# B. 운영: Caddy HTTPS 경유 (Basic Auth)
+.venv-ser5/bin/python scripts/ser5/tbv3_smoke.py --base https://ser5tack.duckdns.org --user '<id>' --password '<pw>'
+```
+
+- smoke가 확인하는 것
+  - health · engine 정보
+  - 세션 연속성: `/api/new`가 준 쿠키가 다음 요청에 돌아와 같은 판(seed)이 보이는지
+  - AI 응답 6수(모두 엔진 수, 시간)
+- 실패하면 마지막 판 상태(status, move_count, last_error)와 서버 AI 큐(running, queued, done, failed), sessions, secure_cookie를 함께 출력한다.
+
+### 3.2 TB-RT30-v4 same-move gate (이전 웹 모델을 다시 열기 전에 한 번)
+
+v4는 v3와 설정 · 코드가 같고 `src/rt30/native/build.py`만 다르다(`_forbidden` 추가).
+- 판정: deadline 없이(결정에 시간이 들어가지 않게) 같은 국면을 다시 두어 수와 탐색 기록이 v3와 같은지 본다.
+  - 수, route, 노드 수, 검사 상태, tree 수
+- 대상
+  - v3의 커밋된 동등성 기록(H3 8국면, frozen / fast3 / rt3)
+  - SER5 대표 국면 묶음 두 개(`slow-stratified-v1` 60, `critical-regressions-v1` 6): v3 checkout과 이 checkout에서
+
+```bash
+cd ~/renju-alphazero && export PYTHONPATH=src CK=runs/h3_policy_64x4/best.pt
+mkdir -p runs/v4_gate
+git worktree add ../renju-v3 3b8746e          # 마지막 TB-RT30-v3 웹 커밋 (feat/Web_SER5)
+(cd ../renju-v3 && PYTHONPATH=src ../renju-alphazero/.venv-ser5/bin/python -m rt30.native.build)
+KEYS="puct_policy_vct2_50k_8415/2/14 puct_policy_vct2_50k_8415/9/18 puct_policy_vct2_50k_8415/9/26
+puct_policy_vct2_50k_8415/10/18 puct_policy_vct2_50k_8415/10/20 puct_policy_vct2_50k_8415/11/9
+puct_policy_vct2_50k_8415/11/11 puct_policy_vct2_50k_8415/11/13"
+.venv-ser5/bin/python scripts/run_rt30_replay.py --checkpoint $CK --arms frozen,fast3,rt3 --keys $KEYS \
+  --workers 4 --output runs/v4_gate/v4_equivalence_h3_8.json
+for SET in slow-stratified-v1 critical-regressions-v1; do
+  (cd ../renju-v3 && PYTHONPATH=src ../renju-alphazero/.venv-ser5/bin/python scripts/run_rt30_replay.py \
+     --checkpoint ../renju-alphazero/$CK --arms rt3 --keys-file docs/rt30-eval/$SET.json --workers 4 \
+     --output ../renju-alphazero/runs/v4_gate/v3_$SET.json)
+  .venv-ser5/bin/python scripts/run_rt30_replay.py --checkpoint $CK --arms rt3 --keys-file docs/rt30-eval/$SET.json \
+     --workers 4 --output runs/v4_gate/v4_$SET.json
+done
+.venv-ser5/bin/python scripts/check_rt30_v4_gate.py --v4-equivalence runs/v4_gate/v4_equivalence_h3_8.json \
+  --pair runs/v4_gate/v3_slow-stratified-v1.json runs/v4_gate/v4_slow-stratified-v1.json \
+  --pair runs/v4_gate/v3_critical-regressions-v1.json runs/v4_gate/v4_critical-regressions-v1.json \
+  --output docs/rt30-results/v4_same_move.json
+git add docs/rt30-results/v4_same_move.json && git commit -m "docs: TB-RT30-v4 same-move gate" && git push
+sudo systemctl restart renju-web     # 로그: "TB-RT30-v4: offered as legacy-certified"
+```
+
+- `V4_SAME_MOVE_PASS`이면 v4는 `legacy-certified`가 된다(`rt30.legacy.status`가 기록과 지금 v4 잠금 파일을 대조한다).
+- FAIL이면 기록을 커밋하지 않는다. v4는 후보로 남고 웹에 나오지 않는다.
 - 죽으면 5초 뒤 다시 뜬다(10분에 5번까지). 끄기(`systemctl stop`)는 SIGTERM이다. 대기 중인 AI 수를 취소하고, 진행 중인 판을 `abandoned`로 남기고, 엔진 worker와 helper를 닫는다. 탐색 중이면 최대 40초 걸린다.
 - 설정 값은 `deploy/renju-web.service`의 `ExecStart` 한 줄이다. 바꾸면 `sudo systemctl daemon-reload && sudo systemctl restart renju-web`.
 

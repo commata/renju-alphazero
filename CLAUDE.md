@@ -49,6 +49,11 @@
   checkpoint never reaches the web by being trained.
 - TB-RT30-v3's lock is kept but for `src/rt30/native/build.py`, which TB-V3's builder replaced (one `MODULES` line,
   checked by `tests/test_tb_rt30_v3.py`): that is TB-RT30-v4 (`src/rt30/tb_rt30_v4.py`, `tests/frozen_tb_rt30_v4.sha256`),
-  a candidate until its same-move gate on SER5, and only a legacy / rollback opponent.
+  a candidate until its same-move gate passes (`scripts/check_rt30_v4_gate.py` -> `docs/rt30-results/v4_same_move.json`;
+  `rt30.legacy.status` reads that record, never `tb_rt30_v4.STATUS`, since that file is in v4's lock). Only then is it
+  offered, as the "previous web model" (legacy, lazily started, never the default).
+- `scripts/ser5/tbv3_smoke.py` must keep checking session continuity: the service sets a Secure cookie
+  (`--secure-cookie`, never removed), which no client sends back over http://; smoke a local server without it or
+  the HTTPS address.
 - TB-RT30-v1 (the web engine) is frozen the same way: the files in `tests/frozen_tb_rt30_v1.sha256`
   (`src/rt30/engine.py`, `solver.py`, `deadline.py`, `vcf.py`, `fast*.py`, `tb_rt30_v1.py`); a change is TB-RT30-v2.

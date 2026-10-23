@@ -22,11 +22,13 @@ Environment=PYTHONPATH=src
 # C source, the venv's Python or the flags changed (after a git pull); the server refuses to start with a
 # stale one, and also unless the fast5 evidence (G0 / G1 / G2 / CPU certification, read through git: a full,
 # non-shallow clone), TB-V3's identity and both model files check (rt30.tb_v3_slot.check_deployment).
-# One AI slot, as SER5 was certified (worker 1). TB-RT30 (--rt30, v4 legacy) is not served for now.
+# One AI slot, as SER5 was certified (worker 1). The previous web engine is offered beside it as TB-RT30-v4
+# legacy only once its same-move gate record passes (docs/rt30-results/v4_same_move.json; until then the server
+# logs "TB-RT30-v4: not served" and serves TB-V3 alone); its worker starts on first use.
 ExecStartPre=/home/deploy/renju-alphazero/.venv-ser5/bin/python -m rt30.native.build --if-stale
 ExecStartPre=/home/deploy/renju-alphazero/.venv-ser5/bin/python -m rt30.vcfcore.build --if-stale
 ExecStart=/home/deploy/renju-alphazero/.venv-ser5/bin/python scripts/run_web_play.py \
-    --host 127.0.0.1 --port 8000 --tbv3 --db data/renju_web.db \
+    --host 127.0.0.1 --port 8000 --tbv3 --rt30 --rt30-engine v4 --db data/renju_web.db \
     --ai-slots 1 --slot-spill 2 --max-queue 4 --max-sessions 16 --session-ttl 3600 --secure-cookie
 # SIGTERM takes the server's Ctrl+C path: queued replies cancelled, games marked abandoned,
 # engine workers closed. A TB-V3 search takes seconds (SER5 max 6.9 s); its 30 s limit is a soft monitor.

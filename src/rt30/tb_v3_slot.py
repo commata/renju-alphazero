@@ -25,7 +25,7 @@ from typing import Any
 KEY = 'tbv3'
 LATEST_CERTIFIED = {'engine_id': 'TB-V3', 'runtime': 'fast5', 'value_device': 'cpu', 'models': 'tb_v3.MODELS',
                     'ai_slots': 1, 'soft_limit_seconds': 30.0}
-LABEL = 'TB-V3 Resolve (fast5, 최신 인증)'
+LABEL = '최신 인증 모델 - TB-V3 Resolve / fast5'
 SOFT_LIMIT_SECONDS = LATEST_CERTIFIED['soft_limit_seconds']
 HANG_SECONDS = 300.0  # a worker silent this long is hung: the move is an error (no fallback), the worker replaced
 

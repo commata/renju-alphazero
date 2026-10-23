@@ -213,6 +213,32 @@ def engine_summary() -> dict[str, Any] | None:
             "runtime_hash": info["runtime_hash"][:12]}
 
 
+def engines_overview() -> dict[str, Any]:
+    """/api/engines: the supervised opponents offered, their status and worker state."""
+    from rt30.legacy import supervisor_stats
+
+    available: dict[str, Any] = {}
+    if _TBV3:
+        info = _TBV3["info"]
+        available[TBV3_KEY] = {"label": _TBV3["label"], "engine": info["engine_id"], "runtime": info["runtime"],
+                               "value_device": info["value_device"], "status": "latest-certified",
+                               "workers": [supervisor_stats(s) for s in _TBV3["supervisors"]]}
+    if _RT30:
+        info = _RT30["info"]
+        available[RT30_KEY] = {"label": _RT30["label"], "engine": info["engine"],
+                               "engine_config_hash": info["engine_config_hash"][:12],
+                               "status": info.get("status"), "status_reason": info.get("status_reason"),
+                               "deadline_seconds": info.get("deadline_seconds"),
+                               "workers": [s.stats() if hasattr(s, "stats") else supervisor_stats(s)
+                                           for s in _RT30["supervisors"]]}
+    return {"default": default_agent_key(), "featured": featured_agents(), "available": available}
+
+
+def featured_agents() -> list[str]:
+    """The supervised opponents first in the browser's list: the latest-certified, then the legacy one."""
+    return [key for key, served in ((TBV3_KEY, _TBV3), (RT30_KEY, _RT30)) if served]
+
+
 def engine_details() -> dict[str, Any]:
     """Full provenance of the latest-certified engine (identities, model SHA-256, evidence records)."""
     if not _TBV3:
@@ -1092,6 +1118,7 @@ class PlaySession:
             ),
             "versions": VERSION_LABELS,
             "default_agent": default_agent_key(),
+            "featured_agents": featured_agents(),
             "undo_count": self.undo_count,
             "veto_positions": self.veto_files,
         }
@@ -1162,7 +1189,11 @@ class Handler(BaseHTTPRequestHandler):
                                                  "failures": store.failures, "last_error": store.last_error}
                 self._send_json({"ok": True, "db": db, "sessions": len(APP.sessions),
                                  "sessions_expired": APP.sessions.expired, "ai": APP.jobs.stats(),
-                                 "default_agent": default_agent_key(), "engine": engine_summary()})
+                                 "default_agent": default_agent_key(), "engine": engine_summary(),
+                                 "secure_cookie": APP.secure_cookie})
+                return
+            if self.path == "/api/engines":
+                self._send_json(engines_overview())
                 return
             if self.path == "/api/engine":
                 self._send_json(engine_details())
@@ -1278,6 +1309,8 @@ def main() -> None:
     parser.add_argument("--rt30-engine", choices=("v4", "v1"), default="v4",
                         help="TB-RT30 version (legacy / rollback opponent): v4 (v3 with TB-V3's native builder; "
                              "native scan + V8-B helper beside each worker) or v1")
+    parser.add_argument("--rt30-allow-candidate", action="store_true",
+                        help="serve TB-RT30-v4 before its same-move gate passed (local tests only, labelled candidate)")
     parser.add_argument("--rt30-uniform-prior", action="store_true",
                         help="TB-RT30 without the H3 checkpoint (uniform PUCT prior; a test engine, not TB1)")
     parser.add_argument("--rt30-deadline", type=float, help="override TB-RT30-v1's 27.5 s (experiments only)")
@@ -1347,12 +1380,18 @@ def main() -> None:
         print(f"{info['engine']}: worker ready (no deadline: node budgets; soft monitor "
               f"{tb_v3_slot.SOFT_LIMIT_SECONDS:g} s, no move fallback)", flush=True)
     if args.rt30:
-        from rt30 import tb_rt30_v1, tb_rt30_v4
+        from rt30 import legacy, tb_rt30_v1, tb_rt30_v4
         from rt30.supervisor import AgentSpec, EngineSupervisor
 
         module = tb_rt30_v4 if args.rt30_engine == "v4" else tb_rt30_v1
         config = tb_rt30_v4.TB_RT30_V4 if module is tb_rt30_v4 else tb_rt30_v1.TB_RT30_V1
-        extra: dict[str, Any] = {}
+        status, reason = legacy.status() if module is tb_rt30_v4 else ("frozen", "TB-RT30-v1 lock")
+        served = status != "candidate" or args.rt30_allow_candidate
+        if not served:  # the legacy opponent is optional: not offered, the latest-certified one still is
+            print(f"{module.NAME}: not served ({status}: {reason}); run its same-move gate "
+                  f"(scripts/check_rt30_v4_gate.py) or pass --rt30-allow-candidate for a local test", flush=True)
+    if args.rt30 and served:
+        extra: dict[str, Any] = {"status": status, "status_reason": reason}
         if module is tb_rt30_v4:
             from rt30 import fast3_windows
             from rt30.native import build as native_build
@@ -1374,21 +1413,25 @@ def main() -> None:
         if (args.rt30_deadline, args.rt30_watchdog) != (None, None):
             engine += " (deadline override)"
         helper = module is tb_rt30_v4
-        print(f"{engine}: starting {args.ai_slots} engine worker(s)"
-              f"{' + V8-B helper each' if helper else ''} ...", flush=True)
-        rt30_supervisors = [EngineSupervisor(AgentSpec(f"rt30.supervisor:make_tb_rt30_{args.rt30_engine}_agent",
-                                                       kwargs),
-                                             engine_deadline=deadline, watchdog=watchdog,
-                                             agent_cache=max(8, args.max_sessions), attack_helper=helper,
-                                             preload=True)
+        spec = AgentSpec(f"rt30.supervisor:make_tb_rt30_{args.rt30_engine}_agent", kwargs)
+
+        def make_rt30_supervisor(spec=spec, deadline=deadline, watchdog=watchdog, helper=helper):
+            return EngineSupervisor(spec, engine_deadline=deadline, watchdog=watchdog,
+                                    agent_cache=max(8, args.max_sessions), attack_helper=helper, preload=True)
+
+        # Started when a game first asks for a move, closed after a session TTL without one.
+        rt30_supervisors = [legacy.LazySupervisor(make_rt30_supervisor, idle_seconds=args.session_ttl)
                             for _ in range(args.ai_slots)]
         supervisors += rt30_supervisors
-        register_rt30(rt30_supervisors, f"{engine} (실시간 {deadline:g}초)",
+        label = (legacy.LABEL if status == "legacy-certified" else
+                 legacy.CANDIDATE_LABEL if module is tb_rt30_v4 else f"{engine} (legacy)")
+        register_rt30(rt30_supervisors, f"{label} (실시간 {deadline:g}초)",
                       {"engine": engine, "engine_config_hash": module.config_hash(),
                        "deadline_seconds": deadline, "watchdog_seconds": watchdog,
                        "freeze_evidence": module.FREEZE_EVIDENCE, **extra}, config=config)
-        print(f"{engine}: worker ready (deadline {deadline:g} s, watchdog {watchdog:g} s, "
-              f"config {module.config_hash()[:12]})")
+        print(f"{engine}: offered as {status} ({reason}); worker starts on first use "
+              f"(deadline {deadline:g} s, watchdog {watchdog:g} s, config {module.config_hash()[:12]}"
+              f"{', + V8-B helper' if helper else ''})", flush=True)
     if args.az_checkpoint is not None:
         from agents.alphazero_agent import AlphaZeroAgent
 

@@ -320,12 +320,18 @@ function forbiddenAt(row, col) {
 
 function syncVersions() {
   // Versions registered by the server (e.g. an AlphaZero checkpoint) join the list; the server's
-  // default (the latest-certified engine it serves, TB-V3 / fast5 in production) goes first.
+  // featured engines come first, in its order: the latest-certified default (TB-V3 / fast5 in
+  // production), then the previous web engine (TB-RT30-v4 legacy) when it is offered.
   for (const [key, label] of Object.entries(state.versions || {})) {
     if (![...agentSelect.options].some(option => option.value === key)) {
-      agentSelect.add(new Option(label, key), key === state.default_agent ? 0 : undefined);
+      agentSelect.add(new Option(label, key));
     }
   }
+  const featured = state.featured_agents || [state.default_agent];
+  featured.forEach((key, index) => {
+    const option = [...agentSelect.options].find(o => o.value === key);
+    if (option && agentSelect.options[index] !== option) agentSelect.add(option, index);
+  });
 }
 
 function render() {

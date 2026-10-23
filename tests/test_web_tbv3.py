@@ -107,31 +107,100 @@ class AgentTest(Registered):
         self.assertIsNone(web.engine_summary())
 
 
+class SlowSupervisor(FakeSupervisor):
+    def select(self, **kw):
+        import time
+        time.sleep(self.seconds)
+        return super().select(**kw)
+
+
 class SmokeScriptTest(Registered):
-    def test_smoke_script_against_a_server(self):
-        """``scripts/ser5/tbv3_smoke.py`` against a real HTTP server whose TB-V3 worker is a stand-in."""
+    """``scripts/ser5/tbv3_smoke.py`` against a real HTTP server whose TB-V3 worker is a stand-in."""
+
+    def serve(self, secure_cookie=False):
         import threading
         from http.server import ThreadingHTTPServer
+        from pathlib import Path
         from tempfile import TemporaryDirectory
+
+        tmp = TemporaryDirectory()
+        app = web.WebApp(log_root=Path(tmp.name), max_sessions=4, max_queue=1, secure_cookie=secure_cookie)
+        previous, web.APP = web.APP, app
+        server = ThreadingHTTPServer(('127.0.0.1', 0), web.Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        def stop():
+            server.shutdown()
+            server.server_close()
+            app.close()
+            web.APP = previous
+            tmp.cleanup()
+        self.addCleanup(stop)
+        return f'http://127.0.0.1:{server.server_address[1]}'
+
+    def smoke(self, base, *args):
+        import io
+        from contextlib import redirect_stdout
 
         from scripts.ser5 import tbv3_smoke
 
+        out = io.StringIO()
+        with redirect_stdout(out):
+            code = tbv3_smoke.main(['--base', base, *args])
+        return code, out.getvalue()
+
+    def test_smoke_http_with_normal_cookie_passes(self):
         self.register(FakeSupervisor(seconds=0.5))
-        with TemporaryDirectory() as tmp:
-            app = web.WebApp(log_root=__import__('pathlib').Path(tmp), max_sessions=2, max_queue=1)
-            previous, web.APP = web.APP, app
-            server = ThreadingHTTPServer(('127.0.0.1', 0), web.Handler)
-            threading.Thread(target=server.serve_forever, daemon=True).start()
-            try:
-                base = f'http://127.0.0.1:{server.server_address[1]}'
-                self.assertEqual(tbv3_smoke.main(['--base', base, '--moves', '3', '--timeout', '20']), 0)
-                web._TBV3['supervisors'][0].source = 'watchdog'  # the worker stops answering: the script fails
-                self.assertEqual(tbv3_smoke.main(['--base', base, '--moves', '2', '--timeout', '20']), 1)
-            finally:
-                server.shutdown()
-                server.server_close()
-                app.close()
-                web.APP = previous
+        base = self.serve()
+        code, out = self.smoke(base, '--moves', '3', '--timeout', '20')
+        self.assertEqual(code, 0, out)
+        self.assertIn('PASS  session: cookie not Secure', out)
+        web._TBV3['supervisors'][0].source = 'watchdog'  # the worker stops answering: the script fails
+        code, out = self.smoke(base, '--moves', '2', '--timeout', '20')
+        self.assertEqual(code, 1)
+        self.assertIn('no engine move', out)
+
+    def test_smoke_http_with_secure_cookie_refuses_immediately(self):
+        """The production server (--secure-cookie) over http://: refused at the session check, not a timeout."""
+        import time
+
+        self.register(FakeSupervisor(seconds=0.5))
+        base = self.serve(secure_cookie=True)
+        started = time.monotonic()
+        code, out = self.smoke(base, '--moves', '3', '--timeout', '60')
+        self.assertEqual(code, 1, out)
+        self.assertLess(time.monotonic() - started, 10)
+        self.assertIn('Secure session cookie', out)
+        self.assertIn('secure_cookie=True', out)  # the health snapshot shows the server's setting
+
+    def test_smoke_https_secure_cookie_preserves_session(self):
+        """Over https:// a Secure cookie comes back: the continuity check passes (and fails on another game)."""
+        import http.cookiejar
+
+        from scripts.ser5 import tbv3_smoke
+
+        class Stub(tbv3_smoke.Client):
+            def __init__(self, seed):
+                super().__init__('https://example.invalid')
+                self.seed = seed
+                self.jar.set_cookie(http.cookiejar.Cookie(
+                    0, tbv3_smoke.COOKIE, 'sid', None, False, 'example.invalid', False, False, '/', True, True,
+                    None, False, None, None, {}))
+
+            def call(self, path, body=None):
+                return {'seed': self.seed, 'agent_key': 'tbv3'}, []
+
+        state = {'seed': 5, 'agent_key': 'tbv3'}
+        self.assertEqual(tbv3_smoke.check_session(Stub(5), [], state), 'Secure')
+        with self.assertRaises(tbv3_smoke.SmokeFailure):
+            tbv3_smoke.check_session(Stub(6), [], state)
+
+    def test_timeout_is_reported_with_the_queue(self):
+        self.register(SlowSupervisor(seconds=3.0))
+        code, out = self.smoke(self.serve(), '--moves', '1', '--timeout', '1')
+        self.assertEqual(code, 1)
+        self.assertIn('smoke performance timeout, not an engine failure', out)
+        self.assertIn('queue: running=', out)
 
 
 class DeploymentCheckTest(unittest.TestCase):
