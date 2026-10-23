@@ -4,7 +4,8 @@
             (default 12): every record field but times must be equal, since no decision of TB-V3 depends on time
     sweep   the same 20 games (indices 0-19) with each worker count (default 6, 8, 10, 12, 14): games per hour,
             move latency mean / p99, GPU utilisation and memory (nvidia-smi, sampled each second), CPU utilisation
-            (/proc/stat); the choice is the fewest workers within 95% of the best games per hour
+            (/proc/stat); the choice is the fewest workers within 95% of the best games per hour, and there is none
+            (``SWEEP_REPRO_FAIL``, exit 1) when any worker count played different games than the first
 
     python -u scripts/h7c_throughput.py repro --policy-checkpoint runs/h3_policy_64x4/best.pt \\
         --value-checkpoint runs/h6_value_head_v3/best.pt --device cuda --out runs/h7c/throughput
@@ -83,6 +84,14 @@ def compare_runs(a: list[dict], b: list[dict]) -> dict:
 def choose(rows: list[dict]) -> int:
     best = max(r['games_per_hour'] for r in rows)
     return min(r['workers'] for r in rows if r['games_per_hour'] >= CHOICE_SHARE * best)
+
+
+def sweep_verdict(rows: list[dict], games: int) -> dict:
+    """Fail closed: a worker count whose games differ (any field but times) from the first one's gives no choice."""
+    diverged = [r['workers'] for r in rows if r['same_games_as_first'] != games]
+    if diverged:
+        return {'verdict': 'SWEEP_REPRO_FAIL', 'diverged_workers': diverged, 'chosen_workers': None}
+    return {'verdict': 'SWEEP_PASS', 'diverged_workers': [], 'chosen_workers': choose(rows)}
 
 
 class Sampler:
@@ -174,8 +183,8 @@ def sweep(args, log=print) -> dict:
         log(f"[h7c-throughput] workers {workers}: {rows[-1]['games_per_hour']} games/h, "
             f"move mean {rows[-1]['move_seconds_mean']} s, p99 {rows[-1]['move_seconds_p99']} s", flush=True)
     return {'format': FORMAT, 'mode': 'sweep', 'identity': identity, 'git': git, 'games': SWEEP_GAMES,
-            'rule': f'fewest workers within {CHOICE_SHARE:.0%} of the best games per hour', 'rows': rows,
-            'chosen_workers': choose(rows)}
+            'rule': f'fewest workers within {CHOICE_SHARE:.0%} of the best games per hour, only if every worker '
+                    'count played the same games', 'rows': rows, **sweep_verdict(rows, len(reference))}
 
 
 def main(argv=None) -> int:
@@ -201,7 +210,7 @@ def main(argv=None) -> int:
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(payload, indent=1) + '\n', encoding='utf-8')
-    return 0 if payload.get('verdict', 'REPRO_PASS') == 'REPRO_PASS' else 1
+    return 0 if payload['verdict'] in ('REPRO_PASS', 'SWEEP_PASS') else 1
 
 
 if __name__ == '__main__':

@@ -12,13 +12,18 @@ The rules are H6's, reused rather than re-implemented:
                 position are masked and ``check_leakage`` refuses any unmasked overlap
     provenance  one engine / model per game (``check_game_provenance``); every row names the engine hash and the
                 self-play model hash
-Policy rows (``POLICY_FORMAT``) take the target the generator wrote (``hybrid.h7c_targets.policy_target``): kind
-``visits`` (KL to H3 applies) or ``proof_one_hot`` (no KL), with the raw visits; kind ``none`` gives no row. A
-policy row is dropped with its game (probe) and masked when its position is a masked probe row or a later-split
-duplicate.
+Policy rows (``POLICY_FORMAT``) take the target the generator wrote, once it matched ``hybrid.h7c_targets.policy_target``
+(below): kind ``visits`` (KL to H3 applies) or ``proof_one_hot`` (no KL), with the raw visits; kind ``none`` (forced
+moves: approved, no policy loss there) gives no row. A policy row is dropped with its game (probe) and masked when its
+position is a row-only probe (by the probe hashes, also before ``--from-ply``) or a later-split duplicate.
 
-Inputs must be one cycle of one model: training run seeds only (never 8800 or a reserved seed), no truncated
-game, the same identity in every game. Outputs go under ``data/`` or ``runs/`` (never committed).
+Inputs must be one cycle of one model from one clean generator commit: training run seeds only (never 8800 or a
+reserved seed), no truncated game, the same identity in every game. Every game is replayed (order, mover, legal
+moves, result) and every stored target and sampling event is recomputed with ``hybrid.h7c_targets`` and must match:
+the label step never trusts the generator's output. Rows carry the H6 fields plus ``h7c_provenance`` (runtime hash,
+the four model SHA-256, the self-play and label commits); ``h6_value_cache`` reads the H6 fields and ignores it.
+Outputs go under ``data/`` or ``runs/`` (never committed), written to ``.tmp`` files and moved into place only after
+everything passed.
 
     python -u scripts/h7c_labels.py --games runs/h7c/c1/selfplay_8801.jsonl --workers 12 --fast fast4 \\
         --value-output runs/h7c/c1/value_rows.jsonl.gz --policy-output runs/h7c/c1/policy_rows.jsonl.gz \\
@@ -53,7 +58,8 @@ SOURCE = 'h7c-selfplay'
 SPLIT_SALT = 'h7c-v1'
 SPLIT_FRACTIONS = (('val', 0.05),)
 IDENTITY_KEYS = ('format', 'cycle', 'engine_id', 'engine_hash', 'runtime', 'runtime_hash', 'models', 'model_hash',
-                 'frozen_models', 'opening_rule', 'sampling', 'target_format')
+                 'frozen_models', 'opening_rule', 'sampling', 'target_format', 'generator_git')
+TARGET_TOLERANCE = 1e-9
 
 
 def game_id(game: dict) -> str:
@@ -68,17 +74,92 @@ def read_games(paths) -> list[dict]:
     return rows
 
 
+def check_target(g: dict, p: dict, opening_plies: int) -> None:
+    """The stored target and sampling event must be what ``hybrid.h7c_targets`` gives for the stored move facts."""
+    from hybrid import h7c_targets as targets
+
+    where = f"{game_id(g)} ply {p['ply']}"
+    expected = targets.policy_target(p['route'], p['engine_move'], p['visits'], p['proven_loss'])
+    stored = p['target']
+    if stored.get('format') != expected['format'] or stored.get('kind') != expected['kind'] or \
+            stored.get('kl') != expected['kl']:
+        raise ValueError(f"{where}: target kind {stored.get('kind')!r} / kl {stored.get('kl')!r}, the rule gives "
+                         f"{expected['kind']!r} / {expected['kl']!r}")
+    if expected['target'] is None:
+        if stored.get('target') is not None:
+            raise ValueError(f'{where}: a target where the rule gives none')
+    else:
+        got = stored.get('target') or []
+        if [m[:2] for m in got] != [m[:2] for m in expected['target']] or \
+                any(abs(a[2] - b[2]) > TARGET_TOLERANCE for a, b in zip(got, expected['target'])):
+            raise ValueError(f'{where}: the target differs from the rule\'s')
+        total = sum(m[2] for m in got)
+        losses = {tuple(m) for m in p['proven_loss']}
+        if any(m[2] < 0 for m in got) or abs(total - 1.0) > 1e-6 or \
+                any(m[2] > 0 for m in got if tuple(m[:2]) in losses):
+            raise ValueError(f'{where}: the target is not a distribution without the proven losses')
+    early = p['ply'] - opening_plies < targets.SAMPLE_PLIES
+    if not early:
+        ok = p['event'] == 'engine' and p['played'] == p['engine_move']
+    elif p['event'] == 'proven_win':
+        ok = p['route'] in targets.PROVEN_WIN_ROUTES and p['played'] == p['engine_move']
+    elif p['event'] == 'no_distribution':
+        ok = p['played'] == p['engine_move'] and (
+            p['route'] in targets.FORCED_ROUTES
+            or targets.visit_distribution(p['visits'], p['proven_loss']) is None)
+    elif p['event'] == 'sampled':
+        dist = targets.visit_distribution(p['visits'], p['proven_loss']) or []
+        ok = p['route'] not in targets.PROVEN_WIN_ROUTES and any(m[:2] == p['played'] and m[2] > 0 for m in dist)
+    else:
+        ok = False
+    if not ok:
+        raise ValueError(f"{where}: sampling event {p['event']!r} does not fit the rule (played {p['played']})")
+
+
+def check_game(g: dict) -> None:
+    """Replay the game: the opening, every ply in order, each mover and move legal, the stored result."""
+    from renju import WHITE, Game
+
+    game = Game()
+    for move in g['opening']:
+        game.play(*move)
+    if len(g['plies']) + len(g['opening']) != len(g['moves']) or g['length'] != len(g['moves']):
+        raise ValueError(f'{game_id(g)}: its length and per-move records disagree')
+    for i, p in enumerate(g['plies']):
+        where = f"{game_id(g)} ply {p['ply']}"
+        if p['ply'] != len(g['opening']) + i or p['ply'] != len(game.history):
+            raise ValueError(f'{where}: the plies are not in order')
+        if p['color'] != ('black' if game.to_play == BLACK else 'white'):
+            raise ValueError(f'{where}: recorded for {p["color"]}, {game.to_play} is to move')
+        if game.done or tuple(p['played']) not in set(game.legal_moves()) or g['moves'][p['ply']] != p['played']:
+            raise ValueError(f'{where}: the played move {p["played"]} is not the legal recorded move')
+        check_target(g, p, len(g['opening']))
+        game.play(*p['played'])
+    if not game.done or game.winner != g['winner']:
+        raise ValueError(f'{game_id(g)}: the replayed game does not end with the recorded winner')
+    expected = 'draw' if game.winner is None else 'black' if game.winner == BLACK else 'white'
+    if g['result'] != expected or g['real_draw'] != (game.winner is None and len(game.history) == 15 * 15) or \
+            game.winner not in (BLACK, WHITE, None):
+        raise ValueError(f'{game_id(g)}: result {g["result"]!r} / real_draw do not match the replay')
+
+
 def check_games(games: list[dict]) -> dict:
-    """One cycle of one model from training runs, complete games, no duplicates; the shared identity."""
+    """One cycle of one model from training runs, one clean generator commit, complete legal games, no duplicates;
+    the shared identity."""
     import h7c_selfplay as sp
 
     if not games:
         raise ValueError('no games')
     first = {k: games[0].get(k) for k in IDENTITY_KEYS}
+    git = first.get('generator_git') or {}
+    if not git.get('commit') or git.get('dirty') is not False:
+        raise ValueError(f'the self-play generator ran from {git or "an unknown tree"}: only games of a clean, '
+                         f'committed generator are training data')
     seen = set()
     for g in games:
         if {k: g.get(k) for k in IDENTITY_KEYS} != first:
-            raise ValueError(f'{game_id(g)}: another cycle, engine, runtime, model or rule than the first game')
+            raise ValueError(f'{game_id(g)}: another cycle, engine, runtime, model, rule or generator commit than '
+                             f'the first game')
         if g['run_seed'] not in sp.RUN_SEEDS:
             raise ValueError(f"{game_id(g)}: run seed {g['run_seed']} is not a training run seed")
         check_reserved_seed(g['run_seed'])
@@ -90,6 +171,7 @@ def check_games(games: list[dict]) -> dict:
         if g['moves'][:len(g['opening'])] != g['opening'] or [p['played'] for p in g['plies']] != \
                 g['moves'][len(g['opening']):]:
             raise ValueError(f'{game_id(g)}: its moves and per-move records disagree')
+        check_game(g)
     return first
 
 
@@ -108,12 +190,12 @@ def policy_rows(game: dict, split: str, provenance: dict) -> list[dict]:
     return out
 
 
-def mask_policy(policy: list[dict], value_rows) -> dict:
-    """Mask policy rows at masked probe positions and later-split duplicates (train < val), like the value rows."""
-    probe_masked = {(r.game_id, r.ply) for r in value_rows if 'probe_position' in r.flags}
+def mask_policy(policy: list[dict], row_probes: set[str]) -> dict:
+    """Mask policy rows at row-only probe positions (from the probe hashes themselves: policy rows start before the
+    value rows' ``from_ply``) and later-split duplicates (train < val), as the value rows are."""
     counts = {'probe_position': 0, 'cross_split_duplicate': 0}
     for row in policy:
-        if (row['game_id'], row['ply']) in probe_masked:
+        if row['canonical_hash'] in row_probes:
             row['mask'] = True
             row['flags'].append('probe_position')
             counts['probe_position'] += 1
@@ -169,6 +251,9 @@ def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: flo
               **({'prove_losses': h6b.LOSS_BUDGET} if prove_losses else {})}
     provenance = {'engine_config_hash': identity['engine_hash'], 'model_hash': identity['model_hash'],
                   'git_commit': h6b._git_commit()}
+    # Beside the H6 row fields (which h6_value_cache reads; it ignores the rest): what exactly made the data.
+    detail = {'runtime_hash': identity['runtime_hash'], **identity['models'],
+              'selfplay_git_commit': identity['generator_git']['commit'], 'label_git_commit': provenance['git_commit']}
     rows, policy = [], []
     for g, proof in zip(kept, proofs):
         split = split_for(game_id(g), fractions=SPLIT_FRACTIONS, salt=SPLIT_SALT)
@@ -183,11 +268,11 @@ def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: flo
         rows.extend(these)
         policy.extend(policy_rows(g, split, {'engine_config_hash': identity['engine_hash'],
                                              'model_hash': identity['model_hash'],
-                                             'git_commit': provenance['git_commit']}))
+                                             'git_commit': provenance['git_commit'], 'h7c_provenance': detail}))
     cross = mask_cross_split(rows)
     check_leakage(rows)
     check_game_provenance(rows)
-    policy_masked = mask_policy(policy, rows)
+    policy_masked = mask_policy(policy, row_probes)
     kinds, splits = {}, {}
     for row in policy:
         if not row['mask']:
@@ -203,7 +288,41 @@ def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: flo
                'value': {'cross_split_masked': cross, **report(rows)},
                'policy': {'rows': len(policy), 'unmasked_by_kind': kinds, 'unmasked_by_split': splits,
                           'masked': policy_masked}}
+    for row in rows:
+        row.h7c_provenance = detail
     return rows, policy, summary
+
+
+def value_row_dict(row) -> dict:
+    """The H6 row (``Row.to_dict``) plus the H7-c provenance field."""
+    return {**row.to_dict(), 'h7c_provenance': row.h7c_provenance}
+
+
+def write_atomic(items: dict[Path, list[dict]], report: tuple[Path, str] | None = None) -> None:
+    """Every output to ``<name>.tmp`` first; only when all are written are they moved into place."""
+    import os
+
+    temps = []
+    try:
+        for path, rows in items.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temp = path.with_name(path.name + '.tmp')
+            temps.append((temp, path))
+            with gzip.open(temp, 'wt', encoding='utf-8') as handle:
+                for row in rows:
+                    handle.write(json.dumps(row, separators=(',', ':')) + '\n')
+        if report is not None:
+            path, text = report
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temp = path.with_name(path.name + '.tmp')
+            temps.append((temp, path))
+            temp.write_text(text, encoding='utf-8')
+    except BaseException:
+        for temp, _ in temps:
+            temp.unlink(missing_ok=True)
+        raise
+    for temp, path in temps:
+        os.replace(temp, path)
 
 
 def _under_data_or_runs(path: Path) -> bool:
@@ -230,8 +349,8 @@ def main(argv=None) -> int:
     for path in (args.value_output, args.policy_output):
         if not _under_data_or_runs(path):
             parser.error(f'{path}: label rows go under data/ or runs/, never into the repository')
-        if path.exists():
-            parser.error(f'{path} exists')
+        if path.exists() or path.with_name(path.name + '.tmp').exists():
+            parser.error(f'{path} (or its .tmp) exists')
     probe_files = default_probe_files(ROOT) + list(args.probe_files)
     try:
         rows, policy, summary = build(read_games(args.games), probes=probe_positions(probe_files, ROOT),
@@ -240,11 +359,6 @@ def main(argv=None) -> int:
                                       probe_game_min_ply=args.probe_game_min_ply, workers=args.workers, fast=args.fast)
     except ValueError as exc:
         parser.error(str(exc))
-    for path, items in ((args.value_output, [r.to_dict() for r in rows]), (args.policy_output, policy)):
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with gzip.open(path, 'wt', encoding='utf-8') as handle:
-            for item in items:
-                handle.write(json.dumps(item, separators=(',', ':')) + '\n')
     payload = {'format': FORMAT, 'value_row_format': rows[0].to_dict()['format'] if rows else None,
                'policy_row_format': POLICY_FORMAT, 'git_commit': h6b._git_commit(),
                'games': [str(p) for p in args.games],
@@ -255,9 +369,8 @@ def main(argv=None) -> int:
                                if Path(p).resolve().is_relative_to(ROOT) else str(p) for p in probe_files],
                'summary': summary}
     print(json.dumps(summary, indent=1), flush=True)
-    if args.report is not None:
-        args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(payload, indent=1) + '\n', encoding='utf-8')
+    write_atomic({args.value_output: [value_row_dict(r) for r in rows], args.policy_output: policy},
+                 None if args.report is None else (args.report, json.dumps(payload, indent=1) + '\n'))
     return 0
 
 

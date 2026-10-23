@@ -50,8 +50,44 @@ class TargetTest(unittest.TestCase):
         self.assertNotIn((8, 8), counts)   # a proven loss is never sampled
         self.assertNotIn((9, 9), counts)   # nor an unvisited child
         self.assertAlmostEqual(counts[(7, 8)] / 4000, 30 / 35, delta=0.03)  # T = 1: proportional to visits
-        a = [t.sample_move('tree', (7, 8), VISITS, [], Random(3)) for _ in range(3)]
-        self.assertEqual(len({tuple(m) for m, _ in a}), 1)  # deterministic for a seed
+        one, two = Random(3), Random(3)  # the same seed: the same whole sequence of draws
+        first = [t.sample_move('tree', (7, 8), VISITS, [], one)[0] for _ in range(200)]
+        self.assertEqual(first, [t.sample_move('tree', (7, 8), VISITS, [], two)[0] for _ in range(200)])
+        self.assertGreater(len({tuple(m) for m in first}), 1)
+
+
+class ResumeFileTest(unittest.TestCase):
+    IDENTITY = {'format': sp.FORMAT, 'cycle': 1, 'generator_git': {'commit': 'abc', 'dirty': False}}
+
+    def write(self, tmp, lines):
+        path = Path(tmp) / 'games.jsonl'
+        path.write_bytes(b''.join(lines))
+        return path
+
+    def row(self, index, **changes):
+        return (json.dumps({**self.IDENTITY, 'game_index': index, **changes}) + '\n').encode()
+
+    def test_resume_file_rules(self):
+        quiet = lambda *a, **k: None  # noqa: E731
+        with TemporaryDirectory() as tmp:
+            path = self.write(tmp, [self.row(0), self.row(1)])
+            self.assertEqual(sorted(sp.load_finished(path, self.IDENTITY, log=quiet)), [0, 1])
+            path = self.write(tmp, [self.row(0), self.row(0)])
+            with self.assertRaises(ValueError):  # an index twice: never silently replaced
+                sp.load_finished(path, self.IDENTITY, log=quiet)
+            path = self.write(tmp, [self.row(0), self.row(1, generator_git={'commit': 'def', 'dirty': False})])
+            with self.assertRaises(ValueError):  # another generator commit in the same file
+                sp.load_finished(path, self.IDENTITY, log=quiet)
+            path = self.write(tmp, [self.row(0), b'{"format": "h7c-sel', b'\n', self.row(1)])
+            with self.assertRaises(ValueError):  # an unreadable line in the middle
+                sp.load_finished(path, self.IDENTITY, log=quiet)
+            good = self.row(0) + self.row(1)
+            path = self.write(tmp, [good, self.row(2)[:25]])  # a crash while appending game 2
+            messages = []
+            self.assertEqual(sorted(sp.load_finished(path, self.IDENTITY, log=lambda m, **k: messages.append(m))),
+                             [0, 1])
+            self.assertEqual(path.read_bytes(), good)  # the torn line is cut, the file ends on a full line
+            self.assertIn('incomplete', messages[0])
 
 
 class SeedTest(unittest.TestCase):
@@ -103,7 +139,8 @@ class GameTest(unittest.TestCase):
 
         sp._init_worker(str(self.policy), str(self.value), 'cpu')
         models = tb_v3_net.model_identity(self.policy, self.value)
-        task = {'identity': sp.run_identity(1, 8801, models, 'cpu'), 'git': {'commit': 'x', 'dirty': False},
+        task = {'identity': {**sp.run_identity(1, 8801, models, 'cpu'),
+                             'generator_git': {'commit': 'x', 'dirty': False}},
                 'game_index': 0, 'game_seed': sp.game_seed(8801, 1, 0), 'opening_seed': sp.opening_seed(8801, 1, 0)}
         row = sp.play_game(task, max_plies=9)
         self.assertEqual((row['length'], row['result'], row['truncated']), (9, 'truncated', True))
@@ -147,9 +184,6 @@ class GameTest(unittest.TestCase):
                 sp.run(args, log=lambda *a, **k: None)
 
 
-if __name__ == '__main__':
-    unittest.main()
-
 
 class ThroughputTest(unittest.TestCase):
     def test_compare_and_choice(self):
@@ -160,8 +194,14 @@ class ThroughputTest(unittest.TestCase):
         self.assertEqual(tp.compare_runs(a, b)['identical'], 1)  # times differ only
         c = [{'game_index': 0, 'moves': [[7, 7]], 'plies': [{'seconds': 1.0, 'route': 'own_vcf'}]}]
         self.assertEqual(tp.compare_runs(a, c)['differences'], {'0': '.plies[0].route'})
-        rows = [{'workers': w, 'games_per_hour': g} for w, g in ((6, 60), (8, 76), (10, 80), (12, 81), (14, 79))]
+        rows = [{'workers': w, 'games_per_hour': g, 'same_games_as_first': 20}
+                for w, g in ((6, 60), (8, 76), (10, 80), (12, 81), (14, 79))]
         self.assertEqual(tp.choose(rows), 10)  # 80 >= 0.95 * 81
+        self.assertEqual(tp.sweep_verdict(rows, 20), {'verdict': 'SWEEP_PASS', 'diverged_workers': [],
+                                                      'chosen_workers': 10})
+        rows[3]['same_games_as_first'] = 19  # 12 workers played one game differently: no worker count is chosen
+        self.assertEqual(tp.sweep_verdict(rows, 20), {'verdict': 'SWEEP_REPRO_FAIL', 'diverged_workers': [12],
+                                                      'chosen_workers': None})
 
 
 @unittest.skipUnless(fast5.available(), 'python -m rt30.vcfcore.build first')
@@ -184,3 +224,7 @@ class ThroughputRunTest(unittest.TestCase):
             self.assertEqual((result['verdict'], result['games'], result['workers']), ('REPRO_PASS', 4, [1, 2]))
             with self.assertRaises(ValueError):  # a used directory is refused
                 tp.repro(args, log=lambda *a, **k: None)
+
+
+if __name__ == '__main__':
+    unittest.main()

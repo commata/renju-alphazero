@@ -23,7 +23,8 @@ device, the four model SHA-256 and their hash, code commit and dirty flag) and t
         --device cuda --jsonl runs/h7c/c1/selfplay_8801.jsonl --output runs/h7c/c1/selfplay_8801.json
 
 Resume: rerun the same command; finished game indices in ``--jsonl`` are skipped, and a file of another run
-(seed, cycle, models, engine, runtime, sampling) is refused. A dirty tree is refused (``--allow-dirty`` only for
+(seed, cycle, models, engine, runtime, sampling, or another generator commit) is refused, as is an index twice or an
+unreadable line before the last; an incomplete last line (a crash while appending) is cut and its game played again. A dirty tree is refused (``--allow-dirty`` only for
 tests). Progress goes to stdout about once a minute.
 """
 from __future__ import annotations
@@ -165,28 +166,44 @@ def play_game(task: dict, make_agent=None, max_plies: int | None = None) -> dict
             'moves': [list(m) for m in game.history], 'length': len(game.history), 'result': result,
             'winner': winner, 'real_draw': not truncated and winner is None and len(game.history) == 15 * 15,
             'truncated': truncated, 'events': events, 'plies': plies,
-            'game_seconds': round(perf_counter() - started_game, 2), 'git': task['git']}
+            'game_seconds': round(perf_counter() - started_game, 2)}
 
 
 def _play_chunk(tasks: list[dict]) -> list[dict]:
     return [play_game(t, max_plies=t.get('max_plies')) for t in tasks]
 
 
-def load_finished(path: Path, identity: dict) -> dict[int, dict]:
-    """Finished games of ``path`` by index; refuses a file of another run."""
+def load_finished(path: Path, identity: dict, log=print) -> dict[int, dict]:
+    """Finished games of ``path`` by index. Refused: a game of another run (identity, generator commit included),
+    an index twice, an unreadable line before the last one. An unreadable last line is an append cut by a crash:
+    it is reported and cut off the file, and that game is played again."""
     done = {}
     if not path.exists():
         return done
-    with path.open(encoding='utf-8') as handle:
-        for line in handle:
-            if not line.strip():
-                continue
-            row = json.loads(line)
-            other = {k: row.get(k) for k in identity}
-            if other != identity:
-                bad = sorted(k for k in identity if other[k] != identity[k])
-                raise ValueError(f'{path}: game {row.get("game_index")} is of another run ({bad})')
-            done[row['game_index']] = row
+    data = path.read_bytes()
+    offset, lines = 0, []
+    for raw in data.split(b'\n'):
+        lines.append((offset, raw))
+        offset += len(raw) + 1
+    content = [(o, raw) for o, raw in lines if raw.strip()]
+    for n, (start, raw) in enumerate(content):
+        try:
+            row = json.loads(raw)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            if n != len(content) - 1:
+                raise ValueError(f'{path}: unreadable line at byte {start} before the end ({exc})') from exc
+            log(f'[h7c-selfplay] {path}: the last line is incomplete (an interrupted append): cut, its game '
+                f'is played again', flush=True)
+            with path.open('r+b') as handle:
+                handle.truncate(start)
+            break
+        other = {k: row.get(k) for k in identity}
+        if other != identity:
+            bad = sorted(k for k in identity if other[k] != identity[k])
+            raise ValueError(f'{path}: game {row.get("game_index")} is of another run ({bad})')
+        if row['game_index'] in done:
+            raise ValueError(f'{path}: game {row["game_index"]} is in the file twice')
+        done[row['game_index']] = row
     return done
 
 
@@ -220,10 +237,11 @@ def run(args, log=print) -> dict:
     if git['dirty'] is not False and not args.allow_dirty:
         raise ValueError('the tree is dirty (or git is unavailable): self-play data must name its code commit')
     models = tb_v3_net.model_identity(args.policy_checkpoint, args.value_checkpoint)
-    identity = run_identity(args.cycle, args.run_seed, models, args.device)
-    finished = load_finished(args.jsonl, identity)
+    # The generator's commit is part of the run: a resumed file never mixes games of two code versions.
+    identity = {**run_identity(args.cycle, args.run_seed, models, args.device), 'generator_git': git}
+    finished = load_finished(args.jsonl, identity, log=log)
     todo = [i for i in indices if i not in finished]
-    tasks = [{'identity': identity, 'git': git, 'game_index': i, 'game_seed': game_seed(args.run_seed, args.cycle, i),
+    tasks = [{'identity': identity, 'game_index': i, 'game_seed': game_seed(args.run_seed, args.cycle, i),
               'opening_seed': opening_seed(args.run_seed, args.cycle, i),
               **({'max_plies': args.max_plies} if getattr(args, 'max_plies', None) else {})} for i in todo]
     log(f'h7c self-play: cycle {args.cycle}, run seed {args.run_seed}, games {len(indices)} '
