@@ -92,13 +92,18 @@ def restore_fast_mode():
     try:
         yield
     finally:
+        from rt30 import fast5
+        fast5.uninstall()  # fast5 (X2-F) rebinds the VCF searches on top of fast4: take that back too
         install(previous)
 
 
-def _init(policy_checkpoint, value_checkpoint, device, threads, fast, factories=None):
+def _init(policy_checkpoint, value_checkpoint, device, threads, fast, factories=None, runtime='fast4'):
     if fast != 'off':
         from hybrid.h6_fast import install
         install(fast)
+    if runtime == 'fast5':  # TB-V3 on fast5: fast4 plus the native VCF core
+        from analysis import tb_v3_fast5
+        tb_v3_fast5.install()
     if factories is not None:  # tests: torch-free stand-ins
         _WORKER.update(factories)
         return
@@ -109,17 +114,21 @@ def _init(policy_checkpoint, value_checkpoint, device, threads, fast, factories=
     _WORKER.update(policy_checkpoint=policy_checkpoint, value_checkpoint=value_checkpoint)
 
 
-def _tb_v3_agent(seed: int):
-    """TB-V3 Resolve by its fail-closed factory (tests: the engine after the checks, on stand-in models)."""
-    from analysis import tb_v3_runtime
+def _tb_v3_agent(seed: int, runtime: str = 'fast4'):
+    """TB-V3 Resolve by its fail-closed factory on ``runtime`` (tests: the engine after the checks, on stand-in
+    models)."""
+    from analysis import tb_v3_fast5, tb_v3_runtime
 
     w = _WORKER
     if w.get('stand_in'):
+        if runtime == 'fast5':
+            tb_v3_fast5.check_bound()
         return tb_v3_runtime._build(w['policy'], w['leaf'], seed)
-    return tb_v3_runtime.make_tb_v3_agent(w['policy'], w['leaf'], seed, w['policy_checkpoint'], w['value_checkpoint'])
+    make = tb_v3_fast5.make_tb_v3_fast5_agent if runtime == 'fast5' else tb_v3_runtime.make_tb_v3_agent
+    return make(w['policy'], w['leaf'], seed, w['policy_checkpoint'], w['value_checkpoint'])
 
 
-def decide(moves, seed: int, engine: str = 'tb-v2-value') -> dict:
+def decide(moves, seed: int, engine: str = 'tb-v2-value', runtime: str = 'fast4') -> dict:
     """The frozen TB-V2-Value (or TB-V3 Resolve) on one position; every decision field and the times.
 
     TB-V3 gets a fresh agent per position, so its cooldown never skips an attack here: the worst case for time."""
@@ -133,7 +142,7 @@ def decide(moves, seed: int, engine: str = 'tb-v2-value') -> dict:
     if hasattr(leaf, '_cache'):
         leaf._cache.clear()  # cold per position: the time does not depend on the order of positions
     if engine == 'tb-v3':
-        agent = _tb_v3_agent(seed)  # built (and checked) before the clock starts
+        agent = _tb_v3_agent(seed, runtime)  # built (and checked) before the clock starts
     else:
         agent = tb_v2_value.make_agent(_WORKER['policy'], leaf, seed=seed)
     started = perf_counter()
@@ -163,9 +172,10 @@ def decide(moves, seed: int, engine: str = 'tb-v2-value') -> dict:
 def measure_task(task: dict) -> dict:
     from scripts.run_mcts_v8_benchmark import derive_seed
 
-    engine = task.get('engine', 'tb-v2-value')
+    engine, runtime = task.get('engine', 'tb-v2-value'), task.get('runtime', 'fast4')
     return {'id': task['id'], 'source': task['source'], **({'engine': engine} if engine != 'tb-v2-value' else {}),
-            **decide(task['moves'], derive_seed(SEED, 'h7-timing', task['id']), engine)}
+            **({'runtime': runtime} if runtime != 'fast4' else {}),
+            **decide(task['moves'], derive_seed(SEED, 'h7-timing', task['id']), engine, runtime)}
 
 
 def ser5_check(summary: dict) -> dict:
@@ -400,6 +410,8 @@ def main(argv=None, factories=None) -> int:
     pm.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
     pm.add_argument('--label', default='frozen', help='what runs: frozen, or the optimization candidate name')
     pm.add_argument('--engine', choices=ENGINES, default='tb-v2-value', help='tb-v3: TB-V3 Resolve (fast4 only)')
+    pm.add_argument('--runtime', choices=('fast4', 'fast5'), default='fast4',
+                    help='TB-V3 only: fast5 = fast4 + the native VCF core (analysis.tb_v3_fast5)')
     pm.add_argument('--jsonl', type=Path)
     pm.add_argument('--limit', type=int)
     pc = sub.add_parser('corpus')
@@ -449,16 +461,22 @@ def main(argv=None, factories=None) -> int:
             keep = set(load(args.corpus)['ids'])
             tasks = [t for t in tasks if t['id'] in keep]
         tasks = tasks[:args.limit]
+        if args.runtime == 'fast5' and args.engine != 'tb-v3':
+            parser.error('--runtime fast5 is a TB-V3 runtime (--engine tb-v3)')
         if args.engine == 'tb-v3':
             if args.fast != 'fast4':
-                parser.error('TB-V3 Resolve runs only on fast4')
-            tasks = [{**t, 'engine': 'tb-v3'} for t in tasks]
-        init = (args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, args.fast, factories)
+                parser.error('TB-V3 Resolve runs only on fast4 (fast5 is --runtime fast5 on top of it)')
+            tasks = [{**t, 'engine': 'tb-v3', **({'runtime': 'fast5'} if args.runtime == 'fast5' else {})}
+                     for t in tasks]
+        init = (args.policy_checkpoint, args.value_checkpoint, args.device, args.threads, args.fast, factories,
+                args.runtime)
         rows = _run_measure(tasks, args.workers, args.jsonl, init)
         identity = {}
         if args.engine == 'tb-v3':
-            from analysis import tb_v3, tb_v3_runtime
-            identity = {'engine_name': tb_v3.ENGINE_NAME, 'runtime_hash': tb_v3_runtime.runtime_hash(args.device),
+            from analysis import tb_v3, tb_v3_fast5, tb_v3_runtime
+            runtime = tb_v3_fast5 if args.runtime == 'fast5' else tb_v3_runtime
+            identity = {'engine_name': tb_v3.ENGINE_NAME, 'runtime_mode': args.runtime,
+                        'runtime_hash': runtime.runtime_hash(args.device),
                         'identity_sha256': tb_v3_runtime.identity_sha256()}
         summary = summarize_measure(rows)
         result = {'format': FORMAT, 'step': 'measure',
@@ -547,9 +565,12 @@ def _run_measure(tasks, workers, jsonl, init) -> list[dict]:
             if line.strip():
                 row = json.loads(line)
                 done[row['id']] = row
+    def kind(r):
+        return r.get('engine', 'tb-v2-value'), r.get('runtime', 'fast4')
+
     for t in tasks:
-        if t['id'] in done and done[t['id']].get('engine', 'tb-v2-value') != t.get('engine', 'tb-v2-value'):
-            raise ValueError(f'{jsonl} has rows of another engine; use another file')
+        if t['id'] in done and kind(done[t['id']]) != kind(t):
+            raise ValueError(f'{jsonl} has rows of another engine / runtime; use another file')
     todo = [t for t in tasks if t['id'] not in done]
     print(f'[h7-timing] {len(tasks)} positions, {len(tasks) - len(todo)} already done, workers {workers}', flush=True)
 

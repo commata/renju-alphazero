@@ -15,6 +15,10 @@ Approved before running (docs/h6-value.md, "TB-V3 Resolve 승격"):
                 decision mismatches -> PROMOTION_PASS (the canonical alias may move to TB-V3); else
                 PROMOTION_FAIL: no promotion, find the cause (the arena's ADOPT stands; the factory is not the
                 candidate). B: a reproducibility cross-check, reported (REPRODUCED / DIFFERS), not a gate
+G1 of the fast5 runtime (``--runtime fast5``, ``analysis.tb_v3_fast5``, approved before running): the same replay
+on fast5, and every record field but times must match too (charged VCF nodes, uncached VCF calls, cuts,
+statuses, V8-C table hits / stores, the E4-v2 step): G1_PASS / G1_FAIL. B then runs TB-V2-Value's factory
+with the native VCF core bound (a cross-check of the V8-C table path, reported).
 CUDA only (the arena's value device). One game per task in a worker pool; each finished game is appended to
 ``--jsonl`` (resume; a fingerprint binds the runtime hash, the run file and the device).
 
@@ -104,20 +108,26 @@ def replay_game(task: dict, make_agent) -> dict:
             'record_mismatch': rows['record'], 'seconds': round(perf_counter() - started, 1)}
 
 
-def _init(policy_checkpoint, value_checkpoint, device) -> None:
-    from analysis import tb_v3_runtime
+def install_runtime(runtime: str) -> None:
+    from analysis import tb_v3_fast5, tb_v3_runtime
+
+    tb_v3_fast5.install() if runtime == 'fast5' else tb_v3_runtime.install()
+
+
+def _init(policy_checkpoint, value_checkpoint, device, runtime='fast4') -> None:
     from scripts.run_mcts_v8_benchmark import load_policy, load_value
 
-    tb_v3_runtime.install()
+    install_runtime(runtime)
     _WORKER.update(policy=load_policy(policy_checkpoint), leaf=load_value(value_checkpoint, device),
-                   policy_checkpoint=policy_checkpoint, value_checkpoint=value_checkpoint)
+                   policy_checkpoint=policy_checkpoint, value_checkpoint=value_checkpoint, runtime=runtime)
 
 
 def _factory_agent(engine: str, seed: int):
     from analysis.canonical import factory
 
     w = _WORKER
-    return factory(engine)(w['policy'], w['leaf'], seed, w['policy_checkpoint'], w['value_checkpoint'])
+    runtime = w.get('runtime', 'fast4') if engine == 'TB-V3' else None
+    return factory(engine, runtime)(w['policy'], w['leaf'], seed, w['policy_checkpoint'], w['value_checkpoint'])
 
 
 def _chunk(tasks):
@@ -144,7 +154,8 @@ def summarize(rows: list[dict], engine: str) -> dict:
             'seconds': round(sum(r['seconds'] for r in part), 1)}
 
 
-def verdict(e: dict, expected_games: int, expected_moves: int, b: dict | None) -> dict:
+def verdict(e: dict, expected_games: int, expected_moves: int, b: dict | None, runtime: str = 'fast4') -> dict:
+    """fast4: the promotion gate. fast5: G1, which also needs every record field but times equal."""
     reasons = []
     if (e['games'], e['moves']) != (expected_games, expected_moves):
         reasons.append(f"{e['games']} games / {e['moves']} moves replayed, the arena has "
@@ -153,11 +164,17 @@ def verdict(e: dict, expected_games: int, expected_moves: int, b: dict | None) -
         reasons.append(f"{len(e['move_mismatches'])} moves differ")
     if e['decision_mismatches']:
         reasons.append(f"{len(e['decision_mismatches'])} decision records differ")
-    out = {'verdict': 'PROMOTION_FAIL' if reasons else 'PROMOTION_PASS',
-           'reasons': reasons or [f'{expected_moves} / {expected_moves} moves and every E4-v2 step equal']}
+    strict = runtime != 'fast4'
+    if strict and e['record_mismatch_moves']:
+        reasons.append(f"{e['record_mismatch_moves']} move records differ in {e['record_mismatch_fields']}")
+    passed, failed = ('G1_PASS', 'G1_FAIL') if strict else ('PROMOTION_PASS', 'PROMOTION_FAIL')
+    out = {'verdict': failed if reasons else passed,
+           'reasons': reasons or [f'{expected_moves} / {expected_moves} moves and every E4-v2 step equal'
+                                  + (', every record field but times equal' if strict else '')]}
     if b is not None:
-        out['baseline'] = 'REPRODUCED' if b['games'] and not b['move_mismatches'] and not b['decision_mismatches'] \
-            else 'DIFFERS'
+        clean = b['games'] and not b['move_mismatches'] and not b['decision_mismatches'] \
+            and not (strict and b['record_mismatch_moves'])
+        out['baseline'] = 'REPRODUCED' if clean else 'DIFFERS'
     return out
 
 
@@ -170,12 +187,14 @@ def main(argv=None, factories=None) -> int:
     parser.add_argument('--policy-checkpoint', default=str(ROOT / 'runs/h3_policy_64x4/best.pt'))
     parser.add_argument('--value-checkpoint', default=str(ROOT / 'runs/h6_value_head_v3/best.pt'))
     parser.add_argument('--workers', type=int, default=1)
+    parser.add_argument('--runtime', choices=('fast4', 'fast5'), default='fast4',
+                        help='fast4: the promotion replay; fast5: G1 of the fast5 runtime')
     parser.add_argument('--jsonl', type=Path, help='one line per replayed game (resume)')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
     if args.output is not None and args.output.exists():
         parser.error(f'{args.output} exists')
-    from analysis import tb_v2_runtime, tb_v3, tb_v3_runtime
+    from analysis import tb_v2_runtime, tb_v3, tb_v3_fast5, tb_v3_runtime
     from hybrid.progress import Progress, run_chunks
     from scripts.h7_timing import restore_fast_mode
     from scripts.run_mcts_v8_benchmark import _git_commit, _git_dirty, file_sha256
@@ -201,7 +220,11 @@ def main(argv=None, factories=None) -> int:
         parser.error(f'--runs must be the E runs of both seeds {arena_rules.SEEDS}')
     tasks = tasks_of(loaded)
     device = tb_v3_runtime.device_kind(args.device)
-    hashes = {'TB-V3': tb_v3_runtime.runtime_hash(device), 'TB-V2-Value': tb_v2_runtime.runtime_hash(device)}
+    if args.runtime == 'fast5':  # B runs its own factory on the native VCF core: marked, not its runtime hash
+        hashes = {'TB-V3': tb_v3_fast5.runtime_hash(device),
+                  'TB-V2-Value': f"{tb_v2_runtime.runtime_hash(device)}+vcfcore:{tb_v3_fast5.runtime_hash(device)}"}
+    else:
+        hashes = {'TB-V3': tb_v3_runtime.runtime_hash(device), 'TB-V2-Value': tb_v2_runtime.runtime_hash(device)}
     done = {}
     if args.jsonl is not None and args.jsonl.exists():
         for line in args.jsonl.read_text(encoding='utf-8').splitlines():
@@ -228,34 +251,44 @@ def main(argv=None, factories=None) -> int:
     progress = Progress('tb-v3-promotion', len(todo), 'games')
     if factories is not None:  # tests: stand-in models and an unchecked builder, in this process
         with restore_fast_mode():
-            tb_v3_runtime.install()
-            for i, t in enumerate(todo):
-                keep(i, [replay_game(t, factories['build'])])
-                progress.update(1)
+            try:
+                install_runtime(args.runtime)
+                for i, t in enumerate(todo):
+                    keep(i, [replay_game(t, factories['build'])])
+                    progress.update(1)
+            finally:
+                _uninstall_fast5()
     elif args.workers > 1 and todo:
         with ProcessPoolExecutor(max_workers=args.workers, mp_context=get_context('spawn'), initializer=_init,
-                                 initargs=(args.policy_checkpoint, args.value_checkpoint, args.device)) as pool:
+                                 initargs=(args.policy_checkpoint, args.value_checkpoint, args.device,
+                                           args.runtime)) as pool:
             run_chunks(pool, _chunk, [[t] for t in todo], progress, len, unit_name='games', on_result=keep)
     else:
         with restore_fast_mode():
-            _init(args.policy_checkpoint, args.value_checkpoint, args.device)
-            for i, t in enumerate(todo):
-                keep(i, _chunk([t]))
-                progress.update(1)
+            try:
+                _init(args.policy_checkpoint, args.value_checkpoint, args.device, args.runtime)
+                for i, t in enumerate(todo):
+                    keep(i, _chunk([t]))
+                    progress.update(1)
+            finally:
+                _uninstall_fast5()
     rows = [done[(t['key'], t['run_sha256'])] for t in tasks]
     e = summarize(rows, 'TB-V3')
     b = summarize(rows, 'TB-V2-Value') if args.baseline_runs else None
     steps = arena['report']['e4v2_steps']['moves']
-    result = verdict(e, arena['arms'][arena_rules.CANDIDATE]['games'], steps, b)
+    result = verdict(e, arena['arms'][arena_rules.CANDIDATE]['games'], steps, b, args.runtime)
     payload = {'format': FORMAT, 'git_commit': _git_commit(), 'git_dirty': _git_dirty(), 'engine': tb_v3.ENGINE_NAME,
                'engine_hash': tb_v3.ENGINE_HASH, 'identity_sha256': tb_v3_runtime.identity_sha256(),
                'code_manifest_sha256': tb_v3.CODE_MANIFEST_SHA256, 'runtime_hash': hashes['TB-V3'],
-               'baseline_runtime_hash': hashes['TB-V2-Value'], 'device': device,
+               'baseline_runtime_hash': hashes['TB-V2-Value'], 'device': device, 'runtime_mode': args.runtime,
                'arena_sha256': file_sha256(args.arena), 'runs': {str(p): s for p, (_, s) in
                                                                  zip(args.runs + args.baseline_runs, loaded)},
-               'runtime': tb_v3_runtime.provenance(args.device) if factories is None else None,
+               'runtime': ((tb_v3_fast5 if args.runtime == 'fast5' else tb_v3_runtime).provenance(args.device)
+                           if factories is None else None),
                'rules': {'move_fields': list(MOVE_FIELDS), 'step_fields': list(STEP_FIELDS) + ['gate.status'],
-                         'gate': 'E: every game and move of the arena, 0 move and 0 decision mismatches'},
+                         'gate': 'E: every game and move of the arena, 0 move and 0 decision mismatches'
+                                 + ('; fast5 (G1): and 0 record mismatches (times excluded)'
+                                    if args.runtime == 'fast5' else '')},
                **result, 'tb_v3': e, 'tb_v2_value': b, 'rows': rows}
     print(json.dumps({k: payload[k] for k in ('verdict', 'reasons')} | {'baseline': result.get('baseline'),
                      'tb_v3': {k: e[k] for k in ('games', 'moves', 'moves_matched', 'record_mismatch_moves')}},
@@ -263,7 +296,13 @@ def main(argv=None, factories=None) -> int:
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(payload, indent=1) + '\n', encoding='utf-8')
-    return 0 if result['verdict'] == 'PROMOTION_PASS' else 1
+    return 0 if result['verdict'] in ('PROMOTION_PASS', 'G1_PASS') else 1
+
+
+def _uninstall_fast5() -> None:
+    from rt30 import fast5
+
+    fast5.uninstall()
 
 
 if __name__ == '__main__':

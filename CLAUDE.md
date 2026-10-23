@@ -28,3 +28,9 @@
   one place that says which engine is the canonical; TB-V3 becomes it only after its promotion replay
   (`docs/h7/tb_v3_promotion.json`, PROMOTION_PASS). Versioned factories (`make_tb_v2_agent`, `make_tb_v3_agent`) never
   change meaning.
+- Exact runtime speed-ups of TB-V3 keep its engine hash and get their own runtime identity: fast5
+  (`src/analysis/tb_v3_fast5.py`, `src/rt30/fast5.py`, `src/rt30/vcfcore/`) locks its sources by SHA-256
+  (`FAST5_SOURCES`; the native VCF core includes the frozen `rt30/native/forbidden.c`). It stays a candidate
+  (`canonical.CANONICAL_RUNTIME = 'fast4'`) until G0 (native = Python differential), G1 (arena replay, every record
+  field but times equal) and G2 (desktop and SER5 timing) pass; a fast4 CPU certification does not carry over.
+  Build it with `python -m rt30.vcfcore.build --if-stale` (in `src/`); `rt30/native/build.py` stays untouched.

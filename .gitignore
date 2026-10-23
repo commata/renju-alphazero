@@ -40,3 +40,5 @@ buffers/
 src/rt30/native/*.so
 src/rt30/native/*.pyd
 src/rt30/native/build_info.json
+src/rt30/vcfcore/*.so
+src/rt30/vcfcore/build_info.json

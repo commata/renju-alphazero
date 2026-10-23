@@ -5160,6 +5160,122 @@ fast5 → G0 → G1 (3,201수) → G2 (데스크톱 + SER5)
    └── 아직 > 25초 → X2-B / X2-E 등 정확 가속, X2-H 배포 실험 따로
 ```
 
+## X2-F 구현: fast5 실행판 (2026-10-23, G0 진행 중)
+
+**구성 (동결 파일과 TB-V3 manifest 63개는 그대로)**
+- `src/rt30/vcfcore/vcf_core.c`
+  - `search.mcts_v7._find_vcf_with_stats`(table 0)와 `analysis.vcf_tt_v1`(table 1)을 C로 그대로 옮겼다.
+  - 같은 후보, 같은 순서다. 후보마다 합법성 검사 전에 노드 하나를 청구하고, 반환도 같다.
+  - 렌주 금수는 동결된 `rt30/native/forbidden.c`를 그대로 `#include`해서 같은 C 분류기를 쓴다.
+  - 속도 장치: 창(5칸)마다 돌 수를 재귀의 착수 / 무르기 때 갱신한다. "5를 만들 수 있는 창" 수가 0이면 승리 수 검사를 건너뛴다(그런 창이 없으면 후보가 없으므로 같은 답).
+  - V8-C 표: (판, 공격자, 남은 4 수) 키, Zobrist 해시 + 판 전체 비교(충돌 없음). hit / store 수가 Python과 같다.
+  - 검사용 `probe`: 창 후보, 승리 수, 완성점, 합법, 5 판정을 하나씩 노출한다.
+- `src/rt30/vcfcore/build.py`
+  - 자기 `build_info.json`을 쓴다. 두 소스(`vcf_core.c`, `forbidden.c`) SHA를 기록하고, 어느 쪽이 바뀌어도 stale이다.
+  - `rt30/native/build.py`(동결 manifest 안)는 고치지 않았다.
+- `src/rt30/fast5.py`: Python 쪽 그대로 대체(같은 서명, 같은 오류 문구, 같은 `VCFResult`, 같은 `TableStats` 누적).
+  - `install`: fast4 위에 두 탐색을 이름 바꿔 끼우기로 올린다. `uninstall`: 되돌린다.
+  - `h7_timing.restore_fast_mode`도 fast5를 되돌린다.
+- `src/analysis/tb_v3_fast5.py`(실행판 identity)
+  - 이름 `TB-V3 Resolve/fast5`. 엔진 해시는 TB-V3 그대로다.
+  - `FAST5_SOURCES`(5개 파일 SHA 잠금)
+  - `runtime_hash`: 엔진 해시, `tb_v3.py`, 이 파일, fast4 소스 / binding, fast5 소스, 장치. CUDA 값은 `60268d63…`이다(fast4 `51e3579a…`와 다름).
+  - `make_tb_v3_fast5_agent`: fast4 factory와 같은 fail-closed 검사에 fast5 소스와 native 빌드 검사를 더한 뒤, 같은 agent(`tb_v3_runtime._build`)를 만든다.
+  - `CERTIFICATION`: CUDA / CPU 모두 None
+- `analysis.canonical`
+  - `CANONICAL_RUNTIME = 'fast4'`(G1 / G2 전)
+  - `factory(engine, runtime)`, `RUNTIMES = {'TB-V3': ('fast4', 'fast5')}`
+- 도구
+  - `scripts/fast5_g0.py`(G0 shadow)
+    - 실제 solver 실행 중 모든 VCF 호출을 동결 Python(fast4)이 답한다. 같은 판으로 C도 돌려서 결과, witness, 노드, cut, 표 hit / store, 판 불변을 비교한다.
+    - 작업 종류: `e4`(문턱 + 공격), `base`(TB-V3 한 수 전체: V7 / V8-A / V8-B / V8-C 표 / VCT2 / E4), `ref`(기준 solver 4M)
+  - `scripts/tb_v3_promotion.py --runtime fast5`(G1): 수·결정에 더해 시간 밖의 기록 필드 전부가 같아야 `G1_PASS`다. B는 TB-V2 factory를 C VCF 위에서 다시 둔다(V8-C 표 경로 교차 확인, 보고).
+  - `scripts/h7_timing.py measure --engine tb-v3 --runtime fast5`(G2 측정)
+  - `scripts/fast5_g2.py`(G2 비교)
+    - fast4 대 fast5. 모든 회차, 모든 국면에서 수·결정 필드·E4 단계(시간 제외)가 같아야 비교한다.
+    - 보고: 전체 / 부분별 / E4 실행·소진 집단의 비율과 분포, 25초 초과 국면 표(+ `--tail`의 `over_rule`), SER5 규칙
+    - `--machine ser5`면 판정이 `SER5_CERTIFIED` / `SER5_NOT_CERTIFIED`다.
+  - `check_track_b_frozen.py`: `tb-v3 fast5 runtime`(소스 잠금, 빌드되어 있으면 설치·바인딩까지)
+
+**컨테이너 결과 (G0 일부, 보고)**
+- 단위 시험 `tests/test_fast5.py`(9개) 통과
+  - 원시 함수: 무작위 판 40개의 모든 칸 / 두 색
+  - VCF: 무작위 판 300개(가장자리 위주 포함) × 두 색 × 노드 한도 1 / 7 / 300 / 20,000, 작은 `max_fours`, 판 가득 참, COSTTEST 국면
+  - 오류 문구, 설치와 복원
+  - fast5 identity와 factory fail-closed
+  - **기록된 대국을 fast5로 다시 두면 기록 필드 전부가 같다(G1 논리)**
+  - G2 도구
+- G0 shadow(`e4`, COSTTEST 252국면): VCF 호출 89,413번(노드 543만, VCF 발견 72,225, cut 616). **불일치 0**
+- G0 shadow(`base`, stand-in 모델, timing corpus 130국면): **불일치 0**
+  - 일반 VCF 97,779번(노드 425만, 발견 85,670, cut 342)
+  - V8-C 표 VCF 51,050번(노드 225만, 발견 34,959, cut 43)
+  - 모델이 stand-in이므로 탐색하는 국면은 실제와 다르다. 실제 모델의 G0는 데스크톱에서 한다(아래 명령).
+- 속도(컨테이너, 비공식)
+  - VCF 단독: COSTTEST 국면에서 fast4 Python 대비 **약 22.8배**(같은 노드 110,795개)
+  - TB-V3 한 수 전체(stand-in 모델, E3A 15국면): fast5 / fast4 = **0.20**, 수 같음
+  - 실제 모델에서는 value와 tree가 남는다. 그래서 SER5 비율은 G2에서 잰다.
+
+**실행 명령 — 데스크톱: G0 → G1 (G1 PASS 뒤 G2)**
+
+```bash
+cd ~/renju-h6 && git pull --ff-only && source .venv/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale && CC=gcc python -m rt30.vcfcore.build --if-stale)
+python scripts/check_frozen_baseline.py && python scripts/check_track_b_frozen.py
+python -m unittest tests.test_fast5 tests.test_tb_v3 tests.test_h7_timing tests.test_track_b_guard
+mkdir -p runs/tb_v3
+# G0: 실제 모델로 timing 국면 2,594개(기준 엔진 + E4), COSTTEST 2,513개(E4)의 모든 VCF 호출
+python -u scripts/fast5_g0.py --positions docs/h7/h7_timing_positions.json --parts e4 base --workers 8 --device cuda \
+  --jsonl runs/tb_v3/fast5_g0_base.jsonl --output docs/h7/tb_v3_fast5_g0_base.json 2>&1 | tee runs/tb_v3/fast5_g0_base.log
+python -u scripts/fast5_g0.py --positions docs/h7/h7_e4v2_costtest_positions.json --parts e4 --workers 12 \
+  --jsonl runs/tb_v3/fast5_g0_e4.jsonl --output docs/h7/tb_v3_fast5_g0_e4.json 2>&1 | tee runs/tb_v3/fast5_g0_e4.log
+# G1: arena 200대국 3,201수를 fast5로 (B 200대국은 교차 확인)
+python -u scripts/tb_v3_promotion.py --runtime fast5 --runs runs/h7_e4v2/e_8441.json runs/h7_e4v2/e_8442.json \
+  --baseline-runs runs/h7_e4v2/b_8441.json runs/h7_e4v2/b_8442.json --workers 8 --device cuda \
+  --jsonl runs/tb_v3/fast5_g1.jsonl --output docs/h7/tb_v3_fast5_g1.json 2>&1 | tee runs/tb_v3/fast5_g1.log
+```
+
+- 커밋할 것: `docs/h7/tb_v3_fast5_g0_base.json`, `tb_v3_fast5_g0_e4.json`, `tb_v3_fast5_g1.json`
+- 먼저 볼 것: G0의 `verdict`, `mismatches`, `calls`. G1의 `verdict`(`G1_PASS`), `tb_v3.record_mismatch_moves` 0, `baseline`
+
+**G1 PASS 뒤 — G2 데스크톱 (827 corpus, CUDA, workers 1, 같은 기계에서 연달아)**
+
+```bash
+for RT in fast4 fast5; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --engine tb-v3 --runtime $RT --device cuda --threads 1 --workers 1 --fast fast4 --label tb_v3_desktop_$RT \
+  --jsonl runs/tb_v3/desktop_$RT.jsonl --output runs/tb_v3/desktop_$RT.json 2>&1 | tee runs/tb_v3/desktop_$RT.log
+done
+python scripts/fast5_g2.py --fast4 runs/tb_v3/desktop_fast4.json --fast5 runs/tb_v3/desktop_fast5.json \
+  --tail docs/h7/tb_v3_ser5_tail.json --output docs/h7/tb_v3_fast5_g2_desktop.json
+```
+
+**G1 PASS 뒤 — G2 SER5 (2회, 다른 작업 없이, fast4 비교는 이미 있는 `runs/tb_v3/ser5_r1/r2.json`)**
+
+```bash
+cd ~/renju-h7-timing && git pull --ff-only && source .venv-ser5/bin/activate
+export PYTHONUNBUFFERED=1 PYTHONPATH="$PWD/src"
+(cd src && CC=gcc python -m rt30.native.build --if-stale && CC=gcc python -m rt30.vcfcore.build --if-stale)
+python scripts/check_track_b_frozen.py
+python -m unittest tests.test_fast5 tests.test_h7_timing
+for R in 1 2; do
+python -u scripts/h7_timing.py measure --positions docs/h7/h7_timing_positions.json --corpus docs/h7/h7_equiv_corpus.json \
+  --engine tb-v3 --runtime fast5 --device cpu --threads 1 --workers 1 --fast fast4 --label tb_v3_fast5_ser5_r$R \
+  --jsonl runs/tb_v3/ser5_fast5_r$R.jsonl --output runs/tb_v3/ser5_fast5_r$R.json 2>&1 | tee runs/tb_v3/ser5_fast5_r$R.log
+done
+python scripts/fast5_g2.py --fast4 runs/tb_v3/ser5_r1.json runs/tb_v3/ser5_r2.json \
+  --fast5 runs/tb_v3/ser5_fast5_r1.json runs/tb_v3/ser5_fast5_r2.json --tail docs/h7/tb_v3_ser5_tail.json \
+  --machine ser5 --output docs/h7/tb_v3_fast5_g2_ser5.json
+```
+
+- 커밋할 것: `docs/h7/tb_v3_fast5_g2_desktop.json`, `docs/h7/tb_v3_fast5_g2_ser5.json`(국면 행 없음)
+- 먼저 볼 것
+  - `same_decisions`
+  - `ratio_total`, `ratio_by_part`, `ratio_e4`
+  - `tracked`: 25초 초과 5국면의 fast4 → fast5 표
+  - `ser5_rounds`, `verdict`
+- SER5에서는 tail 도구도 새 검사로 한 번 다시 돌려 `tb_v3_ser5_tail.json`을 갱신한다(몇 초).
+
 ## H7 이후 로드맵 (2026-10-19, 사용자 추가 단계 반영)
 
 ```

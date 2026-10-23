@@ -11,6 +11,8 @@
     tb-v3      its code manifest ``tests/tb_v3_frozen.sha256`` against its import closure, its identity
                (``tb_v3.check_identity``), and, once it is the canonical (``analysis.canonical``), the promotion
                record ``docs/h7/tb_v3_promotion.json`` (PROMOTION_PASS on this runtime hash and identity file)
+    fast5      the exact runtime candidate's sources (``tb_v3_fast5.check_sources``) and, when built, its native
+               VCF core (fresh, bound by ``tb_v3_fast5.install``); not built is reported, not a failure
 Exit status 1 on any FAIL. Run it before benchmark, web or self-play work on a machine with the models.
 
     python scripts/check_track_b_frozen.py
@@ -177,7 +179,23 @@ def checks(models: bool, policy_checkpoint: Path, value_checkpoint: Path) -> lis
     run('e4-v1 candidate sources', e4)
     run('tb-v3 code', v3_code)
     run('tb-v3 identity', v3_identity)
+    def v3_fast5():
+        from analysis import tb_v3_fast5
+        from hybrid import h6_fast
+        from rt30 import fast5
+        tb_v3_fast5.check_sources()
+        if not fast5.available():
+            return 'sources PASS; native VCF core not built (python -m rt30.vcfcore.build)'
+        previous = h6_fast.installed_mode()
+        try:
+            tb_v3_fast5.install()
+        finally:
+            fast5.uninstall()
+            h6_fast.install(previous)
+        return f'bound, runtime {tb_v3_fast5.runtime_hash("cuda")[:12]} (cuda)'
+
     run('tb-v3 promotion', v3_promotion)
+    run('tb-v3 fast5 runtime', v3_fast5)
     return out
 
 

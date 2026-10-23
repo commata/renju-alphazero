@@ -115,6 +115,20 @@ class CorpusRulesTest(unittest.TestCase):
             with self.assertRaises(ValueError):  # a TB-V3 jsonl is not resumed as TB-V2-Value
                 t.main(['measure', '--positions', str(pos), '--limit', '2', '--jsonl', str(jsonl),
                         '--output', str(tmp / 'y.json')], factories=FACTORIES)
+            from rt30 import fast5
+            if fast5.available():  # fast5: the same decisions and E4-v2 steps, its own runtime hash
+                from analysis import tb_v3_fast5
+                out5 = tmp / 'v3_fast5.json'
+                self.assertEqual(t.main(argv + ['--fast', 'fast4', '--runtime', 'fast5', '--output', str(out5)],
+                                        factories={**FACTORIES, 'stand_in': True}), 0)
+                r5 = json.loads(out5.read_text(encoding='utf-8'))
+                self.assertEqual((r5['runtime_mode'], r5['runtime_hash']), ('fast5', tb_v3_fast5.runtime_hash('cpu')))
+                untimed = (lambda row: (row['move'], row['decision'], {k: v for k, v in row['e4_attack'].items()}))
+                self.assertEqual([untimed(x) for x in r5['rows']], [untimed(x) for x in r['rows']])
+                with self.assertRaises(ValueError):  # a fast4 jsonl is not resumed as fast5
+                    t.main(argv + ['--fast', 'fast4', '--runtime', 'fast5', '--jsonl', str(jsonl),
+                                   '--output', str(tmp / 'z.json')], factories={**FACTORIES, 'stand_in': True})
+                self.assertFalse(fast5.installed())
         from hybrid.h6_fast import installed_mode
         self.assertEqual(installed_mode(), 'off')
 
