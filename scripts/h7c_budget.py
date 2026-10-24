@@ -18,7 +18,9 @@ configuration with its own config, never an engine of record, a self-play engine
     summary    the play outputs and the positions output: per k the score, the pair bootstrap of (score - 0.5), the
                time ratio, and the pre-registered reading (docs/h7-c1.md): a budget is STRONGER when the 95% lower bound
                of (score - 0.5) is above 0; any STRONGER budget gives BUDGET_HELPS (the smallest such k is the one to
-               propose), none gives NOT_DETECTED
+               propose), none gives NOT_DETECTED. The 50-pair reading always uses pairs 0-49; an S400 arm extended to
+               150 pairs (``play --factor 8 --pairs 150``, same --jsonl) adds the saturation reading (``SATURATION``):
+               STRONGER (lower bound above 0), SATURATED (upper bound below 0.075) or INCONCLUSIVE
 
     python -u scripts/h7c_budget.py play --factor 4 --policy-checkpoint runs/h3_policy_64x4/best.pt \\
         --value-checkpoint runs/h6_value_head_v3/best.pt --device cuda --workers 6 \\
@@ -46,6 +48,11 @@ FORMAT = 'h7c-budget-v1'
 SEED = 8741
 PAIRS = 50
 FACTORS = (2, 4, 8)          # S100, S200, S400 against S50
+# Saturation stage (pre-registered, docs/h7-c1.md "MCTS-v9 진입 조건"): when no budget is STRONGER at 50 pairs, S400
+# is extended to 150 pairs on the same seed (pairs 0-49 are the 50-pair run's). SATURATED: the 95% upper bound of
+# (score - 0.5) is below 0.075 (+52 Elo). With a pair-score SD of 0.325 (c1 official) this verdict comes with
+# probability 0.81 when S400 is truly no stronger, 0.15 at a true +35 Elo and 0.025 at +52 Elo.
+SATURATION = {'factor': 8, 'pairs': 150, 'upper_bound_below': 0.075}
 POSITION_FACTORS = (1, 2, 4, 8)
 BASE = {'simulations': 50, 'tactical_simulations': 100}
 _WORKER: dict = {}
@@ -203,12 +210,17 @@ def play(args, log=print) -> dict:
 
     if args.factor not in FACTORS:
         raise ValueError(f'--factor is one of {FACTORS}')
+    pairs = getattr(args, 'pairs', None) or PAIRS
+    if pairs not in (PAIRS, SATURATION['pairs']) and not getattr(args, 'max_plies', None):
+        raise ValueError(f'--pairs is {PAIRS}, or {SATURATION["pairs"]} for the saturation stage')
+    if pairs == SATURATION['pairs'] and args.factor != SATURATION['factor']:
+        raise ValueError(f'the saturation stage extends factor {SATURATION["factor"]} only')
     git = ar._git()
     if git['dirty'] is not False and not args.allow_dirty:
         raise ValueError('the tree is dirty (or git is unavailable): the games must name their code commit')
     ident = identity(args, args.factor, git)
     sig = ar.signature(ident)
-    tasks = build_tasks(args.factor, getattr(args, 'pairs', None) or PAIRS)
+    tasks = build_tasks(args.factor, pairs)
     finished = ar.load_finished(args.jsonl, {t['key'] for t in tasks}, sig, log=log)
     context = {'policy': str(args.policy_checkpoint), 'value': str(args.value_checkpoint), 'device': args.device,
                'signature': sig}
@@ -363,11 +375,22 @@ def summary(args) -> dict:
               for r in arms.values()}
     if len(shared) != 1:
         raise ValueError('the arms differ in engine, runtime, models, seed or commit')
-    rows = {}
+    rows, saturation = {}, None
     for k, record in sorted(arms.items()):
-        s = record['summary']
-        if s['complete_pairs'] != PAIRS or s['truncated']:
-            raise ValueError(f'factor {k}: {s["complete_pairs"]} complete pairs of {PAIRS}')
+        full = record['summary']
+        played = full['complete_pairs'] + len(full['opponent_illegal_pairs'])  # every pair finished
+        if full['truncated'] or played not in ((PAIRS, SATURATION['pairs']) if k == SATURATION['factor'] else (PAIRS,)):
+            raise ValueError(f'factor {k}: {full["complete_pairs"]} complete pairs')
+        # the 50-pair reading always uses pairs 0-49, also when the arm was extended
+        s = summarize_arm([g for g in record['games'] if g['pair'] < PAIRS])
+        if s['complete_pairs'] + len(s['opponent_illegal_pairs']) != PAIRS:
+            raise ValueError(f'factor {k}: pairs 0-{PAIRS - 1} are not all played')
+        if played == SATURATION['pairs']:
+            upper, lower150 = full['improvement_ci95'][1], full['improvement_ci95'][0]
+            saturation = {'pairs': SATURATION['pairs'], 'score': full['score'], 'score_ci95': full['score_ci95'],
+                          'improvement_ci95': full['improvement_ci95'], 'elo': full['elo'],
+                          'rule': SATURATION, 'reading': 'STRONGER' if lower150 > 0 else 'SATURATED'
+                          if upper < SATURATION['upper_bound_below'] else 'INCONCLUSIVE'}
         lower = s['improvement_ci95'][0]
         rows[f'S{BASE["simulations"] * k}'] = {
             'factor': k, 'score': s['score'], 'score_ci95': s['score_ci95'], 'improvement_ci95': s['improvement_ci95'],
@@ -377,7 +400,10 @@ def summary(args) -> dict:
     out = {'format': f'{FORMAT}-summary', 'seed': SEED, 'pairs': PAIRS, 'rule': 'STRONGER: the 95% pair-bootstrap '
            'lower bound of (score - 0.5) against S50 is above 0', 'arms': rows,
            'reading': 'BUDGET_HELPS' if stronger else 'NOT_DETECTED',
-           'smallest_stronger_budget': budget(min(stronger)) if stronger else None, 'arm_sha256': arm_sha}
+           'smallest_stronger_budget': budget(min(stronger)) if stronger else None, 'arm_sha256': arm_sha,
+           'saturation': saturation}
+    if stronger and saturation is not None:
+        raise ValueError('the saturation stage runs only when no budget is STRONGER at 50 pairs')
     if args.positions:
         record = json.loads(Path(args.positions).read_text(encoding='utf-8'))
         out['positions'] = {**record['summary'], 'sha256': ar._file_sha(Path(args.positions))}
@@ -398,6 +424,9 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument('--allow-stand-in', action='store_true', help='tests only: models other than H3 / H6 v3')
     sub.choices['play'].add_argument('--factor', type=int, required=True, choices=FACTORS)
     sub.choices['play'].add_argument('--jsonl', type=Path, required=True)
+    sub.choices['play'].add_argument('--pairs', type=int, default=PAIRS,
+                                     help=f'{PAIRS}; {SATURATION["pairs"]} extends factor 8 for the saturation stage '
+                                          '(same --jsonl: the first 50 pairs are reused)')
     sub.choices['positions'].add_argument('--policy-rows', type=Path, required=True)
     sub.choices['positions'].add_argument('--evidence', type=Path, required=True)
     sub.choices['positions'].add_argument('--limit', type=int, help='first N positions only (tests)')

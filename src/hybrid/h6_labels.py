@@ -55,7 +55,7 @@ RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8406, 8411, 8412, 8413
                             8441, 8442,         # H7-E4 arena (candidate vs v8:full)
                             8451, 8452,         # CPU-backend certification of the post-E4 engine
                             *range(8731, 8741),   # H7-c internal Arena: cycle c = 8730 + c (registered 2026-10-24)
-                            8741, 8742})          # H7-c search-budget ablation (8742: reserve; registered 2026-10-24)
+                            *range(8741, 8750)})  # H7-c search-budget ablation: 8741 c1, 8742-8749 later re-runs (2026-10-24)
 FRESH_PROBE_SEEDS = tuple(range(8601, 8611))
 DEV_PROBE_SEEDS = tuple(range(8611, 8614))
 DEV_PROBE_EXTENSION_SEEDS = tuple(range(8614, 8617))

@@ -520,6 +520,22 @@ def d4(args, log=print) -> dict:
                                   'mean_target': round(sum(r['target'] for r in rows) / len(rows), 5),
                                   'parent': _value_stats(items, 2), 'candidate': _value_stats(items, 3)}
         return out
+
+    def by_route(columns):
+        """Totals over the effective val rows: all, those the search sends to the network, those exact_leaf settles."""
+        rows = [r for cell in cells.values() for r in cell]
+        out = {}
+        for name, keep in (('all', lambda r: True), ('network', lambda r: r['route'] == 'network'),
+                           ('exact_leaf', lambda r: r['route'] == 'exact_leaf')):
+            items = [(r['target'], r['weight'], r[columns[0]], r[columns[1]]) for r in rows if keep(r)]
+            if not items:
+                out[name] = {'n': 0}
+                continue
+            parent, candidate = _value_stats(items, 2), _value_stats(items, 3)
+            out[name] = {'n': len(items), 'weight': round(sum(i[1] for i in items), 3), 'parent': parent,
+                         'candidate': candidate, 'wmse_relative_improvement':
+                         round((parent['wmse'] - candidate['wmse']) / parent['wmse'], 5) if parent['wmse'] else None}
+        return out
     log('[h7c-diagnose] D4 probes', flush=True)
     probes = {'parent': value_probes(args.parent_value, args.device),
               'candidate': value_probes(args.candidate_value, args.device)}
@@ -527,8 +543,10 @@ def d4(args, log=print) -> dict:
         p['fresh'].pop('rows', None)
     return {'positions': len(effective),
             'training_metric': {'inference': 'raw (h6_value_train.evaluate)', 'reproduction': reproduction,
+                                'by_route': by_route(('parent_raw', 'candidate_raw')),
                                 'strata': split(('parent_raw', 'candidate_raw'))},
-            'engine_metric': {'inference': 'ValueLeaf D4 average', 'strata': split(('parent_d4', 'candidate_d4'))},
+            'engine_metric': {'inference': 'ValueLeaf D4 average', 'by_route': by_route(('parent_d4', 'candidate_d4')),
+                              'strata': split(('parent_d4', 'candidate_d4'))},
             'exact_leaf': exact, 'probes': probes}
 
 

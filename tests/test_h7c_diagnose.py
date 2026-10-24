@@ -200,6 +200,10 @@ class EndToEndTest(unittest.TestCase):
             self.assertEqual({k: c['n'] for k, c in d4['engine_metric']['strata'].items()},
                              {k: c['n'] for k, c in d4['training_metric']['strata'].items()})
             self.assertTrue(0 < d4['exact_leaf']['exact_leaf_rows_share'] < 1)  # five-in-one positions: exact
+            routes = d4['training_metric']['by_route']
+            self.assertEqual(routes['all']['n'], routes['network'].get('n', 0) + routes['exact_leaf'].get('n', 0))
+            self.assertEqual(routes['all']['n'], d4['positions'])
+            self.assertAlmostEqual(routes['all']['candidate']['wmse'], record['best']['cycle_wmse'], 4)
             self.assertEqual(d4['probes']['parent']['device'], 'cpu')
             self.assertIn('black', parts['d5'])
             self.assertEqual(result['inputs']['p_only_signature'], out['signature'])

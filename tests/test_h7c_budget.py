@@ -66,6 +66,21 @@ class RuleTest(unittest.TestCase):
             self.assertEqual(sb.summary(argparse.Namespace(arms=flat, positions=None))['reading'], 'NOT_DETECTED')
             with self.assertRaises(ValueError):  # every factor exactly once
                 sb.summary(argparse.Namespace(arms=flat[:2], positions=None))
+            for k in (8,):  # the saturation stage: S400 extended to 150 pairs, pairs 0-49 reused for the 50-pair reading
+                for games, reading in ((([('win', 'loss')] * 150), 'SATURATED'),
+                                       ([('win', 'loss')] * 50 + [('win', 'win')] * 30 + [('loss', 'loss')] * 18
+                                        + [('win', 'loss')] * 52, 'INCONCLUSIVE'),  # 0.54, upper bound above 0.575
+                                       ([('win', 'loss')] * 50 + [('win', 'win')] * 40 + [('win', 'loss')] * 60,
+                                        'STRONGER')):
+                    extended = flat[:2] + [write_arm(tmp, k, games)]
+                    out = sb.summary(argparse.Namespace(arms=extended, positions=None))
+                    self.assertEqual((out['reading'], out['saturation']['reading']), ('NOT_DETECTED', reading))
+                    self.assertEqual(out['arms']['S400']['score'], 0.5)  # the 50-pair reading: pairs 0-49 only
+                    self.assertEqual(out['saturation']['pairs'], 150)
+                helps = flat[:2] + [write_arm(tmp, 8, [('win', 'win')] * 50 + [('win', 'loss')] * 100)]
+                with self.assertRaises(ValueError):  # no saturation stage once a budget is STRONGER at 50 pairs
+                    sb.summary(argparse.Namespace(arms=helps, positions=None))
+            flat = [write_arm(tmp, k, [('win', 'loss')] * 50) for k in sb.FACTORS]
             record = json.loads(Path(flat[0]).read_text())
             record['summary']['score'] = 0.9
             Path(flat[0]).write_text(json.dumps(record))
@@ -124,6 +139,10 @@ class EngineTest(unittest.TestCase):
             self.assertTrue(all(m['tree_budget'] in (None, 100, 200) for g in out['games'] for m in g['tested_moves']))
             again = sb.play(args, log=quiet)  # resumed: the same games
             self.assertEqual([g['moves'] for g in again['games']], [g['moves'] for g in out['games']])
+            for pairs, factor in ((150, 2), (80, 8)):  # 150 pairs extends S400 only; no other count
+                with self.assertRaises(ValueError):
+                    sb.play(argparse.Namespace(**{**vars(args), 'pairs': pairs, 'factor': factor, 'max_plies': None,
+                                                  'jsonl': tmp / 'y.jsonl'}), log=quiet)
             with self.assertRaises(ValueError):  # the ablation runs the frozen models only
                 sb.play(argparse.Namespace(**{**vars(args), 'allow_stand_in': False, 'jsonl': tmp / 'x.jsonl'}),
                         log=quiet)
