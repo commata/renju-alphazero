@@ -32,7 +32,8 @@ Modes:
     verdict   the arm outputs and the tactical record of one cycle: promotion, convergence signal, Monitoring
               and diagnosis tables (``--history``: the verdicts of the earlier cycles, for the convergence rule)
     no-candidate  the cycle's record when the policy or value training gave ``NO_CANDIDATE``: no Arena,
-              ``KEEP_CHAMPION``, no improvement bound (such a cycle never counts towards convergence). From cycle 2
+              ``KEEP_CHAMPION``, no improvement bound (it counts towards the 3-cycle minimum, and breaks a run of
+              stalled cycles: it is never one of them). From cycle 2
               a policy NO_CANDIDATE with a value candidate is not such a cycle: its candidate is
               ``VALUE_ONLY_FALLBACK`` (``--candidate-mode``: the parent policy byte for byte + the new value, with the
               policy training's NO_CANDIDATE ``--policy-record``), Arena without ``p_only`` (NOT_APPLICABLE) and
@@ -173,6 +174,7 @@ def run_identity(arm: str, cycle: int, models: dict, device: str, git: dict) -> 
             'value_device': device.split(':')[0],
             'candidate': models['candidate_identity'], 'parent': models['parent_identity'],
             'candidate_mode': models.get('candidate_mode', JOINT),
+            'fallback_policy_record_sha256': models.get('fallback_policy_record_sha256'),
             'champion_record_sha256': models.get('champion_record_sha256'),
             'tested': {'models': tested_identity, 'model_hash': tb_v3_net.model_hash(tested_identity),
                        'policy_from': ARMS[arm]['side'][0], 'value_from': ARMS[arm]['side'][1]},
@@ -355,6 +357,7 @@ PROBE_FILE = ROOT / 'docs' / 'mcts-v8-results' / 'probe_web_v8_loss_20261007.jso
 # hard item in v1, which the frozen H6 v3 parent itself fails; they stay as recorded diagnostics.
 TACTICAL_RULE = 'h7c-tactical-v2'
 FRESH_PROBES = ROOT / 'docs' / 'h6' / 'h6_fresh_dev_probes_v2.json'
+FRESH_PROBES_SHA256 = '96407fb0cae50dcf10b3d064f23b286cda49b8adfd7b36155b7aaf60222abcc9'  # docs/h6/h6_dev_probe_eval_v2.json
 FRESH_RULE = {'sign_accuracy_min': 0.80, 'min_probes_per_sign': 20, 'inference': 'd4_average'}
 POLICY_PROBES = ROOT / 'tests' / 'fixtures' / 'stage7_probes_v1.json'
 E1_MANIFEST = ROOT / 'docs' / 'mcts-v8-results' / 'e1' / 'e1_manifest.json'
@@ -384,6 +387,8 @@ def value_probes(value_checkpoint, device: str) -> dict:
     from model.checkpoint import load_checkpoint
     from model.config import ModelConfig
 
+    if _file_sha(FRESH_PROBES) != FRESH_PROBES_SHA256:
+        raise ValueError(f'{FRESH_PROBES} is not the H6 dev-v2 probe set the rule names ({FRESH_PROBES_SHA256[:12]})')
     meta = json.loads(Path(value_checkpoint).with_name('best.json').read_text(encoding='utf-8'))
     model = load_checkpoint(value_checkpoint, ModelConfig(**meta['model_config']), device=device)
     model.eval()
@@ -391,7 +396,7 @@ def value_probes(value_checkpoint, device: str) -> dict:
     diagnostic = probes(value_fn, PROBE_FILE, device)
     fresh = fresh_probes(value_fn, FRESH_PROBES, device)
     return {'device': device, 'inference': FRESH_RULE['inference'],
-            'fresh': {**fresh_rule(fresh), 'file_sha256': _file_sha(FRESH_PROBES), 'rows': fresh['probes']},
+            'fresh': {**fresh_rule(fresh), 'file_sha256': FRESH_PROBES_SHA256, 'rows': fresh['probes']},
             'p93_p94': {name: {k: diagnostic[name][k] for k in ('original', 'd4_mean', 'expected_sign', 'pass',
                                                                  'side_to_move')} for name in ('P93', 'P94')},
             'p92': diagnostic['P92']}
@@ -502,13 +507,38 @@ FALLBACK_FROM_CYCLE = 2  # approved 2026-10-24 before any c1 Arena result; c1 is
 FALLBACK_ARMS = {'p_only': 'NOT_APPLICABLE', 'v_only': 'SAME_AS_OFFICIAL'}  # not played in a fallback cycle
 
 
+POLICY_RECORD_FORMAT = 'h7c-policy-train-v1'
+
+
+def check_fallback_record(record: dict, cycle: int, source: dict, value_meta: dict, path) -> None:
+    """The policy NO_CANDIDATE record that admits a fallback: this cycle, a clean tree, started from the parent policy
+    pair and trained on the same self-play source (models, runtime, generator commit) as the value candidate."""
+    inputs = record.get('inputs') or {}
+    trained_on = inputs.get('source') or {}
+    problems = {
+        'format': record.get('format') == POLICY_RECORD_FORMAT,
+        'cycle / verdict': (record.get('cycle'), record.get('verdict')) == (cycle, 'NO_CANDIDATE'),
+        'clean tree': (record.get('git') or {}).get('dirty') is False,
+        'parent policy pair': (inputs.get('parent_checkpoint_sha256'), inputs.get('parent_metadata_sha256')) == (
+            source['policy_checkpoint_sha256'], source['policy_metadata_sha256']),
+        'self-play models': trained_on.get('models') == source,
+        'self-play commit': trained_on.get('selfplay_git_commit') is not None
+        and trained_on.get('selfplay_git_commit') == value_meta.get('source_selfplay_git_commit'),
+        'runtime': trained_on.get('runtime_hash') is not None
+        and trained_on.get('runtime_hash') == value_meta.get('source_runtime_hash'),
+    }
+    failed = sorted(k for k, ok in problems.items() if not ok)
+    if failed:
+        raise ValueError(f'{path}: not the policy NO_CANDIDATE record of this fallback ({", ".join(failed)})')
+
+
 def check_candidate(policy_checkpoint, value_checkpoint, cycle: int, mode: str = JOINT,
                     policy_record=None) -> dict:
     """The candidate's metadata name this cycle and one self-play source; returns that source's four SHA-256.
 
     ``VALUE_ONLY_FALLBACK`` (cycle >= 2; the policy training gave NO_CANDIDATE, the value training a candidate):
     the policy is the self-play source's own policy, byte for byte (checkpoint and metadata SHA-256), and
-    ``policy_record`` (that policy training's ``record.json``) shows this cycle's NO_CANDIDATE from that policy."""
+    ``policy_record`` (that policy training's ``record.json``) passes ``check_fallback_record``."""
     from analysis import tb_v3_net
     from hybrid.h7c_train import POLICY_STAGE, SOURCE_MODEL_KEYS, VALUE_STAGE
 
@@ -529,10 +559,7 @@ def check_candidate(policy_checkpoint, value_checkpoint, cycle: int, mode: str =
             raise ValueError(f'{FALLBACK}: the policy is not the parent policy that played the self-play')
         if policy_record is None:
             raise ValueError(f"{FALLBACK} needs --policy-record (the policy training's record.json)")
-        record = _json(policy_record)
-        if (record.get('cycle'), record.get('verdict')) != (cycle, 'NO_CANDIDATE') or \
-                record['inputs']['parent_checkpoint_sha256'] != source['policy_checkpoint_sha256']:
-            raise ValueError(f'{policy_record}: not a NO_CANDIDATE policy training of cycle {cycle} from the parent')
+        check_fallback_record(_json(policy_record), cycle, source, value_meta, policy_record)
         return source
     policy_meta = _json(Path(policy_checkpoint).with_suffix('.json'))
     if policy_meta.get('stage') != POLICY_STAGE or policy_meta.get('cycle') != cycle:
@@ -581,6 +608,8 @@ def check_models(args, need_frozen_policy: bool) -> dict:
                        getattr(args, 'policy_record', None)) != models['parent_identity']:
         raise ValueError("the candidate was not trained on the parent's self-play")
     models['candidate_mode'] = mode
+    record = getattr(args, 'policy_record', None)
+    models['fallback_policy_record_sha256'] = _file_sha(Path(record)) if mode == FALLBACK else None
     models['champion_record_sha256'] = check_parent(args.cycle, models['parent_identity'],
                                                     getattr(args, 'champion', None), args.allow_stand_in)
     if need_frozen_policy:
@@ -629,7 +658,6 @@ def play(args, log=print) -> dict:
                 out.flush()
             run_chunks(pool, _play_chunk, [[t] for t in todo], progress, len, unit_name='games', on_result=keep)
     games = [finished[t['key']] for t in tasks]
-    from evaluation.external import fingerprint
     return {'format': f'{FORMAT}-arm', 'identity': identity, 'signature': sig, 'openings': openings,
             'wall_seconds': round(perf_counter() - started, 1), 'summary': summarize_arm(games),
             'fingerprint': fingerprint(games), 'games': games}
@@ -639,11 +667,14 @@ def tactical(args, log=print) -> dict:
     git = _git()
     if git['dirty'] is not False and not args.allow_dirty:
         raise ValueError('the tree is dirty (or git is unavailable): the tactical record must name its code commit')
+    if args.cycle < FALLBACK_FROM_CYCLE:
+        raise ValueError(f'{TACTICAL_RULE} applies from cycle {FALLBACK_FROM_CYCLE}: cycle 1 is historical and immutable')
     models = check_models(args, False)
     out = {'format': f'{FORMAT}-tactical', 'cycle': args.cycle, 'git': git, 'device': args.device,
            'candidate': models['candidate_identity'], 'parent': models['parent_identity'],
            'champion_record_sha256': models['champion_record_sha256'],
-           'candidate_mode': models['candidate_mode'], 'rule_version': TACTICAL_RULE,
+           'candidate_mode': models['candidate_mode'],
+           'fallback_policy_record_sha256': models['fallback_policy_record_sha256'], 'rule_version': TACTICAL_RULE,
            'files': {'value_probes': _file_sha(PROBE_FILE), 'fresh_probes': _file_sha(FRESH_PROBES),
                      'policy_probes': _file_sha(POLICY_PROBES), 'e1_manifest': _file_sha(E1_MANIFEST)}}
     for name in ('candidate', 'parent'):
@@ -675,6 +706,12 @@ def load_history(paths, cycle: int, parent: dict, champion_sha256: str | None) -
     return history
 
 
+def fingerprint(games: list[dict]) -> str:
+    from evaluation.external import fingerprint as games_fingerprint
+
+    return games_fingerprint(games)
+
+
 def verdict(args) -> dict:
     """One cycle's promotion record from its six arm outputs and its tactical record (all from one commit and
     the same candidate / parent / champion record)."""
@@ -688,6 +725,8 @@ def verdict(args) -> dict:
         if signature(record['identity']) != record['signature'] or any(
                 g['signature'] != record['signature'] for g in record['games']):
             raise ValueError(f'{path}: its games do not match its identity')
+        if record['summary'] != summarize_arm(record['games']) or record['fingerprint'] != fingerprint(record['games']):
+            raise ValueError(f'{path}: its summary or fingerprint is not the one its games give')
         arms[arm] = record
     modes = {r['identity'].get('candidate_mode', JOINT) for r in arms.values()}
     if len(modes) != 1:
@@ -700,7 +739,9 @@ def verdict(args) -> dict:
     if tact.get('rule_version') != TACTICAL_RULE or tact['judge'].get('rule_version') != TACTICAL_RULE:
         raise ValueError(f"{args.tactical} is a tactical record of rule {tact.get('rule_version', 'h7c-tactical-v1')}; "
                          f'verdicts from cycle 2 on need {TACTICAL_RULE}')
-    key = ('cycle', 'candidate', 'parent', 'champion_record_sha256')
+    if tact['cycle'] < FALLBACK_FROM_CYCLE:
+        raise ValueError('cycle 1 is historical and immutable: its verdict is not made again')
+    key = ('cycle', 'candidate', 'parent', 'champion_record_sha256', 'fallback_policy_record_sha256')
     shared = {json.dumps([r['identity'].get(k) for k in key] + [r['identity']['git']['commit'],
                          r['identity'].get('candidate_mode', JOINT)], sort_keys=True) for r in arms.values()}
     shared.add(json.dumps([tact.get(k) for k in key] + [tact['git']['commit'], tact.get('candidate_mode', JOINT)],
@@ -723,7 +764,8 @@ def verdict(args) -> dict:
                        'compare': tact['judge']['compare'],
                        'regressions_reported': tact['judge']['regressions_reported']}
     out = {'format': f'{FORMAT}-verdict', 'cycle': cycle, 'seed': arena_seed(cycle),
-           'git_commit': tact['git']['commit'], 'candidate_mode': mode, 'candidate': tact['candidate'],
+           'git_commit': tact['git']['commit'], 'candidate_mode': mode,
+           'fallback_policy_record_sha256': tact.get('fallback_policy_record_sha256'), 'candidate': tact['candidate'],
            'parent': tact['parent'],
            'champion_record_sha256': tact['champion_record_sha256'],
            'official': {**{k: official[k] for k in ('score', 'score_ci95', 'improvement', 'improvement_ci95', 'elo',

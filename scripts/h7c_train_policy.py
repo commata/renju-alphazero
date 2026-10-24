@@ -91,6 +91,7 @@ def run(args, log=print) -> dict:
                 'parent_checkpoint_sha256': record['inputs']['parent_checkpoint_sha256'],
                 'teacher_checkpoint_sha256': shas['checkpoint'], 'policy_rows_sha256': record['inputs']['policy_rows_sha256'],
                 'source_models': source['models'], 'source_selfplay_git_commit': source['selfplay_git_commit'],
+                'source_runtime_hash': source['runtime_hash'],
                 'best': result['record']['best'], 'teacher_guard_top1': result['record']['teacher_guard']['top1'],
                 'git': git}
         (out / 'best.json.tmp').write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')

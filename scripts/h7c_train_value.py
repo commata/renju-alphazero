@@ -126,6 +126,7 @@ def run(args, log=print) -> dict:
                 'training_sources': {'cycle_labels_sha256': cycle_manifest['labels_sha256'],
                                      'replay_anchor_labels_sha256': anchor},
                 'source_models': source['models'], 'source_selfplay_git_commit': source['selfplay_git_commit'],
+                'source_runtime_hash': source['runtime_hash'],
                 'mix': 'cycle:replay = 50:50 per epoch', 'config': tr.config_dict(cfg),
                 'best': result['record']['best'], 'git': git}
         (out / 'best.json.tmp').write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')

@@ -269,6 +269,8 @@ class CliTest(unittest.TestCase):
                                                              'replay_anchor_labels_sha256': manifest['labels_sha256']})
             self.assertEqual(leaf.meta['source_models'], {k: source_of(policy, value)[k] for k in tr.SOURCE_MODEL_KEYS})
             self.assertNotIn('labels_sha256', leaf.meta)
+            from tests.test_h7c_labels import game
+            self.assertEqual(leaf.meta['source_runtime_hash'], game()['runtime_hash'])  # checked by a c2+ fallback
             with self.assertRaises(ValueError):  # the same output directory twice
                 tv.run(args, log=quiet)
             with self.assertRaises(ValueError):  # a stand-in parent is neither the frozen H6 v3 nor a candidate
@@ -319,6 +321,7 @@ class CliTest(unittest.TestCase):
                 loaded = RootPolicy(tmp / 'out' / 'best.pt')  # the policy loader takes it
                 self.assertEqual((loaded.meta['stage'], loaded.meta['cycle']), ('H7-c-policy', 1))
                 self.assertEqual(loaded.meta['source_models'], {k: source[k] for k in tr.SOURCE_MODEL_KEYS})
+                self.assertEqual(loaded.meta['source_runtime_hash'], source['runtime_hash'])
                 again = lambda **kw: argparse.Namespace(**{**vars(args), **kw})  # noqa: E731
                 with self.assertRaises(ValueError):  # the frozen H3 is required as the teacher
                     tp.run(again(out_dir=tmp / 'o2', allow_stand_in=False), log=lambda *a, **k: None)

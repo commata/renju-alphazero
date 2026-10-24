@@ -16,6 +16,7 @@ workers, output files) is passed through to the runner unchanged.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from pathlib import Path
 import sys
 
@@ -51,6 +52,8 @@ def candidate_info(cycle: int, policy_checkpoint, value_checkpoint, device: str,
     identity = tb_v3_net.model_identity(policy_checkpoint, value_checkpoint)
     provenance = {'cycle': cycle, 'engine_id': tb_v3.ENGINE_ID, 'engine_hash': tb_v3.ENGINE_HASH,
                   'candidate_mode': mode, 'source_models': source,
+                  'fallback_policy_record_sha256': hashlib.sha256(Path(policy_record).read_bytes()).hexdigest()
+                  if mode == 'VALUE_ONLY_FALLBACK' else None,
                   **tb_v3_net.provenance(device, identity)}
     return {'label': f"h7c:c{cycle}:{provenance['model_hash'][:12]}" + ('' if device == 'cuda' else f'[{device}]'),
             'provenance': provenance}
