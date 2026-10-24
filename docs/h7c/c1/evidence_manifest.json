@@ -45,5 +45,18 @@
     "labels_report.json": "c7eb4fba48337bdb0f3b5c9beabf11e0689cc85a6f18bfe0853736a9d0056a6f",
     "value_rows.jsonl.gz": "110cd854117524630ab04f09d1f68493247760bf15ecda84c486eb7134f68253",
     "policy_rows.jsonl.gz": "6c38e508288c2cba652e83276d60288f68f7f5428ecd6fd68de8a331ebdeed61"
+  },
+  "training": {
+    "cycle_value_labels_sha256": "75bfb3d77cec4f6454ca2d89e21421f555d96794656f504edee5ce148d56610e",
+    "policy_verdict": "CANDIDATE",
+    "value_verdict": "CANDIDATE",
+    "policy_candidate": {
+      "checkpoint_sha256": "1c50d95784c351da4299e768e8beb59bc7c4c235fb3df262bc21ab649537d168",
+      "metadata_sha256": "6e0919fbbd38c7c0b557306e60238a64b9b2a0f653ee1c8749f272f9dbad5383"
+    },
+    "value_candidate": {
+      "checkpoint_sha256": "55ad3679168d4c6ef31f96c5faa3620e6c232d49cc1f55d6373ecd9a497cff49",
+      "metadata_sha256": "dfcd008b735a2f4f239c94638ac26284b86fc79712e89c7f9b9158b5f6295bf8"
+    }
   }
 }

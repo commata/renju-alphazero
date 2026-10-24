@@ -1,0 +1,76 @@
+{
+ "stage": "H6-2a",
+ "h7c_stage": "H7-c-value",
+ "track": "B",
+ "cycle": 1,
+ "policy_trained": true,
+ "value_trained": true,
+ "trunk_frozen": true,
+ "policy_head_frozen": true,
+ "parent_h3_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "parent_h3_metadata_sha256": "33679875e0ece99b6590959b03cf95557868b93894936a89891cb98cd1177e4e",
+ "parent_value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+ "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+ "model_config": {
+  "board_size": 15,
+  "input_planes": 6,
+  "channels": 64,
+  "blocks": 4,
+  "policy_channels": 2,
+  "value_channels": 1,
+  "value_hidden": 64
+ },
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "training_sources": {
+  "cycle_labels_sha256": "75bfb3d77cec4f6454ca2d89e21421f555d96794656f504edee5ce148d56610e",
+  "replay_anchor_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084"
+ },
+ "source_models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+  "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+ },
+ "source_selfplay_git_commit": "8b617324108917431724662ffab44e2b1e365c1a",
+ "mix": "cycle:replay = 50:50 per epoch",
+ "config": {
+  "seed": 20261025,
+  "batch_size": 1024,
+  "epochs": 3.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "augment_d4": true,
+  "evaluations": 10,
+  "h6_guard_ratio": 1.05,
+  "device": "cuda"
+ },
+ "best": {
+  "step": 94,
+  "objective": 0.4990491420030594,
+  "cycle_wmse": 0.4221157133579254,
+  "replay_wmse": 0.5759825706481934,
+  "eligible": true,
+  "cycle_val": {
+   "states": 1832,
+   "mse": 0.7066419124603271,
+   "sign_acc": 0.6425602436065674,
+   "mean_value": 0.17149443924427032,
+   "mean_target": 0.007096069864928722,
+   "saturated": 0.044213972985744476
+  },
+  "replay_val": {
+   "states": 106218,
+   "mse": 0.8570730686187744,
+   "sign_acc": 0.6632021069526672,
+   "mean_value": 0.11090496182441711,
+   "mean_target": 0.033534806221723557,
+   "saturated": 0.03187783434987068
+  }
+ },
+ "git": {
+  "commit": "dca48554582a04fe5ed3d808b963c83bdbbf3817",
+  "dirty": false
+ }
+}

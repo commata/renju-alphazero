@@ -1,0 +1,50 @@
+{
+ "stage": "H7-c-policy",
+ "track": "B",
+ "cycle": 1,
+ "policy_trained": true,
+ "value_trained": false,
+ "config": {
+  "channels": 64,
+  "blocks": 4,
+  "seed": 20261024,
+  "batch_size": 512,
+  "epochs": 2.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "kl_lambda": 0.5,
+  "augment_d4": true,
+  "evaluations": 10,
+  "guard_drop": 0.02,
+  "device": "cuda"
+ },
+ "parent_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "teacher_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "policy_rows_sha256": "6c38e508288c2cba652e83276d60288f68f7f5428ecd6fd68de8a331ebdeed61",
+ "source_models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+  "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+ },
+ "source_selfplay_git_commit": "8b617324108917431724662ffab44e2b1e365c1a",
+ "best": {
+  "step": 102,
+  "val": {
+   "rows": 1141,
+   "objective": 1.9209358823811349,
+   "ce": 1.8811024457712533,
+   "kl": 0.0954831387816357,
+   "top1_vs_target_mode": 0.5705521472392638
+  },
+  "guard_top1": 0.5086556285148763,
+  "guard_drop": 0.015457601558327316,
+  "eligible": true
+ },
+ "teacher_guard_top1": 0.5241132300732037,
+ "git": {
+  "commit": "dca48554582a04fe5ed3d808b963c83bdbbf3817",
+  "dirty": false
+ }
+}

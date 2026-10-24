@@ -1,0 +1,230 @@
+{
+ "format": "h7c-policy-train-v1",
+ "cycle": 1,
+ "config": {
+  "seed": 20261024,
+  "batch_size": 512,
+  "epochs": 2.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "kl_lambda": 0.5,
+  "augment_d4": true,
+  "evaluations": 10,
+  "guard_drop": 0.02,
+  "device": "cuda"
+ },
+ "git": {
+  "commit": "dca48554582a04fe5ed3d808b963c83bdbbf3817",
+  "dirty": false
+ },
+ "inputs": {
+  "policy_rows": "runs/h7c/c1/policy_rows.jsonl.gz",
+  "policy_rows_sha256": "6c38e508288c2cba652e83276d60288f68f7f5428ecd6fd68de8a331ebdeed61",
+  "parent_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "parent_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "teacher_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "h3_cache": "data/external/renjunet/h3_cache",
+  "source": {
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+    "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+   },
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "selfplay_git_commit": "8b617324108917431724662ffab44e2b1e365c1a",
+   "rows": 27293
+  }
+ },
+ "total_steps": 102,
+ "steps_per_epoch": 51,
+ "warmup_steps": 5,
+ "train_rows": 25625,
+ "val_rows": 1141,
+ "teacher_guard": {
+  "states": 127316,
+  "ce": 1.5916649842000845,
+  "top1": 0.5241132300732037,
+  "top3": 0.762732099657545,
+  "top5": 0.8521631216814854,
+  "diagnostic": {
+   "raw_top1_legal_rate": 0.553504665556568,
+   "raw_illegal_mass": 0.45545746715403873
+  },
+  "top1_by_ply": {
+   "5-9": 0.47913769123783034,
+   "10-14": 0.5211739373155754,
+   "15-19": 0.5336681839585622,
+   "20-29": 0.5317754345967513,
+   "30-49": 0.5271481843907857,
+   "50-1000": 0.5039975863629507
+  },
+  "states_by_ply": {
+   "5-9": 2876,
+   "10-14": 12539,
+   "15-19": 19113,
+   "20-29": 35090,
+   "30-49": 37811,
+   "50-1000": 19887
+  }
+ },
+ "parent_guard_top1": 0.5241132300732037,
+ "parent_val": {
+  "rows": 1141,
+  "objective": 2.0276356061021032,
+  "ce": 2.0276356061021032,
+  "kl": 0.0,
+  "top1_vs_target_mode": 0.544259421560035
+ },
+ "evaluations": [
+  {
+   "step": 10,
+   "val": {
+    "rows": 1141,
+    "objective": 1.960811471228637,
+    "ce": 1.9335729948373137,
+    "kl": 0.06529187354720942,
+    "top1_vs_target_mode": 0.5644171779141104
+   },
+   "guard_top1": 0.5151748405542116,
+   "guard_drop": 0.008938389518992063,
+   "eligible": true
+  },
+  {
+   "step": 20,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9432879087697195,
+    "ce": 1.9070406219188212,
+    "kl": 0.08688668643727022,
+    "top1_vs_target_mode": 0.5609114811568799
+   },
+   "guard_top1": 0.5094803481102139,
+   "guard_drop": 0.01463288196298973,
+   "eligible": true
+  },
+  {
+   "step": 31,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9407322421395705,
+    "ce": 1.9009060805351665,
+    "kl": 0.0954658043484728,
+    "top1_vs_target_mode": 0.5635407537248028
+   },
+   "guard_top1": 0.5073282226899997,
+   "guard_drop": 0.016785007383203987,
+   "eligible": true
+  },
+  {
+   "step": 41,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9348964039219982,
+    "ce": 1.8912485107635846,
+    "kl": 0.10462674373338203,
+    "top1_vs_target_mode": 0.5626643295354952
+   },
+   "guard_top1": 0.5043670866191209,
+   "guard_drop": 0.019746143454082765,
+   "eligible": true
+  },
+  {
+   "step": 51,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9312109717353199,
+    "ce": 1.894761054584794,
+    "kl": 0.08737294012758912,
+    "top1_vs_target_mode": 0.5766871165644172
+   },
+   "guard_top1": 0.510383612428917,
+   "guard_drop": 0.013729617644286596,
+   "eligible": true
+  },
+  {
+   "step": 61,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9264434894692155,
+    "ce": 1.8852581856649868,
+    "kl": 0.09872281851888705,
+    "top1_vs_target_mode": 0.5793163891323401
+   },
+   "guard_top1": 0.5074460397750479,
+   "guard_drop": 0.016667190298155776,
+   "eligible": true
+  },
+  {
+   "step": 71,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9307094242988607,
+    "ce": 1.8882713217572304,
+    "kl": 0.10172720516429228,
+    "top1_vs_target_mode": 0.5626643295354952
+   },
+   "guard_top1": 0.505356750133526,
+   "guard_drop": 0.01875647993967766,
+   "eligible": true
+  },
+  {
+   "step": 82,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9234795666493207,
+    "ce": 1.8797980800832603,
+    "kl": 0.10470728513573398,
+    "top1_vs_target_mode": 0.5723049956178791
+   },
+   "guard_top1": 0.5069433535455088,
+   "guard_drop": 0.01716987652769486,
+   "eligible": true
+  },
+  {
+   "step": 92,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9212617598323838,
+    "ce": 1.8807566690403155,
+    "kl": 0.09709304521063797,
+    "top1_vs_target_mode": 0.5705521472392638
+   },
+   "guard_top1": 0.5089933708253479,
+   "guard_drop": 0.01511985924785575,
+   "eligible": true
+  },
+  {
+   "step": 102,
+   "val": {
+    "rows": 1141,
+    "objective": 1.9209358823811349,
+    "ce": 1.8811024457712533,
+    "kl": 0.0954831387816357,
+    "top1_vs_target_mode": 0.5705521472392638
+   },
+   "guard_top1": 0.5086556285148763,
+   "guard_drop": 0.015457601558327316,
+   "eligible": true
+  }
+ ],
+ "best": {
+  "step": 102,
+  "val": {
+   "rows": 1141,
+   "objective": 1.9209358823811349,
+   "ce": 1.8811024457712533,
+   "kl": 0.0954831387816357,
+   "top1_vs_target_mode": 0.5705521472392638
+  },
+  "guard_top1": 0.5086556285148763,
+  "guard_drop": 0.015457601558327316,
+  "eligible": true
+ },
+ "verdict": "CANDIDATE",
+ "candidate": {
+  "checkpoint_sha256": "1c50d95784c351da4299e768e8beb59bc7c4c235fb3df262bc21ab649537d168",
+  "metadata_sha256": "6e0919fbbd38c7c0b557306e60238a64b9b2a0f653ee1c8749f272f9dbad5383"
+ }
+}
