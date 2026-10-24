@@ -23,7 +23,8 @@ moves, result) and every stored target and sampling event is recomputed with ``h
 the label step never trusts the generator's output. Rows carry the H6 fields plus ``h7c_provenance`` (runtime hash,
 the four model SHA-256, the self-play and label commits); ``h6_value_cache`` reads the H6 fields and ignores it.
 Outputs go under ``data/`` or ``runs/`` (never committed), written to ``.tmp`` files and moved into place only after
-everything passed.
+everything passed. The report records the label step's own ``git_commit`` and ``git_dirty``; a dirty tree is refused
+(``--allow-dirty`` for tests only).
 
     python -u scripts/h7c_labels.py --games runs/h7c/c1/selfplay_8801.jsonl --workers 12 --fast fast4 \\
         --value-output runs/h7c/c1/value_rows.jsonl.gz --policy-output runs/h7c/c1/policy_rows.jsonl.gz \\
@@ -345,7 +346,12 @@ def main(argv=None) -> int:
     parser.add_argument('--value-output', type=Path, required=True)
     parser.add_argument('--policy-output', type=Path, required=True)
     parser.add_argument('--report', type=Path)
+    parser.add_argument('--allow-dirty', action='store_true', help='tests only: labels from a dirty tree')
     args = parser.parse_args(argv)
+    from run_mcts_v8_benchmark import _git_dirty
+    git = {'commit': h6b._git_commit(), 'dirty': _git_dirty()}
+    if git['dirty'] is not False and not args.allow_dirty:
+        parser.error('the tree is dirty (or git is unavailable): training labels must name a clean code commit')
     for path in (args.value_output, args.policy_output):
         if not _under_data_or_runs(path):
             parser.error(f'{path}: label rows go under data/ or runs/, never into the repository')
@@ -360,7 +366,7 @@ def main(argv=None) -> int:
     except ValueError as exc:
         parser.error(str(exc))
     payload = {'format': FORMAT, 'value_row_format': rows[0].to_dict()['format'] if rows else None,
-               'policy_row_format': POLICY_FORMAT, 'git_commit': h6b._git_commit(),
+               'policy_row_format': POLICY_FORMAT, 'git_commit': git['commit'], 'git_dirty': git['dirty'],
                'games': [str(p) for p in args.games],
                'settings': {k: getattr(args, k) for k in ('from_ply', 'outcome_weight', 'proof_weight', 'prove_losses',
                                                           'vct1', 'probe_game_min_ply', 'fast')},

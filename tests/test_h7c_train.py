@@ -256,6 +256,11 @@ class CliTest(unittest.TestCase):
             again = lambda **kw: argparse.Namespace(**{**vars(args), **kw})  # noqa: E731
             record = tv.run(args, log=quiet)
             self.assertEqual(record['verdict'], 'CANDIDATE')
+            for split in ('cycle_val', 'replay_val'):  # the parent's diagnostics, in the evaluations' format
+                self.assertEqual(set(record['parent_val'][split]), set(record['evaluations'][0][split]))
+            self.assertTrue({'states', 'mse', 'sign_acc', 'mean_value', 'mean_target', 'saturated'}
+                            <= set(record['parent_val']['replay_val']))  # (this tiny cycle's val split is empty)
+            self.assertEqual(set(record['parent_val']) >= {'cycle_wmse', 'replay_wmse', 'objective'}, True)
             from hybrid.h6_value_leaf import ValueLeaf
             leaf = ValueLeaf(tmp / 'out' / 'best.pt', expected_sha256=None)  # the frozen loader takes it
             self.assertEqual((leaf.meta['h7c_stage'], leaf.meta['cycle']), ('H7-c-value', 1))

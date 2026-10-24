@@ -38,17 +38,19 @@ def x2_seed(cycle: int) -> int:
     return seed
 
 
-def candidate_info(cycle: int, policy_checkpoint, value_checkpoint, device: str) -> dict:
+def candidate_info(cycle: int, policy_checkpoint, value_checkpoint, device: str, mode: str = 'JOINT',
+                   policy_record=None) -> dict:
     """Label and provenance of the candidate: the frozen engine identity, fast5 on this device, the four model SHA,
-    and the self-play source both models were trained on (their metadata must name this cycle)."""
+    the self-play source it was trained on (its metadata must name this cycle) and its candidate mode
+    (``VALUE_ONLY_FALLBACK``: the parent policy with the cycle's value, ``h7c_arena.check_candidate``)."""
     from analysis import tb_v3, tb_v3_net
     from h7c_arena import check_candidate
 
     tb_v3.check_identity()
-    source = check_candidate(policy_checkpoint, value_checkpoint, cycle)
+    source = check_candidate(policy_checkpoint, value_checkpoint, cycle, mode, policy_record)
     identity = tb_v3_net.model_identity(policy_checkpoint, value_checkpoint)
     provenance = {'cycle': cycle, 'engine_id': tb_v3.ENGINE_ID, 'engine_hash': tb_v3.ENGINE_HASH,
-                  'source_models': source,
+                  'candidate_mode': mode, 'source_models': source,
                   **tb_v3_net.provenance(device, identity)}
     return {'label': f"h7c:c{cycle}:{provenance['model_hash'][:12]}" + ('' if device == 'cuda' else f'[{device}]'),
             'provenance': provenance}
@@ -79,10 +81,13 @@ def main(argv=None) -> int:
     parser.add_argument('--policy-checkpoint', type=Path, required=True)
     parser.add_argument('--value-checkpoint', type=Path, required=True)
     parser.add_argument('--value-device', choices=('cuda', 'cpu'), default='cuda')
+    parser.add_argument('--candidate-mode', choices=('JOINT', 'VALUE_ONLY_FALLBACK'), default='JOINT')
+    parser.add_argument('--policy-record', type=Path, help="VALUE_ONLY_FALLBACK: the policy training's record.json")
     args, rest = parser.parse_known_args(argv)
     try:
         forwarded = runner_argv(args, rest)
-        info = candidate_info(args.cycle, args.policy_checkpoint, args.value_checkpoint, args.value_device)
+        info = candidate_info(args.cycle, args.policy_checkpoint, args.value_checkpoint, args.value_device,
+                              args.candidate_mode, args.policy_record)
     except (OSError, ValueError, RuntimeError) as exc:
         parser.error(str(exc))
     return runner.main(forwarded, h7c=info)

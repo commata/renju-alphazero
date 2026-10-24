@@ -168,5 +168,31 @@ class LabelTest(unittest.TestCase):
             self.assertEqual(sorted(p.name for p in Path(tmp).iterdir()), ['report.json', 'value.jsonl.gz'])
 
 
+class LabelCommandTest(unittest.TestCase):
+    def test_git_provenance_and_dirty_tree(self):
+        from contextlib import redirect_stderr
+        import io
+        from unittest import mock
+
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            games = tmp / 'games.jsonl'
+            games.write_text(''.join(json.dumps(game(i)) + '\n' for i in range(3)), encoding='utf-8')
+            argv = lambda name, *extra: ['--games', str(games), '--value-output', str(tmp / f'{name}_v.jsonl.gz'),  # noqa: E731
+                                         '--policy-output', str(tmp / f'{name}_p.jsonl.gz'),
+                                         '--report', str(tmp / f'{name}.json'), *extra]
+            with mock.patch('run_mcts_v8_benchmark._git_dirty', lambda: True), \
+                    self.assertRaises(SystemExit), redirect_stderr(io.StringIO()):
+                lab.main(argv('dirty'))  # training labels from a dirty tree: refused
+            self.assertFalse((tmp / 'dirty.json').exists())
+            with mock.patch('run_mcts_v8_benchmark._git_dirty', lambda: False):
+                lab.main(argv('clean'))
+            report = json.loads((tmp / 'clean.json').read_text(encoding='utf-8'))
+            self.assertIs(report['git_dirty'], False)
+            self.assertIn('git_commit', report)
+            with mock.patch('run_mcts_v8_benchmark._git_dirty', lambda: True):
+                lab.main(argv('allowed', '--allow-dirty'))  # tests only, and recorded as dirty
+            self.assertIs(json.loads((tmp / 'allowed.json').read_text(encoding='utf-8'))['git_dirty'], True)
+
 if __name__ == '__main__':
     unittest.main()

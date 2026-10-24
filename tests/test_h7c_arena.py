@@ -113,9 +113,7 @@ class VerdictRuleTest(unittest.TestCase):
 
     def test_tactical_judge(self):
         def side(unsound=0, sign=True, hits=12, rescue=0.6):
-            return {'e1': {'metrics': {'unsound_witness': unsound, 'false_veto': 0,
-                                       'rescue_rate': {'value': rescue, 'n': 'x'}, 'veto_recall': {'value': 1.0}}},
-                    'value_probes': {'pass': sign}, 'must_block': {'hits': hits, 'anchor': 9}}
+            return judge_side(unsound, hits, rescue, value_side(fresh() if sign else fresh(win=(70, 93))))
         ok = ar.tactical_judge(side(rescue=0.5, hits=10), side())  # 2 below the parent: allowed
         self.assertEqual((ok['verdict'], ok['must_block_min']), ('PASS', 10))
         self.assertEqual(ok['regressions_reported'], ['must_block_hits', 'rescue_rate'])  # reported, not gated
@@ -123,6 +121,60 @@ class VerdictRuleTest(unittest.TestCase):
         for bad, parent in ((side(unsound=1), side()), (side(sign=False), side()), (side(hits=8), side(hits=8)),
                             (side(hits=9), side(hits=12))):  # 3 below the parent
             self.assertEqual(ar.tactical_judge(bad, parent)['verdict'], 'FAIL')
+
+    def test_fresh_rule_boundaries(self):
+        self.assertTrue(fresh(win=(16, 20), loss=(16, 20))['pass'])          # exactly 0.80, exactly 20: PASS
+        self.assertFalse(fresh(win=(15, 20), loss=(20, 20))['pass'])         # 0.75
+        self.assertFalse(fresh(win=(19, 19), loss=(20, 20))['pass'])         # 19 probes: too few, even all right
+        self.assertFalse(fresh(win=(20, 20), loss=(15, 20))['pass'])         # the loss sign alone fails
+        one = fresh(win=(16, 20))
+        self.assertEqual((one['win']['correct'], one['win']['probes'], one['win']['accuracy']), (16, 20, 0.8))
+
+    def test_v2_value_item_is_the_fresh_gate_not_p93_p94(self):
+        item = ar.FRESH_ITEM
+        wrong_p9x = judge_side(value=value_side(p93=False, p94=False))  # the parent's own state: both wrong
+        self.assertTrue(ar.tactical_judge(wrong_p9x, judge_side())['items'][item])
+        right_p9x = judge_side(value=value_side(fresh(loss=(60, 81)), p93=True, p94=True))
+        judged = ar.tactical_judge(right_p9x, judge_side())
+        self.assertEqual((judged['items'][item], judged['verdict']), (False, 'FAIL'))
+        self.assertNotIn('P93 / P94 value sign', judged['items'])
+        evidence = judged['evidence']
+        self.assertEqual((evidence['rule_version'], evidence['value_device'], evidence['inference']),
+                         ('h7c-tactical-v2', 'cpu', 'd4_average'))
+        self.assertEqual(evidence['p93_p94_diagnostic']['candidate']['P94']['pass'], True)   # recorded, not gated
+        self.assertEqual(evidence['fresh']['parent_diagnostic']['loss']['correct'], 78)
+        self.assertEqual(evidence['must_block'], {'candidate': 12, 'parent': 12, 'min': 10})
+        self.assertEqual(set(judged['items']), {'unsound_witness == 0', item,
+                                                'must_block >= max(B400 anchor, parent - 2)'})
+        with self.assertRaises(ValueError):  # candidate and parent measured differently
+            ar.tactical_judge(judge_side(value=value_side(device='cuda')), judge_side())
+
+
+def fresh(win=(93, 93), loss=(78, 81)):
+    """A ``value_probes['fresh']``-like record from (correct, probes) per sign, through the real rule."""
+    rows = [{'expected_sign': 1, 'correct': i < win[0]} for i in range(win[1])] + \
+           [{'expected_sign': -1, 'correct': i < loss[0]} for i in range(loss[1])]
+    summary = {'probes': rows, 'win': {'games': win[1], 'mean_value': 0.5}, 'loss': {'games': loss[1], 'mean_value': -0.5}}
+    return {**ar.fresh_rule(summary), 'file_sha256': 'f' * 64}
+
+
+def value_side(fresh_record=None, p93=False, p94=False, device='cpu'):
+    return {'device': device, 'inference': 'd4_average', 'fresh': fresh_record or fresh(),
+            'p93_p94': {'P93': {'d4_mean': 0.1 if p93 else -0.01, 'expected_sign': 1, 'pass': p93},
+                        'P94': {'d4_mean': -0.1 if p94 else 0.98, 'expected_sign': -1, 'pass': p94}}}
+
+
+def judge_side(unsound=0, hits=12, rescue=0.6, value=None):
+    return {'e1': {'metrics': {'unsound_witness': unsound, 'false_veto': 0,
+                               'rescue_rate': {'value': rescue, 'n': 'x'}, 'veto_recall': {'value': 1.0}}},
+            'value_probes': value or value_side(), 'must_block': {'hits': hits, 'anchor': 9}}
+
+
+def judge_record(**items):
+    """A v2 tactical judge for the verdict tests."""
+    judged = ar.tactical_judge(judge_side(), judge_side())
+    judged['items'].update(items)
+    return judged
 
 
 def write_arm(tmp, arm, results, **identity):
@@ -148,7 +200,7 @@ class VerdictCommandTest(unittest.TestCase):
         self.tactical.write_text(json.dumps({
             'cycle': 1, 'git': {'commit': 'abc'}, 'candidate': {'c': 1}, 'parent': {'p': 1},
             'champion_record_sha256': None,
-            'judge': {'items': {'unsound_witness == 0': True}, 'compare': {}, 'regressions_reported': []}}))
+            'rule_version': ar.TACTICAL_RULE, 'judge': judge_record()}))
 
     def arms(self, official, monitoring=None, tmp=None, **extra):
         tmp = tmp or self.tmp.name
@@ -187,7 +239,7 @@ class VerdictCommandTest(unittest.TestCase):
                 tactical.write_text(json.dumps({
                     'cycle': 2, 'git': {'commit': 'abc'}, 'candidate': {'c': 2}, 'parent': parent,
                     'champion_record_sha256': champion,
-                    'judge': {'items': {'unsound_witness == 0': True}, 'compare': {}, 'regressions_reported': []}}))
+                    'rule_version': ar.TACTICAL_RULE, 'judge': judge_record()}))
                 ident = {'cycle': 2, 'candidate': {'c': 2}, 'parent': parent, 'champion_record_sha256': champion}
                 return self.run_verdict(self.arms([('win', 'loss')] * 50, tmp=tmp, all=ident), history, tactical)
             out = cycle2({'c': 1})
@@ -414,8 +466,9 @@ class GameTest(unittest.TestCase):
         self.assertEqual((row['result'], row['illegal']['side']), ('opponent_illegal', 'opponent'))  # never scored
 
     def test_value_and_policy_probes(self):
-        probes = ar.value_probes(self.value)
-        self.assertEqual(set(probes) >= {'P93', 'P94', 'P92', 'pass'}, True)
+        probes = ar.value_probes(self.value, 'cpu')
+        self.assertTrue(set(probes) >= {'device', 'inference', 'fresh', 'p93_p94', 'p92'})
+        self.assertEqual(probes['fresh']['win']['probes'] + probes['fresh']['loss']['probes'], 174)
         block = ar.must_block(self.policy)
         self.assertEqual((block['anchor'], block['total'] > 0), (9, True))
 
@@ -432,9 +485,17 @@ class GameTest(unittest.TestCase):
         with TemporaryDirectory() as tmp, mock.patch.object(ar, 'e1_suite', e1):
             out = ar.tactical(self.args(tmp), log=lambda *a, **k: None)
         self.assertEqual(seen, [('candidate', str(self.policy)), ('parent', str(self.parent_policy))])
-        self.assertEqual(set(out['judge']['items']), {'unsound_witness == 0', 'P93 / P94 value sign',
+        self.assertEqual(set(out['judge']['items']), {'unsound_witness == 0', ar.FRESH_ITEM,
                                                       'must_block >= max(B400 anchor, parent - 2)'})
-        self.assertEqual(set(out['files']), {'value_probes', 'policy_probes', 'e1_manifest'})
+        self.assertEqual(set(out['files']), {'value_probes', 'fresh_probes', 'policy_probes', 'e1_manifest'})
+        self.assertEqual(out['rule_version'], 'h7c-tactical-v2')
+        for who in ('candidate_result', 'parent_result'):  # the value probes ran on --device, both sides alike
+            probes = out[who]['value_probes']
+            self.assertEqual((probes['device'], probes['inference']), ('cpu', 'd4_average'))
+            self.assertEqual(probes['fresh']['file_sha256'], out['files']['fresh_probes'])
+            self.assertEqual((probes['fresh']['win']['probes'], probes['fresh']['loss']['probes']), (93, 81))
+            self.assertEqual(set(probes['p93_p94']), {'P93', 'P94'})
+        self.assertEqual(out['judge']['evidence']['value_device'], 'cpu')
 
     def test_x2_candidate_against_the_fake_engine(self):
         from analysis import tb_v3_net
@@ -478,6 +539,157 @@ class X2CommandTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 x2.runner_argv(args, bad)
 
+
+
+class TacticalRuleVersionTest(unittest.TestCase):
+    def test_v1_tactical_record_refused(self):
+        with TemporaryDirectory() as tmp:
+            tactical = Path(tmp) / 'tactical.json'
+            tactical.write_text(json.dumps({'cycle': 1, 'git': {'commit': 'abc'}, 'candidate': {'c': 1},
+                                            'parent': {'p': 1}, 'champion_record_sha256': None,
+                                            'judge': {'items': {'P93 / P94 value sign': True}, 'compare': {},
+                                                      'regressions_reported': []}}))
+            arms = [write_arm(tmp, arm, [('win', 'win')] * ar.ARMS[arm]['pairs']) for arm in ar.ARMS]
+            with self.assertRaises(ValueError) as caught:
+                ar.verdict(argparse.Namespace(arms=arms, tactical=tactical, history=[]))
+            self.assertIn('h7c-tactical-v2', str(caught.exception))
+
+
+class FallbackVerdictTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.c1 = Path(self.tmp.name) / 'c1.json'
+        self.c1.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 1, 'next_champion': {'p': 1},
+                                       'promotion': {'improvement_lower': -0.2}, 'tactical': {'verdict': 'FAIL'}}))
+        self.ident = {'cycle': 2, 'candidate': {'c': 2}, 'parent': {'p': 1},
+                      'champion_record_sha256': ar._file_sha(self.c1)}
+
+    def tactical(self, mode):
+        path = Path(self.tmp.name) / f'tactical_{mode}.json'
+        path.write_text(json.dumps({**self.ident, 'git': {'commit': 'abc'}, 'candidate_mode': mode,
+                                    'rule_version': ar.TACTICAL_RULE, 'judge': judge_record()}))
+        return path
+
+    def arms(self, mode, names):
+        return [write_arm(self.tmp.name, arm, [('win', 'win')] * ar.ARMS[arm]['pairs'],
+                          **self.ident, candidate_mode=mode) for arm in names]
+
+    def run_verdict(self, arms, mode):
+        return ar.verdict(argparse.Namespace(arms=arms, tactical=self.tactical(mode), history=[str(self.c1)]))
+
+    def test_fallback_cycle(self):
+        played = ('official', 'mon_v8_full', 'mon_puct_policy', 'mon_e2')
+        out = self.run_verdict(self.arms(ar.FALLBACK, played), ar.FALLBACK)
+        self.assertEqual(out['candidate_mode'], 'VALUE_ONLY_FALLBACK')
+        self.assertEqual(out['diagnosis'], {'p_only': 'NOT_APPLICABLE', 'v_only': 'SAME_AS_OFFICIAL'})
+        self.assertEqual(set(out['fingerprints']), set(played))
+        self.assertEqual((out['promotion']['decision'], out['next_champion']), ('PROMOTE', {'c': 2}))
+        self.assertIsNotNone(out['promotion']['improvement_lower'])  # a valid fallback Arena counts for convergence
+        with self.assertRaises(ValueError):  # p_only / v_only are not played in a fallback cycle
+            self.run_verdict(self.arms(ar.FALLBACK, played + ('p_only',)), ar.FALLBACK)
+        with self.assertRaises(ValueError):  # a joint cycle needs every arm
+            self.run_verdict(self.arms(ar.JOINT, played), ar.JOINT)
+        with self.assertRaises(ValueError):  # the arms and the tactical record in different modes
+            self.run_verdict(self.arms(ar.FALLBACK, played), ar.JOINT)
+        mixed = self.arms(ar.FALLBACK, played[:-1]) + self.arms(ar.JOINT, played[-1:])
+        with self.assertRaises(ValueError):  # arms of two modes
+            self.run_verdict(mixed, ar.FALLBACK)
+
+
+class NoCandidateFallbackBoundaryTest(unittest.TestCase):
+    def test_policy_only_failure_needs_the_fallback_arena_from_cycle_2(self):
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy, value = dummy_models(tmp / 'parent', 'parent')
+            records = {}
+            for name, path, verdict in (('policy', policy, 'NO_CANDIDATE'), ('value', value, 'CANDIDATE')):
+                records[name] = tmp / f'{name}.json'
+                records[name].write_text(json.dumps({'cycle': 2, 'verdict': verdict, 'inputs': {
+                    'parent_checkpoint_sha256': ar._file_sha(path)}}))
+            c1 = tmp / 'c1.json'
+            from analysis import tb_v3_net
+            c1.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 1,
+                                      'next_champion': tb_v3_net.model_identity(policy, value),
+                                      'promotion': {'improvement_lower': -0.2}, 'tactical': {'verdict': 'FAIL'}}))
+            args = argparse.Namespace(cycle=2, policy_record=records['policy'], value_record=records['value'],
+                                      parent_policy=policy, parent_value=value, champion=c1, history=[str(c1)],
+                                      allow_stand_in=True)
+            with self.assertRaises(ValueError) as caught:
+                ar.no_candidate(args)
+            self.assertIn('VALUE_ONLY_FALLBACK', str(caught.exception))
+            for name in records:  # value NO_CANDIDATE stays a no-candidate cycle
+                data = json.loads(records[name].read_text())
+                records[name].write_text(json.dumps({**data, 'verdict': 'CANDIDATE' if name == 'policy'
+                                                     else 'NO_CANDIDATE'}))
+            self.assertEqual(ar.no_candidate(args)['promotion']['reason'], 'NO_CANDIDATE')
+
+
+@unittest.skipUnless(fast5.available(), 'python -m rt30.vcfcore.build first')
+class FallbackCandidateTest(unittest.TestCase):
+    """The fallback candidate: the parent policy byte for byte, the cycle's value, the policy NO_CANDIDATE record."""
+
+    def setUp(self):
+        from analysis import tb_v3_net
+        from tests.test_tb_v3_net import write_models
+
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        tmp = Path(self.tmp.name)
+        self.parent_policy, self.parent_value = write_models(tmp / 'p', seed=2)
+        _, self.value = write_candidate(tmp / 'c2', self.parent_policy, self.parent_value, cycle=2, seed=5)
+        self.record = tmp / 'policy_record.json'
+        self.write_record(2, 'NO_CANDIDATE')
+        self.champion = tmp / 'c1.json'
+        self.champion.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 1, 'next_champion':
+                                             tb_v3_net.model_identity(self.parent_policy, self.parent_value)}))
+
+    def tearDown(self):
+        from hybrid.h6_fast import install
+        fast5.uninstall()
+        install('off')
+        ar._MODELS.clear()
+
+    def write_record(self, cycle, verdict, parent=None):
+        self.record.write_text(json.dumps({'cycle': cycle, 'verdict': verdict, 'inputs': {
+            'parent_checkpoint_sha256': parent or ar._file_sha(self.parent_policy)}}))
+
+    def args(self, tmp, **kw):
+        base = {'candidate_mode': ar.FALLBACK, 'policy_record': self.record, 'champion': self.champion, 'cycle': 2}
+        return play_args(tmp, self.parent_policy, self.value, self.parent_policy, self.parent_value, **{**base, **kw})
+
+    def test_fallback_candidate(self):
+        source = ar.check_candidate(self.parent_policy, self.value, 2, ar.FALLBACK, self.record)
+        from analysis import tb_v3_net
+        self.assertEqual(source, tb_v3_net.model_identity(self.parent_policy, self.parent_value))
+        with self.assertRaises(ValueError):  # a joint candidate needs a cycle policy
+            ar.check_candidate(self.parent_policy, self.value, 2)
+        with self.assertRaises(ValueError):  # not before cycle 2
+            ar.check_candidate(self.parent_policy, self.value, 1, ar.FALLBACK, self.record)
+        with self.assertRaises(ValueError):  # no NO_CANDIDATE record
+            ar.check_candidate(self.parent_policy, self.value, 2, ar.FALLBACK, None)
+        other_policy, _ = write_candidate(Path(self.tmp.name) / 'o', self.parent_policy, self.parent_value, 2, 9)
+        with self.assertRaises(ValueError):  # the policy must be the parent's, byte for byte
+            ar.check_candidate(other_policy, self.value, 2, ar.FALLBACK, self.record)
+        for cycle, verdict, parent in ((2, 'CANDIDATE', None), (3, 'NO_CANDIDATE', None), (2, 'NO_CANDIDATE', 'e' * 64)):
+            self.write_record(cycle, verdict, parent)
+            with self.assertRaises(ValueError):  # the record must be this cycle's NO_CANDIDATE from the parent
+                ar.check_candidate(self.parent_policy, self.value, 2, ar.FALLBACK, self.record)
+
+    def test_fallback_arena_and_x2(self):
+        quiet = lambda *a, **k: None  # noqa: E731
+        with TemporaryDirectory() as tmp:
+            out = ar.play(self.args(tmp, max_plies=5), log=quiet)
+            self.assertEqual((out['identity']['candidate_mode'], out['identity']['seed']), ('VALUE_ONLY_FALLBACK', 8732))
+            self.assertEqual(out['identity']['tested']['models']['policy_checkpoint_sha256'],
+                             ar._file_sha(self.parent_policy))
+            for arm in ('p_only', 'v_only'):
+                with self.assertRaises(ValueError):
+                    ar.play(self.args(tmp, arm=arm, jsonl=Path(tmp) / f'{arm}.jsonl'), log=quiet)
+        info = x2.candidate_info(2, self.parent_policy, self.value, 'cpu', ar.FALLBACK, self.record)
+        self.assertEqual(info['provenance']['candidate_mode'], 'VALUE_ONLY_FALLBACK')
+        with self.assertRaises(ValueError):
+            x2.candidate_info(2, self.parent_policy, self.value, 'cpu')  # joint mode refuses the parent policy
 
 if __name__ == '__main__':
     unittest.main()

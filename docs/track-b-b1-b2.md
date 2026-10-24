@@ -165,6 +165,12 @@ B2-H6
 - **크기(§13 고정):** 고정 상대당 25쌍(50판) × 상대 3종(`v8:full`, H5 `puct_policy`, E2 상대) = 150판, 그리고 직전 checkpoint와 50쌍(100판). 주기당 약 250판.
   B1-Champion-v1이 확정된 뒤의 B2·B1-Matched 주기에는 B1-Champion-v1과의 25쌍을 기록용으로 더한다.
 - 전술 gate: 금수 오류 0, `unsound_witness` 0, P93·P94 value 부호, must_block probe, E1 suite 지표.
+  - **정정(protocol erratum, 2026-10-24, H7-c2부터):** P93·P94 value 부호는 hard gate에서 진단 기록으로 내린다.
+    - 이유: 출발점인 동결 H6 v3 자체가 두 국면을 이미 틀린다(P94 +0.983, P93 −0.011, `docs/h6-value.md` H6-3D). 그래서 parent도 만족하지 못하는 조건이었다. H6에서도 같은 이유로 G4를 fresh probe로 판정했다.
+    - 대신 value 항목은 H6 G4의 사전 규칙을 그대로 쓴다: `docs/h6/h6_fresh_dev_probes_v2.json`에서 승 · 패 부호 정확도가 각각 ≥ 0.80이고, 부호마다 probe가 20개 이상, D4 평균 추론.
+    - 새 parent 대비 기준은 두지 않는다. parent 값은 진단으로 함께 기록한다.
+    - c1 결과를 보고 성능 기준을 완화한 것이 아니다. 잘못된 항목을 기존 규칙으로 바로잡은 것이다. c1 verdict는 고쳐 쓰지 않는다(공식 Arena만으로도 승급 실패).
+    - must_block은 H7-c에서 max(9, parent − 2)로 정했다(`docs/h7-c1.md`). E1 비율 지표는 기록만 한다.
 - 진행 확인과 곡선 그리기에 쓴다. 승급은 계열 안에서 직전 checkpoint를 상대로만 판정한다(§3).
 - 평가 대국은 어느 계열의 학습에도 쓰지 않는다.
 

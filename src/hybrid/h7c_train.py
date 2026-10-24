@@ -427,9 +427,12 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
 
     base = val_metrics()
     record = {'total_steps': total, 'steps_per_epoch': per_epoch, 'warmup_steps': warm, 'train_rows_per_epoch': n,
+              # the parent's diagnostics in the evaluations' format (measurement only: selection and guard unchanged)
               'union_masking': dropped, 'parent_val': {'objective': base['objective'],
                                                        'cycle_wmse': base['cycle_val']['weighted_mse'],
-                                                       'replay_wmse': base['replay_val']['weighted_mse']},
+                                                       'replay_wmse': base['replay_val']['weighted_mse'],
+                                                       'cycle_val': base['cycle_val']['all'],
+                                                       'replay_val': base['replay_val']['all']},
               'frozen_state_sha256': frozen, 'evaluations': []}
     best, best_state, step, epoch = None, None, 0, 0
     generator = torch.Generator().manual_seed(cfg.seed)
