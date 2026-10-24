@@ -1,0 +1,80 @@
+{
+ "format": "h7c-selfplay-v1-summary",
+ "identity": {
+  "format": "h7c-selfplay-v1",
+  "cycle": 1,
+  "run_seed": 8801,
+  "engine_id": "TB-V3",
+  "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+  "runtime": "fast5",
+  "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+  "value_device": "cuda",
+  "models": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+   "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  },
+  "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+  "frozen_models": true,
+  "opening_rule": {
+   "random_plies": 2,
+   "radius": 2
+  },
+  "sampling": {
+   "format": "h7c-sampling-v1",
+   "plies": 4,
+   "temperature": 1.0
+  },
+  "target_format": "h7c-target-v1",
+  "generator_git": {
+   "commit": "8b617324108917431724662ffab44e2b1e365c1a",
+   "dirty": false
+  }
+ },
+ "git": {
+  "commit": "8b617324108917431724662ffab44e2b1e365c1a",
+  "dirty": false
+ },
+ "start": 0,
+ "games": 1000,
+ "workers": 6,
+ "wall_seconds": 4291.4,
+ "summary": {
+  "games": 1000,
+  "results": {
+   "white": 408,
+   "black": 544,
+   "draw": 48
+  },
+  "moves": 44639,
+  "routes": {
+   "tree": 22068,
+   "stage4": 7765,
+   "stage5": 854,
+   "stage2": 8265,
+   "own_vct": 775,
+   "own_vcf": 2605,
+   "stage3": 931,
+   "stage1": 952,
+   "own_vct2": 424
+  },
+  "events": {
+   "sampled": 3839,
+   "engine": 40639,
+   "no_distribution": 161
+  },
+  "target_kinds": {
+   "visits": 21956,
+   "none": 16996,
+   "proof_one_hot": 5687
+  },
+  "length_mean": 47.64,
+  "move_seconds": {
+   "mean": 0.5642,
+   "p99": 2.7749,
+   "max": 6.5443
+  },
+  "game_minutes": 420.4
+ }
+}

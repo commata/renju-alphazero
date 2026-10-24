@@ -1,0 +1,49 @@
+{
+  "format": "h7c-c1-evidence-v1",
+  "cycle": 1,
+  "run_seed": 8801,
+  "selfplay": {
+    "generator_commit": "8b617324108917431724662ffab44e2b1e365c1a",
+    "generator_dirty": false,
+    "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+    "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+    "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+    "games": 1000,
+    "results": {
+      "white": 408,
+      "black": 544,
+      "draw": 48
+    },
+    "moves": 44639,
+    "target_kinds": {
+      "visits": 21956,
+      "none": 16996,
+      "proof_one_hot": 5687
+    }
+  },
+  "labels": {
+    "label_commit": "8b617324108917431724662ffab44e2b1e365c1a",
+    "games_in": 1000,
+    "games_kept": 991,
+    "dropped": {
+      "probe_game": 9
+    },
+    "value_labelled": 41401,
+    "policy_rows": 27293,
+    "policy_unmasked_by_kind": {
+      "visits": 21179,
+      "proof_one_hot": 5587
+    },
+    "policy_masked": {
+      "probe_position": 175,
+      "cross_split_duplicate": 352
+    }
+  },
+  "files_sha256": {
+    "selfplay_8801.json": "6684bc8f1d618b2ce2b15c89d0aa1e0af995b610123353dcbbd78da9b8383092",
+    "selfplay_8801.jsonl": "27cede34a5456bc599badb32f0bcf8ed3b12d04e905c00c22d9d7e8a83189834",
+    "labels_report.json": "c7eb4fba48337bdb0f3b5c9beabf11e0689cc85a6f18bfe0853736a9d0056a6f",
+    "value_rows.jsonl.gz": "110cd854117524630ab04f09d1f68493247760bf15ecda84c486eb7134f68253",
+    "policy_rows.jsonl.gz": "6c38e508288c2cba652e83276d60288f68f7f5428ecd6fd68de8a331ebdeed61"
+  }
+}
