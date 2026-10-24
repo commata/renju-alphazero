@@ -58,5 +58,24 @@
       "checkpoint_sha256": "55ad3679168d4c6ef31f96c5faa3620e6c232d49cc1f55d6373ecd9a497cff49",
       "metadata_sha256": "dfcd008b735a2f4f239c94638ac26284b86fc79712e89c7f9b9158b5f6295bf8"
     }
+  },
+  "arena": {
+    "run_git_commit": "ef5398f0ff1471f2283badfbdf8ee425be3f01c8",
+    "arm_sha256": {
+      "official": "4d1215a4e6ce9b40ffa040fa128fad5d064c33a30b24a88d2ad5fd2dee8112f3",
+      "p_only": "41a7ecb46d2a466c1472fcc0bc3725307ec3a6d00afe9053bb36f442f882d6ee",
+      "v_only": "584f3bd467631cd524a22646954eb5709b304a310596f8071264d2b3a7487674",
+      "mon_v8_full": "00160151b872ce970edd0482b2cc67e87904230f7e27de6dacf57d70e8fc1166",
+      "mon_puct_policy": "1994595a2f1132d5da65d400a12a10fb400b05e183c32d05f52a4c120a408ebb",
+      "mon_e2": "b1f85a5a290eb0bf1d18ea133c25558a578f7186020abe1548bb5ad200c092dc"
+    },
+    "tactical_sha256": "2699eceacfcc2f2961fcb4fe2a83612830111fcb6a5daae2ab736ab110045eed",
+    "verdict_sha256": "091302ca15da658afb9ba587aaaddbacc266df360b1481a1b2e90f0e81e705da",
+    "promotion": "KEEP_CHAMPION"
+  },
+  "x2": {
+    "cycle": 1,
+    "seed": 8711,
+    "result_sha256": "7212ec61d2d3290fc48d23b6d37578759531bfe683167337e321d882d469a6d5"
   }
 }
