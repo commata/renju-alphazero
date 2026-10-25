@@ -75,16 +75,30 @@ class RuleTest(unittest.TestCase):
         self.assertEqual(counts, {'same': 1, 'actor_only': 1, 'retarget_only': 1, 'union': 3})
 
     def test_cost_gate(self):
-        checked = set()
-        gate = lambda **k: hr.cost_gate(**{'elapsed': 100.0, 'rows_total': 10_000, 'cap_seconds': 10_728.5,  # noqa
-                                           'checked': checked, **k})
-        self.assertIsNone(gate(games_done=19, rows_done=900))      # not 20 games yet
-        self.assertIsNone(gate(games_done=40, rows_done=255))      # not 256 rows yet
-        first = gate(games_done=20, rows_done=256)
-        self.assertEqual((first['point'], first['projected_seconds'], first['exceeded']), ('first', 3906.2, False))
-        self.assertIsNone(gate(games_done=30, rows_done=300))      # the next point is 10%
-        late = gate(games_done=50, rows_done=1_000, elapsed=1_100.0)
-        self.assertEqual((late['point'], late['projected_seconds'], late['exceeded']), ('0.10', 11_000.0, True))
+        checked, window = set(), {'elapsed': 30.0, 'games': 6, 'rows': 60}
+        gate = lambda **k: hr.cost_gate(**{'rows_total': 10_000, 'cap_seconds': 10_728.5, 'checked': checked,  # noqa
+                                           'window': window, 'workers': 6, **k})
+        self.assertIsNone(gate(elapsed=60.0, games_done=25, rows_done=900))     # 19 games after the window
+        self.assertIsNone(gate(elapsed=60.0, games_done=40, rows_done=315))     # 255 rows after the window
+        first = gate(elapsed=130.0, games_done=26, rows_done=316, search_seconds=316 * 2.5)
+        # 256 rows in 100 s after the window (2.56 rows/s): 130 s elapsed + 9,684 remaining rows / 2.56
+        self.assertEqual((first['point'], first['projected_seconds'], first['exceeded']), ('first', 3912.8, False))
+        self.assertEqual(first['search_projection_seconds'], round(130 + 9_684 * 2.5 / 6, 1))
+        self.assertIsNone(gate(elapsed=140.0, games_done=30, rows_done=400))   # the next point is 10%
+        late = gate(elapsed=1_130.0, games_done=60, rows_done=1_060)
+        self.assertEqual((late['point'], late['exceeded']), ('0.10', True))     # 1,000 rows in 1,100 s: too slow
+
+    def test_cost_gate_incident(self):
+        """The c2 stop: 262 rows of 20,910 after 145.5 s, the workers' search 2.570 s per row. Start-up (about 30 s
+        before the first 6 games, an illustrative split) is outside the steady rate now; the projection comes out
+        under the cap."""
+        window = {'elapsed': 45.0, 'games': 6, 'rows': 60}
+        got = hr.cost_gate(elapsed=145.5 + 40, games_done=31, rows_done=60 + 280, rows_total=20_910,
+                           cap_seconds=10_728.5, checked=set(), window=window, search_seconds=340 * 2.57, workers=6)
+        self.assertFalse(got['exceeded'])
+        self.assertLess(got['projected_seconds'], 10_728.5)
+        old = 145.5 / 262 * 20_910  # the first rule's projection at the stop
+        self.assertAlmostEqual(old, 11_611, delta=5)  # 145.5 s is rounded
 
     def test_compare_to_actor(self):
         p = game(0)['plies'][0]

@@ -39,7 +39,8 @@ PURPOSES = ('retarget', 'g0')
 BASE_BUDGET = {'simulations': 50, 'tactical_simulations': 100}
 E4_KEYS = ('ran', 'skip', 'base_route')
 Q_TOLERANCE = 1e-5  # the mean values are stored rounded to 6 decimals
-# Cost gate (docs/h7-c1.md): the first projection once both minima are done, then again at these fractions.
+# Cost gate (docs/h7-c1.md): the steady rate after the first `workers` games; the first projection once both
+# minima are done after that, then again at these fractions of the rows.
 GATE_MIN_GAMES = 20
 GATE_MIN_ROWS = 256
 GATE_FRACTIONS = (0.10, 0.25, 0.50)
@@ -201,20 +202,30 @@ def compare_to_actor(ply: dict, row: dict) -> list[str]:
 
 
 def cost_gate(*, elapsed: float, games_done: int, rows_done: int, rows_total: int, cap_seconds: float,
-              checked: set) -> dict | None:
-    """The projection of the whole run's wall time at this session's rate, when a gate point is reached (the first
-    once ``GATE_MIN_GAMES`` games and ``GATE_MIN_ROWS`` rows are done, then each of ``GATE_FRACTIONS``); None when no
-    gate point is due. ``exceeded`` stops the run (the finished games stay in the resume file)."""
-    if rows_done <= 0 or rows_total <= 0:
+              checked: set, window: dict, search_seconds: float = 0.0, workers: int = 1) -> dict | None:
+    """The projected wall time of the whole session when a gate point is reached; None when none is due.
+
+    The rate is the steady one: rows per second since ``window`` (the state when the first ``workers`` games had
+    finished: worker start-up, model loading and the games that all started together lie before it, and the games in
+    flight are about as far along at both ends). Projected = elapsed + remaining rows / that rate. Points: the first
+    once ``GATE_MIN_GAMES`` games and ``GATE_MIN_ROWS`` rows are done after the window, then each of
+    ``GATE_FRACTIONS`` of the rows. ``exceeded`` stops the run (the finished games stay in the resume file). Beside it,
+    the pure-search projection (the workers' own ``select_move`` seconds per row / workers) as a diagnostic."""
+    rows, games, seconds = rows_done - window['rows'], games_done - window['games'], elapsed - window['elapsed']
+    if rows_total <= 0 or rows <= 0 or seconds <= 0:
         return None
     points = []
-    if games_done >= GATE_MIN_GAMES and rows_done >= GATE_MIN_ROWS:
+    if games >= GATE_MIN_GAMES and rows >= GATE_MIN_ROWS:
         points.append('first')
         points += [f'{f:.2f}' for f in GATE_FRACTIONS if rows_done >= f * rows_total]
     due = [p for p in points if p not in checked]
     if not due:
         return None
     checked.update(due)
-    projected = elapsed / rows_done * rows_total
+    remaining = rows_total - rows_done
+    projected = elapsed + remaining * seconds / rows
+    search = elapsed + remaining * (search_seconds / rows_done) / workers if rows_done else None
     return {'point': due[-1], 'rows_done': rows_done, 'rows_total': rows_total, 'elapsed_seconds': round(elapsed, 1),
-            'projected_seconds': round(projected, 1), 'cap_seconds': cap_seconds, 'exceeded': projected > cap_seconds}
+            'window': window, 'rows_per_second': round(rows / seconds, 4), 'projected_seconds': round(projected, 1),
+            'search_projection_seconds': None if search is None else round(search, 1), 'cap_seconds': cap_seconds,
+            'exceeded': projected > cap_seconds}

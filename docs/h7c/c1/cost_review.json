@@ -26,7 +26,7 @@
  },
  "manual_multiple": 1.25,
  "hard_cap_seconds": 10728.5,
- "cap_rule": "the retarget run stops when its projected wall time (this session's rate x all eligible rows) exceeds hard_cap_seconds, first after 20 complete games and 256 rows, then at 10%, 25% and 50% of the rows; the cap is absolute (it does not move with the c2 self-play time, whose 1.25 x 2 x wall is recorded as a diagnostic only)",
+ "cap_rule": "the retarget run stops when its projected wall time exceeds hard_cap_seconds: elapsed + remaining rows / the steady rate, the rate measured from the moment the first `workers` games are done (worker start-up and the games that all started together lie before it); first after 20 more games and 256 more rows, then at 10%, 25% and 50% of the rows; the cap is absolute (it does not move with the c2 self-play time, whose 1.25 x 2 x wall is recorded as a diagnostic only)",
  "reasons": [
   "S200 is STRONGER than S50 in direct games (score 0.615, improvement 95% CI [+0.020, +0.205], 50 pairs)",
   "B_POLICY and B_VALUE did not fire (proof share 0.134, visits top-1 +0.029; network gain 0.041 of 0.059)",
@@ -34,5 +34,6 @@
   "the actor stays the frozen TB-V3 S50; only the visits targets come from S200 / tactical S400",
   "the only recipe change of c2; policy and value hyperparameters unchanged"
  ],
- "approved_by": "user (docs/h7-c1.md, S200 retarget)"
+ "approved_by": "user (docs/h7-c1.md, S200 retarget)",
+ "cap_rule_erratum": "2026-10-25: the first rule (elapsed since the pool start / finished rows x all rows) counted worker start-up and left out the work of the games in flight; the c2 run stopped at 262 rows with 11,611 s projected while the workers' own search time gave 2.570 s per row (8,957 s for 20,910 rows / 6 workers). The cap, factor and mode are unchanged; only the estimator was corrected."
 }

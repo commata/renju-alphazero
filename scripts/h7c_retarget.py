@@ -11,7 +11,9 @@ actor's seeds ``derive_seed(game_seed, 'black' | 'white')``.
            committed cost review of that decision (its ``hard_cap_seconds`` is the cap, its factor and mode are the
            run's); the self-play must be one clean cycle (``h7c_labels.check_games``), the checkpoints its models,
            the engine / runtime / device its own. Cost gate: the run stops when the projected wall time exceeds the
-           cap, first after 20 complete games and 256 rows, then at 10%, 25% and 50% of the rows (resumable).
+           cap: elapsed + remaining rows at the steady rate (measured after the first ``--workers`` games, so
+           start-up and the games that all started together are not in it), first after 20 more games and 256 more
+           rows, then at 10%, 25% and 50% of the rows (resumable).
     check  G0, before any retarget is trusted: ``--factor 1`` must reproduce every actor record (route, move, visits,
            mean values within 1e-5, proven losses, E4-v2 step, target) and, with ``--policy-rows``, the v1 projection
            of the v2 rows must be the cycle's v1 rows; ``--mode both`` also requires the ``restored`` and the
@@ -254,7 +256,8 @@ def approved_budget(decision: dict, decision_sha: str, cost_review: dict | None,
 def _execute(args, games: list[dict], identity: dict, modes: tuple, factor: int, log, gate=None,
              validate: bool = True) -> dict[int, dict]:
     """Every game's records (resumed from ``args.jsonl``), each checked as it arrives (``validate``: a run; a check
-    counts differences instead); ``gate(elapsed, games_done, rows_done, rows_total)`` may stop it."""
+    counts differences instead); ``gate(elapsed, done, rows_total)`` may stop it (``done``: games, rows and the
+    workers' search seconds so far)."""
     import h7c_selfplay as sp
 
     finished = sp.load_finished(args.jsonl, {'identity': identity}, log=log)
@@ -263,7 +266,7 @@ def _execute(args, games: list[dict], identity: dict, modes: tuple, factor: int,
     log(f'[h7c-retarget] factor {factor} ({hr.budget(factor)}), modes {"/".join(modes)}: {len(games)} games, '
         f'{len(finished)} already done, {rows_total:,} rows to search, workers {args.workers}', flush=True)
     progress = Progress('h7c-retarget', rows_total, 'rows')
-    started, done = perf_counter(), {'games': 0, 'rows': 0}
+    started, done = perf_counter(), {'games': 0, 'rows': 0, 'search_seconds': 0.0}
     if todo:
         args.jsonl.parent.mkdir(parents=True, exist_ok=True)
         chunks = [[{'game': g, 'modes': modes}] for g in todo]
@@ -288,8 +291,9 @@ def _execute(args, games: list[dict], identity: dict, modes: tuple, factor: int,
                     finished[result['game_index']] = record
                     done['games'] += 1
                     done['rows'] += len(_rows(result, modes[0]))
+                    done['search_seconds'] += sum(r['seconds'] for r in _rows(result, modes[0]))
                 if gate is not None:
-                    gate(perf_counter() - started, done['games'], done['rows'], rows_total)
+                    gate(perf_counter() - started, dict(done), rows_total)
 
             run_chunks(pool, _chunk, chunks, progress, lambda c: len(hr.eligible_plies(c[0]['game'])),
                        unit_name='games', on_result=keep)
@@ -318,16 +322,22 @@ def run(args, log=print) -> dict:
                 'mode': mode, 'selfplay_jsonl_sha256': file_sha256(args.games), 'selfplay': selfplay,
                 'decision_sha256': decision_sha, 'decision_inputs_sha256': _json(args.decision)['inputs_sha256'],
                 'cost_review_sha256': plan['cost_review_sha256'], 'coverage': hr.coverage(games), 'git': git}
-    gates, checked = [], set()
+    gates, checked, window = [], set(), {}
 
-    def gate(elapsed, games_done, rows_done, rows_total):
-        point = hr.cost_gate(elapsed=elapsed, games_done=games_done, rows_done=rows_done, rows_total=rows_total,
-                             cap_seconds=plan['cap_seconds'], checked=checked)
+    def gate(elapsed, done, rows_total):
+        if not window:  # the steady rate starts once the first `workers` games are in
+            if done['games'] >= args.workers:
+                window.update(elapsed=elapsed, games=done['games'], rows=done['rows'])
+            return
+        point = hr.cost_gate(elapsed=elapsed, games_done=done['games'], rows_done=done['rows'], rows_total=rows_total,
+                             cap_seconds=plan['cap_seconds'], checked=checked, window=dict(window),
+                             search_seconds=done['search_seconds'], workers=args.workers)
         if point is None:
             return
         gates.append(point)
         log(f"[h7c-retarget] cost gate {point['point']}: projected {point['projected_seconds']:,.0f} s "
-            f"(cap {point['cap_seconds']:,.1f} s) after {rows_done:,} of {rows_total:,} rows", flush=True)
+            f"(pure search {point['search_projection_seconds']:,.0f} s; cap {point['cap_seconds']:,.1f} s) after "
+            f"{done['rows']:,} of {rows_total:,} rows", flush=True)
         if point['exceeded']:
             raise CostCapExceeded(f"projected {point['projected_seconds']:,.0f} s exceeds the cap "
                                   f"{point['cap_seconds']:,.1f} s: stopped (finished games are kept for a resume "
