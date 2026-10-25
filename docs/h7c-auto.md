@@ -20,13 +20,25 @@ python scripts/h7c_auto.py next          # NEXT_ACTION과 (도구가 있으면) 
 python scripts/h7c_auto.py explain       # 근거(보류 창, 정체, preflight 등) JSON
 python scripts/h7c_auto.py verify        # frozen checker, c1 decision 재계산, verdict 사슬, recipe SHA, evidence-only
 python scripts/h7c_auto.py recipe --cycle 2   # G0 / G0b evidence 커밋 뒤, clean tree에서 docs/h7c/c2/recipe.json
+python scripts/h7c_auto.py index --cycle 2    # 검사를 통과한 evidence의 SHA만으로 docs/h7c/c2/cycle.json
 ```
 
-**시작 조건 (C2_READY).** c1 decision · cost review(`applies_to_cycle: 2`, decision SHA 일치), `docs/h7c/c1/retarget_g0.json`
-(factor 1 PASS) · `retarget_g0b.json`(factor 4 PASS), c1 verdict, 그리고 커밋된 `docs/h7c/c2/recipe.json`.
+**시작 조건 (C2_READY).** c1 decision · cost review(`applies_to_cycle: 2`, decision SHA 일치), c1 verdict, G0 / G0b 계약
+전체(`hybrid.h7c_auto.g0_errors`), 그리고 커밋된 `docs/h7c/c2/recipe.json`. `check`의 PASS만으로는 계약이 아니다
+(`--games-limit`, `--policy-rows` 없이, 한 mode만으로도 PASS가 나온다). 그래서 다음을 모두 본다.
+
+| | G0 (`docs/h7c/c1/retarget_g0.json`) | G0b (`retarget_g0b.json`) |
+|---|---|---|
+| 형식 · 판정 | `h7c-retarget-v1-check`, purpose `g0`, PASS, failures 없음 | 같음 |
+| factor · 판 수 | 1, 1,000판(coverage games = 1,000) | 4, 20판 |
+| 행 | rows = coverage eligible | 같음 |
+| 비교 | actor 재현 차이 0, v1 projection 있음 ∧ differ 0 ∧ missing 0 ∧ compared > 0 | modes = {restored, sequential}, `modes_differ` = {} |
+| 출처 | c1 self-play JSONL SHA(`evidence_manifest.json`) · self-play identity, clean commit | 같음 |
+
 2026-10-25 현재 이 checkout에는 G0 / G0b evidence가 없어서 `NOT_C2_READY`다.
 
 **커밋 순서.** A = 자동화 코드 · 테스트 · 이 문서 → G0 / G0b evidence 커밋 → B = `recipe.json`만(`code_base_commit` = B 직전 HEAD).
+recipe는 그 뒤의 코드 변경을 막으므로, 자동화 코드 수정은 모두 recipe 전에 끝낸다.
 
 ## 고정 규칙과의 대조
 
@@ -42,9 +54,9 @@ python scripts/h7c_auto.py recipe --cycle 2   # G0 / G0b evidence 커밋 뒤, cl
 | E2 SB | `h7c_budget`은 H3 / H6 v3 + seed 8741만 | `E2_SB_TOOLING_REQUIRED` |
 | retarget resume | `_execute`는 남은 게임으로 `rows_total`을 다시 세고 timer도 세션마다 0 → resume 후 cap이 절대값이 아님 | partial jsonl ∧ summary 없음 → `MANUAL_COST_RESUME_REVIEW_REQUIRED` |
 | pool | Arena · SB 명시적 `spawn`; self-play · retarget · labels 기본 context | 바꾸지 않음(바꾸면 G0 / G0b · throughput 재측정) |
-| workers | `h7c1_throughput.json`(self-play만): 6 / 8 / 10 / 12 / 14 → 514.2 / 510.1 / 500.8 / 481.7 / 473.0 games/h, 선택 6 | 전 단계 6 고정 |
+| workers | `h7c1_throughput.json`(self-play만): 6 / 8 / 10 / 12 / 14 → 514.2 / 510.1 / 500.8 / 481.7 / 473.0 games/h, 선택 6 | self-play · retarget · Arena = 6(recipe에 기록), labels · value cache = c1과 같은 12 |
 | 학습 | NO_CANDIDATE → record + exit 1 | 정상 결과. CANDIDATE인데 metadata 없음 / SHA 불일치 / parent 불일치 → `BLOCKED_TRAIN` |
-| X2 | 기록 전용, `--value-device cuda` | JOINT / FALLBACK이면 `X2_MONITOR`, no-candidate면 NOT_APPLICABLE |
+| X2 | 기록 전용, `--value-device cuda`, Rapfi 파일 경로는 머신마다 다름 | JOINT / FALLBACK이면 `X2_MONITOR`, no-candidate면 NOT_APPLICABLE. `runs/h7c/automation/x2_config.json`(engine, engine_name, engine_files, engine_info, workers; 커밋 안 함)이 없으면 `X2_CONFIG_REQUIRED` |
 
 ## 기초 수치 (설명용, 쌍 점수 σ = 0.325 정규 근사)
 
@@ -70,7 +82,28 @@ C2_READY
 
 cycle c의 evidence(`docs/h7c/c<c>/`): `recipe.json`, `selfplay_c<c>_seed<8800+c>.json`, `retarget_s200.json`,
 `labels_c<c>_report.json`, `policy_record.json` / `policy_best.json`, `value_record.json` / `value_best.json`,
-`arena_verdict.json`, `docs/external/x2_c<c>.json`, `cycle.json`. 위에서부터 첫 미충족이 현재 단계다.
+`value_cache_manifest.json`, `arena_verdict.json`, `docs/external/x2_c<c>.json`, `cycle.json`.
+위에서부터 첫 미충족이 현재 단계다. **파일이 있어도 검사를 통과하지 못하면 그 단계는 완료가 아니라 `BLOCKED_<단계>`다.**
+
+**단계별 검사 (SHA 사슬, `hybrid.h7c_auto`의 `*_errors`).** 각 evidence의 코드 커밋은 recipe의 `code_base_commit`과 HEAD
+사이에 있어야 한다.
+
+| 단계 | 앞 단계와 맞춰 보는 것 |
+|---|---|
+| recipe | c1 decision · cost review · G0 · G0b · c1 verdict · policy / value config SHA, engine / runtime hash · value device(c1 self-play identity), workers 6 |
+| parent 파일 | 명령에 넣는 parent 체크포인트 · metadata 4 SHA = 직전 verdict `next_champion`(이 머신의 `runs/`, 없으면 `BLOCKED_CHAMPION_FILES`) |
+| self-play | 형식, cycle, seed 8800 + c, 모델 = parent, engine / runtime / device = recipe, 1,000판(start 0), clean |
+| retarget | factor · budget · mode · decision · cost review · cap = recipe, self-play identity = self-play 요약, coverage eligible = completed = self-play visits 수, missing · duplicate · extra 0, clean |
+| labels | v2 policy 행, clean, cycle · engine · runtime · model hash = self-play, 1,000판 입력, retarget 파일 SHA · coverage SHA = retarget 요약 |
+| 학습 | 형식, cycle, clean, parent 2 SHA, source 모델 = parent, policy의 retarget = labels의 retarget, value의 labels SHA = value cache manifest. CANDIDATE는 metadata SHA = record, Arena 전에는 `runs/`의 best.pt SHA = record(없거나 다르면 `BLOCKED_TRAIN`) |
+| verdict | 형식, cycle, seed 8730 + c, parent, champion record = 직전 verdict SHA, candidate = record들이 정한 4 SHA(fallback이면 parent policy), mode, `next_champion` = PROMOTE면 candidate 아니면 parent. no-candidate면 두 record SHA |
+| X2 | 형식, seed 8710 + c, clean, cycle, 모델 = verdict candidate |
+| cycle.json | 위 파일들의 SHA와 판정으로 `index`가 다시 만든 내용과 같아야 한다. 파일만 있는 cycle.json은 cycle 완료가 아니다 |
+
+**커밋 gate (모든 단계 전에).** working tree(untracked 포함)와 `code_base_commit..HEAD`를 본다.
+- 바뀐 것이 현재 cycle의 evidence뿐(직전 cycle의 index는 커밋 전까지 허용, recipe 전 c2는 G0 / G0b 파일도)이고 미커밋이면 `EVIDENCE_COMMIT_REQUIRED`(next가 `git add … && git commit`을 출력)
+- 그 밖의 경로가 있으면 `MANUAL_CODE_CHANGE_REVIEW_REQUIRED`
+- verdict 사슬이 깨지면 `BLOCKED_EVIDENCE`
 
 **Cost preflight (R4, 참고 단계).** pre = visits 행 × 2.8334 / 6, cap 10,728.5초.
 
@@ -119,8 +152,8 @@ stagnant  = 실제 마지막 2 cycle이 모두 평가 cycle ∧ KEEP ∧ 하한 
 ## verify와 evidence-only
 
 1. `scripts/check_track_b_frozen.py` PASS(모델이 없는 머신은 `--skip-frozen`).
-2. c1 decision 재계산 = 커밋 파일, verdict 사슬, recipe의 source SHA(decision, cost review, G0, G0b, parent verdict, policy / value config).
-3. `git diff --name-only <recipe.code_base_commit> HEAD`와 working tree(untracked 포함)의 모든 경로가 현재 cycle의 evidence(`docs/h7c/c<c>/**`, `docs/external/x2_c<c>.json`, 현재 E2 episode `docs/h7c/e2/e<N>/**`)여야 한다. 이 문서, `src/`, `scripts/`, `configs/`, `tests/`가 바뀌면 `MANUAL_CODE_CHANGE_REVIEW_REQUIRED`. evidence만 미커밋이면 `EVIDENCE_COMMIT_REQUIRED`.
+2. c1 decision 재계산 = 커밋 파일, verdict 사슬, G0 / G0b 계약, recipe의 source SHA.
+3. 현재 상태(`state`): 위 커밋 gate와 단계별 검사를 거친 결과. 이 문서, `src/`, `scripts/`, `configs/`, `tests/`가 바뀌면 `MANUAL_CODE_CHANGE_REVIEW_REQUIRED`.
 
 ## 자동으로 바꾸지 않는 것
 
@@ -144,6 +177,7 @@ actor 예산, PUCT · candidate_limit, policy / value 하이퍼파라미터 · g
 |---|---|---|
 | U1 | `runs/` · `data/` · checkpoint를 ext4(Linux FS)에 둔다. WSL이면 `/mnt/c`(9P) 금지 | c2 전 |
 | U3 | 부모 프로세스 `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1`(worker 모델은 이미 `threads=1`) | c2 전 |
+| — | pool: Arena · SB는 명시적 `spawn`, self-play · retarget · labels는 기본 context(Linux에서 fork 계열). 바꾸지 않는다 | — |
 | U7 | native core는 `python -m rt30.vcfcore.build --if-stale`만(`-O2 -shared -fPIC` 고정). `-O3` · `-march=native` 금지. 새 머신 첫 실행에 checker PASS 필수 | c2 전 |
 | U8 | `ulimit -n` 상향, RAM / swap 확인(6 worker × 모델) | c2 전 |
 | U4 | `systemd-inhibit --what=sleep:idle`, `tmux` / `systemd-run --user` + `tee` 로그, CPU governor `performance` | best-effort(WSL2에서는 효과 제한), gate 아님 |

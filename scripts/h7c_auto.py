@@ -9,6 +9,7 @@ cache: ``status`` rewrites it from the evidence every time.
     python scripts/h7c_auto.py status | next | explain
     python scripts/h7c_auto.py verify [--skip-frozen]
     python scripts/h7c_auto.py recipe --cycle 2      # docs/h7c/c2/recipe.json, after the G0 / G0b evidence commit
+    python scripts/h7c_auto.py index --cycle 2       # docs/h7c/c2/cycle.json, from the checked evidence only
 """
 from __future__ import annotations
 
@@ -38,6 +39,8 @@ C1 = {'decision': DOCS / 'c1' / 'decision.json', 'cost_review': DOCS / 'c1' / 'c
 CONFIGS = {'policy': ROOT / 'configs' / 'h7c' / 'c1_policy.json', 'value': ROOT / 'configs' / 'h7c' / 'c1_value.json'}
 WORKERS = 6
 TOOLING = {name: False for name in auto.TOOLING}   # Auto-v1: none of the extensions exists yet
+INDEX_FORMAT = 'h7c-cycle-v1'
+X2_CONFIG = ROOT / RUNS / 'automation' / 'x2_config.json'   # this machine's Rapfi files (never committed)
 
 
 def _json(path: Path) -> dict | None:
@@ -64,29 +67,37 @@ def cycle_files(c: int, recipe: dict | None = None) -> dict:
             'retarget_partial': ROOT / RUNS / f'c{c}' / f'retarget_s{50 * factor}.jsonl',
             'labels': d / f'labels_c{c}_report.json', 'policy_record': d / 'policy_record.json',
             'policy_best': d / 'policy_best.json', 'value_record': d / 'value_record.json',
-            'value_best': d / 'value_best.json', 'verdict': d / 'arena_verdict.json',
-            'x2': ROOT / 'docs' / 'external' / f'x2_c{c}.json', 'cycle_index': d / 'cycle.json'}
+            'value_best': d / 'value_best.json', 'value_cache_manifest': d / 'value_cache_manifest.json',
+            'verdict': d / 'arena_verdict.json', 'x2': ROOT / 'docs' / 'external' / f'x2_c{c}.json',
+            'cycle_index': d / 'cycle.json'}
+
+
+def candidate_checkpoint(c: int, name: str) -> Path:
+    return ROOT / RUNS / f'c{c}' / name / 'best.pt'
 
 
 # --- readiness and the chain ---------------------------------------------------------------------------------------
 
+def c1_selfplay() -> tuple[dict, str | None]:
+    """The c1 self-play identity and the SHA-256 of its JSONL file (docs/h7c/c1/evidence_manifest.json)."""
+    manifest = _json(DOCS / 'c1' / 'evidence_manifest.json') or {}
+    return _json(C1['selfplay'])['identity'], (manifest.get('files_sha256') or {}).get('selfplay_8801.jsonl')
+
+
 def c2_ready() -> str | bool:
-    """Cycle 2's starting point: the c1 decision and its cost review, G0 (factor 1) and G0b (factor 4, both modes)
-    PASS, the c1 verdict. True, or what is missing."""
-    missing = [k for k in ('decision', 'cost_review', 'g0', 'g0b') if not C1[k].exists()]
+    """Cycle 2's starting point: the c1 decision and its cost review, the full G0 / G0b contract, the c1 verdict.
+    True, or what is wrong."""
+    missing = [k for k in ('decision', 'cost_review') if not C1[k].exists()]
     if not (DOCS / 'c1' / 'arena_verdict.json').exists():
         missing.append('c1 verdict')
     if missing:
         return f'missing: {", ".join(missing)}'
-    review, decision_sha = _json(C1['cost_review']), _sha(C1['decision'])
-    if review.get('decision_sha256') != decision_sha or review.get('applies_to_cycle') != 2:
+    review = _json(C1['cost_review'])
+    if review.get('decision_sha256') != _sha(C1['decision']) or review.get('applies_to_cycle') != 2:
         return 'the cost review does not approve this decision for cycle 2'
-    for key, factor in (('g0', 1), ('g0b', auto.TEACHER_FACTOR)):
-        rec = _json(C1[key])
-        if rec.get('format') != 'h7c-retarget-v1-check' or rec.get('verdict') != 'PASS' or \
-                rec['identity'].get('factor') != factor:
-            return f'{key} is not a PASS check at factor {factor}'
-    return True
+    identity, jsonl_sha = c1_selfplay()
+    errors = auto.g0_errors(_json(C1['g0']), _json(C1['g0b']), identity, jsonl_sha)
+    return True if not errors else '; '.join(errors)
 
 
 def verdicts() -> list[dict]:
@@ -112,73 +123,174 @@ def chain_errors(found: list[dict]) -> list[str]:
     return errors
 
 
-def evidence(c: int) -> dict:
-    """What exists of cycle c, normalized for ``auto.cycle_stage``."""
+def champion_paths(history: list[dict], c: int) -> dict:
+    """The parent models of cycle c: the frozen ones until a cycle promoted, then that cycle's candidate files (the
+    fallback keeps the policy it was given)."""
+    paths = dict(FROZEN)
+    for e in history[:c - 1]:
+        if e['decision'] == auto.PROMOTE:
+            paths = {'policy': paths['policy'] if e['candidate_mode'] == auto.FALLBACK else
+                     f'{RUNS}/c{e["cycle"]}/policy/best.pt', 'value': f'{RUNS}/c{e["cycle"]}/value/best.pt'}
+    return paths
+
+
+def champion_error(history: list[dict], c: int, parent: dict) -> str | None:
+    """The files the commands pass as the parent are the previous verdict's ``next_champion`` (four SHA-256)."""
+    from analysis.tb_v3_net import model_identity
+
+    paths = champion_paths(history, c)
+    try:
+        found = model_identity(ROOT / paths['policy'], ROOT / paths['value'])
+    except FileNotFoundError as exc:
+        return f'not on this machine: {exc.filename}'
+    bad = [k for k in auto.MODEL_KEYS if found[k] != parent.get(k)]
+    return f"{paths} differ from cycle {c - 1}'s next_champion in {bad}" if bad else None
+
+
+def commit_errors(label: str, commit: str | None, base: str) -> list[str]:
+    """An evidence file's code commit lies between the cycle's ``code_base_commit`` and HEAD (evidence-only commits
+    in between, checked by the commit gate)."""
+    if not commit:
+        return [f'{label}: no commit recorded']
+    ok = all(subprocess.run(['git', 'merge-base', '--is-ancestor', a, b], cwd=ROOT, capture_output=True).returncode == 0
+             for a, b in ((base, commit), (commit, 'HEAD')))
+    return [] if ok else [f'{label}: commit {commit[:12]} is not between the code base {base[:12]} and HEAD']
+
+
+def evidence(c: int, history: list[dict], found: list[dict], local: bool = True) -> dict:
+    """What exists of cycle c and whether each piece checks against the previous one, for ``auto.cycle_stage``.
+    ``local``: also the files only this machine has (the parent and the candidate checkpoints)."""
     recipe = _json(cycle_files(c)['recipe'])
     f = cycle_files(c, recipe)
-    ev = {'cycle': c, 'tooling': TOOLING, 'ready': c2_ready() if c == auto.FIRST_CYCLE else True,
-          'recipe': recipe is not None}
+    prev = found[c - 2] if len(found) >= c - 1 else None
+    parent = (prev or {}).get('record', {}).get('next_champion') or {}
+    errors = {}
+    ev = {'cycle': c, 'tooling': TOOLING if local else {k: True for k in TOOLING},
+          'ready': c2_ready() if c == auto.FIRST_CYCLE else True, 'recipe': recipe is not None, 'errors': errors,
+          'x2_config': X2_CONFIG.exists()}
+    if recipe is None:
+        return ev
+    base = recipe.get('code_base_commit')
+    errors['recipe'] = recipe_errors(recipe) if c == auto.FIRST_CYCLE else ['only the cycle-2 recipe is checked']
+    ev['verdict'] = f['verdict'].exists()
+    if local and not ev['verdict']:
+        ev['champion_error'] = champion_error(history, c, parent)
     selfplay = _json(f['selfplay'])
     ev['selfplay'] = selfplay is not None
-    if selfplay is not None and recipe is not None:
-        rows = selfplay['summary']['target_kinds'].get('visits', 0)
-        ev['preflight_detail'] = auto.cost_preflight(rows, recipe['tree_seconds_mean'], recipe['workers'],
-                                                     recipe['hard_cap_seconds'])
-        ev['preflight'] = ev['preflight_detail']['status']
-    ev['retarget'] = f['retarget'].exists()
-    ev['retarget_partial'] = f['retarget_partial'].exists()
-    ev['labels'] = f['labels'].exists()
-    previous = DOCS / f'c{c - 1}' / 'arena_verdict.json'
-    parent = (_json(previous) or {}).get('next_champion') or {}
-    errors = []
-    for name in ('policy', 'value'):
-        record = _json(f[f'{name}_record'])
-        if record is None:
-            continue
-        ev[f'{name}_verdict'] = record.get('verdict')
-        err = auto.train_artifacts_ok(record, _sha(f[f'{name}_best']), c, parent.get(f'{name}_checkpoint_sha256'))
-        if err:
-            errors.append(f'{name}: {err}')
-    ev['train_error'] = '; '.join(errors) or None
-    ev['verdict'] = f['verdict'].exists()
-    ev['x2'] = f['x2'].exists()
-    ev['cycle_index'] = f['cycle_index'].exists()
+    if selfplay is None:
+        return ev
+    errors['selfplay'] = auto.selfplay_errors(selfplay, c, parent, recipe) + \
+        commit_errors('self-play', (selfplay.get('git') or {}).get('commit'), base)
+    rows = selfplay['summary']['target_kinds'].get('visits', 0)
+    ev['preflight_detail'] = auto.cost_preflight(rows, recipe['tree_seconds_mean'], recipe['workers'],
+                                                 recipe['hard_cap_seconds'])
+    ev['preflight'] = ev['preflight_detail']['status']
+    retarget = _json(f['retarget'])
+    ev['retarget'], ev['retarget_partial'] = retarget is not None, f['retarget_partial'].exists()
+    if retarget is None:
+        return ev
+    errors['retarget'] = auto.retarget_errors(retarget, selfplay, recipe) + \
+        commit_errors('retarget', ((retarget.get('identity') or {}).get('git') or {}).get('commit'), base)
+    labels = _json(f['labels'])
+    ev['labels'] = labels is not None
+    if labels is None:
+        return ev
+    errors['labels'] = auto.labels_errors(labels, selfplay, retarget) + \
+        commit_errors('labels', labels.get('git_commit'), base)
+    records = {name: _json(f[f'{name}_record']) for name in ('policy', 'value')}
+    ev['policy_verdict'] = (records['policy'] or {}).get('verdict')
+    ev['value_verdict'] = (records['value'] or {}).get('verdict')
+    if not (ev['policy_verdict'] and ev['value_verdict']):
+        return ev
+    retarget_info = ((labels.get('summary') or {}).get('policy') or {}).get('retarget', {}).get('info')
+    manifest = _json(f['value_cache_manifest']) or {}
+    sources = {'policy': {'source.models': parent, 'source.retarget': retarget_info},
+               'value': {'source.models': parent, 'cycle_labels_sha256': manifest.get('labels_sha256') or 'missing'}}
+    errors['train'] = []
+    for name, record in records.items():
+        errors['train'] += auto.train_errors(name, record, c, parent, _sha(f[f'{name}_best']),
+                                             _sha(candidate_checkpoint(c, name)), local and not ev['verdict'],
+                                             sources[name])
+        errors['train'] += commit_errors(f'{name} training', (record.get('git') or {}).get('commit'), base)
+    if errors['train']:
+        return ev
+    mode = auto.resolve_candidate(ev['policy_verdict'], ev['value_verdict'], c)
+    candidate = auto.expected_candidate(mode, records['policy'], records['value'], parent)
+    ev['candidate'] = candidate
+    verdict = _json(f['verdict'])
+    if verdict is None:
+        return ev
+    errors['arena'] = auto.verdict_errors(verdict, c, parent, _sha(prev['path']), mode, candidate,
+                                          {'policy': _sha(f['policy_record']), 'value': _sha(f['value_record'])}) + \
+        commit_errors('verdict', verdict.get('git_commit'), base)
+    x2 = _json(f['x2'])
+    ev['x2'] = x2 is not None
+    if x2 is not None and mode != auto.NO_CANDIDATE:
+        errors['x2'] = auto.x2_errors(x2, c, candidate) + commit_errors('X2', x2.get('git_commit'), base)
+    index = _json(f['cycle_index'])
+    ev['cycle_index'] = index is not None
+    if index is not None:
+        errors['cycle_index'] = [] if index == build_index(c, f, verdict, mode) else \
+            ['cycle.json is not the index of the checked evidence (h7c_auto.py index)']
     return ev
 
 
+def build_index(c: int, f: dict, verdict: dict, mode: str) -> dict:
+    names = ['recipe', 'selfplay', 'retarget', 'labels', 'policy_record', 'policy_best', 'value_record', 'value_best',
+             'value_cache_manifest', 'verdict'] + ([] if mode == auto.NO_CANDIDATE else ['x2'])
+    p = verdict['promotion']
+    return {'format': INDEX_FORMAT, 'cycle': c, 'candidate_mode': mode,
+            'files_sha256': {_rel(f[n]): _sha(f[n]) for n in names if f[n].exists()},
+            'promotion': {'decision': p['decision'], 'reason': p.get('reason'),
+                          'improvement_lower': p.get('improvement_lower')},
+            'x2': 'NOT_APPLICABLE' if mode == auto.NO_CANDIDATE else 'RECORDED',
+            'next_champion': verdict['next_champion']}
+
+
+def dirty_paths() -> list[str]:
+    out = []
+    for line in _git('status', '--porcelain', '--untracked-files=all').splitlines():
+        path = line[3:]
+        out.append(path.split(' -> ')[-1].strip('"'))
+    return out
+
+
 def current() -> dict:
-    """The cycle the evidence is at and its step: after a complete cycle, the next-cycle decision decides whether a
-    next cycle starts at all."""
+    """The cycle the evidence is at and its one allowed step. In order: the verdict chain, every indexed cycle's
+    evidence (an index counts only when it is the index of checked evidence), the commit gate, the previous cycle's
+    decision, then this cycle's first missing or failing step."""
     found = verdicts()
     history = [auto.cycle_entry(v['record']) for v in found]
+    out = {'history': history, 'chain_errors': chain_errors(found)}
+    if out['chain_errors']:
+        return {**out, 'cycle': len(found), 'step': auto._step('BLOCKED_EVIDENCE', None, errors=out['chain_errors'])}
     c = auto.FIRST_CYCLE
-    while (DOCS / f'c{c}' / 'cycle.json').exists():
+    while cycle_files(c)['cycle_index'].exists():
+        step = auto.cycle_stage(evidence(c, history, found, local=False))
+        if step['state'] != 'CYCLE_COMPLETE':
+            return {**out, 'cycle': c, 'step': step}
         c += 1
+    recipe = _json(cycle_files(c)['recipe'])
+    changed = [p for p in _git('diff', '--name-only', recipe['code_base_commit'], 'HEAD').split() if p] \
+        if recipe and recipe.get('code_base_commit') else []
+    extra = tuple(_rel(C1[k]) for k in ('g0', 'g0b')) if c == auto.FIRST_CYCLE and recipe is None else ()
+    gate = auto.commit_gate(dirty_paths(), changed, c, extra)
+    if gate is not None:
+        return {**out, 'cycle': c, 'step': gate}
     decision = auto.next_cycle_decision(history[:c - 1], TOOLING) if len(history) >= c - 1 else None
     if decision is not None and decision['state'] not in ('NEXT_CYCLE', 'V9_HOLD'):
-        return {'cycle': c - 1, 'step': decision, 'history': history, 'chain_errors': chain_errors(found)}
-    ev = evidence(c)
+        return {**out, 'cycle': c - 1, 'step': decision}
+    ev = evidence(c, history, found)
     step = auto.cycle_stage(ev)
     if decision is not None:
         step['why']['previous_cycle'] = {k: decision['why'][k] for k in ('hold', 'stagnant', 'hold_window',
                                                                           'no_candidate_streak')}
     if ev.get('preflight_detail'):
         step['why']['preflight'] = ev['preflight_detail']
-    return {'cycle': c, 'step': step, 'evidence': ev, 'history': history, 'chain_errors': chain_errors(found)}
+    return {**out, 'cycle': c, 'step': step, 'evidence': ev}
 
 
 # --- commands (only for tools that exist) --------------------------------------------------------------------------
-
-def champion_paths(history: list[dict], c: int) -> dict:
-    """The parent models of cycle c: the frozen ones until a cycle promoted, then that cycle's candidate files."""
-    paths = dict(FROZEN)
-    for e in history[:c - 1]:
-        if e['decision'] == auto.PROMOTE:
-            paths = {'policy': f'{RUNS}/c{e["cycle"]}/policy/best.pt', 'value': f'{RUNS}/c{e["cycle"]}/value/best.pt'}
-            if e['candidate_mode'] == auto.FALLBACK:
-                paths['policy'] = champion_paths(history, e['cycle'])['policy']
-    return paths
-
 
 def command(state: dict) -> list[str]:
     c, step, history = state['cycle'], state['step'], state['history']
@@ -186,6 +298,9 @@ def command(state: dict) -> list[str]:
     par = champion_paths(history, c)
     pol, val, champ = par['policy'], par['value'], f'docs/h7c/c{c - 1}/arena_verdict.json'
     hist = ' '.join(f'docs/h7c/c{k}/arena_verdict.json' for k in range(1, c))
+    if action == 'COMMIT_EVIDENCE':
+        paths = ' '.join(step['why']['paths'])
+        return [f'git add {paths} && git commit -m "H7-c c{c}: evidence"']
     if action == 'WRITE_RECIPE':
         return [f'python scripts/h7c_auto.py recipe --cycle {c}', f'git add docs/h7c/c{c}/recipe.json && git commit']
     if action == 'RUN_SELFPLAY':
@@ -196,10 +311,11 @@ def command(state: dict) -> list[str]:
                 f'cp {C}/selfplay_{seed}.json docs/h7c/c{c}/selfplay_c{c}_seed{seed}.json  # then commit']
     if action == 'RUN_RETARGET':
         seed = auto.selfplay_seed(c)
-        return [f'python -u scripts/h7c_retarget.py run --games {C}/selfplay_{seed}.jsonl --decision {_rel(C1["decision"])} '
-                f'--cost-review {_rel(C1["cost_review"])} --selfplay-summary docs/h7c/c{c}/selfplay_c{c}_seed{seed}.json '
-                f'--policy-checkpoint {pol} --value-checkpoint {val} --device cuda --workers {WORKERS} '
-                f'--jsonl {C}/retarget_s200.jsonl --output docs/h7c/c{c}/retarget_s200.json 2>&1 | tee {C}/retarget.log']
+        return [f'python -u scripts/h7c_retarget.py run --games {C}/selfplay_{seed}.jsonl '
+                f'--decision {_rel(C1["decision"])} --cost-review {_rel(C1["cost_review"])} '
+                f'--selfplay-summary docs/h7c/c{c}/selfplay_c{c}_seed{seed}.json --policy-checkpoint {pol} '
+                f'--value-checkpoint {val} --device cuda --workers {WORKERS} --jsonl {C}/retarget_s200.jsonl '
+                f'--output docs/h7c/c{c}/retarget_s200.json 2>&1 | tee {C}/retarget.log']
     if action == 'RUN_LABELS':
         seed = auto.selfplay_seed(c)
         return [f'python -u scripts/h7c_labels.py --games {C}/selfplay_{seed}.jsonl --retarget {C}/retarget_s200.jsonl '
@@ -218,6 +334,7 @@ def command(state: dict) -> list[str]:
                 f'python -u scripts/h7c_train_value.py --cycle {c} --config configs/h7c/c1_value.json --cycle-cache '
                 f'{C}/value_cache --cycle-rows {C}/value_rows.jsonl.gz --replay-cache data/tactical/h6/value_cache_v3 '
                 f'--parent {val} --device cuda --out-dir {C}/value 2>&1 | tee {C}/value_train.log',
+                f'cp {C}/value_cache/manifest.json docs/h7c/c{c}/value_cache_manifest.json; '
                 f'cp {C}/value/record.json docs/h7c/c{c}/value_record.json; '
                 f'[ -f {C}/value/best.json ] && cp {C}/value/best.json docs/h7c/c{c}/value_best.json']
     if action == 'RUN_NO_CANDIDATE':
@@ -240,11 +357,17 @@ def command(state: dict) -> list[str]:
              f'python scripts/h7c_arena.py verdict --arms {" ".join(f"{C}/arena/{arm}.json" for arm in arms)} '
              f'--tactical {C}/arena/tactical.json --history {hist} --output docs/h7c/c{c}/arena_verdict.json']
     if action == 'RUN_X2':
-        return [f'python -u scripts/h7c_external.py --cycle {c} ...  # the Rapfi settings of docs/h7-c1.md (X2), '
-                f'--value-device cuda, --output docs/external/x2_c{c}.json']
+        cfg = _json(X2_CONFIG)
+        fallback = (state.get('evidence') or {}).get('policy_verdict') == auto.NO_CANDIDATE   # X2: JOINT / fallback
+        cand_pol = pol if fallback else f'{C}/policy/best.pt'
+        engine = ' '.join([f"--engine {cfg['engine']} --engine-name {cfg.get('engine_name', 'rapfi')}"] +
+                          [f'--engine-info {i}' for i in cfg.get('engine_info', [])] +
+                          [f'--engine-file {f}' for f in cfg.get('engine_files', [])])
+        return [f'python -u scripts/h7c_external.py --cycle {c} --policy-checkpoint {cand_pol} --value-checkpoint '
+                f'{C}/value/best.pt --value-device cuda {engine} --workers {cfg.get("workers", 4)} --forbid-check '
+                f'--games-jsonl runs/external/x2/c{c}.jsonl --output docs/external/x2_c{c}.json']
     if action == 'WRITE_CYCLE_INDEX':
-        return [f'# docs/h7c/c{c}/cycle.json (h7c-cycle-v1): recipe, self-play, retarget, labels, records, verdict and '
-                'X2 SHA-256, the verdict decision; then commit']
+        return [f'python scripts/h7c_auto.py index --cycle {c}']
     return []
 
 
@@ -266,17 +389,11 @@ def verify(skip_frozen: bool) -> dict:
     ready = c2_ready()
     checks['c2_ready'] = 'PASS' if ready is True else f'NOT_C2_READY ({ready})'
     state = current()
-    c, recipe = state['cycle'], _json(cycle_files(state['cycle'])['recipe'])
+    recipe = _json(cycle_files(state['cycle'])['recipe'])
     if recipe is not None:
-        checks['recipe_sources'] = 'PASS' if recipe_errors(recipe) == [] else 'FAIL: ' + '; '.join(recipe_errors(recipe))
-        changed = [p for p in _git('diff', '--name-only', recipe['code_base_commit'], 'HEAD').split() if p]
-        bad = auto.evidence_only(changed, c)
-        checks['evidence_only'] = 'PASS' if not bad else 'MANUAL_CODE_CHANGE_REVIEW_REQUIRED: ' + ', '.join(bad)
-    porcelain = _git('status', '--porcelain', '--untracked-files=all').splitlines()
-    dirty = [line[3:] for line in porcelain]
-    bad = auto.evidence_only(dirty, c)
-    checks['working_tree'] = ('PASS' if not dirty else 'EVIDENCE_COMMIT_REQUIRED: ' + ', '.join(dirty) if not bad
-                              else 'MANUAL_CODE_CHANGE_REVIEW_REQUIRED: ' + ', '.join(bad))
+        bad = recipe_errors(recipe)
+        checks['recipe_sources'] = 'PASS' if not bad else 'FAIL: ' + '; '.join(bad)
+    checks['state'] = f"c{state['cycle']} {state['step']['state']}"
     return checks
 
 
@@ -287,6 +404,11 @@ def recipe_errors(recipe: dict) -> list[str]:
                       ('policy_config_sha256', CONFIGS['policy']), ('value_config_sha256', CONFIGS['value'])):
         if recipe.get(key) != _sha(path):
             errors.append(key)
+    identity, _ = c1_selfplay()
+    errors += [k for k in ('engine_hash', 'runtime_hash', 'value_device') if recipe.get(k) != identity[k]]
+    if recipe.get('format') != RECIPE_FORMAT or recipe.get('cycle') != auto.FIRST_CYCLE or \
+            recipe.get('workers') != WORKERS or not recipe.get('code_base_commit'):
+        errors.append('format / cycle / workers / code_base_commit')
     if recipe.get('parent_verdict_sha256') != _sha(DOCS / f'c{recipe["cycle"] - 1}' / 'arena_verdict.json'):
         errors.append('parent_verdict_sha256')
     return errors
@@ -302,6 +424,7 @@ def make_recipe(cycle: int) -> dict:
         raise ValueError('the working tree is not clean')
     review = _json(C1['cost_review'])
     decision = _json(C1['decision'])
+    identity, _ = c1_selfplay()
     return {'format': RECIPE_FORMAT, 'cycle': cycle, 'recipe': 'S200_RETARGET',
             'teacher_factor': review['approved']['factor'], 'budget': review['approved']['budget'],
             'mode': review['approved']['mode'], 'hard_cap_seconds': review['hard_cap_seconds'],
@@ -312,6 +435,7 @@ def make_recipe(cycle: int) -> dict:
             'g0_sha256': _sha(C1['g0']), 'g0b_sha256': _sha(C1['g0b']),
             'parent_verdict_sha256': _sha(DOCS / f'c{cycle - 1}' / 'arena_verdict.json'),
             'policy_config_sha256': _sha(CONFIGS['policy']), 'value_config_sha256': _sha(CONFIGS['value']),
+            **{k: identity[k] for k in ('engine_hash', 'runtime_hash', 'value_device')},
             'code_base_commit': _git('rev-parse', 'HEAD').strip()}
 
 
@@ -335,11 +459,12 @@ def main(argv=None) -> int:
     sub.add_parser('verify').add_argument('--skip-frozen', action='store_true',
                                           help='skip scripts/check_track_b_frozen.py (no models on this machine)')
     sub.add_parser('recipe').add_argument('--cycle', type=int, required=True)
+    sub.add_parser('index').add_argument('--cycle', type=int, required=True)
     args = parser.parse_args(argv)
     if args.mode == 'verify':
         checks = verify(args.skip_frozen)
         print(json.dumps(checks, indent=1), flush=True)
-        return 0 if all(v == 'PASS' or v.startswith('NOT_C2_READY') for v in checks.values()) else 1
+        return 0 if all(v == 'PASS' or k in ('c2_ready', 'state') for k, v in checks.items()) else 1
     if args.mode == 'recipe':
         path = cycle_files(args.cycle)['recipe']
         if path.exists():
@@ -351,6 +476,18 @@ def main(argv=None) -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(recipe, indent=1) + '\n', encoding='utf-8')
         print(f'wrote {_rel(path)} (code_base_commit {recipe["code_base_commit"][:12]})', flush=True)
+        return 0
+    if args.mode == 'index':
+        state = current()
+        if state['cycle'] != args.cycle or state['step']['state'] != 'CYCLE_INDEX_READY':
+            parser.error(f"cycle {state['cycle']} is at {state['step']['state']}, not CYCLE_INDEX_READY")
+        found = verdicts()
+        f = cycle_files(args.cycle, _json(cycle_files(args.cycle)['recipe']))
+        mode = auto.resolve_candidate(state['evidence']['policy_verdict'], state['evidence']['value_verdict'],
+                                      args.cycle)
+        index = build_index(args.cycle, f, found[args.cycle - 1]['record'], mode)
+        f['cycle_index'].write_text(json.dumps(index, indent=1) + '\n', encoding='utf-8')
+        print(f"wrote {_rel(f['cycle_index'])}: {index['promotion']['decision']}", flush=True)
         return 0
     state = current()
     _cache(state)
