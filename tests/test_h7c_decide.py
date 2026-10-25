@@ -26,7 +26,9 @@ SELFPLAY = {'wall_seconds': 4291.4, 'summary': {'routes': {'tree': 22068}}}
 
 
 def case(diag_d2=None, diag_d4=None, summary=None):
-    return hd.decide({'parts': {'d2': diag_d2 or d2(), 'd4': diag_d4 or d4()}}, summary or sb(), SELFPLAY)
+    # h7c_diagnose.run stores every part with its run time
+    parts = {'d2': {**(diag_d2 or d2()), 'seconds': 12.3}, 'd4': {**(diag_d4 or d4()), 'seconds': 45.6}}
+    return hd.decide({'parts': parts}, summary or sb(), SELFPLAY)
 
 
 class TriggerTest(unittest.TestCase):
@@ -37,6 +39,22 @@ class TriggerTest(unittest.TestCase):
         self.assertTrue(hd.policy_trigger(d2(proof_dce=-0.04))['fired'])          # 4 of 8: exactly 0.5
         self.assertTrue(hd.policy_trigger(d2(visits_dtop1=0.0))['fired'])         # visits top-1 did not rise
         self.assertTrue(hd.policy_trigger(d2(visits_dce=0.01))['fired'])          # the visits rows got worse: share > 1
+
+    def test_policy_trigger_accepts_real_diagnosis_metadata(self):
+        data = d2()
+        data['seconds'] = 12.34  # as h7c_diagnose.run writes the part
+        got = hd.policy_trigger(data)
+        self.assertFalse(got['fired'])
+        self.assertAlmostEqual(got['proof_share_of_reduction'], 2 / 6, places=4)
+        self.assertEqual(got, hd.policy_trigger(d2()))
+
+    def test_policy_trigger_rejects_unknown_entries(self):
+        for bad in ({'elapsed': 1.0}, {'visits/black': {'n': 10, 'delta_ce': -0.01}}, {'other/black': {
+                'n': 1, 'delta_ce': 0.0, 'delta_top1': 0.0}}):
+            with self.assertRaises(ValueError):
+                hd.policy_trigger({**d2(), **bad})
+        with self.assertRaises(ValueError):
+            hd.policy_trigger({'seconds': 1.0})
 
     def test_value_trigger(self):
         self.assertFalse(hd.value_trigger(d4(0.06, 0.03))['fired'])               # exactly half: not below

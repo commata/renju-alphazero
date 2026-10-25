@@ -38,11 +38,26 @@ def _json(path) -> dict:
     return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
+D2_KINDS = ('visits', 'proof_one_hot')
+D2_METADATA = ('seconds',)  # h7c_diagnose.run adds the part's run time next to its results
+
+
+def d2_strata(d2: dict) -> dict:
+    strata = {k: v for k, v in d2.items() if k not in D2_METADATA}
+    for k, v in strata.items():
+        if k.split('/')[0] not in D2_KINDS or not isinstance(v, dict) or not {'n', 'delta_ce', 'delta_top1'} <= set(v):
+            raise ValueError(f'D2 entry {k!r} is not a stratum of the diagnosis schema')
+    if not strata:
+        raise ValueError('D2 has no strata')
+    return strata
+
+
 def policy_trigger(d2: dict) -> dict:
-    reduction = {k: -v['delta_ce'] * v['n'] for k, v in d2.items()}
+    strata = d2_strata(d2)
+    reduction = {k: -v['delta_ce'] * v['n'] for k, v in strata.items()}
     total = sum(reduction.values())
     proof = sum(v for k, v in reduction.items() if k.startswith('proof_one_hot/'))
-    visits = {k: v for k, v in d2.items() if k.startswith('visits/')}
+    visits = {k: v for k, v in strata.items() if k.startswith('visits/')}
     n = sum(v['n'] for v in visits.values())
     top1 = sum(v['delta_top1'] * v['n'] for v in visits.values()) / n if n else None
     visits_reduction = sum(v for k, v in reduction.items() if k.startswith('visits/'))
