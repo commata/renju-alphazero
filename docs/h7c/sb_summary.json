@@ -1,0 +1,192 @@
+{
+ "format": "h7c-budget-v1-summary",
+ "seed": 8741,
+ "pairs": 50,
+ "rule": "STRONGER: the 95% pair-bootstrap lower bound of (score - 0.5) against S50 is above 0",
+ "arms": {
+  "S100": {
+   "factor": 2,
+   "score": 0.52,
+   "score_ci95": [
+    0.435,
+    0.6
+   ],
+   "improvement_ci95": [
+    -0.065,
+    0.1
+   ],
+   "elo": 13.9,
+   "score_by_color": {
+    "black": 0.61,
+    "white": 0.43
+   },
+   "stronger": false,
+   "cost": {
+    "tested_seconds": 2129.9,
+    "opponent_seconds": 1352.3,
+    "time_ratio": 1.575,
+    "tree_moves": 1099,
+    "tree_seconds_mean": 1.7854
+   },
+   "tree": {
+    "chose_prior_top": 0.667,
+    "top_share": 0.6272,
+    "visited_children": 8.053
+   },
+   "opponent_illegal_pairs": []
+  },
+  "S200": {
+   "factor": 4,
+   "score": 0.615,
+   "score_ci95": [
+    0.52,
+    0.705
+   ],
+   "improvement_ci95": [
+    0.02,
+    0.205
+   ],
+   "elo": 81.4,
+   "score_by_color": {
+    "black": 0.66,
+    "white": 0.57
+   },
+   "stronger": true,
+   "cost": {
+    "tested_seconds": 4419.5,
+    "opponent_seconds": 1508.0,
+    "time_ratio": 2.931,
+    "tree_moves": 1476,
+    "tree_seconds_mean": 2.8334
+   },
+   "tree": {
+    "chose_prior_top": 0.628,
+    "top_share": 0.6504,
+    "visited_children": 9.541
+   },
+   "opponent_illegal_pairs": []
+  },
+  "S400": {
+   "factor": 8,
+   "score": 0.59,
+   "score_ci95": [
+    0.49,
+    0.69
+   ],
+   "improvement_ci95": [
+    -0.01,
+    0.19
+   ],
+   "elo": 63.2,
+   "score_by_color": {
+    "black": 0.72,
+    "white": 0.46
+   },
+   "stronger": false,
+   "cost": {
+    "tested_seconds": 7708.7,
+    "opponent_seconds": 1521.6,
+    "time_ratio": 5.066,
+    "tree_moves": 1450,
+    "tree_seconds_mean": 5.1208
+   },
+   "tree": {
+    "chose_prior_top": 0.5993,
+    "top_share": 0.6733,
+    "visited_children": 10.463
+   },
+   "opponent_illegal_pairs": []
+  }
+ },
+ "reading": "BUDGET_HELPS",
+ "smallest_stronger_budget": {
+  "simulations": 200,
+  "tactical_simulations": 400
+ },
+ "arm_sha256": {
+  "S100": "ffae070ec731335cb5222c3a9d65269c380fe264a23751e141e637f4736baffc",
+  "S200": "1670b4467146b251882a86b3837898c5a81e4939a3ef4bfa6f0482ed14cc47f7",
+  "S400": "635ae0f1e0d6dbdbfbbbdf4ac6e63654e836b0118722ce0a60c670b2f691d65d"
+ },
+ "saturation": null,
+ "positions": {
+  "positions": 952,
+  "tree_at_every_budget": 948,
+  "reproduced_at_k1": 948,
+  "by_factor": {
+   "1": {
+    "budget": {
+     "simulations": 50,
+     "tactical_simulations": 100
+    },
+    "n": 948,
+    "chose_prior_top": 0.6867,
+    "agrees_with_largest": 0.6403,
+    "js_to_largest": 0.10363,
+    "entropy": 1.1306,
+    "top_share": 0.619,
+    "visited_children": 8.313,
+    "seconds": 1.301,
+    "by_side": {
+     "black": 0.6856,
+     "white": 0.6879
+    }
+   },
+   "2": {
+    "budget": {
+     "simulations": 100,
+     "tactical_simulations": 200
+    },
+    "n": 948,
+    "chose_prior_top": 0.6203,
+    "agrees_with_largest": 0.711,
+    "js_to_largest": 0.06769,
+    "entropy": 1.1214,
+    "top_share": 0.6184,
+    "visited_children": 9.613,
+    "seconds": 1.7656,
+    "by_side": {
+     "black": 0.6369,
+     "white": 0.6022
+    }
+   },
+   "4": {
+    "budget": {
+     "simulations": 200,
+     "tactical_simulations": 400
+    },
+    "n": 948,
+    "chose_prior_top": 0.5854,
+    "agrees_with_largest": 0.8259,
+    "js_to_largest": 0.0289,
+    "entropy": 1.0893,
+    "top_share": 0.6321,
+    "visited_children": 10.579,
+    "seconds": 2.813,
+    "by_side": {
+     "black": 0.6085,
+     "white": 0.5604
+    }
+   },
+   "8": {
+    "budget": {
+     "simulations": 400,
+     "tactical_simulations": 800
+    },
+    "n": 948,
+    "chose_prior_top": 0.5338,
+    "agrees_with_largest": 1.0,
+    "js_to_largest": 0.0,
+    "entropy": 1.0338,
+    "top_share": 0.6553,
+    "visited_children": 11.443,
+    "seconds": 4.8272,
+    "by_side": {
+     "black": 0.5619,
+     "white": 0.5033
+    }
+   }
+  },
+  "sha256": "4a7fbbf80c4e57810974ceffb8389951d0647d93729b21a69c7d8c1b1b2805f8"
+ }
+}
