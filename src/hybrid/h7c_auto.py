@@ -8,6 +8,8 @@ R1-R6 (docs/h7c-auto.md), each named below.
     cycle_stage            the first step of cycle c whose evidence is missing, and the action it needs
     next_cycle_decision    after a cycle's verdict: MANUAL_REVIEW / E2 / BLOCKED_SEED_RANGE / *_TOOLING / NEXT_CYCLE
     sb_branch, e2_state    the E2 episode (search-budget ablation with the champion, saturation, B prescriptions)
+    g0_errors, *_errors    each stage's evidence against the previous one (the SHA-256 chain); [] when consistent
+    commit_gate            before any step: uncommitted evidence, or any other change since the code base
     cost_preflight         the retarget's projected time before it starts (R4; the run's own gate is authoritative)
     evidence_only          the paths a commit may touch after the cycle's ``code_base_commit``
 """
@@ -49,27 +51,6 @@ def _step(state: str, action: str | None = None, **why) -> dict:
 
 # --- one cycle --------------------------------------------------------------------------------------------------
 
-def train_artifacts_ok(record: dict | None, best_sha256: str | None, cycle: int, parent_sha256: str) -> str | None:
-    """A training record and its candidate: None when consistent, else the reason (BLOCKED_TRAIN). NO_CANDIDATE is a
-    result, not a failure: then no candidate may be recorded."""
-    if record is None:
-        return 'no record'
-    if record.get('cycle') != cycle:
-        return f"record of cycle {record.get('cycle')}"
-    if (record.get('inputs') or {}).get('parent_checkpoint_sha256') != parent_sha256:
-        return 'training did not start from the parent'
-    verdict = record.get('verdict')
-    if verdict == NO_CANDIDATE:
-        return None if best_sha256 is None else 'NO_CANDIDATE with a candidate file'
-    if verdict != 'CANDIDATE':
-        return f'verdict {verdict!r}'
-    if best_sha256 is None:
-        return 'CANDIDATE without its metadata file'
-    if (record.get('candidate') or {}).get('metadata_sha256') != best_sha256:
-        return 'candidate metadata SHA-256 differs from the record'
-    return None
-
-
 def resolve_candidate(policy_verdict: str, value_verdict: str, cycle: int) -> str:
     """h7c_arena: both candidates -> JOINT; policy NO_CANDIDATE + value candidate -> the value-only fallback
     (cycle >= 2); otherwise the no-candidate record."""
@@ -92,10 +73,16 @@ def cost_preflight(eligible_rows: int, tree_seconds: float, workers: int, cap_se
 
 def cycle_stage(ev: dict) -> dict:
     """The first missing step of cycle ``ev['cycle']``. Keys (all optional but ``cycle``): ``ready`` (cycle 2: the
-    G0 / G0b evidence and the c1 chain), ``tooling``, ``recipe``, ``selfplay``, ``preflight`` (cost_preflight's
-    status), ``retarget``, ``retarget_partial``, ``labels``, ``train_error``, ``policy_verdict`` / ``value_verdict``,
-    ``verdict``, ``x2`` (the X2 record exists; not needed for a no-candidate cycle), ``cycle_index``."""
-    c, tooling = ev['cycle'], ev.get('tooling') or {}
+    G0 / G0b contract and the c1 chain), ``tooling``, ``recipe``, ``champion_error`` (the parent files on this machine
+    are not the previous verdict's ``next_champion``), ``selfplay``, ``preflight`` (cost_preflight's status),
+    ``retarget``, ``retarget_partial``, ``labels``, ``policy_verdict`` / ``value_verdict``, ``verdict``, ``x2``,
+    ``x2_config``, ``cycle_index``, and ``errors`` ({stage: [reasons]} for evidence that exists but fails its
+    checks: a stage with errors blocks, it never counts as done)."""
+    c, tooling, errors = ev['cycle'], ev.get('tooling') or {}, ev.get('errors') or {}
+
+    def blocked(stage: str):
+        return _step(f'BLOCKED_{stage.upper()}', None, errors=errors[stage]) if errors.get(stage) else None
+
     if c < FIRST_CYCLE:
         return _step('BLOCKED', None, reason=f'the automation starts at cycle {FIRST_CYCLE}')
     if c not in ARENA_CYCLES or not 8801 <= selfplay_seed(c) <= 8999:
@@ -106,8 +93,14 @@ def cycle_stage(ev: dict) -> dict:
         return _step('C3_RECIPE_TOOLING_REQUIRED', None, reason='h7c_retarget run takes no recipe carry-forward')
     if not ev.get('recipe'):
         return _step('RECIPE_REQUIRED', 'WRITE_RECIPE')
+    if b := blocked('recipe'):
+        return b
+    if ev.get('champion_error') and not ev.get('verdict'):
+        return _step('BLOCKED_CHAMPION_FILES', None, reason=ev['champion_error'])
     if not ev.get('selfplay'):
         return _step('SELFPLAY_READY', 'RUN_SELFPLAY', seed=selfplay_seed(c))
+    if b := blocked('selfplay'):
+        return b
     if not ev.get('retarget'):
         if ev.get('retarget_partial') and not tooling.get('retarget_cost_ledger'):
             return _step('MANUAL_COST_RESUME_REVIEW_REQUIRED', None,
@@ -116,24 +109,38 @@ def cycle_stage(ev: dict) -> dict:
         if ev.get('preflight') == 'MANUAL_COST_PREFLIGHT_REVIEW_REQUIRED':
             return _step('MANUAL_COST_PREFLIGHT_REVIEW_REQUIRED', None)
         return _step('RETARGET_READY', 'RUN_RETARGET', preflight=ev.get('preflight'))
+    if b := blocked('retarget'):
+        return b
     if not ev.get('labels'):
         return _step('LABELS_READY', 'RUN_LABELS')
+    if b := blocked('labels'):
+        return b
     if not ev.get('policy_verdict'):
         return _step('POLICY_TRAIN_READY', 'RUN_POLICY_TRAIN')
     if not ev.get('value_verdict'):
         return _step('VALUE_TRAIN_READY', 'RUN_VALUE_TRAIN')
-    if ev.get('train_error'):
-        return _step('BLOCKED_TRAIN', None, reason=ev['train_error'])
+    if b := blocked('train'):
+        return b
     mode = resolve_candidate(ev['policy_verdict'], ev['value_verdict'], c)
     if not ev.get('verdict'):
         if mode == NO_CANDIDATE:
             return _step('NO_CANDIDATE_VERDICT_READY', 'RUN_NO_CANDIDATE', candidate_mode=mode)
         return _step('ARENA_BUNDLE_READY', 'RUN_ARENA_BUNDLE', candidate_mode=mode,
                      note='every arm, the tactical record and the verdict on one HEAD: no commit in between')
-    if mode != NO_CANDIDATE and not ev.get('x2'):
-        return _step('X2_MONITOR_READY', 'RUN_X2')
+    if b := blocked('arena'):
+        return b
+    if mode != NO_CANDIDATE:
+        if not ev.get('x2'):
+            if not ev.get('x2_config'):
+                return _step('X2_CONFIG_REQUIRED', None, reason='the Rapfi engine files of this machine '
+                                                                '(runs/h7c/automation/x2_config.json)')
+            return _step('X2_MONITOR_READY', 'RUN_X2')
+        if b := blocked('x2'):
+            return b
     if not ev.get('cycle_index'):
         return _step('CYCLE_INDEX_READY', 'WRITE_CYCLE_INDEX', x2='NOT_APPLICABLE' if mode == NO_CANDIDATE else 'DONE')
+    if b := blocked('cycle_index'):
+        return b
     return _step('CYCLE_COMPLETE', 'NEXT_CYCLE_DECISION')
 
 
@@ -257,6 +264,207 @@ def e2_state(stronger: set | None, saturation: str | None, triggers: dict | None
                  triggers=triggers)
 
 
+# --- evidence checks (one stage each; [] when consistent) ---------------------------------------------------------
+
+MODEL_KEYS = ('policy_checkpoint_sha256', 'policy_metadata_sha256', 'value_checkpoint_sha256', 'value_metadata_sha256')
+SELFPLAY_KEYS = ('cycle', 'run_seed', 'engine_hash', 'runtime_hash', 'value_device', 'models', 'model_hash',
+                 'generator_git')   # hybrid.h7c_retarget.SELFPLAY_KEYS: what a retarget names of its self-play
+SELFPLAY_GAMES = 1000
+
+
+def _diff(errors: list, label: str, got, want) -> None:
+    if got != want:
+        errors.append(f'{label}: {got!r} != {want!r}' if len(repr(got)) + len(repr(want)) < 160 else f'{label} differs')
+
+
+def g0_errors(g0: dict | None, g0b: dict | None, selfplay: dict, selfplay_jsonl_sha256: str) -> list[str]:
+    """The approved G0 / G0b contract (docs/h7-c1.md), not just a PASS: G0 = factor 1 over all 1,000 c1 games with
+    the v1 projection compared and equal; G0b = factor 4, both modes, the first 20 games, no difference. Both name
+    the c1 self-play file and identity and a clean commit."""
+    errors = []
+    for name, rec, factor, games, modes in (('G0', g0, 1, SELFPLAY_GAMES, None),
+                                            ('G0b', g0b, TEACHER_FACTOR, 20, ['restored', 'sequential'])):
+        if rec is None:
+            errors.append(f'{name} missing')
+            continue
+        ident = rec.get('identity') or {}
+        _diff(errors, f'{name} format', rec.get('format'), 'h7c-retarget-v1-check')
+        _diff(errors, f'{name} verdict', rec.get('verdict'), 'PASS')
+        _diff(errors, f'{name} purpose', ident.get('purpose'), 'g0')
+        _diff(errors, f'{name} factor', ident.get('factor'), factor)
+        _diff(errors, f'{name} games', rec.get('games'), games)
+        _diff(errors, f'{name} coverage games', (ident.get('coverage') or {}).get('games'), games)
+        _diff(errors, f'{name} rows', rec.get('rows'), (ident.get('coverage') or {}).get('eligible'))
+        _diff(errors, f'{name} self-play file', ident.get('selfplay_jsonl_sha256'), selfplay_jsonl_sha256)
+        _diff(errors, f'{name} self-play identity', ident.get('selfplay'), {k: selfplay.get(k) for k in SELFPLAY_KEYS})
+        _diff(errors, f'{name} clean commit', (ident.get('git') or {}).get('dirty'), False)
+        if rec.get('failures'):
+            errors.append(f'{name} failures {rec["failures"]}')
+        if modes is None:
+            proj = rec.get('projection')
+            if not proj:
+                errors.append('G0 has no v1 projection (--policy-rows)')
+            elif proj.get('differ') or proj.get('missing') or not proj.get('compared'):
+                errors.append(f'G0 projection {proj}')
+            if any((rec.get('actor') or {}).values()) or rec.get('actor') is None:
+                errors.append('G0 actor records not reproduced')
+        else:
+            _diff(errors, 'G0b modes', sorted(ident.get('modes') or []), modes)
+            _diff(errors, 'G0b modes_differ', rec.get('modes_differ'), {})
+    return errors
+
+
+def selfplay_errors(summary: dict, cycle: int, parent: dict, recipe: dict) -> list[str]:
+    errors, ident = [], summary.get('identity') or {}
+    _diff(errors, 'format', summary.get('format'), 'h7c-selfplay-v1-summary')
+    _diff(errors, 'cycle', ident.get('cycle'), cycle)
+    _diff(errors, 'run seed', ident.get('run_seed'), selfplay_seed(cycle))
+    _diff(errors, 'models', ident.get('models'), parent)
+    for key in ('engine_hash', 'runtime_hash', 'value_device'):
+        _diff(errors, key, ident.get(key), recipe.get(key))
+    _diff(errors, 'games', (summary.get('start'), summary.get('games'), (summary.get('summary') or {}).get('games')),
+          (0, SELFPLAY_GAMES, SELFPLAY_GAMES))
+    dirty = ((summary.get('git') or {}).get('dirty'), (ident.get('generator_git') or {}).get('dirty'))
+    _diff(errors, 'clean commit', dirty, (False, False))
+    return errors
+
+
+def retarget_errors(summary: dict, selfplay: dict, recipe: dict) -> list[str]:
+    errors, ident = [], summary.get('identity') or {}
+    _diff(errors, 'format', summary.get('format'), 'h7c-retarget-v1-summary')
+    _diff(errors, 'purpose', ident.get('purpose'), 'retarget')
+    for key, want in (('factor', recipe.get('teacher_factor')), ('budget', recipe.get('budget')),
+                      ('mode', recipe.get('mode')), ('decision_sha256', recipe.get('source_decision_sha256')),
+                      ('cost_review_sha256', recipe.get('source_cost_review_sha256'))):
+        _diff(errors, key, ident.get(key), want)
+    _diff(errors, 'cap', summary.get('cap_seconds'), recipe.get('hard_cap_seconds'))
+    _diff(errors, 'self-play identity', ident.get('selfplay'),
+          {k: (selfplay.get('identity') or {}).get(k) for k in SELFPLAY_KEYS})
+    cov = summary.get('coverage') or {}
+    eligible = (selfplay.get('summary') or {}).get('target_kinds', {}).get('visits')
+    _diff(errors, 'coverage', (cov.get('eligible'), cov.get('completed'), cov.get('missing'), cov.get('duplicate'),
+                               cov.get('extra')), (eligible, eligible, 0, 0, 0))
+    _diff(errors, 'clean commit', (ident.get('git') or {}).get('dirty'), False)
+    return errors
+
+
+def labels_errors(report: dict, selfplay: dict, retarget: dict) -> list[str]:
+    errors, summary = [], report.get('summary') or {}
+    _diff(errors, 'format', (report.get('format'), report.get('policy_row_format')),
+          ('h7c-labels-v1', 'h7c-policy-row-v2'))
+    _diff(errors, 'clean commit', report.get('git_dirty'), False)
+    ident, sp = summary.get('identity') or {}, selfplay.get('identity') or {}
+    for key in ('cycle', 'engine_hash', 'runtime_hash', 'model_hash'):
+        _diff(errors, key, ident.get(key), sp.get(key))
+    _diff(errors, 'games in', summary.get('games_in'), SELFPLAY_GAMES)
+    info = ((summary.get('policy') or {}).get('retarget') or {}).get('info') or {}
+    _diff(errors, 'retarget file', info.get('sha256'), retarget.get('jsonl_sha256'))
+    _diff(errors, 'retarget coverage', info.get('coverage_sha256'),
+          ((retarget.get('identity') or {}).get('coverage') or {}).get('coverage_sha256'))
+    return errors
+
+
+def train_errors(name: str, record: dict | None, cycle: int, parent: dict, metadata_sha256: str | None,
+                 checkpoint_sha256: str | None, check_checkpoint: bool, source: dict) -> list[str]:
+    """One training record and its candidate. NO_CANDIDATE is a result (no candidate file may exist); a CANDIDATE
+    needs its metadata (committed) and, before its Arena, its checkpoint on this machine, both as the record names
+    them. ``source``: the fields the record's inputs must repeat (parent models, the retarget, the value labels)."""
+    if record is None:
+        return [f'{name}: no record']
+    errors = []
+    _diff(errors, f'{name} format', record.get('format'), f'h7c-{name}-train-v1')
+    _diff(errors, f'{name} cycle', record.get('cycle'), cycle)
+    _diff(errors, f'{name} clean commit', (record.get('git') or {}).get('dirty'), False)
+    inputs = record.get('inputs') or {}
+    for kind in ('checkpoint', 'metadata'):
+        _diff(errors, f'{name} parent {kind}', inputs.get(f'parent_{kind}_sha256'), parent.get(f'{name}_{kind}_sha256'))
+    for key, want in source.items():
+        got = inputs
+        for part in key.split('.'):
+            got = (got or {}).get(part)
+        _diff(errors, f'{name} {key}', got, want)
+    verdict = record.get('verdict')
+    if verdict == NO_CANDIDATE:
+        if metadata_sha256 is not None:
+            errors.append(f'{name}: NO_CANDIDATE with a candidate metadata file')
+        return errors
+    if verdict != 'CANDIDATE':
+        return errors + [f'{name}: verdict {verdict!r}']
+    cand = record.get('candidate') or {}
+    if metadata_sha256 is None:
+        errors.append(f'{name}: CANDIDATE without its metadata file')
+    else:
+        _diff(errors, f'{name} candidate metadata', metadata_sha256, cand.get('metadata_sha256'))
+    if check_checkpoint:
+        if checkpoint_sha256 is None:
+            errors.append(f'{name}: the candidate checkpoint is not on this machine')
+        else:
+            _diff(errors, f'{name} candidate checkpoint', checkpoint_sha256, cand.get('checkpoint_sha256'))
+    return errors
+
+
+def expected_candidate(mode: str, policy_record: dict, value_record: dict, parent: dict) -> dict | None:
+    """The four SHA-256 the Arena must name: JOINT both new; the fallback the parent policy and the new value."""
+    if mode == NO_CANDIDATE:
+        return None
+    pol = ({'policy_checkpoint_sha256': parent['policy_checkpoint_sha256'],
+            'policy_metadata_sha256': parent['policy_metadata_sha256']} if mode == FALLBACK else
+           {'policy_checkpoint_sha256': policy_record['candidate']['checkpoint_sha256'],
+            'policy_metadata_sha256': policy_record['candidate']['metadata_sha256']})
+    return {**pol, 'value_checkpoint_sha256': value_record['candidate']['checkpoint_sha256'],
+            'value_metadata_sha256': value_record['candidate']['metadata_sha256']}
+
+
+def verdict_errors(verdict: dict, cycle: int, parent: dict, champion_sha256: str, mode: str, candidate: dict | None,
+                   record_sha256: dict) -> list[str]:
+    errors, promotion = [], verdict.get('promotion') or {}
+    _diff(errors, 'format', verdict.get('format'), 'h7c-arena-v1-verdict')
+    _diff(errors, 'cycle', verdict.get('cycle'), cycle)
+    _diff(errors, 'seed', verdict.get('seed'), 8730 + cycle)
+    _diff(errors, 'parent', verdict.get('parent'), parent)
+    _diff(errors, 'champion record', verdict.get('champion_record_sha256'), champion_sha256)
+    _diff(errors, 'candidate', verdict.get('candidate'), candidate)
+    if mode == NO_CANDIDATE:
+        _diff(errors, 'reason', promotion.get('reason'), NO_CANDIDATE)
+        _diff(errors, 'training records', (verdict.get('training') or {}).get('record_sha256'), record_sha256)
+    else:
+        _diff(errors, 'candidate mode', verdict.get('candidate_mode') or JOINT, mode)
+    if promotion.get('decision') not in (PROMOTE, KEEP):
+        errors.append(f"decision {promotion.get('decision')!r}")
+    want_next = candidate if promotion.get('decision') == PROMOTE else parent
+    _diff(errors, 'next champion', verdict.get('next_champion'), want_next)
+    return errors
+
+
+def x2_errors(x2: dict, cycle: int, candidate: dict) -> list[str]:
+    errors, h7c = [], (x2.get('ours_provenance') or {}).get('h7c') or {}
+    _diff(errors, 'format', x2.get('format'), 'external-match-v1')
+    _diff(errors, 'seed', x2.get('seed'), 8710 + cycle)
+    _diff(errors, 'clean commit', x2.get('git_dirty'), False)
+    _diff(errors, 'cycle', h7c.get('cycle'), cycle)
+    _diff(errors, 'models', h7c.get('models'), candidate)
+    return errors
+
+
+def commit_gate(dirty: list[str], changed: list[str], cycle: int, extra: tuple = ()) -> dict | None:
+    """Before any step: uncommitted or committed changes since the cycle's ``code_base_commit``. Only this cycle's
+    evidence (or the previous cycle's, while its index waits for a commit; ``extra`` before the first recipe) may
+    change; it must be committed before the next tool runs (they refuse a dirty tree)."""
+    previous = cycle - 1 if cycle - 1 >= FIRST_CYCLE else None
+
+    def outside(path: str, committed: bool) -> bool:
+        if path in extra or not evidence_only([path], cycle):
+            return False
+        return committed or previous is None or bool(evidence_only([path], previous))
+
+    bad = sorted({p for p in changed if outside(p, True)} | {p for p in dirty if outside(p, False)})
+    if bad:
+        return _step('MANUAL_CODE_CHANGE_REVIEW_REQUIRED', None, paths=bad)
+    if dirty:
+        return _step('EVIDENCE_COMMIT_REQUIRED', 'COMMIT_EVIDENCE', paths=sorted(dirty))
+    return None
+
+
 # --- commits ------------------------------------------------------------------------------------------------------
 
 def evidence_only(paths, cycle: int, episode: int | None = None) -> list[str]:
@@ -268,10 +476,12 @@ def evidence_only(paths, cycle: int, episode: int | None = None) -> list[str]:
     return sorted(p for p in paths if not any(fnmatch.fnmatchcase(p, a) for a in allowed))
 
 
-RECIPE_LINEAGE = ('cycle', 'parent_recipe_sha256', 'source_verdict_sha256', 'code_base_commit', 'source_e2_plan_sha256',
-                  'intervention', 'trigger')
+RECIPE_SEMANTICS = ('recipe', 'teacher_factor', 'budget', 'mode', 'hard_cap_seconds', 'tree_seconds_mean', 'workers',
+                    'actor', 'engine_hash', 'runtime_hash', 'value_device', 'policy_config_sha256',
+                    'value_config_sha256', 'intervention')
 
 
 def recipe_fingerprint(recipe: dict) -> dict:
-    """The recipe without its lineage: a REPLICATE cycle's must equal the previous one's."""
-    return {k: v for k, v in recipe.items() if k not in RECIPE_LINEAGE and not k.startswith('source_')}
+    """What a recipe trains with (a whitelist: seeds, lineage and provenance fields are left out): a REPLICATE
+    cycle's must equal the previous one's."""
+    return {k: recipe.get(k) for k in RECIPE_SEMANTICS}
