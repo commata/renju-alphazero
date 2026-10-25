@@ -6,7 +6,9 @@
 
 The teacher (KL) and the guard baseline are always the frozen H3 (``analysis.tb_v3.MODELS``); the parent is the
 cycle's starting policy (c1: the same H3), and it must be the policy that played the cycle's self-play: the rows'
-``h7c_provenance`` (one model pair, every game id of this cycle) names it by SHA-256. The output is a policy-only checkpoint ``best.pt`` with ``best.json``
+``h7c_provenance`` (one model pair, every game id of this cycle) names it by SHA-256. v2 rows (visits targets from a
+search retarget, ``scripts/h7c_retarget.py``) carry the retarget's identity; the record (``inputs.source.retarget``)
+and ``best.json`` (``source_retarget``) keep it, None for v1 rows. The output is a policy-only checkpoint ``best.pt`` with ``best.json``
 (``hybrid.h4_policy.RootPolicy`` loads it; ``analysis.tb_v3_net`` takes it as a candidate) and ``record.json``. No
 eligible checkpoint (every one more than 2 points of RenjuNet top-1 below H3): ``NO_CANDIDATE``, no ``best.pt``,
 exit 1. A dirty tree is refused (``--allow-dirty`` for tests only).
@@ -91,7 +93,7 @@ def run(args, log=print) -> dict:
                 'parent_checkpoint_sha256': record['inputs']['parent_checkpoint_sha256'],
                 'teacher_checkpoint_sha256': shas['checkpoint'], 'policy_rows_sha256': record['inputs']['policy_rows_sha256'],
                 'source_models': source['models'], 'source_selfplay_git_commit': source['selfplay_git_commit'],
-                'source_runtime_hash': source['runtime_hash'],
+                'source_runtime_hash': source['runtime_hash'], 'source_retarget': source['retarget'],
                 'best': result['record']['best'], 'teacher_guard_top1': result['record']['teacher_guard']['top1'],
                 'git': git}
         (out / 'best.json.tmp').write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')

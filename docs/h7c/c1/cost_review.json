@@ -1,0 +1,38 @@
+{
+ "format": "h7c-cost-review-v1",
+ "cycle": 1,
+ "applies_to_cycle": 2,
+ "decision_sha256": "1917d66c802c2a4559a7b9a90e86521c61a1af6b3fa1b3d7b2bfd353d633ece4",
+ "decision_inputs_sha256": {
+  "diagnosis": "32d38cd2827a0480b6cc94a982a5177346e75a9b327ae68e14781f967612476f",
+  "sb": "8d2df6920f463ebd9a3d88b5a879889a4ab96a519e89c0de54be60fd284aae06",
+  "selfplay": "6684bc8f1d618b2ce2b15c89d0aa1e0af995b610123353dcbbd78da9b8383092"
+ },
+ "case": "A_COST_REVIEW",
+ "approved": {
+  "factor": 4,
+  "budget": {
+   "simulations": 200,
+   "tactical_simulations": 400
+  },
+  "mode": "restored"
+ },
+ "decision_projection": {
+  "tree_positions": 22068,
+  "tree_seconds_mean": 2.8334,
+  "projected_seconds": 10421.2,
+  "ceiling_seconds": 8582.8,
+  "over_ceiling": 0.2142
+ },
+ "manual_multiple": 1.25,
+ "hard_cap_seconds": 10728.5,
+ "cap_rule": "the retarget run stops when its projected wall time (this session's rate x all eligible rows) exceeds hard_cap_seconds, first after 20 complete games and 256 rows, then at 10%, 25% and 50% of the rows; the cap is absolute (it does not move with the c2 self-play time, whose 1.25 x 2 x wall is recorded as a diagnostic only)",
+ "reasons": [
+  "S200 is STRONGER than S50 in direct games (score 0.615, improvement 95% CI [+0.020, +0.205], 50 pairs)",
+  "B_POLICY and B_VALUE did not fire (proof share 0.134, visits top-1 +0.029; network gain 0.041 of 0.059)",
+  "the projected re-search is 21.4% over the pre-registered 2x self-play ceiling",
+  "the actor stays the frozen TB-V3 S50; only the visits targets come from S200 / tactical S400",
+  "the only recipe change of c2; policy and value hyperparameters unchanged"
+ ],
+ "approved_by": "user (docs/h7-c1.md, S200 retarget)"
+}

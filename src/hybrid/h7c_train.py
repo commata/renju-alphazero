@@ -76,15 +76,20 @@ def rows_source(provenances, game_ids, cycle: int) -> dict:
 
 
 def policy_rows_source(path: Path, cycle: int) -> dict:
-    """``rows_source`` over every policy row (masked ones too)."""
-    provenances, ids = [], []
+    """``rows_source`` over every policy row (masked ones too), plus the one search retarget of the file (v2 rows,
+    ``scripts/h7c_retarget.py``) or None (v1 rows)."""
+    provenances, ids, retargets = [], [], set()
     with gzip.open(path, 'rt', encoding='utf-8') as handle:
         for line in handle:
             if line.strip():
                 row = json.loads(line)
                 provenances.append(row.get('h7c_provenance'))
                 ids.append(row.get('game_id'))
-    return rows_source(provenances, ids, cycle)
+                retargets.add(json.dumps(row.get('retarget'), sort_keys=True))
+    source = rows_source(provenances, ids, cycle)
+    if len(retargets) != 1:
+        raise ValueError(f'the policy rows name {len(retargets)} search retargets (one, or none for v1 rows)')
+    return {**source, 'retarget': json.loads(retargets.pop())}
 
 
 def value_rows_source(path: Path, cycle: int, labels_sha256: str) -> dict:
@@ -197,14 +202,19 @@ class PolicyConfig:
         return _config(cls, data)
 
 
+POLICY_ROW_FORMATS = ('h7c-policy-row-v1', 'h7c-policy-row-v2')  # v2: visits targets from a search retarget
+
+
 def load_policy_rows(path: Path) -> dict[str, list[dict]]:
-    """Unmasked policy rows of ``scripts/h7c_labels.py`` by split."""
+    """Unmasked policy rows of ``scripts/h7c_labels.py`` by split (one row format per file)."""
     out: dict[str, list[dict]] = {'train': [], 'val': []}
+    formats = set()
     with gzip.open(path, 'rt', encoding='utf-8') as handle:
         for line in handle:
             row = json.loads(line)
-            if row.get('format') != 'h7c-policy-row-v1':
-                raise ValueError(f"policy row format {row.get('format')!r}")
+            formats.add(row.get('format'))
+            if row.get('format') not in POLICY_ROW_FORMATS or len(formats) > 1:
+                raise ValueError(f"policy row format {row.get('format')!r} (one of {POLICY_ROW_FORMATS} per file)")
             if not row['mask']:
                 out.setdefault(row['split'], []).append(row)
     return out

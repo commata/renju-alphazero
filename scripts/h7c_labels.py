@@ -26,6 +26,13 @@ Outputs go under ``data/`` or ``runs/`` (never committed), written to ``.tmp`` f
 everything passed. The report records the label step's own ``git_commit`` and ``git_dirty``; a dirty tree is refused
 (``--allow-dirty`` for tests only).
 
+Retarget (cycle >= 2, ``--retarget``, rules in ``hybrid.h7c_retarget``): the records of ``scripts/h7c_retarget.py
+run`` for exactly this self-play file (its SHA-256, identity and coverage: every actor ``visits`` ply once, no other)
+replace the actor's search in the policy targets of those plies: ``hybrid.h7c_targets.policy_target`` over the
+retarget's visits and the union of both proven-loss sets (a target with no mass gives no row, counted). Proof rows and
+the value rows are unchanged. The rows are ``h7c-policy-row-v2`` (``POLICY_FORMAT_V2``) and carry the retarget's
+identity; without ``--retarget`` the output is the v1 output, unchanged.
+
     python -u scripts/h7c_labels.py --games runs/h7c/c1/selfplay_8801.jsonl --workers 12 --fast fast4 \\
         --value-output runs/h7c/c1/value_rows.jsonl.gz --policy-output runs/h7c/c1/policy_rows.jsonl.gz \\
         --report runs/h7c/c1/labels_report.json
@@ -46,6 +53,7 @@ for path in (ROOT / 'src', ROOT / 'scripts'):
 
 import build_h6_labels as h6b  # noqa: E402
 from hybrid import h6_fast  # noqa: E402
+from hybrid import h7c_retarget as hr  # noqa: E402
 from hybrid.h6_labels import (  # noqa: E402
     canonical_hash, check_game_provenance, check_leakage, check_reserved_seed, default_probe_files,
     first_probe, game_rows, mask_cross_split, probe_positions, report, side_name, split_for,
@@ -55,6 +63,7 @@ from renju import BLACK  # noqa: E402
 
 FORMAT = 'h7c-labels-v1'
 POLICY_FORMAT = 'h7c-policy-row-v1'
+POLICY_FORMAT_V2 = hr.POLICY_ROW_V2
 SOURCE = 'h7c-selfplay'
 SPLIT_SALT = 'h7c-v1'
 SPLIT_FRACTIONS = (('val', 0.05),)
@@ -176,19 +185,73 @@ def check_games(games: list[dict]) -> dict:
     return first
 
 
-def policy_rows(game: dict, split: str, provenance: dict) -> list[dict]:
+def policy_rows(game: dict, split: str, provenance: dict, retarget: dict | None = None,
+                counts: dict | None = None) -> list[dict]:
+    """The policy rows of one game; with ``retarget`` (``{'rows': {(game index, ply): record}, 'info': {...}}``) the
+    v2 rows, the visits plies' targets from the retarget records (module docstring)."""
     out = []
     for p in game['plies']:
         target = p['target']
         if target['kind'] == 'none':
             continue
         moves = game['moves'][:p['ply']]
-        out.append({'format': POLICY_FORMAT, 'game_id': game_id(game), 'source': SOURCE, 'split': split,
-                    'ply': p['ply'], 'moves': moves, 'side_to_move': side_name(p['ply']),
-                    'canonical_hash': canonical_hash(moves), 'kind': target['kind'], 'kl': target['kl'],
-                    'target': target['target'], 'raw_visits': p['visits'], 'played': p['played'],
-                    'event': p['event'], 'route': p['route'], 'mask': False, 'flags': [], **provenance})
+        row = {'format': POLICY_FORMAT, 'game_id': game_id(game), 'source': SOURCE, 'split': split,
+               'ply': p['ply'], 'moves': moves, 'side_to_move': side_name(p['ply']),
+               'canonical_hash': canonical_hash(moves), 'kind': target['kind'], 'kl': target['kl'],
+               'target': target['target'], 'raw_visits': p['visits'], 'played': p['played'],
+               'event': p['event'], 'route': p['route'], 'mask': False, 'flags': [], **provenance}
+        if retarget is not None:
+            row.update(format=POLICY_FORMAT_V2, retarget=retarget['info'], actor_raw_visits=p['visits'],
+                       actor_proven_loss=p['proven_loss'])
+            if target['kind'] == 'visits':
+                record = retarget['rows'][(game['game_index'], p['ply'])]
+                new, losses, loss_counts = hr.retarget_target(p, record)
+                if counts is not None:
+                    for k in ('same', 'actor_only', 'retarget_only'):
+                        counts[k] = counts.get(k, 0) + loss_counts[k]
+                    counts['move_changed'] = counts.get('move_changed', 0) + (
+                        list(record['engine_move']) != list(p['engine_move']))
+                if new['kind'] == 'none':  # all of the retarget's mass on proven losses: no policy loss here
+                    if counts is not None:
+                        counts['retarget_none'] = counts.get('retarget_none', 0) + 1
+                    continue
+                row.update(kind=new['kind'], kl=new['kl'], target=new['target'], raw_visits=record['visits'],
+                           target_source='retarget', proven_loss=losses, retarget_proven_loss=record['proven_loss'],
+                           retarget_move=record['engine_move'])
+                if counts is not None:
+                    counts['retargeted'] = counts.get('retargeted', 0) + 1
+            else:
+                row.update(target_source='actor', proven_loss=p['proven_loss'], retarget_proven_loss=None,
+                           retarget_move=None)
+        out.append(row)
     return out
+
+
+def load_retarget(path: Path) -> list[dict]:
+    with Path(path).open(encoding='utf-8') as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def retarget_rows(games: list[dict], records: list[dict], sha256: str) -> dict:
+    """The retarget records of exactly these games (identity, coverage, every row checked), by (game index, ply)."""
+    if not records:
+        raise ValueError('the retarget file is empty')
+    ident = records[0].get('identity') or {}
+    want = hr.selfplay_identity(games)
+    if ident.get('format') != hr.FORMAT or ident.get('purpose') != 'retarget':
+        raise ValueError('not a retarget run file (a G0 check file is never training data)')
+    if ident.get('selfplay') != want:
+        raise ValueError('the retarget file is of another self-play (cycle, seed, engine, runtime, models or commit)')
+    if ident.get('budget') != hr.budget(ident.get('factor')):
+        raise ValueError('the retarget budget is not 50k / 100k of its factor')
+    if ident.get('coverage') != hr.coverage(games):
+        raise ValueError("the retarget coverage is not this self-play's visits plies")
+    rows = hr.index_rows(games, records, ident)
+    info = {'sha256': sha256, 'format': hr.FORMAT, 'factor': ident['factor'], 'budget': ident['budget'],
+            'mode': ident['mode'], 'selfplay_jsonl_sha256': ident['selfplay_jsonl_sha256'],
+            'coverage_sha256': ident['coverage']['coverage_sha256'], 'decision_sha256': ident['decision_sha256'],
+            'cost_review_sha256': ident['cost_review_sha256'], 'git_commit': ident['git']['commit']}
+    return {'rows': rows, 'info': info}
 
 
 def mask_policy(policy: list[dict], row_probes: set[str]) -> dict:
@@ -211,8 +274,12 @@ def mask_policy(policy: list[dict], row_probes: set[str]) -> dict:
 
 def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: float, proof_weight: float,
           prove_losses: bool, vct1: bool, probe_game_min_ply: int, workers: int, fast: str,
-          progress_seconds: float = 60.0) -> tuple[list, list[dict], dict]:
+          progress_seconds: float = 60.0, retarget: dict | None = None) -> tuple[list, list[dict], dict]:
+    """``retarget``: ``{'records': [...], 'sha256': ...}`` of ``scripts/h7c_retarget.py run`` (v2 policy rows)."""
     identity = check_games(games)
+    if retarget is not None:  # over every game of the file, before any is dropped (the run searched them all)
+        retarget = retarget_rows(games, retarget['records'], retarget['sha256'])
+    retarget_counts: dict = {}
     game_probes = {h for h, p in probes.items() if p['ply'] >= probe_game_min_ply}
     row_probes = set(probes) - game_probes
     unsafe = [p for h, p in probes.items() if h in row_probes and p['ply'] > h6b.MAX_ROW_ONLY_PROBE_PLY]
@@ -269,7 +336,8 @@ def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: flo
         rows.extend(these)
         policy.extend(policy_rows(g, split, {'engine_config_hash': identity['engine_hash'],
                                              'model_hash': identity['model_hash'],
-                                             'git_commit': provenance['git_commit'], 'h7c_provenance': detail}))
+                                             'git_commit': provenance['git_commit'], 'h7c_provenance': detail},
+                                  retarget=retarget, counts=retarget_counts))
     cross = mask_cross_split(rows)
     check_leakage(rows)
     check_game_provenance(rows)
@@ -289,6 +357,8 @@ def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: flo
                'value': {'cross_split_masked': cross, **report(rows)},
                'policy': {'rows': len(policy), 'unmasked_by_kind': kinds, 'unmasked_by_split': splits,
                           'masked': policy_masked}}
+    if retarget is not None:
+        summary['policy']['retarget'] = {'info': retarget['info'], 'kept_games': retarget_counts}
     for row in rows:
         row.h7c_provenance = detail
     return rows, policy, summary
@@ -346,6 +416,7 @@ def main(argv=None) -> int:
     parser.add_argument('--value-output', type=Path, required=True)
     parser.add_argument('--policy-output', type=Path, required=True)
     parser.add_argument('--report', type=Path)
+    parser.add_argument('--retarget', type=Path, help='scripts/h7c_retarget.py run records of this self-play file')
     parser.add_argument('--allow-dirty', action='store_true', help='tests only: labels from a dirty tree')
     args = parser.parse_args(argv)
     from run_mcts_v8_benchmark import _git_dirty
@@ -358,15 +429,26 @@ def main(argv=None) -> int:
         if path.exists() or path.with_name(path.name + '.tmp').exists():
             parser.error(f'{path} (or its .tmp) exists')
     probe_files = default_probe_files(ROOT) + list(args.probe_files)
+    retarget = None
+    if args.retarget is not None:
+        if len(args.games) != 1:
+            parser.error('--retarget: one self-play file (the one the retarget searched)')
+        import h7c_retarget as rt
+        retarget = {'records': load_retarget(args.retarget), 'sha256': rt.file_sha256(args.retarget)}
+        if retarget['records'] and (retarget['records'][0].get('identity') or {}).get('selfplay_jsonl_sha256') != \
+                rt.file_sha256(args.games[0]):
+            parser.error(f'{args.retarget} was made from another self-play file than {args.games[0]}')
     try:
         rows, policy, summary = build(read_games(args.games), probes=probe_positions(probe_files, ROOT),
                                       from_ply=args.from_ply, outcome_weight=args.outcome_weight,
                                       proof_weight=args.proof_weight, prove_losses=args.prove_losses, vct1=args.vct1,
-                                      probe_game_min_ply=args.probe_game_min_ply, workers=args.workers, fast=args.fast)
+                                      probe_game_min_ply=args.probe_game_min_ply, workers=args.workers, fast=args.fast,
+                                      retarget=retarget)
     except ValueError as exc:
         parser.error(str(exc))
     payload = {'format': FORMAT, 'value_row_format': rows[0].to_dict()['format'] if rows else None,
-               'policy_row_format': POLICY_FORMAT, 'git_commit': git['commit'], 'git_dirty': git['dirty'],
+               'policy_row_format': POLICY_FORMAT if retarget is None else POLICY_FORMAT_V2,
+               'git_commit': git['commit'], 'git_dirty': git['dirty'],
                'games': [str(p) for p in args.games],
                'settings': {k: getattr(args, k) for k in ('from_ply', 'outcome_weight', 'proof_weight', 'prove_losses',
                                                           'vct1', 'probe_game_min_ply', 'fast')},
