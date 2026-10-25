@@ -77,7 +77,8 @@ class NextCycleTest(unittest.TestCase):
 
 class CycleStageTest(unittest.TestCase):
     FULL = {'cycle': 2, 'ready': True, 'recipe': True, 'selfplay': True, 'preflight': 'WARN', 'retarget': True,
-            'labels': True, 'policy_verdict': 'CANDIDATE', 'value_verdict': 'CANDIDATE', 'verdict': True, 'x2': True,
+            'labels': True, 'manifest': True, 'policy_verdict': 'CANDIDATE', 'value_verdict': 'CANDIDATE',
+            'verdict': True, 'x2': True,
             'cycle_index': True}
 
     def stage(self, **changes):
@@ -91,6 +92,7 @@ class CycleStageTest(unittest.TestCase):
         self.assertEqual(auto.cycle_stage({**self.FULL, 'selfplay': False})['why']['seed'], 8802)
         self.assertEqual(self.stage(retarget=False), 'RETARGET_READY')
         self.assertEqual(self.stage(labels=False), 'LABELS_READY')
+        self.assertEqual(self.stage(manifest=False), 'EVIDENCE_MANIFEST_READY')
         self.assertEqual(self.stage(policy_verdict=None), 'POLICY_TRAIN_READY')
         self.assertEqual(self.stage(value_verdict=None), 'VALUE_TRAIN_READY')
         self.assertEqual(self.stage(verdict=False), 'ARENA_BUNDLE_READY')
@@ -105,10 +107,22 @@ class CycleStageTest(unittest.TestCase):
     def test_failing_evidence_blocks(self):
         for stage, state in (('selfplay', 'BLOCKED_SELFPLAY'), ('retarget', 'BLOCKED_RETARGET'),
                              ('labels', 'BLOCKED_LABELS'), ('arena', 'BLOCKED_ARENA'), ('x2', 'BLOCKED_X2'),
-                             ('cycle_index', 'BLOCKED_CYCLE_INDEX'), ('recipe', 'BLOCKED_RECIPE')):
+                             ('cycle_index', 'BLOCKED_CYCLE_INDEX'), ('recipe', 'BLOCKED_RECIPE'),
+                             ('manifest', 'BLOCKED_MANIFEST')):
             self.assertEqual(self.stage(errors={stage: ['x']}), state)
         self.assertEqual(self.stage(errors={'selfplay': []}), 'CYCLE_COMPLETE')
         self.assertEqual(self.stage(champion_error='not on this machine', verdict=False), 'BLOCKED_CHAMPION_FILES')
+        # after the Arena, before X2: a candidate checkpoint gone or changed blocks the X2 step
+        self.assertEqual(self.stage(x2=False, x2_config=True, errors={'train': ['value: checkpoint']}), 'BLOCKED_TRAIN')
+        self.assertEqual(self.stage(x2=False, x2_config=True, champion_error='parent policy gone'),
+                         'BLOCKED_CHAMPION_FILES')
+
+    def test_checkpoints_needed(self):
+        self.assertTrue(auto.checkpoints_needed(False, False, None))          # training / Arena
+        self.assertTrue(auto.checkpoints_needed(True, False, 'JOINT'))        # X2 still to run
+        self.assertTrue(auto.checkpoints_needed(True, False, 'VALUE_ONLY_FALLBACK'))
+        self.assertFalse(auto.checkpoints_needed(True, True, 'JOINT'))
+        self.assertFalse(auto.checkpoints_needed(True, False, 'NO_CANDIDATE'))
 
     def test_an_index_alone_is_no_cycle(self):
         self.assertEqual(auto.cycle_stage({'cycle': 2, 'ready': True, 'cycle_index': True})['state'],
@@ -117,6 +131,14 @@ class CycleStageTest(unittest.TestCase):
 
     def test_x2_config(self):
         self.assertEqual(self.stage(x2=False, x2_config=False), 'X2_CONFIG_REQUIRED')
+        self.assertEqual(self.stage(x2=False, x2_config=True, errors={'x2_config': ['engine']}), 'BLOCKED_X2_CONFIG')
+        good = {'engine': '/e/rapfi', 'engine_name': 'rapfi', 'engine_info': ['max_node=300'],
+                'engine_files': ['/e/config.toml'], 'workers': 4}
+        self.assertEqual(auto.x2_config_errors(good), [])
+        for bad in ({}, [], {**good, 'engine': ''}, {**good, 'engine_info': 'max_node=300'},
+                    {**good, 'engine_files': [1]}, {**good, 'workers': 0}, {**good, 'workers': '4'},
+                    {**good, 'workers': True}, {**good, 'engine_name': ''}):
+            self.assertTrue(auto.x2_config_errors(bad), bad)
 
     def test_training_results(self):
         self.assertEqual(self.stage(policy_verdict='NO_CANDIDATE', verdict=False), 'ARENA_BUNDLE_READY')  # fallback
@@ -258,6 +280,27 @@ class EvidenceOnlyTest(unittest.TestCase):
         self.assertNotEqual(auto.recipe_fingerprint(a), auto.recipe_fingerprint({**b, 'intervention': 'proof_off'}))
 
 
+class ManifestTest(unittest.TestCase):
+    RETARGET = {'jsonl_sha256': 'r' * 64, 'identity': {'selfplay_jsonl_sha256': 's' * 64}}
+
+    def manifest(self, **changes):
+        return {'format': 'h7c-evidence-v2', 'cycle': 2, 'selfplay_jsonl_sha256': 's' * 64,
+                'retarget_jsonl_sha256': 'r' * 64, 'labels_report_sha256': 'l' * 64, 'policy_rows_sha256': 'p' * 64,
+                'value_rows_sha256': 'v' * 64, **changes}
+
+    def test_mutations(self):
+        self.assertEqual(auto.manifest_errors(self.manifest(), 2, self.RETARGET, 'l' * 64), [])
+        for key in ('selfplay_jsonl_sha256', 'retarget_jsonl_sha256', 'labels_report_sha256'):
+            self.assertTrue(auto.manifest_errors(self.manifest(**{key: 'x' * 64}), 2, self.RETARGET, 'l' * 64), key)
+        self.assertTrue(auto.manifest_errors(self.manifest(policy_rows_sha256=None), 2, self.RETARGET, 'l' * 64))
+        self.assertTrue(auto.manifest_errors(self.manifest(), 3, self.RETARGET, 'l' * 64))
+        # the policy record must name the manifest's row file
+        rec = TrainArtifactTest().rec(inputs={'parent_checkpoint_sha256': 'pc', 'parent_metadata_sha256': 'pm',
+                                              'policy_rows_sha256': 'x' * 64})
+        self.assertTrue(auto.train_errors('policy', rec, 2, TrainArtifactTest.PARENT, 'm', 'c', True,
+                                          {'policy_rows_sha256': 'p' * 64}))
+
+
 class G0Test(unittest.TestCase):
     SELFPLAY = {'cycle': 1, 'run_seed': 8801, 'engine_hash': 'e', 'runtime_hash': 'r', 'value_device': 'cuda',
                 'models': {'m': 1}, 'model_hash': 'h', 'generator_git': {'commit': 'g', 'dirty': False}}
@@ -286,6 +329,9 @@ class G0Test(unittest.TestCase):
         self.assertTrue(self.errors(g0=self.rec(1, 1000, ['restored'],
                                                projection={'compared': 0, 'differ': 0, 'missing': 0})))
         self.assertTrue(self.errors(g0b=self.rec(4, 20, ['restored'])))                # one mode only
+        self.assertTrue(self.errors(g0=self.rec(1, 1000, ['restored'], actor={})))     # no per-mode report
+        self.assertTrue(self.errors(g0=self.rec(1, 1000, ['restored'], actor={'restored': {'move': 3}})))
+        self.assertTrue(self.errors(g0=self.rec(1, 1000, ['sequential'])))             # G0 is the restored mode
         self.assertTrue(self.errors(g0b=self.rec(2, 20, ['restored', 'sequential'])))  # wrong factor
         self.assertTrue(self.errors(g0=self.rec(1, 1000, ['restored'], verdict='FAIL')))
         other = {**self.rec(4, 20, ['restored', 'sequential'])}
@@ -330,6 +376,29 @@ class RepositoryTest(unittest.TestCase):
         found = cli.verdicts()
         fake = {'path': found[0]['path'], 'record': {**found[0]['record'], 'cycle': 2, 'parent': {'x': 1}}}
         self.assertTrue(cli.chain_errors(found + [fake]))
+
+    def test_x2_command(self):
+        history = [auto.cycle_entry(cli.verdicts()[0]['record'])]
+        cfg = {'engine': '/e/rapfi', 'engine_info': ['max_node=300'], 'engine_files': ['/e/a.bin'], 'workers': 4}
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'x2_config.json'
+            path.write_text(json.dumps(cfg), encoding='utf-8')
+            with mock.patch.object(cli, 'X2_CONFIG', path):
+                lines = {mode: cli.command({'cycle': 2, 'history': history, 'step': auto._step(
+                    'X2_MONITOR_READY', 'RUN_X2', candidate_mode=mode)})[0]
+                    for mode in ('JOINT', 'VALUE_ONLY_FALLBACK')}
+        joint, fallback = lines['JOINT'], lines['VALUE_ONLY_FALLBACK']
+        self.assertIn('--policy-checkpoint runs/h7c/c2/policy/best.pt', joint)
+        self.assertNotIn('--candidate-mode', joint)
+        self.assertNotIn('--policy-record', joint)
+        self.assertIn(f"--policy-checkpoint {cli.FROZEN['policy']}", fallback)   # the parent policy
+        self.assertIn('--candidate-mode VALUE_ONLY_FALLBACK', fallback)
+        self.assertIn('--policy-record runs/h7c/c2/policy/record.json', fallback)
+        self.assertIn('--engine /e/rapfi', joint)
+        self.assertIn('--engine-info max_node=300', joint)
+        self.assertIn('--engine-file /e/a.bin', joint)
+        self.assertIn('--workers 4', joint)
+        self.assertNotIn('...', joint + fallback)
 
     def test_uncommitted_recipe_is_a_commit_step(self):
         with mock.patch.object(cli, 'dirty_paths', return_value=['docs/h7c/c2/recipe.json']):

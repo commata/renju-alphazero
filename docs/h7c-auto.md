@@ -20,6 +20,7 @@ python scripts/h7c_auto.py next          # NEXT_ACTION과 (도구가 있으면) 
 python scripts/h7c_auto.py explain       # 근거(보류 창, 정체, preflight 등) JSON
 python scripts/h7c_auto.py verify        # frozen checker, c1 decision 재계산, verdict 사슬, recipe SHA, evidence-only
 python scripts/h7c_auto.py recipe --cycle 2   # G0 / G0b evidence 커밋 뒤, clean tree에서 docs/h7c/c2/recipe.json
+python scripts/h7c_auto.py manifest --cycle 2 # labels 뒤: runs/의 원본 파일 SHA → docs/h7c/c2/evidence_manifest.json
 python scripts/h7c_auto.py index --cycle 2    # 검사를 통과한 evidence의 SHA만으로 docs/h7c/c2/cycle.json
 ```
 
@@ -32,8 +33,8 @@ python scripts/h7c_auto.py index --cycle 2    # 검사를 통과한 evidence의 
 | 형식 · 판정 | `h7c-retarget-v1-check`, purpose `g0`, PASS, failures 없음 | 같음 |
 | factor · 판 수 | 1, 1,000판(coverage games = 1,000) | 4, 20판 |
 | 행 | rows = coverage eligible | 같음 |
-| 비교 | actor 재현 차이 0, v1 projection 있음 ∧ differ 0 ∧ missing 0 ∧ compared > 0 | modes = {restored, sequential}, `modes_differ` = {} |
-| 출처 | c1 self-play JSONL SHA(`evidence_manifest.json`) · self-play identity, clean commit | 같음 |
+| 비교 | modes = [restored], `actor` = {restored: {}}(차이 0), v1 projection 있음 ∧ differ 0 ∧ missing 0 ∧ compared > 0 | modes = {restored, sequential}, `modes_differ` = {} |
+| 출처 | c1 self-play JSONL SHA(`evidence_manifest.json`) · self-play identity, clean commit, 그 commit이 HEAD의 조상 | 같음 |
 
 2026-10-25 현재 이 checkout에는 G0 / G0b evidence가 없어서 `NOT_C2_READY`다.
 
@@ -56,7 +57,7 @@ recipe는 그 뒤의 코드 변경을 막으므로, 자동화 코드 수정은 �
 | pool | Arena · SB 명시적 `spawn`; self-play · retarget · labels 기본 context | 바꾸지 않음(바꾸면 G0 / G0b · throughput 재측정) |
 | workers | `h7c1_throughput.json`(self-play만): 6 / 8 / 10 / 12 / 14 → 514.2 / 510.1 / 500.8 / 481.7 / 473.0 games/h, 선택 6 | self-play · retarget · Arena = 6(recipe에 기록), labels · value cache = c1과 같은 12 |
 | 학습 | NO_CANDIDATE → record + exit 1 | 정상 결과. CANDIDATE인데 metadata 없음 / SHA 불일치 / parent 불일치 → `BLOCKED_TRAIN` |
-| X2 | 기록 전용, `--value-device cuda`, Rapfi 파일 경로는 머신마다 다름 | JOINT / FALLBACK이면 `X2_MONITOR`, no-candidate면 NOT_APPLICABLE. `runs/h7c/automation/x2_config.json`(engine, engine_name, engine_files, engine_info, workers; 커밋 안 함)이 없으면 `X2_CONFIG_REQUIRED` |
+| X2 | 기록 전용, `--value-device cuda`, Rapfi 파일 경로는 머신마다 다름. fallback은 `--candidate-mode VALUE_ONLY_FALLBACK --policy-record`가 필요(기본 JOINT) | JOINT / FALLBACK이면 `X2_MONITOR`, no-candidate면 NOT_APPLICABLE. `runs/h7c/automation/x2_config.json`(커밋 안 함): 없으면 `X2_CONFIG_REQUIRED`, 형식 오류면 `BLOCKED_X2_CONFIG`(engine 비지 않은 문자열, engine_name 선택, engine_info · engine_files 문자열 목록, workers 정수 ≥ 1) |
 
 ## 기초 수치 (설명용, 쌍 점수 σ = 0.325 정규 근사)
 
@@ -73,7 +74,7 @@ C2_READY
  → SELFPLAY → EVIDENCE_COMMIT_REQUIRED
  → COST_PREFLIGHT (PASS / WARN / MANUAL_COST_PREFLIGHT_REVIEW_REQUIRED)
  → RETARGET → EVIDENCE_COMMIT_REQUIRED        (partial: MANUAL_COST_RESUME_REVIEW_REQUIRED; 실행 중 gate: BLOCKED_COST_CAP)
- → LABELS → EVIDENCE_COMMIT_REQUIRED
+ → LABELS → EVIDENCE_COMMIT_REQUIRED → EVIDENCE_MANIFEST (원본 파일 SHA) → EVIDENCE_COMMIT_REQUIRED
  → POLICY_TRAIN → VALUE_TRAIN → TRAIN_ARTIFACT_VERIFY (BLOCKED_TRAIN) → EVIDENCE_COMMIT_REQUIRED
  → CANDIDATE_RESOLVE: JOINT / VALUE_ONLY_FALLBACK → ARENA_BUNDLE | 그 밖 → NO_CANDIDATE_VERDICT
  → EVIDENCE_COMMIT_REQUIRED → X2_MONITOR | X2_NOT_APPLICABLE → EVIDENCE_COMMIT_REQUIRED
@@ -82,7 +83,7 @@ C2_READY
 
 cycle c의 evidence(`docs/h7c/c<c>/`): `recipe.json`, `selfplay_c<c>_seed<8800+c>.json`, `retarget_s200.json`,
 `labels_c<c>_report.json`, `policy_record.json` / `policy_best.json`, `value_record.json` / `value_best.json`,
-`value_cache_manifest.json`, `arena_verdict.json`, `docs/external/x2_c<c>.json`, `cycle.json`.
+`value_cache_manifest.json`, `evidence_manifest.json`, `arena_verdict.json`, `docs/external/x2_c<c>.json`, `cycle.json`.
 위에서부터 첫 미충족이 현재 단계다. **파일이 있어도 검사를 통과하지 못하면 그 단계는 완료가 아니라 `BLOCKED_<단계>`다.**
 
 **단계별 검사 (SHA 사슬, `hybrid.h7c_auto`의 `*_errors`).** 각 evidence의 코드 커밋은 recipe의 `code_base_commit`과 HEAD
@@ -95,7 +96,8 @@ cycle c의 evidence(`docs/h7c/c<c>/`): `recipe.json`, `selfplay_c<c>_seed<8800+c
 | self-play | 형식, cycle, seed 8800 + c, 모델 = parent, engine / runtime / device = recipe, 1,000판(start 0), clean |
 | retarget | factor · budget · mode · decision · cost review · cap = recipe, self-play identity = self-play 요약, coverage eligible = completed = self-play visits 수, missing · duplicate · extra 0, clean |
 | labels | v2 policy 행, clean, cycle · engine · runtime · model hash = self-play, 1,000판 입력, retarget 파일 SHA · coverage SHA = retarget 요약 |
-| 학습 | 형식, cycle, clean, parent 2 SHA, source 모델 = parent, policy의 retarget = labels의 retarget, value의 labels SHA = value cache manifest. CANDIDATE는 metadata SHA = record, Arena 전에는 `runs/`의 best.pt SHA = record(없거나 다르면 `BLOCKED_TRAIN`) |
+| 원본 manifest (`h7c-evidence-v2`, labels 뒤 `manifest`) | `runs/`의 self-play JSONL · retarget JSONL · labels report · policy rows · value rows SHA. self-play JSONL = retarget이 기록한 것, retarget JSONL = retarget 요약, labels report = 커밋된 사본. c1의 `evidence_manifest.json`과 같은 역할 |
+| 학습 | 형식, cycle, clean, parent 2 SHA, source 모델 = parent, policy의 retarget = labels의 retarget, policy rows SHA = 원본 manifest, value의 labels SHA = value cache manifest. CANDIDATE는 metadata SHA = record. 학습 · Arena · X2(no-candidate 제외)가 남아 있는 동안에는 `runs/`의 best.pt SHA = record, parent 파일 4 SHA = `next_champion`(없거나 다르면 `BLOCKED_TRAIN` / `BLOCKED_CHAMPION_FILES`) |
 | verdict | 형식, cycle, seed 8730 + c, parent, champion record = 직전 verdict SHA, candidate = record들이 정한 4 SHA(fallback이면 parent policy), mode, `next_champion` = PROMOTE면 candidate 아니면 parent. no-candidate면 두 record SHA |
 | X2 | 형식, seed 8710 + c, clean, cycle, 모델 = verdict candidate |
 | cycle.json | 위 파일들의 SHA와 판정으로 `index`가 다시 만든 내용과 같아야 한다. 파일만 있는 cycle.json은 cycle 완료가 아니다 |
@@ -188,3 +190,9 @@ actor 예산, PUCT · candidate_limit, policy / value 하이퍼파라미터 · g
 ## 남은 도구 (별도 승인 단계)
 
 `h7c_retarget run --recipe`(c3+), `h7c_budget`의 champion 모델 · seed 8742–8749(E2), fallback cycle용 진단, retarget 누적 cost ledger(자동 resume), Auto-v2 `run`(한 단계 실행; 학습 exit 1 + 유효 record = NO_CANDIDATE 정상 완료).
+
+## CI
+
+`scripts/ci_run_tests.py`가 `tests/test*.py`를 모두 찾으므로 `tests/test_h7c_auto.py`는 core-no-torch · full-tests에 이미 들어간다.
+full-tests는 Ubuntu 24.04에서 native VCF core(`-O2 -shared -fPIC`)를 빌드하고 `check_track_b_frozen.py --no-models`로 코드 ·
+엔진 · runtime을 검사한다(체크포인트 없음). workflow는 PR, main push, 수동 실행에서만 돈다(feature branch push 제외).

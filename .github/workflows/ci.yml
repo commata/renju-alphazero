@@ -67,6 +67,10 @@ jobs:
         run: python -m unittest tests.test_game -v
       - name: Build the native exact speed-up (H6 --fast fast3)
         run: PYTHONPATH=src python -m rt30.native.build
+      - name: Build the native VCF core (fast5, -O2 -shared -fPIC)
+        run: PYTHONPATH=src python -m rt30.vcfcore.build --if-stale
+      - name: Verify frozen Track B code / engine / runtime (no checkpoints on the runner)
+        run: python scripts/check_track_b_frozen.py --no-models
       - name: Run full regression with zero skips
         run: python scripts/ci_run_tests.py --skip-policy none
 
