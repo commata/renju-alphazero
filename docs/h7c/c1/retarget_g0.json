@@ -1,0 +1,59 @@
+{
+ "format": "h7c-retarget-v1-check",
+ "identity": {
+  "format": "h7c-retarget-v1",
+  "purpose": "g0",
+  "factor": 1,
+  "budget": {
+   "simulations": 50,
+   "tactical_simulations": 100
+  },
+  "modes": [
+   "restored"
+  ],
+  "selfplay_jsonl_sha256": "27cede34a5456bc599badb32f0bcf8ed3b12d04e905c00c22d9d7e8a83189834",
+  "selfplay": {
+   "cycle": 1,
+   "run_seed": 8801,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "value_device": "cuda",
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+    "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+   },
+   "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+   "generator_git": {
+    "commit": "8b617324108917431724662ffab44e2b1e365c1a",
+    "dirty": false
+   }
+  },
+  "coverage": {
+   "eligible": 21956,
+   "games": 1000,
+   "coverage_sha256": "22818d7668f4f5ce712455fa3d92e3959d814928c316ee37aa2e41807dfb7ea5"
+  },
+  "git": {
+   "commit": "4282b7aa8ecd80e8db7ef3904f81a1dbaee64e3a",
+   "dirty": false
+  }
+ },
+ "jsonl_sha256": "717de9bdef503aa3fe0ac87a0108ecd3b3de5e298ecc992fffc9b42d402b3cfe",
+ "rows": 21956,
+ "games": 1000,
+ "actor": {
+  "restored": {}
+ },
+ "modes_differ": null,
+ "examples": [],
+ "projection": {
+  "compared": 27293,
+  "differ": 0,
+  "missing": 0,
+  "not_in_cycle_rows": 9
+ },
+ "verdict": "PASS",
+ "failures": []
+}
