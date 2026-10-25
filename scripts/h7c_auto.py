@@ -18,6 +18,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 
@@ -53,7 +54,7 @@ def _sha(path: Path) -> str | None:
 
 
 def _rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)) if path.is_absolute() else str(path)
+    return str(path.relative_to(ROOT)) if path.is_absolute() and path.is_relative_to(ROOT) else str(path)
 
 
 def _git(*args: str) -> str:
@@ -218,6 +219,12 @@ def evidence(c: int, history: list[dict], found: list[dict], local: bool = True)
     if raw is None:
         return ev
     errors['manifest'] = auto.manifest_errors(raw, c, retarget, _sha(f['labels']))
+    done = {n: bool((_json(f[f'{n}_record']) or {}).get('verdict')) for n in ('policy', 'value')}
+    # before the policy training all raw files must still be the manifest's; then the value rows until the value
+    # training (the value cache is built from them)
+    pending = list(auto.MANIFEST_KEYS) if not done['policy'] else ['value_rows_sha256'] if not done['value'] else []
+    if local and pending:
+        errors['manifest'] += auto.raw_file_errors(raw, {k: _sha(p) for k, p in raw_files(c).items()}, pending)
     records = {name: _json(f[f'{name}_record']) for name in ('policy', 'value')}
     ev['policy_verdict'] = (records['policy'] or {}).get('verdict')
     ev['value_verdict'] = (records['value'] or {}).get('verdict')
@@ -255,13 +262,17 @@ def evidence(c: int, history: list[dict], found: list[dict], local: bool = True)
     return ev
 
 
+def raw_files(c: int) -> dict:
+    C, seed = ROOT / RUNS / f'c{c}', auto.selfplay_seed(c)
+    return {'selfplay_jsonl_sha256': C / f'selfplay_{seed}.jsonl', 'retarget_jsonl_sha256': C / 'retarget_s200.jsonl',
+            'labels_report_sha256': C / 'labels_report.json', 'policy_rows_sha256': C / 'policy_rows.jsonl.gz',
+            'value_rows_sha256': C / 'value_rows.jsonl.gz'}
+
+
 def raw_manifest(c: int) -> dict:
     """The SHA-256 of the cycle's raw files under runs/ (they are never committed; docs/h7c/c1/evidence_manifest.json
     did the same for c1)."""
-    C, seed = ROOT / RUNS / f'c{c}', auto.selfplay_seed(c)
-    files = {'selfplay_jsonl_sha256': C / f'selfplay_{seed}.jsonl', 'retarget_jsonl_sha256': C / 'retarget_s200.jsonl',
-             'labels_report_sha256': C / 'labels_report.json', 'policy_rows_sha256': C / 'policy_rows.jsonl.gz',
-             'value_rows_sha256': C / 'value_rows.jsonl.gz'}
+    files = raw_files(c)
     out = {'format': auto.MANIFEST_FORMAT, 'cycle': c}
     for key, path in files.items():
         if not path.exists():
@@ -397,9 +408,10 @@ def command(state: dict) -> list[str]:
         cfg = _json(X2_CONFIG)
         fallback = step['why'].get('candidate_mode') == auto.FALLBACK
         cand_pol = pol if fallback else f'{C}/policy/best.pt'
-        engine = ' '.join([f"--engine {cfg['engine']} --engine-name {cfg.get('engine_name', 'rapfi')}"] +
-                          [f'--engine-info {i}' for i in cfg.get('engine_info', [])] +
-                          [f'--engine-file {f}' for f in cfg.get('engine_files', [])])
+        q = shlex.quote
+        engine = ' '.join([f"--engine {q(cfg['engine'])} --engine-name {q(cfg.get('engine_name', 'rapfi'))}"] +
+                          [f'--engine-info {q(i)}' for i in cfg['engine_info']] +
+                          [f'--engine-file {q(f)}' for f in cfg['engine_files']])
         extra = f' --candidate-mode {auto.FALLBACK} --policy-record {C}/policy/record.json' if fallback else ''
         return [f'python -u scripts/h7c_external.py --cycle {c} --policy-checkpoint {cand_pol} --value-checkpoint '
                 f'{C}/value/best.pt --value-device cuda {engine} --workers {cfg["workers"]} --forbid-check '
@@ -506,7 +518,8 @@ def main(argv=None) -> int:
     if args.mode == 'verify':
         checks = verify(args.skip_frozen)
         print(json.dumps(checks, indent=1), flush=True)
-        return 0 if all(v == 'PASS' or k in ('c2_ready', 'state') for k, v in checks.items()) else 1
+        ok = all(v == 'PASS' or k in ('c2_ready', 'state') for k, v in checks.items())
+        return 0 if ok and not auto.is_error(checks['state'].split(' ', 1)[1]) else 1
     if args.mode == 'recipe':
         path = cycle_files(args.cycle)['recipe']
         if path.exists():

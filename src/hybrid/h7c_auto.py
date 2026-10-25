@@ -33,6 +33,12 @@ TEACHER_FACTOR = 4               # the c2 recipe (docs/h7c/c1/cost_review.json):
 SATURATION_FACTOR = 8            # the S400 150-pair stage
 TOOLING = ('c3_retarget_recipe', 'e2_sb_champion', 'fallback_diagnose', 'retarget_cost_ledger')
 ALLOWED_PATHS = ('docs/h7c/c{c}/*', 'docs/external/x2_c{c}.json')
+ERROR_STATES = ('MANUAL_CODE_CHANGE_REVIEW_REQUIRED',)   # with every BLOCKED_*: verify exits 1
+
+
+def is_error(state: str) -> bool:
+    """A failure of the evidence or the checkout, as opposed to a step to run or a decision to wait for."""
+    return state.startswith('BLOCKED') or state in ERROR_STATES
 ALLOWED_EPISODE_PATHS = ('docs/h7c/e2/e{n}/*',)
 
 
@@ -478,6 +484,19 @@ def manifest_errors(manifest: dict, cycle: int, retarget: dict, labels_report_sh
           (retarget.get('identity') or {}).get('selfplay_jsonl_sha256'))
     _diff(errors, 'retarget JSONL', manifest.get('retarget_jsonl_sha256'), retarget.get('jsonl_sha256'))
     _diff(errors, 'labels report', manifest.get('labels_report_sha256'), labels_report_sha256)
+    return errors
+
+
+def raw_file_errors(manifest: dict, current: dict, keys=MANIFEST_KEYS) -> list[str]:
+    """The raw files as they are now (``current``: key -> SHA-256, None when missing) against the committed manifest:
+    runs/ is ignored by git, so a row file changed after the manifest is seen only here. ``keys``: the files a step
+    still reads."""
+    errors = []
+    for key in keys:
+        if current.get(key) is None:
+            errors.append(f'{key}: the raw file is not on this machine')
+        elif current[key] != manifest.get(key):
+            errors.append(f'{key}: the raw file changed after the manifest')
     return errors
 
 

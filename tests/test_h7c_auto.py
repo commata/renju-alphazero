@@ -301,6 +301,37 @@ class ManifestTest(unittest.TestCase):
                                           {'policy_rows_sha256': 'p' * 64}))
 
 
+class RawFileTest(unittest.TestCase):
+    MANIFEST = ManifestTest().manifest()
+
+    def test_pure(self):
+        now = {k: self.MANIFEST[k] for k in auto.MANIFEST_KEYS}
+        self.assertEqual(auto.raw_file_errors(self.MANIFEST, now), [])
+        for key in ('value_rows_sha256', 'policy_rows_sha256'):
+            self.assertTrue(auto.raw_file_errors(self.MANIFEST, {**now, key: 'x' * 64}), key)
+            self.assertTrue(auto.raw_file_errors(self.MANIFEST, {**now, key: None}), key)
+        self.assertEqual(auto.raw_file_errors(self.MANIFEST, {**now, 'policy_rows_sha256': None},
+                                              ['value_rows_sha256']), [])
+
+    def test_changed_rows_after_the_manifest(self):
+        """manifest written -> a row file changes under runs/ -> the stage blocks before the trainer reads it."""
+        with TemporaryDirectory() as tmp:
+            files = {k: Path(tmp) / k for k in auto.MANIFEST_KEYS}
+            for path in files.values():
+                path.write_bytes(path.name.encode())
+            with mock.patch.object(cli, 'raw_files', return_value=files):
+                manifest = {**cli.raw_manifest(2), 'cycle': 2}
+                now = lambda: {k: cli._sha(p) for k, p in cli.raw_files(2).items()}  # noqa: E731
+                self.assertEqual(auto.raw_file_errors(manifest, now()), [])
+                for key in ('value_rows_sha256', 'policy_rows_sha256'):
+                    files[key].write_bytes(b'changed')
+                    errors = auto.raw_file_errors(manifest, now())
+                    self.assertTrue(any(e.startswith(key) for e in errors), key)
+                    stage = auto.cycle_stage({**CycleStageTest.FULL, 'policy_verdict': None, 'value_verdict': None,
+                                              'errors': {'manifest': errors}})
+                    self.assertEqual(stage['state'], 'BLOCKED_MANIFEST')
+
+
 class G0Test(unittest.TestCase):
     SELFPLAY = {'cycle': 1, 'run_seed': 8801, 'engine_hash': 'e', 'runtime_hash': 'r', 'value_device': 'cuda',
                 'models': {'m': 1}, 'model_hash': 'h', 'generator_git': {'commit': 'g', 'dirty': False}}
@@ -399,6 +430,30 @@ class RepositoryTest(unittest.TestCase):
         self.assertIn('--engine-file /e/a.bin', joint)
         self.assertIn('--workers 4', joint)
         self.assertNotIn('...', joint + fallback)
+
+    def test_x2_paths_are_quoted(self):
+        history = [auto.cycle_entry(cli.verdicts()[0]['record'])]
+        cfg = {'engine': '/home/u/My Engines/rapfi', 'engine_info': ['max_node=300'],
+               'engine_files': ['/home/u/My Engines/a b.bin'], 'workers': 4}
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / 'x2_config.json'
+            path.write_text(json.dumps(cfg), encoding='utf-8')
+            with mock.patch.object(cli, 'X2_CONFIG', path):
+                line = cli.command({'cycle': 2, 'history': history,
+                                    'step': auto._step('X2_MONITOR_READY', 'RUN_X2', candidate_mode='JOINT')})[0]
+        self.assertIn("--engine '/home/u/My Engines/rapfi'", line)
+        self.assertIn("--engine-file '/home/u/My Engines/a b.bin'", line)
+
+    def test_error_states(self):
+        for state in ('BLOCKED_TRAIN', 'BLOCKED_EVIDENCE', 'BLOCKED_SEED_RANGE', 'MANUAL_CODE_CHANGE_REVIEW_REQUIRED'):
+            self.assertTrue(auto.is_error(state), state)
+        for state in ('NOT_C2_READY', 'SELFPLAY_READY', 'CYCLE_COMPLETE', 'X2_CONFIG_REQUIRED',
+                      'C3_RECIPE_TOOLING_REQUIRED', 'EVIDENCE_COMMIT_REQUIRED', 'MANUAL_REVIEW_REQUIRED'):
+            self.assertFalse(auto.is_error(state), state)
+        with mock.patch.object(cli, 'dirty_paths', return_value=['src/x.py']):
+            self.assertEqual(cli.main(['verify', '--skip-frozen']), 1)
+        with mock.patch.object(cli, 'dirty_paths', return_value=[]):
+            self.assertEqual(cli.main(['verify', '--skip-frozen']), 0)   # NOT_C2_READY is not an error
 
     def test_uncommitted_recipe_is_a_commit_step(self):
         with mock.patch.object(cli, 'dirty_paths', return_value=['docs/h7c/c2/recipe.json']):
