@@ -1,0 +1,100 @@
+{
+ "format": "h6-value-cache-v1",
+ "labels_sha256": "421bf145ecae1d927f693a5a83b65b49aabe2c2ade4e8bc924764fa09cb87967",
+ "labels_file": "runs/h7c/c2/value_rows.jsonl.gz",
+ "h6_report_sha256": null,
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+ "policy_from_ply": 5,
+ "git_commit": "c7e412356f2179d6292dc2e8d12583b1760d161c",
+ "splits": {
+  "train": {
+   "states": 37609,
+   "games": 936,
+   "weight_sum": 8294.200048536062,
+   "by_kind": {
+    "outcome": {
+     "states": 32572,
+     "weight_sum": 3257.2000485360622,
+     "weight_share": 0.39270816106141093,
+     "sign": {
+      "+1": 11009,
+      "-1": 13863,
+      "0": 7700
+     }
+    },
+    "proof": {
+     "states": 5037,
+     "weight_sum": 5037.0,
+     "weight_share": 0.6072918389385891,
+     "sign": {
+      "+1": 4136,
+      "-1": 901,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 0,
+   "sha256": "8467c29d24d5d93f43e3827fdf3e5a9f48f3b4374519b6f55796f4353e0cd4ef"
+  },
+  "val": {
+   "states": 2261,
+   "games": 49,
+   "weight_sum": 448.40000300109386,
+   "by_kind": {
+    "outcome": {
+     "states": 2014,
+     "weight_sum": 201.40000300109386,
+     "weight_share": 0.4491525460596452,
+     "sign": {
+      "+1": 510,
+      "-1": 642,
+      "0": 862
+     }
+    },
+    "proof": {
+     "states": 247,
+     "weight_sum": 247.0,
+     "weight_share": 0.5508474539403548,
+     "sign": {
+      "+1": 202,
+      "-1": 45,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 370,
+   "sha256": "9e137f4eb5a99a46da0c8c97e1f1fc87db64291476ead06da99b45692505af25"
+  },
+  "test": {
+   "states": 0,
+   "games": 0,
+   "weight_sum": 0.0,
+   "by_kind": {
+    "outcome": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 0,
+   "sha256": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+  }
+ }
+}

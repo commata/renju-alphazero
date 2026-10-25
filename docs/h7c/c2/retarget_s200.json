@@ -1,0 +1,145 @@
+{
+ "format": "h7c-retarget-v1-summary",
+ "identity": {
+  "format": "h7c-retarget-v1",
+  "purpose": "retarget",
+  "factor": 4,
+  "budget": {
+   "simulations": 200,
+   "tactical_simulations": 400
+  },
+  "mode": "restored",
+  "selfplay_jsonl_sha256": "48b65dd7ed30eb17a7b45d37caa46228b3852277cf5ee2d9e9ae82baaf98585d",
+  "selfplay": {
+   "cycle": 2,
+   "run_seed": 8802,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "value_device": "cuda",
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+    "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+   },
+   "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+   "generator_git": {
+    "commit": "9dccf1f44253f6d7090f6076a43d464dcb203c19",
+    "dirty": false
+   }
+  },
+  "decision_sha256": "1917d66c802c2a4559a7b9a90e86521c61a1af6b3fa1b3d7b2bfd353d633ece4",
+  "decision_inputs_sha256": {
+   "diagnosis": "32d38cd2827a0480b6cc94a982a5177346e75a9b327ae68e14781f967612476f",
+   "sb": "8d2df6920f463ebd9a3d88b5a879889a4ab96a519e89c0de54be60fd284aae06",
+   "selfplay": "6684bc8f1d618b2ce2b15c89d0aa1e0af995b610123353dcbbd78da9b8383092"
+  },
+  "cost_review_sha256": "e00eda661660344eefb63acc73f76ab12d1dce103cdd215333f12210bb53b2a5",
+  "coverage": {
+   "eligible": 20910,
+   "games": 1000,
+   "coverage_sha256": "532419466006d6e54bda41dd462d60aea962507985b4318529a78ddf3b41a04d"
+  },
+  "git": {
+   "commit": "c7e412356f2179d6292dc2e8d12583b1760d161c",
+   "dirty": false
+  }
+ },
+ "jsonl_sha256": "14747ea3dfbede9f565d201ee5a1c5d5d6689ae42c46b65368d163f3e9cb7ad4",
+ "cap_seconds": 10728.5,
+ "gates": [
+  {
+   "point": "first",
+   "rows_done": 317,
+   "rows_total": 20910,
+   "elapsed_seconds": 155.7,
+   "window": {
+    "elapsed": 35.785743306998484,
+    "games": 6,
+    "rows": 50
+   },
+   "rows_per_second": 2.2262,
+   "projected_seconds": 9405.9,
+   "search_projection_seconds": 8996.9,
+   "cap_seconds": 10728.5,
+   "exceeded": false
+  },
+  {
+   "point": "0.10",
+   "rows_done": 2109,
+   "rows_total": 20910,
+   "elapsed_seconds": 988.6,
+   "window": {
+    "elapsed": 35.785743306998484,
+    "games": 6,
+    "rows": 50
+   },
+   "rows_per_second": 2.1609,
+   "projected_seconds": 9689.0,
+   "search_projection_seconds": 8760.4,
+   "cap_seconds": 10728.5,
+   "exceeded": false
+  },
+  {
+   "point": "0.25",
+   "rows_done": 5231,
+   "rows_total": 20910,
+   "elapsed_seconds": 2314.9,
+   "window": {
+    "elapsed": 35.785743306998484,
+    "games": 6,
+    "rows": 50
+   },
+   "rows_per_second": 2.2732,
+   "projected_seconds": 9212.2,
+   "search_projection_seconds": 8982.4,
+   "cap_seconds": 10728.5,
+   "exceeded": false
+  },
+  {
+   "point": "0.50",
+   "rows_done": 10459,
+   "rows_total": 20910,
+   "elapsed_seconds": 4427.6,
+   "window": {
+    "elapsed": 35.785743306998484,
+    "games": 6,
+    "rows": 50
+   },
+   "rows_per_second": 2.3701,
+   "projected_seconds": 8837.2,
+   "search_projection_seconds": 8819.8,
+   "cap_seconds": 10728.5,
+   "exceeded": false
+  }
+ ],
+ "wall_seconds_this_session": 8857.0,
+ "coverage": {
+  "eligible": 20910,
+  "games": 1000,
+  "coverage_sha256": "532419466006d6e54bda41dd462d60aea962507985b4318529a78ddf3b41a04d",
+  "completed": 20910,
+  "missing": 0,
+  "duplicate": 0,
+  "extra": 0
+ },
+ "dynamic_ceiling_diagnostic": {
+  "selfplay_wall_seconds": 4043.4,
+  "ceiling_1_25x": 10108.5
+ },
+ "summary": {
+  "rows": 20910,
+  "target_kinds": {
+   "visits": 20910
+  },
+  "proven_loss": {
+   "same": 396,
+   "actor_only": 175,
+   "retarget_only": 141
+  },
+  "move_changed_share": 0.244,
+  "visited_children_mean": 10.405,
+  "seconds_mean": 2.5076,
+  "cooldown_restored": 1485
+ }
+}

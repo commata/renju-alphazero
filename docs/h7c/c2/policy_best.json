@@ -1,0 +1,66 @@
+{
+ "stage": "H7-c-policy",
+ "track": "B",
+ "cycle": 2,
+ "policy_trained": true,
+ "value_trained": false,
+ "config": {
+  "channels": 64,
+  "blocks": 4,
+  "seed": 20261024,
+  "batch_size": 512,
+  "epochs": 2.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "kl_lambda": 0.5,
+  "augment_d4": true,
+  "evaluations": 10,
+  "guard_drop": 0.02,
+  "device": "cuda"
+ },
+ "parent_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "teacher_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "policy_rows_sha256": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71",
+ "source_models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+  "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+ },
+ "source_selfplay_git_commit": "9dccf1f44253f6d7090f6076a43d464dcb203c19",
+ "source_runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+ "source_retarget": {
+  "budget": {
+   "simulations": 200,
+   "tactical_simulations": 400
+  },
+  "cost_review_sha256": "e00eda661660344eefb63acc73f76ab12d1dce103cdd215333f12210bb53b2a5",
+  "coverage_sha256": "532419466006d6e54bda41dd462d60aea962507985b4318529a78ddf3b41a04d",
+  "decision_sha256": "1917d66c802c2a4559a7b9a90e86521c61a1af6b3fa1b3d7b2bfd353d633ece4",
+  "factor": 4,
+  "format": "h7c-retarget-v1",
+  "git_commit": "c7e412356f2179d6292dc2e8d12583b1760d161c",
+  "mode": "restored",
+  "selfplay_jsonl_sha256": "48b65dd7ed30eb17a7b45d37caa46228b3852277cf5ee2d9e9ae82baaf98585d",
+  "sha256": "14747ea3dfbede9f565d201ee5a1c5d5d6689ae42c46b65368d163f3e9cb7ad4"
+ },
+ "best": {
+  "step": 77,
+  "val": {
+   "rows": 1423,
+   "objective": 1.9761500516075192,
+   "ce": 1.9333043155415495,
+   "kl": 0.10413217911040243,
+   "top1_vs_target_mode": 0.5284609978917779
+  },
+  "guard_top1": 0.5047676647082849,
+  "guard_drop": 0.019345565364918715,
+  "eligible": true
+ },
+ "teacher_guard_top1": 0.5241132300732037,
+ "git": {
+  "commit": "c7e412356f2179d6292dc2e8d12583b1760d161c",
+  "dirty": false
+ }
+}

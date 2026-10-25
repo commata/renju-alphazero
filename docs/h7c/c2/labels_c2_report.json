@@ -1,0 +1,141 @@
+{
+ "format": "h7c-labels-v1",
+ "value_row_format": "h6-value-row-v1",
+ "policy_row_format": "h7c-policy-row-v2",
+ "git_commit": "c7e412356f2179d6292dc2e8d12583b1760d161c",
+ "git_dirty": false,
+ "games": [
+  "runs/h7c/c2/selfplay_8802.jsonl"
+ ],
+ "settings": {
+  "from_ply": 5,
+  "outcome_weight": 0.1,
+  "proof_weight": 1.0,
+  "prove_losses": false,
+  "vct1": false,
+  "probe_game_min_ply": 4,
+  "fast": "fast4"
+ },
+ "split": {
+  "salt": "h7c-v1",
+  "fractions": {
+   "val": 0.05
+  }
+ },
+ "probe_files": [
+  "tests/fixtures/stage7_probes_defense_v1.json",
+  "tests/fixtures/stage7_probes_v1.json",
+  "tests/fixtures/v8_budget_probes_v1.json",
+  "tests/fixtures/v8c_divergence_probes_v1.json",
+  "tests/fixtures/v8c_root_probes_v1.json",
+  "tests/fixtures/vct_probes_v1.json",
+  "docs/mcts-v8-results/probe_web_v8_loss_20261007.json",
+  "docs/mcts-v8-results/e1/e1_manifest.json",
+  "docs/mcts-v8-results/e1h/e1h_manifest.json",
+  "docs/mcts-v8-results/e1s/e1s_manifest.json",
+  "docs/h6/h6_fresh_dev_probes_v1.json",
+  "docs/h6/h6_fresh_dev_probes_v2.json",
+  "docs/h6/h6_fresh_final_probes_v1.json"
+ ],
+ "summary": {
+  "identity": {
+   "cycle": 2,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+   "frozen_models": true
+  },
+  "games_in": 1000,
+  "games_kept": 992,
+  "dropped": {
+   "probe_game": 8
+  },
+  "results": {
+   "black": 549,
+   "white": 404,
+   "draw": 39
+  },
+  "value": {
+   "cross_split_masked": {
+    "train": 0,
+    "val": 370,
+    "test": 0
+   },
+   "rows": 40240,
+   "labelled": 39870,
+   "by_split": {
+    "train": 37609,
+    "val": 2631
+   },
+   "by_kind": {
+    "outcome": 34586,
+    "proof_vcf": 2475,
+    "proof_unstoppable_four": 917,
+    "proof_forced_loss": 946,
+    "proof_immediate_win": 946
+   },
+   "by_depth": {
+    "0": 5284
+   },
+   "sign": {
+    "-1": 15451,
+    "+1": 15857,
+    "0": 8562
+   },
+   "sign_by_side": {
+    "white": {
+     "-1": 7976,
+     "+1": 7872,
+     "0": 4280
+    },
+    "black": {
+     "+1": 7985,
+     "-1": 7475,
+     "0": 4282
+    }
+   },
+   "masked_by_flag": {
+    "cross_split_duplicate": 370
+   }
+  },
+  "policy": {
+   "rows": 26000,
+   "unmasked_by_kind": {
+    "visits": 19981,
+    "proof_one_hot": 5519
+   },
+   "unmasked_by_split": {
+    "train": 24077,
+    "val": 1423
+   },
+   "masked": {
+    "probe_position": 162,
+    "cross_split_duplicate": 338
+   },
+   "retarget": {
+    "info": {
+     "sha256": "14747ea3dfbede9f565d201ee5a1c5d5d6689ae42c46b65368d163f3e9cb7ad4",
+     "format": "h7c-retarget-v1",
+     "factor": 4,
+     "budget": {
+      "simulations": 200,
+      "tactical_simulations": 400
+     },
+     "mode": "restored",
+     "selfplay_jsonl_sha256": "48b65dd7ed30eb17a7b45d37caa46228b3852277cf5ee2d9e9ae82baaf98585d",
+     "coverage_sha256": "532419466006d6e54bda41dd462d60aea962507985b4318529a78ddf3b41a04d",
+     "decision_sha256": "1917d66c802c2a4559a7b9a90e86521c61a1af6b3fa1b3d7b2bfd353d633ece4",
+     "cost_review_sha256": "e00eda661660344eefb63acc73f76ab12d1dce103cdd215333f12210bb53b2a5",
+     "git_commit": "c7e412356f2179d6292dc2e8d12583b1760d161c"
+    },
+    "kept_games": {
+     "same": 392,
+     "actor_only": 174,
+     "retarget_only": 140,
+     "move_changed": 4953,
+     "retargeted": 20437
+    }
+   }
+  }
+ }
+}
