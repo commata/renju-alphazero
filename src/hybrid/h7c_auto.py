@@ -75,7 +75,8 @@ def cycle_stage(ev: dict) -> dict:
     """The first missing step of cycle ``ev['cycle']``. Keys (all optional but ``cycle``): ``ready`` (cycle 2: the
     G0 / G0b contract and the c1 chain), ``tooling``, ``recipe``, ``champion_error`` (the parent files on this machine
     are not the previous verdict's ``next_champion``), ``selfplay``, ``preflight`` (cost_preflight's status),
-    ``retarget``, ``retarget_partial``, ``labels``, ``policy_verdict`` / ``value_verdict``, ``verdict``, ``x2``,
+    ``retarget``, ``retarget_partial``, ``labels``, ``manifest`` (the raw files' SHA-256), ``policy_verdict`` /
+    ``value_verdict``, ``verdict``, ``x2``,
     ``x2_config``, ``cycle_index``, and ``errors`` ({stage: [reasons]} for evidence that exists but fails its
     checks: a stage with errors blocks, it never counts as done)."""
     c, tooling, errors = ev['cycle'], ev.get('tooling') or {}, ev.get('errors') or {}
@@ -95,7 +96,7 @@ def cycle_stage(ev: dict) -> dict:
         return _step('RECIPE_REQUIRED', 'WRITE_RECIPE')
     if b := blocked('recipe'):
         return b
-    if ev.get('champion_error') and not ev.get('verdict'):
+    if ev.get('champion_error'):
         return _step('BLOCKED_CHAMPION_FILES', None, reason=ev['champion_error'])
     if not ev.get('selfplay'):
         return _step('SELFPLAY_READY', 'RUN_SELFPLAY', seed=selfplay_seed(c))
@@ -114,6 +115,10 @@ def cycle_stage(ev: dict) -> dict:
     if not ev.get('labels'):
         return _step('LABELS_READY', 'RUN_LABELS')
     if b := blocked('labels'):
+        return b
+    if not ev.get('manifest'):
+        return _step('EVIDENCE_MANIFEST_READY', 'WRITE_EVIDENCE_MANIFEST')
+    if b := blocked('manifest'):
         return b
     if not ev.get('policy_verdict'):
         return _step('POLICY_TRAIN_READY', 'RUN_POLICY_TRAIN')
@@ -134,7 +139,9 @@ def cycle_stage(ev: dict) -> dict:
             if not ev.get('x2_config'):
                 return _step('X2_CONFIG_REQUIRED', None, reason='the Rapfi engine files of this machine '
                                                                 '(runs/h7c/automation/x2_config.json)')
-            return _step('X2_MONITOR_READY', 'RUN_X2')
+            if b := blocked('x2_config'):
+                return b
+            return _step('X2_MONITOR_READY', 'RUN_X2', candidate_mode=mode)
         if b := blocked('x2'):
             return b
     if not ev.get('cycle_index'):
@@ -306,8 +313,8 @@ def g0_errors(g0: dict | None, g0b: dict | None, selfplay: dict, selfplay_jsonl_
                 errors.append('G0 has no v1 projection (--policy-rows)')
             elif proj.get('differ') or proj.get('missing') or not proj.get('compared'):
                 errors.append(f'G0 projection {proj}')
-            if any((rec.get('actor') or {}).values()) or rec.get('actor') is None:
-                errors.append('G0 actor records not reproduced')
+            _diff(errors, 'G0 modes', ident.get('modes'), ['restored'])
+            _diff(errors, 'G0 actor differences', rec.get('actor'), {'restored': {}})
         else:
             _diff(errors, 'G0b modes', sorted(ident.get('modes') or []), modes)
             _diff(errors, 'G0b modes_differ', rec.get('modes_differ'), {})
@@ -367,8 +374,9 @@ def labels_errors(report: dict, selfplay: dict, retarget: dict) -> list[str]:
 def train_errors(name: str, record: dict | None, cycle: int, parent: dict, metadata_sha256: str | None,
                  checkpoint_sha256: str | None, check_checkpoint: bool, source: dict) -> list[str]:
     """One training record and its candidate. NO_CANDIDATE is a result (no candidate file may exist); a CANDIDATE
-    needs its metadata (committed) and, before its Arena, its checkpoint on this machine, both as the record names
-    them. ``source``: the fields the record's inputs must repeat (parent models, the retarget, the value labels)."""
+    needs its metadata (committed) and, while a step still reads it (``checkpoints_needed``: training, the Arena,
+    then X2), its checkpoint on this machine, both as the record names them. ``source``: the fields the record's
+    inputs must repeat (parent models, the retarget, the row files, the value labels)."""
     if record is None:
         return [f'{name}: no record']
     errors = []
@@ -443,6 +451,50 @@ def x2_errors(x2: dict, cycle: int, candidate: dict) -> list[str]:
     _diff(errors, 'clean commit', x2.get('git_dirty'), False)
     _diff(errors, 'cycle', h7c.get('cycle'), cycle)
     _diff(errors, 'models', h7c.get('models'), candidate)
+    return errors
+
+
+def checkpoints_needed(verdict: bool, x2: bool, mode: str | None) -> bool:
+    """Whether the next step reads the parent and candidate checkpoints on this machine: training, the Arena, and
+    after the Arena the X2 match (not for a no-candidate cycle)."""
+    return not verdict or (mode not in (None, NO_CANDIDATE) and not x2)
+
+
+MANIFEST_FORMAT = 'h7c-evidence-v2'
+MANIFEST_KEYS = ('selfplay_jsonl_sha256', 'retarget_jsonl_sha256', 'labels_report_sha256', 'policy_rows_sha256',
+                 'value_rows_sha256')
+
+
+def manifest_errors(manifest: dict, cycle: int, retarget: dict, labels_report_sha256: str) -> list[str]:
+    """The raw files under runs/ (never committed) by SHA-256, tied to the committed summaries: the self-play and
+    retarget JSONL the retarget named, the label report committed beside it. The training records are checked
+    against its row files (``train_errors`` sources)."""
+    errors = []
+    _diff(errors, 'format', (manifest.get('format'), manifest.get('cycle')), (MANIFEST_FORMAT, cycle))
+    missing = [k for k in MANIFEST_KEYS if not isinstance(manifest.get(k), str) or len(manifest[k]) != 64]
+    if missing:
+        errors.append(f'missing SHA-256: {missing}')
+    _diff(errors, 'self-play JSONL', manifest.get('selfplay_jsonl_sha256'),
+          (retarget.get('identity') or {}).get('selfplay_jsonl_sha256'))
+    _diff(errors, 'retarget JSONL', manifest.get('retarget_jsonl_sha256'), retarget.get('jsonl_sha256'))
+    _diff(errors, 'labels report', manifest.get('labels_report_sha256'), labels_report_sha256)
+    return errors
+
+
+def x2_config_errors(cfg) -> list[str]:
+    """runs/h7c/automation/x2_config.json: this machine's Rapfi files for the X2 command."""
+    if not isinstance(cfg, dict):
+        return ['not a JSON object']
+    errors = []
+    if not isinstance(cfg.get('engine'), str) or not cfg['engine']:
+        errors.append('engine: a non-empty path')
+    if 'engine_name' in cfg and (not isinstance(cfg['engine_name'], str) or not cfg['engine_name']):
+        errors.append('engine_name: a non-empty string')
+    for key in ('engine_info', 'engine_files'):
+        if not isinstance(cfg.get(key), list) or not all(isinstance(x, str) and x for x in cfg[key]):
+            errors.append(f'{key}: a list of strings')
+    if not isinstance(cfg.get('workers'), int) or isinstance(cfg.get('workers'), bool) or cfg['workers'] < 1:
+        errors.append('workers: an integer >= 1')
     return errors
 
 
