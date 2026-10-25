@@ -1,0 +1,50 @@
+{
+ "format": "h7c-decision-v1",
+ "cycle": 1,
+ "rules": {
+  "proof_share_min": 0.5,
+  "visits_top1_delta_max": 0.0,
+  "network_share_min": 0.5,
+  "cost_multiple": 2.0,
+  "workers": 6
+ },
+ "sb_reading": "BUDGET_HELPS",
+ "saturation": null,
+ "budget": {
+  "helps": true,
+  "factor": 4,
+  "budget": {
+   "simulations": 200,
+   "tactical_simulations": 400
+  },
+  "tree_positions": 22068,
+  "tree_seconds_mean": 2.8334,
+  "projected_seconds": 10421.2,
+  "ceiling_seconds": 8582.8,
+  "affordable": false
+ },
+ "policy_trigger": {
+  "ce_reduction_total": 167.2422,
+  "visits_ce_reduction": 144.8071,
+  "proof_share_of_reduction": 0.1341,
+  "visits_top1_delta": 0.02941,
+  "fired": false
+ },
+ "value_trigger": {
+  "overall_relative_gain": 0.05922,
+  "network_relative_gain": 0.04097,
+  "fired": false
+ },
+ "case": "A_COST_REVIEW",
+ "v9_e1": {
+  "not_detected": false,
+  "saturated": false,
+  "no_b_trigger": true,
+  "met": false
+ },
+ "inputs_sha256": {
+  "diagnosis": "32d38cd2827a0480b6cc94a982a5177346e75a9b327ae68e14781f967612476f",
+  "sb": "8d2df6920f463ebd9a3d88b5a879889a4ab96a519e89c0de54be60fd284aae06",
+  "selfplay": "6684bc8f1d618b2ce2b15c89d0aa1e0af995b610123353dcbbd78da9b8383092"
+ }
+}
