@@ -57,7 +57,7 @@ recipe는 그 뒤의 코드 변경을 막으므로, 자동화 코드 수정은 �
 | pool | Arena · SB 명시적 `spawn`; self-play · retarget · labels 기본 context | 바꾸지 않음(바꾸면 G0 / G0b · throughput 재측정) |
 | workers | `h7c1_throughput.json`(self-play만): 6 / 8 / 10 / 12 / 14 → 514.2 / 510.1 / 500.8 / 481.7 / 473.0 games/h, 선택 6 | self-play · retarget · Arena = 6(recipe에 기록), labels · value cache = c1과 같은 12 |
 | 학습 | NO_CANDIDATE → record + exit 1 | 정상 결과. CANDIDATE인데 metadata 없음 / SHA 불일치 / parent 불일치 → `BLOCKED_TRAIN` |
-| X2 | 기록 전용, `--value-device cuda`, Rapfi 파일 경로는 머신마다 다름. fallback은 `--candidate-mode VALUE_ONLY_FALLBACK --policy-record`가 필요(기본 JOINT) | JOINT / FALLBACK이면 `X2_MONITOR`, no-candidate면 NOT_APPLICABLE. `runs/h7c/automation/x2_config.json`(커밋 안 함): 없으면 `X2_CONFIG_REQUIRED`, 형식 오류면 `BLOCKED_X2_CONFIG`(engine 비지 않은 문자열, engine_name 선택, engine_info · engine_files 문자열 목록, workers 정수 ≥ 1) |
+| X2 | 기록 전용, `--value-device cuda`, Rapfi 파일 경로는 머신마다 다름. fallback은 `--candidate-mode VALUE_ONLY_FALLBACK --policy-record`가 필요(기본 JOINT) | JOINT / FALLBACK이면 `X2_MONITOR`, no-candidate면 NOT_APPLICABLE. `runs/h7c/automation/x2_config.json`(커밋 안 함): 없으면 `X2_CONFIG_REQUIRED`, 형식 오류면 `BLOCKED_X2_CONFIG`(engine 비지 않은 문자열, engine_name 선택, engine_info · engine_files 문자열 목록, workers 정수 ≥ 1). 값은 `shlex.quote`로 넣는다(공백 경로) |
 
 ## 기초 수치 (설명용, 쌍 점수 σ = 0.325 정규 근사)
 
@@ -75,7 +75,8 @@ C2_READY
  → COST_PREFLIGHT (PASS / WARN / MANUAL_COST_PREFLIGHT_REVIEW_REQUIRED)
  → RETARGET → EVIDENCE_COMMIT_REQUIRED        (partial: MANUAL_COST_RESUME_REVIEW_REQUIRED; 실행 중 gate: BLOCKED_COST_CAP)
  → LABELS → EVIDENCE_COMMIT_REQUIRED → EVIDENCE_MANIFEST (원본 파일 SHA) → EVIDENCE_COMMIT_REQUIRED
- → POLICY_TRAIN → VALUE_TRAIN → TRAIN_ARTIFACT_VERIFY (BLOCKED_TRAIN) → EVIDENCE_COMMIT_REQUIRED
+ → POLICY_TRAIN → EVIDENCE_COMMIT_REQUIRED → VALUE_TRAIN → EVIDENCE_COMMIT_REQUIRED → TRAIN_ARTIFACT_VERIFY (BLOCKED_TRAIN)
+   (각 학습 명령이 record · best.json을 docs/로 복사하고, 다음 학습은 clean tree를 요구하므로 학습마다 커밋한다)
  → CANDIDATE_RESOLVE: JOINT / VALUE_ONLY_FALLBACK → ARENA_BUNDLE | 그 밖 → NO_CANDIDATE_VERDICT
  → EVIDENCE_COMMIT_REQUIRED → X2_MONITOR | X2_NOT_APPLICABLE → EVIDENCE_COMMIT_REQUIRED
  → CYCLE_INDEX (docs/h7c/c<c>/cycle.json) → NEXT_CYCLE_DECISION
@@ -96,7 +97,7 @@ cycle c의 evidence(`docs/h7c/c<c>/`): `recipe.json`, `selfplay_c<c>_seed<8800+c
 | self-play | 형식, cycle, seed 8800 + c, 모델 = parent, engine / runtime / device = recipe, 1,000판(start 0), clean |
 | retarget | factor · budget · mode · decision · cost review · cap = recipe, self-play identity = self-play 요약, coverage eligible = completed = self-play visits 수, missing · duplicate · extra 0, clean |
 | labels | v2 policy 행, clean, cycle · engine · runtime · model hash = self-play, 1,000판 입력, retarget 파일 SHA · coverage SHA = retarget 요약 |
-| 원본 manifest (`h7c-evidence-v2`, labels 뒤 `manifest`) | `runs/`의 self-play JSONL · retarget JSONL · labels report · policy rows · value rows SHA. self-play JSONL = retarget이 기록한 것, retarget JSONL = retarget 요약, labels report = 커밋된 사본. c1의 `evidence_manifest.json`과 같은 역할 |
+| 원본 manifest (`h7c-evidence-v2`, labels 뒤 `manifest`) | `runs/`의 self-play JSONL · retarget JSONL · labels report · policy rows · value rows SHA. self-play JSONL = retarget이 기록한 것, retarget JSONL = retarget 요약, labels report = 커밋된 사본. c1의 `evidence_manifest.json`과 같은 역할. runs/는 git 밖이므로, policy 학습 전에는 다섯 파일 모두, 그 뒤 value 학습 전까지는 value rows를 이 머신의 현재 파일 SHA로 다시 계산해 manifest와 비교한다(바뀌었거나 없으면 `BLOCKED_MANIFEST`) |
 | 학습 | 형식, cycle, clean, parent 2 SHA, source 모델 = parent, policy의 retarget = labels의 retarget, policy rows SHA = 원본 manifest, value의 labels SHA = value cache manifest. CANDIDATE는 metadata SHA = record. 학습 · Arena · X2(no-candidate 제외)가 남아 있는 동안에는 `runs/`의 best.pt SHA = record, parent 파일 4 SHA = `next_champion`(없거나 다르면 `BLOCKED_TRAIN` / `BLOCKED_CHAMPION_FILES`) |
 | verdict | 형식, cycle, seed 8730 + c, parent, champion record = 직전 verdict SHA, candidate = record들이 정한 4 SHA(fallback이면 parent policy), mode, `next_champion` = PROMOTE면 candidate 아니면 parent. no-candidate면 두 record SHA |
 | X2 | 형식, seed 8710 + c, clean, cycle, 모델 = verdict candidate |
@@ -156,6 +157,7 @@ stagnant  = 실제 마지막 2 cycle이 모두 평가 cycle ∧ KEEP ∧ 하한 
 1. `scripts/check_track_b_frozen.py` PASS(모델이 없는 머신은 `--skip-frozen`).
 2. c1 decision 재계산 = 커밋 파일, verdict 사슬, G0 / G0b 계약, recipe의 source SHA.
 3. 현재 상태(`state`): 위 커밋 gate와 단계별 검사를 거친 결과. 이 문서, `src/`, `scripts/`, `configs/`, `tests/`가 바뀌면 `MANUAL_CODE_CHANGE_REVIEW_REQUIRED`.
+4. exit code: 1 = 위 검사 중 FAIL이 있거나 상태가 오류(`BLOCKED_*`, `MANUAL_CODE_CHANGE_REVIEW_REQUIRED`). 0 = 실행할 단계이거나 사람의 결정 · 도구 · 설정을 기다리는 정상 정지(`NOT_C2_READY`, `*_TOOLING_REQUIRED`, `X2_CONFIG_REQUIRED`, `EVIDENCE_COMMIT_REQUIRED`, `MANUAL_REVIEW_REQUIRED` 등).
 
 ## 자동으로 바꾸지 않는 것
 
@@ -186,6 +188,13 @@ actor 예산, PUCT · candidate_limit, policy / value 하이퍼파라미터 · g
 | U5 | `nvidia-smi -pm 1` | best-effort(WSL2 미지원 가능), gate 아님 |
 | U2a | 새 머신이면 self-play worker sweep(`h7c_throughput.py`)만 재측정. retarget worker 근거로 쓰지 않음 | 선택 |
 | — | pool context 변경, X2와 GPU 학습 겹치기, retarget · SB · 포화와 다른 작업 겹치기 | 하지 않음 |
+
+## 고정 (Auto-v1 freeze)
+
+이 문서와 `src/hybrid/h7c_auto.py`, `scripts/h7c_auto.py`, `tests/test_h7c_auto.py`는 이 커밋에서 고정한다. 다음 순서는
+G0 / G0b 실행 · 검증 → evidence 커밋 → clean tree에서 `recipe --cycle 2` → recipe만 커밋 → `verify` → `next`(= `RUN_SELFPLAY`,
+seed 8802)다. recipe 뒤에 이 파일들이 바뀌면 커밋 gate가 `MANUAL_CODE_CHANGE_REVIEW_REQUIRED`로 멈춘다. 바꿀 일이 생기면 새
+cycle의 recipe 전에 별도 단계로 한다.
 
 ## 남은 도구 (별도 승인 단계)
 
