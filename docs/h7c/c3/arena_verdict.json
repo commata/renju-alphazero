@@ -1,0 +1,286 @@
+{
+ "format": "h7c-arena-v1-verdict",
+ "cycle": 3,
+ "seed": 8733,
+ "git_commit": "31e7c7ddb65b040da31ab18f30ee2b4539f46223",
+ "candidate_mode": "VALUE_ONLY",
+ "fallback_policy_record_sha256": null,
+ "recipe_decision_sha256": "0d6fa45ecc4b47f1fa642295dffb6a500cf9c30d663a6ee9a4a59cc44927f99c",
+ "candidate": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "c1987a3fc05e55c1002ceaf342adcf85e4111ddb2be42f845026e8b5a7a25c77",
+  "value_metadata_sha256": "9828f2faba7734b8a67cfda9b67145fa61f3f34821152926d0bd88dace16553e"
+ },
+ "parent": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+  "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+ },
+ "champion_record_sha256": "9dad79599058203be92337103dcb18b239cd9b6889cbf642292df36a6b326a26",
+ "official": {
+  "score": 0.51,
+  "score_ci95": [
+   0.455,
+   0.565
+  ],
+  "improvement": 0.01,
+  "improvement_ci95": [
+   -0.045,
+   0.065
+  ],
+  "elo": 6.9,
+  "wins": 49,
+  "draws": 4,
+  "losses": 47,
+  "score_by_color": {
+   "black": 0.67,
+   "white": 0.35
+  },
+  "complete_pairs": 50,
+  "valid": true,
+  "opponent_illegal_pairs": []
+ },
+ "tactical": {
+  "rule_version": "h7c-tactical-v2",
+  "items": {
+   "unsound_witness == 0": true,
+   "fresh value sign (H6 G4 dev v2: win, loss >= 0.80, >= 20 each)": true,
+   "must_block >= max(B400 anchor, parent - 2)": true,
+   "forbidden errors == 0 (all Arena games)": true
+  },
+  "verdict": "PASS",
+  "forbidden_errors": 0,
+  "must_block_min": 38,
+  "evidence": {
+   "rule_version": "h7c-tactical-v2",
+   "fresh_rule": {
+    "sign_accuracy_min": 0.8,
+    "min_probes_per_sign": 20,
+    "inference": "d4_average"
+   },
+   "fresh_file_sha256": "96407fb0cae50dcf10b3d064f23b286cda49b8adfd7b36155b7aaf60222abcc9",
+   "value_device": "cuda",
+   "inference": "d4_average",
+   "must_block_device": "cpu",
+   "fresh": {
+    "candidate": {
+     "win": {
+      "correct": 93,
+      "probes": 93,
+      "accuracy": 1.0,
+      "mean_value": 0.8509410241598724
+     },
+     "loss": {
+      "correct": 76,
+      "probes": 81,
+      "accuracy": 0.9382716049382716,
+      "mean_value": -0.4564291648106811
+     },
+     "pass": true
+    },
+    "parent_diagnostic": {
+     "win": {
+      "correct": 93,
+      "probes": 93,
+      "accuracy": 1.0,
+      "mean_value": 0.8338164485269978
+     },
+     "loss": {
+      "correct": 78,
+      "probes": 81,
+      "accuracy": 0.9629629629629629,
+      "mean_value": -0.4960086557692216
+     },
+     "pass": true
+    }
+   },
+   "p93_p94_diagnostic": {
+    "candidate": {
+     "P93": {
+      "original": -0.13833138346672058,
+      "d4_mean": -0.13833139836788177,
+      "expected_sign": 1,
+      "pass": false,
+      "side_to_move": "white"
+     },
+     "P94": {
+      "original": 0.976626992225647,
+      "d4_mean": 0.9766269326210022,
+      "expected_sign": -1,
+      "pass": false,
+      "side_to_move": "black"
+     }
+    },
+    "parent": {
+     "P93": {
+      "original": -0.009860444813966751,
+      "d4_mean": -0.0098604466766119,
+      "expected_sign": 1,
+      "pass": false,
+      "side_to_move": "white"
+     },
+     "P94": {
+      "original": 0.9826043248176575,
+      "d4_mean": 0.9826043844223022,
+      "expected_sign": -1,
+      "pass": false,
+      "side_to_move": "black"
+     }
+    }
+   },
+   "must_block": {
+    "candidate": 40,
+    "parent": 40,
+    "min": 38
+   }
+  },
+  "compare": {
+   "rescue_rate": {
+    "candidate": 1.0,
+    "parent": 1.0
+   },
+   "veto_recall": {
+    "candidate": null,
+    "parent": null
+   },
+   "false_veto": {
+    "candidate": 0,
+    "parent": 0
+   },
+   "must_block_hits": {
+    "candidate": 40,
+    "parent": 40
+   }
+  },
+  "regressions_reported": []
+ },
+ "monitoring": {
+  "mon_v8_full": {
+   "score": 0.99,
+   "score_ci95": [
+    0.97,
+    1.0
+   ],
+   "improvement_ci95": [
+    0.47,
+    0.5
+   ],
+   "elo": 798.3,
+   "wins": 49,
+   "draws": 1,
+   "losses": 0,
+   "complete_pairs": 25,
+   "score_by_color": {
+    "black": 0.98,
+    "white": 1.0
+   },
+   "opponent_illegal_pairs": []
+  },
+  "mon_puct_policy": {
+   "score": 0.83,
+   "score_ci95": [
+    0.74,
+    0.92
+   ],
+   "improvement_ci95": [
+    0.24,
+    0.42
+   ],
+   "elo": 275.5,
+   "wins": 40,
+   "draws": 3,
+   "losses": 7,
+   "complete_pairs": 25,
+   "score_by_color": {
+    "black": 0.8,
+    "white": 0.86
+   },
+   "opponent_illegal_pairs": []
+  },
+  "mon_e2": {
+   "score": 0.99,
+   "score_ci95": [
+    0.97,
+    1.0
+   ],
+   "improvement_ci95": [
+    0.47,
+    0.5
+   ],
+   "elo": 798.3,
+   "wins": 49,
+   "draws": 1,
+   "losses": 0,
+   "complete_pairs": 25,
+   "score_by_color": {
+    "black": 0.98,
+    "white": 1.0
+   },
+   "opponent_illegal_pairs": []
+  }
+ },
+ "diagnosis": {
+  "p_only": "NOT_APPLICABLE",
+  "v_only": "SAME_AS_OFFICIAL"
+ },
+ "fingerprints": {
+  "mon_e2": "2d557757926c78a2ecb262912a7f625c440778d86c82c23bdc6dc3d0af070634",
+  "mon_puct_policy": "ce26c4aac9bd6be5a0e003e2ba5da4d588b977432f88e598ea1c0944b486e366",
+  "mon_v8_full": "ad54088e784542c8cd09fe04da25e52926b7a89664fb017cd33f97416ae20bda",
+  "official": "51cee223e11ba91d7ed30322c61b8da3074143c0f34cfd2be426d1bc74ea9c4a"
+ },
+ "arm_sha256": {
+  "official": "cbf147278c725b260f28802f4b88f6f70c3d7003e04312115a573f253f2507e2",
+  "mon_v8_full": "50f02c0b23e658b3ae17bd4541130cadb240eec33c1c81b7b19710c0076561dd",
+  "mon_puct_policy": "1b0e2b923c79cfe7ce452cf4e7d1726de5201fbc8afcb4f9d5da38c61a1e3206",
+  "mon_e2": "d5d0055c7772ba022a023c330bf3f404db470dc3fa3ba2ed2e7e75bea2d91d4d"
+ },
+ "tactical_sha256": "f3866b1a1d00fdc2bf6903ade5c0bf3848e5086c2fd5ffc5c28e67c79a7a5be4",
+ "promotion": {
+  "rule": {
+   "score_above": 0.5,
+   "improvement_lower_min": -0.05
+  },
+  "checks": {
+   "official_valid": true,
+   "score_above_0.50": true,
+   "improvement_lower_ge_-0.05": true,
+   "tactical_gate": true
+  },
+  "improvement_lower": -0.045,
+  "decision": "PROMOTE",
+  "reason": "PROMOTED",
+  "next_parent": "candidate"
+ },
+ "next_champion": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "c1987a3fc05e55c1002ceaf342adcf85e4111ddb2be42f845026e8b5a7a25c77",
+  "value_metadata_sha256": "9828f2faba7734b8a67cfda9b67145fa61f3f34821152926d0bd88dace16553e"
+ },
+ "convergence": {
+  "rule": {
+   "min_cycles": 3,
+   "consecutive": 2,
+   "improvement_lower_max": 0.0
+  },
+  "cycles": [
+   1,
+   2,
+   3
+  ],
+  "improvement_lower": [
+   -0.2,
+   -0.135,
+   -0.045
+  ],
+  "checks": {
+   "min_cycles": true,
+   "consecutive_lower_le_0": true,
+   "tactical_gate": true
+  },
+  "converged": true
+ }
+}

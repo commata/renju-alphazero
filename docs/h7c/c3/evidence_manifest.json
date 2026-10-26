@@ -27,7 +27,12 @@
     "value_cache/val.pt": "f56516d7d3b58e503a0783717c3c07cc88ea6aeefd686bf209f2d7642947cd97",
     "value_cache/val_games.json": "f5bafb04d269569a4858bf1c0542dfaf44ace0193cff15927da2e470b7e19e7f",
     "value_cache/test.pt": "32cb4e6df2e567725a3f79e05de5d0294eb6e6a7864f5e2cc953bf3109af4a52",
-    "value_cache/test_games.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    "value_cache/test_games.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "arena/official.json": "cbf147278c725b260f28802f4b88f6f70c3d7003e04312115a573f253f2507e2",
+    "arena/mon_v8_full.json": "50f02c0b23e658b3ae17bd4541130cadb240eec33c1c81b7b19710c0076561dd",
+    "arena/mon_puct_policy.json": "1b0e2b923c79cfe7ce452cf4e7d1726de5201fbc8afcb4f9d5da38c61a1e3206",
+    "arena/mon_e2.json": "d5d0055c7772ba022a023c330bf3f404db470dc3fa3ba2ed2e7e75bea2d91d4d",
+    "arena/tactical.json": "f3866b1a1d00fdc2bf6903ade5c0bf3848e5086c2fd5ffc5c28e67c79a7a5be4"
   },
   "document_copies": {
     "selfplay_8803.json": "selfplay_c3_seed8803.json",
