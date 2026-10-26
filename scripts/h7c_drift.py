@@ -7,6 +7,7 @@ import json
 from multiprocessing import get_context
 from pathlib import Path
 import sys
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
 for directory in (ROOT, ROOT / 'src', ROOT / 'scripts'):
@@ -15,6 +16,35 @@ for directory in (ROOT, ROOT / 'src', ROOT / 'scripts'):
 
 from scripts import h7c_arena as ar
 from hybrid import h7c_b2 as b2, h7c_recipe
+from hybrid.progress import Progress, run_chunks
+
+
+class DriftProgress(Progress):
+    """Show global completion, but estimate remaining time only from games finished in this attempt."""
+    def __init__(self, total, resumed=0, **kwargs):
+        super().__init__('h7c-drift', total, 'games', **kwargs)
+        self.done = self.resumed = resumed
+
+    def line(self, now=None, extra=''):
+        elapsed = (perf_counter() if now is None else now) - self.started
+        new = self.done - self.resumed
+        eta = f'{elapsed * (self.total - self.done) / new / 60:.0f} min' if new > 0 else 'unknown'
+        share = self.done / self.total if self.total else 1.0
+        text = (f'[{self.label}] {self.done:,.0f}/{self.total:,.0f} games  {100 * share:.1f}%  '
+                f'{elapsed / 60:.1f} min  ETA {eta}')
+        return f'{text}  {extra}' if extra else text
+
+
+def collect_games(pool, pending, out, done, progress):
+    """Persist each completed chunk immediately, including while an earlier game is still running."""
+    def keep(_, rows):
+        for row in rows:
+            row['arm'] = 'drift'
+            out.write(json.dumps(row, separators=(',', ':')) + '\n')
+            done[row['key']] = row
+        out.flush()
+    return run_chunks(pool, ar._play_chunk, [[t] for t in pending], progress, len,
+                      unit_name='games', on_result=keep)
 
 
 def play(args):
@@ -48,17 +78,14 @@ def play(args):
     # Reuse the official candidate-vs-parent game worker with the fixed baseline as its opponent.
     context = {'models': {**models, 'parent': frozen}, 'device': args.device, 'signature': sig}
     pending = [{**t, 'context': context} for t in tasks if t['key'] not in done]
+    progress = DriftProgress(len(tasks), len(done))
     args.jsonl.parent.mkdir(parents=True, exist_ok=True)
     if pending:
         with args.jsonl.open('a', encoding='utf-8') as out, ProcessPoolExecutor(
                 max_workers=args.workers, mp_context=get_context('spawn')) as pool:
-            for rows in pool.map(ar._play_chunk, [[t] for t in pending]):
-                for row in rows:
-                    row['arm'] = 'drift'
-                    out.write(json.dumps(row, separators=(',', ':')) + '\n')
-                    out.flush()
-                    done[row['key']] = row
-                print(f"drift {len(done)}/100 games", flush=True)
+            collect_games(pool, pending, out, done, progress)
+    else:
+        progress.update(0, extra='all games already recorded')
     games = [done[t['key']] for t in tasks]
     summary = ar.summarize_arm(games)
     return {'format': 'h7c-drift-v1', 'identity': identity, 'signature': sig, 'openings': openings,

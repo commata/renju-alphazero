@@ -13,8 +13,10 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
 for directory in (ROOT, ROOT / 'src', ROOT / 'scripts'):
@@ -122,13 +124,36 @@ def alive(pid):
     return True
 
 
-def execute(argv, log, root, running):
+def last_progress(log, since=0):
+    """Read a bounded tail from this attempt only; avoid dumping JSON and stale retry output to stdout."""
+    path = Path(log)
+    if not path.exists():
+        return 'child progress unavailable (done/total, % and ETA unknown)'
+    with path.open('rb') as handle:
+        handle.seek(max(since, path.stat().st_size - 16384))
+        lines = handle.read().decode('utf-8', errors='replace').splitlines()
+    for pattern in (r'\bETA\b', r'^\[[^]]+\].*\bstep\s+\d', r'^\[[^]]+\].*\d[\d,.]*\s*/\s*\d'):
+        for line in reversed(lines):
+            if re.search(pattern, line):
+                return line.strip()[:1000]
+    return 'child progress unavailable (done/total, % and ETA unknown)'
+
+
+def execute(argv, log, root, running, *, heartbeat_seconds=60.0, log_progress=print):
     env = {**os.environ, 'PYTHONPATH': str(root / 'src'), 'PYTHONUNBUFFERED': '1'}
+    started = perf_counter()
+    offset = log.stat().st_size if log.exists() else 0
     with log.open('ab') as handle:
         process = subprocess.Popen(argv, cwd=root, env=env, stdout=handle, stderr=subprocess.STDOUT)
         running(process.pid)
         try:
-            return process.wait()
+            while True:
+                try:
+                    return process.wait(timeout=heartbeat_seconds)
+                except subprocess.TimeoutExpired:
+                    elapsed = (perf_counter() - started) / 60
+                    log_progress(f'[b2:{log.stem}] running, elapsed {elapsed:.1f} min | '
+                                 f'{last_progress(log, offset)}', flush=True)
         except BaseException:
             process.terminate()
             process.wait()
