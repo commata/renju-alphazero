@@ -1,0 +1,100 @@
+{
+ "format": "h6-value-cache-v1",
+ "labels_sha256": "dd6dd35aa25c4bc3185cace838eb9e997fe445854373ed34e89000b5b89d60ca",
+ "labels_file": "/home/tack/renju-h6/runs/h7c/c8/value_rows.jsonl.gz",
+ "h6_report_sha256": null,
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+ "policy_from_ply": 5,
+ "git_commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf",
+ "splits": {
+  "train": {
+   "states": 35816,
+   "games": 932,
+   "weight_sum": 8103.200045883656,
+   "by_kind": {
+    "outcome": {
+     "states": 30792,
+     "weight_sum": 3079.2000458836555,
+     "weight_share": 0.3799980289821252,
+     "sign": {
+      "+1": 9992,
+      "-1": 12880,
+      "0": 7920
+     }
+    },
+    "proof": {
+     "states": 5024,
+     "weight_sum": 5024.0,
+     "weight_share": 0.6200019710178748,
+     "sign": {
+      "+1": 4128,
+      "-1": 896,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 0,
+   "sha256": "487880b9ec97b02e1eec686440a938017f3bcbfa5aba880c60f3a04180f9b3e1"
+  },
+  "val": {
+   "states": 1853,
+   "games": 51,
+   "weight_sum": 440.0000023394823,
+   "by_kind": {
+    "outcome": {
+     "states": 1570,
+     "weight_sum": 157.0000023394823,
+     "weight_share": 0.3568181852379829,
+     "sign": {
+      "+1": 495,
+      "-1": 661,
+      "0": 414
+     }
+    },
+    "proof": {
+     "states": 283,
+     "weight_sum": 283.0,
+     "weight_share": 0.6431818147620171,
+     "sign": {
+      "+1": 234,
+      "-1": 49,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 267,
+   "sha256": "92a97e2b0e287483ca4693688829cbd1c34fbf1860ef887770bb9d6c03f29d3f"
+  },
+  "test": {
+   "states": 0,
+   "games": 0,
+   "weight_sum": 0.0,
+   "by_kind": {
+    "outcome": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 0,
+   "sha256": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+  }
+ }
+}

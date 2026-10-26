@@ -1,0 +1,54 @@
+{
+ "approved_by": "pre_registered_program",
+ "arena": {
+  "diagnosis": {
+   "p_only": "NOT_APPLICABLE",
+   "v_only": "SAME_AS_OFFICIAL"
+  },
+  "monitoring": [
+   "mon_v8_full",
+   "mon_puct_policy",
+   "mon_e2"
+  ],
+  "official_pairs": 50,
+  "promotion": {
+   "improvement_lower_min": -0.05,
+   "score_above": 0.5,
+   "tactical_rule": "h7c-tactical-v2"
+  },
+  "x2": "record only, never a gate"
+ },
+ "candidate_mode": "VALUE_ONLY",
+ "champion_record_sha256": "746567fef5aecb95740b0b504174a5b73990365a57a72b97940b1344dc7da8da",
+ "cycle": 6,
+ "format": "h7c-recipe-decision-v1",
+ "parent": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "policy": {
+  "action": "freeze_parent",
+  "training": false
+ },
+ "program": {
+  "path": "docs/h7c/b2_program.json",
+  "sha256": "8b7d4c906ec714a24a28c177e2c1971d2531ee77efce0430c29c3d77af111949"
+ },
+ "recipe": "VALUE_ONLY",
+ "retarget": false,
+ "seeds": {
+  "arena": 8736,
+  "drift": 8756,
+  "selfplay_run_seed": 8806,
+  "x2": 8716
+ },
+ "value": {
+  "config": "configs/h7c/c1_value.json",
+  "config_sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0",
+  "h6_guard_ratio": 1.05,
+  "mix": "cycle:replay = 50:50 per epoch",
+  "replay_anchor_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084"
+ }
+}

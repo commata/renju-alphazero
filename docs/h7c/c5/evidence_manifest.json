@@ -1,0 +1,51 @@
+{
+ "b2_program_sha256": "8b7d4c906ec714a24a28c177e2c1971d2531ee77efce0430c29c3d77af111949",
+ "code_git": {
+  "commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf",
+  "dirty": false
+ },
+ "cycle": 5,
+ "document_copies": {
+  "labels_report.json": "labels_c5_report.json",
+  "selfplay.json": "selfplay_c5_seed8805.json",
+  "value/best.json": "value_best.json",
+  "value/record.json": "value_record.json",
+  "value_cache/manifest.json": "value_cache_manifest.json"
+ },
+ "files_sha256": {
+  "runs/h7c/c5/arena/drift.json": "4df1e7562b16c1b90a6aa325d81b0eba3295e318ffb908f62a37d12772e67ec3",
+  "runs/h7c/c5/arena/drift.jsonl": "ce40feb8ee9d91959aca3a944848522f5dae459a00e6a98359451d37d7f084b6",
+  "runs/h7c/c5/arena/mon_e2.json": "30cd93cc31e90272b8b3f4d5f9c5e8b95742ccbb6ec58088ef6b281de1eb309f",
+  "runs/h7c/c5/arena/mon_e2.jsonl": "0c003bb5659e89fe4317b2088990087feaa2e0e0a373510eab691962dea77205",
+  "runs/h7c/c5/arena/mon_puct_policy.json": "a618fdb73d7bafaece6d7d676690f7e3041406009b08169c1493414b191a0e90",
+  "runs/h7c/c5/arena/mon_puct_policy.jsonl": "49a058ee1fb76db287fb3e0cbee420a829f56bd5a0f86639b7d95ed4c1d1fb5d",
+  "runs/h7c/c5/arena/mon_v8_full.json": "13d041742e7b89c60259f8a93ec1576c537f3c4123af73eaa5a2e86e6e35b4ea",
+  "runs/h7c/c5/arena/mon_v8_full.jsonl": "b966d52bff878e976bf72b18648670e58b2b745ab1f022f38ac8c0beb38909f7",
+  "runs/h7c/c5/arena/official.json": "d9bdd4bdf41e8eea64ae0d3051257f25cb03f3628d40ce54c5870619fe4f7f85",
+  "runs/h7c/c5/arena/official.jsonl": "be862750a8e18478e5b35db52d86bbb5393a13d74a09dfbbd75ce94971ba6c00",
+  "runs/h7c/c5/arena/tactical.json": "d9fa9c2fdb27aac105fd7ee31e6485798e8d092d608ae031b289f8ad9dd2120c",
+  "runs/h7c/c5/arena/verdict.json": "a2b5f323fe9a190723288217d391288d36d941df1d5870f6b59abde08245df9d",
+  "runs/h7c/c5/labels_report.json": "0fbf10e1c624ea42462577a64844c9c18feb1dd51f1a28f25d6b02835e1eee33",
+  "runs/h7c/c5/policy_rows.jsonl.gz": "e7781e2ba51a4aff2ce475060366422098861200acd0f3ef6d86a559376d792a",
+  "runs/h7c/c5/selfplay.json": "5cfc7c8906ea557d86e34932a6693bc7ced1831513688dab95d82b11c43c0106",
+  "runs/h7c/c5/selfplay.jsonl": "e81ed1269a7f25ea10b2852a0306874967f8a34765b25f539cf7de487887cfed",
+  "runs/h7c/c5/value/best.json": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1",
+  "runs/h7c/c5/value/best.pt": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "runs/h7c/c5/value/record.json": "26f951b93245914ea7a3f20ec0f490b4267aa6cb9b3e17e6d04da0992669f8e6",
+  "runs/h7c/c5/value_cache/manifest.json": "a3dde8d86dacd8e95ef9d39d8c27b52c5b1726202311d895c30cc94c9e0bc884",
+  "runs/h7c/c5/value_cache/test.pt": "32cb4e6df2e567725a3f79e05de5d0294eb6e6a7864f5e2cc953bf3109af4a52",
+  "runs/h7c/c5/value_cache/test_games.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "runs/h7c/c5/value_cache/train.pt": "3683cc1e9a7132a6d53e09406f8d44dead306d62d961739065b51d30d27ae677",
+  "runs/h7c/c5/value_cache/train_games.json": "33ba31db8f0f490a3060c4743f5848aae22f65d6ca0b379d1220754fe7bbcaf5",
+  "runs/h7c/c5/value_cache/val.pt": "b81b6df77187a66c538b901e884015c871c2e8d1e3ceffeb0a377dd4888e7f4b",
+  "runs/h7c/c5/value_cache/val_games.json": "b289a99ec34484e3639e0b53661cf38bec417f2159e5b2c93cec2661ff1ecfb5",
+  "runs/h7c/c5/value_rows.jsonl.gz": "4f5ac8b061447228f4719758e60975b9975166fd3c04b02ed204420ee888d42d",
+  "runs/h7c/c5/x2.json": "be6ba3f3d87b57813c5bf39d32badef76db08eda5dd3bf2bb2bf0b9d08bea1c1",
+  "runs/h7c/c5/x2.jsonl": "50235ba8edc186a958ca4fe6bc28d3aa3d27decbb1acc55ce58e7e52852f5266"
+ },
+ "format": "h7c-b2-evidence-v1",
+ "phase": "AB",
+ "recipe_decision_sha256": "d9359a43a3ede7c36713a7e7873e692290887879a3be777a6e8f2f507f6af412",
+ "skipped": {},
+ "verdict_sha256": "746567fef5aecb95740b0b504174a5b73990365a57a72b97940b1344dc7da8da"
+}

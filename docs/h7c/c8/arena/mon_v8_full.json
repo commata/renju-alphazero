@@ -1,0 +1,12108 @@
+{
+ "format": "h7c-arena-v1-arm",
+ "identity": {
+  "format": "h7c-arena-v1",
+  "arm": "mon_v8_full",
+  "role": "monitoring",
+  "cycle": 8,
+  "seed": 8738,
+  "pairs": 25,
+  "opening_rule": {
+   "random_plies": 2,
+   "radius": 2
+  },
+  "engine_id": "TB-V3",
+  "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+  "runtime": "fast5",
+  "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+  "value_device": "cuda",
+  "candidate": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+   "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+  },
+  "parent": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "candidate_mode": "VALUE_ONLY",
+  "fallback_policy_record_sha256": null,
+  "champion_record_sha256": "db1c012ea52d59752da078bee037ede18db4ce180a1b36f16768f5651cfa97fd",
+  "recipe_decision_sha256": "eb8308f22e7a110d54ee076f9b545c906375fd239a8d65bad60e9844569103f3",
+  "tested": {
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+    "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+   },
+   "model_hash": "ef470b466c257ee6659d8cb4a400c9d42eae8b798bae26e3ea40e3344de03aa3",
+   "policy_from": "candidate",
+   "value_from": "candidate"
+  },
+  "opponent": {
+   "kind": "v8:full",
+   "config": {
+    "simulations": 50,
+    "tactical_simulations": 100,
+    "tactical_score_threshold": 1800,
+    "exploration": 1.4142135623730951,
+    "candidate_limit": 20,
+    "initial_width": 8,
+    "neighborhood_radius": 2,
+    "priority_top_k": 8,
+    "own_vcf_max_fours": 10,
+    "own_vcf_node_limit": 5000,
+    "safety_vcf_max_fours": 10,
+    "safety_vcf_node_limit": 4000,
+    "safety_precheck_node_limit": 8000,
+    "safety_total_node_limit": 8000,
+    "self_forbidden_min_white": 3,
+    "stage_vct_safety": true,
+    "vct_vcf_node_limit": 20000,
+    "vct_call_limit": 3000,
+    "vct_node_budget": 200000,
+    "own_vct_attack": true,
+    "attack_vcf_node_limit": 20000,
+    "attack_call_limit": 10000,
+    "attack_node_budget": 200000,
+    "root_vct_safety": true,
+    "root_vcf_node_limit": 20000,
+    "root_call_limit": 10000,
+    "root_node_budget": 400000,
+    "root_max_children": 4,
+    "root_vct_mode": "aggressive",
+    "root_policy_order": false,
+    "root_policy_extra": 0,
+    "tree_mode": "v5",
+    "puct_prior": "uniform",
+    "puct_c": 1.5,
+    "root_vct2_check": false,
+    "vct2_node_limit": 20000,
+    "vct2_call_limit": 20000,
+    "vct2_node_budget": 10000,
+    "vct2_max_children": 4
+   }
+  },
+  "git": {
+   "commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf",
+   "dirty": false
+  }
+ },
+ "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+ "openings": [
+  {
+   "pair": 0,
+   "seed": 12328721797662828024,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 1,
+   "seed": 1545188756753802963,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     7,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 2,
+   "seed": 13854980466737562503,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     6
+    ]
+   ]
+  },
+  {
+   "pair": 3,
+   "seed": 15666792498434931025,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     6
+    ]
+   ]
+  },
+  {
+   "pair": 4,
+   "seed": 18443040751539395626,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     8
+    ]
+   ]
+  },
+  {
+   "pair": 5,
+   "seed": 15463550795684263131,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     6
+    ]
+   ]
+  },
+  {
+   "pair": 6,
+   "seed": 15863526848071904567,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 7,
+   "seed": 1868104838072616938,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 8,
+   "seed": 17612206108215181376,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 9,
+   "seed": 10241331349535974844,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 10,
+   "seed": 8129373408904046152,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     8
+    ]
+   ]
+  },
+  {
+   "pair": 11,
+   "seed": 5728102347244200651,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 12,
+   "seed": 15840000673767284525,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 13,
+   "seed": 28286799728003256,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 14,
+   "seed": 6637537483075988475,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 15,
+   "seed": 5460315857027826001,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     8
+    ]
+   ]
+  },
+  {
+   "pair": 16,
+   "seed": 15770788410574129279,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     8
+    ]
+   ]
+  },
+  {
+   "pair": 17,
+   "seed": 2719958194898887028,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ]
+   ]
+  },
+  {
+   "pair": 18,
+   "seed": 12351830206812560457,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 19,
+   "seed": 8489617801638211730,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     6
+    ]
+   ]
+  },
+  {
+   "pair": 20,
+   "seed": 11896078467426252419,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     8
+    ]
+   ]
+  },
+  {
+   "pair": 21,
+   "seed": 13409883025540056140,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 22,
+   "seed": 2919669229184954169,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     8
+    ]
+   ]
+  },
+  {
+   "pair": 23,
+   "seed": 10525859566753242659,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     5
+    ]
+   ]
+  },
+  {
+   "pair": 24,
+   "seed": 12983101457270886444,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     5
+    ]
+   ]
+  }
+ ],
+ "wall_seconds": 287.3,
+ "summary": {
+  "games": 50,
+  "scored_games": 50,
+  "complete_pairs": 25,
+  "incomplete_pairs": [],
+  "wins": 47,
+  "draws": 1,
+  "losses": 2,
+  "score": 0.95,
+  "score_by_color": {
+   "black": 0.92,
+   "white": 0.98
+  },
+  "score_ci95": [
+   0.87,
+   1.0
+  ],
+  "improvement": 0.45,
+  "improvement_ci95": [
+   0.37,
+   0.5
+  ],
+  "elo": 511.5,
+  "pair_scores": {
+   "0": 0.25,
+   "1": 0.5,
+   "2": 1.0,
+   "3": 1.0,
+   "4": 1.0,
+   "5": 1.0,
+   "6": 1.0,
+   "7": 1.0,
+   "8": 1.0,
+   "9": 1.0,
+   "10": 1.0,
+   "11": 1.0,
+   "12": 1.0,
+   "13": 1.0,
+   "14": 1.0,
+   "15": 1.0,
+   "16": 1.0,
+   "17": 1.0,
+   "18": 1.0,
+   "19": 1.0,
+   "20": 1.0,
+   "21": 1.0,
+   "22": 1.0,
+   "23": 1.0,
+   "24": 1.0
+  },
+  "illegal": {
+   "tested": 0,
+   "opponent": 0
+  },
+  "opponent_illegal_pairs": [],
+  "truncated": 0,
+  "length_mean": 32.8,
+  "bootstrap": {
+   "samples": 20000,
+   "seed": 0
+  }
+ },
+ "fingerprint": "116494a44806e76cfed4eb284ca7043a18ca926d9939c49f0bcd08d646f249bc",
+ "games": [
+  {
+   "key": "mon_v8_full/8738/0/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 0,
+   "seed": 6410469560514946466,
+   "tested_color": "black",
+   "result": "loss",
+   "winner": -1,
+   "length": 82,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     8,
+     1
+    ],
+    [
+     7,
+     0
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     1,
+     7
+    ],
+    [
+     1,
+     8
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     0
+    ],
+    [
+     12,
+     4
+    ],
+    [
+     10,
+     2
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     10,
+     1
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 2.883
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.5443
+    },
+    {
+     "ply": 8,
+     "route": "stage4",
+     "seconds": 0.3512
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 2.6354
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 2.0217
+    },
+    {
+     "ply": 14,
+     "route": "stage4",
+     "seconds": 0.8285
+    },
+    {
+     "ply": 16,
+     "route": "stage4",
+     "seconds": 1.0057
+    },
+    {
+     "ply": 18,
+     "route": "stage2",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 20,
+     "route": "stage4",
+     "seconds": 0.573
+    },
+    {
+     "ply": 22,
+     "route": "tree",
+     "seconds": 4.476
+    },
+    {
+     "ply": 24,
+     "route": "tree",
+     "seconds": 2.2177
+    },
+    {
+     "ply": 26,
+     "route": "tree",
+     "seconds": 3.5116
+    },
+    {
+     "ply": 28,
+     "route": "tree",
+     "seconds": 3.5785
+    },
+    {
+     "ply": 30,
+     "route": "tree",
+     "seconds": 2.7146
+    },
+    {
+     "ply": 32,
+     "route": "tree",
+     "seconds": 3.8186
+    },
+    {
+     "ply": 34,
+     "route": "stage2",
+     "seconds": 0.001
+    },
+    {
+     "ply": 36,
+     "route": "stage2",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 38,
+     "route": "stage4",
+     "seconds": 0.7414
+    },
+    {
+     "ply": 40,
+     "route": "tree",
+     "seconds": 2.8689
+    },
+    {
+     "ply": 42,
+     "route": "tree",
+     "seconds": 2.0456
+    },
+    {
+     "ply": 44,
+     "route": "tree",
+     "seconds": 2.1888
+    },
+    {
+     "ply": 46,
+     "route": "stage5",
+     "seconds": 0.8047
+    },
+    {
+     "ply": 48,
+     "route": "stage2",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 50,
+     "route": "stage2",
+     "seconds": 0.001
+    },
+    {
+     "ply": 52,
+     "route": "tree",
+     "seconds": 3.4253
+    },
+    {
+     "ply": 54,
+     "route": "tree",
+     "seconds": 4.4448
+    },
+    {
+     "ply": 56,
+     "route": "stage4",
+     "seconds": 0.7691
+    },
+    {
+     "ply": 58,
+     "route": "tree",
+     "seconds": 2.2757
+    },
+    {
+     "ply": 60,
+     "route": "tree",
+     "seconds": 2.0857
+    },
+    {
+     "ply": 62,
+     "route": "tree",
+     "seconds": 2.5252
+    },
+    {
+     "ply": 64,
+     "route": "tree",
+     "seconds": 3.1152
+    },
+    {
+     "ply": 66,
+     "route": "tree",
+     "seconds": 1.7868
+    },
+    {
+     "ply": 68,
+     "route": "tree",
+     "seconds": 2.154
+    },
+    {
+     "ply": 70,
+     "route": "tree",
+     "seconds": 3.7191
+    },
+    {
+     "ply": 72,
+     "route": "tree",
+     "seconds": 3.3778
+    },
+    {
+     "ply": 74,
+     "route": "tree",
+     "seconds": 3.087
+    },
+    {
+     "ply": 76,
+     "route": "stage4",
+     "seconds": 0.5465
+    },
+    {
+     "ply": 78,
+     "route": "stage4",
+     "seconds": 0.0947
+    },
+    {
+     "ply": 80,
+     "route": "stage2",
+     "seconds": 0.0012
+    }
+   ],
+   "opponent_routes": {
+    "tree": 12,
+    "stage4": 14,
+    "stage2": 11,
+    "stage5": 1,
+    "stage3": 1,
+    "stage1": 1
+   },
+   "game_seconds": 110.59
+  },
+  {
+   "key": "mon_v8_full/8738/0/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 0,
+   "seed": 17758017701469962821,
+   "tested_color": "white",
+   "result": "draw",
+   "winner": null,
+   "length": 225,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     1,
+     7
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     1,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     8,
+     11
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     6,
+     12
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     12
+    ],
+    [
+     6,
+     13
+    ],
+    [
+     9,
+     12
+    ],
+    [
+     8,
+     12
+    ],
+    [
+     9,
+     13
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     10,
+     13
+    ],
+    [
+     11,
+     14
+    ],
+    [
+     8,
+     13
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     9,
+     14
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     12,
+     13
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     8,
+     14
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     0
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     9,
+     0
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     8,
+     1
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     11,
+     10
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     11,
+     11
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     12,
+     10
+    ],
+    [
+     13,
+     10
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     12,
+     12
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     13,
+     13
+    ],
+    [
+     14,
+     14
+    ],
+    [
+     11,
+     12
+    ],
+    [
+     13,
+     12
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     13,
+     11
+    ],
+    [
+     14,
+     10
+    ],
+    [
+     3,
+     11
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     14,
+     11
+    ],
+    [
+     12,
+     9
+    ],
+    [
+     14,
+     13
+    ],
+    [
+     14,
+     12
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     10,
+     0
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     11,
+     2
+    ],
+    [
+     12,
+     1
+    ],
+    [
+     10,
+     2
+    ],
+    [
+     12,
+     2
+    ],
+    [
+     12,
+     4
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     13,
+     7
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     13,
+     6
+    ],
+    [
+     13,
+     8
+    ],
+    [
+     13,
+     5
+    ],
+    [
+     13,
+     4
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     12,
+     3
+    ],
+    [
+     13,
+     2
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     14,
+     5
+    ],
+    [
+     6,
+     0
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     13,
+     14
+    ],
+    [
+     12,
+     14
+    ],
+    [
+     7,
+     14
+    ],
+    [
+     6,
+     14
+    ],
+    [
+     14,
+     7
+    ],
+    [
+     14,
+     6
+    ],
+    [
+     14,
+     9
+    ],
+    [
+     14,
+     8
+    ],
+    [
+     4,
+     12
+    ],
+    [
+     3,
+     13
+    ],
+    [
+     5,
+     13
+    ],
+    [
+     3,
+     12
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     2,
+     13
+    ],
+    [
+     1,
+     14
+    ],
+    [
+     2,
+     11
+    ],
+    [
+     13,
+     3
+    ],
+    [
+     14,
+     4
+    ],
+    [
+     14,
+     2
+    ],
+    [
+     2,
+     12
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     1,
+     11
+    ],
+    [
+     0,
+     11
+    ],
+    [
+     0,
+     10
+    ],
+    [
+     4,
+     14
+    ],
+    [
+     4,
+     13
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     1,
+     13
+    ],
+    [
+     0,
+     13
+    ],
+    [
+     5,
+     14
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     0,
+     0
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     0,
+     7
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     9
+    ],
+    [
+     0,
+     8
+    ],
+    [
+     0,
+     9
+    ],
+    [
+     0,
+     5
+    ],
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     14
+    ],
+    [
+     3,
+     14
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     13,
+     1
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     11,
+     0
+    ],
+    [
+     14,
+     1
+    ],
+    [
+     14,
+     0
+    ],
+    [
+     0,
+     14
+    ],
+    [
+     0,
+     12
+    ],
+    [
+     1,
+     12
+    ],
+    [
+     0,
+     3
+    ],
+    [
+     13,
+     0
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 3.0032
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.4236
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.4039
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.7631
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.914
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 1.5591
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 1.7994
+    },
+    {
+     "ply": 17,
+     "route": "tree",
+     "seconds": 1.7713
+    },
+    {
+     "ply": 19,
+     "route": "tree",
+     "seconds": 2.1417
+    },
+    {
+     "ply": 21,
+     "route": "stage4",
+     "seconds": 0.4325
+    },
+    {
+     "ply": 23,
+     "route": "tree",
+     "seconds": 5.1248
+    },
+    {
+     "ply": 25,
+     "route": "tree",
+     "seconds": 2.8609
+    },
+    {
+     "ply": 27,
+     "route": "stage2",
+     "seconds": 0.0003
+    },
+    {
+     "ply": 29,
+     "route": "tree",
+     "seconds": 3.3499
+    },
+    {
+     "ply": 31,
+     "route": "tree",
+     "seconds": 5.1727
+    },
+    {
+     "ply": 33,
+     "route": "stage4",
+     "seconds": 0.5713
+    },
+    {
+     "ply": 35,
+     "route": "tree",
+     "seconds": 3.7927
+    },
+    {
+     "ply": 37,
+     "route": "tree",
+     "seconds": 3.1871
+    },
+    {
+     "ply": 39,
+     "route": "tree",
+     "seconds": 3.0756
+    },
+    {
+     "ply": 41,
+     "route": "tree",
+     "seconds": 2.8619
+    },
+    {
+     "ply": 43,
+     "route": "tree",
+     "seconds": 2.9113
+    },
+    {
+     "ply": 45,
+     "route": "stage5",
+     "seconds": 2.689
+    },
+    {
+     "ply": 47,
+     "route": "tree",
+     "seconds": 2.6048
+    },
+    {
+     "ply": 49,
+     "route": "tree",
+     "seconds": 3.8886
+    },
+    {
+     "ply": 51,
+     "route": "tree",
+     "seconds": 2.1275
+    },
+    {
+     "ply": 53,
+     "route": "tree",
+     "seconds": 3.7205
+    },
+    {
+     "ply": 55,
+     "route": "tree",
+     "seconds": 2.7764
+    },
+    {
+     "ply": 57,
+     "route": "stage4",
+     "seconds": 0.6541
+    },
+    {
+     "ply": 59,
+     "route": "tree",
+     "seconds": 2.6593
+    },
+    {
+     "ply": 61,
+     "route": "tree",
+     "seconds": 2.2502
+    },
+    {
+     "ply": 63,
+     "route": "tree",
+     "seconds": 3.1014
+    },
+    {
+     "ply": 65,
+     "route": "tree",
+     "seconds": 1.5572
+    },
+    {
+     "ply": 67,
+     "route": "tree",
+     "seconds": 1.5803
+    },
+    {
+     "ply": 69,
+     "route": "tree",
+     "seconds": 2.9312
+    },
+    {
+     "ply": 71,
+     "route": "tree",
+     "seconds": 1.5831
+    },
+    {
+     "ply": 73,
+     "route": "stage4",
+     "seconds": 0.6462
+    },
+    {
+     "ply": 75,
+     "route": "tree",
+     "seconds": 1.7315
+    },
+    {
+     "ply": 77,
+     "route": "tree",
+     "seconds": 1.3382
+    },
+    {
+     "ply": 79,
+     "route": "tree",
+     "seconds": 2.7989
+    },
+    {
+     "ply": 81,
+     "route": "tree",
+     "seconds": 3.8716
+    },
+    {
+     "ply": 83,
+     "route": "tree",
+     "seconds": 3.8497
+    },
+    {
+     "ply": 85,
+     "route": "tree",
+     "seconds": 3.4767
+    },
+    {
+     "ply": 87,
+     "route": "tree",
+     "seconds": 2.4947
+    },
+    {
+     "ply": 89,
+     "route": "stage5",
+     "seconds": 0.5629
+    },
+    {
+     "ply": 91,
+     "route": "stage5",
+     "seconds": 0.4744
+    },
+    {
+     "ply": 93,
+     "route": "tree",
+     "seconds": 2.5602
+    },
+    {
+     "ply": 95,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 97,
+     "route": "tree",
+     "seconds": 2.0307
+    },
+    {
+     "ply": 99,
+     "route": "tree",
+     "seconds": 3.0622
+    },
+    {
+     "ply": 101,
+     "route": "tree",
+     "seconds": 2.1064
+    },
+    {
+     "ply": 103,
+     "route": "tree",
+     "seconds": 3.6408
+    },
+    {
+     "ply": 105,
+     "route": "tree",
+     "seconds": 1.4142
+    },
+    {
+     "ply": 107,
+     "route": "tree",
+     "seconds": 1.4799
+    },
+    {
+     "ply": 109,
+     "route": "tree",
+     "seconds": 2.4464
+    },
+    {
+     "ply": 111,
+     "route": "stage5",
+     "seconds": 0.5076
+    },
+    {
+     "ply": 113,
+     "route": "tree",
+     "seconds": 2.7251
+    },
+    {
+     "ply": 115,
+     "route": "tree",
+     "seconds": 1.4886
+    },
+    {
+     "ply": 117,
+     "route": "tree",
+     "seconds": 2.7402
+    },
+    {
+     "ply": 119,
+     "route": "tree",
+     "seconds": 1.9662
+    },
+    {
+     "ply": 121,
+     "route": "tree",
+     "seconds": 2.0976
+    },
+    {
+     "ply": 123,
+     "route": "tree",
+     "seconds": 1.7959
+    },
+    {
+     "ply": 125,
+     "route": "tree",
+     "seconds": 1.6427
+    },
+    {
+     "ply": 127,
+     "route": "stage4",
+     "seconds": 0.2387
+    },
+    {
+     "ply": 129,
+     "route": "tree",
+     "seconds": 1.565
+    },
+    {
+     "ply": 131,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 133,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 135,
+     "route": "tree",
+     "seconds": 0.9396
+    },
+    {
+     "ply": 137,
+     "route": "tree",
+     "seconds": 0.552
+    },
+    {
+     "ply": 139,
+     "route": "tree",
+     "seconds": 0.7835
+    },
+    {
+     "ply": 141,
+     "route": "tree",
+     "seconds": 1.2234
+    },
+    {
+     "ply": 143,
+     "route": "tree",
+     "seconds": 0.7937
+    },
+    {
+     "ply": 145,
+     "route": "tree",
+     "seconds": 1.3971
+    },
+    {
+     "ply": 147,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 149,
+     "route": "stage2",
+     "seconds": 0.0003
+    },
+    {
+     "ply": 151,
+     "route": "tree",
+     "seconds": 1.471
+    },
+    {
+     "ply": 153,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 155,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 157,
+     "route": "tree",
+     "seconds": 1.3594
+    },
+    {
+     "ply": 159,
+     "route": "tree",
+     "seconds": 1.284
+    },
+    {
+     "ply": 161,
+     "route": "tree",
+     "seconds": 1.1419
+    },
+    {
+     "ply": 163,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 165,
+     "route": "tree",
+     "seconds": 1.3095
+    },
+    {
+     "ply": 167,
+     "route": "tree",
+     "seconds": 0.7768
+    },
+    {
+     "ply": 169,
+     "route": "tree",
+     "seconds": 0.8044
+    },
+    {
+     "ply": 171,
+     "route": "tree",
+     "seconds": 1.2968
+    },
+    {
+     "ply": 173,
+     "route": "stage2",
+     "seconds": 0.0001
+    },
+    {
+     "ply": 175,
+     "route": "tree",
+     "seconds": 0.5934
+    },
+    {
+     "ply": 177,
+     "route": "tree",
+     "seconds": 0.5481
+    },
+    {
+     "ply": 179,
+     "route": "tree",
+     "seconds": 1.0394
+    },
+    {
+     "ply": 181,
+     "route": "tree",
+     "seconds": 0.918
+    },
+    {
+     "ply": 183,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 185,
+     "route": "tree",
+     "seconds": 0.6177
+    },
+    {
+     "ply": 187,
+     "route": "tree",
+     "seconds": 0.9593
+    },
+    {
+     "ply": 189,
+     "route": "tree",
+     "seconds": 1.0258
+    },
+    {
+     "ply": 191,
+     "route": "tree",
+     "seconds": 0.4085
+    },
+    {
+     "ply": 193,
+     "route": "tree",
+     "seconds": 0.4379
+    },
+    {
+     "ply": 195,
+     "route": "tree",
+     "seconds": 0.3622
+    },
+    {
+     "ply": 197,
+     "route": "tree",
+     "seconds": 0.5222
+    },
+    {
+     "ply": 199,
+     "route": "tree",
+     "seconds": 0.427
+    },
+    {
+     "ply": 201,
+     "route": "tree",
+     "seconds": 0.4258
+    },
+    {
+     "ply": 203,
+     "route": "tree",
+     "seconds": 0.3924
+    },
+    {
+     "ply": 205,
+     "route": "tree",
+     "seconds": 0.4253
+    },
+    {
+     "ply": 207,
+     "route": "tree",
+     "seconds": 0.4627
+    },
+    {
+     "ply": 209,
+     "route": "tree",
+     "seconds": 0.4124
+    },
+    {
+     "ply": 211,
+     "route": "tree",
+     "seconds": 0.3429
+    },
+    {
+     "ply": 213,
+     "route": "tree",
+     "seconds": 0.7651
+    },
+    {
+     "ply": 215,
+     "route": "tree",
+     "seconds": 0.3677
+    },
+    {
+     "ply": 217,
+     "route": "tree",
+     "seconds": 0.3212
+    },
+    {
+     "ply": 219,
+     "route": "tree",
+     "seconds": 0.2626
+    },
+    {
+     "ply": 221,
+     "route": "tree",
+     "seconds": 0.0594
+    },
+    {
+     "ply": 223,
+     "route": "tree",
+     "seconds": 0.0137
+    }
+   ],
+   "opponent_routes": {
+    "tree": 60,
+    "stage4": 17,
+    "stage2": 32,
+    "stage5": 2
+   },
+   "game_seconds": 283.24
+  },
+  {
+   "key": "mon_v8_full/8738/1/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 1,
+   "seed": 1232187674558449275,
+   "tested_color": "black",
+   "result": "loss",
+   "winner": -1,
+   "length": 56,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     10,
+     2
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     11
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     3,
+     7
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 2.7809
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 2.0126
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 2.0905
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 2.0324
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 2.4471
+    },
+    {
+     "ply": 14,
+     "route": "tree",
+     "seconds": 1.9316
+    },
+    {
+     "ply": 16,
+     "route": "stage4",
+     "seconds": 0.5174
+    },
+    {
+     "ply": 18,
+     "route": "stage4",
+     "seconds": 1.0301
+    },
+    {
+     "ply": 20,
+     "route": "tree",
+     "seconds": 4.5297
+    },
+    {
+     "ply": 22,
+     "route": "tree",
+     "seconds": 2.8483
+    },
+    {
+     "ply": 24,
+     "route": "tree",
+     "seconds": 6.2482
+    },
+    {
+     "ply": 26,
+     "route": "tree",
+     "seconds": 2.8622
+    },
+    {
+     "ply": 28,
+     "route": "stage4",
+     "seconds": 1.2735
+    },
+    {
+     "ply": 30,
+     "route": "tree",
+     "seconds": 5.4902
+    },
+    {
+     "ply": 32,
+     "route": "tree",
+     "seconds": 3.6251
+    },
+    {
+     "ply": 34,
+     "route": "tree",
+     "seconds": 4.9579
+    },
+    {
+     "ply": 36,
+     "route": "tree",
+     "seconds": 4.6202
+    },
+    {
+     "ply": 38,
+     "route": "stage5",
+     "seconds": 0.8383
+    },
+    {
+     "ply": 40,
+     "route": "stage2",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 42,
+     "route": "stage5",
+     "seconds": 0.6307
+    },
+    {
+     "ply": 44,
+     "route": "stage5",
+     "seconds": 4.7274
+    },
+    {
+     "ply": 46,
+     "route": "stage4",
+     "seconds": 0.7325
+    },
+    {
+     "ply": 48,
+     "route": "stage4",
+     "seconds": 0.086
+    },
+    {
+     "ply": 50,
+     "route": "stage2",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 52,
+     "route": "stage2",
+     "seconds": 0.0013
+    },
+    {
+     "ply": 54,
+     "route": "stage2",
+     "seconds": 0.0014
+    }
+   ],
+   "opponent_routes": {
+    "tree": 7,
+    "stage4": 10,
+    "stage2": 5,
+    "own_vct": 1,
+    "own_vcf": 2,
+    "stage3": 1,
+    "stage1": 1
+   },
+   "game_seconds": 78.38
+  },
+  {
+   "key": "mon_v8_full/8738/1/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 1,
+   "seed": 17086501479546343472,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 28,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     9,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 3.0686
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.5217
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.833
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.6969
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.449
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 2.8259
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 1.7632
+    },
+    {
+     "ply": 17,
+     "route": "own_vct2",
+     "seconds": 2.3785
+    },
+    {
+     "ply": 19,
+     "route": "own_vct",
+     "seconds": 0.0569
+    },
+    {
+     "ply": 21,
+     "route": "own_vcf",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 23,
+     "route": "own_vcf",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 25,
+     "route": "stage3",
+     "seconds": 0.0004
+    },
+    {
+     "ply": 27,
+     "route": "stage1",
+     "seconds": 0.0002
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 5,
+    "stage5": 2,
+    "stage2": 2
+   },
+   "game_seconds": 23.28
+  },
+  {
+   "key": "mon_v8_full/8738/2/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 2,
+   "seed": 6401603766777658280,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 29,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     4,
+     10
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 2.6336
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.9172
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 2.1441
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 2.5295
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 3.1411
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.0633
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0022
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.001
+    },
+    {
+     "ply": 22,
+     "route": "own_vcf",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 24,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 26,
+     "route": "stage3",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 28,
+     "route": "stage1",
+     "seconds": 0.0007
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 7
+   },
+   "game_seconds": 15.99
+  },
+  {
+   "key": "mon_v8_full/8738/2/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 2,
+   "seed": 5123715402484025047,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 18,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 3.0486
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.7082
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.3623
+    },
+    {
+     "ply": 9,
+     "route": "own_vct2",
+     "seconds": 2.1068
+    },
+    {
+     "ply": 11,
+     "route": "own_vct",
+     "seconds": 0.0563
+    },
+    {
+     "ply": 13,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 15,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 17,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 1
+   },
+   "game_seconds": 11.58
+  },
+  {
+   "key": "mon_v8_full/8738/3/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 3,
+   "seed": 18383348062875646670,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 23,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.5951
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.7862
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.9384
+    },
+    {
+     "ply": 10,
+     "route": "own_vct2",
+     "seconds": 3.4107
+    },
+    {
+     "ply": 12,
+     "route": "own_vct",
+     "seconds": 0.071
+    },
+    {
+     "ply": 14,
+     "route": "own_vcf",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0036
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0018
+    },
+    {
+     "ply": 20,
+     "route": "stage3",
+     "seconds": 0.0013
+    },
+    {
+     "ply": 22,
+     "route": "stage1",
+     "seconds": 0.0016
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 4
+   },
+   "game_seconds": 12.05
+  },
+  {
+   "key": "mon_v8_full/8738/3/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 3,
+   "seed": 13107944660235959137,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 18,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     11,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.3748
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.7989
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.7113
+    },
+    {
+     "ply": 9,
+     "route": "stage4",
+     "seconds": 0.3757
+    },
+    {
+     "ply": 11,
+     "route": "own_vct2",
+     "seconds": 2.1071
+    },
+    {
+     "ply": 13,
+     "route": "own_vct",
+     "seconds": 0.0419
+    },
+    {
+     "ply": 15,
+     "route": "stage3",
+     "seconds": 0.0004
+    },
+    {
+     "ply": 17,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 3,
+    "stage5": 1,
+    "stage2": 1
+   },
+   "game_seconds": 10.98
+  },
+  {
+   "key": "mon_v8_full/8738/4/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 4,
+   "seed": 5045651718799304656,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 25,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     12,
+     8
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.5589
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.8265
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 2.9724
+    },
+    {
+     "ply": 10,
+     "route": "stage5",
+     "seconds": 2.1096
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 2.9228
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.1274
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0021
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.001
+    },
+    {
+     "ply": 22,
+     "route": "stage3",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 24,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage5": 1,
+    "stage2": 4
+   },
+   "game_seconds": 15.16
+  },
+  {
+   "key": "mon_v8_full/8738/4/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 4,
+   "seed": 16121732835484978444,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 26,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.3968
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.5327
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.4087
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.536
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.439
+    },
+    {
+     "ply": 13,
+     "route": "own_vct2",
+     "seconds": 2.7013
+    },
+    {
+     "ply": 15,
+     "route": "own_vct",
+     "seconds": 0.2332
+    },
+    {
+     "ply": 17,
+     "route": "stage2",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 19,
+     "route": "stage2",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 21,
+     "route": "own_vcf",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 23,
+     "route": "stage3",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 25,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 5,
+    "stage2": 3
+   },
+   "game_seconds": 15.36
+  },
+  {
+   "key": "mon_v8_full/8738/5/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 5,
+   "seed": 17417996541274642252,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 23,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     2,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.4428
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.7424
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.6681
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.6926
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 0.5617
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.0629
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0022
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 20,
+     "route": "stage3",
+     "seconds": 0.0018
+    },
+    {
+     "ply": 22,
+     "route": "stage1",
+     "seconds": 0.001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 4
+   },
+   "game_seconds": 10.65
+  },
+  {
+   "key": "mon_v8_full/8738/5/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 5,
+   "seed": 4117640434268669233,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 16,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.3667
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.7012
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.9531
+    },
+    {
+     "ply": 9,
+     "route": "own_vct2",
+     "seconds": 2.5763
+    },
+    {
+     "ply": 11,
+     "route": "own_vct",
+     "seconds": 0.0378
+    },
+    {
+     "ply": 13,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 15,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 3,
+    "stage2": 1
+   },
+   "game_seconds": 10.92
+  },
+  {
+   "key": "mon_v8_full/8738/6/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 6,
+   "seed": 4261815120882499221,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     5,
+     12
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.4811
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.6011
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.9576
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 2.51
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 1.7901
+    },
+    {
+     "ply": 14,
+     "route": "tree",
+     "seconds": 3.2502
+    },
+    {
+     "ply": 16,
+     "route": "tree",
+     "seconds": 1.7319
+    },
+    {
+     "ply": 18,
+     "route": "own_vct",
+     "seconds": 0.232
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.0031
+    },
+    {
+     "ply": 22,
+     "route": "own_vcf",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 24,
+     "route": "stage3",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 26,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 5,
+    "stage2": 4
+   },
+   "game_seconds": 20.66
+  },
+  {
+   "key": "mon_v8_full/8738/6/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 6,
+   "seed": 11984797319534408911,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 40,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     10,
+     2
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     12,
+     4
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     13,
+     7
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.4385
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.5019
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.5404
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.8488
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.4135
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 3.3674
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 2.107
+    },
+    {
+     "ply": 17,
+     "route": "stage2",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 19,
+     "route": "tree",
+     "seconds": 5.981
+    },
+    {
+     "ply": 21,
+     "route": "own_vct",
+     "seconds": 0.4533
+    },
+    {
+     "ply": 23,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 25,
+     "route": "own_vcf",
+     "seconds": 0.0026
+    },
+    {
+     "ply": 27,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 29,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 31,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 33,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 35,
+     "route": "own_vcf",
+     "seconds": 0.0022
+    },
+    {
+     "ply": 37,
+     "route": "stage3",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 39,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 4,
+    "stage4": 5,
+    "stage2": 9
+   },
+   "game_seconds": 28.64
+  },
+  {
+   "key": "mon_v8_full/8738/7/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 7,
+   "seed": 12889891890227035240,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 33,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.4656
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.7779
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.8773
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.7696
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 1.7905
+    },
+    {
+     "ply": 14,
+     "route": "stage4",
+     "seconds": 0.4661
+    },
+    {
+     "ply": 16,
+     "route": "tree",
+     "seconds": 2.6529
+    },
+    {
+     "ply": 18,
+     "route": "tree",
+     "seconds": 4.7687
+    },
+    {
+     "ply": 20,
+     "route": "stage2",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 22,
+     "route": "stage2",
+     "seconds": 0.001
+    },
+    {
+     "ply": 24,
+     "route": "own_vcf",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 26,
+     "route": "own_vcf",
+     "seconds": 0.0027
+    },
+    {
+     "ply": 28,
+     "route": "own_vcf",
+     "seconds": 0.0014
+    },
+    {
+     "ply": 30,
+     "route": "stage3",
+     "seconds": 0.0023
+    },
+    {
+     "ply": 32,
+     "route": "stage1",
+     "seconds": 0.001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 4,
+    "stage4": 5,
+    "stage2": 5,
+    "stage5": 1
+   },
+   "game_seconds": 24.57
+  },
+  {
+   "key": "mon_v8_full/8738/7/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 7,
+   "seed": 2482664887453357163,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 16,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.4597
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.5017
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 2.1744
+    },
+    {
+     "ply": 9,
+     "route": "own_vct2",
+     "seconds": 1.845
+    },
+    {
+     "ply": 11,
+     "route": "own_vct",
+     "seconds": 0.0438
+    },
+    {
+     "ply": 13,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 15,
+     "route": "stage1",
+     "seconds": 0.0002
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 3,
+    "stage2": 1
+   },
+   "game_seconds": 10.6
+  },
+  {
+   "key": "mon_v8_full/8738/8/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 8,
+   "seed": 3650341692987120154,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 25,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     3,
+     8
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.5677
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.7514
+    },
+    {
+     "ply": 8,
+     "route": "stage5",
+     "seconds": 0.6905
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 3.0678
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 2.8227
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.0966
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 22,
+     "route": "stage3",
+     "seconds": 0.0014
+    },
+    {
+     "ply": 24,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 4,
+    "stage2": 4
+   },
+   "game_seconds": 14.32
+  },
+  {
+   "key": "mon_v8_full/8738/8/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 8,
+   "seed": 4047073356059730508,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 26,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     11,
+     6
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     8,
+     1
+    ],
+    [
+     8,
+     2
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.5075
+    },
+    {
+     "ply": 5,
+     "route": "stage4",
+     "seconds": 0.219
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 2.1277
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 2.1551
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 3.3176
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 2.6255
+    },
+    {
+     "ply": 15,
+     "route": "own_vcf",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 17,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 19,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 21,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 23,
+     "route": "stage3",
+     "seconds": 0.0003
+    },
+    {
+     "ply": 25,
+     "route": "stage1",
+     "seconds": 0.0002
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 5,
+    "stage2": 4
+   },
+   "game_seconds": 16.7
+  },
+  {
+   "key": "mon_v8_full/8738/9/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 9,
+   "seed": 4869411139780778462,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 49,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     0,
+     4
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     1,
+     7
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.5293
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.5456
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.8666
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 2.6549
+    },
+    {
+     "ply": 12,
+     "route": "stage5",
+     "seconds": 1.2876
+    },
+    {
+     "ply": 14,
+     "route": "stage4",
+     "seconds": 0.4439
+    },
+    {
+     "ply": 16,
+     "route": "tree",
+     "seconds": 2.1341
+    },
+    {
+     "ply": 18,
+     "route": "tree",
+     "seconds": 1.7482
+    },
+    {
+     "ply": 20,
+     "route": "tree",
+     "seconds": 1.8321
+    },
+    {
+     "ply": 22,
+     "route": "stage2",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 24,
+     "route": "stage2",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 26,
+     "route": "tree",
+     "seconds": 1.8923
+    },
+    {
+     "ply": 28,
+     "route": "tree",
+     "seconds": 2.4371
+    },
+    {
+     "ply": 30,
+     "route": "tree",
+     "seconds": 1.9875
+    },
+    {
+     "ply": 32,
+     "route": "tree",
+     "seconds": 2.1355
+    },
+    {
+     "ply": 34,
+     "route": "tree",
+     "seconds": 1.9871
+    },
+    {
+     "ply": 36,
+     "route": "tree",
+     "seconds": 3.2242
+    },
+    {
+     "ply": 38,
+     "route": "own_vct",
+     "seconds": 0.3347
+    },
+    {
+     "ply": 40,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 42,
+     "route": "own_vcf",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 44,
+     "route": "own_vcf",
+     "seconds": 0.001
+    },
+    {
+     "ply": 46,
+     "route": "stage3",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 48,
+     "route": "stage1",
+     "seconds": 0.0005
+    }
+   ],
+   "opponent_routes": {
+    "tree": 8,
+    "stage4": 7,
+    "stage5": 1,
+    "stage2": 7
+   },
+   "game_seconds": 42.33
+  },
+  {
+   "key": "mon_v8_full/8738/9/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 9,
+   "seed": 8854748684338653435,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 16,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     6,
+     9
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.4017
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.6699
+    },
+    {
+     "ply": 7,
+     "route": "stage4",
+     "seconds": 0.2226
+    },
+    {
+     "ply": 9,
+     "route": "own_vct2",
+     "seconds": 2.2494
+    },
+    {
+     "ply": 11,
+     "route": "own_vct",
+     "seconds": 0.0819
+    },
+    {
+     "ply": 13,
+     "route": "stage3",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 15,
+     "route": "stage1",
+     "seconds": 0.0002
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 3,
+    "stage2": 1
+   },
+   "game_seconds": 8.96
+  },
+  {
+   "key": "mon_v8_full/8738/10/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 10,
+   "seed": 13174469374441848331,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     11,
+     5
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.7446
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.7911
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.8825
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 5.9581
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 2.8075
+    },
+    {
+     "ply": 14,
+     "route": "own_vct2",
+     "seconds": 5.2724
+    },
+    {
+     "ply": 16,
+     "route": "own_vct",
+     "seconds": 0.1343
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0018
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.0014
+    },
+    {
+     "ply": 22,
+     "route": "own_vcf",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 24,
+     "route": "stage3",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 26,
+     "route": "stage1",
+     "seconds": 0.0005
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 6
+   },
+   "game_seconds": 23.08
+  },
+  {
+   "key": "mon_v8_full/8738/10/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 10,
+   "seed": 8406209689050566253,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 16,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     9,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.4002
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.4844
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.9195
+    },
+    {
+     "ply": 9,
+     "route": "own_vct2",
+     "seconds": 2.8679
+    },
+    {
+     "ply": 11,
+     "route": "own_vct",
+     "seconds": 0.1723
+    },
+    {
+     "ply": 13,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 15,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 2,
+    "stage2": 1
+   },
+   "game_seconds": 12.8
+  },
+  {
+   "key": "mon_v8_full/8738/11/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 11,
+   "seed": 4408827669918718650,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 23,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     10,
+     2
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.7122
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.4667
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.5152
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.8503
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 2.7367
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.061
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0058
+    },
+    {
+     "ply": 20,
+     "route": "stage3",
+     "seconds": 0.0022
+    },
+    {
+     "ply": 22,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 3,
+    "stage2": 4,
+    "stage5": 1
+   },
+   "game_seconds": 12.67
+  },
+  {
+   "key": "mon_v8_full/8738/11/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 11,
+   "seed": 16718627529456842313,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 24,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     10,
+     2
+    ],
+    [
+     11,
+     1
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     12,
+     4
+    ],
+    [
+     8,
+     0
+    ],
+    [
+     13,
+     5
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.4125
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.4955
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.8074
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.9453
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 2.0584
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 2.6269
+    },
+    {
+     "ply": 15,
+     "route": "own_vct2",
+     "seconds": 2.7851
+    },
+    {
+     "ply": 17,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 19,
+     "route": "own_vcf",
+     "seconds": 0.001
+    },
+    {
+     "ply": 21,
+     "route": "stage3",
+     "seconds": 0.0004
+    },
+    {
+     "ply": 23,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage5": 1,
+    "stage2": 3
+   },
+   "game_seconds": 17.96
+  },
+  {
+   "key": "mon_v8_full/8738/12/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 12,
+   "seed": 10461741875250168297,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 55,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     12,
+     6
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     12,
+     7
+    ],
+    [
+     12,
+     8
+    ],
+    [
+     13,
+     9
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     11,
+     10
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     7,
+     12
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.5417
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.6547
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 3.821
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.2999
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 1.7661
+    },
+    {
+     "ply": 14,
+     "route": "tree",
+     "seconds": 1.2625
+    },
+    {
+     "ply": 16,
+     "route": "tree",
+     "seconds": 1.318
+    },
+    {
+     "ply": 18,
+     "route": "tree",
+     "seconds": 1.5058
+    },
+    {
+     "ply": 20,
+     "route": "stage4",
+     "seconds": 0.3888
+    },
+    {
+     "ply": 22,
+     "route": "tree",
+     "seconds": 3.3557
+    },
+    {
+     "ply": 24,
+     "route": "tree",
+     "seconds": 2.794
+    },
+    {
+     "ply": 26,
+     "route": "stage5",
+     "seconds": 3.8167
+    },
+    {
+     "ply": 28,
+     "route": "stage2",
+     "seconds": 0.0018
+    },
+    {
+     "ply": 30,
+     "route": "tree",
+     "seconds": 3.0552
+    },
+    {
+     "ply": 32,
+     "route": "tree",
+     "seconds": 1.6461
+    },
+    {
+     "ply": 34,
+     "route": "stage2",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 36,
+     "route": "tree",
+     "seconds": 3.1511
+    },
+    {
+     "ply": 38,
+     "route": "tree",
+     "seconds": 2.7357
+    },
+    {
+     "ply": 40,
+     "route": "tree",
+     "seconds": 3.7541
+    },
+    {
+     "ply": 42,
+     "route": "tree",
+     "seconds": 3.2977
+    },
+    {
+     "ply": 44,
+     "route": "tree",
+     "seconds": 3.8333
+    },
+    {
+     "ply": 46,
+     "route": "tree",
+     "seconds": 4.0702
+    },
+    {
+     "ply": 48,
+     "route": "stage2",
+     "seconds": 0.0026
+    },
+    {
+     "ply": 50,
+     "route": "stage2",
+     "seconds": 0.0014
+    },
+    {
+     "ply": 52,
+     "route": "stage3",
+     "seconds": 0.0035
+    },
+    {
+     "ply": 54,
+     "route": "stage1",
+     "seconds": 0.005
+    }
+   ],
+   "opponent_routes": {
+    "tree": 9,
+    "stage4": 11,
+    "stage2": 6
+   },
+   "game_seconds": 73.65
+  },
+  {
+   "key": "mon_v8_full/8738/12/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 12,
+   "seed": 418126235454796272,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 18,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     11
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     9,
+     4
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.6857
+    },
+    {
+     "ply": 5,
+     "route": "stage4",
+     "seconds": 0.197
+    },
+    {
+     "ply": 7,
+     "route": "stage2",
+     "seconds": 0.0003
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.2539
+    },
+    {
+     "ply": 11,
+     "route": "own_vct2",
+     "seconds": 1.4871
+    },
+    {
+     "ply": 13,
+     "route": "own_vct",
+     "seconds": 0.0364
+    },
+    {
+     "ply": 15,
+     "route": "stage3",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 17,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 4,
+    "stage4": 2,
+    "stage2": 1
+   },
+   "game_seconds": 10.21
+  },
+  {
+   "key": "mon_v8_full/8738/13/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 13,
+   "seed": 14756168262420894184,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 19,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     11,
+     10
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     11,
+     11
+    ],
+    [
+     11,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.4639
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.2138
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.6019
+    },
+    {
+     "ply": 10,
+     "route": "own_vct2",
+     "seconds": 2.2961
+    },
+    {
+     "ply": 12,
+     "route": "own_vct",
+     "seconds": 0.0461
+    },
+    {
+     "ply": 14,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 16,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 18,
+     "route": "stage1",
+     "seconds": 0.0003
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 2,
+    "stage5": 1,
+    "stage2": 2
+   },
+   "game_seconds": 10.3
+  },
+  {
+   "key": "mon_v8_full/8738/13/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 13,
+   "seed": 9988440624875045229,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 22,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     12
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     7,
+     10
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.0312
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.3527
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.1475
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.4701
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 6.6652
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 1.9448
+    },
+    {
+     "ply": 15,
+     "route": "stage2",
+     "seconds": 0.0004
+    },
+    {
+     "ply": 17,
+     "route": "own_vct",
+     "seconds": 0.0996
+    },
+    {
+     "ply": 19,
+     "route": "stage3",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 21,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 6,
+    "stage2": 1
+   },
+   "game_seconds": 18.06
+  },
+  {
+   "key": "mon_v8_full/8738/14/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 14,
+   "seed": 2222271947398302750,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 33,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     6,
+     12
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     12,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.1842
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.1181
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.4663
+    },
+    {
+     "ply": 10,
+     "route": "stage2",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 2.8133
+    },
+    {
+     "ply": 14,
+     "route": "tree",
+     "seconds": 2.172
+    },
+    {
+     "ply": 16,
+     "route": "stage5",
+     "seconds": 1.052
+    },
+    {
+     "ply": 18,
+     "route": "tree",
+     "seconds": 2.3661
+    },
+    {
+     "ply": 20,
+     "route": "own_vct2",
+     "seconds": 2.9892
+    },
+    {
+     "ply": 22,
+     "route": "own_vct",
+     "seconds": 0.1895
+    },
+    {
+     "ply": 24,
+     "route": "own_vcf",
+     "seconds": 0.0019
+    },
+    {
+     "ply": 26,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 28,
+     "route": "own_vcf",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 30,
+     "route": "stage3",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 32,
+     "route": "stage1",
+     "seconds": 0.0004
+    }
+   ],
+   "opponent_routes": {
+    "tree": 7,
+    "stage4": 4,
+    "stage2": 4
+   },
+   "game_seconds": 25.62
+  },
+  {
+   "key": "mon_v8_full/8738/14/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 14,
+   "seed": 2099178255975137228,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 22,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     8,
+     5
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.1758
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.2818
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 2.1902
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 4.0825
+    },
+    {
+     "ply": 11,
+     "route": "own_vct2",
+     "seconds": 5.189
+    },
+    {
+     "ply": 13,
+     "route": "own_vct",
+     "seconds": 0.1494
+    },
+    {
+     "ply": 15,
+     "route": "own_vcf",
+     "seconds": 0.0013
+    },
+    {
+     "ply": 17,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 19,
+     "route": "stage3",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 21,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 3,
+    "stage5": 1,
+    "stage2": 3
+   },
+   "game_seconds": 18.0
+  },
+  {
+   "key": "mon_v8_full/8738/15/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 15,
+   "seed": 10906687536925039274,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     3,
+     9
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.3753
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 2.4007
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 2.9268
+    },
+    {
+     "ply": 10,
+     "route": "stage4",
+     "seconds": 0.4772
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 4.9789
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.0532
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0018
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.002
+    },
+    {
+     "ply": 22,
+     "route": "own_vcf",
+     "seconds": 0.0053
+    },
+    {
+     "ply": 24,
+     "route": "stage3",
+     "seconds": 0.0024
+    },
+    {
+     "ply": 26,
+     "route": "stage1",
+     "seconds": 0.0007
+    }
+   ],
+   "opponent_routes": {
+    "tree": 4,
+    "stage4": 3,
+    "stage2": 5
+   },
+   "game_seconds": 17.3
+  },
+  {
+   "key": "mon_v8_full/8738/15/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 15,
+   "seed": 8746314784828276791,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 34,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     4,
+     12
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     12
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     5,
+     13
+    ],
+    [
+     6,
+     13
+    ],
+    [
+     6,
+     14
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     4,
+     13
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.4587
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.3391
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.5694
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.7052
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.7937
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 4.3444
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 2.0423
+    },
+    {
+     "ply": 17,
+     "route": "stage4",
+     "seconds": 0.3132
+    },
+    {
+     "ply": 19,
+     "route": "tree",
+     "seconds": 3.3168
+    },
+    {
+     "ply": 21,
+     "route": "own_vct",
+     "seconds": 0.1903
+    },
+    {
+     "ply": 23,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 25,
+     "route": "own_vcf",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 27,
+     "route": "own_vcf",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 29,
+     "route": "own_vcf",
+     "seconds": 0.0013
+    },
+    {
+     "ply": 31,
+     "route": "stage3",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 33,
+     "route": "stage1",
+     "seconds": 0.0002
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 6,
+    "stage2": 6
+   },
+   "game_seconds": 24.7
+  },
+  {
+   "key": "mon_v8_full/8738/16/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 16,
+   "seed": 357568335708692662,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 25,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     9,
+     3
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.2752
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.6765
+    },
+    {
+     "ply": 8,
+     "route": "stage4",
+     "seconds": 0.2775
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.9642
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 4.1531
+    },
+    {
+     "ply": 14,
+     "route": "tree",
+     "seconds": 2.0022
+    },
+    {
+     "ply": 16,
+     "route": "own_vct",
+     "seconds": 0.0681
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0026
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.0033
+    },
+    {
+     "ply": 22,
+     "route": "stage3",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 24,
+     "route": "stage1",
+     "seconds": 0.0005
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 4,
+    "stage2": 4
+   },
+   "game_seconds": 16.03
+  },
+  {
+   "key": "mon_v8_full/8738/16/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 16,
+   "seed": 8758566871730902099,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 14,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     11,
+     10
+    ],
+    [
+     12,
+     11
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.2112
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.4005
+    },
+    {
+     "ply": 7,
+     "route": "own_vct2",
+     "seconds": 2.2682
+    },
+    {
+     "ply": 9,
+     "route": "own_vct",
+     "seconds": 0.0467
+    },
+    {
+     "ply": 11,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 13,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 2,
+    "stage2": 1
+   },
+   "game_seconds": 7.71
+  },
+  {
+   "key": "mon_v8_full/8738/17/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 17,
+   "seed": 7569970015715595917,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 21,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     3,
+     9
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.411
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.8489
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.6376
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.7841
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 1.827
+    },
+    {
+     "ply": 14,
+     "route": "own_vct2",
+     "seconds": 2.3684
+    },
+    {
+     "ply": 16,
+     "route": "own_vct",
+     "seconds": 0.055
+    },
+    {
+     "ply": 18,
+     "route": "stage2",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 20,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 4,
+    "stage2": 2
+   },
+   "game_seconds": 15.98
+  },
+  {
+   "key": "mon_v8_full/8738/17/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 17,
+   "seed": 13315168223766385340,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 22,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     10,
+     5
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.5684
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.6496
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.6387
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.7187
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.6644
+    },
+    {
+     "ply": 13,
+     "route": "stage4",
+     "seconds": 0.3164
+    },
+    {
+     "ply": 15,
+     "route": "stage4",
+     "seconds": 0.4697
+    },
+    {
+     "ply": 17,
+     "route": "own_vct",
+     "seconds": 0.2436
+    },
+    {
+     "ply": 19,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 21,
+     "route": "stage1",
+     "seconds": 0.0002
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 4,
+    "stage2": 2
+   },
+   "game_seconds": 14.98
+  },
+  {
+   "key": "mon_v8_full/8738/18/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 18,
+   "seed": 5488041009411097488,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     4,
+     2
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.3793
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.7232
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 2.052
+    },
+    {
+     "ply": 10,
+     "route": "own_vct2",
+     "seconds": 3.1475
+    },
+    {
+     "ply": 12,
+     "route": "own_vct",
+     "seconds": 0.0836
+    },
+    {
+     "ply": 14,
+     "route": "own_vcf",
+     "seconds": 0.0024
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0014
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.001
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.0014
+    },
+    {
+     "ply": 22,
+     "route": "own_vcf",
+     "seconds": 0.0021
+    },
+    {
+     "ply": 24,
+     "route": "stage3",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 26,
+     "route": "stage1",
+     "seconds": 0.0011
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 6
+   },
+   "game_seconds": 13.15
+  },
+  {
+   "key": "mon_v8_full/8738/18/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 18,
+   "seed": 12483138054755895828,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 28,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     1,
+     8
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.5361
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.7429
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.6066
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.5152
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 7.0322
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 3.9802
+    },
+    {
+     "ply": 15,
+     "route": "own_vct",
+     "seconds": 0.8873
+    },
+    {
+     "ply": 17,
+     "route": "own_vcf",
+     "seconds": 0.0014
+    },
+    {
+     "ply": 19,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 21,
+     "route": "own_vcf",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 23,
+     "route": "own_vcf",
+     "seconds": 0.0054
+    },
+    {
+     "ply": 25,
+     "route": "stage3",
+     "seconds": 0.0004
+    },
+    {
+     "ply": 27,
+     "route": "stage1",
+     "seconds": 0.0002
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 6
+   },
+   "game_seconds": 22.66
+  },
+  {
+   "key": "mon_v8_full/8738/19/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 19,
+   "seed": 5111700218259396393,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     11,
+     9
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 2.1018
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 2.0126
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 2.7679
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 3.9618
+    },
+    {
+     "ply": 12,
+     "route": "stage4",
+     "seconds": 0.4442
+    },
+    {
+     "ply": 14,
+     "route": "own_vct2",
+     "seconds": 4.888
+    },
+    {
+     "ply": 16,
+     "route": "own_vct",
+     "seconds": 0.0885
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 22,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 24,
+     "route": "stage3",
+     "seconds": 0.0013
+    },
+    {
+     "ply": 26,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 5,
+    "stage2": 5
+   },
+   "game_seconds": 19.84
+  },
+  {
+   "key": "mon_v8_full/8738/19/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 19,
+   "seed": 158233609610916104,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 42,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     10,
+     3
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     7,
+     2
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     10,
+     1
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     2
+    ],
+    [
+     8,
+     1
+    ],
+    [
+     9,
+     0
+    ],
+    [
+     9,
+     1
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     4
+    ],
+    [
+     7,
+     1
+    ],
+    [
+     11,
+     5
+    ],
+    [
+     6,
+     0
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.7309
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.5897
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.3737
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 2.0446
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.7527
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 2.23
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 2.441
+    },
+    {
+     "ply": 17,
+     "route": "tree",
+     "seconds": 2.9336
+    },
+    {
+     "ply": 19,
+     "route": "tree",
+     "seconds": 2.3443
+    },
+    {
+     "ply": 21,
+     "route": "tree",
+     "seconds": 1.9035
+    },
+    {
+     "ply": 23,
+     "route": "tree",
+     "seconds": 1.959
+    },
+    {
+     "ply": 25,
+     "route": "tree",
+     "seconds": 3.9067
+    },
+    {
+     "ply": 27,
+     "route": "tree",
+     "seconds": 2.2291
+    },
+    {
+     "ply": 29,
+     "route": "own_vct2",
+     "seconds": 2.4404
+    },
+    {
+     "ply": 31,
+     "route": "own_vct",
+     "seconds": 0.298
+    },
+    {
+     "ply": 33,
+     "route": "own_vcf",
+     "seconds": 0.002
+    },
+    {
+     "ply": 35,
+     "route": "own_vcf",
+     "seconds": 0.0016
+    },
+    {
+     "ply": 37,
+     "route": "own_vcf",
+     "seconds": 0.0012
+    },
+    {
+     "ply": 39,
+     "route": "stage3",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 41,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 7,
+    "stage2": 9
+   },
+   "game_seconds": 38.82
+  },
+  {
+   "key": "mon_v8_full/8738/20/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 20,
+   "seed": 5957475613059876869,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 49,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     3,
+     11
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.353
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 2.1526
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.746
+    },
+    {
+     "ply": 10,
+     "route": "stage4",
+     "seconds": 0.3196
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 3.2396
+    },
+    {
+     "ply": 14,
+     "route": "tree",
+     "seconds": 3.2635
+    },
+    {
+     "ply": 16,
+     "route": "tree",
+     "seconds": 2.67
+    },
+    {
+     "ply": 18,
+     "route": "tree",
+     "seconds": 2.1
+    },
+    {
+     "ply": 20,
+     "route": "stage2",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 22,
+     "route": "stage4",
+     "seconds": 0.6618
+    },
+    {
+     "ply": 24,
+     "route": "tree",
+     "seconds": 3.8072
+    },
+    {
+     "ply": 26,
+     "route": "tree",
+     "seconds": 1.0201
+    },
+    {
+     "ply": 28,
+     "route": "tree",
+     "seconds": 3.033
+    },
+    {
+     "ply": 30,
+     "route": "tree",
+     "seconds": 1.8215
+    },
+    {
+     "ply": 32,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 34,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 36,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 38,
+     "route": "own_vcf",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 40,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 42,
+     "route": "own_vcf",
+     "seconds": 0.0015
+    },
+    {
+     "ply": 44,
+     "route": "own_vcf",
+     "seconds": 0.0019
+    },
+    {
+     "ply": 46,
+     "route": "stage3",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 48,
+     "route": "stage1",
+     "seconds": 0.0007
+    }
+   ],
+   "opponent_routes": {
+    "tree": 4,
+    "stage4": 7,
+    "stage2": 11,
+    "stage5": 1
+   },
+   "game_seconds": 37.67
+  },
+  {
+   "key": "mon_v8_full/8738/20/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 20,
+   "seed": 18026240667479975606,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 36,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     11
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     11,
+     8
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     11,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.9307
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 2.0017
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 2.4062
+    },
+    {
+     "ply": 9,
+     "route": "stage4",
+     "seconds": 0.2259
+    },
+    {
+     "ply": 11,
+     "route": "stage4",
+     "seconds": 0.2807
+    },
+    {
+     "ply": 13,
+     "route": "stage2",
+     "seconds": 0.0003
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 2.968
+    },
+    {
+     "ply": 17,
+     "route": "tree",
+     "seconds": 1.8418
+    },
+    {
+     "ply": 19,
+     "route": "own_vct2",
+     "seconds": 2.853
+    },
+    {
+     "ply": 21,
+     "route": "own_vct",
+     "seconds": 0.0587
+    },
+    {
+     "ply": 23,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 25,
+     "route": "own_vcf",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 27,
+     "route": "own_vcf",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 29,
+     "route": "own_vcf",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 31,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 33,
+     "route": "stage3",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 35,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 4,
+    "stage4": 4,
+    "stage2": 8
+   },
+   "game_seconds": 21.37
+  },
+  {
+   "key": "mon_v8_full/8738/21/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 21,
+   "seed": 3640306946888642672,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 21,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 2.0923
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.6544
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.5856
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.6777
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 3.2612
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.0643
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 18,
+     "route": "stage3",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 20,
+     "route": "stage1",
+     "seconds": 0.001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 4,
+    "stage2": 2
+   },
+   "game_seconds": 15.31
+  },
+  {
+   "key": "mon_v8_full/8738/21/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 21,
+   "seed": 8772138528970814946,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 16,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     6,
+     7
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.9257
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.512
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.9706
+    },
+    {
+     "ply": 9,
+     "route": "own_vct2",
+     "seconds": 3.1884
+    },
+    {
+     "ply": 11,
+     "route": "own_vct",
+     "seconds": 0.1547
+    },
+    {
+     "ply": 13,
+     "route": "stage3",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 15,
+     "route": "stage1",
+     "seconds": 0.0004
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4
+   },
+   "game_seconds": 12.61
+  },
+  {
+   "key": "mon_v8_full/8738/22/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 22,
+   "seed": 7366472839451142401,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     3,
+     11
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     1,
+     10
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     1,
+     11
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     4,
+     6
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.5925
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.6394
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.5597
+    },
+    {
+     "ply": 10,
+     "route": "stage4",
+     "seconds": 0.3909
+    },
+    {
+     "ply": 12,
+     "route": "tree",
+     "seconds": 1.7299
+    },
+    {
+     "ply": 14,
+     "route": "own_vct2",
+     "seconds": 2.1406
+    },
+    {
+     "ply": 16,
+     "route": "own_vct",
+     "seconds": 0.0753
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 20,
+     "route": "own_vcf",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 22,
+     "route": "own_vcf",
+     "seconds": 0.0013
+    },
+    {
+     "ply": 24,
+     "route": "stage3",
+     "seconds": 0.0017
+    },
+    {
+     "ply": 26,
+     "route": "stage1",
+     "seconds": 0.0006
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 5,
+    "stage2": 5
+   },
+   "game_seconds": 13.66
+  },
+  {
+   "key": "mon_v8_full/8738/22/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 22,
+   "seed": 17513953671463915544,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 28,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     7,
+     11
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     2,
+     10
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     0,
+     12
+    ],
+    [
+     1,
+     11
+    ],
+    [
+     1,
+     9
+    ],
+    [
+     2,
+     9
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     12
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     3,
+     11
+    ],
+    [
+     5,
+     13
+    ],
+    [
+     0,
+     8
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.1665
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.225
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.307
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.4102
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.5639
+    },
+    {
+     "ply": 13,
+     "route": "own_vct2",
+     "seconds": 3.2706
+    },
+    {
+     "ply": 15,
+     "route": "own_vct",
+     "seconds": 0.0815
+    },
+    {
+     "ply": 17,
+     "route": "own_vcf",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 19,
+     "route": "own_vcf",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 21,
+     "route": "own_vcf",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 23,
+     "route": "own_vcf",
+     "seconds": 0.0004
+    },
+    {
+     "ply": 25,
+     "route": "stage3",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 27,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 3,
+    "stage2": 6
+   },
+   "game_seconds": 14.21
+  },
+  {
+   "key": "mon_v8_full/8738/23/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 23,
+   "seed": 6505435353561653056,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 21,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.2915
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.503
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.7927
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.6006
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 2.3247
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.0529
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0019
+    },
+    {
+     "ply": 18,
+     "route": "stage3",
+     "seconds": 0.0005
+    },
+    {
+     "ply": 20,
+     "route": "stage1",
+     "seconds": 0.0004
+    }
+   ],
+   "opponent_routes": {
+    "tree": 3,
+    "stage4": 4,
+    "stage2": 2
+   },
+   "game_seconds": 12.69
+  },
+  {
+   "key": "mon_v8_full/8738/23/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 23,
+   "seed": 11951216688394283202,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 58,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     5,
+     11
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     12
+    ],
+    [
+     6,
+     11
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     4,
+     12
+    ],
+    [
+     3,
+     13
+    ],
+    [
+     4,
+     11
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     7,
+     12
+    ],
+    [
+     5,
+     12
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     13
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     3
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     2,
+     11
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     3,
+     11
+    ],
+    [
+     1,
+     11
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     1,
+     8
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.275
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.3135
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.4096
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.8417
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.3598
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 2.3185
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 1.7301
+    },
+    {
+     "ply": 17,
+     "route": "tree",
+     "seconds": 2.3678
+    },
+    {
+     "ply": 19,
+     "route": "tree",
+     "seconds": 1.6123
+    },
+    {
+     "ply": 21,
+     "route": "stage5",
+     "seconds": 0.9507
+    },
+    {
+     "ply": 23,
+     "route": "stage4",
+     "seconds": 0.5798
+    },
+    {
+     "ply": 25,
+     "route": "tree",
+     "seconds": 2.9575
+    },
+    {
+     "ply": 27,
+     "route": "tree",
+     "seconds": 2.2676
+    },
+    {
+     "ply": 29,
+     "route": "tree",
+     "seconds": 1.1253
+    },
+    {
+     "ply": 31,
+     "route": "tree",
+     "seconds": 1.2066
+    },
+    {
+     "ply": 33,
+     "route": "tree",
+     "seconds": 3.5221
+    },
+    {
+     "ply": 35,
+     "route": "tree",
+     "seconds": 2.2014
+    },
+    {
+     "ply": 37,
+     "route": "tree",
+     "seconds": 2.0598
+    },
+    {
+     "ply": 39,
+     "route": "tree",
+     "seconds": 2.2943
+    },
+    {
+     "ply": 41,
+     "route": "tree",
+     "seconds": 3.2049
+    },
+    {
+     "ply": 43,
+     "route": "tree",
+     "seconds": 2.1484
+    },
+    {
+     "ply": 45,
+     "route": "tree",
+     "seconds": 4.4936
+    },
+    {
+     "ply": 47,
+     "route": "stage2",
+     "seconds": 0.0004
+    },
+    {
+     "ply": 49,
+     "route": "own_vcf",
+     "seconds": 0.0007
+    },
+    {
+     "ply": 51,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 53,
+     "route": "own_vcf",
+     "seconds": 0.0006
+    },
+    {
+     "ply": 55,
+     "route": "stage3",
+     "seconds": 0.0002
+    },
+    {
+     "ply": 57,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 5,
+    "stage4": 13,
+    "stage2": 9
+   },
+   "game_seconds": 58.28
+  },
+  {
+   "key": "mon_v8_full/8738/24/black",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 24,
+   "seed": 1368022396297080541,
+   "tested_color": "black",
+   "result": "win",
+   "winner": 1,
+   "length": 23,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     11,
+     3
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     11,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     3
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     3
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 4,
+     "route": "tree",
+     "seconds": 1.2961
+    },
+    {
+     "ply": 6,
+     "route": "tree",
+     "seconds": 1.19
+    },
+    {
+     "ply": 8,
+     "route": "tree",
+     "seconds": 1.2809
+    },
+    {
+     "ply": 10,
+     "route": "tree",
+     "seconds": 1.48
+    },
+    {
+     "ply": 12,
+     "route": "own_vct2",
+     "seconds": 1.5171
+    },
+    {
+     "ply": 14,
+     "route": "own_vct",
+     "seconds": 0.0638
+    },
+    {
+     "ply": 16,
+     "route": "own_vcf",
+     "seconds": 0.0011
+    },
+    {
+     "ply": 18,
+     "route": "own_vcf",
+     "seconds": 0.001
+    },
+    {
+     "ply": 20,
+     "route": "stage3",
+     "seconds": 0.0009
+    },
+    {
+     "ply": 22,
+     "route": "stage1",
+     "seconds": 0.0005
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 4,
+    "stage2": 4
+   },
+   "game_seconds": 9.47
+  },
+  {
+   "key": "mon_v8_full/8738/24/white",
+   "signature": "f0da827964acfcd88fec57a294ff524319150ebe6a5005d44096f4d6ea6df530",
+   "arm": "mon_v8_full",
+   "pair": 24,
+   "seed": 17151733788852790187,
+   "tested_color": "white",
+   "result": "win",
+   "winner": -1,
+   "length": 32,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     3,
+     9
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     2,
+     8
+    ],
+    [
+     3,
+     8
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     3,
+     10
+    ],
+    [
+     8,
+     5
+    ]
+   ],
+   "illegal": null,
+   "truncated": false,
+   "tested_moves": [
+    {
+     "ply": 3,
+     "route": "tree",
+     "seconds": 1.2867
+    },
+    {
+     "ply": 5,
+     "route": "tree",
+     "seconds": 1.1494
+    },
+    {
+     "ply": 7,
+     "route": "tree",
+     "seconds": 1.0359
+    },
+    {
+     "ply": 9,
+     "route": "tree",
+     "seconds": 1.1758
+    },
+    {
+     "ply": 11,
+     "route": "tree",
+     "seconds": 1.1324
+    },
+    {
+     "ply": 13,
+     "route": "tree",
+     "seconds": 1.9659
+    },
+    {
+     "ply": 15,
+     "route": "tree",
+     "seconds": 3.3652
+    },
+    {
+     "ply": 17,
+     "route": "tree",
+     "seconds": 1.615
+    },
+    {
+     "ply": 19,
+     "route": "own_vct2",
+     "seconds": 2.1066
+    },
+    {
+     "ply": 21,
+     "route": "own_vct",
+     "seconds": 0.0455
+    },
+    {
+     "ply": 23,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 25,
+     "route": "own_vcf",
+     "seconds": 0.0008
+    },
+    {
+     "ply": 27,
+     "route": "own_vcf",
+     "seconds": 0.001
+    },
+    {
+     "ply": 29,
+     "route": "stage3",
+     "seconds": 0.0003
+    },
+    {
+     "ply": 31,
+     "route": "stage1",
+     "seconds": 0.0001
+    }
+   ],
+   "opponent_routes": {
+    "tree": 2,
+    "stage4": 6,
+    "stage2": 6
+   },
+   "game_seconds": 18.29
+  }
+ ]
+}

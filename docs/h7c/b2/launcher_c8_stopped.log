@@ -1,0 +1,676 @@
+START c4-selfplay; log=/home/tack/renju-h6/runs/h7c/b2/c4-selfplay.log
+[b2:c4-selfplay] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-selfplay] running, elapsed 2.0 min | [h7c-selfplay] 16/1,000 games  1.6%  1.0 min  ETA 63 min  16/1,000 games
+[b2:c4-selfplay] running, elapsed 3.0 min | [h7c-selfplay] 33/1,000 games  3.3%  2.0 min  ETA 60 min  33/1,000 games
+[b2:c4-selfplay] running, elapsed 4.0 min | [h7c-selfplay] 62/1,000 games  6.2%  3.2 min  ETA 48 min  62/1,000 games
+[b2:c4-selfplay] running, elapsed 5.0 min | [h7c-selfplay] 78/1,000 games  7.8%  4.2 min  ETA 49 min  78/1,000 games
+[b2:c4-selfplay] running, elapsed 6.0 min | [h7c-selfplay] 95/1,000 games  9.5%  5.2 min  ETA 49 min  95/1,000 games
+[b2:c4-selfplay] running, elapsed 7.0 min | [h7c-selfplay] 114/1,000 games  11.4%  6.2 min  ETA 48 min  114/1,000 games
+[b2:c4-selfplay] running, elapsed 8.0 min | [h7c-selfplay] 133/1,000 games  13.3%  7.2 min  ETA 47 min  133/1,000 games
+[b2:c4-selfplay] running, elapsed 9.0 min | [h7c-selfplay] 152/1,000 games  15.2%  8.2 min  ETA 46 min  152/1,000 games
+[b2:c4-selfplay] running, elapsed 10.0 min | [h7c-selfplay] 175/1,000 games  17.5%  9.4 min  ETA 44 min  175/1,000 games
+[b2:c4-selfplay] running, elapsed 11.0 min | [h7c-selfplay] 192/1,000 games  19.2%  10.5 min  ETA 44 min  192/1,000 games
+[b2:c4-selfplay] running, elapsed 12.0 min | [h7c-selfplay] 202/1,000 games  20.2%  11.5 min  ETA 45 min  202/1,000 games
+[b2:c4-selfplay] running, elapsed 13.0 min | [h7c-selfplay] 223/1,000 games  22.3%  12.6 min  ETA 44 min  223/1,000 games
+[b2:c4-selfplay] running, elapsed 14.0 min | [h7c-selfplay] 236/1,000 games  23.6%  13.7 min  ETA 44 min  236/1,000 games
+[b2:c4-selfplay] running, elapsed 15.0 min | [h7c-selfplay] 255/1,000 games  25.5%  14.9 min  ETA 43 min  255/1,000 games
+[b2:c4-selfplay] running, elapsed 16.0 min | [h7c-selfplay] 255/1,000 games  25.5%  14.9 min  ETA 43 min  255/1,000 games
+[b2:c4-selfplay] running, elapsed 17.0 min | [h7c-selfplay] 272/1,000 games  27.2%  16.0 min  ETA 43 min  272/1,000 games
+[b2:c4-selfplay] running, elapsed 18.0 min | [h7c-selfplay] 286/1,000 games  28.6%  17.0 min  ETA 43 min  286/1,000 games
+[b2:c4-selfplay] running, elapsed 19.0 min | [h7c-selfplay] 302/1,000 games  30.2%  18.1 min  ETA 42 min  302/1,000 games
+[b2:c4-selfplay] running, elapsed 20.0 min | [h7c-selfplay] 316/1,000 games  31.6%  19.1 min  ETA 41 min  316/1,000 games
+[b2:c4-selfplay] running, elapsed 21.0 min | [h7c-selfplay] 331/1,000 games  33.1%  20.1 min  ETA 41 min  331/1,000 games
+[b2:c4-selfplay] running, elapsed 22.0 min | [h7c-selfplay] 338/1,000 games  33.8%  21.2 min  ETA 41 min  338/1,000 games
+[b2:c4-selfplay] running, elapsed 23.0 min | [h7c-selfplay] 354/1,000 games  35.4%  22.2 min  ETA 41 min  354/1,000 games
+[b2:c4-selfplay] running, elapsed 24.0 min | [h7c-selfplay] 371/1,000 games  37.1%  23.3 min  ETA 40 min  371/1,000 games
+[b2:c4-selfplay] running, elapsed 25.0 min | [h7c-selfplay] 392/1,000 games  39.2%  24.4 min  ETA 38 min  392/1,000 games
+[b2:c4-selfplay] running, elapsed 26.0 min | [h7c-selfplay] 406/1,000 games  40.6%  25.5 min  ETA 37 min  406/1,000 games
+[b2:c4-selfplay] running, elapsed 27.0 min | [h7c-selfplay] 419/1,000 games  41.9%  26.6 min  ETA 37 min  419/1,000 games
+[b2:c4-selfplay] running, elapsed 28.0 min | [h7c-selfplay] 428/1,000 games  42.8%  27.7 min  ETA 37 min  428/1,000 games
+[b2:c4-selfplay] running, elapsed 29.0 min | [h7c-selfplay] 448/1,000 games  44.8%  28.8 min  ETA 35 min  448/1,000 games
+[b2:c4-selfplay] running, elapsed 30.0 min | [h7c-selfplay] 463/1,000 games  46.3%  29.8 min  ETA 35 min  463/1,000 games
+[b2:c4-selfplay] running, elapsed 31.0 min | [h7c-selfplay] 476/1,000 games  47.6%  30.8 min  ETA 34 min  476/1,000 games
+[b2:c4-selfplay] running, elapsed 32.0 min | [h7c-selfplay] 497/1,000 games  49.7%  31.9 min  ETA 32 min  497/1,000 games
+[b2:c4-selfplay] running, elapsed 33.0 min | [h7c-selfplay] 515/1,000 games  51.5%  32.9 min  ETA 31 min  515/1,000 games
+[b2:c4-selfplay] running, elapsed 34.0 min | [h7c-selfplay] 515/1,000 games  51.5%  32.9 min  ETA 31 min  515/1,000 games
+[b2:c4-selfplay] running, elapsed 35.0 min | [h7c-selfplay] 535/1,000 games  53.5%  34.0 min  ETA 30 min  535/1,000 games
+[b2:c4-selfplay] running, elapsed 36.0 min | [h7c-selfplay] 553/1,000 games  55.3%  35.1 min  ETA 28 min  553/1,000 games
+[b2:c4-selfplay] running, elapsed 37.0 min | [h7c-selfplay] 569/1,000 games  56.9%  36.1 min  ETA 27 min  569/1,000 games
+[b2:c4-selfplay] running, elapsed 38.0 min | [h7c-selfplay] 591/1,000 games  59.1%  37.2 min  ETA 26 min  591/1,000 games
+[b2:c4-selfplay] running, elapsed 39.0 min | [h7c-selfplay] 617/1,000 games  61.7%  38.2 min  ETA 24 min  617/1,000 games
+[b2:c4-selfplay] running, elapsed 40.0 min | [h7c-selfplay] 637/1,000 games  63.7%  39.3 min  ETA 22 min  637/1,000 games
+[b2:c4-selfplay] running, elapsed 41.0 min | [h7c-selfplay] 659/1,000 games  65.9%  40.3 min  ETA 21 min  659/1,000 games
+[b2:c4-selfplay] running, elapsed 42.0 min | [h7c-selfplay] 677/1,000 games  67.7%  41.4 min  ETA 20 min  677/1,000 games
+[b2:c4-selfplay] running, elapsed 43.0 min | [h7c-selfplay] 699/1,000 games  69.9%  42.4 min  ETA 18 min  699/1,000 games
+[b2:c4-selfplay] running, elapsed 44.0 min | [h7c-selfplay] 719/1,000 games  71.9%  43.4 min  ETA 17 min  719/1,000 games
+[b2:c4-selfplay] running, elapsed 45.0 min | [h7c-selfplay] 734/1,000 games  73.4%  44.5 min  ETA 16 min  734/1,000 games
+[b2:c4-selfplay] running, elapsed 46.0 min | [h7c-selfplay] 750/1,000 games  75.0%  45.5 min  ETA 15 min  750/1,000 games
+[b2:c4-selfplay] running, elapsed 47.0 min | [h7c-selfplay] 762/1,000 games  76.2%  46.6 min  ETA 15 min  762/1,000 games
+[b2:c4-selfplay] running, elapsed 48.0 min | [h7c-selfplay] 776/1,000 games  77.6%  47.6 min  ETA 14 min  776/1,000 games
+[b2:c4-selfplay] running, elapsed 49.0 min | [h7c-selfplay] 803/1,000 games  80.3%  48.6 min  ETA 12 min  803/1,000 games
+[b2:c4-selfplay] running, elapsed 50.0 min | [h7c-selfplay] 831/1,000 games  83.1%  49.7 min  ETA 10 min  831/1,000 games
+[b2:c4-selfplay] running, elapsed 51.0 min | [h7c-selfplay] 848/1,000 games  84.8%  50.7 min  ETA 9 min  848/1,000 games
+[b2:c4-selfplay] running, elapsed 52.0 min | [h7c-selfplay] 864/1,000 games  86.4%  51.7 min  ETA 8 min  864/1,000 games
+[b2:c4-selfplay] running, elapsed 53.0 min | [h7c-selfplay] 879/1,000 games  87.9%  52.8 min  ETA 7 min  879/1,000 games
+[b2:c4-selfplay] running, elapsed 54.0 min | [h7c-selfplay] 900/1,000 games  90.0%  53.8 min  ETA 6 min  900/1,000 games
+[b2:c4-selfplay] running, elapsed 55.0 min | [h7c-selfplay] 923/1,000 games  92.3%  54.8 min  ETA 5 min  923/1,000 games
+[b2:c4-selfplay] running, elapsed 56.0 min | [h7c-selfplay] 950/1,000 games  95.0%  55.9 min  ETA 3 min  950/1,000 games
+[b2:c4-selfplay] running, elapsed 57.0 min | [h7c-selfplay] 969/1,000 games  96.9%  56.9 min  ETA 2 min  969/1,000 games
+[b2:c4-selfplay] running, elapsed 58.0 min | [h7c-selfplay] 989/1,000 games  98.9%  58.0 min  ETA 1 min  989/1,000 games
+[b2:c4-selfplay] running, elapsed 59.0 min | [h7c-selfplay] 989/1,000 games  98.9%  58.0 min  ETA 1 min  989/1,000 games
+COMPLETE c4-selfplay
+START c4-labels; log=/home/tack/renju-h6/runs/h7c/b2/c4-labels.log
+COMPLETE c4-labels
+START c4-cache; log=/home/tack/renju-h6/runs/h7c/b2/c4-cache.log
+COMPLETE c4-cache
+START c4-value; log=/home/tack/renju-h6/runs/h7c/b2/c4-value.log
+[b2:c4-value] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-value] running, elapsed 2.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-value] running, elapsed 3.0 min | child progress unavailable (done/total, % and ETA unknown)
+COMPLETE c4-value
+START c4-official; log=/home/tack/renju-h6/runs/h7c/b2/c4-official.log
+[b2:c4-official] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-official] running, elapsed 2.0 min | [h7c-arena-official] 31/100 games  31.0%  1.0 min  ETA 2 min  31/100 games
+[b2:c4-official] running, elapsed 3.0 min | [h7c-arena-official] 43/100 games  43.0%  2.2 min  ETA 3 min  43/100 games
+[b2:c4-official] running, elapsed 4.0 min | [h7c-arena-official] 51/100 games  51.0%  3.5 min  ETA 3 min  51/100 games
+[b2:c4-official] running, elapsed 5.0 min | [h7c-arena-official] 59/100 games  59.0%  4.6 min  ETA 3 min  59/100 games
+[b2:c4-official] running, elapsed 6.0 min | [h7c-arena-official] 69/100 games  69.0%  5.6 min  ETA 3 min  69/100 games
+[b2:c4-official] running, elapsed 7.0 min | [h7c-arena-official] 85/100 games  85.0%  6.6 min  ETA 1 min  85/100 games
+[b2:c4-official] running, elapsed 8.0 min | [h7c-arena-official] 97/100 games  97.0%  7.7 min  ETA 0 min  97/100 games
+[b2:c4-official] running, elapsed 9.0 min | [h7c-arena-official] 97/100 games  97.0%  7.7 min  ETA 0 min  97/100 games
+COMPLETE c4-official
+START c4-mon_v8_full; log=/home/tack/renju-h6/runs/h7c/b2/c4-mon_v8_full.log
+[b2:c4-mon_v8_full] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-mon_v8_full] running, elapsed 2.0 min | [h7c-arena-mon_v8_full] 19/50 games  38.0%  1.0 min  ETA 2 min  19/50 games
+COMPLETE c4-mon_v8_full
+START c4-mon_puct_policy; log=/home/tack/renju-h6/runs/h7c/b2/c4-mon_puct_policy.log
+[b2:c4-mon_puct_policy] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-mon_puct_policy] running, elapsed 2.0 min | [h7c-arena-mon_puct_policy] 22/50 games  44.0%  1.0 min  ETA 1 min  22/50 games
+[b2:c4-mon_puct_policy] running, elapsed 3.0 min | [h7c-arena-mon_puct_policy] 37/50 games  74.0%  2.2 min  ETA 1 min  37/50 games
+[b2:c4-mon_puct_policy] running, elapsed 4.0 min | [h7c-arena-mon_puct_policy] 43/50 games  86.0%  3.3 min  ETA 1 min  43/50 games
+COMPLETE c4-mon_puct_policy
+START c4-mon_e2; log=/home/tack/renju-h6/runs/h7c/b2/c4-mon_e2.log
+[b2:c4-mon_e2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-mon_e2] running, elapsed 2.0 min | [h7c-arena-mon_e2] 21/50 games  42.0%  1.0 min  ETA 1 min  21/50 games
+COMPLETE c4-mon_e2
+START c4-tactical; log=/home/tack/renju-h6/runs/h7c/b2/c4-tactical.log
+[b2:c4-tactical] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-tactical] running, elapsed 2.0 min | [h7c-e1-candidate] 45/45 positions  100.0%  1.2 min  ETA 0 min  45/45 positions
+COMPLETE c4-tactical
+START c4-verdict; log=/home/tack/renju-h6/runs/h7c/b2/c4-verdict.log
+COMPLETE c4-verdict
+START c4-drift; log=/home/tack/renju-h6/runs/h7c/b2/c4-drift.log
+[b2:c4-drift] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c4-drift] running, elapsed 2.0 min | [h7c-drift] 12/100 games  12.0%  1.1 min  ETA 8 min  12/100 games
+[b2:c4-drift] running, elapsed 3.0 min | [h7c-drift] 23/100 games  23.0%  2.1 min  ETA 7 min  23/100 games
+[b2:c4-drift] running, elapsed 4.0 min | [h7c-drift] 35/100 games  35.0%  3.2 min  ETA 6 min  35/100 games
+[b2:c4-drift] running, elapsed 5.0 min | [h7c-drift] 46/100 games  46.0%  4.4 min  ETA 5 min  46/100 games
+[b2:c4-drift] running, elapsed 6.0 min | [h7c-drift] 67/100 games  67.0%  5.6 min  ETA 3 min  67/100 games
+[b2:c4-drift] running, elapsed 7.0 min | [h7c-drift] 79/100 games  79.0%  6.6 min  ETA 2 min  79/100 games
+[b2:c4-drift] running, elapsed 8.0 min | [h7c-drift] 79/100 games  79.0%  6.6 min  ETA 2 min  79/100 games
+[b2:c4-drift] running, elapsed 9.0 min | [h7c-drift] 90/100 games  90.0%  8.1 min  ETA 1 min  90/100 games
+COMPLETE c4-drift
+START c4-x2; log=/home/tack/renju-h6/runs/h7c/b2/c4-x2.log
+[b2:c4-x2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+COMPLETE c4-x2
+START c5-selfplay; log=/home/tack/renju-h6/runs/h7c/b2/c5-selfplay.log
+[b2:c5-selfplay] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-selfplay] running, elapsed 2.0 min | [h7c-selfplay] 23/1,000 games  2.3%  1.0 min  ETA 43 min  23/1,000 games
+[b2:c5-selfplay] running, elapsed 3.0 min | [h7c-selfplay] 45/1,000 games  4.5%  2.1 min  ETA 45 min  45/1,000 games
+[b2:c5-selfplay] running, elapsed 4.0 min | [h7c-selfplay] 64/1,000 games  6.4%  3.1 min  ETA 46 min  64/1,000 games
+[b2:c5-selfplay] running, elapsed 5.0 min | [h7c-selfplay] 75/1,000 games  7.5%  4.2 min  ETA 51 min  75/1,000 games
+[b2:c5-selfplay] running, elapsed 6.0 min | [h7c-selfplay] 88/1,000 games  8.8%  5.2 min  ETA 54 min  88/1,000 games
+[b2:c5-selfplay] running, elapsed 7.0 min | [h7c-selfplay] 108/1,000 games  10.8%  6.2 min  ETA 51 min  108/1,000 games
+[b2:c5-selfplay] running, elapsed 8.0 min | [h7c-selfplay] 125/1,000 games  12.5%  7.2 min  ETA 50 min  125/1,000 games
+[b2:c5-selfplay] running, elapsed 9.0 min | [h7c-selfplay] 141/1,000 games  14.1%  8.2 min  ETA 50 min  141/1,000 games
+[b2:c5-selfplay] running, elapsed 10.0 min | [h7c-selfplay] 150/1,000 games  15.0%  9.3 min  ETA 52 min  150/1,000 games
+[b2:c5-selfplay] running, elapsed 11.0 min | [h7c-selfplay] 167/1,000 games  16.7%  10.3 min  ETA 51 min  167/1,000 games
+[b2:c5-selfplay] running, elapsed 12.0 min | [h7c-selfplay] 195/1,000 games  19.5%  11.3 min  ETA 47 min  195/1,000 games
+[b2:c5-selfplay] running, elapsed 13.0 min | [h7c-selfplay] 212/1,000 games  21.2%  12.3 min  ETA 46 min  212/1,000 games
+[b2:c5-selfplay] running, elapsed 14.0 min | [h7c-selfplay] 225/1,000 games  22.5%  13.5 min  ETA 47 min  225/1,000 games
+[b2:c5-selfplay] running, elapsed 15.0 min | [h7c-selfplay] 234/1,000 games  23.4%  14.6 min  ETA 48 min  234/1,000 games
+[b2:c5-selfplay] running, elapsed 16.0 min | [h7c-selfplay] 257/1,000 games  25.7%  15.6 min  ETA 45 min  257/1,000 games
+[b2:c5-selfplay] running, elapsed 17.0 min | [h7c-selfplay] 278/1,000 games  27.8%  16.6 min  ETA 43 min  278/1,000 games
+[b2:c5-selfplay] running, elapsed 18.0 min | [h7c-selfplay] 299/1,000 games  29.9%  17.7 min  ETA 41 min  299/1,000 games
+[b2:c5-selfplay] running, elapsed 19.0 min | [h7c-selfplay] 318/1,000 games  31.8%  18.7 min  ETA 40 min  318/1,000 games
+[b2:c5-selfplay] running, elapsed 20.0 min | [h7c-selfplay] 331/1,000 games  33.1%  19.7 min  ETA 40 min  331/1,000 games
+[b2:c5-selfplay] running, elapsed 21.0 min | [h7c-selfplay] 347/1,000 games  34.7%  20.8 min  ETA 39 min  347/1,000 games
+[b2:c5-selfplay] running, elapsed 22.0 min | [h7c-selfplay] 364/1,000 games  36.4%  21.8 min  ETA 38 min  364/1,000 games
+[b2:c5-selfplay] running, elapsed 23.0 min | [h7c-selfplay] 378/1,000 games  37.8%  22.9 min  ETA 38 min  378/1,000 games
+[b2:c5-selfplay] running, elapsed 24.0 min | [h7c-selfplay] 391/1,000 games  39.1%  24.0 min  ETA 37 min  391/1,000 games
+[b2:c5-selfplay] running, elapsed 25.0 min | [h7c-selfplay] 391/1,000 games  39.1%  24.0 min  ETA 37 min  391/1,000 games
+[b2:c5-selfplay] running, elapsed 26.0 min | [h7c-selfplay] 404/1,000 games  40.4%  25.0 min  ETA 37 min  404/1,000 games
+[b2:c5-selfplay] running, elapsed 27.0 min | [h7c-selfplay] 423/1,000 games  42.3%  26.1 min  ETA 36 min  423/1,000 games
+[b2:c5-selfplay] running, elapsed 28.0 min | [h7c-selfplay] 438/1,000 games  43.8%  27.1 min  ETA 35 min  438/1,000 games
+[b2:c5-selfplay] running, elapsed 29.0 min | [h7c-selfplay] 455/1,000 games  45.5%  28.2 min  ETA 34 min  455/1,000 games
+[b2:c5-selfplay] running, elapsed 30.0 min | [h7c-selfplay] 474/1,000 games  47.4%  29.2 min  ETA 32 min  474/1,000 games
+[b2:c5-selfplay] running, elapsed 31.0 min | [h7c-selfplay] 486/1,000 games  48.6%  30.3 min  ETA 32 min  486/1,000 games
+[b2:c5-selfplay] running, elapsed 32.0 min | [h7c-selfplay] 499/1,000 games  49.9%  31.3 min  ETA 31 min  499/1,000 games
+[b2:c5-selfplay] running, elapsed 33.0 min | [h7c-selfplay] 519/1,000 games  51.9%  32.3 min  ETA 30 min  519/1,000 games
+[b2:c5-selfplay] running, elapsed 34.0 min | [h7c-selfplay] 543/1,000 games  54.3%  33.5 min  ETA 28 min  543/1,000 games
+[b2:c5-selfplay] running, elapsed 35.0 min | [h7c-selfplay] 556/1,000 games  55.6%  34.6 min  ETA 28 min  556/1,000 games
+[b2:c5-selfplay] running, elapsed 36.0 min | [h7c-selfplay] 570/1,000 games  57.0%  35.6 min  ETA 27 min  570/1,000 games
+[b2:c5-selfplay] running, elapsed 37.0 min | [h7c-selfplay] 591/1,000 games  59.1%  36.6 min  ETA 25 min  591/1,000 games
+[b2:c5-selfplay] running, elapsed 38.0 min | [h7c-selfplay] 609/1,000 games  60.9%  37.7 min  ETA 24 min  609/1,000 games
+[b2:c5-selfplay] running, elapsed 39.0 min | [h7c-selfplay] 626/1,000 games  62.6%  38.7 min  ETA 23 min  626/1,000 games
+[b2:c5-selfplay] running, elapsed 40.0 min | [h7c-selfplay] 643/1,000 games  64.3%  39.8 min  ETA 22 min  643/1,000 games
+[b2:c5-selfplay] running, elapsed 41.0 min | [h7c-selfplay] 652/1,000 games  65.2%  40.9 min  ETA 22 min  652/1,000 games
+[b2:c5-selfplay] running, elapsed 42.0 min | [h7c-selfplay] 668/1,000 games  66.8%  41.9 min  ETA 21 min  668/1,000 games
+[b2:c5-selfplay] running, elapsed 43.0 min | [h7c-selfplay] 678/1,000 games  67.8%  42.9 min  ETA 20 min  678/1,000 games
+[b2:c5-selfplay] running, elapsed 44.0 min | [h7c-selfplay] 696/1,000 games  69.6%  44.0 min  ETA 19 min  696/1,000 games
+[b2:c5-selfplay] running, elapsed 45.0 min | [h7c-selfplay] 696/1,000 games  69.6%  44.0 min  ETA 19 min  696/1,000 games
+[b2:c5-selfplay] running, elapsed 46.0 min | [h7c-selfplay] 718/1,000 games  71.8%  45.1 min  ETA 18 min  718/1,000 games
+[b2:c5-selfplay] running, elapsed 47.0 min | [h7c-selfplay] 730/1,000 games  73.0%  46.2 min  ETA 17 min  730/1,000 games
+[b2:c5-selfplay] running, elapsed 48.0 min | [h7c-selfplay] 749/1,000 games  74.9%  47.2 min  ETA 16 min  749/1,000 games
+[b2:c5-selfplay] running, elapsed 49.0 min | [h7c-selfplay] 774/1,000 games  77.4%  48.3 min  ETA 14 min  774/1,000 games
+[b2:c5-selfplay] running, elapsed 50.0 min | [h7c-selfplay] 787/1,000 games  78.7%  49.3 min  ETA 13 min  787/1,000 games
+[b2:c5-selfplay] running, elapsed 51.0 min | [h7c-selfplay] 804/1,000 games  80.4%  50.4 min  ETA 12 min  804/1,000 games
+[b2:c5-selfplay] running, elapsed 52.0 min | [h7c-selfplay] 823/1,000 games  82.3%  51.4 min  ETA 11 min  823/1,000 games
+[b2:c5-selfplay] running, elapsed 53.0 min | [h7c-selfplay] 834/1,000 games  83.4%  52.6 min  ETA 10 min  834/1,000 games
+[b2:c5-selfplay] running, elapsed 54.0 min | [h7c-selfplay] 844/1,000 games  84.4%  53.7 min  ETA 10 min  844/1,000 games
+[b2:c5-selfplay] running, elapsed 55.0 min | [h7c-selfplay] 868/1,000 games  86.8%  54.7 min  ETA 8 min  868/1,000 games
+[b2:c5-selfplay] running, elapsed 56.0 min | [h7c-selfplay] 888/1,000 games  88.8%  55.7 min  ETA 7 min  888/1,000 games
+[b2:c5-selfplay] running, elapsed 57.0 min | [h7c-selfplay] 912/1,000 games  91.2%  56.7 min  ETA 5 min  912/1,000 games
+[b2:c5-selfplay] running, elapsed 58.0 min | [h7c-selfplay] 930/1,000 games  93.0%  57.8 min  ETA 4 min  930/1,000 games
+[b2:c5-selfplay] running, elapsed 59.0 min | [h7c-selfplay] 949/1,000 games  94.9%  58.9 min  ETA 3 min  949/1,000 games
+[b2:c5-selfplay] running, elapsed 60.0 min | [h7c-selfplay] 961/1,000 games  96.1%  60.0 min  ETA 2 min  961/1,000 games
+[b2:c5-selfplay] running, elapsed 61.0 min | [h7c-selfplay] 961/1,000 games  96.1%  60.0 min  ETA 2 min  961/1,000 games
+[b2:c5-selfplay] running, elapsed 62.0 min | [h7c-selfplay] 978/1,000 games  97.8%  61.0 min  ETA 1 min  978/1,000 games
+COMPLETE c5-selfplay
+START c5-labels; log=/home/tack/renju-h6/runs/h7c/b2/c5-labels.log
+COMPLETE c5-labels
+START c5-cache; log=/home/tack/renju-h6/runs/h7c/b2/c5-cache.log
+COMPLETE c5-cache
+START c5-value; log=/home/tack/renju-h6/runs/h7c/b2/c5-value.log
+[b2:c5-value] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-value] running, elapsed 2.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-value] running, elapsed 3.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-value] running, elapsed 4.0 min | child progress unavailable (done/total, % and ETA unknown)
+COMPLETE c5-value
+START c5-official; log=/home/tack/renju-h6/runs/h7c/b2/c5-official.log
+[b2:c5-official] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-official] running, elapsed 2.0 min | [h7c-arena-official] 5/100 games  5.0%  1.0 min  ETA 19 min  5/100 games
+[b2:c5-official] running, elapsed 3.0 min | [h7c-arena-official] 15/100 games  15.0%  2.4 min  ETA 14 min  15/100 games
+[b2:c5-official] running, elapsed 4.0 min | [h7c-arena-official] 16/100 games  16.0%  3.5 min  ETA 18 min  16/100 games, 84 pending
+[b2:c5-official] running, elapsed 5.0 min | [h7c-arena-official] 23/100 games  23.0%  4.7 min  ETA 16 min  23/100 games
+[b2:c5-official] running, elapsed 6.0 min | [h7c-arena-official] 26/100 games  26.0%  5.9 min  ETA 17 min  26/100 games
+[b2:c5-official] running, elapsed 7.0 min | [h7c-arena-official] 30/100 games  30.0%  7.0 min  ETA 16 min  30/100 games
+[b2:c5-official] running, elapsed 8.0 min | [h7c-arena-official] 36/100 games  36.0%  8.0 min  ETA 14 min  36/100 games
+[b2:c5-official] running, elapsed 9.0 min | [h7c-arena-official] 36/100 games  36.0%  8.0 min  ETA 14 min  36/100 games
+[b2:c5-official] running, elapsed 10.0 min | [h7c-arena-official] 45/100 games  45.0%  9.1 min  ETA 11 min  45/100 games
+[b2:c5-official] running, elapsed 11.0 min | [h7c-arena-official] 49/100 games  49.0%  10.6 min  ETA 11 min  49/100 games
+[b2:c5-official] running, elapsed 12.0 min | [h7c-arena-official] 63/100 games  63.0%  11.6 min  ETA 7 min  63/100 games
+[b2:c5-official] running, elapsed 13.0 min | [h7c-arena-official] 71/100 games  71.0%  12.6 min  ETA 5 min  71/100 games
+[b2:c5-official] running, elapsed 14.0 min | [h7c-arena-official] 85/100 games  85.0%  13.9 min  ETA 2 min  85/100 games
+[b2:c5-official] running, elapsed 15.0 min | [h7c-arena-official] 96/100 games  96.0%  14.9 min  ETA 1 min  96/100 games
+[b2:c5-official] running, elapsed 16.0 min | [h7c-arena-official] 96/100 games  96.0%  14.9 min  ETA 1 min  96/100 games
+[b2:c5-official] running, elapsed 17.0 min | [h7c-arena-official] 99/100 games  99.0%  16.3 min  ETA 0 min  99/100 games, 1 pending
+COMPLETE c5-official
+START c5-mon_v8_full; log=/home/tack/renju-h6/runs/h7c/b2/c5-mon_v8_full.log
+[b2:c5-mon_v8_full] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-mon_v8_full] running, elapsed 2.0 min | [h7c-arena-mon_v8_full] 19/50 games  38.0%  1.1 min  ETA 2 min  19/50 games
+COMPLETE c5-mon_v8_full
+START c5-mon_puct_policy; log=/home/tack/renju-h6/runs/h7c/b2/c5-mon_puct_policy.log
+[b2:c5-mon_puct_policy] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-mon_puct_policy] running, elapsed 2.0 min | [h7c-arena-mon_puct_policy] 7/50 games  14.0%  1.1 min  ETA 6 min  7/50 games
+[b2:c5-mon_puct_policy] running, elapsed 3.0 min | [h7c-arena-mon_puct_policy] 17/50 games  34.0%  2.3 min  ETA 5 min  17/50 games
+[b2:c5-mon_puct_policy] running, elapsed 4.0 min | [h7c-arena-mon_puct_policy] 21/50 games  42.0%  3.4 min  ETA 5 min  21/50 games
+[b2:c5-mon_puct_policy] running, elapsed 5.0 min | [h7c-arena-mon_puct_policy] 29/50 games  58.0%  4.4 min  ETA 3 min  29/50 games
+[b2:c5-mon_puct_policy] running, elapsed 6.0 min | [h7c-arena-mon_puct_policy] 36/50 games  72.0%  5.6 min  ETA 2 min  36/50 games
+[b2:c5-mon_puct_policy] running, elapsed 7.0 min | [h7c-arena-mon_puct_policy] 46/50 games  92.0%  6.6 min  ETA 1 min  46/50 games
+[b2:c5-mon_puct_policy] running, elapsed 8.0 min | [h7c-arena-mon_puct_policy] 49/50 games  98.0%  7.8 min  ETA 0 min  49/50 games
+[b2:c5-mon_puct_policy] running, elapsed 9.0 min | [h7c-arena-mon_puct_policy] 49/50 games  98.0%  8.8 min  ETA 0 min  49/50 games, 1 pending
+COMPLETE c5-mon_puct_policy
+START c5-mon_e2; log=/home/tack/renju-h6/runs/h7c/b2/c5-mon_e2.log
+[b2:c5-mon_e2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-mon_e2] running, elapsed 2.0 min | [h7c-arena-mon_e2] 18/50 games  36.0%  1.1 min  ETA 2 min  18/50 games
+[b2:c5-mon_e2] running, elapsed 3.0 min | [h7c-arena-mon_e2] 34/50 games  68.0%  2.1 min  ETA 1 min  34/50 games
+COMPLETE c5-mon_e2
+START c5-tactical; log=/home/tack/renju-h6/runs/h7c/b2/c5-tactical.log
+[b2:c5-tactical] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-tactical] running, elapsed 2.0 min | [h7c-e1-candidate] 36/45 positions  80.0%  1.5 min  ETA 0 min  36/45 positions
+[b2:c5-tactical] running, elapsed 3.0 min | [h7c-e1-candidate] 45/45 positions  100.0%  2.1 min  ETA 0 min  45/45 positions
+[b2:c5-tactical] running, elapsed 4.0 min | [h7c-e1-parent] 35/45 positions  77.8%  1.1 min  ETA 0 min  35/45 positions
+COMPLETE c5-tactical
+START c5-verdict; log=/home/tack/renju-h6/runs/h7c/b2/c5-verdict.log
+COMPLETE c5-verdict
+START c5-drift; log=/home/tack/renju-h6/runs/h7c/b2/c5-drift.log
+[b2:c5-drift] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c5-drift] running, elapsed 2.0 min | [h7c-drift] 9/100 games  9.0%  1.1 min  ETA 11 min  9/100 games
+[b2:c5-drift] running, elapsed 3.0 min | [h7c-drift] 26/100 games  26.0%  2.1 min  ETA 6 min  26/100 games
+[b2:c5-drift] running, elapsed 4.0 min | [h7c-drift] 40/100 games  40.0%  3.1 min  ETA 5 min  40/100 games
+[b2:c5-drift] running, elapsed 5.0 min | [h7c-drift] 50/100 games  50.0%  4.2 min  ETA 4 min  50/100 games
+[b2:c5-drift] running, elapsed 6.0 min | [h7c-drift] 67/100 games  67.0%  5.3 min  ETA 3 min  67/100 games
+[b2:c5-drift] running, elapsed 7.0 min | [h7c-drift] 91/100 games  91.0%  6.5 min  ETA 1 min  91/100 games
+[b2:c5-drift] running, elapsed 8.0 min | [h7c-drift] 97/100 games  97.0%  7.7 min  ETA 0 min  97/100 games
+COMPLETE c5-drift
+START c5-x2; log=/home/tack/renju-h6/runs/h7c/b2/c5-x2.log
+[b2:c5-x2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+COMPLETE c5-x2
+START c6-selfplay; log=/home/tack/renju-h6/runs/h7c/b2/c6-selfplay.log
+[b2:c6-selfplay] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-selfplay] running, elapsed 2.0 min | [h7c-selfplay] 20/1,000 games  2.0%  1.0 min  ETA 49 min  20/1,000 games
+[b2:c6-selfplay] running, elapsed 3.0 min | [h7c-selfplay] 46/1,000 games  4.6%  2.0 min  ETA 42 min  46/1,000 games
+[b2:c6-selfplay] running, elapsed 4.0 min | [h7c-selfplay] 70/1,000 games  7.0%  3.1 min  ETA 41 min  70/1,000 games
+[b2:c6-selfplay] running, elapsed 5.0 min | [h7c-selfplay] 89/1,000 games  8.9%  4.2 min  ETA 43 min  89/1,000 games
+[b2:c6-selfplay] running, elapsed 6.0 min | [h7c-selfplay] 101/1,000 games  10.1%  5.3 min  ETA 48 min  101/1,000 games
+[b2:c6-selfplay] running, elapsed 7.0 min | [h7c-selfplay] 112/1,000 games  11.2%  6.5 min  ETA 51 min  112/1,000 games
+[b2:c6-selfplay] running, elapsed 8.0 min | [h7c-selfplay] 134/1,000 games  13.4%  7.6 min  ETA 49 min  134/1,000 games
+[b2:c6-selfplay] running, elapsed 9.0 min | [h7c-selfplay] 149/1,000 games  14.9%  8.6 min  ETA 49 min  149/1,000 games
+[b2:c6-selfplay] running, elapsed 10.0 min | [h7c-selfplay] 169/1,000 games  16.9%  9.6 min  ETA 47 min  169/1,000 games
+[b2:c6-selfplay] running, elapsed 11.0 min | [h7c-selfplay] 188/1,000 games  18.8%  10.7 min  ETA 46 min  188/1,000 games
+[b2:c6-selfplay] running, elapsed 12.0 min | [h7c-selfplay] 202/1,000 games  20.2%  11.7 min  ETA 46 min  202/1,000 games
+[b2:c6-selfplay] running, elapsed 13.0 min | [h7c-selfplay] 231/1,000 games  23.1%  12.8 min  ETA 43 min  231/1,000 games
+[b2:c6-selfplay] running, elapsed 14.0 min | [h7c-selfplay] 256/1,000 games  25.6%  13.8 min  ETA 40 min  256/1,000 games
+[b2:c6-selfplay] running, elapsed 15.0 min | [h7c-selfplay] 271/1,000 games  27.1%  14.9 min  ETA 40 min  271/1,000 games
+[b2:c6-selfplay] running, elapsed 16.0 min | [h7c-selfplay] 284/1,000 games  28.4%  16.0 min  ETA 40 min  284/1,000 games
+[b2:c6-selfplay] running, elapsed 17.0 min | [h7c-selfplay] 297/1,000 games  29.7%  17.0 min  ETA 40 min  297/1,000 games
+[b2:c6-selfplay] running, elapsed 18.0 min | [h7c-selfplay] 307/1,000 games  30.7%  18.0 min  ETA 41 min  307/1,000 games
+[b2:c6-selfplay] running, elapsed 19.0 min | [h7c-selfplay] 324/1,000 games  32.4%  19.0 min  ETA 40 min  324/1,000 games
+[b2:c6-selfplay] running, elapsed 20.0 min | [h7c-selfplay] 324/1,000 games  32.4%  19.0 min  ETA 40 min  324/1,000 games
+[b2:c6-selfplay] running, elapsed 21.0 min | [h7c-selfplay] 340/1,000 games  34.0%  20.0 min  ETA 39 min  340/1,000 games
+[b2:c6-selfplay] running, elapsed 22.0 min | [h7c-selfplay] 362/1,000 games  36.2%  21.0 min  ETA 37 min  362/1,000 games
+[b2:c6-selfplay] running, elapsed 23.0 min | [h7c-selfplay] 379/1,000 games  37.9%  22.1 min  ETA 36 min  379/1,000 games
+[b2:c6-selfplay] running, elapsed 24.0 min | [h7c-selfplay] 400/1,000 games  40.0%  23.1 min  ETA 35 min  400/1,000 games
+[b2:c6-selfplay] running, elapsed 25.0 min | [h7c-selfplay] 416/1,000 games  41.6%  24.1 min  ETA 34 min  416/1,000 games
+[b2:c6-selfplay] running, elapsed 26.0 min | [h7c-selfplay] 433/1,000 games  43.3%  25.2 min  ETA 33 min  433/1,000 games
+[b2:c6-selfplay] running, elapsed 27.0 min | [h7c-selfplay] 451/1,000 games  45.1%  26.3 min  ETA 32 min  451/1,000 games
+[b2:c6-selfplay] running, elapsed 28.0 min | [h7c-selfplay] 470/1,000 games  47.0%  27.4 min  ETA 31 min  470/1,000 games
+[b2:c6-selfplay] running, elapsed 29.0 min | [h7c-selfplay] 488/1,000 games  48.8%  28.4 min  ETA 30 min  488/1,000 games
+[b2:c6-selfplay] running, elapsed 30.0 min | [h7c-selfplay] 517/1,000 games  51.7%  29.4 min  ETA 27 min  517/1,000 games
+[b2:c6-selfplay] running, elapsed 31.0 min | [h7c-selfplay] 538/1,000 games  53.8%  30.4 min  ETA 26 min  538/1,000 games
+[b2:c6-selfplay] running, elapsed 32.0 min | [h7c-selfplay] 555/1,000 games  55.5%  31.5 min  ETA 25 min  555/1,000 games
+[b2:c6-selfplay] running, elapsed 33.0 min | [h7c-selfplay] 572/1,000 games  57.2%  32.5 min  ETA 24 min  572/1,000 games
+[b2:c6-selfplay] running, elapsed 34.0 min | [h7c-selfplay] 587/1,000 games  58.7%  33.5 min  ETA 24 min  587/1,000 games
+[b2:c6-selfplay] running, elapsed 35.0 min | [h7c-selfplay] 607/1,000 games  60.7%  34.6 min  ETA 22 min  607/1,000 games
+[b2:c6-selfplay] running, elapsed 36.0 min | [h7c-selfplay] 631/1,000 games  63.1%  35.6 min  ETA 21 min  631/1,000 games
+[b2:c6-selfplay] running, elapsed 37.0 min | [h7c-selfplay] 660/1,000 games  66.0%  36.7 min  ETA 19 min  660/1,000 games
+[b2:c6-selfplay] running, elapsed 38.0 min | [h7c-selfplay] 671/1,000 games  67.1%  37.9 min  ETA 19 min  671/1,000 games
+[b2:c6-selfplay] running, elapsed 39.0 min | [h7c-selfplay] 682/1,000 games  68.2%  39.0 min  ETA 18 min  682/1,000 games
+[b2:c6-selfplay] running, elapsed 40.0 min | [h7c-selfplay] 695/1,000 games  69.5%  40.0 min  ETA 18 min  695/1,000 games
+[b2:c6-selfplay] running, elapsed 41.0 min | [h7c-selfplay] 708/1,000 games  70.8%  41.0 min  ETA 17 min  708/1,000 games
+[b2:c6-selfplay] running, elapsed 42.0 min | [h7c-selfplay] 720/1,000 games  72.0%  42.0 min  ETA 16 min  720/1,000 games
+[b2:c6-selfplay] running, elapsed 43.0 min | [h7c-selfplay] 720/1,000 games  72.0%  42.0 min  ETA 16 min  720/1,000 games
+[b2:c6-selfplay] running, elapsed 44.0 min | [h7c-selfplay] 735/1,000 games  73.5%  43.0 min  ETA 16 min  735/1,000 games
+[b2:c6-selfplay] running, elapsed 45.0 min | [h7c-selfplay] 749/1,000 games  74.9%  44.1 min  ETA 15 min  749/1,000 games
+[b2:c6-selfplay] running, elapsed 46.0 min | [h7c-selfplay] 757/1,000 games  75.7%  45.1 min  ETA 14 min  757/1,000 games
+[b2:c6-selfplay] running, elapsed 47.0 min | [h7c-selfplay] 768/1,000 games  76.8%  46.2 min  ETA 14 min  768/1,000 games
+[b2:c6-selfplay] running, elapsed 48.0 min | [h7c-selfplay] 786/1,000 games  78.6%  47.2 min  ETA 13 min  786/1,000 games
+[b2:c6-selfplay] running, elapsed 49.0 min | [h7c-selfplay] 809/1,000 games  80.9%  48.2 min  ETA 11 min  809/1,000 games
+[b2:c6-selfplay] running, elapsed 50.0 min | [h7c-selfplay] 831/1,000 games  83.1%  49.3 min  ETA 10 min  831/1,000 games
+[b2:c6-selfplay] running, elapsed 51.0 min | [h7c-selfplay] 840/1,000 games  84.0%  50.4 min  ETA 10 min  840/1,000 games
+[b2:c6-selfplay] running, elapsed 52.0 min | [h7c-selfplay] 853/1,000 games  85.3%  51.5 min  ETA 9 min  853/1,000 games
+[b2:c6-selfplay] running, elapsed 53.0 min | [h7c-selfplay] 860/1,000 games  86.0%  52.5 min  ETA 9 min  860/1,000 games
+[b2:c6-selfplay] running, elapsed 54.0 min | [h7c-selfplay] 874/1,000 games  87.4%  53.6 min  ETA 8 min  874/1,000 games
+[b2:c6-selfplay] running, elapsed 55.0 min | [h7c-selfplay] 888/1,000 games  88.8%  54.6 min  ETA 7 min  888/1,000 games
+[b2:c6-selfplay] running, elapsed 56.0 min | [h7c-selfplay] 902/1,000 games  90.2%  55.6 min  ETA 6 min  902/1,000 games
+[b2:c6-selfplay] running, elapsed 57.0 min | [h7c-selfplay] 915/1,000 games  91.5%  56.6 min  ETA 5 min  915/1,000 games
+[b2:c6-selfplay] running, elapsed 58.0 min | [h7c-selfplay] 937/1,000 games  93.7%  57.7 min  ETA 4 min  937/1,000 games
+[b2:c6-selfplay] running, elapsed 59.0 min | [h7c-selfplay] 940/1,000 games  94.0%  58.8 min  ETA 4 min  940/1,000 games
+[b2:c6-selfplay] running, elapsed 60.0 min | [h7c-selfplay] 953/1,000 games  95.3%  59.8 min  ETA 3 min  953/1,000 games
+[b2:c6-selfplay] running, elapsed 61.0 min | [h7c-selfplay] 968/1,000 games  96.8%  60.9 min  ETA 2 min  968/1,000 games
+[b2:c6-selfplay] running, elapsed 62.0 min | [h7c-selfplay] 984/1,000 games  98.4%  61.9 min  ETA 1 min  984/1,000 games
+[b2:c6-selfplay] running, elapsed 63.0 min | [h7c-selfplay] 994/1,000 games  99.4%  62.9 min  ETA 0 min  994/1,000 games
+[b2:c6-selfplay] running, elapsed 64.0 min | [h7c-selfplay] 994/1,000 games  99.4%  62.9 min  ETA 0 min  994/1,000 games
+COMPLETE c6-selfplay
+START c6-labels; log=/home/tack/renju-h6/runs/h7c/b2/c6-labels.log
+COMPLETE c6-labels
+START c6-cache; log=/home/tack/renju-h6/runs/h7c/b2/c6-cache.log
+COMPLETE c6-cache
+START c6-value; log=/home/tack/renju-h6/runs/h7c/b2/c6-value.log
+[b2:c6-value] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-value] running, elapsed 2.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-value] running, elapsed 3.0 min | child progress unavailable (done/total, % and ETA unknown)
+COMPLETE c6-value
+START c6-official; log=/home/tack/renju-h6/runs/h7c/b2/c6-official.log
+[b2:c6-official] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-official] running, elapsed 2.0 min | [h7c-arena-official] 9/100 games  9.0%  1.0 min  ETA 10 min  9/100 games
+[b2:c6-official] running, elapsed 3.0 min | [h7c-arena-official] 21/100 games  21.0%  2.0 min  ETA 8 min  21/100 games
+[b2:c6-official] running, elapsed 4.0 min | [h7c-arena-official] 43/100 games  43.0%  3.1 min  ETA 4 min  43/100 games
+[b2:c6-official] running, elapsed 5.0 min | [h7c-arena-official] 51/100 games  51.0%  4.2 min  ETA 4 min  51/100 games
+[b2:c6-official] running, elapsed 6.0 min | [h7c-arena-official] 58/100 games  58.0%  5.9 min  ETA 4 min  58/100 games
+[b2:c6-official] running, elapsed 7.0 min | [h7c-arena-official] 58/100 games  58.0%  5.9 min  ETA 4 min  58/100 games
+[b2:c6-official] running, elapsed 8.0 min | [h7c-arena-official] 71/100 games  71.0%  7.1 min  ETA 3 min  71/100 games
+[b2:c6-official] running, elapsed 9.0 min | [h7c-arena-official] 75/100 games  75.0%  8.1 min  ETA 3 min  75/100 games
+[b2:c6-official] running, elapsed 10.0 min | [h7c-arena-official] 91/100 games  91.0%  9.4 min  ETA 1 min  91/100 games
+[b2:c6-official] running, elapsed 11.0 min | [h7c-arena-official] 98/100 games  98.0%  11.0 min  ETA 0 min  98/100 games, 2 pending
+COMPLETE c6-official
+START c6-mon_v8_full; log=/home/tack/renju-h6/runs/h7c/b2/c6-mon_v8_full.log
+[b2:c6-mon_v8_full] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+COMPLETE c6-mon_v8_full
+START c6-mon_puct_policy; log=/home/tack/renju-h6/runs/h7c/b2/c6-mon_puct_policy.log
+[b2:c6-mon_puct_policy] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-mon_puct_policy] running, elapsed 2.0 min | [h7c-arena-mon_puct_policy] 17/50 games  34.0%  1.0 min  ETA 2 min  17/50 games
+[b2:c6-mon_puct_policy] running, elapsed 3.0 min | [h7c-arena-mon_puct_policy] 33/50 games  66.0%  2.0 min  ETA 1 min  33/50 games
+[b2:c6-mon_puct_policy] running, elapsed 4.0 min | [h7c-arena-mon_puct_policy] 44/50 games  88.0%  3.3 min  ETA 0 min  44/50 games
+[b2:c6-mon_puct_policy] running, elapsed 5.0 min | [h7c-arena-mon_puct_policy] 47/50 games  94.0%  4.4 min  ETA 0 min  47/50 games
+COMPLETE c6-mon_puct_policy
+START c6-mon_e2; log=/home/tack/renju-h6/runs/h7c/b2/c6-mon_e2.log
+[b2:c6-mon_e2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-mon_e2] running, elapsed 2.0 min | [h7c-arena-mon_e2] 33/50 games  66.0%  1.0 min  ETA 1 min  33/50 games
+COMPLETE c6-mon_e2
+START c6-tactical; log=/home/tack/renju-h6/runs/h7c/b2/c6-tactical.log
+[b2:c6-tactical] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-tactical] running, elapsed 2.0 min | [h7c-e1-candidate] 45/45 positions  100.0%  1.3 min  ETA 0 min  45/45 positions
+COMPLETE c6-tactical
+START c6-verdict; log=/home/tack/renju-h6/runs/h7c/b2/c6-verdict.log
+COMPLETE c6-verdict
+START c6-x2; log=/home/tack/renju-h6/runs/h7c/b2/c6-x2.log
+[b2:c6-x2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c6-x2] running, elapsed 2.0 min | [external] 29/50 games  58.0%  1.0 min  ETA 1 min  29/50 games
+COMPLETE c6-x2
+START c7-selfplay; log=/home/tack/renju-h6/runs/h7c/b2/c7-selfplay.log
+[b2:c7-selfplay] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-selfplay] running, elapsed 2.0 min | [h7c-selfplay] 20/1,000 games  2.0%  1.1 min  ETA 53 min  20/1,000 games
+[b2:c7-selfplay] running, elapsed 3.0 min | [h7c-selfplay] 35/1,000 games  3.5%  2.1 min  ETA 58 min  35/1,000 games
+[b2:c7-selfplay] running, elapsed 4.0 min | [h7c-selfplay] 55/1,000 games  5.5%  3.1 min  ETA 54 min  55/1,000 games
+[b2:c7-selfplay] running, elapsed 5.0 min | [h7c-selfplay] 70/1,000 games  7.0%  4.1 min  ETA 55 min  70/1,000 games
+[b2:c7-selfplay] running, elapsed 6.0 min | [h7c-selfplay] 91/1,000 games  9.1%  5.2 min  ETA 52 min  91/1,000 games
+[b2:c7-selfplay] running, elapsed 7.0 min | [h7c-selfplay] 107/1,000 games  10.7%  6.2 min  ETA 52 min  107/1,000 games
+[b2:c7-selfplay] running, elapsed 8.0 min | [h7c-selfplay] 121/1,000 games  12.1%  7.3 min  ETA 53 min  121/1,000 games
+[b2:c7-selfplay] running, elapsed 9.0 min | [h7c-selfplay] 144/1,000 games  14.4%  8.3 min  ETA 49 min  144/1,000 games
+[b2:c7-selfplay] running, elapsed 10.0 min | [h7c-selfplay] 159/1,000 games  15.9%  9.3 min  ETA 49 min  159/1,000 games
+[b2:c7-selfplay] running, elapsed 11.0 min | [h7c-selfplay] 173/1,000 games  17.3%  10.4 min  ETA 50 min  173/1,000 games
+[b2:c7-selfplay] running, elapsed 12.0 min | [h7c-selfplay] 189/1,000 games  18.9%  11.5 min  ETA 49 min  189/1,000 games
+[b2:c7-selfplay] running, elapsed 13.0 min | [h7c-selfplay] 207/1,000 games  20.7%  12.5 min  ETA 48 min  207/1,000 games
+[b2:c7-selfplay] running, elapsed 14.0 min | [h7c-selfplay] 221/1,000 games  22.1%  13.6 min  ETA 48 min  221/1,000 games
+[b2:c7-selfplay] running, elapsed 15.0 min | [h7c-selfplay] 239/1,000 games  23.9%  14.6 min  ETA 47 min  239/1,000 games
+[b2:c7-selfplay] running, elapsed 16.0 min | [h7c-selfplay] 257/1,000 games  25.7%  15.7 min  ETA 45 min  257/1,000 games
+[b2:c7-selfplay] running, elapsed 17.0 min | [h7c-selfplay] 269/1,000 games  26.9%  16.8 min  ETA 46 min  269/1,000 games
+[b2:c7-selfplay] running, elapsed 18.0 min | [h7c-selfplay] 287/1,000 games  28.7%  17.8 min  ETA 44 min  287/1,000 games
+[b2:c7-selfplay] running, elapsed 19.0 min | [h7c-selfplay] 302/1,000 games  30.2%  18.9 min  ETA 44 min  302/1,000 games
+[b2:c7-selfplay] running, elapsed 20.0 min | [h7c-selfplay] 313/1,000 games  31.3%  20.0 min  ETA 44 min  313/1,000 games
+[b2:c7-selfplay] running, elapsed 21.0 min | [h7c-selfplay] 313/1,000 games  31.3%  20.0 min  ETA 44 min  313/1,000 games
+[b2:c7-selfplay] running, elapsed 22.0 min | [h7c-selfplay] 324/1,000 games  32.4%  21.0 min  ETA 44 min  324/1,000 games
+[b2:c7-selfplay] running, elapsed 23.0 min | [h7c-selfplay] 344/1,000 games  34.4%  22.2 min  ETA 42 min  344/1,000 games
+[b2:c7-selfplay] running, elapsed 24.0 min | [h7c-selfplay] 366/1,000 games  36.6%  23.2 min  ETA 40 min  366/1,000 games
+[b2:c7-selfplay] running, elapsed 25.0 min | [h7c-selfplay] 388/1,000 games  38.8%  24.2 min  ETA 38 min  388/1,000 games
+[b2:c7-selfplay] running, elapsed 26.0 min | [h7c-selfplay] 408/1,000 games  40.8%  25.3 min  ETA 37 min  408/1,000 games
+[b2:c7-selfplay] running, elapsed 27.0 min | [h7c-selfplay] 426/1,000 games  42.6%  26.3 min  ETA 35 min  426/1,000 games
+[b2:c7-selfplay] running, elapsed 28.0 min | [h7c-selfplay] 438/1,000 games  43.8%  27.3 min  ETA 35 min  438/1,000 games
+[b2:c7-selfplay] running, elapsed 29.0 min | [h7c-selfplay] 455/1,000 games  45.5%  28.4 min  ETA 34 min  455/1,000 games
+[b2:c7-selfplay] running, elapsed 30.0 min | [h7c-selfplay] 472/1,000 games  47.2%  29.5 min  ETA 33 min  472/1,000 games
+[b2:c7-selfplay] running, elapsed 31.0 min | [h7c-selfplay] 497/1,000 games  49.7%  30.5 min  ETA 31 min  497/1,000 games
+[b2:c7-selfplay] running, elapsed 32.0 min | [h7c-selfplay] 517/1,000 games  51.7%  31.6 min  ETA 29 min  517/1,000 games
+[b2:c7-selfplay] running, elapsed 33.0 min | [h7c-selfplay] 535/1,000 games  53.5%  32.6 min  ETA 28 min  535/1,000 games
+[b2:c7-selfplay] running, elapsed 34.0 min | [h7c-selfplay] 558/1,000 games  55.8%  33.6 min  ETA 27 min  558/1,000 games
+[b2:c7-selfplay] running, elapsed 35.0 min | [h7c-selfplay] 572/1,000 games  57.2%  34.6 min  ETA 26 min  572/1,000 games
+[b2:c7-selfplay] running, elapsed 36.0 min | [h7c-selfplay] 592/1,000 games  59.2%  35.6 min  ETA 25 min  592/1,000 games
+[b2:c7-selfplay] running, elapsed 37.0 min | [h7c-selfplay] 604/1,000 games  60.4%  36.7 min  ETA 24 min  604/1,000 games
+[b2:c7-selfplay] running, elapsed 38.0 min | [h7c-selfplay] 618/1,000 games  61.8%  37.8 min  ETA 23 min  618/1,000 games
+[b2:c7-selfplay] running, elapsed 39.0 min | [h7c-selfplay] 624/1,000 games  62.4%  38.8 min  ETA 23 min  624/1,000 games
+[b2:c7-selfplay] running, elapsed 40.0 min | [h7c-selfplay] 638/1,000 games  63.8%  39.8 min  ETA 23 min  638/1,000 games
+[b2:c7-selfplay] running, elapsed 41.0 min | [h7c-selfplay] 649/1,000 games  64.9%  40.9 min  ETA 22 min  649/1,000 games
+[b2:c7-selfplay] running, elapsed 42.0 min | [h7c-selfplay] 661/1,000 games  66.1%  42.0 min  ETA 22 min  661/1,000 games
+[b2:c7-selfplay] running, elapsed 43.0 min | [h7c-selfplay] 661/1,000 games  66.1%  42.0 min  ETA 22 min  661/1,000 games
+[b2:c7-selfplay] running, elapsed 44.0 min | [h7c-selfplay] 668/1,000 games  66.8%  43.0 min  ETA 21 min  668/1,000 games
+[b2:c7-selfplay] running, elapsed 45.0 min | [h7c-selfplay] 687/1,000 games  68.7%  44.1 min  ETA 20 min  687/1,000 games
+[b2:c7-selfplay] running, elapsed 46.0 min | [h7c-selfplay] 703/1,000 games  70.3%  45.2 min  ETA 19 min  703/1,000 games
+[b2:c7-selfplay] running, elapsed 47.0 min | [h7c-selfplay] 719/1,000 games  71.9%  46.2 min  ETA 18 min  719/1,000 games
+[b2:c7-selfplay] running, elapsed 48.0 min | [h7c-selfplay] 732/1,000 games  73.2%  47.4 min  ETA 17 min  732/1,000 games
+[b2:c7-selfplay] running, elapsed 49.0 min | [h7c-selfplay] 743/1,000 games  74.3%  48.4 min  ETA 17 min  743/1,000 games
+[b2:c7-selfplay] running, elapsed 50.0 min | [h7c-selfplay] 751/1,000 games  75.1%  49.5 min  ETA 16 min  751/1,000 games
+[b2:c7-selfplay] running, elapsed 51.0 min | [h7c-selfplay] 761/1,000 games  76.1%  50.6 min  ETA 16 min  761/1,000 games
+[b2:c7-selfplay] running, elapsed 52.0 min | [h7c-selfplay] 771/1,000 games  77.1%  51.7 min  ETA 15 min  771/1,000 games
+[b2:c7-selfplay] running, elapsed 53.0 min | [h7c-selfplay] 777/1,000 games  77.7%  52.8 min  ETA 15 min  777/1,000 games
+[b2:c7-selfplay] running, elapsed 54.0 min | [h7c-selfplay] 793/1,000 games  79.3%  53.8 min  ETA 14 min  793/1,000 games
+[b2:c7-selfplay] running, elapsed 55.0 min | [h7c-selfplay] 806/1,000 games  80.6%  54.8 min  ETA 13 min  806/1,000 games
+[b2:c7-selfplay] running, elapsed 56.0 min | [h7c-selfplay] 823/1,000 games  82.3%  55.8 min  ETA 12 min  823/1,000 games
+[b2:c7-selfplay] running, elapsed 57.0 min | [h7c-selfplay] 841/1,000 games  84.1%  56.9 min  ETA 11 min  841/1,000 games
+[b2:c7-selfplay] running, elapsed 58.0 min | [h7c-selfplay] 860/1,000 games  86.0%  58.0 min  ETA 9 min  860/1,000 games
+[b2:c7-selfplay] running, elapsed 59.0 min | [h7c-selfplay] 860/1,000 games  86.0%  58.0 min  ETA 9 min  860/1,000 games
+[b2:c7-selfplay] running, elapsed 60.0 min | [h7c-selfplay] 865/1,000 games  86.5%  59.1 min  ETA 9 min  865/1,000 games
+[b2:c7-selfplay] running, elapsed 61.0 min | [h7c-selfplay] 876/1,000 games  87.6%  60.1 min  ETA 9 min  876/1,000 games
+[b2:c7-selfplay] running, elapsed 62.0 min | [h7c-selfplay] 892/1,000 games  89.2%  61.1 min  ETA 7 min  892/1,000 games
+[b2:c7-selfplay] running, elapsed 63.0 min | [h7c-selfplay] 914/1,000 games  91.4%  62.2 min  ETA 6 min  914/1,000 games
+[b2:c7-selfplay] running, elapsed 64.0 min | [h7c-selfplay] 925/1,000 games  92.5%  63.2 min  ETA 5 min  925/1,000 games
+[b2:c7-selfplay] running, elapsed 65.0 min | [h7c-selfplay] 935/1,000 games  93.5%  64.4 min  ETA 4 min  935/1,000 games
+[b2:c7-selfplay] running, elapsed 66.0 min | [h7c-selfplay] 946/1,000 games  94.6%  65.5 min  ETA 4 min  946/1,000 games
+[b2:c7-selfplay] running, elapsed 67.0 min | [h7c-selfplay] 955/1,000 games  95.5%  66.6 min  ETA 3 min  955/1,000 games
+[b2:c7-selfplay] running, elapsed 68.0 min | [h7c-selfplay] 969/1,000 games  96.9%  67.6 min  ETA 2 min  969/1,000 games
+[b2:c7-selfplay] running, elapsed 69.0 min | [h7c-selfplay] 984/1,000 games  98.4%  68.6 min  ETA 1 min  984/1,000 games
+[b2:c7-selfplay] running, elapsed 70.0 min | [h7c-selfplay] 984/1,000 games  98.4%  68.6 min  ETA 1 min  984/1,000 games
+COMPLETE c7-selfplay
+START c7-labels; log=/home/tack/renju-h6/runs/h7c/b2/c7-labels.log
+[b2:c7-labels] running, elapsed 1.0 min | [h7c-proofs] 38,328/38,328 positions  100.0%  0.7 min  ETA 0 min  247/247 chunks
+COMPLETE c7-labels
+START c7-cache; log=/home/tack/renju-h6/runs/h7c/b2/c7-cache.log
+COMPLETE c7-cache
+START c7-value; log=/home/tack/renju-h6/runs/h7c/b2/c7-value.log
+[b2:c7-value] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-value] running, elapsed 2.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-value] running, elapsed 3.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-value] running, elapsed 4.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-value] running, elapsed 5.0 min | [h7c-value] step 65/216 objective 0.45191 (cycle 0.3281674385070801, H6 0.57564)
+COMPLETE c7-value
+START c7-official; log=/home/tack/renju-h6/runs/h7c/b2/c7-official.log
+[b2:c7-official] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-official] running, elapsed 2.0 min | [h7c-arena-official] 6/100 games  6.0%  1.2 min  ETA 19 min  6/100 games
+[b2:c7-official] running, elapsed 3.0 min | [h7c-arena-official] 11/100 games  11.0%  2.2 min  ETA 18 min  11/100 games
+[b2:c7-official] running, elapsed 4.0 min | [h7c-arena-official] 16/100 games  16.0%  3.4 min  ETA 18 min  16/100 games
+[b2:c7-official] running, elapsed 5.0 min | [h7c-arena-official] 25/100 games  25.0%  4.5 min  ETA 14 min  25/100 games
+[b2:c7-official] running, elapsed 6.0 min | [h7c-arena-official] 32/100 games  32.0%  5.6 min  ETA 12 min  32/100 games
+[b2:c7-official] running, elapsed 7.0 min | [h7c-arena-official] 43/100 games  43.0%  6.6 min  ETA 9 min  43/100 games
+[b2:c7-official] running, elapsed 8.0 min | [h7c-arena-official] 48/100 games  48.0%  7.7 min  ETA 8 min  48/100 games
+[b2:c7-official] running, elapsed 9.0 min | [h7c-arena-official] 53/100 games  53.0%  8.8 min  ETA 8 min  53/100 games
+[b2:c7-official] running, elapsed 10.0 min | [h7c-arena-official] 64/100 games  64.0%  9.8 min  ETA 6 min  64/100 games
+[b2:c7-official] running, elapsed 11.0 min | [h7c-arena-official] 73/100 games  73.0%  10.9 min  ETA 4 min  73/100 games
+[b2:c7-official] running, elapsed 12.0 min | [h7c-arena-official] 73/100 games  73.0%  10.9 min  ETA 4 min  73/100 games
+[b2:c7-official] running, elapsed 13.0 min | [h7c-arena-official] 80/100 games  80.0%  12.1 min  ETA 3 min  80/100 games
+[b2:c7-official] running, elapsed 14.0 min | [h7c-arena-official] 92/100 games  92.0%  13.2 min  ETA 1 min  92/100 games
+[b2:c7-official] running, elapsed 15.0 min | [h7c-arena-official] 99/100 games  99.0%  15.0 min  ETA 0 min  99/100 games, 1 pending
+[b2:c7-official] running, elapsed 16.0 min | [h7c-arena-official] 99/100 games  99.0%  16.0 min  ETA 0 min  99/100 games, 1 pending
+COMPLETE c7-official
+START c7-mon_v8_full; log=/home/tack/renju-h6/runs/h7c/b2/c7-mon_v8_full.log
+[b2:c7-mon_v8_full] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-mon_v8_full] running, elapsed 2.0 min | [h7c-arena-mon_v8_full] 17/50 games  34.0%  1.0 min  ETA 2 min  17/50 games
+[b2:c7-mon_v8_full] running, elapsed 3.0 min | [h7c-arena-mon_v8_full] 38/50 games  76.0%  2.0 min  ETA 1 min  38/50 games
+COMPLETE c7-mon_v8_full
+START c7-mon_puct_policy; log=/home/tack/renju-h6/runs/h7c/b2/c7-mon_puct_policy.log
+[b2:c7-mon_puct_policy] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-mon_puct_policy] running, elapsed 2.0 min | [h7c-arena-mon_puct_policy] 6/50 games  12.0%  1.1 min  ETA 8 min  6/50 games
+[b2:c7-mon_puct_policy] running, elapsed 3.0 min | [h7c-arena-mon_puct_policy] 12/50 games  24.0%  2.2 min  ETA 7 min  12/50 games
+[b2:c7-mon_puct_policy] running, elapsed 4.0 min | [h7c-arena-mon_puct_policy] 20/50 games  40.0%  3.4 min  ETA 5 min  20/50 games
+[b2:c7-mon_puct_policy] running, elapsed 5.0 min | [h7c-arena-mon_puct_policy] 29/50 games  58.0%  4.8 min  ETA 3 min  29/50 games
+[b2:c7-mon_puct_policy] running, elapsed 6.0 min | [h7c-arena-mon_puct_policy] 39/50 games  78.0%  5.9 min  ETA 2 min  39/50 games
+[b2:c7-mon_puct_policy] running, elapsed 7.0 min | [h7c-arena-mon_puct_policy] 39/50 games  78.0%  5.9 min  ETA 2 min  39/50 games
+[b2:c7-mon_puct_policy] running, elapsed 8.0 min | [h7c-arena-mon_puct_policy] 47/50 games  94.0%  7.3 min  ETA 0 min  47/50 games
+[b2:c7-mon_puct_policy] running, elapsed 9.0 min | [h7c-arena-mon_puct_policy] 47/50 games  94.0%  8.3 min  ETA 1 min  47/50 games, 3 pending
+[b2:c7-mon_puct_policy] running, elapsed 10.0 min | [h7c-arena-mon_puct_policy] 47/50 games  94.0%  8.3 min  ETA 1 min  47/50 games, 3 pending
+COMPLETE c7-mon_puct_policy
+START c7-mon_e2; log=/home/tack/renju-h6/runs/h7c/b2/c7-mon_e2.log
+[b2:c7-mon_e2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-mon_e2] running, elapsed 2.0 min | [h7c-arena-mon_e2] 14/50 games  28.0%  1.0 min  ETA 3 min  14/50 games
+[b2:c7-mon_e2] running, elapsed 3.0 min | [h7c-arena-mon_e2] 31/50 games  62.0%  2.0 min  ETA 1 min  31/50 games
+COMPLETE c7-mon_e2
+START c7-tactical; log=/home/tack/renju-h6/runs/h7c/b2/c7-tactical.log
+[b2:c7-tactical] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-tactical] running, elapsed 2.0 min | [h7c-e1-candidate] 31/45 positions  68.9%  1.0 min  ETA 0 min  31/45 positions
+[b2:c7-tactical] running, elapsed 3.0 min | [h7c-e1-candidate] 45/45 positions  100.0%  2.4 min  ETA 0 min  45/45 positions
+[b2:c7-tactical] running, elapsed 4.0 min | [h7c-e1-parent] 34/45 positions  75.6%  1.1 min  ETA 0 min  34/45 positions
+COMPLETE c7-tactical
+START c7-verdict; log=/home/tack/renju-h6/runs/h7c/b2/c7-verdict.log
+COMPLETE c7-verdict
+START c7-x2; log=/home/tack/renju-h6/runs/h7c/b2/c7-x2.log
+[b2:c7-x2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c7-x2] running, elapsed 2.0 min | [external] 19/50 games  38.0%  1.0 min  ETA 2 min  19/50 games
+COMPLETE c7-x2
+START c8-selfplay; log=/home/tack/renju-h6/runs/h7c/b2/c8-selfplay.log
+[b2:c8-selfplay] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-selfplay] running, elapsed 2.0 min | [h7c-selfplay] 11/1,000 games  1.1%  1.1 min  ETA 97 min  11/1,000 games
+[b2:c8-selfplay] running, elapsed 3.0 min | [h7c-selfplay] 27/1,000 games  2.7%  2.4 min  ETA 86 min  27/1,000 games
+[b2:c8-selfplay] running, elapsed 4.0 min | [h7c-selfplay] 34/1,000 games  3.4%  3.5 min  ETA 100 min  34/1,000 games
+[b2:c8-selfplay] running, elapsed 5.0 min | [h7c-selfplay] 44/1,000 games  4.4%  4.5 min  ETA 98 min  44/1,000 games
+[b2:c8-selfplay] running, elapsed 6.0 min | [h7c-selfplay] 58/1,000 games  5.8%  5.7 min  ETA 93 min  58/1,000 games
+[b2:c8-selfplay] running, elapsed 7.0 min | [h7c-selfplay] 58/1,000 games  5.8%  5.7 min  ETA 93 min  58/1,000 games
+[b2:c8-selfplay] running, elapsed 8.0 min | [h7c-selfplay] 65/1,000 games  6.5%  7.0 min  ETA 101 min  65/1,000 games
+[b2:c8-selfplay] running, elapsed 9.0 min | [h7c-selfplay] 76/1,000 games  7.6%  8.1 min  ETA 98 min  76/1,000 games
+[b2:c8-selfplay] running, elapsed 10.0 min | [h7c-selfplay] 85/1,000 games  8.5%  9.2 min  ETA 99 min  85/1,000 games
+[b2:c8-selfplay] running, elapsed 11.0 min | [h7c-selfplay] 96/1,000 games  9.6%  10.4 min  ETA 97 min  96/1,000 games
+[b2:c8-selfplay] running, elapsed 12.0 min | [h7c-selfplay] 105/1,000 games  10.5%  11.6 min  ETA 99 min  105/1,000 games
+[b2:c8-selfplay] running, elapsed 13.0 min | [h7c-selfplay] 115/1,000 games  11.5%  12.7 min  ETA 98 min  115/1,000 games
+[b2:c8-selfplay] running, elapsed 14.0 min | [h7c-selfplay] 119/1,000 games  11.9%  13.8 min  ETA 102 min  119/1,000 games
+[b2:c8-selfplay] running, elapsed 15.0 min | [h7c-selfplay] 119/1,000 games  11.9%  13.8 min  ETA 102 min  119/1,000 games
+[b2:c8-selfplay] running, elapsed 16.0 min | [h7c-selfplay] 128/1,000 games  12.8%  15.2 min  ETA 104 min  128/1,000 games
+[b2:c8-selfplay] running, elapsed 17.0 min | [h7c-selfplay] 140/1,000 games  14.0%  16.3 min  ETA 100 min  140/1,000 games
+[b2:c8-selfplay] running, elapsed 18.0 min | [h7c-selfplay] 145/1,000 games  14.5%  17.5 min  ETA 103 min  145/1,000 games
+[b2:c8-selfplay] running, elapsed 19.0 min | [h7c-selfplay] 155/1,000 games  15.5%  18.6 min  ETA 102 min  155/1,000 games
+[b2:c8-selfplay] running, elapsed 20.0 min | [h7c-selfplay] 166/1,000 games  16.6%  19.8 min  ETA 99 min  166/1,000 games
+[b2:c8-selfplay] running, elapsed 21.0 min | [h7c-selfplay] 176/1,000 games  17.6%  20.9 min  ETA 98 min  176/1,000 games
+[b2:c8-selfplay] running, elapsed 22.0 min | [h7c-selfplay] 176/1,000 games  17.6%  20.9 min  ETA 98 min  176/1,000 games
+[b2:c8-selfplay] running, elapsed 23.0 min | [h7c-selfplay] 182/1,000 games  18.2%  22.2 min  ETA 100 min  182/1,000 games
+[b2:c8-selfplay] running, elapsed 24.0 min | [h7c-selfplay] 189/1,000 games  18.9%  23.2 min  ETA 100 min  189/1,000 games
+[b2:c8-selfplay] running, elapsed 25.0 min | [h7c-selfplay] 195/1,000 games  19.5%  24.2 min  ETA 100 min  195/1,000 games
+[b2:c8-selfplay] running, elapsed 26.0 min | [h7c-selfplay] 205/1,000 games  20.5%  25.3 min  ETA 98 min  205/1,000 games
+[b2:c8-selfplay] running, elapsed 27.0 min | [h7c-selfplay] 213/1,000 games  21.3%  26.4 min  ETA 97 min  213/1,000 games
+[b2:c8-selfplay] running, elapsed 28.0 min | [h7c-selfplay] 224/1,000 games  22.4%  27.4 min  ETA 95 min  224/1,000 games
+[b2:c8-selfplay] running, elapsed 29.0 min | [h7c-selfplay] 230/1,000 games  23.0%  28.4 min  ETA 95 min  230/1,000 games
+[b2:c8-selfplay] running, elapsed 30.0 min | [h7c-selfplay] 240/1,000 games  24.0%  29.6 min  ETA 94 min  240/1,000 games
+[b2:c8-selfplay] running, elapsed 31.0 min | [h7c-selfplay] 240/1,000 games  24.0%  30.6 min  ETA 97 min  240/1,000 games, 760 pending
+[b2:c8-selfplay] running, elapsed 32.0 min | [h7c-selfplay] 245/1,000 games  24.5%  31.6 min  ETA 97 min  245/1,000 games
+[b2:c8-selfplay] running, elapsed 33.0 min | [h7c-selfplay] 256/1,000 games  25.6%  32.6 min  ETA 95 min  256/1,000 games
+[b2:c8-selfplay] running, elapsed 34.0 min | [h7c-selfplay] 269/1,000 games  26.9%  33.7 min  ETA 92 min  269/1,000 games
+[b2:c8-selfplay] running, elapsed 35.0 min | [h7c-selfplay] 278/1,000 games  27.8%  34.8 min  ETA 90 min  278/1,000 games
+[b2:c8-selfplay] running, elapsed 36.0 min | [h7c-selfplay] 287/1,000 games  28.7%  35.9 min  ETA 89 min  287/1,000 games
+[b2:c8-selfplay] running, elapsed 37.0 min | [h7c-selfplay] 300/1,000 games  30.0%  36.9 min  ETA 86 min  300/1,000 games
+[b2:c8-selfplay] running, elapsed 38.0 min | [h7c-selfplay] 305/1,000 games  30.5%  38.0 min  ETA 87 min  305/1,000 games
+[b2:c8-selfplay] running, elapsed 39.0 min | [h7c-selfplay] 305/1,000 games  30.5%  38.0 min  ETA 87 min  305/1,000 games
+[b2:c8-selfplay] running, elapsed 40.0 min | [h7c-selfplay] 311/1,000 games  31.1%  39.0 min  ETA 86 min  311/1,000 games
+[b2:c8-selfplay] running, elapsed 41.0 min | [h7c-selfplay] 321/1,000 games  32.1%  40.1 min  ETA 85 min  321/1,000 games
+[b2:c8-selfplay] running, elapsed 42.0 min | [h7c-selfplay] 331/1,000 games  33.1%  41.1 min  ETA 83 min  331/1,000 games
+[b2:c8-selfplay] running, elapsed 43.0 min | [h7c-selfplay] 348/1,000 games  34.8%  42.2 min  ETA 79 min  348/1,000 games
+[b2:c8-selfplay] running, elapsed 44.0 min | [h7c-selfplay] 359/1,000 games  35.9%  43.5 min  ETA 78 min  359/1,000 games
+[b2:c8-selfplay] running, elapsed 45.0 min | [h7c-selfplay] 371/1,000 games  37.1%  44.5 min  ETA 75 min  371/1,000 games
+[b2:c8-selfplay] running, elapsed 46.0 min | [h7c-selfplay] 382/1,000 games  38.2%  45.6 min  ETA 74 min  382/1,000 games
+[b2:c8-selfplay] running, elapsed 47.0 min | [h7c-selfplay] 393/1,000 games  39.3%  46.7 min  ETA 72 min  393/1,000 games
+[b2:c8-selfplay] running, elapsed 48.0 min | [h7c-selfplay] 402/1,000 games  40.2%  47.7 min  ETA 71 min  402/1,000 games
+[b2:c8-selfplay] running, elapsed 49.0 min | [h7c-selfplay] 411/1,000 games  41.1%  48.8 min  ETA 70 min  411/1,000 games
+[b2:c8-selfplay] running, elapsed 50.0 min | [h7c-selfplay] 423/1,000 games  42.3%  49.8 min  ETA 68 min  423/1,000 games
+[b2:c8-selfplay] running, elapsed 51.0 min | [h7c-selfplay] 438/1,000 games  43.8%  50.9 min  ETA 65 min  438/1,000 games
+[b2:c8-selfplay] running, elapsed 52.0 min | [h7c-selfplay] 447/1,000 games  44.7%  51.9 min  ETA 64 min  447/1,000 games
+[b2:c8-selfplay] running, elapsed 53.0 min | [h7c-selfplay] 452/1,000 games  45.2%  52.9 min  ETA 64 min  452/1,000 games
+[b2:c8-selfplay] running, elapsed 54.0 min | [h7c-selfplay] 452/1,000 games  45.2%  52.9 min  ETA 64 min  452/1,000 games
+[b2:c8-selfplay] running, elapsed 55.0 min | [h7c-selfplay] 466/1,000 games  46.6%  54.1 min  ETA 62 min  466/1,000 games
+[b2:c8-selfplay] running, elapsed 56.0 min | [h7c-selfplay] 477/1,000 games  47.7%  55.1 min  ETA 60 min  477/1,000 games
+[b2:c8-selfplay] running, elapsed 57.0 min | [h7c-selfplay] 488/1,000 games  48.8%  56.2 min  ETA 59 min  488/1,000 games
+[b2:c8-selfplay] running, elapsed 58.0 min | [h7c-selfplay] 496/1,000 games  49.6%  57.3 min  ETA 58 min  496/1,000 games
+[b2:c8-selfplay] running, elapsed 59.0 min | [h7c-selfplay] 496/1,000 games  49.6%  57.3 min  ETA 58 min  496/1,000 games
+[b2:c8-selfplay] running, elapsed 60.0 min | [h7c-selfplay] 504/1,000 games  50.4%  59.1 min  ETA 58 min  504/1,000 games
+[b2:c8-selfplay] running, elapsed 61.0 min | [h7c-selfplay] 514/1,000 games  51.4%  60.2 min  ETA 57 min  514/1,000 games
+[b2:c8-selfplay] running, elapsed 62.0 min | [h7c-selfplay] 527/1,000 games  52.7%  61.2 min  ETA 55 min  527/1,000 games
+[b2:c8-selfplay] running, elapsed 63.0 min | [h7c-selfplay] 539/1,000 games  53.9%  62.2 min  ETA 53 min  539/1,000 games
+[b2:c8-selfplay] running, elapsed 64.0 min | [h7c-selfplay] 554/1,000 games  55.4%  63.2 min  ETA 51 min  554/1,000 games
+[b2:c8-selfplay] running, elapsed 65.0 min | [h7c-selfplay] 566/1,000 games  56.6%  64.3 min  ETA 49 min  566/1,000 games
+[b2:c8-selfplay] running, elapsed 66.0 min | [h7c-selfplay] 573/1,000 games  57.3%  65.4 min  ETA 49 min  573/1,000 games
+[b2:c8-selfplay] running, elapsed 67.0 min | [h7c-selfplay] 579/1,000 games  57.9%  66.5 min  ETA 48 min  579/1,000 games
+[b2:c8-selfplay] running, elapsed 68.0 min | [h7c-selfplay] 588/1,000 games  58.8%  67.7 min  ETA 47 min  588/1,000 games
+[b2:c8-selfplay] running, elapsed 69.0 min | [h7c-selfplay] 604/1,000 games  60.4%  68.7 min  ETA 45 min  604/1,000 games
+[b2:c8-selfplay] running, elapsed 70.0 min | [h7c-selfplay] 616/1,000 games  61.6%  69.8 min  ETA 43 min  616/1,000 games
+[b2:c8-selfplay] running, elapsed 71.0 min | [h7c-selfplay] 628/1,000 games  62.8%  70.8 min  ETA 42 min  628/1,000 games
+[b2:c8-selfplay] running, elapsed 72.0 min | [h7c-selfplay] 634/1,000 games  63.4%  71.9 min  ETA 41 min  634/1,000 games
+[b2:c8-selfplay] running, elapsed 73.0 min | [h7c-selfplay] 639/1,000 games  63.9%  72.9 min  ETA 41 min  639/1,000 games
+[b2:c8-selfplay] running, elapsed 74.0 min | [h7c-selfplay] 648/1,000 games  64.8%  73.9 min  ETA 40 min  648/1,000 games
+[b2:c8-selfplay] running, elapsed 75.0 min | [h7c-selfplay] 648/1,000 games  64.8%  73.9 min  ETA 40 min  648/1,000 games
+[b2:c8-selfplay] running, elapsed 76.0 min | [h7c-selfplay] 661/1,000 games  66.1%  75.1 min  ETA 39 min  661/1,000 games
+[b2:c8-selfplay] running, elapsed 77.0 min | [h7c-selfplay] 670/1,000 games  67.0%  76.1 min  ETA 38 min  670/1,000 games
+[b2:c8-selfplay] running, elapsed 78.0 min | [h7c-selfplay] 680/1,000 games  68.0%  77.3 min  ETA 36 min  680/1,000 games
+[b2:c8-selfplay] running, elapsed 79.0 min | [h7c-selfplay] 691/1,000 games  69.1%  78.4 min  ETA 35 min  691/1,000 games
+[b2:c8-selfplay] running, elapsed 80.0 min | [h7c-selfplay] 699/1,000 games  69.9%  79.4 min  ETA 34 min  699/1,000 games
+[b2:c8-selfplay] running, elapsed 81.0 min | [h7c-selfplay] 710/1,000 games  71.0%  80.5 min  ETA 33 min  710/1,000 games
+[b2:c8-selfplay] running, elapsed 82.0 min | [h7c-selfplay] 720/1,000 games  72.0%  81.6 min  ETA 32 min  720/1,000 games
+[b2:c8-selfplay] running, elapsed 83.0 min | [h7c-selfplay] 728/1,000 games  72.8%  82.7 min  ETA 31 min  728/1,000 games
+[b2:c8-selfplay] running, elapsed 84.0 min | [h7c-selfplay] 735/1,000 games  73.5%  83.8 min  ETA 30 min  735/1,000 games
+[b2:c8-selfplay] running, elapsed 85.0 min | [h7c-selfplay] 743/1,000 games  74.3%  85.0 min  ETA 29 min  743/1,000 games
+[b2:c8-selfplay] running, elapsed 86.0 min | [h7c-selfplay] 743/1,000 games  74.3%  85.0 min  ETA 29 min  743/1,000 games
+[b2:c8-selfplay] running, elapsed 87.0 min | [h7c-selfplay] 753/1,000 games  75.3%  86.0 min  ETA 28 min  753/1,000 games
+[b2:c8-selfplay] running, elapsed 88.0 min | [h7c-selfplay] 764/1,000 games  76.4%  87.1 min  ETA 27 min  764/1,000 games
+[b2:c8-selfplay] running, elapsed 89.0 min | [h7c-selfplay] 776/1,000 games  77.6%  88.2 min  ETA 25 min  776/1,000 games
+[b2:c8-selfplay] running, elapsed 90.0 min | [h7c-selfplay] 794/1,000 games  79.4%  89.2 min  ETA 23 min  794/1,000 games
+[b2:c8-selfplay] running, elapsed 91.0 min | [h7c-selfplay] 803/1,000 games  80.3%  90.4 min  ETA 22 min  803/1,000 games
+[b2:c8-selfplay] running, elapsed 92.0 min | [h7c-selfplay] 813/1,000 games  81.3%  91.4 min  ETA 21 min  813/1,000 games
+[b2:c8-selfplay] running, elapsed 93.0 min | [h7c-selfplay] 821/1,000 games  82.1%  92.4 min  ETA 20 min  821/1,000 games
+[b2:c8-selfplay] running, elapsed 94.0 min | [h7c-selfplay] 823/1,000 games  82.3%  93.6 min  ETA 20 min  823/1,000 games, 177 pending
+[b2:c8-selfplay] running, elapsed 95.0 min | [h7c-selfplay] 830/1,000 games  83.0%  94.6 min  ETA 19 min  830/1,000 games
+[b2:c8-selfplay] running, elapsed 96.0 min | [h7c-selfplay] 843/1,000 games  84.3%  95.7 min  ETA 18 min  843/1,000 games
+[b2:c8-selfplay] running, elapsed 97.0 min | [h7c-selfplay] 851/1,000 games  85.1%  96.7 min  ETA 17 min  851/1,000 games
+[b2:c8-selfplay] running, elapsed 98.0 min | [h7c-selfplay] 862/1,000 games  86.2%  97.7 min  ETA 16 min  862/1,000 games
+[b2:c8-selfplay] running, elapsed 99.0 min | [h7c-selfplay] 869/1,000 games  86.9%  98.9 min  ETA 15 min  869/1,000 games
+[b2:c8-selfplay] running, elapsed 100.0 min | [h7c-selfplay] 869/1,000 games  86.9%  98.9 min  ETA 15 min  869/1,000 games
+[b2:c8-selfplay] running, elapsed 101.0 min | [h7c-selfplay] 871/1,000 games  87.1%  100.0 min  ETA 15 min  871/1,000 games
+[b2:c8-selfplay] running, elapsed 102.0 min | [h7c-selfplay] 877/1,000 games  87.7%  101.1 min  ETA 14 min  877/1,000 games
+[b2:c8-selfplay] running, elapsed 103.0 min | [h7c-selfplay] 892/1,000 games  89.2%  102.2 min  ETA 12 min  892/1,000 games
+[b2:c8-selfplay] running, elapsed 104.0 min | [h7c-selfplay] 904/1,000 games  90.4%  103.3 min  ETA 11 min  904/1,000 games
+[b2:c8-selfplay] running, elapsed 105.0 min | [h7c-selfplay] 921/1,000 games  92.1%  104.3 min  ETA 9 min  921/1,000 games
+[b2:c8-selfplay] running, elapsed 106.0 min | [h7c-selfplay] 934/1,000 games  93.4%  105.5 min  ETA 7 min  934/1,000 games
+[b2:c8-selfplay] running, elapsed 107.0 min | [h7c-selfplay] 948/1,000 games  94.8%  106.5 min  ETA 6 min  948/1,000 games
+[b2:c8-selfplay] running, elapsed 108.0 min | [h7c-selfplay] 959/1,000 games  95.9%  107.7 min  ETA 5 min  959/1,000 games
+[b2:c8-selfplay] running, elapsed 109.0 min | [h7c-selfplay] 966/1,000 games  96.6%  108.8 min  ETA 4 min  966/1,000 games
+[b2:c8-selfplay] running, elapsed 110.0 min | [h7c-selfplay] 966/1,000 games  96.6%  108.8 min  ETA 4 min  966/1,000 games
+[b2:c8-selfplay] running, elapsed 111.0 min | [h7c-selfplay] 973/1,000 games  97.3%  110.0 min  ETA 3 min  973/1,000 games
+[b2:c8-selfplay] running, elapsed 112.0 min | [h7c-selfplay] 979/1,000 games  97.9%  111.1 min  ETA 2 min  979/1,000 games
+[b2:c8-selfplay] running, elapsed 113.0 min | [h7c-selfplay] 991/1,000 games  99.1%  112.1 min  ETA 1 min  991/1,000 games
+COMPLETE c8-selfplay
+START c8-labels; log=/home/tack/renju-h6/runs/h7c/b2/c8-labels.log
+[b2:c8-labels] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+COMPLETE c8-labels
+START c8-cache; log=/home/tack/renju-h6/runs/h7c/b2/c8-cache.log
+COMPLETE c8-cache
+START c8-value; log=/home/tack/renju-h6/runs/h7c/b2/c8-value.log
+[b2:c8-value] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-value] running, elapsed 2.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-value] running, elapsed 3.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-value] running, elapsed 4.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-value] running, elapsed 5.0 min | [h7c-value] step 189/210 objective 0.45179 (cycle 0.32669058442115784, H6 0.57689)
+COMPLETE c8-value
+START c8-official; log=/home/tack/renju-h6/runs/h7c/b2/c8-official.log
+[b2:c8-official] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-official] running, elapsed 2.0 min | [h7c-arena-official] 10/100 games  10.0%  1.1 min  ETA 10 min  10/100 games
+[b2:c8-official] running, elapsed 3.0 min | [h7c-arena-official] 22/100 games  22.0%  2.4 min  ETA 9 min  22/100 games
+[b2:c8-official] running, elapsed 4.0 min | [h7c-arena-official] 28/100 games  28.0%  3.7 min  ETA 10 min  28/100 games
+[b2:c8-official] running, elapsed 5.0 min | [h7c-arena-official] 32/100 games  32.0%  4.8 min  ETA 10 min  32/100 games
+[b2:c8-official] running, elapsed 6.0 min | [h7c-arena-official] 39/100 games  39.0%  6.0 min  ETA 9 min  39/100 games
+[b2:c8-official] running, elapsed 7.0 min | [h7c-arena-official] 39/100 games  39.0%  6.0 min  ETA 9 min  39/100 games
+[b2:c8-official] running, elapsed 8.0 min | [h7c-arena-official] 46/100 games  46.0%  7.1 min  ETA 8 min  46/100 games
+[b2:c8-official] running, elapsed 9.0 min | [h7c-arena-official] 53/100 games  53.0%  8.1 min  ETA 7 min  53/100 games
+[b2:c8-official] running, elapsed 10.0 min | [h7c-arena-official] 66/100 games  66.0%  9.1 min  ETA 5 min  66/100 games
+[b2:c8-official] running, elapsed 11.0 min | [h7c-arena-official] 72/100 games  72.0%  10.4 min  ETA 4 min  72/100 games
+[b2:c8-official] running, elapsed 12.0 min | [h7c-arena-official] 81/100 games  81.0%  11.5 min  ETA 3 min  81/100 games
+[b2:c8-official] running, elapsed 13.0 min | [h7c-arena-official] 98/100 games  98.0%  13.0 min  ETA 0 min  98/100 games
+[b2:c8-official] running, elapsed 14.0 min | [h7c-arena-official] 98/100 games  98.0%  13.0 min  ETA 0 min  98/100 games
+[b2:c8-official] running, elapsed 15.0 min | [h7c-arena-official] 99/100 games  99.0%  14.0 min  ETA 0 min  99/100 games, 1 pending
+COMPLETE c8-official
+START c8-mon_v8_full; log=/home/tack/renju-h6/runs/h7c/b2/c8-mon_v8_full.log
+[b2:c8-mon_v8_full] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-mon_v8_full] running, elapsed 2.0 min | [h7c-arena-mon_v8_full] 10/50 games  20.0%  1.0 min  ETA 4 min  10/50 games
+[b2:c8-mon_v8_full] running, elapsed 3.0 min | [h7c-arena-mon_v8_full] 25/50 games  50.0%  2.1 min  ETA 2 min  25/50 games
+[b2:c8-mon_v8_full] running, elapsed 4.0 min | [h7c-arena-mon_v8_full] 39/50 games  78.0%  3.3 min  ETA 1 min  39/50 games
+COMPLETE c8-mon_v8_full
+START c8-mon_puct_policy; log=/home/tack/renju-h6/runs/h7c/b2/c8-mon_puct_policy.log
+[b2:c8-mon_puct_policy] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-mon_puct_policy] running, elapsed 2.0 min | [h7c-arena-mon_puct_policy] 9/50 games  18.0%  1.1 min  ETA 5 min  9/50 games
+[b2:c8-mon_puct_policy] running, elapsed 3.0 min | [h7c-arena-mon_puct_policy] 21/50 games  42.0%  2.2 min  ETA 3 min  21/50 games
+[b2:c8-mon_puct_policy] running, elapsed 4.0 min | [h7c-arena-mon_puct_policy] 26/50 games  52.0%  3.4 min  ETA 3 min  26/50 games
+[b2:c8-mon_puct_policy] running, elapsed 5.0 min | [h7c-arena-mon_puct_policy] 39/50 games  78.0%  4.5 min  ETA 1 min  39/50 games
+[b2:c8-mon_puct_policy] running, elapsed 6.0 min | [h7c-arena-mon_puct_policy] 48/50 games  96.0%  5.6 min  ETA 0 min  48/50 games
+[b2:c8-mon_puct_policy] running, elapsed 7.0 min | [h7c-arena-mon_puct_policy] 49/50 games  98.0%  6.7 min  ETA 0 min  49/50 games, 1 pending
+COMPLETE c8-mon_puct_policy
+START c8-mon_e2; log=/home/tack/renju-h6/runs/h7c/b2/c8-mon_e2.log
+[b2:c8-mon_e2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-mon_e2] running, elapsed 2.0 min | [h7c-arena-mon_e2] 13/50 games  26.0%  1.1 min  ETA 3 min  13/50 games
+[b2:c8-mon_e2] running, elapsed 3.0 min | [h7c-arena-mon_e2] 28/50 games  56.0%  2.2 min  ETA 2 min  28/50 games
+[b2:c8-mon_e2] running, elapsed 4.0 min | [h7c-arena-mon_e2] 43/50 games  86.0%  3.2 min  ETA 1 min  43/50 games
+COMPLETE c8-mon_e2
+START c8-tactical; log=/home/tack/renju-h6/runs/h7c/b2/c8-tactical.log
+[b2:c8-tactical] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-tactical] running, elapsed 2.0 min | [h7c-e1-candidate] 31/45 positions  68.9%  1.0 min  ETA 0 min  31/45 positions
+[b2:c8-tactical] running, elapsed 3.0 min | [h7c-e1-candidate] 45/45 positions  100.0%  2.4 min  ETA 0 min  45/45 positions
+[b2:c8-tactical] running, elapsed 4.0 min | [h7c-e1-parent] 33/45 positions  73.3%  1.0 min  ETA 0 min  33/45 positions
+COMPLETE c8-tactical
+START c8-verdict; log=/home/tack/renju-h6/runs/h7c/b2/c8-verdict.log
+COMPLETE c8-verdict
+START c8-x2; log=/home/tack/renju-h6/runs/h7c/b2/c8-x2.log
+[b2:c8-x2] running, elapsed 1.0 min | child progress unavailable (done/total, % and ETA unknown)
+[b2:c8-x2] running, elapsed 2.0 min | [external] 15/50 games  30.0%  1.0 min  ETA 2 min  15/50 games
+[b2:c8-x2] running, elapsed 3.0 min | [external] 38/50 games  76.0%  2.0 min  ETA 1 min  38/50 games
+COMPLETE c8-x2
+{"status": "STOPPED", "reason": "NO_PROMOTION_STREAK", "last_cycle": 8}
