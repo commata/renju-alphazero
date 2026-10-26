@@ -343,6 +343,8 @@ class CliTest(unittest.TestCase):
             record = tv.run(args, log=quiet)
             sha = tr.file_sha256(path)
             self.assertEqual(record['inputs']['recipe_decision_sha256'], sha)
+            self.assertEqual(record['inputs']['config_sha256'], tr.file_sha256(config))
+            self.assertEqual(record['inputs']['selfplay_run_seed'], 8801)
             self.assertEqual(json.loads((tmp / 'out' / 'best.json').read_text())['recipe_decision_sha256'], sha)
             bad = {'config': {'value': {**decision['value'], 'config_sha256': 'e' * 64}},
                    'anchor': {'value': {**decision['value'], 'replay_anchor_labels_sha256': 'e' * 64}},

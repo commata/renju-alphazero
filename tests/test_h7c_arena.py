@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+from unittest import mock
 
 from rt30 import fast5
 from scripts import h7c_arena as ar
@@ -896,12 +897,19 @@ class ValueOnlyCandidateTest(unittest.TestCase):
             with self.subTest(name), self.assertRaises(ValueError):
                 ar.check_decision_context(path, 3, models)
 
-    def test_no_candidate(self):
+    @mock.patch.object(ar, '_git', return_value={'commit': 'clean-code', 'dirty': False})
+    def test_no_candidate(self, _git):
         record = Path(self.tmp.name) / 'value_record.json'
 
         def write(verdict='NO_CANDIDATE', sha=None):
-            record.write_text(json.dumps({'cycle': 3, 'verdict': verdict, 'inputs': {
+            record.write_text(json.dumps({'format': 'h7c-value-train-v1', 'cycle': 3, 'verdict': verdict,
+                'git': {'commit': 'training-code', 'dirty': False}, 'inputs': {
                 'parent_checkpoint_sha256': self.parent['value_checkpoint_sha256'],
+                'parent_metadata_sha256': self.parent['value_metadata_sha256'],
+                'config_sha256': 'd' * 64, 'selfplay_run_seed': 8803,
+                'cycle_labels_sha256': 'b' * 64, 'replay_labels_sha256': 'a' * 64,
+                'source': {'models': self.parent, 'selfplay_git_commit': 'selfplay-code',
+                           'runtime_hash': 'f' * 64, 'rows': 10},
                 'recipe_decision_sha256': sha or ar._file_sha(self.decision)}}))
 
         c1 = c1_verdict(Path(self.tmp.name) / 'c1.json', self.parent)

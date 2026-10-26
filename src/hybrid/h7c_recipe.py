@@ -48,3 +48,29 @@ def load(path, cycle: int) -> tuple[dict, str]:
     if failed:
         raise ValueError(f'{path}: not a {VALUE_ONLY} recipe decision of cycle {cycle} ({", ".join(failed)})')
     return decision, file_sha256(path)
+
+
+def check_value_no_candidate(record: dict, decision: dict, decision_sha: str, path) -> None:
+    """Require a clean, complete value-training failure from this decision's parent, data and recipe."""
+    inputs = record.get('inputs') or {}
+    source = inputs.get('source') or {}
+    git = record.get('git') or {}
+    problems = {
+        'format': record.get('format') == 'h7c-value-train-v1',
+        'cycle / verdict': (record.get('cycle'), record.get('verdict')) == (decision['cycle'], 'NO_CANDIDATE'),
+        'clean training tree': git.get('dirty') is False and bool(git.get('commit')),
+        'parent value pair': (inputs.get('parent_checkpoint_sha256'), inputs.get('parent_metadata_sha256')) == (
+            decision['parent']['value_checkpoint_sha256'], decision['parent']['value_metadata_sha256']),
+        'self-play models': source.get('models') == decision['parent'],
+        'self-play commit': isinstance(source.get('selfplay_git_commit'), str) and bool(source['selfplay_git_commit']),
+        'runtime': _sha(source.get('runtime_hash')),
+        'source rows': type(source.get('rows')) is int and source['rows'] > 0,
+        'cycle labels': _sha(inputs.get('cycle_labels_sha256')),
+        'replay anchor': inputs.get('replay_labels_sha256') == decision['value']['replay_anchor_labels_sha256'],
+        'value config': inputs.get('config_sha256') == decision['value']['config_sha256'],
+        'self-play seed': inputs.get('selfplay_run_seed') == decision['seeds']['selfplay_run_seed'],
+        'recipe decision': inputs.get('recipe_decision_sha256') == decision_sha,
+    }
+    failed = sorted(k for k, ok in problems.items() if not ok)
+    if failed:
+        raise ValueError(f'{path}: not the value NO_CANDIDATE record of this recipe decision ({", ".join(failed)})')

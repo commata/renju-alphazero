@@ -845,6 +845,9 @@ def no_candidate(args) -> dict:
     from analysis import tb_v3_net
 
     decision_path = getattr(args, 'recipe_decision', None)
+    git = _git()
+    if decision_path is not None and git['dirty'] is not False:
+        raise ValueError('the tree is dirty (or git is unavailable): the no-candidate record must name its code commit')
     if decision_path is not None:  # a VALUE_ONLY cycle: no policy training, the value record alone
         if args.policy_record is not None:
             raise ValueError(f'{VALUE_ONLY} trains no policy: no --policy-record')
@@ -870,11 +873,13 @@ def no_candidate(args) -> dict:
     if decision_path is not None:
         decision_sha = check_decision_context(decision_path, args.cycle, {'parent_identity': parent,
                                                                           'champion_record_sha256': champion})
-        if records['value'].get('inputs', {}).get('recipe_decision_sha256') != decision_sha:
-            raise ValueError('the value training record was not made under this recipe decision')
+        from hybrid import h7c_recipe
+
+        decision, _ = h7c_recipe.load(decision_path, args.cycle)
+        h7c_recipe.check_value_no_candidate(records['value'], decision, decision_sha, args.value_record)
     paths = {'policy': args.policy_record, 'value': args.value_record}
     out = {'format': f'{FORMAT}-verdict', 'cycle': args.cycle, 'seed': arena_seed(args.cycle),
-           'git_commit': _git()['commit'], 'candidate': None, 'parent': parent, 'champion_record_sha256': champion,
+           'git_commit': git['commit'], 'git': git, 'candidate': None, 'parent': parent, 'champion_record_sha256': champion,
            'candidate_mode': VALUE_ONLY if decision_path is not None else JOINT, 'recipe_decision_sha256': decision_sha,
            'training': {'verdicts': verdicts, 'record_sha256': {name: _file_sha(paths[name]) for name in records}},
            'official': None, 'tactical': {'verdict': None},

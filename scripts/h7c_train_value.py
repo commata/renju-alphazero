@@ -24,6 +24,7 @@ SHA-256 goes into ``record.json`` (``inputs.recipe_decision_sha256``) and ``best
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 from pathlib import Path
 import sys
@@ -45,14 +46,46 @@ def load_cache_splits(cache: Path, splits=('train', 'val')) -> tuple[dict, dict]
     return data, manifest
 
 
-def check_cycle_cache(cache: Path, cycle: int, run_seed: int | None = None) -> None:
+def check_cycle_cache(cache: Path, cycle: int, run_seed: int | None = None, *, rows: Path | None = None) -> None:
+    """Require cache game lists; when rows are given, check their seed and exact per-split game order too.
+
+    Game lists are not covered by the tensor hashes. Read the source rows independently so an edited or empty
+    list cannot hide games from another run, including games whose rows were all masked by the label pipeline.
+    """
     prefix = f'h7c:c{cycle}:' + ('' if run_seed is None else f'{run_seed}:')
+    expected = {s: [] for s in ('train', 'val', 'test')}
+    if rows is not None:
+        seen, current = {}, None
+        opener = gzip.open if rows.suffix == '.gz' else open
+        with opener(rows, 'rt', encoding='utf-8') as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                game, split = row.get('game_id'), row.get('split')
+                if not isinstance(game, str) or not game.startswith(prefix):
+                    raise ValueError(f'{rows}: game {game!r} is not from {prefix}')
+                if split not in expected or (game in seen and seen[game] != split):
+                    raise ValueError(f'{rows}: invalid or inconsistent split for {game}')
+                if game != current:
+                    if game in seen:
+                        raise ValueError(f'{rows}: non-contiguous game {game}')
+                    expected[split].append(game)
+                    seen[game], current = split, game
+        if not seen:
+            raise ValueError(f'{rows}: no self-play games')
     for split in ('train', 'val', 'test'):
         path = cache / f'{split}_games.json'
-        games = json.loads(path.read_text(encoding='utf-8')) if path.exists() else []
-        bad = [g for g in games if not str(g).startswith(prefix)]
+        if not path.is_file():
+            raise ValueError(f'{path}: missing cache game list; rebuild the cache')
+        games = json.loads(path.read_text(encoding='utf-8'))
+        if not isinstance(games, list) or any(not isinstance(g, str) for g in games):
+            raise ValueError(f'{path}: expected a list of game IDs')
+        bad = [g for g in games if not g.startswith(prefix)]
         if bad:
             raise ValueError(f'{cache}: {split} holds games of another source or cycle, e.g. {bad[0]}')
+        if len(games) != len(set(games)) or (rows is not None and games != expected[split]):
+            raise ValueError(f'{path}: game list does not match the source rows')
 
 
 def replay_anchor(parent_path: Path, parent_meta: dict, allow_stand_in: bool = False) -> str:
@@ -105,7 +138,7 @@ def run(args, log=print) -> dict:
                 tr.file_sha256(parent_path), tr.file_sha256(parent_path.with_name('best.json'))):
             raise ValueError(f'{parent_path} is not the parent value the recipe decision names')
     check_cycle_cache(Path(args.cycle_cache), args.cycle,
-                      None if decision is None else decision['seeds']['selfplay_run_seed'])
+                      None if decision is None else decision['seeds']['selfplay_run_seed'], rows=Path(args.cycle_rows))
     cycle, cycle_manifest = load_cache_splits(Path(args.cycle_cache))
     source = tr.value_rows_source(Path(args.cycle_rows), args.cycle, cycle_manifest['labels_sha256'])
     parent_shas = {'value_checkpoint_sha256': tr.file_sha256(parent_path),
@@ -124,6 +157,8 @@ def run(args, log=print) -> dict:
     result = tr.train_value(cfg, parent, cycle, replay, log=log)
     record = {'format': FORMAT, 'cycle': args.cycle, 'config': tr.config_dict(cfg), 'git': git,
               'inputs': {'parent_checkpoint_sha256': tr.file_sha256(parent_path),
+                         'config_sha256': tr.file_sha256(args.config),
+                         'selfplay_run_seed': None if decision is None else decision['seeds']['selfplay_run_seed'],
                          'parent_metadata_sha256': tr.file_sha256(parent_path.with_name('best.json')),
                          'cycle_labels_sha256': cycle_manifest['labels_sha256'],
                          'replay_labels_sha256': replay_manifest['labels_sha256'], 'source': source,
