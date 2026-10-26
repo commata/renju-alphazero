@@ -1,0 +1,82 @@
+{
+  "format": "h7c-b2-program-v1",
+  "recipe": "VALUE_ONLY",
+  "first_cycle": 4,
+  "last_cycle": 10,
+  "approved_by": "user",
+  "approved_on": "2026-10-26",
+  "authorization": "Review, adjust, implement and push B2 requested in this chat",
+  "start": {
+    "verdict": "docs/h7c/c3/arena_verdict.json",
+    "verdict_sha256": "891d219338db40d3ce4d13a095af92ebf0fb62787489760e55e28c51f5d5eb12",
+    "models": {
+      "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+      "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+      "value_checkpoint_sha256": "c1987a3fc05e55c1002ceaf342adcf85e4111ddb2be42f845026e8b5a7a25c77",
+      "value_metadata_sha256": "9828f2faba7734b8a67cfda9b67145fa61f3f34821152926d0bd88dace16553e"
+    }
+  },
+  "frozen_models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+    "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  },
+  "value": {
+    "config": "configs/h7c/c1_value.json",
+    "config_sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0",
+    "replay_anchor_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084",
+    "mix": "cycle:replay = 50:50 per epoch",
+    "h6_guard_ratio": 1.05
+  },
+  "promotion": {
+    "score_above": 0.5,
+    "improvement_lower_min": -0.05,
+    "tactical_rule": "h7c-tactical-v2"
+  },
+  "seeds": {
+    "selfplay_base": 8800,
+    "arena_base": 8730,
+    "x2_base": 8710,
+    "drift_base": 8750
+  },
+  "execution": {
+    "games": 1000,
+    "workers": 6,
+    "label_workers": 12,
+    "label_fast": "fast4",
+    "x2_workers": 4
+  },
+  "drift": {
+    "pairs": 50,
+    "improvement_upper_below": 0.0,
+    "reference": "frozen_H3_H6_v3",
+    "invalid": "stop"
+  },
+  "stops": {
+    "consecutive_no_promotion": 3,
+    "consecutive_tactical_fail": 2,
+    "integrity_error": "immediate"
+  },
+  "external": {
+    "executable": "pbrain-rapfi-windows-avx2.exe",
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+      "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+      "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+      "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+      "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+      "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+      "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+      "max_node=300",
+      "thread_num=1",
+      "timeout_turn=600000",
+      "timeout_match=1000000000"
+    ]
+  },
+  "deployment": "none; canonical/SER5/web require separate promotion",
+  "mcts_v9": "deferred",
+  "b1_convergence": "recorded unchanged; B2 uses its own registered stop rules"
+}

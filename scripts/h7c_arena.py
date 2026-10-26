@@ -193,11 +193,11 @@ def signature(identity: dict) -> str:
     return hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def build_tasks(arm: str, cycle: int, pairs: int | None = None) -> tuple[list[dict], list[dict]]:
+def build_tasks(arm: str, cycle: int, pairs: int | None = None, *, seed: int | None = None) -> tuple[list[dict], list[dict]]:
     """Tasks of one arm; the openings and game seeds of pair i are the same in every arm of the cycle."""
     from run_mcts_v8_benchmark import derive_seed, make_opening
 
-    seed, tasks, openings = arena_seed(cycle), [], []
+    seed, tasks, openings = arena_seed(cycle) if seed is None else seed, [], []
     for pair in range(ARMS[arm]['pairs'] if pairs is None else pairs):
         opening_seed = derive_seed(seed, 'opening', pair)
         opening = make_opening(opening_seed, OPENING['random_plies'], OPENING['radius'])

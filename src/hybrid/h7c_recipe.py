@@ -47,6 +47,9 @@ def load(path, cycle: int) -> tuple[dict, str]:
     failed = sorted(k for k, ok in problems.items() if not ok)
     if failed:
         raise ValueError(f'{path}: not a {VALUE_ONLY} recipe decision of cycle {cycle} ({", ".join(failed)})')
+    if 'program' in decision:
+        from .h7c_b2 import validate_decision
+        validate_decision(decision)
     return decision, file_sha256(path)
 
 
