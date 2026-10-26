@@ -1,0 +1,39 @@
+{
+  "format": "h7c-phase-a-evidence-v1",
+  "cycle": 3,
+  "recipe": "VALUE_ONLY",
+  "run_seed": 8803,
+  "phase": "A",
+  "source_root": "runs/h7c/c3",
+  "recipe_decision_sha256": "0d6fa45ecc4b47f1fa642295dffb6a500cf9c30d663a6ee9a4a59cc44927f99c",
+  "champion_record_sha256": "9dad79599058203be92337103dcb18b239cd9b6889cbf642292df36a6b326a26",
+  "training_git": {
+    "commit": "e85751588ecafbcdd43f3cba4abf6d2e67b98f55",
+    "dirty": false
+  },
+  "value_verdict": "CANDIDATE",
+  "files_sha256": {
+    "selfplay_8803.json": "b8e46b1bf9f534e292589c967820aaf4487b048857ed1f9ce61aff580537ed16",
+    "selfplay_8803.jsonl": "d5090c270b6733fe0bf9384b91a2820f79de82d875aa857321fb3879751ff7f1",
+    "labels_report.json": "f7f443c66620538b7efb69f42e5ef0f56dce166182737c30d17132f17e515e06",
+    "value_rows.jsonl.gz": "1ff28954269ee81f2ed350512495192ea2b58a6045fb3a81a9365b66c0b5add6",
+    "policy_rows.jsonl.gz": "dbd1b6ca7ea61525fc43955141498ad1cf53deb442eedecd7df5f2846846f76a",
+    "value/record.json": "cace0d4c4b62239c33d7af82dbf4ba01b3b4aa0e13aa7d33e20c1420acd63f12",
+    "value/best.json": "9828f2faba7734b8a67cfda9b67145fa61f3f34821152926d0bd88dace16553e",
+    "value/best.pt": "c1987a3fc05e55c1002ceaf342adcf85e4111ddb2be42f845026e8b5a7a25c77",
+    "value_cache/manifest.json": "f5b39b46411116b0f71531aa132a017908cd4d7a9855de752f8aa7b1bc9517ed",
+    "value_cache/train.pt": "a0860d29d422783f16528bfb669da511efbdfe42a2ebf8ee9e6243784cce956f",
+    "value_cache/train_games.json": "d1eab9c432b98ebd17047133c3794f2541d4d96e622ecb34f4c395a48b931970",
+    "value_cache/val.pt": "f56516d7d3b58e503a0783717c3c07cc88ea6aeefd686bf209f2d7642947cd97",
+    "value_cache/val_games.json": "f5bafb04d269569a4858bf1c0542dfaf44ace0193cff15927da2e470b7e19e7f",
+    "value_cache/test.pt": "32cb4e6df2e567725a3f79e05de5d0294eb6e6a7864f5e2cc953bf3109af4a52",
+    "value_cache/test_games.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "document_copies": {
+    "selfplay_8803.json": "selfplay_c3_seed8803.json",
+    "labels_report.json": "labels_c3_report.json",
+    "value/record.json": "value_record.json",
+    "value/best.json": "value_best.json",
+    "value_cache/manifest.json": "value_cache_manifest.json"
+  }
+}

@@ -1,0 +1,117 @@
+{
+ "format": "h7c-labels-v1",
+ "value_row_format": "h6-value-row-v1",
+ "policy_row_format": "h7c-policy-row-v1",
+ "git_commit": "e85751588ecafbcdd43f3cba4abf6d2e67b98f55",
+ "git_dirty": false,
+ "games": [
+  "runs/h7c/c3/selfplay_8803.jsonl"
+ ],
+ "settings": {
+  "from_ply": 5,
+  "outcome_weight": 0.1,
+  "proof_weight": 1.0,
+  "prove_losses": false,
+  "vct1": false,
+  "probe_game_min_ply": 4,
+  "fast": "fast4"
+ },
+ "split": {
+  "salt": "h7c-v1",
+  "fractions": {
+   "val": 0.05
+  }
+ },
+ "probe_files": [
+  "tests/fixtures/stage7_probes_defense_v1.json",
+  "tests/fixtures/stage7_probes_v1.json",
+  "tests/fixtures/v8_budget_probes_v1.json",
+  "tests/fixtures/v8c_divergence_probes_v1.json",
+  "tests/fixtures/v8c_root_probes_v1.json",
+  "tests/fixtures/vct_probes_v1.json",
+  "docs/mcts-v8-results/probe_web_v8_loss_20261007.json",
+  "docs/mcts-v8-results/e1/e1_manifest.json",
+  "docs/mcts-v8-results/e1h/e1h_manifest.json",
+  "docs/mcts-v8-results/e1s/e1s_manifest.json",
+  "docs/h6/h6_fresh_dev_probes_v1.json",
+  "docs/h6/h6_fresh_dev_probes_v2.json",
+  "docs/h6/h6_fresh_final_probes_v1.json"
+ ],
+ "summary": {
+  "identity": {
+   "cycle": 3,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+   "frozen_models": true
+  },
+  "games_in": 1000,
+  "games_kept": 989,
+  "dropped": {
+   "probe_game": 11
+  },
+  "results": {
+   "black": 570,
+   "white": 375,
+   "draw": 44
+  },
+  "value": {
+   "cross_split_masked": {
+    "train": 0,
+    "val": 786,
+    "test": 0
+   },
+   "rows": 40129,
+   "labelled": 39343,
+   "by_split": {
+    "train": 38075,
+    "val": 2054
+   },
+   "by_kind": {
+    "outcome": 33979,
+    "proof_vcf": 2572,
+    "proof_unstoppable_four": 920,
+    "proof_forced_loss": 936,
+    "proof_immediate_win": 936
+   },
+   "by_depth": {
+    "0": 5364
+   },
+   "sign": {
+    "-1": 14866,
+    "+1": 15237,
+    "0": 9240
+   },
+   "sign_by_side": {
+    "white": {
+     "-1": 8209,
+     "+1": 7020,
+     "0": 4620
+    },
+    "black": {
+     "+1": 8217,
+     "-1": 6657,
+     "0": 4620
+    }
+   },
+   "masked_by_flag": {
+    "cross_split_duplicate": 786
+   }
+  },
+  "policy": {
+   "rows": 26121,
+   "unmasked_by_kind": {
+    "visits": 19697,
+    "proof_one_hot": 5624
+   },
+   "unmasked_by_split": {
+    "train": 24605,
+    "val": 716
+   },
+   "masked": {
+    "probe_position": 160,
+    "cross_split_duplicate": 640
+   }
+  }
+ }
+}

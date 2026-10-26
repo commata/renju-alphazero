@@ -1,0 +1,78 @@
+{
+ "stage": "H6-2a",
+ "h7c_stage": "H7-c-value",
+ "track": "B",
+ "cycle": 3,
+ "policy_trained": true,
+ "value_trained": true,
+ "trunk_frozen": true,
+ "policy_head_frozen": true,
+ "parent_h3_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "parent_h3_metadata_sha256": "33679875e0ece99b6590959b03cf95557868b93894936a89891cb98cd1177e4e",
+ "parent_value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+ "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+ "model_config": {
+  "board_size": 15,
+  "input_planes": 6,
+  "channels": 64,
+  "blocks": 4,
+  "policy_channels": 2,
+  "value_channels": 1,
+  "value_hidden": 64
+ },
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "training_sources": {
+  "cycle_labels_sha256": "6c918e34b5872c224233cbcb7a74c530d433760d2a5d008b8d97666f6211287d",
+  "replay_anchor_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084"
+ },
+ "source_models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+  "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+ },
+ "source_selfplay_git_commit": "e85751588ecafbcdd43f3cba4abf6d2e67b98f55",
+ "source_runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+ "mix": "cycle:replay = 50:50 per epoch",
+ "config": {
+  "seed": 20261025,
+  "batch_size": 1024,
+  "epochs": 3.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "augment_d4": true,
+  "evaluations": 10,
+  "h6_guard_ratio": 1.05,
+  "device": "cuda"
+ },
+ "recipe_decision_sha256": "0d6fa45ecc4b47f1fa642295dffb6a500cf9c30d663a6ee9a4a59cc44927f99c",
+ "best": {
+  "step": 68,
+  "objective": 0.4462805390357971,
+  "cycle_wmse": 0.31673574447631836,
+  "replay_wmse": 0.5758253335952759,
+  "eligible": true,
+  "cycle_val": {
+   "states": 1197,
+   "mse": 0.5880451798439026,
+   "sign_acc": 0.7655453681945801,
+   "mean_value": 0.1931062489748001,
+   "mean_target": 0.01253132801502943,
+   "saturated": 0.06098579615354538
+  },
+  "replay_val": {
+   "states": 106230,
+   "mse": 0.8618953227996826,
+   "sign_acc": 0.6607173085212708,
+   "mean_value": 0.13308802247047424,
+   "mean_target": 0.03353101760149002,
+   "saturated": 0.03495246171951294
+  }
+ },
+ "git": {
+  "commit": "e85751588ecafbcdd43f3cba4abf6d2e67b98f55",
+  "dirty": false
+ }
+}
