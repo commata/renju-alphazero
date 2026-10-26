@@ -15,6 +15,11 @@ SHA-256 checked) names the self-play models in every row. The cycle cache must h
 when it is an H7-c value candidate (which carries it on), and refused otherwise. Output: ``best.pt`` + ``best.json`` in the H6-2a loader contract (``hybrid.h6_value_leaf``
 loads it; stage ``H6-2a`` names that contract, ``h7c_stage`` the step), and ``record.json``. ``NO_CANDIDATE``
 (every evaluation's H6 val weighted MSE above 1.05 x the parent's): no ``best.pt``, exit 1.
+
+``--recipe-decision`` (a ``VALUE_ONLY`` cycle, ``hybrid.h7c_recipe``): the decision must be this cycle's, its value
+config SHA-256 the ``--config`` file's, its parent value pair the ``--parent``'s, its replay anchor this run's, its
+parent models the self-play's and its self-play run seed the cycle cache's games (``h7c:c<cycle>:<seed>:``); its
+SHA-256 goes into ``record.json`` (``inputs.recipe_decision_sha256``) and ``best.json`` (``recipe_decision_sha256``).
 """
 from __future__ import annotations
 
@@ -40,8 +45,8 @@ def load_cache_splits(cache: Path, splits=('train', 'val')) -> tuple[dict, dict]
     return data, manifest
 
 
-def check_cycle_cache(cache: Path, cycle: int) -> None:
-    prefix = f'h7c:c{cycle}:'
+def check_cycle_cache(cache: Path, cycle: int, run_seed: int | None = None) -> None:
+    prefix = f'h7c:c{cycle}:' + ('' if run_seed is None else f'{run_seed}:')
     for split in ('train', 'val', 'test'):
         path = cache / f'{split}_games.json'
         games = json.loads(path.read_text(encoding='utf-8')) if path.exists() else []
@@ -88,7 +93,19 @@ def run(args, log=print) -> dict:
             or parent_meta.get('trunk_frozen') is not True or parent_meta.get('policy_head_frozen') is not True:
         raise ValueError(f'{parent_path}: not an H6-2a value head on a frozen trunk')
     anchor = replay_anchor(parent_path, parent_meta, getattr(args, 'allow_stand_in', False))
-    check_cycle_cache(Path(args.cycle_cache), args.cycle)
+    decision, decision_sha = None, None
+    if getattr(args, 'recipe_decision', None) is not None:
+        from hybrid import h7c_recipe
+        decision, decision_sha = h7c_recipe.load(args.recipe_decision, args.cycle)
+        if decision['value']['config_sha256'] != tr.file_sha256(args.config):
+            raise ValueError(f'{args.config} is not the value config the recipe decision fixed')
+        if decision['value']['replay_anchor_labels_sha256'] != anchor:
+            raise ValueError("the parent's replay anchor is not the one the recipe decision fixed")
+        if (decision['parent']['value_checkpoint_sha256'], decision['parent']['value_metadata_sha256']) != (
+                tr.file_sha256(parent_path), tr.file_sha256(parent_path.with_name('best.json'))):
+            raise ValueError(f'{parent_path} is not the parent value the recipe decision names')
+    check_cycle_cache(Path(args.cycle_cache), args.cycle,
+                      None if decision is None else decision['seeds']['selfplay_run_seed'])
     cycle, cycle_manifest = load_cache_splits(Path(args.cycle_cache))
     source = tr.value_rows_source(Path(args.cycle_rows), args.cycle, cycle_manifest['labels_sha256'])
     parent_shas = {'value_checkpoint_sha256': tr.file_sha256(parent_path),
@@ -96,6 +113,8 @@ def run(args, log=print) -> dict:
     if {k: source['models'][k] for k in parent_shas} != parent_shas:
         raise ValueError(f"{parent_path} is not the value that played the cycle's self-play "
                          f"({source['models']['value_checkpoint_sha256'][:12]})")
+    if decision is not None and source['models'] != decision['parent']:
+        raise ValueError("the cycle's self-play was not played by the parent models the recipe decision names")
     replay, replay_manifest = load_cache_splits(Path(args.replay_cache))
     if replay_manifest['labels_sha256'] != anchor:
         raise ValueError(f"the replay cache's labels ({replay_manifest['labels_sha256'][:12]}) are not the replay "
@@ -109,7 +128,8 @@ def run(args, log=print) -> dict:
                          'cycle_labels_sha256': cycle_manifest['labels_sha256'],
                          'replay_labels_sha256': replay_manifest['labels_sha256'], 'source': source,
                          'cycle_cache_splits': {k: v['sha256'] for k, v in cycle_manifest['splits'].items()},
-                         'replay_cache_splits': {k: v['sha256'] for k, v in replay_manifest['splits'].items()}},
+                         'replay_cache_splits': {k: v['sha256'] for k, v in replay_manifest['splits'].items()},
+                         'recipe_decision_sha256': decision_sha},
               **result['record']}
     out.mkdir(parents=True, exist_ok=True)
     if result['state'] is not None:
@@ -128,6 +148,7 @@ def run(args, log=print) -> dict:
                 'source_models': source['models'], 'source_selfplay_git_commit': source['selfplay_git_commit'],
                 'source_runtime_hash': source['runtime_hash'],
                 'mix': 'cycle:replay = 50:50 per epoch', 'config': tr.config_dict(cfg),
+                'recipe_decision_sha256': decision_sha,
                 'best': result['record']['best'], 'git': git}
         (out / 'best.json.tmp').write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')
         (out / 'best.pt.tmp').replace(out / 'best.pt')
@@ -148,6 +169,7 @@ def main(argv=None) -> int:
     parser.add_argument('--parent', type=Path, required=True, help="the cycle's starting value (c1: H6 v3)")
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--out-dir', type=Path, required=True)
+    parser.add_argument('--recipe-decision', type=Path, help='a VALUE_ONLY cycle: its recipe decision (docs/h7c/c<c>/)')
     parser.add_argument('--allow-dirty', action='store_true', help='tests only')
     parser.add_argument('--allow-stand-in', action='store_true', help='tests only: a parent other than H6 v3')
     args = parser.parse_args(argv)

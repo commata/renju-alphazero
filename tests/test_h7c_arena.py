@@ -766,5 +766,200 @@ class FallbackCandidateTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             x2.candidate_info(2, self.parent_policy, self.value, 'cpu')  # joint mode refuses the parent policy
 
+
+def write_decision(path, parent, champion_sha, **changes):
+    """A VALUE_ONLY recipe decision of cycle 3 (hybrid.h7c_recipe)."""
+    decision = {'format': 'h7c-recipe-decision-v1', 'cycle': 3, 'recipe': 'VALUE_ONLY', 'candidate_mode': 'VALUE_ONLY',
+                'parent': parent, 'champion_record_sha256': champion_sha,
+                'policy': {'action': 'freeze_parent', 'training': False},
+                'value': {'config_sha256': 'd' * 64, 'replay_anchor_labels_sha256': 'a' * 64}, 'retarget': False,
+                'seeds': {'selfplay_run_seed': 8803, 'arena': 8733, 'x2': 8713}, **changes}
+    Path(path).write_text(json.dumps(decision), encoding='utf-8')
+    return Path(path)
+
+
+class ValueOnlyVerdictTest(unittest.TestCase):
+    """Cycle 3 in VALUE_ONLY mode on the c1 / c2 history: the fallback's arms, the decision SHA everywhere."""
+
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        tmp = Path(self.tmp.name)
+        self.c1 = c1_verdict(tmp / 'c1.json')
+        self.c2 = tmp / 'c2.json'
+        self.c2.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 2, 'parent': {'p': 1},
+                                       'next_champion': {'p': 1}, 'promotion': {'improvement_lower': -0.135},
+                                       'tactical': {'verdict': 'PASS'}}))
+        self.ident = {'cycle': 3, 'candidate': {'c': 3}, 'parent': {'p': 1},
+                      'champion_record_sha256': ar._file_sha(self.c2), 'recipe_decision_sha256': 'f' * 64}
+
+    def tactical(self, **changes):
+        path = Path(self.tmp.name) / 'tactical.json'
+        path.write_text(json.dumps({**self.ident, 'git': {'commit': 'abc'}, 'candidate_mode': ar.VALUE_ONLY,
+                                    'rule_version': ar.TACTICAL_RULE, 'judge': judge_record(), **changes}))
+        return path
+
+    def arms(self, names, results=None, **changes):
+        return [write_arm(self.tmp.name, arm, results or [('win', 'loss')] * ar.ARMS[arm]['pairs'],
+                          **{**self.ident, 'candidate_mode': ar.VALUE_ONLY, **changes}) for arm in names]
+
+    def test_value_only_cycle(self):
+        played = ('official', 'mon_v8_full', 'mon_puct_policy', 'mon_e2')
+        out = ar.verdict(argparse.Namespace(arms=self.arms(played), tactical=self.tactical(),
+                                            history=[str(self.c1), str(self.c2)]))
+        self.assertEqual((out['candidate_mode'], out['recipe_decision_sha256']), ('VALUE_ONLY', 'f' * 64))
+        self.assertEqual(out['diagnosis'], {'p_only': 'NOT_APPLICABLE', 'v_only': 'SAME_AS_OFFICIAL'})
+        self.assertEqual(out['promotion']['decision'], 'KEEP_CHAMPION')  # 0.50: not above 0.50
+        conv = out['convergence']
+        self.assertEqual((conv['cycles'], conv['converged']), ([1, 2, 3], True))  # 3 cycles, the last two <= 0
+        with self.assertRaises(ValueError):  # p_only is not played in a VALUE_ONLY cycle
+            ar.verdict(argparse.Namespace(arms=self.arms(played + ('p_only',)), tactical=self.tactical(),
+                                          history=[str(self.c1), str(self.c2)]))
+        with self.assertRaises(ValueError):  # the arms and the tactical record under different decisions
+            ar.verdict(argparse.Namespace(arms=self.arms(played), tactical=self.tactical(
+                recipe_decision_sha256='e' * 64), history=[str(self.c1), str(self.c2)]))
+
+
+class ValueOnlyCandidateTest(unittest.TestCase):
+    """The VALUE_ONLY candidate: the decision's parent policy byte for byte, a value trained under the decision."""
+
+    def setUp(self):
+        from analysis import tb_v3_net
+        from tests.test_tb_v3_net import write_models
+
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        tmp = Path(self.tmp.name)
+        self.parent_policy, self.parent_value = write_models(tmp / 'p', seed=2)
+        self.parent = tb_v3_net.model_identity(self.parent_policy, self.parent_value)
+        _, self.value = write_candidate(tmp / 'c3', self.parent_policy, self.parent_value, cycle=3, seed=5)
+        self.champion = tmp / 'c2.json'
+        self.champion.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 2,
+                                             'next_champion': self.parent}))
+        self.decision = write_decision(tmp / 'decision.json', self.parent, ar._file_sha(self.champion))
+        self.sign_value()
+
+    def sign_value(self, **changes):
+        path = self.value.with_name('best.json')
+        meta = json.loads(path.read_text(encoding='utf-8'))
+        meta.update({'recipe_decision_sha256': ar._file_sha(self.decision),
+                     'training_sources': {'cycle_labels_sha256': 'b' * 64, 'replay_anchor_labels_sha256': 'a' * 64},
+                     **changes})
+        path.write_text(json.dumps(meta), encoding='utf-8')
+
+    def check(self, policy=None, cycle=3, mode=None, record=None, decision='default'):
+        return ar.check_candidate(policy or self.parent_policy, self.value, cycle, mode or ar.VALUE_ONLY, record,
+                                  self.decision if decision == 'default' else decision)
+
+    def test_candidate(self):
+        self.assertEqual(self.check(), self.parent)
+        refused = {
+            'no decision': dict(decision=None),
+            'decision in joint mode': dict(mode=ar.JOINT),
+            'decision with the fallback': dict(mode=ar.FALLBACK, record=self.decision),
+            'a policy record': dict(record=self.decision),
+            'cycle 2': dict(cycle=2),
+        }
+        for name, kw in refused.items():
+            with self.subTest(name), self.assertRaises(ValueError):
+                self.check(**kw)
+        other_policy, _ = write_candidate(Path(self.tmp.name) / 'o', self.parent_policy, self.parent_value, 3, 9)
+        with self.assertRaises(ValueError):  # the policy must be the parent's, byte for byte
+            self.check(policy=other_policy)
+        for name, change in (('value of another decision', {'recipe_decision_sha256': 'e' * 64}),
+                             ('another replay anchor', {'training_sources': {'replay_anchor_labels_sha256': 'e' * 64}}),
+                             ('no decision SHA', {'recipe_decision_sha256': None})):
+            self.sign_value(**change)
+            with self.subTest(name), self.assertRaises(ValueError):
+                self.check()
+        self.sign_value()
+        other_parent = {**self.parent, 'policy_checkpoint_sha256': 'e' * 64}
+        for name, parent, change in (('another parent', other_parent, {}),
+                                     ('policy trained', self.parent, {'policy': {'action': 'train', 'training': True}}),
+                                     ('retarget', self.parent, {'retarget': True}),
+                                     ('cycle 4', self.parent, {'cycle': 4})):
+            write_decision(self.decision, parent, ar._file_sha(self.champion), **change)
+            self.sign_value()
+            with self.subTest(name), self.assertRaises(ValueError):
+                self.check()
+        write_decision(self.decision, self.parent, ar._file_sha(self.champion))
+        self.sign_value()
+        self.assertEqual(self.check(), self.parent)
+
+    def test_decision_context(self):
+        models = {'parent_identity': self.parent, 'champion_record_sha256': ar._file_sha(self.champion)}
+        self.assertEqual(ar.check_decision_context(self.decision, 3, models), ar._file_sha(self.decision))
+        for name, change in (('another champion record', {'champion_record_sha256': 'e' * 64}),
+                             ('another Arena seed', {'seeds': {'selfplay_run_seed': 8803, 'arena': 8734, 'x2': 8713}})):
+            path = write_decision(Path(self.tmp.name) / f'{name}.json', self.parent, ar._file_sha(self.champion),
+                                  **change)
+            with self.subTest(name), self.assertRaises(ValueError):
+                ar.check_decision_context(path, 3, models)
+
+    def test_no_candidate(self):
+        record = Path(self.tmp.name) / 'value_record.json'
+
+        def write(verdict='NO_CANDIDATE', sha=None):
+            record.write_text(json.dumps({'cycle': 3, 'verdict': verdict, 'inputs': {
+                'parent_checkpoint_sha256': self.parent['value_checkpoint_sha256'],
+                'recipe_decision_sha256': sha or ar._file_sha(self.decision)}}))
+
+        c1 = c1_verdict(Path(self.tmp.name) / 'c1.json', self.parent)
+        champion = json.loads(self.champion.read_text())
+        self.champion.write_text(json.dumps({**champion, 'parent': self.parent, 'promotion': {'improvement_lower': -0.1},
+                                             'tactical': {'verdict': 'PASS'}}))
+        write_decision(self.decision, self.parent, ar._file_sha(self.champion))
+        args = argparse.Namespace(cycle=3, policy_record=None, value_record=record, recipe_decision=self.decision,
+                                  parent_policy=self.parent_policy, parent_value=self.parent_value,
+                                  champion=self.champion, history=[str(c1), str(self.champion)], allow_stand_in=True)
+        write()
+        out = ar.no_candidate(args)
+        self.assertEqual((out['candidate_mode'], out['training']['verdicts']), ('VALUE_ONLY', {'value': 'NO_CANDIDATE'}))
+        self.assertEqual(out['recipe_decision_sha256'], ar._file_sha(self.decision))
+        with self.assertRaises(ValueError):  # a VALUE_ONLY cycle has no policy record
+            ar.no_candidate(argparse.Namespace(**{**vars(args), 'policy_record': record}))
+        write(sha='e' * 64)
+        with self.assertRaises(ValueError):  # the value training ran under another decision
+            ar.no_candidate(args)
+        write(verdict='CANDIDATE')
+        with self.assertRaises(ValueError):  # a value candidate: the Arena runs
+            ar.no_candidate(args)
+        with self.assertRaises(ValueError):  # without a decision the policy record is required
+            ar.no_candidate(argparse.Namespace(**{**vars(args), 'recipe_decision': None}))
+
+
+@unittest.skipUnless(fast5.available(), 'python -m rt30.vcfcore.build first')
+class ValueOnlyArenaTest(ValueOnlyCandidateTest):
+    def tearDown(self):
+        from hybrid.h6_fast import install
+        fast5.uninstall()
+        install('off')
+        ar._MODELS.clear()
+
+    def test_arena_and_x2(self):
+        quiet = lambda *a, **k: None  # noqa: E731
+        with TemporaryDirectory() as tmp:
+            args = play_args(tmp, self.parent_policy, self.value, self.parent_policy, self.parent_value, cycle=3,
+                             candidate_mode=ar.VALUE_ONLY, recipe_decision=self.decision, champion=self.champion,
+                             policy_record=None, max_plies=5)
+            out = ar.play(args, log=quiet)
+            ident = out['identity']
+            self.assertEqual((ident['candidate_mode'], ident['seed'], ident['recipe_decision_sha256']),
+                             ('VALUE_ONLY', 8733, ar._file_sha(self.decision)))
+            self.assertEqual(ident['tested']['models']['policy_checkpoint_sha256'], ar._file_sha(self.parent_policy))
+            for arm in ('p_only', 'v_only'):
+                with self.assertRaises(ValueError):
+                    ar.play(argparse.Namespace(**{**vars(args), 'arm': arm, 'jsonl': Path(tmp) / f'{arm}.jsonl'}),
+                            log=quiet)
+        info = x2.candidate_info(3, self.parent_policy, self.value, 'cpu', ar.VALUE_ONLY, None, self.decision)
+        self.assertEqual((info['provenance']['candidate_mode'], info['provenance']['recipe_decision_sha256']),
+                         ('VALUE_ONLY', ar._file_sha(self.decision)))
+        write_decision(self.decision, self.parent, ar._file_sha(self.champion),
+                       seeds={'selfplay_run_seed': 8803, 'arena': 8733, 'x2': 8714})
+        self.sign_value()
+        with self.assertRaises(ValueError):  # the decision's X2 seed is not the cycle's
+            x2.candidate_info(3, self.parent_policy, self.value, 'cpu', ar.VALUE_ONLY, None, self.decision)
+
+
 if __name__ == '__main__':
     unittest.main()

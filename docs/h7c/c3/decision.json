@@ -1,0 +1,75 @@
+{
+ "format": "h7c-recipe-decision-v1",
+ "cycle": 3,
+ "recipe": "VALUE_ONLY",
+ "candidate_mode": "VALUE_ONLY",
+ "parent": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+  "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+ },
+ "champion_record_sha256": "9dad79599058203be92337103dcb18b239cd9b6889cbf642292df36a6b326a26",
+ "policy": {
+  "action": "freeze_parent",
+  "training": false
+ },
+ "value": {
+  "config": "configs/h7c/c1_value.json",
+  "config_sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0",
+  "replay_anchor_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084",
+  "mix": "cycle:replay = 50:50 per epoch",
+  "h6_guard_ratio": 1.05
+ },
+ "retarget": false,
+ "seeds": {
+  "selfplay_run_seed": 8803,
+  "arena": 8733,
+  "x2": 8713
+ },
+ "arena": {
+  "official_pairs": 50,
+  "promotion": {
+   "score_above": 0.5,
+   "improvement_lower_min": -0.05,
+   "tactical_rule": "h7c-tactical-v2"
+  },
+  "diagnosis": {
+   "p_only": "NOT_APPLICABLE",
+   "v_only": "SAME_AS_OFFICIAL"
+  },
+  "monitoring": [
+   "mon_v8_full",
+   "mon_puct_policy",
+   "mon_e2"
+  ],
+  "x2": "record only, never a gate"
+ },
+ "convergence": "unchanged (min 3 cycles, 2 consecutive lower bounds <= 0, tactical PASS); c3 joins the history",
+ "offline_policy_distillation_diagnosis": {
+  "status": "measurement_only",
+  "binding_for_c3": false,
+  "use": "c4+ policy design only"
+ },
+ "power_note": {
+  "sigma_pair": 0.325,
+  "pairs": 50,
+  "observed_score_needed": 0.54,
+  "promotion_probability": {
+   "true_+0pp": 0.19,
+   "true_+1pp (c2 V-only point estimate)": 0.26,
+   "true_+3pp (optimistic assumption)": 0.41
+  }
+ },
+ "rationale": [
+  "P-only excluded 0 in both cycles (c1 [-0.26, -0.01] with S50 targets, c2 [-0.23, -0.05] with S200)",
+  "policy distillation, not teacher depth, is the likely bottleneck; S200 itself was STRONGER in SB",
+  "c2 V-only is parity (0.51, improvement CI [-0.03, +0.06]): no improvement claimed, no repeated deficit",
+  "one variable: the policy fine-tune is removed; the value recipe is c1 / c2 unchanged",
+  "not a B_VALUE trigger: B_VALUE did not fire in the c1 decision (case A_COST_REVIEW); this is a c3 ablation chosen after the c2 Phase B review, in the shape of the B_VALUE option \"value only\""
+ ],
+ "mcts_v9": "deferred (E2-1 met, E2-2 / E1 not: S200 STRONGER, champion unchanged)",
+ "based_on_commit": "8708626b44ed9e53dedeb3c364e59f1e586ef55c",
+ "approved_by": "user",
+ "approved_on": "2026-10-26"
+}

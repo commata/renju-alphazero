@@ -38,6 +38,13 @@ Modes:
               ``VALUE_ONLY_FALLBACK`` (``--candidate-mode``: the parent policy byte for byte + the new value, with the
               policy training's NO_CANDIDATE ``--policy-record``), Arena without ``p_only`` (NOT_APPLICABLE) and
               ``v_only`` (SAME_AS_OFFICIAL), recorded as such in every run, the tactical record and the verdict
+    VALUE_ONLY    (cycle >= 3, ``hybrid.h7c_recipe``): a recipe fixed before the self-play, not a training failure. The
+              policy is frozen at the parent's (checkpoint and metadata byte for byte), only the value is trained;
+              ``--recipe-decision`` (the cycle's decision: parent, champion record, Arena seed) is required and the
+              value metadata must carry its SHA-256. No policy record. The same arms as a fallback (``p_only``
+              NOT_APPLICABLE, ``v_only`` SAME_AS_OFFICIAL); the decision's SHA-256 is in every run, the tactical
+              record and the verdict. A value NO_CANDIDATE gives a ``no-candidate`` record with the decision and the
+              value record only
 
 Promotion (all of them): a valid official arm, score > 0.50, pair-bootstrap 95% lower bound of (score - 0.50) >= -0.05,
 tactical gate PASS. Tactical gate (v2): forbidden errors 0, ``unsound_witness`` 0, fresh dev probes v2 win and loss
@@ -176,6 +183,7 @@ def run_identity(arm: str, cycle: int, models: dict, device: str, git: dict) -> 
             'candidate_mode': models.get('candidate_mode', JOINT),
             'fallback_policy_record_sha256': models.get('fallback_policy_record_sha256'),
             'champion_record_sha256': models.get('champion_record_sha256'),
+            'recipe_decision_sha256': models.get('recipe_decision_sha256'),
             'tested': {'models': tested_identity, 'model_hash': tb_v3_net.model_hash(tested_identity),
                        'policy_from': ARMS[arm]['side'][0], 'value_from': ARMS[arm]['side'][1]},
             'opponent': opponent_identity(arm, models), 'git': git}
@@ -501,10 +509,11 @@ def _json(path) -> dict:
     return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
-JOINT, FALLBACK = 'JOINT', 'VALUE_ONLY_FALLBACK'
-CANDIDATE_MODES = (JOINT, FALLBACK)
+JOINT, FALLBACK, VALUE_ONLY = 'JOINT', 'VALUE_ONLY_FALLBACK', 'VALUE_ONLY'
+CANDIDATE_MODES = (JOINT, FALLBACK, VALUE_ONLY)
 FALLBACK_FROM_CYCLE = 2  # approved 2026-10-24 before any c1 Arena result; c1 is not retroactive
-FALLBACK_ARMS = {'p_only': 'NOT_APPLICABLE', 'v_only': 'SAME_AS_OFFICIAL'}  # not played in a fallback cycle
+FALLBACK_ARMS = {'p_only': 'NOT_APPLICABLE', 'v_only': 'SAME_AS_OFFICIAL'}  # not played when the policy is the parent's
+PARENT_POLICY_MODES = (FALLBACK, VALUE_ONLY)
 
 
 POLICY_RECORD_FORMAT = 'h7c-policy-train-v1'
@@ -533,17 +542,25 @@ def check_fallback_record(record: dict, cycle: int, source: dict, value_meta: di
 
 
 def check_candidate(policy_checkpoint, value_checkpoint, cycle: int, mode: str = JOINT,
-                    policy_record=None) -> dict:
+                    policy_record=None, recipe_decision=None) -> dict:
     """The candidate's metadata name this cycle and one self-play source; returns that source's four SHA-256.
 
     ``VALUE_ONLY_FALLBACK`` (cycle >= 2; the policy training gave NO_CANDIDATE, the value training a candidate):
     the policy is the self-play source's own policy, byte for byte (checkpoint and metadata SHA-256), and
-    ``policy_record`` (that policy training's ``record.json``) passes ``check_fallback_record``."""
+    ``policy_record`` (that policy training's ``record.json``) passes ``check_fallback_record``.
+
+    ``VALUE_ONLY`` (cycle >= 3): ``recipe_decision`` is the cycle's ``hybrid.h7c_recipe`` decision; the policy is its
+    parent policy byte for byte, the value metadata carries the decision's SHA-256, its self-play source is the
+    decision's parent and its replay anchor the decision's; no policy record."""
     from analysis import tb_v3_net
     from hybrid.h7c_train import POLICY_STAGE, SOURCE_MODEL_KEYS, VALUE_STAGE
 
     if mode not in CANDIDATE_MODES:
         raise ValueError(f'candidate mode {mode!r}: one of {CANDIDATE_MODES}')
+    if (recipe_decision is not None) != (mode == VALUE_ONLY):
+        raise ValueError(f'--recipe-decision goes with {VALUE_ONLY} and only there')
+    if mode == VALUE_ONLY and policy_record is not None:
+        raise ValueError(f'{VALUE_ONLY} trains no policy: no --policy-record (that is {FALLBACK})')
     value_meta = _json(Path(value_checkpoint).with_name('best.json'))
     if value_meta.get('h7c_stage') != VALUE_STAGE or value_meta.get('cycle') != cycle:
         raise ValueError(f'{value_checkpoint}: not an H7-c value candidate of cycle {cycle} '
@@ -560,6 +577,23 @@ def check_candidate(policy_checkpoint, value_checkpoint, cycle: int, mode: str =
         if policy_record is None:
             raise ValueError(f"{FALLBACK} needs --policy-record (the policy training's record.json)")
         check_fallback_record(_json(policy_record), cycle, source, value_meta, policy_record)
+        return source
+    if mode == VALUE_ONLY:
+        from hybrid import h7c_recipe
+
+        decision, decision_sha = h7c_recipe.load(recipe_decision, cycle)
+        policy = tb_v3_net.model_identity(policy_checkpoint, value_checkpoint)
+        problems = {
+            'policy = parent policy': all(policy[k] == decision['parent'][k]
+                                          for k in ('policy_checkpoint_sha256', 'policy_metadata_sha256')),
+            'self-play source = parent': source == decision['parent'],
+            'value trained under this decision': value_meta.get('recipe_decision_sha256') == decision_sha,
+            'replay anchor': (value_meta.get('training_sources') or {}).get('replay_anchor_labels_sha256')
+            == decision['value']['replay_anchor_labels_sha256'],
+        }
+        failed = sorted(k for k, ok in problems.items() if not ok)
+        if failed:
+            raise ValueError(f'not the {VALUE_ONLY} candidate of {recipe_decision} ({", ".join(failed)})')
         return source
     policy_meta = _json(Path(policy_checkpoint).with_suffix('.json'))
     if policy_meta.get('stage') != POLICY_STAGE or policy_meta.get('cycle') != cycle:
@@ -604,14 +638,18 @@ def check_models(args, need_frozen_policy: bool) -> dict:
     if models['candidate_identity'] == models['parent_identity']:
         raise ValueError('the candidate is the parent')
     mode = getattr(args, 'candidate_mode', JOINT)
+    decision_path = getattr(args, 'recipe_decision', None)
     if check_candidate(args.candidate_policy, args.candidate_value, args.cycle, mode,
-                       getattr(args, 'policy_record', None)) != models['parent_identity']:
+                       getattr(args, 'policy_record', None), decision_path) != models['parent_identity']:
         raise ValueError("the candidate was not trained on the parent's self-play")
     models['candidate_mode'] = mode
     record = getattr(args, 'policy_record', None)
     models['fallback_policy_record_sha256'] = _file_sha(Path(record)) if mode == FALLBACK else None
     models['champion_record_sha256'] = check_parent(args.cycle, models['parent_identity'],
                                                     getattr(args, 'champion', None), args.allow_stand_in)
+    models['recipe_decision_sha256'] = None
+    if mode == VALUE_ONLY:
+        models['recipe_decision_sha256'] = check_decision_context(decision_path, args.cycle, models)
     if need_frozen_policy:
         if args.frozen_policy is None:
             raise ValueError('this arm needs --frozen-policy (the H3 policy of the H5 opponent)')
@@ -624,13 +662,27 @@ def check_models(args, need_frozen_policy: bool) -> dict:
     return models
 
 
+def check_decision_context(path, cycle: int, models: dict) -> str:
+    """The recipe decision names this cycle's parent, champion record and Arena seed; returns its SHA-256."""
+    from hybrid import h7c_recipe
+
+    decision, sha = h7c_recipe.load(path, cycle)
+    if decision['parent'] != models['parent_identity']:
+        raise ValueError(f'{path}: another parent than this cycle\'s')
+    if decision['champion_record_sha256'] != models['champion_record_sha256']:
+        raise ValueError(f'{path}: another champion record than --champion')
+    if decision['seeds']['arena'] != arena_seed(cycle):
+        raise ValueError(f"{path}: Arena seed {decision['seeds']['arena']}, the cycle's is {arena_seed(cycle)}")
+    return sha
+
+
 def play(args, log=print) -> dict:
     git = _git()
     if git['dirty'] is not False and not args.allow_dirty:
         raise ValueError('the tree is dirty (or git is unavailable): Arena games must name their code commit')
     models = check_models(args, ARMS[args.arm]['opponent'] == 'v8:puct_policy')
-    if models['candidate_mode'] == FALLBACK and args.arm in FALLBACK_ARMS:
-        raise ValueError(f'{args.arm} is {FALLBACK_ARMS[args.arm]} in a {FALLBACK} cycle: not played')
+    if models['candidate_mode'] in PARENT_POLICY_MODES and args.arm in FALLBACK_ARMS:
+        raise ValueError(f"{args.arm} is {FALLBACK_ARMS[args.arm]} in a {models['candidate_mode']} cycle: not played")
     identity = run_identity(args.arm, args.cycle, models, args.device, git)
     sig = signature(identity)
     tasks, openings = build_tasks(args.arm, args.cycle, getattr(args, 'pairs', None))
@@ -674,7 +726,8 @@ def tactical(args, log=print) -> dict:
            'candidate': models['candidate_identity'], 'parent': models['parent_identity'],
            'champion_record_sha256': models['champion_record_sha256'],
            'candidate_mode': models['candidate_mode'],
-           'fallback_policy_record_sha256': models['fallback_policy_record_sha256'], 'rule_version': TACTICAL_RULE,
+           'fallback_policy_record_sha256': models['fallback_policy_record_sha256'],
+           'recipe_decision_sha256': models['recipe_decision_sha256'], 'rule_version': TACTICAL_RULE,
            'files': {'value_probes': _file_sha(PROBE_FILE), 'fresh_probes': _file_sha(FRESH_PROBES),
                      'policy_probes': _file_sha(POLICY_PROBES), 'e1_manifest': _file_sha(E1_MANIFEST)}}
     for name in ('candidate', 'parent'):
@@ -732,7 +785,7 @@ def verdict(args) -> dict:
     if len(modes) != 1:
         raise ValueError(f'the arms were played in different candidate modes: {sorted(modes)}')
     mode = modes.pop()
-    expected = set(ARMS) - (set(FALLBACK_ARMS) if mode == FALLBACK else set())
+    expected = set(ARMS) - (set(FALLBACK_ARMS) if mode in PARENT_POLICY_MODES else set())
     if set(arms) != expected:
         raise ValueError(f'{mode} needs exactly the arms {sorted(expected)}, got {sorted(arms)}')
     tact = _json(args.tactical)
@@ -741,14 +794,15 @@ def verdict(args) -> dict:
                          f'verdicts from cycle 2 on need {TACTICAL_RULE}')
     if tact['cycle'] < FALLBACK_FROM_CYCLE:
         raise ValueError('cycle 1 is historical and immutable: its verdict is not made again')
-    key = ('cycle', 'candidate', 'parent', 'champion_record_sha256', 'fallback_policy_record_sha256')
+    key = ('cycle', 'candidate', 'parent', 'champion_record_sha256', 'fallback_policy_record_sha256',
+           'recipe_decision_sha256')
     shared = {json.dumps([r['identity'].get(k) for k in key] + [r['identity']['git']['commit'],
                          r['identity'].get('candidate_mode', JOINT)], sort_keys=True) for r in arms.values()}
     shared.add(json.dumps([tact.get(k) for k in key] + [tact['git']['commit'], tact.get('candidate_mode', JOINT)],
                           sort_keys=True))
     if len(shared) != 1:
-        raise ValueError('the arm and tactical records differ in cycle, commit, candidate, parent, champion record '
-                         'or candidate mode')
+        raise ValueError('the arm and tactical records differ in cycle, commit, candidate, parent, champion record, '
+                         'recipe decision or candidate mode')
     cycle = tact['cycle']
     official = arms['official']['summary']
     invalid_pairs = official['opponent_illegal_pairs']
@@ -765,7 +819,8 @@ def verdict(args) -> dict:
                        'regressions_reported': tact['judge']['regressions_reported']}
     out = {'format': f'{FORMAT}-verdict', 'cycle': cycle, 'seed': arena_seed(cycle),
            'git_commit': tact['git']['commit'], 'candidate_mode': mode,
-           'fallback_policy_record_sha256': tact.get('fallback_policy_record_sha256'), 'candidate': tact['candidate'],
+           'fallback_policy_record_sha256': tact.get('fallback_policy_record_sha256'),
+           'recipe_decision_sha256': tact.get('recipe_decision_sha256'), 'candidate': tact['candidate'],
            'parent': tact['parent'],
            'champion_record_sha256': tact['champion_record_sha256'],
            'official': {**{k: official[k] for k in ('score', 'score_ci95', 'improvement', 'improvement_ci95', 'elo',
@@ -773,7 +828,7 @@ def verdict(args) -> dict:
                         'valid': not invalid_pairs, 'opponent_illegal_pairs': invalid_pairs},
            'tactical': tactical_record,
            'monitoring': {a: _brief(arms[a]['summary']) for a in ARMS if ARMS[a]['role'] == 'monitoring'},
-           'diagnosis': {a: FALLBACK_ARMS[a] if mode == FALLBACK else _brief(arms[a]['summary'])
+           'diagnosis': {a: FALLBACK_ARMS[a] if mode in PARENT_POLICY_MODES else _brief(arms[a]['summary'])
                          for a in ARMS if ARMS[a]['role'] == 'diagnosis'},
            'fingerprints': {a: arms[a]['fingerprint'] for a in sorted(arms)},
            'arm_sha256': arm_sha,
@@ -789,7 +844,15 @@ def no_candidate(args) -> dict:
     """The record of a cycle whose policy or value training gave no candidate: no Arena, the champion stays."""
     from analysis import tb_v3_net
 
-    records = {'policy': _json(args.policy_record), 'value': _json(args.value_record)}
+    decision_path = getattr(args, 'recipe_decision', None)
+    if decision_path is not None:  # a VALUE_ONLY cycle: no policy training, the value record alone
+        if args.policy_record is not None:
+            raise ValueError(f'{VALUE_ONLY} trains no policy: no --policy-record')
+        records = {'value': _json(args.value_record)}
+    elif args.policy_record is None:
+        raise ValueError('--policy-record is required (or --recipe-decision for a VALUE_ONLY cycle)')
+    else:
+        records = {'policy': _json(args.policy_record), 'value': _json(args.value_record)}
     parent = tb_v3_net.model_identity(args.parent_policy, args.parent_value)
     for name, record in records.items():
         if record.get('cycle') != args.cycle:
@@ -803,10 +866,17 @@ def no_candidate(args) -> dict:
         raise ValueError(f'policy NO_CANDIDATE with a value candidate: run the {FALLBACK} Arena (parent policy + '
                          'the new value), not a no-candidate record')
     champion = check_parent(args.cycle, parent, args.champion, args.allow_stand_in)
+    decision_sha = None
+    if decision_path is not None:
+        decision_sha = check_decision_context(decision_path, args.cycle, {'parent_identity': parent,
+                                                                          'champion_record_sha256': champion})
+        if records['value'].get('inputs', {}).get('recipe_decision_sha256') != decision_sha:
+            raise ValueError('the value training record was not made under this recipe decision')
+    paths = {'policy': args.policy_record, 'value': args.value_record}
     out = {'format': f'{FORMAT}-verdict', 'cycle': args.cycle, 'seed': arena_seed(args.cycle),
            'git_commit': _git()['commit'], 'candidate': None, 'parent': parent, 'champion_record_sha256': champion,
-           'training': {'verdicts': verdicts, 'record_sha256': {'policy': _file_sha(args.policy_record),
-                                                                'value': _file_sha(args.value_record)}},
+           'candidate_mode': VALUE_ONLY if decision_path is not None else JOINT, 'recipe_decision_sha256': decision_sha,
+           'training': {'verdicts': verdicts, 'record_sha256': {name: _file_sha(paths[name]) for name in records}},
            'official': None, 'tactical': {'verdict': None},
            'promotion': {'rule': PROMOTION, 'decision': 'KEEP_CHAMPION', 'reason': 'NO_CANDIDATE',
                          'improvement_lower': None, 'next_parent': 'parent'},
@@ -832,9 +902,11 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument('--parent-value', type=Path, required=True)
         p.add_argument('--champion', type=Path, help='cycle c > 1: the verdict of cycle c - 1 (names the parent)')
         p.add_argument('--candidate-mode', choices=CANDIDATE_MODES, default=JOINT,
-                       help=f'{FALLBACK}: policy NO_CANDIDATE, value CANDIDATE (cycle >= {FALLBACK_FROM_CYCLE}); the '
+                       help=f'{FALLBACK}: policy NO_CANDIDATE, value CANDIDATE (cycle >= {FALLBACK_FROM_CYCLE}); '
+                            f'{VALUE_ONLY}: a value-only recipe (cycle >= 3, --recipe-decision); in both the '
                             'candidate policy is the parent policy')
         p.add_argument('--policy-record', type=Path, help=f"{FALLBACK}: the policy training's record.json")
+        p.add_argument('--recipe-decision', type=Path, help=f"{VALUE_ONLY}: the cycle's recipe decision")
         p.add_argument('--device', default='cuda', help='value device (cuda canonical; cpu certified)')
         p.add_argument('--workers', type=int, default=1)
         p.add_argument('--output', type=Path, required=True)
@@ -850,7 +922,8 @@ def build_parser() -> argparse.ArgumentParser:
     v.add_argument('--output', type=Path, required=True)
     n = sub.add_parser('no-candidate')
     n.add_argument('--cycle', type=int, required=True)
-    n.add_argument('--policy-record', type=Path, required=True, help="the policy training's record.json")
+    n.add_argument('--policy-record', type=Path, help="the policy training's record.json (not in a VALUE_ONLY cycle)")
+    n.add_argument('--recipe-decision', type=Path, help=f"{VALUE_ONLY}: the cycle's recipe decision")
     n.add_argument('--value-record', type=Path, required=True, help="the value training's record.json")
     n.add_argument('--parent-policy', type=Path, required=True)
     n.add_argument('--parent-value', type=Path, required=True)

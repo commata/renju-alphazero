@@ -297,6 +297,67 @@ class CliTest(unittest.TestCase):
                              (2, manifest['labels_sha256']))
             self.assertEqual(meta2['parent_value_checkpoint_sha256'], tr.file_sha256(c1_value))
 
+    def test_value_cli_under_a_recipe_decision(self):
+        """A VALUE_ONLY cycle: the decision fixes config, parent, anchor and self-play seed; its SHA is recorded."""
+        from analysis import tb_v3_net
+        from hybrid.h6_labels import game_rows
+        from hybrid.h6_value_cache import build_value_cache
+        from scripts import h7c_train_value as tv
+        from scripts.h7c_labels import write_atomic
+        from tests.test_tb_v3_net import write_models
+
+        quiet = lambda *a, **k: None  # noqa: E731
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy, value = write_models(tmp)
+            replay_rows = []
+            for g in range(30):
+                replay_rows += game_rows({'id': f'renjunet:{g}', 'moves': random_game(500 + g, 12), 'winner': 1,
+                                          'real_draw': False}, source='renjunet', split='val' if g < 4 else 'train',
+                                         outcome_weight=0.1, from_ply=3)
+            write_atomic({tmp / 'replay_rows.jsonl.gz': [r.to_dict() for r in replay_rows]})
+            manifest = build_value_cache(tmp / 'replay_rows.jsonl.gz', tmp / 'replay_cache', progress_seconds=1e9)
+            meta = json.loads(value.with_name('best.json').read_text(encoding='utf-8'))
+            value.with_name('best.json').write_text(json.dumps({**meta, 'labels_sha256': manifest['labels_sha256']}),
+                                                    encoding='utf-8')
+            rows, cache = cycle_value_rows(tmp, 'c3', policy, value, cycle=3)  # run seed 8801 (the fixture's)
+            config = tmp / 'value.json'
+            config.write_text(json.dumps({'batch_size': 16, 'epochs': 1.0, 'evaluations': 2, 'h6_guard_ratio': 100.0}),
+                              encoding='utf-8')
+            decision = {'format': 'h7c-recipe-decision-v1', 'cycle': 3, 'recipe': 'VALUE_ONLY',
+                        'candidate_mode': 'VALUE_ONLY', 'parent': tb_v3_net.model_identity(policy, value),
+                        'champion_record_sha256': 'c' * 64, 'policy': {'action': 'freeze_parent', 'training': False},
+                        'value': {'config_sha256': tr.file_sha256(config),
+                                  'replay_anchor_labels_sha256': manifest['labels_sha256']},
+                        'retarget': False, 'seeds': {'selfplay_run_seed': 8801, 'arena': 8733, 'x2': 8713}}
+            path = tmp / 'decision.json'
+
+            def write(**changes):
+                path.write_text(json.dumps({**decision, **changes}), encoding='utf-8')
+                return path
+
+            args = argparse.Namespace(cycle=3, config=config, cycle_cache=cache, cycle_rows=rows,
+                                      replay_cache=tmp / 'replay_cache', parent=value, device='cpu',
+                                      out_dir=tmp / 'out', allow_dirty=True, allow_stand_in=True,
+                                      recipe_decision=write())
+            record = tv.run(args, log=quiet)
+            sha = tr.file_sha256(path)
+            self.assertEqual(record['inputs']['recipe_decision_sha256'], sha)
+            self.assertEqual(json.loads((tmp / 'out' / 'best.json').read_text())['recipe_decision_sha256'], sha)
+            bad = {'config': {'value': {**decision['value'], 'config_sha256': 'e' * 64}},
+                   'anchor': {'value': {**decision['value'], 'replay_anchor_labels_sha256': 'e' * 64}},
+                   'self-play seed': {'seeds': {**decision['seeds'], 'selfplay_run_seed': 8803}},
+                   'parent': {'parent': {**decision['parent'], 'value_checkpoint_sha256': 'e' * 64}},
+                   'cycle': {'cycle': 4}, 'recipe': {'recipe': 'JOINT'}, 'retarget': {'retarget': True}}
+            for i, (name, change) in enumerate(bad.items()):
+                with self.subTest(name), self.assertRaises(ValueError):
+                    tv.run(argparse.Namespace(**{**vars(args), 'out_dir': tmp / f'o{i}',
+                                                 'recipe_decision': write(**change)}), log=quiet)
+            write()
+            plain = tv.run(argparse.Namespace(**{**vars(args), 'out_dir': tmp / 'plain', 'recipe_decision': None}),
+                           log=quiet)
+            self.assertIsNone(plain['inputs']['recipe_decision_sha256'])
+
     def test_policy_cli(self):
         from scripts import h7c_train_policy as tp
         from scripts.h7c_labels import write_atomic
