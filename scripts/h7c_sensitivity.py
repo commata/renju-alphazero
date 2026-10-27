@@ -22,6 +22,10 @@ is a diagnosis of their behaviour, not a bound on what another value model, targ
         --compare c5:orig --compare c8:c5 --device cuda --workers 6 \\
         --jsonl runs/h7c/sensitivity/c8_sample.jsonl --output docs/h7c/b2/sensitivity_c8.json
 
+``--sample-file`` (H7C-NMASK-1's confirmatory sample, ``hybrid.h7c_nmask.SAMPLE_FORMAT``): the listed games in
+their listed order instead of the salted first ``--games-sample``; the file's SHA-256 and its rule go into the
+identity. Without it, the identity is the one above (E2 records stay reproducible).
+
 Resume: rerun the same command (finished games in ``--jsonl`` are kept; another identity is refused). A dirty tree
 is refused (``--allow-dirty`` only for tests).
 """
@@ -266,6 +270,22 @@ def check_replay(record: dict, games: dict, models: dict, actor: str) -> None:
 
 # --- the run -----------------------------------------------------------------------------------------------------
 
+def fixed_sample(games: list[dict], path, games_sha: str) -> list[dict]:
+    """The games a sample file lists (``hybrid.h7c_nmask``), each once, all from this self-play file."""
+    import h7c_labels as lab
+    from hybrid import h7c_nmask as nm
+
+    listed = json.loads(Path(path).read_text(encoding='utf-8'))
+    nm.check_sample(listed)
+    if listed['selfplay_jsonl_sha256'] != games_sha:
+        raise ValueError(f'{path} is a sample of another self-play file')
+    by_id = {lab.game_id(g): g for g in games}
+    missing = [i for i in listed['game_ids'] if i not in by_id]
+    if missing:
+        raise ValueError(f'{path}: {len(missing)} listed games are not in the self-play file, e.g. {missing[0]}')
+    return [by_id[i] for i in listed['game_ids']]
+
+
 def run(args, log=print) -> dict:
     import h7c_labels as lab
     import h7c_selfplay as sp
@@ -273,7 +293,12 @@ def run(args, log=print) -> dict:
     from h7c_arena import _git
     from hybrid import h7c_retarget as hr
 
-    if args.games_sample <= 0 or args.workers <= 0:
+    sample_file = getattr(args, 'sample_file', None)
+    if sample_file is not None and args.games_sample is not None:
+        raise ValueError('--sample-file fixes the sample: no --games-sample')
+    if args.games_sample is None and sample_file is None:
+        args.games_sample = GAMES_SAMPLE
+    if (sample_file is None and args.games_sample <= 0) or args.workers <= 0:
         raise ValueError('--games-sample and --workers must be positive')
     git = _git()
     if git['dirty'] is not False and not args.allow_dirty:
@@ -299,7 +324,10 @@ def run(args, log=print) -> dict:
     actors = [name for name, ident in identities.items() if ident == selfplay['models']]
     if len(actors) != 1:
         raise ValueError('exactly one --model must be the self-play actor (the reproduction check)')
-    sample = sample_games(games, args.games_sample)
+    if sample_file is None:
+        sample = sample_games(games, args.games_sample)
+    else:
+        sample = fixed_sample(games, sample_file, games_sha)
     by_index = {g['game_index']: g for g in sample}
     ids = [lab.game_id(g) for g in sample]
     identity = {'format': FORMAT, 'salt': SALT, 'selfplay_jsonl_sha256': games_sha,
@@ -307,6 +335,8 @@ def run(args, log=print) -> dict:
                 'sample_sha256': hashlib.sha256(json.dumps(ids).encode()).hexdigest(), 'models': identities,
                 'engine_hash': tb_v3.ENGINE_HASH, 'runtime_hash': selfplay['runtime_hash'], 'device': args.device,
                 'git': git}
+    if sample_file is not None:
+        identity['sample_file'] = {'sha256': _sha(sample_file), 'rule': 'the listed games, in the listed order'}
     finished = sp.load_finished(Path(args.jsonl), {'identity': identity}, log=log)
     for record in finished.values():
         check_replay(record, by_index, models, actors[0])
@@ -342,7 +372,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--evidence', type=Path, required=True, help="the cycle's evidence manifest")
     parser.add_argument('--model', action='append', required=True, help='NAME=POLICY,VALUE (repeat)')
     parser.add_argument('--compare', action='append', required=True, help='A:B (repeat)')
-    parser.add_argument('--games-sample', type=int, default=GAMES_SAMPLE)
+    parser.add_argument('--games-sample', type=int, help=f'the salted first N games (default {GAMES_SAMPLE})')
+    parser.add_argument('--sample-file', type=Path, help='a fixed sample (hybrid.h7c_nmask SAMPLE_FORMAT) instead')
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--workers', type=int, default=6)
     parser.add_argument('--jsonl', type=Path, required=True)

@@ -26,6 +26,11 @@ Value (``train_value``), from the parent value checkpoint (c1: the frozen H6 v3)
                from its val set (train < val), and the check is repeated after
     selection  objective = mean of the two val weighted MSE (only the H6 one if the cycle val set is empty); eligible = H6 val weighted MSE at most
                ``h6_guard_ratio`` (1.05) times the parent's; best = the eligible evaluation with the lowest objective
+    mask       (``cycle_keep``, H7C-NMASK-1 only; docs/h7-c1.md) a fixed 0 / 1 factor k_i per cycle row (replay rows
+               k = 1): batch loss  sum_i k_i w_i (v_i - t_i)^2 / sum_i w_i  over the same batch, the denominator the
+               batch's original weights (a removed row's contribution is not given to the others); the cycle val
+               metric the same with the effective val set's original weights; without ``cycle_keep`` the code path
+               and every number are the unmasked recipe's
 Source (``policy_rows_source`` / ``value_rows_source``): the label rows of one cycle carry the four model SHA-256 of
 the self-play that made them (``h7c_provenance``); both trainers require them to be one model pair whose policy
 (value) is the trainer's ``--parent``, and every game id to be of this cycle.
@@ -391,7 +396,8 @@ def union_masks(cycle: dict[str, dict], replay: dict[str, dict]) -> tuple[dict, 
 
 
 def mixed_epoch(cycle_train: dict, replay_train: dict, epoch: int, seed: int) -> dict[str, torch.Tensor]:
-    """All cycle train rows and as many replay train rows (without replacement), shuffled: 50 : 50 by source."""
+    """All cycle train rows and as many replay train rows (without replacement), shuffled: 50 : 50 by source.
+    A cycle ``keep`` factor (the mask) travels with its rows; replay rows get 1."""
     n = cycle_train['value'].shape[0]
     m = replay_train['value'].shape[0]
     if m < n:
@@ -400,13 +406,45 @@ def mixed_epoch(cycle_train: dict, replay_train: dict, epoch: int, seed: int) ->
     pick = torch.randperm(m, generator=generator)[:n].sort().values
     keys = ('black', 'white', 'legal', 'last', 'ply', 'value', 'weight', 'kind')
     merged = {k: torch.cat([cycle_train[k], replay_train[k][pick]]) for k in keys}
+    if 'keep' in cycle_train:
+        merged['keep'] = torch.cat([cycle_train['keep'], torch.ones(n, dtype=cycle_train['keep'].dtype)])
     merged['source'] = torch.cat([torch.zeros(n, dtype=torch.int8), torch.ones(n, dtype=torch.int8)])
     order = torch.randperm(2 * n, generator=generator)
     return {k: v[order] for k, v in merged.items()}
 
 
-def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[str, dict], log=print) -> dict:
-    """Continue the value head of ``parent`` (trunk and policy head frozen); the run record and the best state."""
+def masked_wmse(value: torch.Tensor, target: torch.Tensor, weight: torch.Tensor, keep: torch.Tensor) -> torch.Tensor:
+    """``sum k w (v - t)^2 / sum w``: removed rows add nothing, the denominator stays the original weights."""
+    return (keep * weight * (value - target).square()).sum() / weight.sum()
+
+
+@torch.no_grad()
+def masked_metric(model, data: dict, device, batch_size: int = 4096) -> dict:
+    """The masked weighted MSE of a (val) set with a ``keep`` factor, and its kept / original weights."""
+    from .h6_value_cache import planes_from_value_cache
+    from .h6_value_train import value_forward
+
+    was = model.value_head.training
+    model.value_head.eval()
+    n = data['value'].shape[0]
+    num, den, kept = 0.0, 0.0, 0.0
+    for start in range(0, n, batch_size):
+        index = torch.arange(start, min(n, start + batch_size))
+        planes, target, weight = planes_from_value_cache(data, index, device)
+        keep = data['keep'][index].to(device)
+        v = value_forward(model, planes).float()
+        num += float((keep * weight * (v - target).square()).sum())
+        den += float(weight.sum())
+        kept += float((keep * weight).sum())
+    model.value_head.train(was)
+    return {'rows': n, 'kept_rows': int(data['keep'].sum()) if n else 0, 'weight': den, 'kept_weight': kept,
+            'masked_wmse': num / den if den else None}
+
+
+def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[str, dict], log=print,
+                cycle_keep: dict[str, torch.Tensor] | None = None) -> dict:
+    """Continue the value head of ``parent`` (trunk and policy head frozen); the run record and the best state.
+    ``cycle_keep`` (split -> bool per cycle cache row): the H7C-NMASK-1 loss and cycle val metric (module docstring)."""
     from .h3_train import d4_tables
     from .h6_value_train import (augment_planes, evaluate, freeze, frozen_state, state_sha256, value_forward,
                                  weighted_mse)
@@ -417,10 +455,21 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
     params = freeze(model)
     frozen = state_sha256(frozen_state(model))
     optimizer = torch.optim.AdamW(params, lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
+    masked = cycle_keep is not None
+    if masked:
+        cycle = dict(cycle)
+        for split in ('train', 'val'):
+            keep = cycle_keep.get(split)
+            if not isinstance(keep, torch.Tensor) or keep.dtype != torch.bool or \
+                    keep.shape != cycle[split]['value'].shape:
+                raise ValueError(f'the {split} mask is not one bool per cycle {split} row')
+            cycle[split] = {**cycle[split], 'keep': keep.float()}
     cycle, replay, dropped = union_masks(cycle, replay)
     n = 2 * cycle['train']['value'].shape[0]
     if n == 0:
         raise ValueError('no cycle value train rows')
+    if masked and not float((cycle['train']['keep'] * cycle['train']['weight']).sum()) > 0:
+        raise ValueError('the mask leaves no cycle train row with weight')
     per_epoch = math.ceil(n / cfg.batch_size)
     total = max(1, round(cfg.epochs * per_epoch))
     warm = warmup_steps(total)
@@ -432,6 +481,9 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
 
     def val_metrics():
         a, b = evaluate(model, cycle['val'], device), evaluate(model, replay['val'], device)
+        if masked:  # the selection metric of the mask: the masked cycle val WMSE (the unmasked one kept beside it)
+            a = {**a, 'original_weighted_mse': a['weighted_mse'], 'masked': masked_metric(model, cycle['val'], device)}
+            a['weighted_mse'] = a['masked']['masked_wmse']
         parts = [x['weighted_mse'] for x in (a, b) if x['weighted_mse'] is not None]  # an empty cycle val: H6 only
         return {'cycle_val': a, 'replay_val': b, 'objective': sum(parts) / len(parts)}
 
@@ -444,11 +496,21 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
                                                        'cycle_val': base['cycle_val']['all'],
                                                        'replay_val': base['replay_val']['all']},
               'frozen_state_sha256': frozen, 'evaluations': []}
+    if masked:
+        record['parent_val']['cycle_wmse_original'] = base['cycle_val']['original_weighted_mse']
+        record['mask'] = {'zero_cycle_weight_batches': 0, 'batches_without_cycle_rows': 0, 'epochs': [],
+                          'loss': 'sum_i k_i w_i (v_i - t_i)^2 / sum_i w_i (batch; original weights)'}
     best, best_state, step, epoch = None, None, 0, 0
     generator = torch.Generator().manual_seed(cfg.seed)
     while step < total:
         data = mixed_epoch(cycle['train'], replay['train'], epoch, cfg.seed)
         epoch += 1
+        if masked:
+            cyc = data['source'] == 0
+            record['mask']['epochs'].append({
+                'cycle_weight': float(data['weight'][cyc].double().sum()),
+                'cycle_kept_weight': float((data['weight'] * data['keep'])[cyc].double().sum()),
+                'replay_weight': float(data['weight'][~cyc].double().sum())})
         for start in range(0, n, cfg.batch_size):
             if step >= total:
                 break
@@ -459,8 +521,19 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
                 planes = augment_planes(planes, sym, src)
             for group in optimizer.param_groups:
                 group['lr'] = cfg.learning_rate * lr_factor(step, total, warm, cfg.min_lr_ratio)
-            loss = weighted_mse(value_forward(model, planes), data['value'][index].to(device),
-                                data['weight'][index].to(device))
+            if masked:
+                keep, cyc = data['keep'][index].to(device), (data['source'][index] == 0).to(device)
+                if not bool(cyc.any()):
+                    record['mask']['batches_without_cycle_rows'] += 1
+                elif not float((keep * data['weight'][index].to(device))[cyc].sum()) > 0:
+                    record['mask']['zero_cycle_weight_batches'] += 1  # the cycle term is 0, the replay term is not
+                loss = masked_wmse(value_forward(model, planes), data['value'][index].to(device),
+                                   data['weight'][index].to(device), keep)
+                if not torch.isfinite(loss):
+                    raise ValueError(f'step {step}: the masked loss is not finite')
+            else:
+                loss = weighted_mse(value_forward(model, planes), data['value'][index].to(device),
+                                    data['weight'][index].to(device))
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             optimizer.step()
@@ -471,6 +544,10 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
                 entry = {'step': step, 'objective': m['objective'], 'cycle_wmse': m['cycle_val']['weighted_mse'],
                          'replay_wmse': m['replay_val']['weighted_mse'], 'eligible': eligible,
                          'cycle_val': m['cycle_val']['all'], 'replay_val': m['replay_val']['all']}
+                if masked:  # cycle_wmse is the masked metric here; the unmasked one beside it, never mixed
+                    entry['cycle_wmse_original'] = m['cycle_val']['original_weighted_mse']
+                    if not math.isfinite(m['objective']):
+                        raise ValueError(f'step {step}: the masked objective is not finite')
                 record['evaluations'].append(entry)
                 log(f"[h7c-value] step {step}/{total} objective {m['objective']:.5f} (cycle "
                     f"{entry['cycle_wmse']}, H6 {entry['replay_wmse']:.5f}){'' if eligible else ' NOT eligible'}",
@@ -481,7 +558,10 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
         raise RuntimeError('the trunk or policy head changed during value training')
     record['best'] = best
     record['verdict'] = 'CANDIDATE' if best is not None else 'NO_CANDIDATE'
-    return {'record': record, 'state': best_state}
+    out = {'record': record, 'state': best_state}
+    if masked:
+        out['val_sets'] = {'cycle': cycle['val'], 'replay': replay['val']}
+    return out
 
 
 def config_dict(cfg) -> dict:
