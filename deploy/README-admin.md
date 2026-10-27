@@ -167,7 +167,7 @@ ExecStart에 `--export-dir <path> --export-keep <N>`을 지정한다. 기존 `re
 ## 로컬 검증
 
 ```bash
-python -m unittest tests.test_web_admin tests.test_web_admin_games tests.test_web_admin_statistics tests.test_web_admin_exports -v
+PYTHONPATH=src python -m unittest tests.test_web_admin tests.test_web_admin_games tests.test_web_admin_statistics tests.test_web_admin_exports -v
 for f in web/admin/*.js; do node --check "$f"; done
 ```
 
