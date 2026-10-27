@@ -1,0 +1,45 @@
+{
+ "format": "h7c-adjudicate-check-v1-manifest",
+ "code_git": {
+  "commit": "f0b0022c46ef303f4a26b5f5936d0e4bac9374c3",
+  "dirty": false
+ },
+ "verdict": "PASS",
+ "files_sha256": {
+  "runs/h7c/e2_adjudicate/branches.jsonl": "d97a660e42f6d09af46ff18e364742e8f4fde14f39f66a666bb0729fee6e9793",
+  "runs/h7c/e2_adjudicate/run.log": "6d26333d9dcc2a2a81a041ce265911583cf6894ebeeabfb033763f81187ec846"
+ },
+ "document_files_sha256": {
+  "docs/h7c/e2_adjudicate_check/check.json": "2221c8a215ef65087f3d2f8f468dd7d511f91d5f0908005ababad9ae2225cb1f"
+ },
+ "inputs_sha256": {
+  "adjudication_sha256": "ee5b7951221c8fada106ca9f0609e2ed48b581d2952aef035e2c15cbf4bb82ad",
+  "adjudication_manifest_sha256": "073b30f75e2f094cc7ef0e351749708045ec51c574bdfc80656f4bfa54147dd1",
+  "branches_jsonl_sha256": "d97a660e42f6d09af46ff18e364742e8f4fde14f39f66a666bb0729fee6e9793",
+  "v1_inputs": {
+   "manifest": "2e513f45e0249844fe33d7cde1143bce3be3036b2ef1bb6cae8729658bda834b",
+   "summary": "043b06c6b62f01cfb32a928499d1cbe7507fbedf01ed4c761c87c111031bbea6",
+   "sensitivity_jsonl": "1aa768d668a29b0bbfa46aab850afe16d239981d278bf837669b87bf2f735165",
+   "selfplay": "ca91d706299c5d0729f69fd3372f790812181258e49ebcac2d8bb1f944cc7831",
+   "verdict": "3fabf6bdce7fc455217de4fd5cf1de2e72ba7b6ac8f536265405666bb761c10a"
+  },
+  "v1_code": {
+   "scripts/h7c_adjudicate.py": {
+    "recorded": "3951a0d638b403f440b48ad070b86db2cb22ff767a447c49023b3b1bba26c304",
+    "checkout": "3951a0d638b403f440b48ad070b86db2cb22ff767a447c49023b3b1bba26c304"
+   },
+   "src/renju/game.py": {
+    "recorded": "fc6154aef0884b6a8cbc5337b335c92e61849dc72ae9eb28072b8983e3ae032f",
+    "checkout": "fc6154aef0884b6a8cbc5337b335c92e61849dc72ae9eb28072b8983e3ae032f"
+   },
+   "src/renju/rules.py": {
+    "recorded": "078450600f0aaceecc532a7086a4915d5d5ce29da972991e20e5b331d9b09f7e",
+    "checkout": "078450600f0aaceecc532a7086a4915d5d5ce29da972991e20e5b331d9b09f7e"
+   },
+   "src/agents/external_engine.py": {
+    "recorded": "11240430ec0363ecc14e478f8b7d06bdbe6da9c9dc58cdad8c5d1b576b928ae2",
+    "checkout": "11240430ec0363ecc14e478f8b7d06bdbe6da9c9dc58cdad8c5d1b576b928ae2"
+   }
+  }
+ }
+}

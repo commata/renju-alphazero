@@ -1,0 +1,661 @@
+{
+ "format": "h7c-adjudicate-check-v1",
+ "meaning": "a read-only check of the v1 adjudication; descriptive, never a reading",
+ "shared": {
+  "inconsistent_positions": 0,
+  "c5:orig": {
+   "mirror": {
+    "observations": 70,
+    "better": 9,
+    "worse": 16,
+    "same": 45,
+    "invalid": 0,
+    "missing": 0,
+    "positions": 67,
+    "source_games": 39,
+    "observation_share": 0.29787
+   },
+   "only_here": {
+    "observations": 146,
+    "better": 15,
+    "worse": 16,
+    "same": 112,
+    "invalid": 3,
+    "missing": 0,
+    "positions": 142,
+    "source_games": 53,
+    "observation_share": 0.62128
+   },
+   "three_distinct": {
+    "observations": 19,
+    "better": 0,
+    "worse": 0,
+    "same": 17,
+    "invalid": 2,
+    "missing": 0,
+    "positions": 18,
+    "source_games": 11,
+    "observation_share": 0.08085
+   }
+  },
+  "c8:c5": {
+   "mirror": {
+    "observations": 70,
+    "better": 16,
+    "worse": 9,
+    "same": 45,
+    "invalid": 0,
+    "missing": 0,
+    "positions": 67,
+    "source_games": 39,
+    "observation_share": 0.33333
+   },
+   "only_here": {
+    "observations": 121,
+    "better": 17,
+    "worse": 13,
+    "same": 88,
+    "invalid": 3,
+    "missing": 0,
+    "positions": 118,
+    "source_games": 48,
+    "observation_share": 0.57619
+   },
+   "three_distinct": {
+    "observations": 19,
+    "better": 4,
+    "worse": 0,
+    "same": 13,
+    "invalid": 2,
+    "missing": 0,
+    "positions": 18,
+    "source_games": 11,
+    "observation_share": 0.09048
+   }
+  },
+  "shared_positions": 85,
+  "mirror_positions": 67,
+  "mirror_positions_same_both_ways": true,
+  "mirror_deltas_opposite": 67,
+  "documented": {
+   "shared_positions": 85,
+   "mirror_positions": 67
+  },
+  "documented_matches": true
+ },
+ "abnormal_end": {
+  "branches": 14,
+  "rows": [
+   {
+    "key": "a4e0241f7468b0fe84255200f937a2f6ddae65814c8fa4b35fd38b75a6807935",
+    "ply": 165,
+    "mover": "white",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 58,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 558,
+      "ply": 165,
+      "side": "c5"
+     }
+    ]
+   },
+   {
+    "key": "8e57a16349b4da01f30c39defaab00de7b25a9b2f1e90865fd38d0bf1148b292",
+    "ply": 170,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 53,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c8:c5",
+      "game_index": 558,
+      "ply": 170,
+      "side": "c5"
+     }
+    ]
+   },
+   {
+    "key": "750e320f85b81655c4edf7b2907c573b12ac9c8e93252fcb461e75be5855d5b0",
+    "ply": 170,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 53,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c8:c5",
+      "game_index": 558,
+      "ply": 170,
+      "side": "c8"
+     }
+    ]
+   },
+   {
+    "key": "0c9a7f2e7cebfa5a7be18517504b91d47341a1ff496bdc4b8e45a27b8961231d",
+    "ply": 136,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 87,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c8:c5",
+      "game_index": 824,
+      "ply": 136,
+      "side": "c8"
+     }
+    ]
+   },
+   {
+    "key": "bc158d89e81ce1dbc3edf1937f66f5eaa28aa90ff7c50a98b249be468429a4b3",
+    "ply": 132,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 91,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 824,
+      "ply": 132,
+      "side": "orig"
+     }
+    ]
+   },
+   {
+    "key": "849b14bb1de2cce168fc646a06835a4643058e35721860b4963a1161fb092d0e",
+    "ply": 136,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 87,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c8:c5",
+      "game_index": 824,
+      "ply": 136,
+      "side": "c5"
+     }
+    ]
+   },
+   {
+    "key": "169eb1d84cbe0f411a94abb6c71ec92fc8f8784db593d790633ecb9178a95e9c",
+    "ply": 158,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 65,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 824,
+      "ply": 158,
+      "side": "c5"
+     },
+     {
+      "compare": "c8:c5",
+      "game_index": 824,
+      "ply": 158,
+      "side": "c5"
+     }
+    ]
+   },
+   {
+    "key": "373bbd642d528c39a29bdc05a406d15bce72b6f86445b46fb15edddb3e19868e",
+    "ply": 109,
+    "mover": "white",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 114,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c8:c5",
+      "game_index": 435,
+      "ply": 109,
+      "side": "c5"
+     }
+    ]
+   },
+   {
+    "key": "abc6fed6c20fa10a2faa102eaca1edc0ffb6318e50f9b7f4765610105e745e8b",
+    "ply": 161,
+    "mover": "white",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 62,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 824,
+      "ply": 161,
+      "side": "c5"
+     }
+    ]
+   },
+   {
+    "key": "377dde763fb3d4f2402459a4bb6ab75345895f0c30c0df2be97e2ffb7abed707",
+    "ply": 161,
+    "mover": "white",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 62,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 824,
+      "ply": 161,
+      "side": "orig"
+     }
+    ]
+   },
+   {
+    "key": "d7113f61a266525a1db076af1bd15ceb7b61ab1814161d239af66e71b77d24a7",
+    "ply": 180,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 43,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 558,
+      "ply": 180,
+      "side": "orig"
+     }
+    ]
+   },
+   {
+    "key": "68e17041010e02672707dd7e40933e1b92002cce03adf1dde93f45cba2965702",
+    "ply": 180,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 43,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 558,
+      "ply": 180,
+      "side": "c5"
+     },
+     {
+      "compare": "c8:c5",
+      "game_index": 558,
+      "ply": 180,
+      "side": "c5"
+     }
+    ]
+   },
+   {
+    "key": "c50acd0d99198eeab535cea5d480e3687d751b0f5ee264498cd2c88de5c3b1ab",
+    "ply": 180,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 43,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c8:c5",
+      "game_index": 558,
+      "ply": 180,
+      "side": "c8"
+     }
+    ]
+   },
+   {
+    "key": "e5f5b36f0bf17f5c9f574e0033992690079bbd9d43d3f24f7f7b52ef196cd561",
+    "ply": 158,
+    "mover": "black",
+    "length": 224,
+    "to_play": "black",
+    "empty_points": 1,
+    "legal_moves": 0,
+    "black_forbidden_points": 1,
+    "continuation": 65,
+    "every_empty_point_black_forbidden": true,
+    "winner": null,
+    "over": true,
+    "observations": [
+     {
+      "compare": "c5:orig",
+      "game_index": 824,
+      "ply": 158,
+      "side": "orig"
+     }
+    ]
+   }
+  ]
+ },
+ "sensitivity_abnormal_end_as_draw": {
+  "meaning": "abnormal_end branches scored 0.5; reported only: the v1 reading stays as recorded",
+  "not_a_reading": true,
+  "comparisons": [
+   {
+    "comparison": "c8:c5",
+    "candidate": "c8",
+    "reference": "c5",
+    "observations": 210,
+    "source_games": 68,
+    "valid": 210,
+    "invalid": 0,
+    "missing": 0,
+    "invalid_share": 0.0,
+    "decisive": 59,
+    "decisive_games": 41,
+    "better": 37,
+    "worse": 22,
+    "better_share": 0.62712,
+    "same_result": {
+     "share": 0.71905,
+     "both_win": 33,
+     "both_draw": 88,
+     "both_loss": 30
+    },
+    "half_point_deltas": 17,
+    "mean_delta": 0.05476,
+    "better_share_bootstrap": {
+     "undefined_resamples": 0,
+     "ci95": [
+      0.5,
+      0.74194
+     ],
+     "ci975": [
+      0.47619,
+      0.75926
+     ]
+    },
+    "mean_delta_bootstrap": {
+     "undefined_resamples": 0,
+     "ci95": [
+      -0.01295,
+      0.12037
+     ],
+     "ci975": [
+      -0.02381,
+      0.12994
+     ]
+    },
+    "sensitivity_reading": "INCONCLUSIVE",
+    "sensitivity_reasons": [
+     "INTERVAL_CONTAINS_HALF"
+    ]
+   },
+   {
+    "comparison": "c5:orig",
+    "candidate": "c5",
+    "reference": "orig",
+    "observations": 235,
+    "source_games": 77,
+    "valid": 235,
+    "invalid": 0,
+    "missing": 0,
+    "invalid_share": 0.0,
+    "decisive": 56,
+    "decisive_games": 37,
+    "better": 24,
+    "worse": 32,
+    "better_share": 0.42857,
+    "same_result": {
+     "share": 0.7617,
+     "both_win": 37,
+     "both_draw": 95,
+     "both_loss": 47
+    },
+    "half_point_deltas": 15,
+    "mean_delta": -0.02766,
+    "better_share_bootstrap": {
+     "undefined_resamples": 0,
+     "ci95": [
+      0.31111,
+      0.53846
+     ],
+     "ci975": [
+      0.29412,
+      0.55769
+     ]
+    },
+    "mean_delta_bootstrap": {
+     "undefined_resamples": 0,
+     "ci95": [
+      -0.08239,
+      0.02304
+     ],
+     "ci975": [
+      -0.09259,
+      0.02928
+     ]
+    },
+    "sensitivity_reading": "INCONCLUSIVE",
+    "sensitivity_reasons": [
+     "INTERVAL_CONTAINS_HALF"
+    ]
+   }
+  ]
+ },
+ "v1_readings": {
+  "c8:c5": "INCONCLUSIVE",
+  "c5:orig": "INCONCLUSIVE"
+ },
+ "timing": {
+  "worker_seconds": {
+   "branches": 708,
+   "sum": 1036.7,
+   "mean": 1.46,
+   "median": 1.16,
+   "p90": 2.98,
+   "max": 5.79,
+   "note": "per branch, inside the worker (engine start to the end of the game)"
+  },
+  "run_log": {
+   "file_sha256": "6d26333d9dcc2a2a81a041ce265911583cf6894ebeeabfb033763f81187ec846",
+   "sessions": [
+    {
+     "done_before": 0,
+     "to_play": 708,
+     "last_progress": "708/708",
+     "elapsed_minutes": 4.3
+    }
+   ],
+   "pool_wall_minutes": 4.3,
+   "note": "progress lines: elapsed of the process pool, 0.1-minute resolution, input loading and the final statistics not included"
+  },
+  "parallelism": 4.02
+ },
+ "inputs": {
+  "adjudication_sha256": "ee5b7951221c8fada106ca9f0609e2ed48b581d2952aef035e2c15cbf4bb82ad",
+  "adjudication_manifest_sha256": "073b30f75e2f094cc7ef0e351749708045ec51c574bdfc80656f4bfa54147dd1",
+  "branches_jsonl_sha256": "d97a660e42f6d09af46ff18e364742e8f4fde14f39f66a666bb0729fee6e9793",
+  "v1_inputs": {
+   "manifest": "2e513f45e0249844fe33d7cde1143bce3be3036b2ef1bb6cae8729658bda834b",
+   "summary": "043b06c6b62f01cfb32a928499d1cbe7507fbedf01ed4c761c87c111031bbea6",
+   "sensitivity_jsonl": "1aa768d668a29b0bbfa46aab850afe16d239981d278bf837669b87bf2f735165",
+   "selfplay": "ca91d706299c5d0729f69fd3372f790812181258e49ebcac2d8bb1f944cc7831",
+   "verdict": "3fabf6bdce7fc455217de4fd5cf1de2e72ba7b6ac8f536265405666bb761c10a"
+  },
+  "v1_code": {
+   "scripts/h7c_adjudicate.py": {
+    "recorded": "3951a0d638b403f440b48ad070b86db2cb22ff767a447c49023b3b1bba26c304",
+    "checkout": "3951a0d638b403f440b48ad070b86db2cb22ff767a447c49023b3b1bba26c304"
+   },
+   "src/renju/game.py": {
+    "recorded": "fc6154aef0884b6a8cbc5337b335c92e61849dc72ae9eb28072b8983e3ae032f",
+    "checkout": "fc6154aef0884b6a8cbc5337b335c92e61849dc72ae9eb28072b8983e3ae032f"
+   },
+   "src/renju/rules.py": {
+    "recorded": "078450600f0aaceecc532a7086a4915d5d5ce29da972991e20e5b331d9b09f7e",
+    "checkout": "078450600f0aaceecc532a7086a4915d5d5ce29da972991e20e5b331d9b09f7e"
+   },
+   "src/agents/external_engine.py": {
+    "recorded": "11240430ec0363ecc14e478f8b7d06bdbe6da9c9dc58cdad8c5d1b576b928ae2",
+    "checkout": "11240430ec0363ecc14e478f8b7d06bdbe6da9c9dc58cdad8c5d1b576b928ae2"
+   }
+  }
+ },
+ "checks": {
+  "adjudication.json = the v1 manifest": {
+   "pass": true
+  },
+  "identity SHA-256 recomputed": {
+   "pass": true
+  },
+  "a full, clean run": {
+   "pass": true,
+   "limit": null,
+   "dirty": false
+  },
+  "v1 code at the recorded commit = this checkout": {
+   "pass": true,
+   "commit": "fcfb6c66cac0742a33d865e1fdfdf51e9509b43d",
+   "files": {
+    "scripts/h7c_adjudicate.py": true,
+    "src/renju/game.py": true,
+    "src/renju/rules.py": true,
+    "src/agents/external_engine.py": true
+   }
+  },
+  "branches.jsonl = the v1 manifest": {
+   "pass": true,
+   "actual": "d97a660e42f6d09af46ff18e364742e8f4fde14f39f66a666bb0729fee6e9793",
+   "manifest": "d97a660e42f6d09af46ff18e364742e8f4fde14f39f66a666bb0729fee6e9793"
+  },
+  "v1 inputs = the identity's": {
+   "pass": true,
+   "counts": {
+    "c8:c5": 210,
+    "c5:orig": 235
+   }
+  },
+  "branch list = the identity's": {
+   "pass": true,
+   "branches": 708
+  },
+  "every line complete": {
+   "pass": true,
+   "problems": []
+  },
+  "every record of this identity": {
+   "pass": true
+  },
+  "each branch once": {
+   "pass": true,
+   "duplicates": []
+  },
+  "exactly the branch list": {
+   "pass": true,
+   "missing": 0,
+   "extra": 0
+  },
+  "order / position / move / mover = the branch": {
+   "pass": true,
+   "mismatched": []
+  },
+  "every branch replays with Game": {
+   "pass": true,
+   "problems": {}
+  },
+  "comparisons reproduced": {
+   "pass": true
+  },
+  "overlap reproduced": {
+   "pass": true
+  },
+  "branch counts reproduced": {
+   "pass": true
+  },
+  "shared structure consistent": {
+   "pass": true
+  },
+  "abnormal_end = black to move, every empty point forbidden": {
+   "pass": true,
+   "problems": {}
+  }
+ },
+ "failed": [],
+ "verdict": "PASS",
+ "git": {
+  "commit": "f0b0022c46ef303f4a26b5f5936d0e4bac9374c3",
+  "dirty": false
+ }
+}
