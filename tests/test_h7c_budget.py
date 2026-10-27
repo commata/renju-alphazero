@@ -1,20 +1,29 @@
 """H7-c search-budget ablation (scripts/h7c_budget.py): budgets, seeds, the reading rule, real games and positions."""
 import argparse
+from functools import lru_cache
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
 from rt30 import fast5
+from renju import BLACK
 from scripts import h7c_arena as ar
 from scripts import h7c_budget as sb
 
 
+@lru_cache(None)
+def fake_tasks(k):
+    return {(t['pair'], 'black' if t['tested_color'] == BLACK else 'white'): t
+            for t in sb.build_tasks(k, sb.SATURATION['pairs'])}
+
+
 def fake_game(k, pair, color, result, tree=True):
+    task = fake_tasks(k)[pair, color]
     move = {'ply': 3, 'route': 'tree' if tree else 'stage2', 'seconds': 0.2 * k, 'tree_budget': 50 * k,
             'chose_prior_top': True, 'top_share': 0.5, 'visited_children': 4}
-    return {'key': f's{50 * k}/{sb.SEED}/{pair}/{color}', 'pair': pair, 'tested_color': color, 'result': result,
-            'length': 30, 'illegal': None, 'truncated': False, 'moves': [[7, 7], [pair, 0]], 'tested_moves': [move],
+    return {'key': task['key'], 'factor': k, 'seed': task['seed'], 'pair': pair, 'tested_color': color, 'result': result,
+            'length': 30, 'illegal': None, 'truncated': False, 'moves': task['opening'], 'tested_moves': [move],
             'seconds': {'tested': 0.2 * k, 'opponent': 0.2}}
 
 
@@ -68,6 +77,8 @@ class RuleTest(unittest.TestCase):
             policy, value = write_models(Path(tmp) / 'm', seed=3)
             verdict = Path(tmp) / 'verdict.json'
             verdict.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 8,
+                                           'promotion': {'decision': 'KEEP_CHAMPION'},
+                                           'parent': tb_v3_net.model_identity(policy, value),
                                            'next_champion': tb_v3_net.model_identity(policy, value)}))
             args = ns(policy_checkpoint=policy, value_checkpoint=value, champion=verdict, seed=8742)
             ident = sb.identity(args, 4, {'commit': 'abc', 'dirty': False})

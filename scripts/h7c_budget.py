@@ -158,6 +158,10 @@ def champion_models(path) -> tuple[dict, str]:
     record = json.loads(Path(path).read_text(encoding='utf-8'))
     if record.get('format') != f'{ar.FORMAT}-verdict' or not isinstance(record.get('next_champion'), dict):
         raise ValueError(f'{path} is not an Arena verdict with a next champion')
+    decision = (record.get('promotion') or {}).get('decision')
+    expected = record.get('candidate') if decision == 'PROMOTE' else record.get('parent')
+    if decision not in ('PROMOTE', 'KEEP_CHAMPION') or record['next_champion'] != expected:
+        raise ValueError(f'{path}: next champion does not follow its promotion decision')
     return record['next_champion'], ar._file_sha(Path(path))
 
 
@@ -392,12 +396,41 @@ def summarize_positions(results: list[dict]) -> dict:
 
 # --- summary -----------------------------------------------------------------------------------------------------
 
+def check_arm_games(record: dict) -> None:
+    """A summary cannot turn duplicate/misidentified/invalid matches into V9 entry evidence."""
+    ident, games = record['identity'], record['games']
+    factor, seed = ident['factor'], ident['seed']
+    if factor not in FACTORS or ident.get('budget') != budget(factor) or ident.get('opponent_budget') != budget(1):
+        raise ValueError('SB arm budgets are not the registered comparison')
+    allowed = CHAMPION_SEEDS if ident.get('champion_record_sha256') else (SEED,)
+    if seed not in allowed:
+        raise ValueError('SB arm seed does not match its champion/frozen-model mode')
+    pairs = len(games) // 2
+    if len(games) % 2 or pairs not in ((PAIRS, SATURATION['pairs']) if factor == 8 else (PAIRS,)):
+        raise ValueError('SB arm needs every registered pair exactly once')
+    tasks = {t['key']: t for t in build_tasks(factor, pairs, seed)}
+    seen = set()
+    for game in games:
+        key = game.get('key')
+        if key not in tasks or key in seen:
+            raise ValueError('SB arm has a duplicate or unexpected game')
+        seen.add(key)
+        task = tasks[key]
+        color = 'black' if task['tested_color'] == BLACK else 'white'
+        if (game.get('factor'), game.get('pair'), game.get('seed'), game.get('tested_color')) != (
+                factor, task['pair'], task['seed'], color) or game.get('moves', [])[:len(task['opening'])] != task['opening']:
+            raise ValueError('SB game seed, pair, color or opening differs from its identity')
+        if game.get('illegal') is not None or game.get('truncated') or game.get('result') not in ('win', 'draw', 'loss'):
+            raise ValueError('invalid SB game cannot establish budget help or saturation')
+
+
 def summary(args) -> dict:
     import h7c_arena as ar
 
     arms, arm_sha = {}, {}
     for path in args.arms:
         record = json.loads(Path(path).read_text(encoding='utf-8'))
+        check_arm_games(record)
         k = record['identity']['factor']
         arm_sha[f'S{BASE["simulations"] * k}'] = ar._file_sha(Path(path))
         if ar.signature(record['identity']) != record['signature'] or any(
@@ -447,6 +480,9 @@ def summary(args) -> dict:
         raise ValueError('the saturation stage runs only when no budget is STRONGER at 50 pairs')
     if args.positions:
         record = json.loads(Path(args.positions).read_text(encoding='utf-8'))
+        for key in ('engine_hash', 'runtime_hash', 'value_device', 'models', 'seed', 'git', 'champion_record_sha256'):
+            if record['identity'].get(key) != first.get(key):
+                raise ValueError(f'the positions and SB arms differ in {key}')
         out['positions'] = {**record['summary'], 'sha256': ar._file_sha(Path(args.positions))}
     return out
 

@@ -103,8 +103,22 @@ class ReplayTest(unittest.TestCase):
                 result = sn.run(args, log=quiet)
                 self.assertTrue(result['actor_check']['reproduced'])
                 self.assertEqual(sn.run(args, log=quiet)['jsonl_sha256'], result['jsonl_sha256'])
+                saved = jsonl.read_text()
+                for change in ('missing_ply', 'actor_mismatch', 'unknown_game'):
+                    resumed = json.loads(saved)
+                    if change == 'missing_ply':
+                        resumed['plies'].pop()
+                    elif change == 'actor_mismatch':
+                        move = resumed['plies'][0]['sets']['actor']['engine_move']
+                        resumed['plies'][0]['sets']['actor']['engine_move'] = [(move[0] + 1) % 15, move[1]]
+                    else:
+                        resumed['game_index'] += 1
+                    jsonl.write_text(json.dumps(resumed) + '\n')
+                    with self.assertRaises(ValueError, msg=change):
+                        sn.run(args, log=quiet)
+                    jsonl.write_text(saved)
                 for change in ({'model': [f'x={policy},{other_value}', f'y={policy},{other_value}']},
-                               {'evidence': games}):
+                               {'evidence': games}, {'games_sample': 0}, {'workers': 0}):
                     with self.assertRaises(ValueError):
                         sn.run(argparse.Namespace(**{**vars(args), **change}), log=quiet)
 

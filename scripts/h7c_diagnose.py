@@ -121,10 +121,20 @@ def check_value_only_inputs(args) -> dict:
         'verdict models': verdict.get('candidate') == candidate and verdict.get('parent') == parent,
         'same policy': all(candidate[k] == parent[k] for k in policy_keys),
         'evidence of this cycle': evidence.get('format') in EVIDENCE_FORMATS and evidence.get('cycle') == args.cycle,
-        'evidence verdict': evidence.get('verdict_sha256') in (None, _sha(args.verdict)),
+        'evidence verdict': (evidence.get('verdict_sha256') == _sha(args.verdict)
+                             if evidence.get('format') == 'h7c-b2-evidence-v1'
+                             else evidence.get('verdict_sha256') in (None, _sha(args.verdict))),
         'value rows': _evidence_sha(files, 'value_rows.jsonl.gz') == _sha(args.value_rows),
         'cycle cache': _evidence_sha(files, 'value_cache/manifest.json') == _sha(Path(args.cycle_cache) / 'manifest.json'),
+        'value record': _evidence_sha(files, 'value/record.json') == _sha(args.value_record),
+        'value metadata': _evidence_sha(files, 'value/best.json') == candidate['value_metadata_sha256'],
     }
+    # Tensor hashes do not bind the game-index -> game-id mapping used to join D4 predictions to label rows.
+    # Both cache tensors and game lists must be the original evidence files before this join is trusted.
+    for split in ('train', 'val'):
+        for suffix in ('.pt', '_games.json'):
+            name = f'value_cache/{split}{suffix}'
+            checks[name] = _evidence_sha(files, name) == _sha(Path(args.cycle_cache) / f'{split}{suffix}')
     failed = sorted(k for k, ok in checks.items() if not ok)
     if failed:
         raise ValueError(f'{VALUE_ONLY} D4 inputs are not the ones the cycle records name ({", ".join(failed)})')

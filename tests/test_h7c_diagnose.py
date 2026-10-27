@@ -246,7 +246,12 @@ class ValueOnlyD4Test(unittest.TestCase):
             def write_evidence(**changes):
                 evidence.write_text(json.dumps({
                     'format': 'h7c-b2-evidence-v1', 'cycle': 1, 'verdict_sha256': ar._file_sha(verdict),
-                    'files_sha256': {'runs/h7c/c1/value_rows.jsonl.gz': ar._file_sha(tmp / 'value_rows.jsonl.gz'),
+                    'files_sha256': {'runs/h7c/c1/value/record.json': ar._file_sha(tmp / 'value_record.json'),
+                                     'runs/h7c/c1/value/best.json': candidate['value_metadata_sha256'],
+                                     **{f'runs/h7c/c1/value_cache/{s}{ext}':
+                                        ar._file_sha(tmp / 'value_cache' / f'{s}{ext}')
+                                        for s in ('train', 'val') for ext in ('.pt', '_games.json')},
+                                     'runs/h7c/c1/value_rows.jsonl.gz': ar._file_sha(tmp / 'value_rows.jsonl.gz'),
                                      'runs/h7c/c1/value_cache/manifest.json':
                                          ar._file_sha(tmp / 'value_cache' / 'manifest.json')}, **changes}))
             write_evidence()
@@ -267,12 +272,24 @@ class ValueOnlyD4Test(unittest.TestCase):
                            {'value_rows': tmp / 'policy_rows.jsonl.gz'}):
                 with self.assertRaises(ValueError, msg=str(change)):
                     dg.check_inputs(argparse.Namespace(**{**vars(args), **change}))
-            for change in ({'format': 'h7c-c1-evidence-v1'}, {'verdict_sha256': 'e' * 64},
+            for change in ({'format': 'h7c-c1-evidence-v1'}, {'verdict_sha256': 'e' * 64}, {'verdict_sha256': None},
                            {'files_sha256': {'runs/h7c/c1/value_rows.jsonl.gz': 'e' * 64}}):
                 write_evidence(**change)
                 with self.assertRaises(ValueError, msg=str(change)):
                     dg.check_inputs(args)
             write_evidence()
+            # JSON source integrity, including the game-index mapping, is checked before computing D4.
+            for path in (tmp / 'value_record.json', tmp / 'value_cache' / 'val_games.json'):
+                saved = path.read_bytes()
+                obj = json.loads(saved)
+                if isinstance(obj, list):
+                    obj.append('not-the-recorded-game')
+                else:
+                    obj['unrecorded_edit'] = True
+                path.write_text(json.dumps(obj))
+                with self.assertRaises(ValueError, msg=str(path)):
+                    dg.check_inputs(args)
+                path.write_bytes(saved)
             verdict.write_text(json.dumps({**json.loads(verdict.read_text()), 'candidate_mode': 'JOINT'}))
             write_evidence()
             with self.assertRaises(ValueError):  # a joint verdict is not a VALUE_ONLY cycle

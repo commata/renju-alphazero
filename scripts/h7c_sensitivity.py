@@ -5,7 +5,7 @@ a fixed sample of ``--games-sample`` games (sorted by SHA-256 of ``SALT`` + game
 search). Each sampled game is replayed ply by ply: at every ply each model set's agent (TB-V3 / fast5, the candidate
 factory, the actor's seeds ``derive_seed(game_seed, 'black' | 'white')``, one agent per colour per game) searches the
 actor's position, then the actor's played move is played. The model set equal to the self-play's own models is the
-actor check: it must reproduce every recorded engine move and route (``actor_check``).
+actor check: it must reproduce every recorded engine move, route and root visit record (``actor_check``).
 
 Per comparison ``A:B`` (docs/h7-c1.md, B2 review): on all plies and on plies where both searched a tree, the share
 of plies with a different move (direct counts, no model of independence), the share with a different route, the
@@ -203,7 +203,9 @@ def compare(records: list[dict], a: str, b: str) -> dict:
 
 
 def actor_check(records: list[dict], games: dict, actor: str) -> dict:
-    moves = routes = n = 0
+    from hybrid.h7c_retarget import Q_TOLERANCE
+
+    moves = routes = visits = n = 0
     for r in records:
         recorded = {p['ply']: p for p in games[r['game_index']]['plies']}
         for p in r['plies']:
@@ -211,8 +213,55 @@ def actor_check(records: list[dict], games: dict, actor: str) -> dict:
             mine = p['sets'][actor]
             moves += list(mine['engine_move']) == list(recorded[p['ply']]['engine_move'])
             routes += mine['route'] == recorded[p['ply']]['route']
+            expected, actual = recorded[p['ply']]['visits'], mine['visits']
+            visits += len(expected) == len(actual) and all(
+                a[:3] == b[:3] and abs(a[3] - b[3]) <= Q_TOLERANCE for a, b in zip(expected, actual))
     return {'model_set': actor, 'plies': n, 'same_move': moves, 'same_route': routes,
-            'reproduced': moves == n and routes == n}
+            'same_visits': visits, 'reproduced': n > 0 and moves == n and routes == n and visits == n}
+
+
+def check_replay(record: dict, games: dict, models: dict, actor: str) -> None:
+    """Never accept partial/tampered resumed games or a failed actor replay as diagnostic evidence."""
+    index = record.get('game_index')
+    if index not in games:
+        raise ValueError(f'replay game {index}: not in the fixed sample')
+    expected, rows = games[index]['plies'], record.get('plies')
+    if not isinstance(rows, list) or len(rows) != len(expected) or not rows:
+        raise ValueError(f'replay game {index}: incomplete ply coverage')
+    position = Game()
+    for move in games[index]['opening']:
+        position.play(*move)
+    for row, original in zip(rows, expected):
+        if (row.get('ply'), row.get('color'), row.get('actor_route'), row.get('actor_move')) != (
+                original['ply'], original['color'], original['route'], original['engine_move']):
+            raise ValueError(f'replay game {index}: ply order, position or actor record differs')
+        sets = row.get('sets')
+        if not isinstance(sets, dict) or set(sets) != set(models):
+            raise ValueError(f'replay game {index}: model-set coverage differs')
+        legal = set(position.legal_moves())
+        for result in sets.values():
+            move, visits = result.get('engine_move'), result.get('visits')
+            if not isinstance(move, list) or len(move) != 2 or any(
+                    type(v) is not int or not 0 <= v < 15 for v in move):
+                raise ValueError(f'replay game {index}: invalid selected move')
+            if tuple(move) not in legal:
+                raise ValueError(f'replay game {index}: illegal selected move')
+            if not isinstance(result.get('route'), str) or not result['route'] or not isinstance(visits, list):
+                raise ValueError(f'replay game {index}: incomplete search record')
+            seen = set()
+            for visit in visits:
+                if not isinstance(visit, list) or len(visit) != 4 or any(
+                        type(v) is not int or not 0 <= v < 15 for v in visit[:2]):
+                    raise ValueError(f'replay game {index}: invalid visit coordinates')
+                key = tuple(visit[:2])
+                if key not in legal or key in seen or any(type(v) not in (int, float) or not math.isfinite(v) for v in visit[2:]) \
+                        or visit[2] < 0:
+                    raise ValueError(f'replay game {index}: duplicate or non-finite visits')
+                seen.add(key)
+        position.play(*original['played'])
+    check = actor_check([record], games, actor)
+    if not check['reproduced']:
+        raise ValueError(f'replay game {index}: actor move/route/visits reproduction failed ({check})')
 
 
 # --- the run -----------------------------------------------------------------------------------------------------
@@ -224,6 +273,8 @@ def run(args, log=print) -> dict:
     from h7c_arena import _git
     from hybrid import h7c_retarget as hr
 
+    if args.games_sample <= 0 or args.workers <= 0:
+        raise ValueError('--games-sample and --workers must be positive')
     git = _git()
     if git['dirty'] is not False and not args.allow_dirty:
         raise ValueError('the tree is dirty (or git is unavailable): a measurement must name its code commit')
@@ -249,6 +300,7 @@ def run(args, log=print) -> dict:
     if len(actors) != 1:
         raise ValueError('exactly one --model must be the self-play actor (the reproduction check)')
     sample = sample_games(games, args.games_sample)
+    by_index = {g['game_index']: g for g in sample}
     ids = [lab.game_id(g) for g in sample]
     identity = {'format': FORMAT, 'salt': SALT, 'selfplay_jsonl_sha256': games_sha,
                 'evidence_sha256': _sha(args.evidence), 'selfplay': selfplay, 'games_sample': len(sample),
@@ -256,6 +308,8 @@ def run(args, log=print) -> dict:
                 'engine_hash': tb_v3.ENGINE_HASH, 'runtime_hash': selfplay['runtime_hash'], 'device': args.device,
                 'git': git}
     finished = sp.load_finished(Path(args.jsonl), {'identity': identity}, log=log)
+    for record in finished.values():
+        check_replay(record, by_index, models, actors[0])
     todo = [g for g in sample if g['game_index'] not in finished]
     plies = sum(len(g['plies']) for g in todo)
     log(f'[h7c-sensitivity] {len(sample)} games ({len(finished)} done), {plies:,} plies x {len(models)} model sets, '
@@ -266,6 +320,7 @@ def run(args, log=print) -> dict:
                 max_workers=args.workers, mp_context=get_context('spawn')) as pool:
             def keep(_, results):
                 for result in results:
+                    check_replay(result, by_index, models, actors[0])
                     record = {'identity': identity, **result}
                     out.write(json.dumps(record, separators=(',', ':')) + '\n')
                     finished[result['game_index']] = record
@@ -274,7 +329,6 @@ def run(args, log=print) -> dict:
                        Progress('h7c-sensitivity', plies, 'plies'), lambda c: len(c[0]['game']['plies']),
                        unit_name='games', on_result=keep)
     records = [finished[g['game_index']] for g in sample]
-    by_index = {g['game_index']: g for g in sample}
     result = {'format': f'{FORMAT}-summary', 'identity': identity, 'jsonl_sha256': _sha(args.jsonl),
               'bootstrap': BOOTSTRAP, 'actor_check': actor_check(records, by_index, actors[0]),
               'comparisons': [compare(records, a, b) for a, b in compares],
