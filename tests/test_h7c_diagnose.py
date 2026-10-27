@@ -224,5 +224,59 @@ class EndToEndTest(unittest.TestCase):
             with self.assertRaises(ValueError):  # a recorded WMSE that the models do not give
                 dg.training_metric(args, tampered, log=quiet)
 
+
+class ValueOnlyD4Test(unittest.TestCase):
+    """A VALUE_ONLY cycle (B2): D4 only, the parent policy, the B2 evidence manifest by repository path."""
+
+    def test_d4_and_refusals(self):
+        from analysis import tb_v3_net
+        from tests.test_tb_v3_net import write_models
+
+        quiet = lambda *a, **k: None  # noqa: E731
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            policy, parent_value = write_models(tmp / 'p', seed=2)
+            record, value = training_inputs(tmp, policy, parent_value)
+            (tmp / 'value_record.json').write_text(json.dumps(record))
+            candidate, parent = (tb_v3_net.model_identity(policy, v) for v in (value, parent_value))
+            verdict, evidence = tmp / 'verdict.json', tmp / 'evidence.json'
+            verdict.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 1, 'candidate_mode': 'VALUE_ONLY',
+                                           'candidate': candidate, 'parent': parent}))
+
+            def write_evidence(**changes):
+                evidence.write_text(json.dumps({
+                    'format': 'h7c-b2-evidence-v1', 'cycle': 1, 'verdict_sha256': ar._file_sha(verdict),
+                    'files_sha256': {'runs/h7c/c1/value_rows.jsonl.gz': ar._file_sha(tmp / 'value_rows.jsonl.gz'),
+                                     'runs/h7c/c1/value_cache/manifest.json':
+                                         ar._file_sha(tmp / 'value_cache' / 'manifest.json')}, **changes}))
+            write_evidence()
+            args = argparse.Namespace(cycle=1, verdict=verdict, evidence=evidence, p_only=None, policy_rows=None,
+                                      candidate_mode='VALUE_ONLY', candidate_policy=policy, candidate_value=value,
+                                      parent_policy=policy, parent_value=parent_value,
+                                      value_rows=tmp / 'value_rows.jsonl.gz', value_record=tmp / 'value_record.json',
+                                      cycle_cache=tmp / 'value_cache', replay_cache=tmp / 'replay_cache', parts=None,
+                                      device='cpu', workers=1, output=tmp / 'd.json', allow_dirty=True)
+            out = dg.run(args, log=quiet)
+            self.assertEqual((list(out['parts']), out['candidate_mode']), (['d4'], 'VALUE_ONLY'))
+            d4 = out['parts']['d4']
+            self.assertAlmostEqual(d4['training_metric']['reproduction']['reproduced']['candidate']['cycle'],
+                                   record['best']['cycle_wmse'], 6)
+            self.assertEqual(d4['training_metric']['by_route']['all']['n'], d4['positions'])
+            other_policy, _ = write_models(tmp / 'o', seed=7)
+            for change in ({'parts': ['d1', 'd4']}, {'candidate_policy': other_policy}, {'cycle': 2},
+                           {'value_rows': tmp / 'policy_rows.jsonl.gz'}):
+                with self.assertRaises(ValueError, msg=str(change)):
+                    dg.check_inputs(argparse.Namespace(**{**vars(args), **change}))
+            for change in ({'format': 'h7c-c1-evidence-v1'}, {'verdict_sha256': 'e' * 64},
+                           {'files_sha256': {'runs/h7c/c1/value_rows.jsonl.gz': 'e' * 64}}):
+                write_evidence(**change)
+                with self.assertRaises(ValueError, msg=str(change)):
+                    dg.check_inputs(args)
+            write_evidence()
+            verdict.write_text(json.dumps({**json.loads(verdict.read_text()), 'candidate_mode': 'JOINT'}))
+            write_evidence()
+            with self.assertRaises(ValueError):  # a joint verdict is not a VALUE_ONLY cycle
+                dg.check_inputs(args)
+
 if __name__ == '__main__':
     unittest.main()

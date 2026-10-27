@@ -32,6 +32,11 @@ softmax over the legal moves) and ``hybrid.h6_value_leaf.ValueLeaf`` (D4 average
         visits (visited children, entropy, top share) and the target after proven losses are removed (support,
         entropy, exp(entropy), top share), and the visited children the target dropped
 
+VALUE_ONLY cycles (``--candidate-mode VALUE_ONLY``, B2 c4+ and c3): D4 only. There is no P-only arm and no trained
+policy: the candidate policy must be the parent policy byte for byte, the verdict must be a VALUE_ONLY verdict naming
+both model sets, and the label file and the cycle cache manifest must be the ones the cycle's evidence manifest names
+(B2 ``h7c-b2-evidence-v1`` by repository path, c3 ``h7c-phase-a-evidence-v1`` by file name).
+
     python -u scripts/h7c_diagnose.py --cycle 1 --verdict docs/h7c/c1/arena_verdict.json \\
         --evidence docs/h7c/c1/evidence_manifest.json --p-only runs/h7c/c1/arena/p_only.json \\
         --value-record docs/h7c/c1/value_record.json --cycle-cache runs/h7c/c1/value_cache \\
@@ -88,10 +93,58 @@ def position(moves) -> Game:
 
 # --- inputs ------------------------------------------------------------------------------------------------------
 
+VALUE_ONLY = 'VALUE_ONLY'
+EVIDENCE_FORMATS = ('h7c-b2-evidence-v1', 'h7c-phase-a-evidence-v1')
+
+
+def _evidence_sha(files: dict, name: str):
+    """The one manifest entry for ``name`` (a file name, or a path ending in it)."""
+    hits = [v for k, v in files.items() if k == name or k.endswith('/' + name)]
+    return hits[0] if len(hits) == 1 else None
+
+
+def check_value_only_inputs(args) -> dict:
+    """D4 of a VALUE_ONLY cycle: the verdict's two model sets, the same policy, the evidence's label file and cache."""
+    from analysis import tb_v3_net
+    from h7c_arena import FORMAT as ARENA_FORMAT
+
+    if list(args.parts or ['d4']) != ['d4']:
+        raise ValueError(f'{VALUE_ONLY}: D4 only (no P-only arm, no trained policy)')
+    verdict, evidence = _json(args.verdict), _json(args.evidence)
+    candidate = tb_v3_net.model_identity(args.candidate_policy, args.candidate_value)
+    parent = tb_v3_net.model_identity(args.parent_policy, args.parent_value)
+    policy_keys = ('policy_checkpoint_sha256', 'policy_metadata_sha256')
+    files = evidence.get('files_sha256', {})
+    checks = {
+        'verdict of this cycle': verdict.get('format') == f'{ARENA_FORMAT}-verdict' and verdict.get('cycle') == args.cycle,
+        'VALUE_ONLY verdict': verdict.get('candidate_mode') == VALUE_ONLY,
+        'verdict models': verdict.get('candidate') == candidate and verdict.get('parent') == parent,
+        'same policy': all(candidate[k] == parent[k] for k in policy_keys),
+        'evidence of this cycle': evidence.get('format') in EVIDENCE_FORMATS and evidence.get('cycle') == args.cycle,
+        'evidence verdict': evidence.get('verdict_sha256') in (None, _sha(args.verdict)),
+        'value rows': _evidence_sha(files, 'value_rows.jsonl.gz') == _sha(args.value_rows),
+        'cycle cache': _evidence_sha(files, 'value_cache/manifest.json') == _sha(Path(args.cycle_cache) / 'manifest.json'),
+    }
+    failed = sorted(k for k, ok in checks.items() if not ok)
+    if failed:
+        raise ValueError(f'{VALUE_ONLY} D4 inputs are not the ones the cycle records name ({", ".join(failed)})')
+    out = {'candidate_mode': VALUE_ONLY, 'candidate': candidate, 'parent': parent,
+           'sha256': {'verdict': _sha(args.verdict), 'evidence': _sha(args.evidence),
+                      'value_rows': _sha(args.value_rows)}}
+    out['value'] = check_value_inputs(args, evidence, candidate, parent,
+                                      labels=_json(Path(args.cycle_cache) / 'manifest.json')['labels_sha256'])
+    return out
+
+
 def check_inputs(args) -> dict:
     """Fail closed unless the files are the ones the cycle's records name; returns their identities."""
     from analysis import tb_v3_fast5, tb_v3_net
     from h7c_arena import FORMAT as ARENA_FORMAT, signature
+
+    if getattr(args, 'candidate_mode', 'JOINT') == VALUE_ONLY:
+        return check_value_only_inputs(args)
+    if args.p_only is None or args.policy_rows is None:
+        raise ValueError('a joint cycle needs --p-only and --policy-rows')
 
     verdict, evidence, p_only = _json(args.verdict), _json(args.evidence), _json(args.p_only)
     candidate = tb_v3_net.model_identity(args.candidate_policy, args.candidate_value)
@@ -129,8 +182,9 @@ def check_inputs(args) -> dict:
     return out
 
 
-def check_value_inputs(args, evidence: dict, candidate: dict, parent: dict) -> dict:
-    """The value record and both caches are the ones the training used."""
+def check_value_inputs(args, evidence: dict, candidate: dict, parent: dict, labels: str | None = None) -> dict:
+    """The value record and both caches are the ones the training used (``labels``: the cycle labels SHA when the
+    evidence has no training section, already tied to the evidence by the cache manifest file)."""
     record = _json(args.value_record)
     inputs = record.get('inputs', {})
     cycle_manifest, replay_manifest = _json(Path(args.cycle_cache) / 'manifest.json'), \
@@ -139,7 +193,7 @@ def check_value_inputs(args, evidence: dict, candidate: dict, parent: dict) -> d
         'candidate': (record.get('candidate') or {}).get('checkpoint_sha256') == candidate['value_checkpoint_sha256'],
         'parent': inputs.get('parent_checkpoint_sha256') == parent['value_checkpoint_sha256'],
         'cycle labels': inputs.get('cycle_labels_sha256') == cycle_manifest['labels_sha256']
-        == evidence.get('training', {}).get('cycle_value_labels_sha256'),
+        == (labels if labels is not None else evidence.get('training', {}).get('cycle_value_labels_sha256')),
         'replay labels': inputs.get('replay_labels_sha256') == replay_manifest['labels_sha256'],
         'cycle splits': inputs.get('cycle_cache_splits') == {k: v['sha256'] for k, v in cycle_manifest['splits'].items()},
         'replay splits': inputs.get('replay_cache_splits') == {k: v['sha256'] for k, v in replay_manifest['splits'].items()},
@@ -564,9 +618,10 @@ def run(args, log=print) -> dict:
     if git['dirty'] is not False and not args.allow_dirty:
         raise ValueError('the tree is dirty (or git is unavailable): a diagnosis must name its code commit')
     inputs = check_inputs(args)
-    games = _json(args.p_only)['games']
-    parts = args.parts or PARTS
-    out = {'format': FORMAT, 'cycle': args.cycle, 'git': git, 'device': args.device, 'inputs': inputs,
+    parts = args.parts or (['d4'] if getattr(args, 'candidate_mode', 'JOINT') == VALUE_ONLY else PARTS)
+    games = _json(args.p_only)['games'] if {'d1', 'd3'} & set(parts) else None
+    out = {'format': FORMAT, 'cycle': args.cycle, 'candidate_mode': getattr(args, 'candidate_mode', 'JOINT'),
+           'git': git, 'device': args.device, 'inputs': inputs,
            'inference': {'policy': 'RootPolicy (CPU, as in the Arena workers)', 'value_engine': 'ValueLeaf D4',
                          'value_training': 'h6_value_train.evaluate (raw)'}, 'parts': {}}
     policy_rows = read_policy_rows(args.policy_rows) if {'d2', 'd5'} & set(parts) else []
@@ -597,8 +652,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--cycle', type=int, required=True)
     parser.add_argument('--verdict', type=Path, required=True)
     parser.add_argument('--evidence', type=Path, required=True)
-    parser.add_argument('--p-only', type=Path, required=True, help="the P-only arm's play output (games included)")
-    for name in ('candidate-policy', 'candidate-value', 'parent-policy', 'parent-value', 'policy-rows', 'value-rows'):
+    parser.add_argument('--candidate-mode', choices=('JOINT', VALUE_ONLY), default='JOINT',
+                        help=f'{VALUE_ONLY}: D4 only, no --p-only / --policy-rows')
+    parser.add_argument('--p-only', type=Path, help="the P-only arm's play output (games included; joint cycles)")
+    parser.add_argument('--policy-rows', type=Path, help='the policy label rows (joint cycles)')
+    for name in ('candidate-policy', 'candidate-value', 'parent-policy', 'parent-value', 'value-rows'):
         parser.add_argument(f'--{name}', type=Path, required=True)
     parser.add_argument('--value-record', type=Path, help="D4: the value training's record.json")
     parser.add_argument('--cycle-cache', type=Path, help='D4: the cycle value cache the training used')
@@ -616,6 +674,8 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     if args.output.exists():
         parser.error(f'{args.output} exists')
+    if args.candidate_mode != VALUE_ONLY and None in (args.p_only, args.policy_rows):
+        parser.error('a joint cycle needs --p-only and --policy-rows')
     if 'd4' in (args.parts or PARTS) and None in (args.value_record, args.cycle_cache, args.replay_cache):
         parser.error('D4 needs --value-record, --cycle-cache and --replay-cache')
     try:

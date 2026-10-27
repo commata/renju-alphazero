@@ -22,6 +22,12 @@ configuration with its own config, never an engine of record, a self-play engine
                150 pairs (``play --factor 8 --pairs 150``, same --jsonl) adds the saturation reading (``SATURATION``):
                STRONGER (lower bound above 0), SATURATED (upper bound below 0.075) or INCONCLUSIVE
 
+Champion re-run (MCTS-v9 entry E2-2, docs/h7-c1.md): ``--champion <verdict>`` with ``--seed`` one of
+``CHAMPION_SEEDS`` (8742-8749, reserved for these re-runs) runs the same ablation with the models that verdict names as
+``next_champion`` (checked by SHA-256); the verdict's SHA-256 and the seed are in every arm's identity, and the
+summary refuses arms of different champions or seeds. Without ``--champion`` the tool is the c1 ablation (frozen H3 /
+H6 v3, seed 8741), unchanged.
+
     python -u scripts/h7c_budget.py play --factor 4 --policy-checkpoint runs/h3_policy_64x4/best.pt \\
         --value-checkpoint runs/h6_value_head_v3/best.pt --device cuda --workers 6 \\
         --jsonl runs/h7c/sb/s200.jsonl --output runs/h7c/sb/s200.json
@@ -46,6 +52,7 @@ from renju import BLACK, WHITE, Game, IllegalMove  # noqa: E402
 
 FORMAT = 'h7c-budget-v1'
 SEED = 8741
+CHAMPION_SEEDS = range(8742, 8750)  # E2-2 re-runs with a later champion (hybrid.h6_labels.RESERVED_SEEDS)
 PAIRS = 50
 FACTORS = (2, 4, 8)          # S100, S200, S400 against S50
 # Saturation stage (pre-registered, docs/h7-c1.md "MCTS-v9 진입 조건"): when no budget is STRONGER at 50 pairs, S400
@@ -129,19 +136,43 @@ def distribution(visits: list[list]) -> dict:
 
 # --- games -------------------------------------------------------------------------------------------------------
 
-def build_tasks(factor: int, pairs: int = PAIRS) -> list[dict]:
+def build_tasks(factor: int, pairs: int = PAIRS, seed: int = SEED) -> list[dict]:
     from run_mcts_v8_benchmark import derive_seed, make_opening
     import h7c_arena as ar
 
     tasks = []
     for pair in range(pairs):
-        opening = make_opening(derive_seed(SEED, 'opening', pair), ar.OPENING['random_plies'], ar.OPENING['radius'])
+        opening = make_opening(derive_seed(seed, 'opening', pair), ar.OPENING['random_plies'], ar.OPENING['radius'])
         for color in (BLACK, WHITE):
             name = 'black' if color == BLACK else 'white'
-            tasks.append({'key': f's{BASE["simulations"] * factor}/{SEED}/{pair}/{name}', 'factor': factor,
-                          'pair': pair, 'seed': derive_seed(SEED, 'game', pair, color), 'tested_color': color,
+            tasks.append({'key': f's{BASE["simulations"] * factor}/{seed}/{pair}/{name}', 'factor': factor,
+                          'pair': pair, 'seed': derive_seed(seed, 'game', pair, color), 'tested_color': color,
                           'opening': [list(m) for m in opening]})
     return tasks
+
+
+def champion_models(path) -> tuple[dict, str]:
+    """The ``next_champion`` of an Arena verdict and the verdict's SHA-256."""
+    import h7c_arena as ar
+
+    record = json.loads(Path(path).read_text(encoding='utf-8'))
+    if record.get('format') != f'{ar.FORMAT}-verdict' or not isinstance(record.get('next_champion'), dict):
+        raise ValueError(f'{path} is not an Arena verdict with a next champion')
+    return record['next_champion'], ar._file_sha(Path(path))
+
+
+def run_seed(args) -> int:
+    """8741 for the frozen-model ablation; one of ``CHAMPION_SEEDS`` with ``--champion``."""
+    from hybrid.h6_labels import RESERVED_SEEDS
+
+    champion, seed = getattr(args, 'champion', None), getattr(args, 'seed', None)
+    if champion is None:
+        if seed not in (None, SEED):
+            raise ValueError(f'--seed goes with --champion; the frozen-model ablation is seed {SEED}')
+        return SEED
+    if seed not in CHAMPION_SEEDS or seed not in RESERVED_SEEDS:
+        raise ValueError(f'--champion needs --seed in {CHAMPION_SEEDS.start}-{CHAMPION_SEEDS.stop - 1}')
+    return seed
 
 
 def play_game(task: dict, make=None, max_plies: int | None = None) -> dict:
@@ -197,12 +228,20 @@ def identity(args, factor: int, git: dict) -> dict:
     from analysis import tb_v3, tb_v3_fast5, tb_v3_net
 
     models = tb_v3_net.model_identity(args.policy_checkpoint, args.value_checkpoint)
-    if models != tb_v3.MODELS and not args.allow_stand_in:
-        raise ValueError('the ablation runs the frozen H3 / H6 v3 models only')
-    return {'format': FORMAT, 'factor': factor, 'budget': budget(factor), 'opponent_budget': budget(1),
-            'seed': SEED, 'engine_id': tb_v3.ENGINE_ID, 'engine_hash': tb_v3.ENGINE_HASH,
-            'runtime_hash': tb_v3_fast5.runtime_hash(args.device), 'value_device': args.device.split(':')[0],
-            'models': models, 'git': git}
+    seed, champion_sha = run_seed(args), None
+    if getattr(args, 'champion', None) is not None:
+        champion, champion_sha = champion_models(args.champion)
+        if models != champion:
+            raise ValueError(f'the checkpoints are not the next champion of {args.champion}')
+    elif models != tb_v3.MODELS and not args.allow_stand_in:
+        raise ValueError('the ablation runs the frozen H3 / H6 v3 models only (or --champion with its models)')
+    out = {'format': FORMAT, 'factor': factor, 'budget': budget(factor), 'opponent_budget': budget(1),
+           'seed': seed, 'engine_id': tb_v3.ENGINE_ID, 'engine_hash': tb_v3.ENGINE_HASH,
+           'runtime_hash': tb_v3_fast5.runtime_hash(args.device), 'value_device': args.device.split(':')[0],
+           'models': models, 'git': git}
+    if champion_sha is not None:  # absent for the c1 ablation: its arms keep their identity and signature
+        out['champion_record_sha256'] = champion_sha
+    return out
 
 
 def play(args, log=print) -> dict:
@@ -220,13 +259,13 @@ def play(args, log=print) -> dict:
         raise ValueError('the tree is dirty (or git is unavailable): the games must name their code commit')
     ident = identity(args, args.factor, git)
     sig = ar.signature(ident)
-    tasks = build_tasks(args.factor, pairs)
+    tasks = build_tasks(args.factor, pairs, ident['seed'])
     finished = ar.load_finished(args.jsonl, {t['key'] for t in tasks}, sig, log=log)
     context = {'policy': str(args.policy_checkpoint), 'value': str(args.value_checkpoint), 'device': args.device,
                'signature': sig}
     todo = [{**t, 'context': context, **({'max_plies': args.max_plies} if getattr(args, 'max_plies', None) else {})}
             for t in tasks if t['key'] not in finished]
-    log(f'h7c budget: S{BASE["simulations"] * args.factor} vs S50, seed {SEED}, games {len(tasks)} '
+    log(f'h7c budget: S{BASE["simulations"] * args.factor} vs S50, seed {ident["seed"]}, games {len(tasks)} '
         f'({len(finished)} done), workers {args.workers}, signature {sig[:12]}', flush=True)
     args.jsonl.parent.mkdir(parents=True, exist_ok=True)
     if todo:
@@ -397,7 +436,9 @@ def summary(args) -> dict:
             'elo': s['elo'], 'score_by_color': s['score_by_color'], 'stronger': lower > 0, 'cost': s['cost'],
             'tree': s['tree'], 'opponent_illegal_pairs': s['opponent_illegal_pairs']}
     stronger = [r['factor'] for r in rows.values() if r['stronger']]
-    out = {'format': f'{FORMAT}-summary', 'seed': SEED, 'pairs': PAIRS, 'rule': 'STRONGER: the 95% pair-bootstrap '
+    first = next(iter(arms.values()))['identity']
+    out = {'format': f'{FORMAT}-summary', 'seed': first['seed'], 'pairs': PAIRS, 'models': first['models'],
+           'champion_record_sha256': first.get('champion_record_sha256'), 'rule': 'STRONGER: the 95% pair-bootstrap '
            'lower bound of (score - 0.5) against S50 is above 0', 'arms': rows,
            'reading': 'BUDGET_HELPS' if stronger else 'NOT_DETECTED',
            'smallest_stronger_budget': budget(min(stronger)) if stronger else None, 'arm_sha256': arm_sha,
@@ -423,6 +464,10 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument('--allow-dirty', action='store_true', help='tests only')
         p.add_argument('--allow-stand-in', action='store_true', help='tests only: models other than H3 / H6 v3')
     sub.choices['play'].add_argument('--factor', type=int, required=True, choices=FACTORS)
+    sub.choices['play'].add_argument('--champion', type=Path,
+                                     help="E2-2 re-run: the verdict whose next_champion the checkpoints are")
+    sub.choices['play'].add_argument('--seed', type=int, help=f'with --champion: one of {CHAMPION_SEEDS.start}-'
+                                                              f'{CHAMPION_SEEDS.stop - 1}')
     sub.choices['play'].add_argument('--jsonl', type=Path, required=True)
     sub.choices['play'].add_argument('--pairs', type=int, default=PAIRS,
                                      help=f'{PAIRS}; {SATURATION["pairs"]} extends factor 8 for the saturation stage '

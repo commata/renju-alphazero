@@ -51,6 +51,38 @@ class RuleTest(unittest.TestCase):
             self.assertEqual((a['opening'], a['seed'], a['tested_color']), (b['opening'], b['seed'], b['tested_color']))
             self.assertNotEqual(a['key'], b['key'])
 
+    def test_champion_rerun_identity(self):
+        """E2-2: the champion's models (by its verdict), a seed of 8742-8749, both in the identity."""
+        from analysis import tb_v3_net
+        from tests.test_tb_v3_net import write_models
+
+        ns = lambda **kw: argparse.Namespace(**{'champion': None, 'seed': None, 'allow_stand_in': False,  # noqa
+                                                'device': 'cpu', **kw})
+        self.assertEqual(sb.run_seed(ns()), 8741)
+        for bad in (ns(seed=8742), ns(champion='v.json'), ns(champion='v.json', seed=8741),
+                    ns(champion='v.json', seed=8750)):
+            with self.assertRaises(ValueError):
+                sb.run_seed(bad)
+        self.assertEqual(sb.run_seed(ns(champion='v.json', seed=8742)), 8742)
+        with TemporaryDirectory() as tmp:
+            policy, value = write_models(Path(tmp) / 'm', seed=3)
+            verdict = Path(tmp) / 'verdict.json'
+            verdict.write_text(json.dumps({'format': 'h7c-arena-v1-verdict', 'cycle': 8,
+                                           'next_champion': tb_v3_net.model_identity(policy, value)}))
+            args = ns(policy_checkpoint=policy, value_checkpoint=value, champion=verdict, seed=8742)
+            ident = sb.identity(args, 4, {'commit': 'abc', 'dirty': False})
+            self.assertEqual((ident['seed'], ident['champion_record_sha256']), (8742, ar._file_sha(verdict)))
+            self.assertEqual(sb.build_tasks(4, 1, 8742)[0]['key'], 's200/8742/0/black')
+            self.assertNotEqual(sb.build_tasks(4, 1, 8742)[0]['opening'], sb.build_tasks(4, 1)[0]['opening'])
+            other, _ = write_models(Path(tmp) / 'o', seed=4)
+            with self.assertRaises(ValueError):  # checkpoints that are not the verdict's next champion
+                sb.identity(ns(policy_checkpoint=other, value_checkpoint=value, champion=verdict, seed=8742), 4,
+                            {'commit': 'abc', 'dirty': False})
+            with self.assertRaises(ValueError):  # without --champion, stand-in models are refused
+                sb.identity(ns(policy_checkpoint=policy, value_checkpoint=value), 4, {'commit': 'abc', 'dirty': False})
+            self.assertNotIn('champion_record_sha256', sb.identity(  # the c1 ablation keeps its identity
+                ns(policy_checkpoint=policy, value_checkpoint=value, allow_stand_in=True), 4, {'commit': 'abc'}))
+
     def test_summary_reading(self):
         with TemporaryDirectory() as tmp:
             helps = [write_arm(tmp, 2, [('win', 'loss')] * 50), write_arm(tmp, 4, [('win', 'win')] * 35
