@@ -1,0 +1,224 @@
+{
+ "format": "h7c-nmask-decision-v1",
+ "experiment": "H7C-NMASK-1",
+ "recipe": "VALUE_ONLY_NETWORK_MASK",
+ "parent": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "control": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+  "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+ },
+ "policy": {
+  "action": "freeze_parent",
+  "training": false,
+  "checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61"
+ },
+ "source": {
+  "cycle": 8,
+  "selfplay_run_seed": 8808,
+  "value_rows_sha256": "899b575eee2aaebe72598e259ac18c5afe6c9e9073746ec142ce31a9d8ad0862",
+  "cycle_labels_sha256": "dd6dd35aa25c4bc3185cace838eb9e997fe445854373ed34e89000b5b89d60ca",
+  "cycle_cache_splits": {
+   "train": "487880b9ec97b02e1eec686440a938017f3bcbfa5aba880c60f3a04180f9b3e1",
+   "val": "92a97e2b0e287483ca4693688829cbd1c34fbf1860ef887770bb9d6c03f29d3f",
+   "test": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+  },
+  "replay_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084",
+  "replay_cache_splits": {
+   "train": "bedea484532f25385b0598ab0ce813bef894583ddf5449dbc496d74657e7b2c7",
+   "val": "a84ce0f076e5ee905fd50471272c77446af006b10b1272808397745a53ae6939",
+   "test": "faf36023faeefed796553839d1fda12ac0ae06ebce0f55bee18d7cf1097d023e"
+  },
+  "selfplay_jsonl_sha256": "ca91d706299c5d0729f69fd3372f790812181258e49ebcac2d8bb1f944cc7831"
+ },
+ "value": {
+  "config": "configs/h7c/c1_value.json",
+  "config_sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0",
+  "settings": {
+   "seed": 20261025,
+   "batch_size": 1024,
+   "epochs": 3.0,
+   "learning_rate": 0.0002,
+   "weight_decay": 0.0001,
+   "min_lr_ratio": 0.05,
+   "augment_d4": true,
+   "evaluations": 10,
+   "h6_guard_ratio": 1.05,
+   "device": "cuda"
+  },
+  "replay_anchor_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084",
+  "steps": {
+   "total_steps": 210,
+   "steps_per_epoch": 70,
+   "warmup_steps": 10,
+   "train_rows_per_epoch": 71632
+  },
+  "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+  "control_parent_val": {
+   "cycle_wmse": 0.3252624273300171,
+   "replay_wmse": 0.5771163702011108
+  },
+  "control_best": {
+   "step": 147,
+   "cycle_wmse": 0.3259740173816681,
+   "replay_wmse": 0.5768555998802185
+  }
+ },
+ "mask": {
+  "definition": "analysis.puct_value_v1.exact_leaf(position) is not None",
+  "manifest_sha256": "65a3cd17051bad60bddcdfb6309d1544e65d6b90c39c8c5f2c4323fdfa9d3fb0",
+  "keep_sha256": "9c5d42df3e53be823d96d9b68b7fa5a9d342e606aeef1f64c04b8ed5496d7fb2",
+  "applies_to": "cycle rows of every split; replay rows unchanged",
+  "masked_rows": {
+   "train": 1710,
+   "val": 97,
+   "test": 0
+  },
+  "masked_weight": {
+   "train": 1710.0,
+   "val": 97.0,
+   "test": 0.0
+  }
+ },
+ "loss": "L_B = sum_{i in B} k_i w_i (v_i - t_i)^2 / sum_{i in B} w_i; k_i = 0 for a masked cycle row, else 1; w the original row weights (no renormalization, no redistribution); replay rows k = 1",
+ "cycle_val_metric": "sum_{val} k_i w_i (v_i - t_i)^2 / sum_{val} w_i over the effective cycle val set (after the union masking); the selection objective is its mean with the replay val WMSE; the H6 guard is unchanged (replay val WMSE <= 1.05 x the parent's)",
+ "zero_cycle_weight_batch": "cycle term 0, replay term as usual, counted in the record",
+ "fail_closed": [
+  "a non-finite loss or objective",
+  "no cycle train row with weight",
+  "a mask of another cache or with other counts",
+  "any input other than the decision's"
+ ],
+ "records_sha256": {
+  "c8_verdict": "3fabf6bdce7fc455217de4fd5cf1de2e72ba7b6ac8f536265405666bb761c10a",
+  "c8_evidence": "b16da6b1da0650491ca79f538cf450e51a920b74c541284f762fc81b68e0b45d",
+  "c8_value_record": "e47581b5263140802adf84b9c1ff6d44e2bb1e8c48d67c8a00e882c285a56389",
+  "c8_cache_manifest": "c89c2aa8f71314a0867984f4189fbe71d18d94101605c27f4b45f41108016e29",
+  "b2_program": "8b7d4c906ec714a24a28c177e2c1971d2531ee77efce0430c29c3d77af111949",
+  "d4_c8": "4bba59e87c5f216816829c075a5f4312b23f1d9a1352b07f9181c85764b36d57",
+  "e2_manifest": "2e513f45e0249844fe33d7cde1143bce3be3036b2ef1bb6cae8729658bda834b",
+  "e2_summary": "043b06c6b62f01cfb32a928499d1cbe7507fbedf01ed4c761c87c111031bbea6",
+  "check": "2221c8a215ef65087f3d2f8f468dd7d511f91d5f0908005ababad9ae2225cb1f",
+  "mask_manifest": "65a3cd17051bad60bddcdfb6309d1544e65d6b90c39c8c5f2c4323fdfa9d3fb0",
+  "sample": "4b1d77d53387c3602b6755405074abb3a1626090f39eb89e6af8e78249c125f9"
+ },
+ "evaluation": {
+  "official": {
+   "opponent": "parent (c5)",
+   "pairs": 50,
+   "seed": 8761,
+   "promotion": {
+    "score_above": 0.5,
+    "improvement_lower_min": -0.05,
+    "tactical_rule": "h7c-tactical-v2"
+   },
+   "meaning": "the existing rule; a PROMOTE changes no champion, program or canonical engine"
+  },
+  "confirm": {
+   "comparisons": [
+    [
+     "mask",
+     "c8"
+    ],
+    [
+     "mask",
+     "c5"
+    ],
+    [
+     "c8",
+     "c5"
+    ]
+   ],
+   "primary": "mask:c8",
+   "models": {
+    "mask": "candidate",
+    "c8": "control",
+    "c5": "parent"
+   },
+   "actor": "c5",
+   "positions": "every recorded ply of every sample game (the self-play record's plies), each model set searching the actor's position with the actor's seeds",
+   "observation": "a ply where the two model sets' engine moves differ (per comparison; never deduplicated)",
+   "bootstrap": {
+    "samples": 10000,
+    "seed": 8764,
+    "method": "percentile",
+    "cluster": "source game"
+   },
+   "report_level": 0.95,
+   "reading_level": 0.9833333333333333,
+   "min_decisive": 20,
+   "min_decisive_games": 10,
+   "max_invalid_share": 0.05,
+   "order_seed": 8763,
+   "invalid": [
+    "timeout",
+    "engine_error",
+    "engine_illegal",
+    "forbid_mismatch",
+    "fixed_move_illegal",
+    "truncated",
+    "abnormal_end"
+   ],
+   "sensitivity": "abnormal_end scored 0.5, reported apart, never a reading",
+   "inconclusive": [
+    "INCOMPLETE",
+    "INVALID_RATE",
+    "TOO_FEW_DECISIVE",
+    "DEGENERATE_BOOTSTRAP",
+    "INTERVAL_CONTAINS_HALF"
+   ],
+   "stop": "any input, model, sample or engine identity mismatch stops the run before a branch is played; no branch, position, budget or repetition is added after a result",
+   "sample_sha256": "4b1d77d53387c3602b6755405074abb3a1626090f39eb89e6af8e78249c125f9",
+   "sample_ids_sha256": "62473c4eeab29d1da46cdd05516e4d8bfd7ebe1ee22f44a91cc6372236f0b822",
+   "games": 800,
+   "engine": {
+    "registered": {
+     "executable": "pbrain-rapfi-windows-avx2.exe",
+     "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+     "files": {
+      "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+      "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+      "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+      "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+      "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+      "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+     },
+     "info": [
+      "max_node=300",
+      "thread_num=1",
+      "timeout_turn=600000",
+      "timeout_match=1000000000"
+     ]
+    },
+    "rule": 4,
+    "move_timeout": 600.0
+   }
+  }
+ },
+ "seeds": {
+  "arena_official": 8761,
+  "adjudication_order": 8763,
+  "adjudication_bootstrap": 8764,
+  "reserved_block": [
+   8761,
+   8770
+  ],
+  "training": 20261025
+ },
+ "out_of_scope": [
+  "V9",
+  "B2 c9",
+  "head / trunk growth",
+  "D4 checkpoint selection",
+  "more self-play",
+  "S400 retarget",
+  "reusing the E2 200 for selection"
+ ],
+ "approved_by": "user, 2026-10-27 (docs/h7-c1.md)"
+}
