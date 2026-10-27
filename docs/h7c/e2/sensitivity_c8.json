@@ -1,0 +1,172 @@
+{
+ "format": "h7c-sensitivity-v1-summary",
+ "identity": {
+  "format": "h7c-sensitivity-v1",
+  "salt": "h7c-sensitivity-v1",
+  "selfplay_jsonl_sha256": "ca91d706299c5d0729f69fd3372f790812181258e49ebcac2d8bb1f944cc7831",
+  "evidence_sha256": "b16da6b1da0650491ca79f538cf450e51a920b74c541284f762fc81b68e0b45d",
+  "selfplay": {
+   "cycle": 8,
+   "run_seed": 8808,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "value_device": "cuda",
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   },
+   "model_hash": "d490b1ba1ae5487f2b2f4ab499919c14920f6125d22e39af70ec67c066fff7de",
+   "generator_git": {
+    "commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf",
+    "dirty": false
+   }
+  },
+  "games_sample": 200,
+  "sample_sha256": "7f57f1725b22edbc0c67c0b9104d252ea1e196659a1d6dc3d285a85bda91590e",
+  "models": {
+   "orig": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+    "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+   },
+   "c5": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   },
+   "c8": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+    "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+   }
+  },
+  "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+  "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+  "device": "cuda",
+  "git": {
+   "commit": "85665102ba72361a531e03fa9c34244ac95efa8a",
+   "dirty": false
+  }
+ },
+ "jsonl_sha256": "1aa768d668a29b0bbfa46aab850afe16d239981d278bf837669b87bf2f735165",
+ "bootstrap": {
+  "samples": 2000,
+  "seed": 20261027
+ },
+ "actor_check": {
+  "model_set": "c5",
+  "plies": 7798,
+  "same_move": 7798,
+  "same_route": 7798,
+  "same_visits": 7798,
+  "reproduced": true
+ },
+ "comparisons": [
+  {
+   "pair": "c5:orig",
+   "games": 200,
+   "all_plies": {
+    "plies": 7798,
+    "different_moves": 235,
+    "share": 0.03014,
+    "ci95_games": [
+     0.02207,
+     0.03769
+    ]
+   },
+   "tree_plies": {
+    "plies": 3789,
+    "different_moves": 235,
+    "share": 0.06202,
+    "ci95_games": [
+     0.04906,
+     0.07376
+    ]
+   },
+   "route_different_share": 0.0,
+   "tree_js_mean": 0.00695,
+   "tree_chosen_q_abs_diff_mean": 0.03262,
+   "games_with_a_different_move": {
+    "games": 77,
+    "share": 0.385,
+    "first_ply_median": 10
+   },
+   "tree_plies_by_side": {
+    "black": {
+     "plies": 1976,
+     "different_moves": 104,
+     "share": 0.05263,
+     "ci95_games": [
+      0.04129,
+      0.06296
+     ]
+    },
+    "white": {
+     "plies": 1813,
+     "different_moves": 131,
+     "share": 0.07226,
+     "ci95_games": [
+      0.05451,
+      0.08852
+     ]
+    }
+   }
+  },
+  {
+   "pair": "c8:c5",
+   "games": 200,
+   "all_plies": {
+    "plies": 7798,
+    "different_moves": 210,
+    "share": 0.02693,
+    "ci95_games": [
+     0.01986,
+     0.03338
+    ]
+   },
+   "tree_plies": {
+    "plies": 3789,
+    "different_moves": 210,
+    "share": 0.05542,
+    "ci95_games": [
+     0.04445,
+     0.06494
+    ]
+   },
+   "route_different_share": 0.0,
+   "tree_js_mean": 0.00738,
+   "tree_chosen_q_abs_diff_mean": 0.03316,
+   "games_with_a_different_move": {
+    "games": 68,
+    "share": 0.34,
+    "first_ply_median": 9.0
+   },
+   "tree_plies_by_side": {
+    "black": {
+     "plies": 1976,
+     "different_moves": 103,
+     "share": 0.05213,
+     "ci95_games": [
+      0.03968,
+      0.06327
+     ]
+    },
+    "white": {
+     "plies": 1813,
+     "different_moves": 107,
+     "share": 0.05902,
+     "ci95_games": [
+      0.04624,
+      0.06935
+     ]
+    }
+   }
+  }
+ ],
+ "reading": "the behaviour of these model sets on this position sample (not a bound for other models)"
+}

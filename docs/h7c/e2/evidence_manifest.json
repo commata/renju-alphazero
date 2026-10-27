@@ -1,0 +1,23 @@
+{
+  "champion_verdict": "docs/h7c/c8/arena_verdict.json",
+  "champion_verdict_sha256": "3fabf6bdce7fc455217de4fd5cf1de2e72ba7b6ac8f536265405666bb761c10a",
+  "document_files_sha256": {
+    "docs/h7c/e2/d4_c5_vs_c4.json": "9bacdaadd9cbf6da9a99bb953e7230718d6c4ded28c35705644d025cd6fd1737",
+    "docs/h7c/e2/d4_c8_vs_c5.json": "4bba59e87c5f216816829c075a5f4312b23f1d9a1352b07f9181c85764b36d57",
+    "docs/h7c/e2/sb_c5_saturation.json": "952751bf83afefb423521d668bd927e43a7dbad397fb49a958bc3a8516edbae9",
+    "docs/h7c/e2/sb_c5_summary.json": "f54b90d41dd49b08505a884e0e56a79cd731a3a69523f454fa1f6d976510f0f1",
+    "docs/h7c/e2/sensitivity_c8.json": "043b06c6b62f01cfb32a928499d1cbe7507fbedf01ed4c761c87c111031bbea6"
+  },
+  "files_sha256": {
+    "runs/h7c/sb_c5/k2.json": "270da6d82b6c62e49c2d5b5c2d0400eaff9349c2d6cdff587cb4a485a70915cb",
+    "runs/h7c/sb_c5/k2.jsonl": "694cdb0de155ef33c5cb6bb9b5cf1e6bbe6c5c9abf9bb52f79316d23c839ed63",
+    "runs/h7c/sb_c5/k4.json": "2913271311933240cb027f0ee6b0bce153074c890fff9f5920f70a4dd2c79e19",
+    "runs/h7c/sb_c5/k4.jsonl": "8739d7f68bccd6bfbd66dd5b210e736775ed8b4ed93189c057bd7c0ad4ffe186",
+    "runs/h7c/sb_c5/k8.json": "a5c0cc312c1547752bf2afa59d3e9972649e65be9aff0d6150c7af1bf0369880",
+    "runs/h7c/sb_c5/k8.jsonl": "de36481c7cd08fac3d057d7b184b78dd226f1e8cd6ecb6194c613b55109d2d62",
+    "runs/h7c/sb_c5/k8_150.json": "f5eb71f5e7869c2eccd9e279e06f353933ba498d91dd208aa19edf19cb3c261d",
+    "runs/h7c/sensitivity/c8_sample.jsonl": "1aa768d668a29b0bbfa46aab850afe16d239981d278bf837669b87bf2f735165"
+  },
+  "format": "h7c-e2-evidence-v1",
+  "generated_at_commit": "85665102ba72361a531e03fa9c34244ac95efa8a"
+}

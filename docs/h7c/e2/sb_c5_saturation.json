@@ -1,0 +1,134 @@
+{
+ "format": "h7c-budget-v1-summary",
+ "seed": 8742,
+ "pairs": 50,
+ "models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "champion_record_sha256": "3fabf6bdce7fc455217de4fd5cf1de2e72ba7b6ac8f536265405666bb761c10a",
+ "rule": "STRONGER: the 95% pair-bootstrap lower bound of (score - 0.5) against S50 is above 0",
+ "arms": {
+  "S100": {
+   "factor": 2,
+   "score": 0.51,
+   "score_ci95": [
+    0.44,
+    0.58
+   ],
+   "improvement_ci95": [
+    -0.06,
+    0.08
+   ],
+   "elo": 6.9,
+   "score_by_color": {
+    "black": 0.68,
+    "white": 0.34
+   },
+   "stronger": false,
+   "cost": {
+    "tested_seconds": 3020.9,
+    "opponent_seconds": 1903.3,
+    "time_ratio": 1.587,
+    "tree_moves": 1860,
+    "tree_seconds_mean": 1.5137
+   },
+   "tree": {
+    "chose_prior_top": 0.6613,
+    "top_share": 0.6062,
+    "visited_children": 9.552
+   },
+   "opponent_illegal_pairs": []
+  },
+  "S200": {
+   "factor": 4,
+   "score": 0.57,
+   "score_ci95": [
+    0.485,
+    0.65
+   ],
+   "improvement_ci95": [
+    -0.015,
+    0.15
+   ],
+   "elo": 49.0,
+   "score_by_color": {
+    "black": 0.65,
+    "white": 0.49
+   },
+   "stronger": false,
+   "cost": {
+    "tested_seconds": 4241.5,
+    "opponent_seconds": 1588.2,
+    "time_ratio": 2.671,
+    "tree_moves": 1522,
+    "tree_seconds_mean": 2.6395
+   },
+   "tree": {
+    "chose_prior_top": 0.6189,
+    "top_share": 0.627,
+    "visited_children": 10.655
+   },
+   "opponent_illegal_pairs": []
+  },
+  "S400": {
+   "factor": 8,
+   "score": 0.595,
+   "score_ci95": [
+    0.5,
+    0.685
+   ],
+   "improvement_ci95": [
+    0.0,
+    0.185
+   ],
+   "elo": 66.8,
+   "score_by_color": {
+    "black": 0.66,
+    "white": 0.53
+   },
+   "stronger": false,
+   "cost": {
+    "tested_seconds": 9236.5,
+    "opponent_seconds": 1869.3,
+    "time_ratio": 4.941,
+    "tree_moves": 2002,
+    "tree_seconds_mean": 4.4642
+   },
+   "tree": {
+    "chose_prior_top": 0.5884,
+    "top_share": 0.6309,
+    "visited_children": 11.544
+   },
+   "opponent_illegal_pairs": []
+  }
+ },
+ "reading": "NOT_DETECTED",
+ "smallest_stronger_budget": null,
+ "arm_sha256": {
+  "S100": "270da6d82b6c62e49c2d5b5c2d0400eaff9349c2d6cdff587cb4a485a70915cb",
+  "S200": "2913271311933240cb027f0ee6b0bce153074c890fff9f5920f70a4dd2c79e19",
+  "S400": "f5eb71f5e7869c2eccd9e279e06f353933ba498d91dd208aa19edf19cb3c261d"
+ },
+ "saturation": {
+  "pairs": 150,
+  "score": 0.5767,
+  "score_ci95": [
+   0.525,
+   0.6267
+  ],
+  "improvement_ci95": [
+   0.025,
+   0.1267
+  ],
+  "elo": 53.7,
+  "rule": {
+   "factor": 8,
+   "pairs": 150,
+   "upper_bound_below": 0.075
+  },
+  "reading": "STRONGER"
+ }
+}
