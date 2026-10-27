@@ -1,6 +1,8 @@
 # 웹 관리자 페이지 계획 (SER5, `/renju/admin/`)
 
-배포 라인(`feat/Web_SER5-tbv3-fast5`)의 렌주 웹에 관리자 페이지를 더하는 계획이다. 아직 구현 전이다.
+배포 라인(`feat/Web_SER5-tbv3-fast5`)의 렌주 웹에 관리자 페이지를 더하는 계획이다. 1단계 읽기 전용 진단 도구와 2단계 관리자 서버·로그인·배포 템플릿을 구현했다.
+실제 SER5 운영 데이터 확인과 Caddy/systemd 적용·게임 smoke는 아직 실행하지 않았다. 3~7단계는 후속 작업이다.
+현재 실행·검증 절차와 한계는 [관리자 배포 안내](../deploy/README-admin.md)를 따른다.
 SQLite(`data/renju_web.db`, `src/weblog/store.py`, 스키마 v2)는 그대로 쓴다.
 
 ## 1. 원안에서 바뀐 점과 근거

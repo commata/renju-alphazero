@@ -1,0 +1,21 @@
+# MERGE these handlers into the EXISTING ser5tack.duckdns.org site block.
+# Keep automatic HTTPS, basic_auth /renju*, the root test-web handler and logging unchanged.
+# Replace the existing /renju/* handler with the pair below; never duplicate it.
+# If the site uses a `route` block, keep these handlers in that same block, in this order.
+redir /renju/admin /renju/admin/ 308
+handle_path /renju/admin/* {
+    reverse_proxy 127.0.0.1:8010 {
+        transport http {
+            dial_timeout 5s
+            response_header_timeout 15s
+        }
+    }
+}
+handle_path /renju/* {
+    reverse_proxy 127.0.0.1:8000 {
+        transport http {
+            dial_timeout 5s
+            response_header_timeout 30s
+        }
+    }
+}
