@@ -7,7 +7,7 @@ section, details, form { background: light-dark(white, #232c36); border-radius: 
 label { display: block; margin: 1rem 0; }
 input { display: block; box-sizing: border-box; width: 100%; font: inherit; padding: .65rem; }
 button { cursor: pointer; font: inherit; padding: .6rem 1rem; border-radius: 6px; }
-button:disabled { cursor: wait; opacity: .6; }
+button:disabled { cursor: default; opacity: .6; }
 dl { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: .5rem 1rem; }
 dd { margin: 0; font-weight: 600; }
 pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; }

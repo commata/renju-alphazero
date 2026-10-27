@@ -1,12 +1,64 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>렌주 관리자</title><link rel="stylesheet" href="/renju/admin/login.css">
-<script src="/renju/admin/admin.js" defer></script></head>
-<body><main><header><h1>렌주 관리자</h1><button id="logout">로그아웃</button></header>
-<p>관리자 서버 기반 · 운영 DB 읽기 전용 진단</p>
-<p>대국 목록·번호 기보·통계 차트·백업 다운로드는 후속 단계에서 제공됩니다.</p>
+<title>렌주 관리자</title><link rel="stylesheet" href="/renju/admin/login.css"><link rel="stylesheet" href="/renju/admin/admin.css">
+<script src="/renju/admin/admin.js" defer></script>
+<script src="/renju/admin/games.js" defer></script>
+<script src="/renju/admin/record.js" defer></script></head>
+<body><main class="wide"><header><h1>렌주 관리자</h1>
+<nav aria-label="관리자 메뉴"><a href="#/" data-view="status">현황</a><a href="#/games" data-view="games">대국 목록</a></nav>
+<button id="logout">로그아웃</button></header>
+<p class="muted small">운영 DB 읽기 전용 · 기보는 저장된 착수를 그대로 재현합니다 (AI를 다시 실행하지 않습니다)</p>
 <p id="connection" role="status" aria-live="polite">연결 중…</p>
+
+<div id="view-status" class="view" hidden>
 <section><h2>데이터 현황</h2><dl id="summary"></dl></section>
 <details><summary>진단 상세</summary><pre id="details"></pre></details>
 <section><h2>게임 서버 상태</h2><pre id="server"></pre></section>
+</div>
+
+<div id="view-games" class="view" hidden>
+<form id="filters" class="filters">
+<label>시작일 (KST)<input type="date" name="from"></label>
+<label>종료일 (KST)<input type="date" name="to"></label>
+<label>AI<select name="agent"><option value="">전체</option></select></label>
+<label>사람 색<select name="color"><option value="">전체</option><option value="BLACK">흑</option><option value="WHITE">백</option></select></label>
+<label>상태<select name="status"><option value="">전체</option><option value="in_progress">진행 중</option><option value="suspected">중단 추정</option><option value="finished">정상 종료</option><option value="unfinished">미완료</option><option value="abandoned">중단</option></select></label>
+<label>결과<select name="result"><option value="">전체</option><option value="HUMAN_WIN">사람 승</option><option value="AI_WIN">AI 승</option><option value="DRAW">무승부</option><option value="UNFINISHED">미완료</option><option value="none">없음</option></select></label>
+<label>무르기<select name="undo"><option value="">전체</option><option value="yes">있음</option><option value="no">없음</option></select></label>
+<button type="reset" class="plain">초기화</button>
+</form>
+<p id="games-summary" class="muted"></p>
+<div class="table-wrap"><table id="games-table"><thead><tr>
+<th>시작 (KST)</th><th>종료 (KST)</th><th>AI</th><th>사람</th><th>상태</th><th>결과</th><th class="num">착수</th><th class="num">무르기</th>
+<th class="num">계산 평균 / 최대 (초)</th><th class="num">대기 최대 (초)</th><th class="num">30초 초과</th></tr></thead><tbody></tbody></table></div>
+<div class="pager"><button id="page-first" class="plain">처음</button><button id="page-prev" class="plain">이전</button><span id="page-label"></span><button id="page-next" class="plain">다음</button></div>
+</div>
+
+<div id="view-record" class="view" hidden>
+<p><a href="#/games">← 대국 목록</a></p>
+<section id="record-head"><h2 id="record-title">대국</h2><dl id="record-meta" class="meta"></dl><div id="record-issues"></div></section>
+<div class="record">
+<div class="board-col">
+<svg id="board" viewBox="0 0 660 660" role="img" aria-label="번호 기보"></svg>
+<div class="replay" aria-label="수순 이동">
+<button id="go-first" title="처음">|◀</button><button id="go-prev" title="이전">◀</button>
+<span id="ply-label" class="ply">0 / 0</span>
+<button id="go-next" title="다음">▶</button><button id="go-last" title="마지막">▶|</button>
+</div>
+<input id="ply-slider" type="range" min="0" max="0" value="0" aria-label="수순 슬라이더">
+<div class="replay-options">
+<button id="play" class="plain">재생</button>
+<label>속도<select id="speed"><option value="2000">느리게 (2초)</option><option value="1000" selected>보통 (1초)</option><option value="400">빠르게 (0.4초)</option></select></label>
+<label>번호<select id="labels"><option value="all">전체 번호</option><option value="last">마지막 수만</option><option value="none">숨김</option></select></label>
+<label class="check" id="follow-wrap" hidden><input type="checkbox" id="follow" checked>최신 수 따라가기</label>
+</div>
+<p id="stone-info" class="muted" role="status" aria-live="polite">돌을 누르면 그 수의 정보를 보여 줍니다.</p>
+</div>
+<div class="side-col">
+<section><h3>AI 계산시간 (착수 번호별, 초)</h3><svg id="time-chart" role="img" aria-label="AI 계산시간 그래프"></svg><p id="chart-note" class="muted small"></p></section>
+<section id="veto-section" hidden><h3>AI VCT2 거부 기록</h3><ul id="veto-list" class="veto-list"></ul></section>
+<section><h3>수순</h3><div class="table-wrap moves-wrap"><table id="moves-table"><thead><tr><th class="num">수</th><th>좌표</th><th>둔 쪽</th><th class="num">계산</th><th class="num">대기</th><th>비고</th></tr></thead><tbody></tbody></table></div></section>
+</div>
+</div>
+</div>
 </main></body></html>

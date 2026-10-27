@@ -11,17 +11,22 @@ import ipaddress
 import json
 from pathlib import Path
 import sqlite3
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from urllib.request import ProxyHandler, build_opener
 
 from .auth import Auth
+from .games import game_detail, list_games, list_options
 from .inspect import inspect_database
 
 PREFIX = '/renju/admin'
 COOKIE = 'renju_admin'
 PUBLIC_ASSETS = {'/login.css': ('style.css', 'text/css; charset=utf-8'),
                  '/login.js': ('login.js', 'text/javascript; charset=utf-8')}
-PRIVATE_ASSETS = {'/admin.js': ('admin.js', 'text/javascript; charset=utf-8')}
+PRIVATE_ASSETS = {'/admin.js': ('admin.js', 'text/javascript; charset=utf-8'),
+                  '/games.js': ('games.js', 'text/javascript; charset=utf-8'),
+                  '/record.js': ('record.js', 'text/javascript; charset=utf-8'),
+                  '/admin.css': ('admin.css', 'text/css; charset=utf-8')}
+GAME_PATH = '/data/games/'
 
 
 def validate_origin(origin: str) -> str:
@@ -141,6 +146,13 @@ class Handler(BaseHTTPRequestHandler):
                 pass
         return peer
 
+    def _query(self) -> dict[str, str]:
+        """Single-valued query parameters; a repeated one is refused."""
+        query = parse_qs(urlsplit(self.path).query, keep_blank_values=True, max_num_fields=32)
+        if any(len(values) != 1 for values in query.values()):
+            raise ValueError('repeated query parameter')
+        return {key: values[0] for key, values in query.items()}
+
     def _path(self):
         path = urlsplit(self.path).path
         if path == PREFIX or path.startswith(PREFIX + '/'):
@@ -171,10 +183,34 @@ class Handler(BaseHTTPRequestHandler):
                 self._asset(*PRIVATE_ASSETS[path])
             elif path == '/data/status':
                 self._json({'database': inspect_database(self.server.db), 'game_server': game_status()})
+            elif path == '/data/games':
+                self._data(lambda: list_games(self.server.db, self._query()))
+            elif path == '/data/games/options':
+                self._json(list_options(self.server.db))
+            elif path.startswith(GAME_PATH) and '/' not in path[len(GAME_PATH):]:
+                def detail():
+                    found = game_detail(self.server.db, path[len(GAME_PATH):], since=self._query().get('since'))
+                    if found is None:
+                        raise LookupError
+                    return found
+                self._data(detail)
             else:
                 self._json({'error': 'not found'}, 404)
         except (OSError, sqlite3.Error, ValueError):
             self._json({'error': '관리자 데이터를 읽을 수 없습니다. DB 경로·스키마·서비스 상태를 확인하세요.'}, 503)
+
+    def _data(self, read):
+        """A data route: a bad request parameter is 400 and an unknown game 404 (the DB errors stay 503)."""
+        try:
+            value = read()
+        except LookupError:
+            self._json({'error': '대국을 찾을 수 없습니다.'}, 404)
+        except ValueError as exc:
+            if isinstance(exc, UnicodeError):
+                raise
+            self._json({'error': f'잘못된 요청: {exc}'}, 400)
+        else:
+            self._json(value)
 
     def do_HEAD(self):
         self.do_GET()

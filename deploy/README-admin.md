@@ -1,7 +1,7 @@
-# SER5 관리자: 1·2단계
+# SER5 관리자: 1~4단계
 
-기준 계획: `docs/web-admin-plan.md` (46f8085). 이 변경은 읽기 전용 진단과 인증된 관리자
-서버 기반까지다. 목록·기보·재생·통계 차트·백업은 3~6단계이며 아직 제공하지 않는다.
+기준 계획: `docs/web-admin-plan.md`. 지금 제공하는 것: 읽기 전용 진단, 인증된 관리자 서버,
+대국 목록, 번호 기보와 기보 검증, 재생, 자동 갱신(§5). 통계 차트·백업은 5·6단계이며 아직 제공하지 않는다.
 운영 SER5 배포(7단계)와 운영 DB 수치 확인은 이 클라우드에서 실행하지 않았다.
 게임 서버·엔진·DB 스키마·기존 백업 timer는 변경하지 않는다.
 
@@ -88,12 +88,45 @@ sudo systemctl status renju-admin --no-pager
 되돌릴 때는 이전 Caddyfile을 복구해 validate/reload하고 `sudo systemctl disable --now renju-admin`.
 게임 서비스와 운영 DB, 기존 일일 백업은 그대로 둔다.
 
+## 5. 대국 목록과 기보 (3·4단계)
+
+화면은 `/renju/admin/` 한 페이지에서 주소 뒤 `#`로 나뉜다: `#/`(현황), `#/games`(목록), `#/games/<game_id>`(기보).
+데이터 API는 모두 로그인이 필요하고 DB는 `mode=ro`로만 읽는다.
+
+| 경로 | 내용 |
+|---|---|
+| `GET /data/games` | 목록. `from`/`to`(KST 날짜, 포함), `agent`, `color`(BLACK/WHITE), `status`(in_progress/finished/unfinished/abandoned/suspected), `result`(HUMAN_WIN/AI_WIN/DRAW/UNFINISHED/none), `undo`(yes/no), `limit`(1..200, 기본 50), `cursor` |
+| `GET /data/games/options` | 목록 필터의 AI 선택지(DB에 있는 `agent_key`, 엔진 hash) |
+| `GET /data/games/<game_id>[?since=<version>]` | 대국 행, 착수(무른 수 포함), VCT2 거부 기록, 기보 검증. `since`가 지금 `version`과 같으면 `{"unchanged": true}` |
+
+잘못된 필터 값·반복된 파라미터는 400, 없는 대국은 404, DB 오류는 503이다.
+
+**목록.** 최신순(`started_at`, `game_id`), cursor 페이지다. 착수 수는 판 위의 수(무른 수 제외)이고, 계산·대기 시간과
+30초 초과 수는 기록된 AI 착수 전체(무른 수 포함: 엔진이 실제로 탐색했다)로 센다. `중단 추정`은 진행 중이면서 마지막
+착수·무르기(없으면 시작)가 1시간보다 오래된 대국이며, DB의 상태는 바꾸지 않는다.
+
+**기보.** SVG 15×15, 흑돌 흰 번호·백돌 검은 번호, 마지막 수는 번호를 가리지 않는 빨간 테두리, 가로 A–O·세로 15–1
+(row 0이 위쪽, 대국 화면의 표기와 같다). N수를 고르면 1..N수만 보인다.
+
+- 이동: 처음·이전·다음·마지막, 슬라이더, 좌우 화살표 키, 자동 재생(2 / 1 / 0.4초)
+- 번호: 전체 / 마지막 수만 / 숨김
+- 돌을 누르면 수 번호·좌표·색·둔 쪽·계산·대기 시간·기록 시각
+- 수순 목록은 기록 순서다. 무른 수는 줄을 긋고 `(n)`으로 보인다. 누르면 그 수가 놓였던 국면에 점선 돌로 보인다.
+- AI 계산시간 그래프: 판 위의 AI 수의 `engine_seconds`. 누르면 가장 가까운 AI 수의 국면으로 간다. 값이 20초 이상이면 30초 점선을 그린다.
+- VCT2 거부 기록: 누르면 그 국면(`ply` = 거부 당시 판 위의 수)에 거부된 후보(빨간 X)와 실제로 둔 수(파란 점선)를 보인다.
+- 진행 중인 대국: `최신 수 따라가기`(기본 켬)이면 새 수가 오면 마지막 수로 간다. 앞선 수를 보는 중이면 위치를 유지한다.
+- 5초마다(숨긴 탭은 30초) 다시 묻는다. 기보는 `version`이 바뀔 때만 다시 그린다.
+
+**기보 검증.** 저장된 착수를 `renju.Game`(서버와 같은 규칙, 흑 금수 포함)으로 다시 둔다. AI는 실행하지 않는다.
+수 번호 1..N 연속, 기록 순서, 중앙 첫 수(`OPENING_RULE`), 흑부터 번갈아, 범위, 합법 여부, 착수 전 국면 hash(서버의
+`board_hash`), 최종 보드(`final_board_json`), 저장된 착수 수, 정상 종료 대국의 결과를 본다. 어긋나면 고치지 않고
+기보 위에 항목별로 보인다(예: 한 칸 밀린 수는 이후 수의 `illegal`, 상하 반전은 `final_board`/`board_hash`).
+
 ## 로컬 검증
 
 ```bash
-python -m unittest tests.test_web_admin -v
-node --check web/admin/login.js
-node --check web/admin/admin.js
+python -m unittest tests.test_web_admin tests.test_web_admin_games -v
+for f in web/admin/*.js; do node --check "$f"; done
 ```
 
 운영 파일 대신 임시 schema-v2 DB와 임시 계정을 쓰는 HTTP 통합 테스트다. 실서비스의 HTTPS,
