@@ -56,7 +56,8 @@ RESERVED_SEEDS = frozenset({8401, 8402, 8403, 8404, 8405, 8406, 8411, 8412, 8413
                             8451, 8452,         # CPU-backend certification of the post-E4 engine
                             *range(8731, 8741),   # H7-c internal Arena: cycle c = 8730 + c (registered 2026-10-24)
                             *range(8741, 8750),  # H7-c search-budget ablation
-                            *range(8751, 8761)})  # B2 drift only: cycle c = 8750+c (registered before B2)
+                            *range(8751, 8761),  # B2 drift only: cycle c = 8750+c (registered before B2)
+                            8771})  # E2 Rapfi adjudication: branch order only (registered 2026-10-27)
 FRESH_PROBE_SEEDS = tuple(range(8601, 8611))
 DEV_PROBE_SEEDS = tuple(range(8611, 8614))
 DEV_PROBE_EXTENSION_SEEDS = tuple(range(8614, 8617))
