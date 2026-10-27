@@ -1,0 +1,100 @@
+{
+ "format": "h7c-nmask-mask-v1",
+ "experiment": "H7C-NMASK-1",
+ "definition": "analysis.puct_value_v1.exact_leaf(position) is not None",
+ "code_sha256": {
+  "analysis/puct_value_v1.py": "43f569dcce8c706ddc53121d0557d889b00bdf00f8f6cf14c099ede9def0726b"
+ },
+ "labels_sha256": "dd6dd35aa25c4bc3185cace838eb9e997fe445854373ed34e89000b5b89d60ca",
+ "cache_manifest_sha256": "c89c2aa8f71314a0867984f4189fbe71d18d94101605c27f4b45f41108016e29",
+ "splits": {
+  "train": {
+   "rows": 35816,
+   "masked_rows": 1710,
+   "kept_rows": 34106,
+   "weight": 8103.200045883656,
+   "masked_weight": 1710.0,
+   "kept_weight": 6393.200045883656,
+   "cache_sha256": "487880b9ec97b02e1eec686440a938017f3bcbfa5aba880c60f3a04180f9b3e1"
+  },
+  "val": {
+   "rows": 1853,
+   "masked_rows": 97,
+   "kept_rows": 1756,
+   "weight": 440.0000023394823,
+   "masked_weight": 97.0,
+   "kept_weight": 343.0000023394823,
+   "cache_sha256": "92a97e2b0e287483ca4693688829cbd1c34fbf1860ef887770bb9d6c03f29d3f"
+  },
+  "test": {
+   "rows": 0,
+   "masked_rows": 0,
+   "kept_rows": 0,
+   "weight": 0.0,
+   "masked_weight": 0.0,
+   "kept_weight": 0.0,
+   "cache_sha256": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+  }
+ },
+ "keep_sha256": "9c5d42df3e53be823d96d9b68b7fa5a9d342e606aeef1f64c04b8ed5496d7fb2",
+ "by_kind": {
+  "outcome": {
+   "exact_leaf": {
+    "rows": 0,
+    "weight": 0.0
+   },
+   "network": {
+    "rows": 32362,
+    "weight": 3236.2
+   }
+  },
+  "proof_forced_loss": {
+   "exact_leaf": {
+    "rows": 862,
+    "weight": 862.0
+   },
+   "network": {
+    "rows": 83,
+    "weight": 83.0
+   }
+  },
+  "proof_immediate_win": {
+   "exact_leaf": {
+    "rows": 945,
+    "weight": 945.0
+   },
+   "network": {
+    "rows": 0,
+    "weight": 0.0
+   }
+  },
+  "proof_unstoppable_four": {
+   "exact_leaf": {
+    "rows": 0,
+    "weight": 0.0
+   },
+   "network": {
+    "rows": 928,
+    "weight": 928.0
+   }
+  },
+  "proof_vcf": {
+   "exact_leaf": {
+    "rows": 0,
+    "weight": 0.0
+   },
+   "network": {
+    "rows": 2489,
+    "weight": 2489.0
+   }
+  }
+ },
+ "link": "each cache row = its label row (game id order, ply, value, weight, kind, stones, legal mask)",
+ "git": {
+  "commit": "7f0b016e5d18a2ff32c1bf87a94995d1fc8663d0",
+  "dirty": false
+ },
+ "value_rows_sha256": "899b575eee2aaebe72598e259ac18c5afe6c9e9073746ec142ce31a9d8ad0862",
+ "mask_file": "runs/h7c/nmask/mask.pt",
+ "mask_file_sha256": "c8293323509ac03a9979a7aad585f657361ccb78d295e99cea4c412a115e53ea"
+}
