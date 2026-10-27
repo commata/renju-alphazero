@@ -1,0 +1,209 @@
+{
+ "format": "h7c-adjudicate-v1-summary",
+ "identity": {
+  "format": "h7c-adjudicate-v1",
+  "git": {
+   "commit": "fcfb6c66cac0742a33d865e1fdfdf51e9509b43d",
+   "dirty": false
+  },
+  "inputs": {
+   "manifest": "2e513f45e0249844fe33d7cde1143bce3be3036b2ef1bb6cae8729658bda834b",
+   "summary": "043b06c6b62f01cfb32a928499d1cbe7507fbedf01ed4c761c87c111031bbea6",
+   "sensitivity_jsonl": "1aa768d668a29b0bbfa46aab850afe16d239981d278bf837669b87bf2f735165",
+   "selfplay": "ca91d706299c5d0729f69fd3372f790812181258e49ebcac2d8bb1f944cc7831",
+   "verdict": "3fabf6bdce7fc455217de4fd5cf1de2e72ba7b6ac8f536265405666bb761c10a"
+  },
+  "input_paths": {
+   "manifest": "docs/h7c/e2/evidence_manifest.json",
+   "summary": "docs/h7c/e2/sensitivity_c8.json",
+   "sensitivity_jsonl": "runs/h7c/sensitivity/c8_sample.jsonl",
+   "selfplay": "runs/h7c/c8/selfplay.jsonl",
+   "verdict": "docs/h7c/c8/arena_verdict.json"
+  },
+  "engine": {
+   "registered": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "actual": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "rule": 4,
+   "arguments": [],
+   "move_timeout": 600.0,
+   "registered_engine": true
+  },
+  "order_seed": 8771,
+  "branches_sha256": "5ec44c46e335777ad528f842a36a419446b2550cb3f6ea27b6a46e28a7654ee1",
+  "limit": null,
+  "max_plies": null
+ },
+ "identity_sha256": "6d841a40b00f8828c2d369e27d7567ec58f9803e95a069caf5b558d8f62fb1c5",
+ "jsonl_sha256": "d97a660e42f6d09af46ff18e364742e8f4fde14f39f66a666bb0729fee6e9793",
+ "meaning": "choice quality on fixed disagreement positions under Rapfi continuations; not playing strength, not a minimax answer, not a cause, never a gate",
+ "rules": {
+  "bootstrap": {
+   "samples": 10000,
+   "seed": 20261028,
+   "method": "percentile",
+   "cluster": "source game"
+  },
+  "report_level": 0.95,
+  "reading_level": 0.975,
+  "min_decisive": 20,
+  "min_decisive_games": 10,
+  "max_invalid_share": 0.05
+ },
+ "branches": {
+  "unique": 708,
+  "played": 708,
+  "invalid_by_reason": {
+   "abnormal_end": 14
+  }
+ },
+ "overlap": {
+  "c5:orig": {
+   "observations": 235,
+   "branch_uses": 470,
+   "unique_branches": 454,
+   "unique_positions": 227
+  },
+  "c8:c5": {
+   "observations": 210,
+   "branch_uses": 420,
+   "unique_branches": 406,
+   "unique_positions": 203
+  },
+  "shared_positions": 85,
+  "shared_branches": 152
+ },
+ "comparisons": [
+  {
+   "comparison": "c8:c5",
+   "candidate": "c8",
+   "reference": "c5",
+   "observations": 210,
+   "source_games": 68,
+   "valid": 205,
+   "invalid": 5,
+   "missing": 0,
+   "invalid_share": 0.02381,
+   "decisive": 59,
+   "decisive_games": 41,
+   "better": 37,
+   "worse": 22,
+   "better_share": 0.62712,
+   "same_result": {
+    "share": 0.7122,
+    "both_win": 33,
+    "both_draw": 83,
+    "both_loss": 30
+   },
+   "half_point_deltas": 17,
+   "mean_delta": 0.0561,
+   "better_share_bootstrap": {
+    "undefined_resamples": 0,
+    "ci95": [
+     0.5,
+     0.74194
+    ],
+    "ci975": [
+     0.47619,
+     0.75926
+    ]
+   },
+   "mean_delta_bootstrap": {
+    "undefined_resamples": 0,
+    "ci95": [
+     -0.01342,
+     0.12269
+    ],
+    "ci975": [
+     -0.02432,
+     0.13216
+    ]
+   },
+   "reading": "INCONCLUSIVE",
+   "reasons": [
+    "INTERVAL_CONTAINS_HALF"
+   ]
+  },
+  {
+   "comparison": "c5:orig",
+   "candidate": "c5",
+   "reference": "orig",
+   "observations": 235,
+   "source_games": 77,
+   "valid": 230,
+   "invalid": 5,
+   "missing": 0,
+   "invalid_share": 0.02128,
+   "decisive": 56,
+   "decisive_games": 37,
+   "better": 24,
+   "worse": 32,
+   "better_share": 0.42857,
+   "same_result": {
+    "share": 0.75652,
+    "both_win": 37,
+    "both_draw": 90,
+    "both_loss": 47
+   },
+   "half_point_deltas": 15,
+   "mean_delta": -0.02826,
+   "better_share_bootstrap": {
+    "undefined_resamples": 0,
+    "ci95": [
+     0.31111,
+     0.53846
+    ],
+    "ci975": [
+     0.29412,
+     0.55769
+    ]
+   },
+   "mean_delta_bootstrap": {
+    "undefined_resamples": 0,
+    "ci95": [
+     -0.08411,
+     0.0235
+    ],
+    "ci975": [
+     -0.09511,
+     0.02996
+    ]
+   },
+   "reading": "INCONCLUSIVE",
+   "reasons": [
+    "INTERVAL_CONTAINS_HALF"
+   ]
+  }
+ ]
+}
