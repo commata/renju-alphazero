@@ -108,6 +108,34 @@ class RecordTests(_Records):
         with self.assertRaises(ValueError):
             game_detail(self.db, '../x', now=self.now)
 
+    def test_version_detects_game_row_updates_without_new_moves(self):
+        before = game_detail(self.db, self.ids['live'], now=self.now)
+        with closing(sqlite3.connect(self.db)) as conn, conn:
+            conn.execute('UPDATE games SET undo_count=undo_count+1 WHERE game_id=?', (self.ids['live'],))
+        try:
+            after = game_detail(self.db, self.ids['live'], since=before['version'], now=self.now)
+            self.assertNotIn('unchanged', after)
+            self.assertNotEqual(after['version'], before['version'])
+        finally:
+            with closing(sqlite3.connect(self.db)) as conn, conn:
+                conn.execute('UPDATE games SET undo_count=undo_count-1 WHERE game_id=?', (self.ids['live'],))
+
+    def test_veto_uses_its_saved_historical_position_and_invalid_json_is_reported(self):
+        history = [[7, 7], [0, 0]]
+        with closing(sqlite3.connect(self.db)) as conn, conn:
+            conn.execute("INSERT INTO veto_positions (game_id, ply, recorded_at, reason, payload_json) VALUES (?,2,?,'VCT2_PROVEN_LOSS',?)",
+                         (self.ids['undo'], self.now.isoformat(), json.dumps({'history': history})))
+            original = conn.execute('SELECT final_board_json FROM games WHERE game_id=?', (self.ids['undo'],)).fetchone()[0]
+            conn.execute("UPDATE games SET final_board_json='not JSON', agent_info_json='not JSON' WHERE game_id=?", (self.ids['undo'],))
+        try:
+            data = game_detail(self.db, self.ids['undo'], now=self.now)
+            self.assertEqual(data['vetoes'][-1]['history'], history)
+            self.assertIn('final_board_json', {issue['code'] for issue in data['verification']['issues']})
+        finally:
+            with closing(sqlite3.connect(self.db)) as conn, conn:
+                conn.execute('UPDATE games SET final_board_json=?, agent_info_json=NULL WHERE game_id=?', (original, self.ids['undo']))
+                conn.execute('DELETE FROM veto_positions WHERE game_id=?', (self.ids['undo'],))
+
     def test_board_hash_is_the_servers(self):
         board = [[0] * 15 for _ in range(15)]
         board[7][7], board[0][0] = BLACK, WHITE

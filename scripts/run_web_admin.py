@@ -11,6 +11,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
+from webadmin.exports import ExportManager  # noqa: E402
 from webadmin.auth import Auth, hash_password  # noqa: E402
 from webadmin.inspect import inspect_database  # noqa: E402
 from webadmin.server import AdminServer  # noqa: E402
@@ -21,6 +22,8 @@ def main(argv=None) -> int:
     parser.add_argument('--hash-password', action='store_true', help='prompt securely and print a scrypt hash')
     parser.add_argument('--db', type=Path, default=ROOT / 'data/renju_web.db')
     parser.add_argument('--port', type=int, default=8010)
+    parser.add_argument('--export-dir', type=Path, default=ROOT / 'data/admin_exports')
+    parser.add_argument('--export-keep', type=int, default=5)
     args = parser.parse_args(argv)
     if args.hash_password:
         first = getpass.getpass('Admin password: ')
@@ -40,7 +43,9 @@ def main(argv=None) -> int:
             raise ValueError('ADMIN_ORIGIN is required')
         inspect_database(args.db)  # fail closed; never initialize or migrate the production DB
         server = AdminServer(('127.0.0.1', args.port), db=args.db, origin=origin,
-                             auth=auth, assets=ROOT / 'web/admin')
+                             auth=auth, assets=ROOT / 'web/admin',
+                             exports=ExportManager(args.db, args.export_dir, repo=ROOT,
+                                                   log_root=ROOT / 'logs/web_play', keep=args.export_keep))
     except (ValueError, OSError, sqlite3.Error) as exc:
         print(f'admin startup failed: {exc}', file=sys.stderr)
         return 1

@@ -28,7 +28,7 @@ Admin.views.record = (() => {
   function describe(move) {
     const parts = [`${move.ply}수${move.undone_at ? ' (무름)' : ''}`, where(move), color(move), KIND[move.kind] || move.actor];
     if (move.kind === 'AI') {
-      parts.push(`계산 ${Admin.seconds(move.engine_seconds)}초`, `대기 ${Admin.seconds(move.wall_seconds)}초`);
+      parts.push(`계산 ${Admin.seconds(move.engine_seconds)}초`, `큐 대기 ${Admin.seconds(move.queue_seconds)}초`, `총 응답 ${Admin.seconds(move.wall_seconds)}초`);
       if (move.soft_limit_exceeded) parts.push('30초 초과');
     }
     parts.push(`기록 ${Admin.kst(move.recorded_at, true)}`);
@@ -37,6 +37,21 @@ Admin.views.record = (() => {
   }
 
   // ---- board -------------------------------------------------------------------------------------
+  function historyBefore(target) {
+    // Each recorded ply encodes the stack depth after a move, even across repeated undos.
+    let history = [];
+    for (const move of data.moves) {
+      if (move.seq >= target.seq) break;
+      history = history.slice(0, Math.max(0, move.ply - 1));
+      history.push(move);
+    }
+    return history.slice(0, Math.max(0, target.ply - 1));
+  }
+  function vetoHistory(row) {
+    if (!row.history) return []; // Never substitute the current branch for a missing historical position.
+    return row.history.map(([r, c], index) => ({row0: r, col0: c, ply: index + 1,
+      player: index % 2 ? 'WHITE' : 'BLACK', kind: 'RECORD', actor: '기록', recorded_at: row.recorded_at}));
+  }
   function drawBoard() {
     board.replaceChildren();
     svg('rect', {x: 0, y: 0, width: VIEW, height: VIEW, rx: 10, class: 'wood'}, board);
@@ -51,7 +66,7 @@ Admin.views.record = (() => {
     }
     for (const [r, c] of STARS) svg('circle', {cx: pos(c), cy: pos(r), r: 3.5, class: 'star'}, board);
     const mode = $('#labels').value;
-    const shown = live.slice(0, ply);
+    const shown = preview ? historyBefore(preview) : veto ? vetoHistory(veto) : live.slice(0, ply);
     shown.forEach((move, index) => {
       const last = index === shown.length - 1;
       const group = svg('g', {class: 'stone-hit'}, board);
@@ -91,7 +106,7 @@ Admin.views.record = (() => {
     chart.replaceChildren();
     const W = 480, H = 190, L = 40, R = 12, T = 12, B = 28;
     chart.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    const points = live.filter(m => m.kind === 'AI' && m.engine_seconds !== null && m.engine_seconds !== undefined);
+    const points = live.filter(m => m.kind === 'AI' && Number.isFinite(m.engine_seconds) && m.engine_seconds >= 0);
     if (!points.length) {
       svg('text', {x: W / 2, y: H / 2, class: 'chart-empty'}, chart, live.some(m => m.kind === 'AI') ? 'AI 계산시간 미기록' : 'AI 착수 없음');
       $('#chart-note').textContent = '';
@@ -141,7 +156,7 @@ Admin.views.record = (() => {
       hover.setAttribute('visibility', 'hidden');
       $('#chart-note').textContent = note;
     });
-    area.addEventListener('click', event => go(nearest(event).ply));
+    area.addEventListener('click', event => { stop(); go(nearest(event).ply); });
   }
 
   // ---- move list, vetoes, header ------------------------------------------------------------------
@@ -155,12 +170,14 @@ Admin.views.record = (() => {
       if (move.emergency_used) notes.push('비상수');
       const ai = move.kind === 'AI';
       const current = !move.undone_at && move.ply === ply && !preview;
-      const tr = Admin.el('tr', {class: `clickable${move.undone_at ? ' undone' : ''}${current || preview === move ? ' current' : ''}`,
+      const tr = Admin.el('tr', {dataset: {seq: move.seq}, class: `clickable${move.undone_at ? ' undone' : ''}${current || preview === move ? ' current' : ''}`,
         onclick: () => move.undone_at ? showUndone(move) : go(move.ply)},
-      Admin.el('td', {className: 'num', textContent: move.undone_at ? `(${move.ply})` : String(move.ply)}),
+      Admin.el('td', {className: 'num'}, Admin.el('button', {className: 'move-select',
+        textContent: move.undone_at ? `(${move.ply})` : String(move.ply), 'aria-label': describe(move)})),
       Admin.el('td', {textContent: where(move)}),
       Admin.el('td', {textContent: `${color(move)} · ${KIND[move.kind] || move.actor}`}),
       Admin.el('td', {className: 'num', textContent: ai ? Admin.seconds(move.engine_seconds) : ''}),
+      Admin.el('td', {className: 'num', textContent: ai ? Admin.seconds(move.queue_seconds) : ''}),
       Admin.el('td', {className: 'num', textContent: ai ? Admin.seconds(move.wall_seconds) : ''}),
       Admin.el('td', {className: notes.length ? 'warn' : '', textContent: notes.join(' · ')}));
       if (current || preview === move) tr.setAttribute('aria-current', 'true');
@@ -181,7 +198,9 @@ Admin.views.record = (() => {
       const played = row.played ? Admin.notation(...row.played) : '미기록';
       return Admin.el('li', {}, Admin.el('button', {className: `plain${veto === row ? ' active' : ''}`,
         textContent: `${row.ply}수 뒤 · 후보 ${tree} → 둔 수 ${played} · ${row.reason}`,
-        onclick: () => { stop(); veto = row; preview = null; ply = Math.min(row.ply, live.length); draw(); }}));
+        onclick: () => { stop(); veto = row; preview = null; ply = Math.min(row.ply, live.length);
+          $('#stone-info').textContent = row.history ? `거부 당시 ${row.ply}수 국면 · 후보 ${tree} → 둔 수 ${played}`
+            : '거부 당시 국면이 미기록되어 후보 위치만 표시합니다.'; draw(); }}));
     }));
   }
 
@@ -197,11 +216,14 @@ Admin.views.record = (() => {
       ['runtime hash', short(game.runtime_hash)], ['커밋', short(game.engine_commit) + (game.git_dirty ? ' (dirty)' : '')],
       ['seed', Admin.fmt(game.seed)], ['게임 ID', game.game_id], ['원본 로그', game.raw_log_dir || '—'],
     ];
-    $('#record-meta').replaceChildren(...rows.flatMap(([k, v]) => [Admin.el('dt', {textContent: k}), Admin.el('dd', {textContent: v})]));
+    const nodes = entries => entries.flatMap(([k, v]) => [Admin.el('dt', {textContent: k}), Admin.el('dd', {textContent: v})]);
+    $('#record-meta').replaceChildren(...nodes(rows.slice(0, 7)));
+    const full = {'엔진 hash': game.engine_config_hash, 'runtime hash': game.runtime_hash, '커밋': game.engine_commit ? game.engine_commit + (game.git_dirty ? ' (dirty)' : '') : null};
+    $('#record-provenance').replaceChildren(...nodes(rows.slice(7).map(([key, value]) => [key, full[key] || value])));
     const check = data.verification;
     const box = $('#record-issues');
     if (check.ok) {
-      box.replaceChildren(Admin.el('p', {className: 'ok', textContent: `기보 검증 통과 · ${check.replayed}수 재현 (합법 수, 착수 전 국면 hash, 최종 보드, 결과)`}));
+      box.replaceChildren(Admin.el('p', {className: 'ok', textContent: `기보 검증 통과 · ${check.replayed}수 재현 (합법 수 및 기록된 hash·최종 보드·결과 대조)`}));
     } else {
       box.replaceChildren(Admin.el('div', {className: 'issues', role: 'alert'},
         Admin.el('strong', {textContent: '기보 기록에 문제가 있습니다 (보정하지 않고 그대로 표시합니다)'}),
@@ -212,11 +234,13 @@ Admin.views.record = (() => {
   }
 
   function draw() {
+    for (const control of document.querySelectorAll('.replay button, .replay-options button, #ply-slider, #labels')) control.disabled = false;
     slider.max = String(live.length);
     slider.value = String(ply);
     $('#ply-label').textContent = preview ? `${preview.ply} (무른 수) / ${live.length}` : `${ply} / ${live.length}`;
     $('#go-first').disabled = $('#go-prev').disabled = ply === 0 && !preview;
     $('#go-next').disabled = $('#go-last').disabled = ply === live.length && !preview;
+    $('#play').disabled = live.length === 0;
     drawBoard();
     drawChart();
     drawMoves();
@@ -228,7 +252,7 @@ Admin.views.record = (() => {
     preview = null;
     veto = null;
     ply = Math.max(0, Math.min(live.length, target));
-    if (ply > 0) $('#stone-info').textContent = describe(live[ply - 1]);
+    $('#stone-info').textContent = ply > 0 ? describe(live[ply - 1]) : '첫 착수 전 국면입니다.';
     draw();
   }
   function showUndone(move) {
@@ -270,13 +294,14 @@ Admin.views.record = (() => {
 
   function apply(next) {
     const oldTotal = live.length;
-    const atEnd = !data || ply === oldTotal;
+    const firstLoad = !data;
+    const atEnd = ply === oldTotal;
     data = next;
     version = next.version;
     live = next.moves.filter(m => !m.undone_at).sort((a, b) => a.ply - b.ply || a.seq - b.seq);
     if (preview) preview = next.moves.find(m => m.seq === preview.seq && m.undone_at) || null;
     if (veto) veto = next.vetoes.find(v => v.id === veto.id) || null;
-    if (atEnd && (oldTotal === 0 || $('#follow').checked || next.game.status !== 'in_progress')) {
+    if (firstLoad || (atEnd && $('#follow').checked && !preview && !veto)) {
       ply = live.length;   // first load, or following the latest move
     } else {
       ply = Math.min(ply, live.length);   // looking at an earlier move: stay there
@@ -293,18 +318,24 @@ Admin.views.record = (() => {
       $('#follow').checked = true;
       $('#record-title').textContent = '불러오는 중…';
       $('#record-meta').replaceChildren();
+      $('#record-provenance').replaceChildren();
       $('#record-issues').replaceChildren();
       $('#stone-info').textContent = '돌을 누르면 그 수의 정보를 보여 줍니다.';
       board.replaceChildren();
       chart.replaceChildren();
+      $('#chart-note').textContent = '';
+      $('#ply-label').textContent = '0 / 0';
+      slider.max = '0'; slider.value = '0';
+      $('#follow-wrap').hidden = true;
       $('#moves-table tbody').replaceChildren();
       $('#veto-section').hidden = true;
+      for (const control of document.querySelectorAll('.replay button, .replay-options button, #ply-slider, #labels')) control.disabled = true;
     },
     leave() { stop(); },
-    async refresh() {
+    async refresh(context) {
       const id = gameId;
       const query = version ? `?since=${encodeURIComponent(version)}` : '';
-      const next = await Admin.get(`/data/games/${id}${query}`);
+      const next = await Admin.get(`/data/games/${id}${query}`, context);
       if (id !== gameId) return;  // the page moved to another game meanwhile
       if (!next.unchanged) apply(next);
       Admin.connected(`DB 연결됨 · 마지막 갱신 ${Admin.kst(next.observed_at, true)} KST`);

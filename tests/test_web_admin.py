@@ -179,7 +179,7 @@ class EntrypointTests(DatabaseFixture):
             conn.request('GET', '/renju/admin/', headers={'Cookie': cookie.split(';')[0]})
             response = conn.getresponse()
             self.assertEqual(response.status, 200)
-            self.assertIn('읽기 전용', response.read().decode())
+            self.assertIn('대국 기록', response.read().decode())
         finally:
             process.terminate()
             try:

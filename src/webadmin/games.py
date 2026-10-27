@@ -24,22 +24,22 @@ from weblog.store import GAME_STATUSES, open_readonly
 
 KST = timezone(timedelta(hours=9))
 AI_MOVE = "actor NOT IN ('HUMAN', 'OPENING_RULE')"
-SOFT_LIMIT = "coalesce(json_extract(rt_json, '$.soft_limit_exceeded'), 0) = 1"
+SOFT_LIMIT = "CASE WHEN json_valid(rt_json) THEN coalesce(json_extract(rt_json, '$.soft_limit_exceeded'), 0) = 1 ELSE 0 END"
 RESULTS = ('HUMAN_WIN', 'AI_WIN', 'DRAW', 'UNFINISHED')
 STATUS_FILTERS = GAME_STATUSES + ('suspected',)
 GAME_ID = re.compile(r'[0-9A-Za-z_-]{1,64}')
 DEFAULT_LIMIT, MAX_LIMIT = 50, 200
 # Last activity of a game: its start, its last recorded move or its last undo (julianday: any ISO offset).
 LAST_ACTIVITY = """max(julianday(g.started_at),
-    coalesce((SELECT julianday(max(recorded_at)) FROM moves WHERE game_id = g.game_id), 0),
-    coalesce((SELECT julianday(max(undone_at)) FROM moves WHERE game_id = g.game_id), 0))"""
+    coalesce((SELECT max(julianday(recorded_at)) FROM moves WHERE game_id = g.game_id), 0),
+    coalesce((SELECT max(julianday(undone_at)) FROM moves WHERE game_id = g.game_id), 0))"""
 GAME_COLUMNS = ('game_id', 'started_at', 'finished_at', 'status', 'result', 'winner', 'winner_actor', 'agent_key',
                 'agent_name', 'seed', 'human_color', 'number_of_moves', 'ai_total_seconds', 'undo_count', 'engine',
                 'engine_config_hash', 'engine_commit', 'git_dirty', 'policy_checkpoint_sha256',
                 'policy_metadata_sha256', 'raw_log_dir')
 
 
-def _cutoff(now: datetime, ttl: int) -> str:
+def cutoff_at(now: datetime, ttl: int) -> str:
     if now.tzinfo is None:
         raise ValueError('now must have a timezone')
     if ttl <= 0:
@@ -52,6 +52,13 @@ def _kst_day(value: str, name: str) -> datetime:
         return datetime.combine(date.fromisoformat(value), time(), KST)
     except ValueError:
         raise ValueError(f'{name}: YYYY-MM-DD') from None
+
+
+def _utc_iso(value: datetime) -> str:
+    try:
+        return value.astimezone(timezone.utc).isoformat()
+    except OverflowError:
+        raise ValueError('date out of supported UTC range') from None
 
 
 def _encode_cursor(started_at: str, game_id: str) -> str:
@@ -70,21 +77,34 @@ def _decode_cursor(value: str) -> tuple[str, str]:
     raise ValueError('cursor: invalid')
 
 
-def _filters(query: dict[str, str], cutoff: str) -> tuple[list[str], list]:
+def game_filters(query: dict[str, str], cutoff: str) -> tuple[list[str], list]:
     """WHERE clauses and parameters of the list filters; unknown values are refused (ValueError)."""
     where, params = [], []
+    if query.get('from') and query.get('to') and _kst_day(query['from'], 'from') > _kst_day(query['to'], 'to'):
+        raise ValueError('from must not be after to')
     if query.get('from'):
         where.append('julianday(g.started_at) >= julianday(?)')
-        params.append(_kst_day(query['from'], 'from').astimezone(timezone.utc).isoformat())
+        params.append(_utc_iso(_kst_day(query['from'], 'from')))
     if query.get('to'):  # inclusive KST day
-        end = _kst_day(query['to'], 'to') + timedelta(days=1)
+        try:
+            end = _kst_day(query['to'], 'to') + timedelta(days=1)
+        except OverflowError:
+            raise ValueError('to: date out of range') from None
         where.append('julianday(g.started_at) < julianday(?)')
-        params.append(end.astimezone(timezone.utc).isoformat())
+        params.append(_utc_iso(end))
     if query.get('agent'):
         if len(query['agent']) > 64:
             raise ValueError('agent: too long')
         where.append('g.agent_key = ?')
         params.append(query['agent'])
+    if query.get('engine'):
+        if query['engine'] == 'none':
+            where.append('g.engine_config_hash IS NULL')
+        elif re.fullmatch(r'[0-9a-fA-F]{1,64}', query['engine']):
+            where.append('g.engine_config_hash = ?')
+            params.append(query['engine'])
+        else:
+            raise ValueError('engine: invalid hash')
     if query.get('color'):
         if query['color'] not in ('BLACK', 'WHITE'):
             raise ValueError('color: BLACK or WHITE')
@@ -122,14 +142,14 @@ def list_games(path: Path, query: dict[str, str], *, now: datetime | None = None
     result, undo, cursor, limit). Timing columns count every recorded AI move (undone ones too: the engine
     searched them); the move count is the stones on the board."""
     now = now or datetime.now(timezone.utc)
-    cutoff = _cutoff(now, ttl)
+    cutoff = cutoff_at(now, ttl)
     try:
         limit = int(query.get('limit') or DEFAULT_LIMIT)
     except ValueError:
         raise ValueError('limit: integer') from None
     if not 1 <= limit <= MAX_LIMIT:
         raise ValueError(f'limit: 1..{MAX_LIMIT}')
-    where, params = _filters(query, cutoff)
+    where, params = game_filters(query, cutoff)
     filtered = ' AND '.join(where) or '1'
     page_where, page_params = [filtered], list(params)
     if query.get('cursor'):
@@ -173,7 +193,7 @@ def list_games(path: Path, query: dict[str, str], *, now: datetime | None = None
 def list_options(path: Path) -> dict:
     """The opponents seen in the database (for the list filter), with their engine hashes."""
     with closing(open_readonly(path)) as conn:
-        rows = conn.execute('''SELECT agent_key, agent_name, substr(engine_config_hash, 1, 12) AS engine_hash,
+        rows = conn.execute('''SELECT agent_key, agent_name, substr(engine_config_hash, 1, 12) AS engine_hash, engine_config_hash,
                 count(*) AS games, max(started_at) AS last_started
             FROM games GROUP BY agent_key, agent_name, engine_config_hash
             ORDER BY last_started DESC''').fetchall()
@@ -197,7 +217,11 @@ def verify_record(game: dict, moves: list[dict], final_board) -> dict:
     alternating from black, every move legal (renju rules, black's forbidden points), the position hash
     before each move, the final board, the move count and the result of a finished game."""
     issues = []
-    live = sorted((m for m in moves if m['undone_at'] is None), key=lambda m: (m['ply'], m['seq']))
+    live = [m for m in moves if m['undone_at'] is None]
+    if any(type(m['ply']) is not int or type(m['seq']) is not int or m['ply'] < 1 or m['seq'] < 0 for m in live):
+        return {'ok': False, 'replayed': 0, 'moves': len(live),
+                'issues': [_issue('sequence_type', '수 번호 또는 기록 순서가 올바른 정수가 아닙니다')]}
+    live.sort(key=lambda m: (m['ply'], m['seq']))
     plies = [m['ply'] for m in live]
     if plies != list(range(1, len(live) + 1)):
         issues.append(_issue('ply_sequence', f'수 번호가 1..{len(live)}로 이어지지 않습니다: {plies[:12]}…'
@@ -262,11 +286,11 @@ def game_detail(path: Path, game_id: str, *, since: str | None = None, now: date
     if not GAME_ID.fullmatch(game_id or ''):
         raise ValueError('game id: invalid')
     now = now or datetime.now(timezone.utc)
-    cutoff = _cutoff(now, ttl)
+    cutoff = cutoff_at(now, ttl)
     with closing(open_readonly(path)) as conn:
         conn.execute('BEGIN')
         row = conn.execute(f'''SELECT {', '.join('g.' + c for c in GAME_COLUMNS)}, g.final_board_json,
-                json_extract(g.agent_info_json, '$.runtime_hash') AS runtime_hash,
+                CASE WHEN json_valid(g.agent_info_json) THEN json_extract(g.agent_info_json, '$.runtime_hash') END AS runtime_hash,
                 g.status = 'in_progress' AND {LAST_ACTIVITY} < julianday(?) AS suspected
             FROM games g WHERE g.game_id = ?''', (cutoff, game_id)).fetchone()
         if row is None:
@@ -274,22 +298,23 @@ def game_detail(path: Path, game_id: str, *, since: str | None = None, now: date
         marker = conn.execute('''SELECT coalesce(max(seq), -1), count(*), count(undone_at)
             FROM moves WHERE game_id = ?''', (game_id,)).fetchone()
         veto_count = conn.execute('SELECT count(*) FROM veto_positions WHERE game_id = ?', (game_id,)).fetchone()[0]
-        version = hashlib.sha256(json.dumps([*marker, veto_count, row['status'], row['result'], row['finished_at'],
-                                             bool(row['suspected'])]).encode()).hexdigest()[:16]
+        version = hashlib.sha256(json.dumps([list(row), *marker, veto_count]).encode()).hexdigest()[:16]
         if since == version:
             return {'unchanged': True, 'version': version, 'observed_at': now.astimezone(timezone.utc).isoformat()}
         moves = [dict(m) for m in conn.execute(f'''SELECT seq, ply, player, actor, row0, col0, board_hash,
                 recorded_at, engine_seconds, queue_seconds, wall_seconds, timed_out, emergency_used, route,
                 {SOFT_LIMIT} AS soft_limit_exceeded, undone_at
             FROM moves WHERE game_id = ? ORDER BY seq''', (game_id,))]
-        vetoes = [dict(v) for v in conn.execute('''SELECT id, ply, recorded_at, reason, tree_move_json, played_json
+        vetoes = [dict(v) for v in conn.execute('''SELECT id, ply, recorded_at, reason, tree_move_json, played_json, payload_json
             FROM veto_positions WHERE game_id = ? ORDER BY ply, id''', (game_id,))]
     game = {key: row[key] for key in GAME_COLUMNS}
     game.update(runtime_hash=row['runtime_hash'], suspected=bool(row['suspected']))
+    bad_final_json = False
     try:
         final_board = json.loads(row['final_board_json']) if row['final_board_json'] else None
     except ValueError:
         final_board = None
+        bad_final_json = True
     for move in moves:
         move['kind'] = 'HUMAN' if move['actor'] == 'HUMAN' else 'OPENING' if move['actor'] == 'OPENING_RULE' else 'AI'
         for flag in ('timed_out', 'emergency_used', 'soft_limit_exceeded'):
@@ -297,7 +322,15 @@ def game_detail(path: Path, game_id: str, *, since: str | None = None, now: date
     for veto in vetoes:
         veto['tree_move'] = _point(veto.pop('tree_move_json'))
         veto['played'] = _point(veto.pop('played_json'))
+        try:
+            history = json.loads(veto.pop('payload_json')).get('history')
+            veto['history'] = history if isinstance(history, list) and all(_point(p) is not None for p in history) else None
+        except (ValueError, AttributeError):
+            veto['history'] = None
     check = verify_record(game, moves, final_board)
+    if bad_final_json:
+        check['issues'].append(_issue('final_board_json', '최종 보드 JSON을 읽을 수 없습니다'))
+        check['ok'] = False
     for move in moves:
         del move['board_hash']
     return {'version': version, 'observed_at': now.astimezone(timezone.utc).isoformat(), 'game': game,

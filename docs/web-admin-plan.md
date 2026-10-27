@@ -1,8 +1,8 @@
 # 웹 관리자 페이지 계획 (SER5, `/renju/admin/`)
 
 배포 라인(`feat/Web_SER5-tbv3-fast5`)의 렌주 웹에 관리자 페이지를 더하는 계획이다. 1단계 읽기 전용 진단 도구, 2단계 관리자 서버·로그인·배포 템플릿, 3단계 대국 목록·번호 기보·기보 검증,
-4단계 재생·자동 갱신을 구현했다. 실제 SER5 운영 데이터 확인과 Caddy/systemd 적용·게임 smoke는 아직 실행하지 않았다.
-5~7단계(통계·백업·SER5 적용)는 후속 작업이다.
+4단계 재생·자동 갱신, 5단계 통계, 6단계 전체 백업·다운로드를 구현했다. 실제 SER5 운영 데이터 확인과 Caddy/systemd 적용·게임 smoke는 아직 실행하지 않았다.
+7단계 SER5 적용은 후속 작업이다. 통계·백업 검증은 임시 DB와 로컬 Chromium에서 수행하며 운영 성능 검증을 대체하지 않는다.
 현재 실행·검증 절차와 한계는 [관리자 배포 안내](../deploy/README-admin.md)를 따른다.
 SQLite(`data/renju_web.db`, `src/weblog/store.py`, 스키마 v2)는 그대로 쓴다.
 
@@ -21,7 +21,7 @@ SQLite(`data/renju_web.db`, `src/weblog/store.py`, 스키마 v2)는 그대로 �
 | 9 | AI 계산시간 하나 | `engine_seconds`(탐색), `queue_seconds`(대기열), `wall_seconds`(사용자가 기다린 시간). 30초 soft limit 초과는 `rt_json`의 `soft_limit_exceeded`. | 계산시간과 대기시간을 나눠 보이고, 30초 초과 건수를 보인다. `actor`가 `HUMAN`, `OPENING_RULE`인 수는 뺀다. |
 | 10 | 관리자 조회가 게임 잠금을 기다리지 않게 | 별도 프로세스라 게임 서버의 잠금과 무관하다. WAL이라 읽기가 쓰기를 막지 않는다. 긴 읽기 트랜잭션은 checkpoint를 밀어 `-wal` 파일을 키운다. | 읽기는 `open_readonly`로 짧게 한다. 관리자 프로세스는 게임 서버와 같은 `deploy` 사용자로 실행한다(`-shm` 권한). |
 | 11 | 실시간 상태 | AI 생각 중, 대기열, 세션 수, DB 쓰기 실패는 게임 서버 메모리에만 있다. | 관리자 서버가 `127.0.0.1:8000/api/health`, `/api/engines`를 호출해 "서버 상태" 패널을 만든다. |
-| 12 | 백업 새로 구현 | `deploy/backup_db.py`가 매일 04:17에 백업 API로 백업하고 integrity_check 후 14개를 보관한다. | 그 로직을 재사용하고 `manifest.json`을 더한다. `logs/web_play/` 원본 로그 포함은 선택이다. |
+| 12 | 백업 새로 구현 | `deploy/backup_db.py`가 매일 04:17에 백업 API로 백업하고 integrity_check 후 14개를 보관한다. | 그 로직을 재사용하고 `manifest.json`을 더한다. 스냅샷에 연결된 완료 대국의 `game.json`·`moves.csv` 원본 로그 포함은 선택이다. |
 
 ## 2. 구성
 
@@ -60,7 +60,7 @@ Caddy (HTTPS, basic_auth /renju*)
 | 무르기 | `undo_count` |
 | AI 시간 | 계산시간 평균·최대, 30초 초과 건수 |
 
-- 필터: 기간(KST), AI, 색, 상태, 결과, 무르기 여부.
+- 필터: 기간(KST), AI, 엔진 해시(전체 값으로 필터), 색, 상태, 결과, 무르기 여부.
 - 최신순, `started_at` 기준 커서 페이지(인덱스 `games_started` 있음).
 - 행을 누르면 상세 기보 화면으로 간다.
 
@@ -83,8 +83,8 @@ Caddy (HTTPS, basic_auth /renju*)
 - PC는 바둑판 옆, 모바일은 바둑판 아래에 착수 목록과 시간을 둔다.
 - 돌을 누르면 좌표, 둔 쪽(사람 / 중앙 첫 수 / AI), 계산시간·대기시간을 보인다.
 - 시간 그래프의 점을 누르면 그 국면으로 간다.
-- 무른 수는 수순 목록에 무르기 지점으로 표시하고, 선택하면 회색 점선 돌로 보인다.
-- AI VCT2 거부 기록을 누르면 그 시점 보드에 원래 후보 수(`tree_move`)와 실제로 둔 수(`played`)를 함께 보인다.
+- 무른 수는 수순 목록에 무르기 지점으로 표시하고, 선택하면 회색 점선 돌로 보인다. 이때 현재 분기가 아니라 기록 순서(`seq`)와 각 수의 `ply`로 당시 분기를 재구성한다.
+- AI VCT2 거부 기록을 누르면 그 시점 보드에 원래 후보 수(`tree_move`)와 실제로 둔 수(`played`)를 함께 보인다. 국면은 payload에 저장된 당시 `history`를 사용하며, 없으면 현재 분기로 대체하지 않고 미기록임을 표시한다.
 - 진행 중 대국은 "최신 수 따라가기". 과거 수를 보는 중에는 새 착수가 와도 위치를 유지한다.
 
 **좌표와 검증.**
@@ -139,7 +139,7 @@ games.csv
 moves.csv
 veto_positions.csv
 manifest.json        (생성 시각, 스키마 버전, 테이블별 건수, 파일별 SHA-256·크기, 서버 커밋)
-[선택] logs/web_play/
+[선택] logs/web_play/<스냅샷에 연결된 완료 대국>/game.json, moves.csv
 ```
 
 ```text
@@ -150,9 +150,10 @@ manifest.json        (생성 시각, 스키마 버전, 테이블별 건수, 파�
 - 모든 추출물은 같은 스냅샷에서 만든다. 운영 DB 파일을 복사하지 않는다.
 - CSV는 `utf-8-sig`(기존 `moves.csv`와 같다), JSON 컬럼도 그대로 넣는다.
 - 위치는 `data/admin_exports/`(git 무시, 웹 경로 밖). 한 번에 하나만, `nice`로 낮은 우선순위, 시작 전 디스크 여유 확인.
-- 상태: 생성 중 / 완료 / 실패. 최근 N개만 남기고 24시간 넘은 임시 파일은 지운다.
+- 상태: 생성 중 / 완료 / 실패. 완료본은 기본 최근 5개(`--export-keep`)를 남기고, 24시간 넘은 임시 파일은 다음 상태 조회·생성 시 지운다. 파일 잠금으로 관리자 재시작 중에도 중복 생성을 차단한다.
 - 화면에 생성 시각, 테이블별 건수, 파일 크기를 보인다.
-- 매일 도는 `renju-db-backup.timer`는 그대로 둔다.
+- 매일 도는 `renju-db-backup.timer`는 그대로 둔다. 온라인 스냅샷·무결성 검사를 `weblog.backup.snapshot_database`로 공유한다. SQL dump에는 `PRAGMA user_version`도 보존한다.
+- `manifest.json`의 파일 해시·크기는 manifest 자신을 제외한 구성 파일을 대상으로 한다. 선택 원본 로그는 파일 사본이며 DB/SQL/CSV와 원자적 스냅샷을 보장하지 않는다. 경로 이탈·심볼릭 링크·계정 설정 파일은 포함하지 않는다.
 
 ## 10. 구현 순서와 완료 기준
 

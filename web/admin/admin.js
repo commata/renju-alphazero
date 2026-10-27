@@ -5,7 +5,7 @@ const Admin = {
   views: {},
   current: null,
   timer: null,
-  loading: false,
+  request: null,
   fmt: value => value === null || value === undefined ? '미기록' : String(value),
   seconds: value => value === null || value === undefined ? '미기록' : Number(value).toFixed(1),
   kst(iso, withSeconds = false) {
@@ -33,17 +33,19 @@ const Admin = {
     node.append(...children.filter(child => child !== null && child !== undefined));
     return node;
   },
-  async get(path) {
-    const response = await fetch(Admin.base + path, {cache: 'no-store', credentials: 'same-origin'});
+  async get(path, context) {
+    const response = await fetch(Admin.base + path, {cache: 'no-store', credentials: 'same-origin', signal: context?.controller.signal});
+    if (context && context !== Admin.request) throw new DOMException('Superseded request', 'AbortError');
     if (response.status === 401) { location.replace(Admin.base + '/login'); throw new Error('login required'); }
     let data = null;
     try { data = await response.json(); } catch { data = null; }
+    if (context && context !== Admin.request) throw new DOMException('Superseded request', 'AbortError');
     if (!response.ok) throw new Error((data && data.error) || `HTTP ${response.status}`);
     return data;
   },
   connected(text) { document.querySelector('#connection').textContent = text; },
   failed(error) {
-    if (error.message !== 'login required') Admin.connected(`연결 오류 · 이전 값 유지 · ${error.message}`);
+    if (error.name !== 'AbortError' && error.message !== 'login required') Admin.connected(`연결 오류 · 이전 값 유지 · ${error.message}`);
   },
   // One timer for the visible view: 5 s, 30 s while the tab is hidden. A slow request never overlaps.
   schedule() {
@@ -52,19 +54,48 @@ const Admin = {
   },
   async refresh() {
     clearTimeout(Admin.timer);
-    if (Admin.loading || !Admin.current) { Admin.schedule(); return; }
-    Admin.loading = true;
+    if (!Admin.current) return;
+    Admin.request?.controller.abort();
+    const context = {controller: new AbortController()};
+    Admin.request = context;
     const view = Admin.current;
-    try { await view.refresh(); } catch (error) { Admin.failed(error); } finally {
-      Admin.loading = false;
-      if (view === Admin.current) Admin.schedule();
+    try { await view.refresh(context); } catch (error) { if (context === Admin.request) Admin.failed(error); } finally {
+      if (context === Admin.request && view === Admin.current) Admin.schedule();
     }
+  },
+  async post(path, body) {
+    const response = await fetch(Admin.base + path, {method: 'POST', credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+    if (response.status === 401) { location.replace(Admin.base + '/login'); throw new Error('login required'); }
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    return data;
+  },
+  filterQuery(form) {
+    const params = new URLSearchParams();
+    for (const [key, value] of new FormData(form)) if (value) params.set(key, value);
+    return params;
+  },
+  async filterOptions(form, context) {
+    if (form.dataset.optionsLoaded) return;
+    const data = await Admin.get('/data/games/options', context);
+    const agents = new Set();
+    for (const agent of data.agents) {
+      if (!agents.has(agent.agent_key)) {
+        form.elements.agent.append(Admin.el('option', {value: agent.agent_key,
+          textContent: `${agent.agent_key} · ${agent.agent_name}`}));
+        agents.add(agent.agent_key);
+      }
+      if (agent.engine_config_hash) form.elements.engine.append(Admin.el('option', {
+        value: agent.engine_config_hash, textContent: `${agent.agent_key} · ${agent.engine_hash}`}));
+    }
+    form.dataset.optionsLoaded = 'true';
   },
   route() {
     const hash = location.hash.replace(/^#/, '') || '/';
     let name = 'status', arg = null;
     const match = hash.match(/^\/games\/([0-9A-Za-z_-]{1,64})$/);
-    if (match) { name = 'record'; arg = match[1]; } else if (hash === '/games') name = 'games';
+    if (match) { name = 'record'; arg = match[1]; } else if (['/games', '/statistics', '/exports'].includes(hash)) name = hash.slice(1);
     for (const view of document.querySelectorAll('.view')) view.hidden = view.id !== `view-${name}`;
     for (const link of document.querySelectorAll('nav a')) {
       link.toggleAttribute('aria-current', link.dataset.view === name || (name === 'record' && link.dataset.view === 'games'));
@@ -72,15 +103,14 @@ const Admin = {
     if (Admin.current && Admin.current.leave) Admin.current.leave();
     Admin.current = Admin.views[name];
     Admin.current.enter(arg);
-    Admin.loading = false;
     Admin.refresh();
   },
 };
 
 Admin.views.status = {
   enter() {},
-  async refresh() {
-    const data = await Admin.get('/data/status');
+  async refresh(context) {
+    const data = await Admin.get('/data/status', context);
     const db = data.database;
     const summary = document.querySelector('#summary');
     summary.replaceChildren();
@@ -96,6 +126,13 @@ Admin.views.status = {
       summary.append(Admin.el('dt', {textContent: label}), Admin.el('dd', {textContent: Admin.fmt(value)}));
     }
     document.querySelector('#details').textContent = JSON.stringify(db, null, 2);
+    const health = data.game_server.health || {};
+    const ai = health.ai || {};
+    const serverRows = {'서버': health.ok ? '연결됨' : '연결할 수 없음', '기본 AI': health.default_agent,
+      '접속 세션': health.sessions, 'AI 실행 중': ai.running, 'AI 큐 대기': ai.queued,
+      'AI 실패': ai.failed, 'DB 기록 실패': health.db?.failures, '최근 DB 오류': health.db?.last_error || '없음'};
+    document.querySelector('#server-summary').replaceChildren(...Object.entries(serverRows).flatMap(([key, value]) =>
+      [Admin.el('dt', {textContent: key}), Admin.el('dd', {textContent: Admin.fmt(value)})]));
     document.querySelector('#server').textContent = JSON.stringify(data.game_server, null, 2);
     Admin.connected(`DB 연결됨 · 마지막 갱신 ${Admin.kst(db.observed_at, true)} KST`);
   },

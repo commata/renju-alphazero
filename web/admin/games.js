@@ -5,27 +5,12 @@ Admin.views.games = (() => {
   const body = document.querySelector('#games-table tbody');
   let cursors = [null];  // cursor of each page seen; the last one is the current page
   let next = null;
-  let optionsLoaded = false;
 
   function query() {
-    const params = new URLSearchParams();
-    for (const [key, value] of new FormData(form)) if (value) params.set(key, value);
+    const params = Admin.filterQuery(form);
     const cursor = cursors[cursors.length - 1];
     if (cursor) params.set('cursor', cursor);
     return params.toString();
-  }
-
-  async function loadOptions() {
-    if (optionsLoaded) return;
-    const data = await Admin.get('/data/games/options');
-    const select = form.elements.agent;
-    const seen = new Set();
-    for (const agent of data.agents) {
-      if (seen.has(agent.agent_key)) continue;
-      seen.add(agent.agent_key);
-      select.append(Admin.el('option', {value: agent.agent_key, textContent: `${agent.agent_key} · ${agent.agent_name}`}));
-    }
-    optionsLoaded = true;
   }
 
   function cell(text, className) { return Admin.el('td', {textContent: text, className: className || ''}); }
@@ -56,9 +41,9 @@ Admin.views.games = (() => {
 
   return {
     enter() {},
-    async refresh() {
-      await loadOptions();
-      const data = await Admin.get(`/data/games?${query()}`);
+    async refresh(context) {
+      await Admin.filterOptions(form, context);
+      const data = await Admin.get(`/data/games?${query()}`, context);
       next = data.next_cursor;
       body.replaceChildren(...data.games.map(row));
       if (!data.games.length) body.append(Admin.el('tr', {}, Admin.el('td', {colSpan: 11, className: 'muted', textContent: '조건에 맞는 대국이 없습니다.'})));

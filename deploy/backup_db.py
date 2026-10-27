@@ -6,10 +6,13 @@ writes (SQLite backup API, WAL-safe), then delete all but the newest ``--keep`` 
 from __future__ import annotations
 
 import argparse
-import sqlite3
 import sys
 from datetime import datetime
 from pathlib import Path
+
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+from weblog.backup import snapshot_database  # noqa: E402
 
 
 def main(argv=None) -> int:
@@ -23,17 +26,7 @@ def main(argv=None) -> int:
         return 1
     args.dir.mkdir(parents=True, exist_ok=True)
     target = args.dir / f'{args.db.stem}-{datetime.now():%Y%m%d-%H%M%S}.db'
-    source = sqlite3.connect(f'{args.db.resolve().as_uri()}?mode=ro', uri=True)
-    copy = sqlite3.connect(target)
-    try:
-        source.backup(copy)
-        ok = copy.execute('PRAGMA integrity_check').fetchone()[0]
-    finally:
-        copy.close()
-        source.close()
-    if ok != 'ok':
-        print(f'backup {target}: integrity_check {ok}', file=sys.stderr)
-        return 1
+    snapshot_database(args.db, target)
     backups = sorted(args.dir.glob(f'{args.db.stem}-*.db'))
     for old in backups[:-args.keep] if args.keep > 0 else []:
         old.unlink()

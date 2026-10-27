@@ -1,7 +1,8 @@
 """Loopback-only admin HTTP server. Caddy strips /renju/admin before proxying.
 
 Only login assets and POST /login are public. All other routes require a session,
-including unknown data/export paths. No game module or torch is imported.
+including unknown data/export paths. No engine or torch is imported; renju.Game
+is used only to verify stored records.
 """
 from __future__ import annotations
 
@@ -9,14 +10,18 @@ from http.cookies import SimpleCookie, CookieError
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ipaddress
 import json
+import os
+import shutil
 from pathlib import Path
 import sqlite3
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import ProxyHandler, build_opener
 
 from .auth import Auth
+from .exports import ExportBusy, ExportManager
 from .games import game_detail, list_games, list_options
 from .inspect import inspect_database
+from .statistics import game_statistics
 
 PREFIX = '/renju/admin'
 COOKIE = 'renju_admin'
@@ -25,7 +30,9 @@ PUBLIC_ASSETS = {'/login.css': ('style.css', 'text/css; charset=utf-8'),
 PRIVATE_ASSETS = {'/admin.js': ('admin.js', 'text/javascript; charset=utf-8'),
                   '/games.js': ('games.js', 'text/javascript; charset=utf-8'),
                   '/record.js': ('record.js', 'text/javascript; charset=utf-8'),
-                  '/admin.css': ('admin.css', 'text/css; charset=utf-8')}
+                  '/admin.css': ('admin.css', 'text/css; charset=utf-8'),
+                  '/statistics.js': ('statistics.js', 'text/javascript; charset=utf-8'),
+                  '/exports.js': ('exports.js', 'text/javascript; charset=utf-8')}
 GAME_PATH = '/data/games/'
 
 
@@ -48,12 +55,14 @@ def validate_origin(origin: str) -> str:
 class AdminServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, *, db: Path, origin: str, auth: Auth, assets: Path):
+    def __init__(self, address, *, db: Path, origin: str, auth: Auth, assets: Path, exports: ExportManager | None = None):
         if address[0] != '127.0.0.1':
             raise ValueError('admin must bind to 127.0.0.1')
         self.origin = validate_origin(origin)
         self.secure = self.origin.startswith('https://')
         self.db, self.auth, self.assets = db, auth, assets
+        self.exports = exports or ExportManager(db, db.parent / 'admin_exports',
+                                               repo=assets.parents[1], log_root=assets.parents[1] / 'logs/web_play')
         super().__init__(address, Handler)
 
     def get_request(self):
@@ -183,6 +192,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._asset(*PRIVATE_ASSETS[path])
             elif path == '/data/status':
                 self._json({'database': inspect_database(self.server.db), 'game_server': game_status()})
+            elif path == '/data/statistics':
+                self._data(lambda: game_statistics(self.server.db, self._query()))
+            elif path == '/data/exports':
+                self._json(self.server.exports.list_jobs())
+            elif path.startswith('/data/exports/') and path.endswith('/download'):
+                self._data(lambda: self._download(path[len('/data/exports/'):-len('/download')]))
             elif path == '/data/games':
                 self._data(lambda: list_games(self.server.db, self._query()))
             elif path == '/data/games/options':
@@ -204,13 +219,28 @@ class Handler(BaseHTTPRequestHandler):
         try:
             value = read()
         except LookupError:
-            self._json({'error': '대국을 찾을 수 없습니다.'}, 404)
+            self._json({'error': '요청한 대국이나 완료된 백업을 찾을 수 없습니다.'}, 404)
         except ValueError as exc:
             if isinstance(exc, UnicodeError):
                 raise
             self._json({'error': f'잘못된 요청: {exc}'}, 400)
         else:
-            self._json(value)
+            if value is not None:
+                self._json(value)
+
+    def _download(self, job_id):
+        handle, _ = self.server.exports.open_download(job_id)
+        with handle:
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/gzip')
+            self.send_header('Content-Length', str(os.fstat(handle.fileno()).st_size))
+            self.send_header('Content-Disposition', f'attachment; filename="renju_web_backup_{job_id}.tar.gz"')
+            self.end_headers()
+            if self.command != 'HEAD':
+                try:
+                    shutil.copyfileobj(handle, self.wfile, 64 * 1024)
+                except OSError:
+                    pass  # client disconnected; a JSON error cannot follow streamed headers
 
     def do_HEAD(self):
         self.do_GET()
@@ -227,7 +257,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.headers.get_all('Origin') != [self.server.origin]:
             self._json({'error': 'origin rejected'}, 403)
             return
-        if path not in ('/login', '/logout'):
+        if path not in ('/login', '/logout', '/data/exports'):
             self._json({'error': 'not found'}, 404)
             return
         if self.headers.get('Transfer-Encoding') or len(self.headers.get_all('Content-Length') or []) != 1:
@@ -243,6 +273,19 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(size))
             if not isinstance(payload, dict):
                 raise ValueError('object required')
+            if path == '/data/exports':
+                include = payload.get('include_raw_logs', False)
+                if type(include) is not bool or set(payload) - {'include_raw_logs'}:
+                    raise ValueError('invalid backup options')
+                try:
+                    job = self.server.exports.start(include_raw_logs=include)
+                except ExportBusy as exc:
+                    self._json({'error': str(exc)}, 409)
+                except OSError:
+                    self._json({'error': '백업 프로세스를 시작하지 못했습니다. 디스크와 서비스 로그를 확인하세요.'}, 503)
+                else:
+                    self._json(job, 202)
+                return
             if path == '/logout':
                 self.server.auth.logout(self._token())
                 self._json({'ok': True}, headers={'Set-Cookie': self._cookie('', clear=True)})
