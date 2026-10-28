@@ -3,6 +3,7 @@ a candidate without cycle lineage, the judgment order and its ledger, the forbid
 stand-in networks and mocked runners only: no real evaluation, Rapfi or GPU."""
 import argparse
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -10,9 +11,9 @@ import unittest
 from unittest import mock
 
 from hybrid import h7r_eval as ev, h7r_evidence as evidence
-from hybrid.h7r_ledger import bind, bind_all, conflicts
+from hybrid.h7r_ledger import bind, bind_all, conflicts, entry_name, same_value
 from scripts import h7r_eval as cli, h7r_holdout as ho
-from tests.h7r_helpers import selection_source, tactical_record, tactical_results, timing_record
+from tests.h7r_helpers import reserve, selection_source, tactical_record, tactical_results, timing_record
 from tests.test_h7r_cli import CLEAN, QUIET, fake_play_game, world
 from tests import test_h7r_eval as eval_tests
 from tests.test_h7r_eval import STATS, games, openings
@@ -209,14 +210,14 @@ class PolicySelectionTest(unittest.TestCase):
         self.assertEqual(out['mean_delta'], -0.05)
 
 
-def confirm_world(tmp, policy=POLICY, candidate_moves=None, branch_records=None):
+def confirm_world(tmp, policy=POLICY, candidate_moves=None, branch_records=None, source_commit='test'):
     w = world(Path(tmp))
     if policy is not None:
         w['body']['selection']['invalid_policy'] = policy
     selection_source(w['root'], w['body'], 'pending', candidate_moves, branch_records)
     w['contract'].write_text(json.dumps(w['body']))
     _, w['sha'] = ev.load_contract(w['contract'], w['root'], check_files=False)
-    w['source'] = selection_source(w['root'], w['body'], w['sha'], candidate_moves, branch_records)
+    w['source'] = selection_source(w['root'], w['body'], w['sha'], candidate_moves, branch_records, source_commit)
     return w
 
 
@@ -227,7 +228,7 @@ class StructuralSelectionTest(unittest.TestCase):
         moves, records = {0: FIXED}, {tuple(FIXED): STRUCTURAL}
         with TemporaryDirectory() as tmp:
             w = confirm_world(tmp, POLICY, moves, records)
-            out = evidence.selection(w['source'], w['body'], w['sha'], w['root'])
+            out = evidence.selection(w['source'], w['body'], w['sha'], w['root'], 'test')
             self.assertEqual((out['structural_observations'], out['unresolved_observations'], out['invalid']), (1, 0, 0))
             self.assertEqual(out['normalized']['abnormal_end_evaluation_draw'], 1)
             self.assertEqual((out['mean_delta'], out['invalid_share']), (-0.02, 0.0))  # -0.5 / 25 observations
@@ -248,12 +249,12 @@ class StructuralSelectionTest(unittest.TestCase):
                 manifest['branches'] = ho.file_ref(branches, w['source'].parent)
                 w['source'].write_text(json.dumps(manifest))
                 with self.assertRaisesRegex(ValueError, 'not structural'):
-                    evidence.selection(w['source'], w['body'], w['sha'], w['root'])
+                    evidence.selection(w['source'], w['body'], w['sha'], w['root'], 'test')
             finally:
                 branches.write_bytes(old)
         with TemporaryDirectory() as tmp:
             w = confirm_world(tmp, None, moves, records)
-            out = evidence.selection(w['source'], w['body'], w['sha'], w['root'])
+            out = evidence.selection(w['source'], w['body'], w['sha'], w['root'], 'test')
             self.assertEqual((out['status'], out['reason'], out['invalid'], out['invalid_policy']),
                              ('INCONCLUSIVE', 'INVALID_BRANCHES', 1, None))
 
@@ -262,15 +263,17 @@ class StructuralSelectionTest(unittest.TestCase):
                    'length': len(PREFIX) + 1}
         with TemporaryDirectory() as tmp:
             w = confirm_world(tmp, POLICY, {0: FIXED}, {tuple(FIXED): timeout})
-            out = evidence.selection(w['source'], w['body'], w['sha'], w['root'])
+            out = evidence.selection(w['source'], w['body'], w['sha'], w['root'], 'test')
             self.assertEqual((out['unresolved_observations'], out['resolved_observations'], out['invalid_share']),
                              (1, 24, 0.04))
             self.assertEqual(out['mean_delta'], -0.04)  # 0 - 1 for game 0, the rest 1 - 1
 
 
-class ConfirmFlowTest(unittest.TestCase):
+class FlowSetup:
     """A policy contract with stand-in models whose candidate has no cycle metadata: tactical from the command,
-    every evidence record, the judgment to PROMOTE and the ledger's behaviour around it."""
+    every evidence record, the judgment to PROMOTE and the ledger's behaviour around it. ``RESERVE``: the
+    pre-registration ``selection-source`` makes (contract, seeds, H-conf use) is in place after ``setUp``."""
+    RESERVE = True
 
     def setUp(self):
         git_patch = mock.patch.object(cli, '_git', return_value=dict(CLEAN))
@@ -286,6 +289,8 @@ class ConfirmFlowTest(unittest.TestCase):
         self.selection = self.save(sel, 'sel')
         self.timing = self.save(timing_record(self.body, self.sha, self.root), 'time')
         self.tactical = self.save(self.make_tactical(), 'tact')
+        if self.RESERVE:
+            reserve(self.root, self.body, self.sha)
 
     def save(self, value, name):
         path = self.root / 'out' / f'{name}.json'
@@ -316,6 +321,7 @@ class ConfirmFlowTest(unittest.TestCase):
                                      'selection': self.selection, 'tactical': self.tactical, 'timing': self.timing,
                                      'allow_dirty': True, **change})
 
+class ConfirmFlowTest(FlowSetup, unittest.TestCase):
     def test_tactical_command_for_a_candidate_without_cycle_lineage(self):
         meta = json.loads((self.w['cand']).with_name('best.json').read_text())
         self.assertFalse({'h7c_stage', 'cycle'} & set(meta))
@@ -344,7 +350,12 @@ class ConfirmFlowTest(unittest.TestCase):
         self.assertEqual((verdict['decision'], verdict['keep_kind'], verdict['code_commit']), ('PROMOTE', None, 'test'))
         self.assertEqual(verdict['judge_git'], CLEAN)
         code_entry = next(e for e in verdict['ledger']['entries'] if e['category'] == 'judge-code')
-        self.assertEqual(json.loads((self.root / code_entry['entry']).read_text()), CLEAN)
+        self.assertEqual(json.loads((self.root / code_entry['entry']).read_text()), {'commit': 'test'})
+        self.assertEqual({e['category'] for e in verdict['ledger']['entries']},
+                         {'contract', 'seed', 'holdout-use', 'judgment', 'judge-code'})
+        # the H-conf was generated by other code (its own commit): another source, not compared with the arms'
+        games = [json.loads(x) for x in (self.root / 'evidence/games.jsonl').read_text().splitlines()]
+        self.assertNotIn('test', {g['generator_git']['commit'] for g in games})
         self.assertEqual(verdict['selection']['invalid_policy'], POLICY)
         for entry in verdict['ledger']['entries']:
             self.assertEqual(ev.file_sha256(self.root / entry['entry']), entry['sha256'])
@@ -422,6 +433,115 @@ class ConfirmFlowTest(unittest.TestCase):
             bind_all(cli.ROOT, [('contract', 'T-CONFIRM', {'sha256': self.sha})], allow_dirty=True)
         self.assertEqual(ledger_files(cli.ROOT), before)
 
+    def test_measurements_of_another_commit_are_refused(self):
+        before = ledger_files(self.root)
+        other_timing = self.save(timing_record(self.body, self.sha, self.root, commit='other'), 'time-other')
+        with self.assertRaisesRegex(ValueError, 'timing code commit differs'):
+            cli.judge(self.judge_args(timing=other_timing), root=self.root)
+        other = selection_source(self.root, self.body, self.sha, source_commit='other', folder_name='evidence-other')
+        record = json.loads(self.selection.read_text())
+        record['source'] = ho.file_ref(other, self.selection.parent)
+        with self.assertRaisesRegex(ValueError, 'selection source code commit differs'):
+            cli.judge(self.judge_args(selection=self.save(record, 'sel-other')), root=self.root)
+        with self.assertRaisesRegex(ValueError, 'selection source code commit differs'):  # the standalone command
+            cli.selection(argparse.Namespace(contract=self.w['contract'], evidence=other, allow_dirty=True,
+                                             output=self.root / 'out/x.json', root=self.root))
+        for verify in (lambda: evidence.timing(json.loads(self.timing.read_text()), self.body, self.sha, self.root,
+                                               None),
+                       lambda: evidence.selection(self.w['source'], self.body, self.sha, self.root, None)):
+            with self.assertRaisesRegex(ValueError, 'expected code commit'):  # no default: the commit is named
+                verify()
+        self.assertEqual(ledger_files(self.root), before)
+        self.assertEqual(cli.judge(self.judge_args(), root=self.root)['decision'], 'PROMOTE')
+
+    def test_judge_requires_the_pre_registration_and_never_creates_it(self):
+        folder = self.root / 'runs/h7r/confirmations'
+        name = lambda category, key: folder / f'{entry_name(category, key)}.json'  # noqa: E731
+        hold = name('holdout-use', self.body['selection']['holdout_contract_sha256'])
+        seed = name('seed', str(self.body['arms'][0]['seed']))
+        contract = name('contract', self.body['contract_id'])
+        # an empty ledger (another checkout?): refused, nothing created
+        away = folder.with_name('confirmations.kept')
+        folder.rename(away)
+        try:
+            with self.assertRaisesRegex(ValueError, 'is empty.*another checkout'):
+                cli.judge(self.judge_args(), root=self.root)
+            self.assertFalse(folder.exists())
+        finally:
+            away.rename(folder)
+        for path, damage, message in ((hold, None, 'holdout-use:.* missing'),
+                                      (seed, {'contract_id': 'OTHER', 'sha256': '0' * 64}, 'seed:.* bound to'),
+                                      (contract, b'{not json', 'contract:.* corrupt')):
+            kept = path.read_bytes()
+            try:
+                if damage is None:
+                    path.unlink()
+                else:
+                    path.write_bytes(damage if isinstance(damage, bytes) else json.dumps(damage).encode())
+                before = ledger_files(self.root)
+                with self.subTest(path=path.name), self.assertRaisesRegex(ValueError, message):
+                    cli.judge(self.judge_args(), root=self.root)
+                self.assertEqual(ledger_files(self.root), before)  # not repaired, not re-created
+            finally:
+                path.write_bytes(kept)
+        self.assertEqual(cli.judge(self.judge_args(), root=self.root)['decision'], 'PROMOTE')
+
+    def test_a_registration_lost_before_the_final_lock_is_not_recreated(self):
+        hold = self.root / 'runs/h7r/confirmations' / (
+            entry_name('holdout-use', self.body['selection']['holdout_contract_sha256']) + '.json')
+        real = evidence.selection
+
+        def verify_then_lose(*a, **k):
+            out = real(*a, **k)
+            hold.unlink()  # after the read-only check, before the final lock
+            return out
+
+        with mock.patch('hybrid.h7r_evidence.selection', verify_then_lose):
+            with self.assertRaisesRegex(ValueError, 'holdout-use:.* missing'):
+                cli.judge(self.judge_args(), root=self.root)
+        self.assertFalse(hold.exists())
+        folder = self.root / 'runs/h7r/confirmations'
+        self.assertFalse((folder / (entry_name('judgment', self.sha) + '.json')).exists())
+        self.assertFalse((folder / (entry_name('judge-code', self.sha) + '.json')).exists())
+
+    def test_judge_code_identity_is_the_commit_only(self):
+        first = cli.judge(self.judge_args(), root=self.root)
+        richer = {**CLEAN, 'branch': 'feat/h7-c1', 'describe': 'v0-1-gtest'}
+        with mock.patch.object(cli, '_git', return_value=richer):
+            again = cli.judge(self.judge_args(), root=self.root)  # other Git fields of the same commit
+        self.assertEqual((again['decision'], again['judge_git'], again['ledger']), ('PROMOTE', richer, first['ledger']))
+        self.assertFalse(same_value('judgment', {'commit': 'test', 'dirty': False}, {'commit': 'test'}))
+
+    def test_a_judge_code_entry_holding_the_whole_git_state_is_read_compatibly(self):
+        folder = self.root / 'runs/h7r/confirmations'
+        path = folder / (entry_name('judge-code', self.sha) + '.json')
+        for legacy, accepted in (({'commit': 'test', 'dirty': False}, True), ({'commit': 'test', 'dirty': True}, False),
+                                 ({'commit': 'other', 'dirty': False}, False), ({'commit': 'test'}, True)):
+            with self.subTest(legacy=legacy):
+                stored = json.dumps(legacy, sort_keys=True).encode()
+                path.write_bytes(stored)
+                if accepted:
+                    verdict = cli.judge(self.judge_args(), root=self.root)
+                    entry = next(e for e in verdict['ledger']['entries'] if e['category'] == 'judge-code')
+                    self.assertEqual(entry['sha256'], hashlib.sha256(stored).hexdigest())
+                else:
+                    with self.assertRaisesRegex(ValueError, 'judge-code'):
+                        cli.judge(self.judge_args(), root=self.root)
+                self.assertEqual(path.read_bytes(), stored)  # never rewritten
+                path.unlink()
+                (folder / (entry_name('judgment', self.sha) + '.json')).unlink(missing_ok=True)
+
+
+class SelectionSourceFlowTest(FlowSetup, unittest.TestCase):
+    """From a ledger without the H-conf reservation: the real ``selection-source`` reserves, then the chain runs."""
+    RESERVE = False
+
+    def test_judge_without_the_hconf_reservation_is_refused(self):
+        before = ledger_files(self.root)
+        with self.assertRaisesRegex(ValueError, 'holdout-use:.* missing'):
+            cli.judge(self.judge_args(), root=self.root)
+        self.assertEqual(ledger_files(self.root), before)
+
     def test_selection_source_reserves_the_hconf_before_evaluating_and_resumes(self):
         manifest = json.loads(self.w['source'].read_text())
         rows = {json.loads(x)['game_index']: json.loads(x)
@@ -462,6 +582,16 @@ class ConfirmFlowTest(unittest.TestCase):
         with second[0], second[1], second[2], second[3], second[4]:
             out = cli.selection_source(args(self.w['contract']), root=self.root)  # the same inputs resume
             self.assertEqual(out['contract_sha256'], self.sha)
+            # the reserved chain: raw evidence verified, PROMOTE, an identical audit recomputation
+            manifest_path = folder / 'source.json'
+            manifest_path.write_text(json.dumps(out))
+            sel = cli.selection(argparse.Namespace(contract=self.w['contract'], evidence=manifest_path,
+                                                   output=self.root / 'out/sel-chain.json', allow_dirty=True,
+                                                   root=self.root))
+            chain = self.save(sel, 'sel-chain')
+            verdict = cli.judge(self.judge_args(selection=chain), root=self.root)
+            self.assertEqual((verdict['decision'], verdict['selection']['source_commit']), ('PROMOTE', 'test'))
+            self.assertEqual(cli.judge(self.judge_args(selection=chain), root=self.root), verdict)
             # another confirmation of this H-conf is refused before anything of it is recorded
             body2 = {**deepcopy(self.body), 'contract_id': 'T-CONFIRM-2'}
             for arm in body2['arms']:
@@ -472,6 +602,64 @@ class ConfirmFlowTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'holdout-use'):
                 cli.selection_source(args(path2), root=self.root)
             self.assertEqual(ledger_files(self.root), before)
+
+
+class AnchorPairingTest(unittest.TestCase):
+    """The anchor arms draw one sample (checked when the contract is read, before any game)."""
+
+    def body(self, tmp, **arms):
+        from tests.test_h7r_eval import contract
+        body = contract(Path(tmp))
+        for arm in body['arms']:
+            arm.update(arms.get(arm['name'], {}))
+        return body
+
+    def test_a_paired_anchor_and_a_separate_candidate_vs_champion_sample_are_accepted(self):
+        with TemporaryDirectory() as tmp:
+            ev.check_contract(self.body(tmp), 'paired', tmp, check_files=False)
+            separate = self.body(tmp, candidate_vs_champion={'pairing': 'C', 'seed': 8791, 'pairs': 7})
+            ev.check_contract(separate, 'separate', tmp, check_files=False)
+            alone = self.body(tmp, candidate_vs_champion={'pairing': None, 'seed': 8791, 'pairs': 7})
+            ev.check_contract(alone, 'alone', tmp, check_files=False)
+
+    def test_unpaired_or_contradictory_anchor_arms_are_refused_before_play(self):
+        with TemporaryDirectory() as tmp:
+            from hybrid import h7r_openings as op
+            other = op.build_suite('O0', 31, 8781)
+            (Path(tmp) / 'suites').mkdir(exist_ok=True)
+            (Path(tmp) / 'suites/other.json').write_text(json.dumps(other))
+            suite = {'path': 'suites/other.json', 'sha256': ev.file_sha256(Path(tmp) / 'suites/other.json')}
+            cases = {
+                'no pairing': ({'champion_vs_anchor': {'pairing': None}}, 'needs a non-empty pairing'),
+                'empty pairing': ({'champion_vs_anchor': {'pairing': ''}}, 'non-empty string'),
+                'not a string': ({'champion_vs_anchor': {'pairing': 3}}, 'non-empty string'),
+                'other pairing': ({'champion_vs_anchor': {'pairing': 'Q', 'seed': 8791}}, 'differ in pairing'),
+                'seed': ({'champion_vs_anchor': {'seed': 8791}}, 'differ in seed'),
+                'pairs': ({'champion_vs_anchor': {'pairs': 9}}, 'differ in seed / pairs'),
+                'suite': ({'champion_vs_anchor': {'suite': suite}}, 'differ in seed / pairs / suite'),
+                # arms that declare one pairing draw one sample, candidate_vs_champion included
+                'declared pairing': ({'candidate_vs_champion': {'pairs': 9}}, 'declare pairing'),
+            }
+            for name, (change, message) in cases.items():
+                with self.subTest(name), self.assertRaisesRegex(ValueError, message):
+                    ev.check_contract(self.body(tmp, **change), name, tmp, check_files=False)
+            # the separately sampled anchors, each with its own pairing, are refused too
+            with self.assertRaisesRegex(ValueError, 'differ in pairing'):
+                ev.check_contract(self.body(tmp, champion_vs_anchor={'pairing': 'Q', 'seed': 8791, 'pairs': 9}),
+                                  'apart', tmp, check_files=False)
+
+    def test_committed_contracts_still_load(self):
+        for path in sorted((ROOT / 'docs/h7r/contracts').glob('*.json')):
+            with self.subTest(path.name):
+                ev.load_contract(path, ROOT, check_files=False)
+
+    def test_the_judgment_keeps_its_opening_check(self):
+        t = eval_tests.JudgeTest()
+        arms, ops = t.arms(**t.GOOD), openings(40)[1:]
+        table = ev.pair_table(games(ops, t.GOOD['champ_anchor'][1:], replayable=True), ops)
+        arms['champion_vs_anchor'] = {'table': table, 'summary': ev.arm_summary(table, STATS)}
+        with self.assertRaisesRegex(ValueError, 'not played on the same openings'):
+            t.judge(arms=arms)
 
 
 class LedgerTest(unittest.TestCase):

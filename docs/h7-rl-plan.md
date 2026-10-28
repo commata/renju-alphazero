@@ -623,7 +623,7 @@ python scripts/check_track_b_frozen.py --no-models
 - `judge` 순서: 입력 확인 → 원본 증거 검증 → 판정 계산 → ledger 등록 → 결과 공개
   - 입력 확인: 확인 계약, fixed · committed, 세 arm과 selection · tactical · timing 파일
   - 원본 증거 검증: arm 재생 · commit 일치, tactical · timing · selection 재계산
-  - ledger 등록: contract · seed · H-conf 사용 · 판정 입력
+  - ledger 등록: contract · seed · H-conf 사용 · 판정 입력 (**9.8에서 변경:** contract · seed · H-conf 사용은 `play` · `selection-source`의 사전 등록을 확인만 하고, judge는 판정 입력과 `judge-code`만 등록한다)
 - 검증 함수(`h7r_evidence.selection`)는 이제 ledger를 쓰지 않는다. 다른 확인 계약에 묶인 H-conf만 읽기 전용으로 거부한다.
 - 여러 binding은 `h7r_ledger.bind_all`이 한 잠금 안에서 처리한다. 충돌을 모두 먼저 검사하므로, 거부되면 아무 항목도 남지 않는다.
 - 동일 입력의 감사용 재계산은 허용한다. 판정된 계약의 입력 변경은 거부한다. 입력 누락으로 실패한 뒤 증거를 갖춰 다시 실행하면 정상 판정된다.
@@ -714,11 +714,68 @@ python -u scripts/h7r_eval.py judge --contract docs/h7r/contracts/CONFIRM_ID.jso
 
 - **현재 판정 코드 검사**: `judge`도 실행 시 Git 상태를 확인한다. 현재 commit이 있어야 하고 작업 트리는 clean이어야 한다. 현재 commit은 세 Arena arm의 공통 commit과 정확히 같아야 한다. 별도의 버전 호환 예외는 두지 않는다.
   - verdict에 실제 판정 코드의 `judge_git`을 남긴다. 기존 `code_commit`은 arm의 공통 commit이며, 이제 둘의 commit이 같음을 검사한다.
-  - ledger에 확인 계약 SHA를 key로 한 `judge-code` 항목을 다른 binding과 함께 기록한다. 저장 바이트의 SHA는 `ledger.entries`에 포함된다.
+  - ledger에 확인 계약 SHA를 key로 한 `judge-code` 항목을 `judgment`와 함께 기록한다. 저장 바이트의 SHA는 `ledger.entries`에 포함된다.
+  - **후속 변경(아래 "측정 commit · 사전 등록"):** `judge-code` 값은 `{'commit': ...}`만이다. 전체 Git 정보는 verdict의 `judge_git`에 남는다.
   - 작업 트리가 dirty이거나 commit이 다르면 ledger 등록 전에 거부한다. 테스트 전용 `--allow-dirty`도 판정 코드의 clean·동일 commit 검사를 건너뛰지 않는다. 테스트는 임시 root와 명시적으로 주입한 Git 상태를 사용한다.
   - 향후 확인에서는 평가 도구·계약을 커밋한 뒤 동일 commit에서 arm·tactical·judge를 실행한다. 코드 변경 뒤 예전 arm을 현재 코드로 재판정하는 우회는 허용하지 않는다. 과거 계약·원본·판정은 수정하거나 다시 실행하지 않았다.
 - **빈 anchor 표본**: 한쪽 또는 양쪽 anchor arm의 모든 쌍이 상대 불법 수로 제외되면, 빈 집합끼리 같더라도 paired 차이를 계산하지 않는다. `anchor=NOT_COMPUTED`, `reason=ARM_INVALID`, `decision=KEEP_CHAMPION`, `keep_kind=NOT_JUDGEABLE`로 기록한다. 정상적으로 남은 표본의 계산 방식은 그대로다.
 - **구조적 관측 수**: `structural_observations`는 평가상 무승부로 정규화된 분기가 하나 이상 있는 관측 수다. 같은 관측의 다른 분기가 timeout 등 미해결이면 `unresolved_observations`에도 센다. 두 수는 겹칠 수 있으며 합계로 전체 관측 수를 계산하면 안 된다. 미해결 비율·최악값 delta·최소 실측 표본·승급 문턱은 바꾸지 않았다.
+
+#### 측정 commit · 사전 등록 · anchor 짝맞춤 (6cbf802 후속)
+
+**anchor 짝맞춤은 계약을 읽을 때 검사한다.**
+- confirm 계약의 `candidate_vs_anchor`와 `champion_vs_anchor`는 같은 표본이어야 한다. 다음 네 값이 모두 같아야 한다.
+  - 비어 있지 않은 문자열 `pairing`
+  - `seed`
+  - `pairs`
+  - suite SHA
+- 같은 `pairing`을 선언한 arm들은 seed · pairs · suite SHA가 모두 같아야 한다.
+- 위반하면 `check_contract`가 거부한다. 따라서 대국을 두기 전에 오류가 드러난다.
+- `candidate_vs_champion`은 다른 pairing과 seed를 써서 따로 뽑아도 된다. 같은 pairing을 선언하면 같은 표본이어야 한다.
+- 이 검사는 confirm 계약에만 적용한다. 이미 fixed인 pilot 계약 `R1-SMOKE-1`은 크기가 다른 arm 둘에 같은 suite 이름을 붙였으므로 그대로 둔다.
+- 판정 단계의 실제 opening 일치 검사(`anchor_difference`)도 방어적으로 유지한다.
+
+**확인 하나는 코드 commit 하나로 측정한다.**
+- 다음은 모두 세 Arena arm의 공통 clean commit과 정확히 같아야 한다.
+  - `tactical.git.commit`
+  - `timing.git.commit`
+  - `selection-source`의 `source_git.commit`
+  - judge를 실행하는 현재 commit
+- 검증기(`h7r_evidence.timing` · `selection` · `tactical`)는 기대 commit을 인자로 받는다. 기본값이 없어서 확인 경로에서 이 검사를 건너뛸 수 없다.
+- 독립 `selection` 명령도 현재 clean commit을 기대값으로 쓴다. 그 commit은 결과의 `source_commit`에 남고, judge가 arm commit과 다시 대조한다.
+- H-conf 생성 commit(self-play의 `generator_git`)은 별도 출처라 대조하지 않는다. SHA · 모델 · 기보 · 재계산 검증은 그대로다.
+
+**judge는 사전 등록을 확인만 하고 만들지 않는다.**
+- `play` · `selection-source`가 남긴 다음 항목이 이 checkout의 ledger에 이미 기대값으로 있어야 판정한다.
+  - 계약 ID → SHA
+  - 각 seed → 계약 ID와 SHA
+  - H-conf 계약 SHA → 확인 계약 SHA
+- 누락 · 불일치 · 손상(JSON으로 읽을 수 없음)은 원인을 밝히고 거부한다.
+- ledger가 비어 있으면 다른 checkout · clone일 가능성을 안내한다. 자동 등록 · 복구는 하지 않는다.
+- 이 확인은 읽기 전용이며, 증거 검증 전에 한다.
+- 최종 등록 잠금 안에서 같은 항목을 다시 확인한다. 그 사이에 항목이 없어졌으면 다시 만들지 않고 거부한다.
+- judge가 새로 등록하는 것은 `judgment`와 `judge-code`뿐이다. 동일 입력의 감사용 재계산과, 같은 입력으로 하는 `selection-source` 재개는 그대로 된다.
+- **이 검사는 사전 예약을 확인할 뿐이다.** 대국이 끝났다는 것이나 여러 머신의 전역 이력을 증명하지 않는다. 대국 완료는 기존 원본 증거 검증(arm 재생, 완전한 H-conf · 분기)으로 확인한다.
+
+**`judge-code` identity**
+- 새 항목은 `{'commit': ...}`만 저장한다. 같은 commit에서 branch 같은 부가 Git 필드가 달라도 충돌하지 않는다.
+- 6cbf802 형식(Git 정보 전체를 담은 항목)은 제한된 규칙으로만 읽는다. `commit`과 `dirty`가 있고, commit이 같으며, `dirty`가 false여야 한다. 원본 바이트와 SHA는 그대로 둔다.
+- 다른 category의 엄격한 값 비교는 그대로다.
+
+**운영 절차** (예시이며, 이 작업에서는 실행하지 않았다)
+1. 확인 실행을 시작하기 전에 평가 도구와 확인 계약을 커밋하고, 그 commit을 기록해 둔다(`ARM_COMMIT`). arm · tactical · timing · selection-source · selection · judge는 모두 이 commit에서 실행한다.
+2. 확인 도중에는 문서만 커밋해도 HEAD가 바뀌어 tactical · judge가 거부된다. 분석 초안은 확인이 끝난 뒤 커밋하거나, 다음 절차로 돌아간다.
+3. 실행 중인 작업이 모두 끝났고 `git status`가 clean인지 확인한다. 그다음 **같은 checkout**에서 arm commit으로 돌아가 남은 단계를 실행한다.
+
+   ```bash
+   git status --short          # 출력이 없어야 한다
+   git switch --detach ARM_COMMIT
+   python -u scripts/h7r_eval.py judge ...   # 9.7의 명령
+   git switch feat/h7-c1       # 끝나면 원래 브랜치로
+   ```
+4. 새 `git worktree`나 clone은 자기 `runs/`를 쓴다. 따라서 기본적으로 기존 ledger를 공유하지 않는다. 그곳의 judge는 빈 ledger로 거부된다.
+5. 다른 checkout · PC로 옮겨야 하면 `runs/h7r/confirmations/`와 원본 증거를 함께 보관 · 복원한다. 복원한 뒤 verdict의 `ledger.entries` SHA, 또는 이전 보관본과 대조해 검증한다. 빈 ledger를 새로 만들어 우회하지 않는다.
+6. ledger는 로컬 규율 장치다. 여러 PC를 아우르는 중앙 등록 서비스는 구현하지 않았다.
 
 회귀 테스트는 다음을 확인한다.
 - dirty·Git 상태 미확인·현재 commit 불일치 시 판정 거부와 ledger 불변, 동일한 clean commit에서 PROMOTE 및 감사용 재계산
@@ -726,3 +783,35 @@ python -u scripts/h7r_eval.py judge --contract docs/h7r/contracts/CONFIRM_ID.jso
 - 후보 쪽 또는 champion 쪽 구조적 무승부와 미해결 분기가 섞인 관측의 중복 집계 및 기존 최악값 점수 유지
 
 검증 결과: R1 6개 모듈과 `test_h7c_recipe_guards`, `test_track_b_guard`, `test_tb_v3_net`을 함께 실행해 총 87개 중 85개 통과, 실제 frozen H3/H6 모델이 필요한 2개 skip을 확인했다. `check_track_b_frozen.py --no-models`는 PASS이며, 전체 checker는 기존과 같이 checkpoint 부재 2항목만 FAIL이다. 실제 GPU·Rapfi 평가, 학습, 전체 pilot, champion·SER5 변경은 수행하지 않았다.
+
+**검증 (6cbf802 후속)**
+
+fixture · stand-in 모델 · mock 실행기만 사용했다. 실제 GPU 학습, 전체 pilot, H-conf 생성, 확인 Arena, checkout 전환 명령은 실행하지 않았다.
+
+추가한 테스트(`tests/test_h7r_confirm.py`)
+- anchor 짝맞춤
+  - pairing 누락 · 빈 문자열 · 비문자열 · 다른 pairing을 사전 거부한다.
+  - seed · pairs · suite 불일치와, 같은 pairing을 선언한 arm 사이의 모순을 사전 거부한다.
+  - 정상 anchor는 통과하고, 따로 뽑은 `candidate_vs_champion`도 허용한다.
+  - 커밋된 계약 세 개는 그대로 읽힌다.
+  - 판정 단계의 opening 일치 검사가 남아 있다.
+- 다른 commit의 측정 거부
+  - 다른 commit의 timing · selection-source를 judge와 독립 `selection`이 거부하고, ledger는 바뀌지 않는다.
+  - 기대 commit을 주지 않은 검증 호출을 거부한다.
+  - H-conf 생성 commit(`abc123`)이 arm commit과 달라도 판정된다.
+- 사전 등록
+  - 빈 ledger(다른 checkout 안내), 항목 누락 · 불일치 · 손상을 거부한다. 거부해도 다시 만들지 않는다.
+  - 최종 잠금 직전에 사라진 항목을 다시 만들지 않는다. 이때 `judgment` · `judge-code`도 기록되지 않는다.
+- `selection-source`의 실제 예약 → 중단 · 재개 → `selection` → PROMOTE → 동일 입력 재계산이 이어진다. 다른 확인 계약의 H-conf 사용은 거부한다.
+- `judge-code` identity
+  - 부가 Git 필드만 다르면 충돌하지 않는다.
+  - 기존 전체 Git 형식 항목은 commit이 같고 clean일 때만 받는다. 원본 바이트와 SHA는 보존한다.
+  - 다른 category는 계속 엄격하게 비교한다.
+
+결과
+- R1 6개 모듈: 71개 모두 통과
+- 회귀(`test_h7*`, `test_tb_v3*`, `test_h6_labels`, `test_track_b*`, `test_canonical*`): 425개 실행, 423개 통과, 2개 skip
+  - skip 2개는 실제 frozen H3 / H6 checkpoint가 필요한 `test_tb_v3_net` 테스트다. 코드 실패가 아니다.
+- frozen checker
+  - `check_track_b_frozen.py --no-models`: PASS
+  - 전체 checker: 이 컨테이너에 없는 policy / value checkpoint 2항목만 FAIL(코드 실패 아님), 나머지는 PASS다.

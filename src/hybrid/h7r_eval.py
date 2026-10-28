@@ -148,6 +148,9 @@ def check_contract(contract: dict, path, root, check_files: bool = True) -> None
         require(h.get('split') in ('dev', 'conf') and isinstance(h.get('games'), int) and h['games'] > 0
                 and h.get('actor') in models and isinstance(h.get('cycle'), int), f'{path}: holdout block')
         seeds.append(h['seed'])
+    if contract['purpose'] == 'confirm':  # the paired sample first: it names the cause of a shared seed
+        require(names >= set(ROLE_ARMS), f'{path}: a confirm contract plays {ROLE_ARMS}')
+        check_pairings(contract, path)
     for seed in seeds:
         require(seed in SEED_BLOCK and seed in RESERVED_SEEDS, f'{path}: seed {seed} is not an H7-R reserved seed')
     require(len(set(seeds)) == len(seeds) or _paired_seeds(contract), f'{path}: a seed used twice outside a pairing')
@@ -182,6 +185,35 @@ def check_contract(contract: dict, path, root, check_files: bool = True) -> None
         for limit in ((contract.get('gates') or {}).get('time') or {}).values():
             if limit is not None:
                 require(type(limit) in (int, float) and math.isfinite(limit) and limit > 0, 'invalid time limit')
+
+
+ANCHOR_ARMS = ('candidate_vs_anchor', 'champion_vs_anchor')
+
+
+def check_pairings(contract: dict, path) -> None:
+    """A confirm contract, before anything is played: arms that declare one pairing draw one sample (the same seed,
+    pairs and suite SHA-256), and the two anchor arms share a non-empty pairing, so the anchor difference is paired
+    opening by opening. ``candidate_vs_champion`` may draw its own sample. (Pilot contracts are not held to this: a
+    fixed pilot contract labels arms of different sizes with one suite name.)"""
+    sample = lambda a: (a.get('seed'), a.get('pairs'), (a.get('suite') or {}).get('sha256'))  # noqa: E731
+    first = {}
+    for arm in contract.get('arms', []):
+        pairing = arm.get('pairing')
+        if pairing is None:
+            continue
+        require(isinstance(pairing, str) and pairing, f"{path}: arm {arm['name']}: pairing must be a non-empty string")
+        name, theirs = first.setdefault(pairing, (arm['name'], sample(arm)))
+        require(theirs == sample(arm), f"{path}: arms {name} and {arm['name']} declare pairing {pairing!r} but differ "
+                                       f'in seed / pairs / suite SHA-256 ({theirs} vs {sample(arm)})')
+    by_name = {a['name']: a for a in contract.get('arms', [])}
+    a, b = (by_name[n] for n in ANCHOR_ARMS)
+    for arm in (a, b):
+        require(isinstance(arm.get('pairing'), str) and arm['pairing'],
+                f"{path}: anchor arm {arm['name']} needs a non-empty pairing string")
+    for field, get in (('pairing', lambda x: x['pairing']), ('seed', lambda x: x['seed']),
+                       ('pairs', lambda x: x['pairs']), ('suite SHA-256', lambda x: x['suite']['sha256'])):
+        require(get(a) == get(b), f'{path}: the anchor arms differ in {field} ({get(a)!r} vs {get(b)!r}): their '
+                                  'difference must be paired on the same openings')
 
 
 def _paired_seeds(contract: dict) -> bool:

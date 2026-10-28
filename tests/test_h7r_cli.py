@@ -107,7 +107,7 @@ class FlowTest(unittest.TestCase):
         self.assertEqual(len({tuple(v) for v in ids.values()}), 1)
         self.assertEqual(len(set(ids['candidate_vs_champion'])), 30)
         # selection rows, timing record (as the tools write them), judgment
-        from tests.h7r_helpers import selection_source, timing_record, tactical_record
+        from tests.h7r_helpers import reserve, selection_source, timing_record, tactical_record
         # Freeze the holdout and registered engine in the confirmation contract before evidence generation.
         selection_source(self.w['root'], self.w['body'], 'pending')
         self.w['contract'].write_text(json.dumps(self.w['body']))
@@ -117,6 +117,7 @@ class FlowTest(unittest.TestCase):
         shutil.rmtree(self.w['root'] / 'runs')
         records = {a: self.save(self.play(a), a) for a in ev.ROLE_ARMS}
         source = selection_source(self.w['root'], self.w['body'], sha)
+        reserve(self.w['root'], self.w['body'], sha)  # what selection-source reserves before evaluating
         selpath = self.w['root'] / 'out' / 'sel.json'
         sel = cli.selection(argparse.Namespace(contract=self.w['contract'], evidence=source, output=selpath,
                                                allow_dirty=True, root=self.w['root']))
@@ -167,8 +168,9 @@ class FlowTest(unittest.TestCase):
             with mock.patch.object(cli, '_git', lambda allow: {'commit': 'x', 'dirty': False}):
                 cli.play(args, log=QUIET, root=self.w['root'])
         self.play('candidate_vs_champion')
-        changed = {**body, 'arms': [dict(a, pairs=29) if a['name'] == 'candidate_vs_champion' else a
-                                    for a in body['arms']]}
+        # candidate_vs_champion may draw its own sample (its own pairing and seed); the binding still refuses it
+        changed = {**body, 'arms': [dict(a, pairs=29, seed=8791, pairing='C') if a['name'] == 'candidate_vs_champion'
+                                    else a for a in body['arms']]}
         self.w['contract'].write_text(json.dumps(changed))
         with self.assertRaisesRegex(ValueError, 'different confirmation inputs|another setup'):  # immutable binding
             self.play('candidate_vs_champion')

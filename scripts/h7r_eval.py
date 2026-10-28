@@ -384,7 +384,7 @@ def selection_source(args, log=print, root=ROOT):
     import h7c_sensitivity as sn
     import h7c_adjudicate as ad
     import h7c_labels as lab
-    from hybrid.h7r_ledger import bind_all, contract_bindings, guard
+    from hybrid.h7r_ledger import bind_all, confirmation_registration, guard
     import h7c_selfplay as sp
 
     root = Path(getattr(args, 'root', None) or root)
@@ -404,8 +404,7 @@ def selection_source(args, log=print, root=ROOT):
     ev.require(lab._under_data_or_runs(folder), 'selection source records go under data/ or runs/')
     # Every input checked: reserve the H-conf for this confirmation before any evaluation (a resume with the same
     # inputs finds the same entries; another confirmation of this H-conf is refused, the ledger unchanged).
-    bind_all(root, [*contract_bindings(contract, sha), ('holdout-use', hsha, {'confirmation': sha})],
-             args.allow_dirty)
+    bind_all(root, confirmation_registration(contract, sha), args.allow_dirty)
     folder.mkdir(parents=True, exist_ok=True)
     ident = {'format': 'h7r-selection-source-v1', 'contract_sha256': sha, 'git': git,
              'models': {k: m['identity'] for k, m in models.items()}, 'holdout_contract_sha256': hsha,
@@ -467,7 +466,12 @@ def selection(args) -> dict:
         ev.require(getattr(args, 'evidence', None) is not None and contract['status'] == 'fixed',
                    'confirm selection requires fixed contract and --evidence, never arbitrary delta rows')
         root = Path(getattr(args, 'root', None) or ROOT)
-        result = evidence.selection(args.evidence, contract, sha, root)
+        # One commit per confirmation: this command runs from the code that made the source (the arms' commit,
+        # which the judgment then checks again through ``source_commit``).
+        git = _git(args.allow_dirty)
+        ev.require(git.get('commit') and git.get('dirty') is False,
+                   'a confirm selection runs from clean committed code (the Arena arms\' commit)')
+        result = evidence.selection(args.evidence, contract, sha, root, git['commit'])
         base = Path(getattr(args, 'output', args.evidence)).parent
         return {'format': SELECTION_FORMAT, 'contract_id': contract['contract_id'],
                 'source': ho.file_ref(args.evidence, base), **result}
@@ -517,12 +521,18 @@ def tactical(args, log=print, root: Path = ROOT) -> dict:
 
 def judge(args, root: Path = ROOT) -> dict:
     """Promotion rule v3 of a confirm contract. Order: inputs checked, source evidence verified, judgment computed,
-    then the ledger bound (contract, seeds, H-conf use, judgment inputs, one lock, every conflict checked first);
-    ``main`` publishes. Any refusal before the ledger step leaves the ledger unchanged; an identical recomputation is
+    then the ledger bound (judgment inputs and judge-code, one lock, every conflict checked first); ``main``
+    publishes. Any refusal before the ledger step leaves the ledger unchanged; an identical recomputation is
     allowed, changed inputs for a judged contract are refused. The judge itself must run from the arms' clean code
-    commit, which is recorded in the verdict and bound to this confirmation in the ledger."""
+    commit, which is recorded in the verdict and bound to this confirmation in the ledger; tactical, timing and the
+    selection source must name that same commit.
+
+    The pre-registration made by ``play`` / ``selection-source`` (contract, seeds, H-conf use) must already be in
+    this checkout's ledger with the expected values; the judge never creates it (checked read-only first, then again
+    inside the final lock). It is a reservation check, not a proof that games were completed: the source evidence
+    shows that."""
     from hybrid import h7r_evidence as evidence
-    from hybrid.h7r_ledger import FOLDER, bind_all, contract_bindings, guard
+    from hybrid.h7r_ledger import FOLDER, bind_all, confirmation_registration, guard, require_registered
     from hybrid.h7c_nmask import committed
     import h7r_holdout as ho
 
@@ -540,6 +550,8 @@ def judge(args, root: Path = ROOT) -> dict:
                             '(nothing was recorded)')
     for path in [*args.arm_record, *(getattr(args, name) for name in EVIDENCE)]:
         ev.require(Path(path).is_file(), f'{path}: no such evidence file (nothing was recorded)')
+    registration = confirmation_registration(contract, sha)
+    require_registered(root, registration)  # read-only
     roles = contract['roles']
     expected = {'candidate_vs_champion': ('candidate', 'champion'), 'candidate_vs_anchor': ('candidate', 'anchor'),
                 'champion_vs_anchor': ('champion', 'anchor')}
@@ -566,19 +578,19 @@ def judge(args, root: Path = ROOT) -> dict:
         ev.require(isinstance(record, dict) and record.get('contract_sha256') == sha,
                    f'{getattr(args, name)}: a record of another contract')
     tact = evidence.tactical(records['tactical'], contract, sha, commit, confirmation=True)
-    time = evidence.timing(records['timing'], contract, sha, root)
+    time = evidence.timing(records['timing'], contract, sha, root, commit)
     record = records['selection']
     ev.require(record.get('format') == SELECTION_FORMAT and not record.get('development_only'),
                'selection record is not confirm evidence')
     source = ho.read_ref(record.get('source'), Path(args.selection).parent)
-    sel = evidence.selection(source, contract, sha, root)
+    sel = evidence.selection(source, contract, sha, root, commit)
     ev.require(all(record.get(k) == v for k, v in sel.items()), 'selection verdict differs from raw evidence')
     out = ev.judge(contract, arms, sel, tact, time)
     inputs = {name: ev.file_sha256(getattr(args, name)) for name in EVIDENCE}
     inputs['arms'] = {name: ev.file_sha256(path) for name, path in arm_files.items()}
-    entries = bind_all(root, [*contract_bindings(contract, sha),
-                              ('holdout-use', sel['holdout_contract_sha256'], {'confirmation': sha}),
-                              ('judgment', sha, inputs), ('judge-code', sha, judge_git)], args.allow_dirty)
+    # The judge-code identity is the commit only: other Git fields never make an audit recomputation conflict.
+    entries = bind_all(root, [('judgment', sha, inputs), ('judge-code', sha, {'commit': commit})], args.allow_dirty,
+                       registered=registration)
     return {'format': VERDICT_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha,
             'roles': roles, 'code_commit': commit, 'judge_git': judge_git, 'evidence_records_sha256': inputs,
             'arm_records_sha256': inputs['arms'], **out,

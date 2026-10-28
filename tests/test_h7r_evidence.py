@@ -86,7 +86,7 @@ class EvidenceTest(unittest.TestCase):
                 self.assertEqual(evidence.tactical(record, contract)['verdict'], record['judge']['verdict'])
 
     def test_timing_binds_direction_models_positions_and_recomputes_gate(self):
-        self.assertTrue(evidence.timing(self.timing, self.w['body'], self.sha, self.w['root'])['gate']['pass'])
+        self.assertTrue(evidence.timing(self.timing, self.w['body'], self.sha, self.w['root'], 'test')['gate']['pass'])
         for mutate in (
             lambda r: r.update(comparison=r['comparison'][::-1]),
             lambda r: r['sides']['cand'].update(identity=self.w['body']['models']['orig']['identity']),
@@ -99,10 +99,10 @@ class EvidenceTest(unittest.TestCase):
             record = deepcopy(self.timing)
             mutate(record)
             with self.assertRaises(ValueError):
-                evidence.timing(record, self.w['body'], self.sha, self.w['root'])
+                evidence.timing(record, self.w['body'], self.sha, self.w['root'], 'test')
 
     def test_selection_uses_conf_source_and_replayed_branches(self):
-        result = evidence.selection(self.source, self.w['body'], self.sha, self.w['root'])
+        result = evidence.selection(self.source, self.w['body'], self.sha, self.w['root'], 'test')
         self.assertEqual(result['status'], 'NONINFERIOR')
         args = argparse.Namespace(contract=self.w['contract'], root=self.w['root'],
                                   rows=self.source, evidence=None, allow_dirty=True)
@@ -111,11 +111,11 @@ class EvidenceTest(unittest.TestCase):
         body = deepcopy(self.w['body'])
         body['selection']['holdout_contract_sha256'] = '0'*64
         with self.assertRaisesRegex(ValueError, 'H-conf'):
-            evidence.selection(self.source, body, self.sha, self.w['root'])
+            evidence.selection(self.source, body, self.sha, self.w['root'], 'test')
         record = json.loads(self.source.read_text())
         record['engine'] = {'registered_engine': False}
         with rewritten(self.source, record), self.assertRaisesRegex(ValueError, 'engine'):
-            evidence.selection(self.source, self.w['body'], self.sha, self.w['root'])
+            evidence.selection(self.source, self.w['body'], self.sha, self.w['root'], 'test')
         # Even a matching file checksum cannot turn a wrong branch outcome into evidence.
         original = json.loads(self.source.read_text())
         branches = ho.read_ref(original['branches'], self.source.parent)
@@ -129,7 +129,7 @@ class EvidenceTest(unittest.TestCase):
                 manifest = deepcopy(original)
                 manifest['branches'] = ho.file_ref(branches, self.source.parent)
                 with rewritten(self.source, manifest), self.assertRaises(ValueError):
-                    evidence.selection(self.source, self.w['body'], self.sha, self.w['root'])
+                    evidence.selection(self.source, self.w['body'], self.sha, self.w['root'], 'test')
             finally:
                 branches.write_bytes(old)
 
@@ -156,7 +156,7 @@ class EvidenceTest(unittest.TestCase):
                 result = cli.selection_source(args, root=self.w['root'])
                 self.assertTrue(sr.called and br.called)
                 args.output.write_text(json.dumps(result))
-                self.assertEqual(evidence.selection(args.output, self.w['body'], self.sha, self.w['root'])['status'],
+                self.assertEqual(evidence.selection(args.output, self.w['body'], self.sha, self.w['root'], 'test')['status'],
                                  'NONINFERIOR')
                 sr.reset_mock(); br.reset_mock()
                 self.assertEqual(cli.selection_source(args, root=self.w['root']), result)

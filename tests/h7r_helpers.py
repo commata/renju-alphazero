@@ -17,10 +17,16 @@ def winning_moves(opening, winner):
     return [list(m) for m in game.history]
 
 
-def timing_record(body, sha, root):
+def reserve(root, body, sha):
+    """The pre-registration ``selection-source`` makes before evaluating (contract, seeds, H-conf use)."""
+    from hybrid.h7r_ledger import bind_all, confirmation_registration
+    return bind_all(root, confirmation_registration(body, sha))
+
+
+def timing_record(body, sha, root, commit='test'):
     from hybrid.h7r_evidence import time_statistics
     names = [body['roles']['candidate'], body['roles']['champion']]
-    return {'format': 'h7r-timing-v2', 'contract_sha256': sha, 'comparison': names, 'git': {'commit': 'test', 'dirty': False},
+    return {'format': 'h7r-timing-v2', 'contract_sha256': sha, 'comparison': names, 'git': {'commit': commit, 'dirty': False},
             'environment': {'torch_threads': 1, 'platform': 'test', 'processor': 'test', 'cpu_count': 1, 'torch': 'test', 'python': 'test', 'device': 'cpu'}, 'warmup': 1, 'positions': 2,
             'position_ids': [o['history_id'] for o in json.loads((Path(root) / body['arms'][0]['suite']['path']).read_text())['openings'][1:3]], 'suite_sha256': body['arms'][0]['suite']['sha256'],
             'sides': {n: {'model': n, 'budget': 1, 'identity': body['models'][n]['identity'],
@@ -79,7 +85,8 @@ def tactical_record(body, sha=None, commit='test'):
             'champion_result': deepcopy(result), **common}
 
 
-def selection_source(root, body, confirm_sha, candidate_moves=None, branch_records=None):
+def selection_source(root, body, confirm_sha, candidate_moves=None, branch_records=None, source_commit='test',
+                     folder_name='evidence'):
     """Bound selection evidence over 25 H-conf fixture games; the disagreement is at ply 8 (the champion's five).
     ``candidate_moves``: game index -> the candidate's ply-8 move (default [7, 6], also a five); ``branch_records``:
     fixed move (tuple) -> the branch record's fields (default: a VALID five, which only a winning move is)."""
@@ -102,7 +109,7 @@ def selection_source(root, body, confirm_sha, candidate_moves=None, branch_recor
     # Caller saves this changed contract, then calls again with the final SHA.
     raw = [game(i, **sp.run_identity(1, 8785, models['champion'], 'cuda'), purpose='holdout',
                 holdout={'contract_id': hc['contract_id'], 'contract_sha256': hsha, 'split': 'conf'}) for i in range(25)]
-    folder = root / 'evidence'; folder.mkdir(exist_ok=True)
+    folder = root / folder_name; folder.mkdir(exist_ok=True)
     gpath = folder / 'games.jsonl'
     gpath.write_text(''.join(json.dumps(g)+'\n' for g in raw))
     rows, _, _ = build(raw, evaluation={'check': lambda gs: ho.check_holdout_games(gs, hc, hsha),
@@ -117,7 +124,7 @@ def selection_source(root, body, confirm_sha, candidate_moves=None, branch_recor
     ho.seal_cache(cache, hcpath, gpath, rpath)
     ident = {'format': 'h7r-selection-source-v1', 'contract_sha256': confirm_sha,
              'models': {k: models[k] for k in ('candidate', 'champion')},
-             'git': {'commit': 'test', 'dirty': False},
+             'git': {'commit': source_commit, 'dirty': False},
              'holdout_contract_sha256': hsha, 'selfplay_sha256': ev.file_sha256(gpath)}
     records, obs = [], []
     for g in raw:

@@ -26,6 +26,16 @@ def verified(contract, **result):
     return {'evidence_verified': True, 'models': role_models(contract), **result}
 
 
+def require_commit(commit, git, what) -> None:
+    """A confirmation measures with one code commit: ``git`` (a record's) clean and exactly ``commit`` (the Arena
+    arms' common one). There is no default: every confirmation caller names the commit it expects."""
+    ev.require(isinstance(commit, str) and commit, f'{what}: the expected code commit is not given')
+    ev.require(isinstance(git, dict) and git.get('commit') and git.get('dirty') is False,
+               f'{what} must name clean committed code')
+    ev.require(git['commit'] == commit, f"{what} code commit differs from the Arena arms' commit "
+                                        f"({git['commit']!r}, expected {commit!r})")
+
+
 def tactical(record, contract, sha=None, commit=None, confirmation=False):
     """A tactical record's verdict recomputed from its raw checks.
 
@@ -63,8 +73,7 @@ def tactical(record, contract, sha=None, commit=None, confirmation=False):
     ev.require(record.get('files') == expected_files and git.get('commit') and git.get('dirty') is False,
                'tactical probes or code provenance differ')
     if confirmation:
-        ev.require(commit is not None and git['commit'] == commit,
-                   'tactical code commit differs from the Arena arms\' commit')
+        require_commit(commit, git, 'tactical')
     fresh_probes = json.loads(ar.FRESH_PROBES.read_text())['probes']
     e1_positions = json.loads(ar.E1_MANIFEST.read_text())['positions']
     policy_probes, policy_sha = load_probe_set(ar.POLICY_PROBES)
@@ -129,11 +138,11 @@ def time_statistics(values):
     return {'mean': sum(values) / len(values), 'p95': ordered[min(len(ordered) - 1, int(.95 * (len(ordered) - 1) + .5))]}
 
 
-def timing(record, contract, sha, root):
+def timing(record, contract, sha, root, commit):
+    """``commit``: the Arena arms' clean commit, which the timing record's must equal."""
     ev.require(record.get('format') == 'h7r-timing-v2' and record.get('contract_sha256') == sha,
                'timing source format or contract differs (v2 samples required)')
-    ev.require((record.get('git') or {}).get('commit') and (record.get('git') or {}).get('dirty') is False,
-               'timing must name clean committed code')
+    require_commit(commit, record.get('git'), 'timing')
     roles = contract['roles']
     names = record.get('comparison')
     ev.require(names == [roles['candidate'], roles['champion']], 'timing must be candidate / champion in that order')
@@ -161,7 +170,7 @@ def timing(record, contract, sha, root):
     gate = {'limits': limits, 'pass': all(ratios[k] <= limits[f'{k}_ratio_max'] for k in ratios)}
     ev.require(record.get('gate', {}).get('limits') == limits and record.get('gate', {}).get('pass') is gate['pass'],
                'timing gate does not match samples')
-    return verified(contract, ratio=ratios, gate=gate)
+    return verified(contract, ratio=ratios, gate=gate, code_commit=commit)
 
 
 # --- selection branches ------------------------------------------------------------------------------------------
@@ -251,7 +260,7 @@ def branch_outcome(result: dict, task: dict, policy: dict | None) -> dict:
     return {'kind': 'unresolved' if handled else 'unhandled', 'score': None, 'reason': reason}
 
 
-def selection(path, contract, sha, root):
+def selection(path, contract, sha, root, commit):
     """Rebuild deltas from complete holdout sensitivity and replayed Rapfi branch records.
 
     The manifest references a sealed H-conf cache, sensitivity JSONL and branch
@@ -259,8 +268,10 @@ def selection(path, contract, sha, root):
     all observations are derived, never selected from a user-supplied delta list.
     INVALID branches follow ``selection.invalid_policy`` (``h7r_eval.policy_selection``)
     or, without one, the strict rule (any INVALID branch: INCONCLUSIVE).
-    Read-only: an H-conf already bound to another confirmation is refused here, and
-    the caller binds it.
+    ``commit``: the Arena arms' clean commit, which the selection source's
+    (``source_git``) must equal; the H-conf's own generator commit is another
+    source and is not compared. Read-only: an H-conf already bound to another
+    confirmation is refused here, and the caller binds it.
     """
     import h7r_holdout as ho
     import h7c_labels as lab
@@ -292,8 +303,7 @@ def selection(path, contract, sha, root):
                          'holdout_contract_sha256': hsha,
                          'selfplay_sha256': ho.file_ref(ho.read_ref(json.loads(cache_binding.read_text())['games'],
                                                                   cache_binding.parent), base)['sha256']}
-    ev.require(isinstance(body.get('source_git'), dict) and body['source_git'].get('commit')
-               and body['source_git'].get('dirty') is False, 'selection source must name clean committed code')
+    require_commit(commit, body.get('source_git'), 'selection source')
     sources = [json.loads(line) for line in spath.read_text().splitlines() if line.strip()]
     by_index = {g['game_index']: g for g in games}
     ev.require(len(sources) == len(games) and {r['game_index'] for r in sources} == set(by_index),
@@ -348,4 +358,4 @@ def selection(path, contract, sha, root):
         result = ev.policy_selection(keyed, outcomes, policy, spec, contract['stats']['bootstrap'])
         result['invalid'] = result['unresolved_observations']
     return verified(contract, **result, contract_sha256=sha, holdout_contract_sha256=hsha,
-                    evidence_sha256=ev.file_sha256(path))
+                    evidence_sha256=ev.file_sha256(path), source_commit=commit)
