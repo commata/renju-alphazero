@@ -1,4 +1,4 @@
-"""The R1-PILOT-1 draft (docs/h7-rl-plan.md 9.2): its recorded planning numbers are the ones its own sources and
+"""The R1-PILOT-1 contract (docs/h7-rl-plan.md 9.2, 9.9): its recorded planning numbers are the ones its own sources and
 formulas give, and the contract loads with the current tools. Planning only: nothing is played."""
 import json
 from pathlib import Path
@@ -22,9 +22,11 @@ class PilotPlanTest(unittest.TestCase):
         cls.body = json.loads(PILOT.read_text())
         cls.arms = {a['name']: a for a in cls.body['arms']}
 
-    def test_the_draft_loads_and_stays_draft(self):
-        contract, _ = ev.load_contract(PILOT, ROOT, check_files=False)
-        self.assertEqual((contract['purpose'], contract['status']), ('pilot', 'draft'))
+    def test_the_fixed_contract_loads_with_its_run_rules(self):
+        contract, _ = ev.load_contract(PILOT, ROOT, check_files=False)  # fixed: check_contract runs check_rules
+        self.assertEqual((contract['purpose'], contract['status']), ('pilot', 'fixed'))
+        self.assertEqual(contract['execution_plan']['workers'], 6)
+        self.assertEqual(contract['execution_plan']['budget']['soft_wall_hours'], 14)
 
     def test_sizes_seeds_and_samples(self):
         planning = self.body['planning']
@@ -40,7 +42,7 @@ class PilotPlanTest(unittest.TestCase):
             body = json.loads((ROOT / control['suite']['path']).read_text())
             ids = lambda a: {o['history_id'] for o in op.pick(body, a['pairs'], a['seed'])}  # noqa: E731
             self.assertEqual(len(ids(small[0]) & ids(control)), planning['opening_overlap_small_vs_control'][suite])
-        self.assertEqual(sorted(self.body['execution_plan']['arm_order_proposed']), sorted(self.arms))
+        self.assertEqual(sorted(self.body['execution_plan']['arm_order']), sorted(self.arms))
 
     def test_cost_scenarios_follow_the_stated_formula(self):
         cost = self.body['planning']['cost']

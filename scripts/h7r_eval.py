@@ -162,8 +162,13 @@ def _play_chunk(tasks: list[dict]) -> list[dict]:
 def play(args, log=print, root: Path = ROOT) -> dict:
     import h7c_arena as ar
 
+    from hybrid.h7r_pilot import is_run_by_plan
+
     git = _git(args.allow_dirty)
     contract, sha = _contract(args, root, playing=True)
+    ev.require(not is_run_by_plan(contract) or getattr(args, 'pilot_session', None),
+               f"{contract['contract_id']}: a pilot run by plan is played through scripts/h7r_pilot.py run "
+               '(arm order, session log, soft budget)')
     arm = _arm(contract, args.arm)
     openings = op.pick(_suite(arm, root), arm['pairs'], arm['seed'])
     identity = arm_identity(contract, sha, arm, args.device, git)

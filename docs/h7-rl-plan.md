@@ -454,6 +454,8 @@ draft JSON에 기록한 계획 수치(쌍·판 수, 비용 시나리오, 검출�
 6. 결과와 무관한 arm 순서·예산 상한·초과 후 처리, mask/orig를 포함한 모델 SHA 확인
 7. 위 미정 항목을 모두 결정한 뒤 pilot 계약 `R1-PILOT-1`을 fixed로 바꾸고 커밋한다(현재는 draft이며 실행하지 않는다).
 
+**2026-10-29 결정(9.9):** 1 · 2 · 3 · 6은 사용자 결정에 따라 계약에 확정했고 `R1-PILOT-1`은 fixed다. 4 · 5는 pilot 뒤 단계로 남는다.
+
 ### 9.4 커밋한 suite · 계약 파일
 
 - suite(`docs/h7r/suites/`, 코드 `0ced742` clean에서 생성)
@@ -467,7 +469,7 @@ draft JSON에 기록한 계획 수치(쌍·판 수, 비용 시나리오, 검출�
   - O1은 이전 평가와 겹치는 수순이 없다. O0 · O2는 이전 cycle Arena가 쓴 opening과 겹친다.
   - 겹침 처리는 확인 계약에서 정한다(2.2절).
 - 계약(`docs/h7r/contracts/`)
-  - `R1-PILOT-1`(`c977490e2ebd`): **수정 draft**. 작은 차이9 arm ×60쌍 + S400 3 arm ×160쌍 =1,020쌍/2,040판. 작은 차이는 seed8781–8783(`O*_small`), S400은 seed8784–8786(`O*_positive_control`)을 제안한다. 초기 100쌍 균등 초안 SHA는 `ab48eb996271`이었다. 9.3절의 미정 항목을 정한 뒤 fixed 전환·커밋을 검토한다.
+  - `R1-PILOT-1`(`15293ca9f010`): **fixed**(9.9, 2026-10-29). 이전 draft SHA는 `c977490e2ebd`였다. 작은 차이9 arm ×60쌍 + S400 3 arm ×160쌍 =1,020쌍/2,040판. 작은 차이는 seed8781–8783(`O*_small`), S400은 seed8784–8786(`O*_positive_control`)이다. 초기 100쌍 균등 초안 SHA는 `ab48eb996271`이었다. 실행은 `scripts/h7r_pilot.py run`으로만 한다(9.9).
   - `R1-SMOKE-1`(`42e9ac6b7b27`): fixed. 데스크톱 smoke용 c8 : c5 S50 2쌍(seed 8798), c5 S400 : c5 S50 1쌍(seed 8799). 판정에 쓰지 않는다.
   - `R1-SMOKE-HOLDOUT`(`a56b0ac6ccdf`): fixed. holdout 경로 확인용 c5 2판(seed 8797, cycle 1). 학습에 쓰이지 않는다.
 - 수정 draft에서 제안한 seed까지 제외하면 남는 H7-R seed는 **8787–8796**(holdout·확인 계약용)이다. 이 중 8795 · 8796은 테스트 fixture가 쓰므로(`tests/h7r_helpers.py`의 `FIXTURE_*_SEED`; 커밋된 계약이 가져가면 `test_h7r_holdout`이 알린다) 실제 계약은 8787–8794부터 쓴다. draft 계약도 seed를 차지한다: holdout 생성기는 커밋된 모든 계약과 seed 중복을 검사한다. 이번 문서 수정으로 실행 ledger를 생성하거나 seed를 실제 사용하지는 않았다.
@@ -864,3 +866,104 @@ fixture · stand-in 모델 · mock 실행기만 사용했다. 실제 GPU 학습,
 - frozen checker
   - `check_track_b_frozen.py --no-models`: PASS
   - 전체 checker: 이 컨테이너에 없는 policy / value checkpoint 2항목만 FAIL(코드 실패 아님), 나머지는 PASS다.
+
+### 9.9 R1-PILOT-1 확정과 실행 도구 (2026-10-29)
+
+사용자 결정에 따라 `R1-PILOT-1`을 **fixed**로 바꿨다. 제안 상태였던 값은 실제 필드로 옮겼고, 미정(null) 값을 지워 검사를 피하지 않았다. 실행 규칙이 있는 fixed pilot 계약은 `check_contract`가 모든 규칙 값을 요구한다(`hybrid.h7r_pilot.check_rules`). draft는 비워 둘 수 있다. 기존 fixed smoke 계약은 실행 계획이 없어 영향받지 않는다.
+
+**확정한 규칙**
+
+| 항목 | 규칙(계약 필드) |
+|---|---|
+| 규모 | suite마다 작은 차이 3 arm × 60쌍, S400 대조 160쌍. 총 1,020쌍 / 2,040판, `execution_plan.workers` = 6 |
+| 순위 | `suite_selection.rank_by`(`h7r-suite-rank-v1`): opening마다 q_i = 세 작은 차이 arm에서 pair_score ≠ 0.5인 비율, 점추정은 opening 60개의 평균 |
+| bootstrap | `history_id` 단위로 세 arm 결과를 함께 재표집. 20,000회, 하위 2.5% 분위, seed 20261029 |
+| 동률 | 하한 → 점추정 순(소수 6자리). 둘 다 같으면 공동 순위 |
+| 함께 보고 | move_split(같은 bootstrap), arm별 move_split · score_split 수 |
+| 제외 | S400 대조와 후보 점수는 순위 통계에 넣지 않는다 |
+| 분산 0 | 모든 opening의 q_i가 같으면 그렇게 표시하고 높은 확실성으로 읽지 않는다 |
+| 누락 · 무효 | 보충 표본을 만들지 않는다. 계획한 유효 쌍이 부족한 arm(상대 불법 수, 오류)이 있으면 원인과 함께 미완료로 보고하고, 모든 suite의 필수 arm이 끝나기 전에는 최종 suite를 고르지 않는다 |
+| 색 편향 | `colour_bias.gate` = none. arm별 tested 흑 점수 · 백 점수 · 절대 차이를 보고하고, 여러 arm을 합친 값으로 대신하지 않는다 |
+| 양성 대조 | `positive_control.detection` = arm summary의 `lower_one_sided > 0`. 효과 · 구간 · 검출 여부를 그대로 보고하고 다시 실행하지 않는다 |
+| 실행 순서 | O0 → O1 → O2. 각 suite에서 S400 → c8 → mask → orig |
+| 시간 예산 | `execution_plan.budget`(`h7r-pilot-budget-v1`): runner 세션별 monotonic 경과시간의 합, soft 14시간. 세션 사이(중단) 시간은 빼고, 완료 arm은 포함한다. arm의 `wall_seconds`로 계산하지 않는다 |
+| 예산 확인 | 각 arm 시작 전과 끝난 뒤. 도달하면 진행 중인 arm만 마치고 다음 arm은 시작하지 않는다(그래서 14시간을 넘을 수 있다) |
+| 예산 도달 뒤 | 별도 승인 없이 재개하지 않는다. 재개하려면 `--budget-extension-hours H --approval TEXT`를 주고, 승인 내용이 세션 로그에 남는다. 예산을 다시 열지 못하는 연장은 기록하지 않고 거부한다 |
+| 오류 | 오류나 예기치 않은 종료는 세션을 멈추고 기록한다. 자동 재시도는 없다. 운영자가 다시 실행하면 같은 commit · 계약 · JSONL로 그 arm을 재개한다 |
+
+이 규칙은 평가 suite의 보정이다. 모델 승급이나 기력 향상 판정이 아니다.
+
+**도구: `scripts/h7r_pilot.py`**
+
+- `preflight`: Arena 대국과 계약 seed를 쓰지 않는다. 다음을 기록한다.
+  - Git 상태, NumPy 유무와 torch 변환, CUDA 장치
+  - fast5 binding과 사용 중인 threat-window 구현
+  - 계약 파일(모델 네 개 × SHA 4개, suite)
+  - 각 모델을 장치에 올려 한 수를 추론한 결과(국면은 중앙 한 수 뒤. 어느 suite의 opening도 아니다)
+  - 모델 로딩은 기존 `h7c_budget.make_budget_agent`(→ `h7c_arena`)를 그대로 쓴다. 후보 factory는 `scripts/h7c_*` 경로로만 쓰인다.
+- `run`: 계약의 arm 순서대로 `h7r_eval.play`를 부른다.
+  - 끝난 arm은 기록을 다시 검증만 하고 다시 두지 않는다. 중단된 arm은 JSONL에서 재개한다.
+  - `runs/` 또는 `data/` 아래 pilot 폴더에 `sessions.jsonl`을 남긴다(세션 시작 · 종료, arm 시작 · 종료, 60초 heartbeat, 예산 중단, 연장 승인).
+  - 같은 폴더에는 한 runner만 돈다(잠금).
+  - 모든 세션은 같은 commit과 계약 SHA여야 한다. 실행 도중 HEAD가 바뀌면 거부한다.
+  - 진행 줄을 1분마다 stdout에 쓴다: 완료 pair-unit / 전체, %, 세션 · 누적 시간, ETA, arm 수.
+- `report`: 모든 arm 기록을 다시 검증한 뒤 다음을 계산한다.
+  - suite별 score_split 순위(완료일 때만), move_split, arm별 색 점수, 양성 대조
+  - 세션 로그의 예산 합계
+  - 미완료이면 `ranking: null`
+- 실행 규칙이 있는 fixed pilot 계약은 `h7r_eval.py play`로 직접 둘 수 없다. runner를 거쳐야 한다.
+- 세션이 강제 종료되면 그 세션의 시간은 마지막 기록까지만 센다. 최대 heartbeat 한 번(60초)만큼 적게 셀 수 있다.
+
+**NumPy 경고에 대한 확인**
+
+- pilot · report · holdout 평가 경로(`h7r_*`, `h7c_arena`, `h7c_budget`, E1 · tactical 검사)는 NumPy를 쓰지 않는다. `numpy`, `.numpy()`, `from_numpy`를 검색해 확인했다.
+- NumPy를 쓰는 곳은 `rt30/fast_windows.py`(선택적: 없으면 순수 Python 구현)와 학습 상태 저장(`training/`)이다.
+  - frozen runtime은 native 빌드가 있으면 threat-window를 native 구현(`fast3_windows`)으로 바꾼다. 따라서 NumPy 유무는 엔진 경로에 영향이 없다.
+  - runtime hash에도 NumPy는 들어가지 않는다.
+- NumPy가 없을 때 torch 경고는 Tensor ↔ NumPy 변환을 부를 때만 문제가 된다.
+- 권장: smoke와 frozen 검사가 NumPy 없이 통과한 환경 그대로 pilot을 돌린다. `preflight`가 NumPy 상태와 사용 중인 threat-window 구현을 기록한다.
+- 그래도 설치한다면 pilot을 시작하기 **전에** 한다. 설치 뒤에는 frozen 검사와 `preflight`를 다시 통과시킨다. 의존성 선언(`pyproject.toml`)에는 NumPy가 없다.
+
+**데스크톱 명령** (`~/renju-h6`. 이 작업에서는 실행하지 않았다)
+
+```bash
+cd ~/renju-h6 && source .venv/bin/activate && export PYTHONPATH="$PWD/src:$PWD/scripts"
+git status --short                      # 출력이 없어야 한다(파일이 보이면 지우지 말고 저장소 밖으로 옮긴다)
+git switch feat/h7-c1 && git pull --ff-only origin feat/h7-c1
+git rev-parse HEAD origin/feat/h7-c1    # 같은 SHA가 두 번
+python -m rt30.native.build --if-stale && python -m rt30.vcfcore.build --if-stale
+python scripts/check_track_b_frozen.py  # 전체 PASS
+mkdir -p runs/h7r/R1-PILOT-1
+python -u scripts/h7r_pilot.py preflight --contract docs/h7r/contracts/R1-PILOT-1.json --device cuda \
+  --output runs/h7r/R1-PILOT-1/preflight.json   # "pass": true
+# 본 실행: 약 10시간 예측(상한 아님). 터미널을 닫아도 계속되도록 nohup(또는 tmux)
+nohup python -u scripts/h7r_pilot.py run --contract docs/h7r/contracts/R1-PILOT-1.json \
+  --runs-dir runs/h7r/R1-PILOT-1 --device cuda > runs/h7r/R1-PILOT-1/run-$(date +%Y%m%d-%H%M%S).log 2>&1 &
+tail -f runs/h7r/R1-PILOT-1/run-*.log    # 1분마다 [h7r-pilot] 진행 줄
+# 끝난 뒤(또는 예산 중단 뒤)
+python -u scripts/h7r_pilot.py report --contract docs/h7r/contracts/R1-PILOT-1.json \
+  --runs-dir runs/h7r/R1-PILOT-1 --output runs/h7r/R1-PILOT-1/report.json
+```
+
+- 중단(오류 · 재부팅 · WSL 종료)되면 같은 `run` 명령을 다시 실행해 재개한다. 끝난 arm은 다시 두지 않는다.
+- 예산에 도달해 멈췄다면, 재개는 별도 승인을 받은 뒤 `--budget-extension-hours`와 `--approval`을 함께 줘서 한다.
+- 실행 중에는 `git pull`이나 문서 커밋으로 HEAD를 바꾸지 않는다. 바뀌면 runner가 재개를 거부한다.
+- 결과와 로그는 `runs/h7r/R1-PILOT-1/`(gitignore 대상)에 남는다. 커밋하지 않는다.
+
+**검증**
+
+- `tests/test_h7r_pilot.py`(13개). fixture · stand-in 모델 · in-process 가짜 대국 · 가짜 시계만 쓴다.
+  - 규칙: fixed는 모든 규칙 값을 요구하고 draft는 비워 둘 수 있다. 커밋된 계약 두 개를 읽는다.
+  - 순위: opening 정렬 · 누락 · 중복 · 짧은 arm · 무효 arm 거부, bootstrap 재현성과 분산 0 표시, 공동 순위
+  - 예산: 세션 합산, 강제 종료 세션, 연장, 로그 복구 · 손상 · commit 불일치
+  - runner:
+    - 순서대로 완주한 뒤 report COMPLETE, 다음 세션에서 다시 두지 않음
+    - 예산 도달 시 진행 중 arm까지만 진행, 승인 없는 재개 거부, 부족한 연장은 기록 없이 거부
+    - 오류 시 중단하고 재실행하면 재개, 직접 `play` 거부, `runs/` 밖 거부
+    - heartbeat 기록과 진행 줄
+  - `preflight`: stand-in 모델을 CPU에서 추론하고, 아무 대국도 기록하지 않는다.
+- 결과
+  - R1 묶음 전체 통과
+  - 회귀(`test_h7*`, `test_tb_v3*`, `test_h6_labels`, `test_track_b*`, `test_canonical*`): 443개 실행, 441개 통과, 2개 skip(실제 frozen H3 / H6 checkpoint가 필요한 `test_tb_v3_net`, 코드 실패 아님)
+  - `check_track_b_frozen.py --no-models`: PASS
+- 실제 GPU pilot은 이 작업에서 실행하지 않았다. 이 세션은 데스크톱에 접근할 수 없다.

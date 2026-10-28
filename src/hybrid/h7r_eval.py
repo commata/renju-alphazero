@@ -148,6 +148,9 @@ def check_contract(contract: dict, path, root, check_files: bool = True) -> None
         require(h.get('split') in ('dev', 'conf') and isinstance(h.get('games'), int) and h['games'] > 0
                 and h.get('actor') in models and isinstance(h.get('cycle'), int), f'{path}: holdout block')
         seeds.append(h['seed'])
+    if contract['purpose'] == 'pilot' and contract['status'] == 'fixed' and 'execution_plan' in contract:
+        from .h7r_pilot import check_rules
+        check_rules(contract, path)  # a fixed pilot run by plan: every run rule set (a draft may leave them unset)
     if contract['purpose'] == 'confirm':  # the paired sample first: it names the cause of a shared seed
         require(names >= set(ROLE_ARMS), f'{path}: a confirm contract plays {ROLE_ARMS}')
         check_pairings(contract, path)

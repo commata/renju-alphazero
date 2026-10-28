@@ -2,8 +2,8 @@
  "format": "h7r-eval-contract-v1",
  "contract_id": "R1-PILOT-1",
  "purpose": "pilot",
- "status": "draft",
- "meaning": "draft calibration proposal only: small-difference arms 60 pairs, S400 positive controls 160 pairs; no model selection, promotion or deployment; all run rules must be agreed and committed before fixed",
+ "status": "fixed",
+ "meaning": "calibration of the evaluation suites, run once by scripts/h7r_pilot.py: small-difference arms 60 pairs, S400 positive controls 160 pairs; no model selection, promotion or deployment; no rerun to a desired result",
  "models": {
   "c5": {
    "policy": "runs/h3_policy_64x4/best.pt",
@@ -281,30 +281,62 @@
   "power": 0.8
  },
  "suite_selection": {
-  "rank_by": null,
-  "colour_gap_max": null,
-  "tie": "the simpler suite: O0, then O2, then O1",
-  "note": "fixed before the pilot is played (docs/h7-rl-plan.md 2.2)",
-  "ranking_proposal": {
-   "status": "proposal_only_not_selected_or_implemented; rank_by stays null until agreement",
-   "metric": "mean score_split indicator over the three small-difference arms, with equal arm weights",
+  "rank_by": {
+   "version": "h7r-suite-rank-v1",
+   "statistic": "score_split opening mean over the three small-difference arms (equal arm weights)",
    "per_opening": "q_i = (I[c8:c5 pair_score != 0.5] + I[mask:c5 pair_score != 0.5] + I[c5:orig pair_score != 0.5]) / 3",
-   "estimate": "mean(q_i) over the 60 shared history_id values in one suite",
-   "uncertainty_proposed": {
-    "method": "percentile cluster bootstrap",
-    "unit": "opening history_id, carrying all three arm outcomes together",
-    "lower_quantile": 0.025,
+   "estimate": "mean(q_i) over the suite's 60 shared history_id values",
+   "bootstrap": {
+    "unit": "history_id",
+    "method": "percentile",
     "samples": 20000,
-    "seed": 20261029
+    "seed": 20261029,
+    "quantile": 0.025
    },
-   "recorded_arm_pairs_per_suite": 180,
-   "exclude_from_ranking": "S400 control is reported separately; do not pool its different sample or choose by candidate wins",
-   "not_allowed": "a Wilson interval treating 180 shared-opening arm outcomes as independent Bernoulli trials",
-   "limitations": "zero-variation bootstrap intervals can collapse; report that limitation, not certainty or a power guarantee. Point rate remains a mean over 180 recorded arm-pairs, but uncertainty uses 60 opening clusters. Prior-evaluation overlap and symmetry dependence remain reported design limitations.",
-   "resampling_clusters_per_suite": 60
+   "order": [
+    "lower",
+    "estimate"
+   ],
+   "tie": "joint",
+   "tie_note": "lower bound, then estimate, compared at 6 decimals; equal on both: a joint rank (no tie-break by suite)",
+   "suites": {
+    "O0": {
+     "small_arms": [
+      "O0_c8_vs_c5",
+      "O0_mask_vs_c5",
+      "O0_c5_vs_orig"
+     ],
+     "control_arm": "O0_c5s400_vs_c5"
+    },
+    "O1": {
+     "small_arms": [
+      "O1_c8_vs_c5",
+      "O1_mask_vs_c5",
+      "O1_c5_vs_orig"
+     ],
+     "control_arm": "O1_c5s400_vs_c5"
+    },
+    "O2": {
+     "small_arms": [
+      "O2_c8_vs_c5",
+      "O2_mask_vs_c5",
+      "O2_c5_vs_orig"
+     ],
+     "control_arm": "O2_c5s400_vs_c5"
+    }
+   },
+   "also_report": [
+    "move_split (the same opening-cluster bootstrap)",
+    "per-arm move_split / score_split counts"
+   ],
+   "excluded": "the S400 control and candidate scores never enter the ranking",
+   "zero_variance": "a bootstrap whose openings all have one q_i value is reported as such, not as certainty",
+   "incomplete": "no supplementary pairs: an arm short of its planned valid pairs (an opponent illegal move, an error) makes the pilot incomplete, reported with its cause; no final suite choice until every required arm of every suite is complete"
   },
+  "tie": "joint rank (rank_by.tie)",
+  "note": "fixed before the pilot is played (docs/h7-rl-plan.md 2.2)",
   "colour_gap_reference": {
-   "status": "descriptive reference only; colour_gap_max and its exact aggregation rule remain unset",
+   "status": "descriptive reference only (colour_bias.gate is none)",
    "historical_absolute_gap_range": [
     0.07,
     0.33
@@ -359,7 +391,11 @@
      "absolute_gap": 0.31
     }
    ],
-   "note": "These are historical tested-colour score gaps on existing cycle openings, not an estimate of O1/O2 bias or a validated exclusion threshold. Fix both aggregation across arms and threshold before pilot results are opened."
+   "note": "historical tested-colour score gaps on earlier cycle openings; no exclusion threshold is drawn from them"
+  },
+  "colour_bias": {
+   "gate": "none",
+   "report": "per arm: tested black score, tested white score and their absolute gap; never pooled across arms as a substitute"
   }
  },
  "positive_control": {
@@ -396,10 +432,12 @@
     "power_at_160_approx": 0.8655,
     "note": "the same source as delta_assumed; 0.35 is larger than the 0.318 sensitivity estimate, but is not a conservative bound for every new suite; neither is a raw S400 pair SD"
    }
-  }
+  },
+  "detection": "lower_one_sided > 0",
+  "detection_note": "the arm summary's one-sided lower bound of (score - 0.5) at stats.alpha_one_sided, pair bootstrap (stats.bootstrap); reported with the effect and interval, never rerun"
  },
  "planning": {
-  "status": "proposal_only_not_enforced_by_the_current_CLI",
+  "status": "fixed sizes and workers (execution_plan); the costs are planning predictions, not bounds",
   "workers_proposed": 6,
   "suite_count": 3,
   "small_difference_arms": 9,
@@ -488,9 +526,12 @@
   }
  },
  "execution_plan": {
-  "status": "draft_operator_procedure_not_a_scheduler",
-  "workers_proposed": 6,
-  "arm_order_proposed": [
+  "status": "fixed; executed by scripts/h7r_pilot.py run (arm order, session log, soft budget)",
+  "errors": "stop on integrity/runtime errors immediately; interrupted work may resume only with the same contract, code, models and JSONL; never rerun completed arms to obtain a desired result",
+  "incomplete": "report completed/missing arms and failure reasons; do not make a final suite choice from incomplete prescribed comparisons",
+  "arm_order_reason": "suite by suite (control first within a suite): a pause at an arm boundary leaves whole suites with all four comparisons; the order is fixed before play and independent of results",
+  "workers": 6,
+  "arm_order": [
    "O0_c5s400_vs_c5",
    "O0_c8_vs_c5",
    "O0_mask_vs_c5",
@@ -504,18 +545,15 @@
    "O2_mask_vs_c5",
    "O2_c5_vs_orig"
   ],
-  "max_wall_hours": null,
-  "pause_or_termination_handling": null,
-  "budget_stop_proposed": "result-blind time-budget checks at arm boundaries; finish the active arm, then pause before the next. This can exceed the nominal limit by one arm; it is not a hard timeout.",
-  "errors": "stop on integrity/runtime errors immediately; interrupted work may resume only with the same contract, code, models and JSONL; never rerun completed arms to obtain a desired result",
-  "incomplete": "report completed/missing arms and failure reasons; do not make a final suite choice from incomplete prescribed comparisons",
-  "note": "max_wall_hours and pause/termination handling remain unset for review; the current CLI runs one arm and does not enforce this schedule or budget",
-  "arm_order_reason": "suite by suite (control first within a suite): a pause at an arm boundary leaves whole suites with all four comparisons; the order is fixed before play and independent of results",
-  "budget_review_proposal": {
-   "status": "discussion only; max_wall_hours and pause_or_termination_handling stay null",
-   "soft_wall_hours_suggested": 14,
-   "ratio_to_6_worker_estimate": 1.382,
-   "note": "about 1.4x the cost proxy, not a guaranteed bound. Before fixed, choose cumulative vs per-session accounting, paused-time treatment and resumption authorization. Arm-boundary checks do not enforce a hard 14-hour cap and the current CLI does not enforce this proposal."
+  "budget": {
+   "version": "h7r-pilot-budget-v1",
+   "soft_wall_hours": 14,
+   "heartbeat_seconds": 60,
+   "accounting": "the sum over runner sessions of each session's monotonic elapsed seconds (sessions.jsonl); time between sessions is excluded, completed arms count; arm wall_seconds is never the budget source; a killed session counts up to its last event (at most one heartbeat short)",
+   "checks": "before each arm starts and after it ends",
+   "on_reach": "the active arm finishes; no further arm starts (the end can pass 14 h: a soft budget)",
+   "after_reach": "no resumption without a separate approval, recorded in the session log (--budget-extension-hours with --approval)",
+   "errors": "an error or unexpected end stops the session and is logged; nothing retries automatically; a rerun by the operator resumes the arm from its JSONL with the same commit and contract"
   }
  }
 }
