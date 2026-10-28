@@ -519,7 +519,8 @@ def judge(args, root: Path = ROOT) -> dict:
     """Promotion rule v3 of a confirm contract. Order: inputs checked, source evidence verified, judgment computed,
     then the ledger bound (contract, seeds, H-conf use, judgment inputs, one lock, every conflict checked first);
     ``main`` publishes. Any refusal before the ledger step leaves the ledger unchanged; an identical recomputation is
-    allowed, changed inputs for a judged contract are refused."""
+    allowed, changed inputs for a judged contract are refused. The judge itself must run from the arms' clean code
+    commit, which is recorded in the verdict and bound to this confirmation in the ledger."""
     from hybrid import h7r_evidence as evidence
     from hybrid.h7r_ledger import FOLDER, bind_all, contract_bindings, guard
     from hybrid.h7c_nmask import committed
@@ -527,6 +528,9 @@ def judge(args, root: Path = ROOT) -> dict:
 
     root = Path(getattr(args, 'root', None) or root)
     guard(root, args.allow_dirty)
+    judge_git = _git(args.allow_dirty)
+    ev.require(judge_git.get('commit') and judge_git.get('dirty') is False,
+               'a judgment requires clean committed code (nothing was recorded)')
     contract, sha = _contract(args, root)
     ev.require(contract['purpose'] == 'confirm', 'only a confirm contract is judged')
     ev.require(contract['status'] == 'fixed' and not ev.unset(contract), 'confirm rule values unset or draft')
@@ -555,6 +559,8 @@ def judge(args, root: Path = ROOT) -> dict:
     ev.require(len(commits) == 1 and None not in commits, 'the three Arena arms were played from different code commits')
     ev.require(args.allow_dirty or all(g.get('dirty') is False for g in gits), 'an Arena arm names a dirty tree')
     commit = commits.pop()
+    ev.require(judge_git['commit'] == commit,
+               'judge code commit differs from the Arena arms (nothing was recorded)')
     records = {name: _json(getattr(args, name)) for name in EVIDENCE}
     for name, record in records.items():
         ev.require(isinstance(record, dict) and record.get('contract_sha256') == sha,
@@ -572,9 +578,9 @@ def judge(args, root: Path = ROOT) -> dict:
     inputs['arms'] = {name: ev.file_sha256(path) for name, path in arm_files.items()}
     entries = bind_all(root, [*contract_bindings(contract, sha),
                               ('holdout-use', sel['holdout_contract_sha256'], {'confirmation': sha}),
-                              ('judgment', sha, inputs)], args.allow_dirty)
+                              ('judgment', sha, inputs), ('judge-code', sha, judge_git)], args.allow_dirty)
     return {'format': VERDICT_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha,
-            'roles': roles, 'code_commit': commit, 'evidence_records_sha256': inputs,
+            'roles': roles, 'code_commit': commit, 'judge_git': judge_git, 'evidence_records_sha256': inputs,
             'arm_records_sha256': inputs['arms'], **out,
             'ledger': {'folder': FOLDER, 'entries': entries,
                        'scope': 'local to this checkout: keep the folder with the source records '

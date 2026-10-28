@@ -709,3 +709,20 @@ python -u scripts/h7r_eval.py judge --contract docs/h7r/contracts/CONFIRM_ID.jso
   - 전체 checker: policy / value checkpoint 두 항목만 FAIL이다. 이 컨테이너에 `runs/h3_policy_64x4/best.pt` · `runs/h6_value_head_v3/best.pt`가 없기 때문이며, 코드 실패가 아니다. code · engine · runtime · TB-V3 identity · promotion · canonical 검사는 모두 PASS다.
 
 이 보완만으로 R1 완료나 기력 향상을 주장하지 않는다. 실제 모델로 만든 tactical 기록과 등록 Rapfi의 분기 기록은 본 확인 단계에서 처음 생긴다.
+
+### 9.8 추가 검토 보완: 판정 코드 출처와 빈 anchor 표본
+
+- **현재 판정 코드 검사**: `judge`도 실행 시 Git 상태를 확인한다. 현재 commit이 있어야 하고 작업 트리는 clean이어야 한다. 현재 commit은 세 Arena arm의 공통 commit과 정확히 같아야 한다. 별도의 버전 호환 예외는 두지 않는다.
+  - verdict에 실제 판정 코드의 `judge_git`을 남긴다. 기존 `code_commit`은 arm의 공통 commit이며, 이제 둘의 commit이 같음을 검사한다.
+  - ledger에 확인 계약 SHA를 key로 한 `judge-code` 항목을 다른 binding과 함께 기록한다. 저장 바이트의 SHA는 `ledger.entries`에 포함된다.
+  - 작업 트리가 dirty이거나 commit이 다르면 ledger 등록 전에 거부한다. 테스트 전용 `--allow-dirty`도 판정 코드의 clean·동일 commit 검사를 건너뛰지 않는다. 테스트는 임시 root와 명시적으로 주입한 Git 상태를 사용한다.
+  - 향후 확인에서는 평가 도구·계약을 커밋한 뒤 동일 commit에서 arm·tactical·judge를 실행한다. 코드 변경 뒤 예전 arm을 현재 코드로 재판정하는 우회는 허용하지 않는다. 과거 계약·원본·판정은 수정하거나 다시 실행하지 않았다.
+- **빈 anchor 표본**: 한쪽 또는 양쪽 anchor arm의 모든 쌍이 상대 불법 수로 제외되면, 빈 집합끼리 같더라도 paired 차이를 계산하지 않는다. `anchor=NOT_COMPUTED`, `reason=ARM_INVALID`, `decision=KEEP_CHAMPION`, `keep_kind=NOT_JUDGEABLE`로 기록한다. 정상적으로 남은 표본의 계산 방식은 그대로다.
+- **구조적 관측 수**: `structural_observations`는 평가상 무승부로 정규화된 분기가 하나 이상 있는 관측 수다. 같은 관측의 다른 분기가 timeout 등 미해결이면 `unresolved_observations`에도 센다. 두 수는 겹칠 수 있으며 합계로 전체 관측 수를 계산하면 안 된다. 미해결 비율·최악값 delta·최소 실측 표본·승급 문턱은 바꾸지 않았다.
+
+회귀 테스트는 다음을 확인한다.
+- dirty·Git 상태 미확인·현재 commit 불일치 시 판정 거부와 ledger 불변, 동일한 clean commit에서 PROMOTE 및 감사용 재계산
+- 실제 기보 재생을 통과한 상대 불법 수 기록으로 한쪽·양쪽 anchor의 유효 쌍이 모두 없어지는 경우
+- 후보 쪽 또는 champion 쪽 구조적 무승부와 미해결 분기가 섞인 관측의 중복 집계 및 기존 최악값 점수 유지
+
+검증 결과: R1 6개 모듈과 `test_h7c_recipe_guards`, `test_track_b_guard`, `test_tb_v3_net`을 함께 실행해 총 87개 중 85개 통과, 실제 frozen H3/H6 모델이 필요한 2개 skip을 확인했다. `check_track_b_frozen.py --no-models`는 PASS이며, 전체 checker는 기존과 같이 checkpoint 부재 2항목만 FAIL이다. 실제 GPU·Rapfi 평가, 학습, 전체 pilot, champion·SER5 변경은 수행하지 않았다.

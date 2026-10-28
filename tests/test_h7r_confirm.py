@@ -183,6 +183,15 @@ class PolicySelectionTest(unittest.TestCase):
         self.assertEqual(self.select([(f'g{i}', R1, R1) for i in range(30)] + [('x', ('unhandled', None), R1)])['reason'],
                          'UNHANDLED_INVALID')
 
+    def test_structural_and_unresolved_observation_counts_can_overlap(self):
+        good = [(f'g{i}', R1, R1) for i in range(38)]
+        out = self.select(good + [('candidate-draw', S, U), ('champion-draw', U, S)])
+        self.assertEqual((out['structural_observations'], out['unresolved_observations'],
+                          out['resolved_observations'], out['observations_total']), (2, 2, 38, 40))
+        self.assertEqual(out['normalized']['abnormal_end_evaluation_draw'], 2)
+        self.assertEqual(out['invalid_share'], 0.05)
+        self.assertEqual(out['mean_delta'], -0.025)
+
     def test_structural_branches_are_counted_apart(self):
         out = self.select([(f'g{i}', R1, R1) for i in range(30)] + [('s', S, R1)])
         self.assertEqual((out['structural_observations'], out['unresolved_observations'], out['invalid_share']),
@@ -264,6 +273,9 @@ class ConfirmFlowTest(unittest.TestCase):
     every evidence record, the judgment to PROMOTE and the ledger's behaviour around it."""
 
     def setUp(self):
+        git_patch = mock.patch.object(cli, '_git', return_value=dict(CLEAN))
+        git_patch.start()
+        self.addCleanup(git_patch.stop)
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.w = confirm_world(self.tmp.name)
@@ -330,6 +342,9 @@ class ConfirmFlowTest(unittest.TestCase):
     def test_judge_promotes_and_records_ledger_entries(self):
         verdict = cli.judge(self.judge_args(), root=self.root)
         self.assertEqual((verdict['decision'], verdict['keep_kind'], verdict['code_commit']), ('PROMOTE', None, 'test'))
+        self.assertEqual(verdict['judge_git'], CLEAN)
+        code_entry = next(e for e in verdict['ledger']['entries'] if e['category'] == 'judge-code')
+        self.assertEqual(json.loads((self.root / code_entry['entry']).read_text()), CLEAN)
         self.assertEqual(verdict['selection']['invalid_policy'], POLICY)
         for entry in verdict['ledger']['entries']:
             self.assertEqual(ev.file_sha256(self.root / entry['entry']), entry['sha256'])
@@ -341,6 +356,24 @@ class ConfirmFlowTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'different confirmation inputs'):
             cli.judge(self.judge_args(timing=regenerated), root=self.root)
         self.assertEqual(ledger_files(self.root), before)
+
+    def test_current_judge_code_is_checked_before_recording(self):
+        before = ledger_files(self.root)
+        args = self.judge_args(allow_dirty=False)
+        cases = (({'commit': 'test', 'dirty': True}, 'clean committed code'),
+                 ({'commit': 'test', 'dirty': None}, 'clean committed code'),
+                 ({'commit': None, 'dirty': False}, 'clean committed code'),
+                 ({'commit': 'different-current-code', 'dirty': False}, 'judge code commit differs'))
+        with mock.patch('hybrid.h7c_nmask.committed', return_value=True):
+            for state, message in cases:
+                with self.subTest(state=state), mock.patch.object(cli, '_git', return_value=state) as reader:
+                    with self.assertRaisesRegex(ValueError, message):
+                        cli.judge(args, root=self.root)
+                    reader.assert_called_once_with(False)
+                    self.assertEqual(ledger_files(self.root), before)
+            # Clean matching code is accepted without the test-only dirty-tree option.
+            verdict = cli.judge(args, root=self.root)
+            self.assertEqual((verdict['decision'], verdict['judge_git']), ('PROMOTE', CLEAN))
 
     def test_refusals_leave_the_ledger_unchanged_and_a_complete_run_then_succeeds(self):
         before = ledger_files(self.root)
@@ -469,6 +502,26 @@ class ForbiddenAttributionTest(unittest.TestCase):
         arms[name]['table'] = ev.pair_table(g, ops)
         arms[name]['summary'] = ev.arm_summary(arms[name]['table'], STATS)
         return arms
+
+    def test_anchor_arms_without_valid_pairs_keep_the_champion(self):
+        t = eval_tests.JudgeTest()
+        for empty_arms in (('candidate_vs_anchor',), ('champion_vs_anchor',),
+                           ('candidate_vs_anchor', 'champion_vs_anchor')):
+            with self.subTest(empty_arms=empty_arms):
+                arms, ops = t.arms(**t.GOOD), openings(40)
+                for name in empty_arms:
+                    records = games(ops, t.GOOD['cand_anchor'], replayable=True)
+                    for g in records:
+                        cut = 5 if g['tested_color'] == 'black' else 4
+                        g.update(result='opponent_illegal', winner=None, moves=g['moves'][:cut], length=cut,
+                                 illegal={'side': 'opponent', 'ply': cut, 'move': [7, 7]})
+                    table = ev.pair_table(records, ops)  # genuine replay, every pair invalidated
+                    self.assertEqual((table['pairs'], len(table['opponent_illegal_pairs'])), ([], 40))
+                    arms[name] = {'table': table, 'summary': ev.arm_summary(table, STATS)}
+                out = t.judge(arms=arms)
+                self.assertEqual((out['decision'], out['keep_kind']), ('KEEP_CHAMPION', 'NOT_JUDGEABLE'))
+                self.assertIn('ARM_INVALID', out['reasons'])
+                self.assertEqual(out['anchor'], {'status': 'NOT_COMPUTED', 'reason': 'ARM_INVALID'})
 
     def test_candidate_and_reference_faults_are_told_apart(self):
         t = eval_tests.JudgeTest()

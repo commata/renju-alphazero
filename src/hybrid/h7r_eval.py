@@ -402,7 +402,7 @@ def policy_selection(observations: list[dict], outcomes: dict, policy: dict, spe
     rows = worst_case_rows(observations, outcomes)
     used = {o[k]: outcomes[o[k]] for o in observations for k in ('key_a', 'key_b')}
     unresolved = sum(not r['resolved'] for r in rows)
-    structural = sum(r['resolved'] and r['structural'] for r in rows)
+    structural = sum(r['structural'] for r in rows)  # may overlap unresolved observations
     unhandled = sum(r['unhandled'] for r in rows)
     n = len(rows)
     resolved = n - unresolved
@@ -514,10 +514,12 @@ def judge(contract: dict, arms: dict, selection: dict | None, tactical: dict | N
         reasons.append('TOO_FEW_INFORMATIVE')
     if summary['lower_one_sided'] is None or not summary['lower_one_sided'] > 0:
         reasons.append('NOT_SUPERIOR')
-    same = ({p['opening_id'] for p in arms['candidate_vs_anchor']['table']['pairs']}
-            == {p['opening_id'] for p in arms['champion_vs_anchor']['table']['pairs']})
-    if invalid_arms and not same:  # an invalid pair left one anchor arm only: there is no paired difference
-        anchor = {'status': 'NOT_COMPUTED', 'reason': 'ARM_INVALID'}
+    candidate_ids = {p['opening_id'] for p in arms['candidate_vs_anchor']['table']['pairs']}
+    champion_ids = {p['opening_id'] for p in arms['champion_vs_anchor']['table']['pairs']}
+    # Empty sets can match, but cannot yield a paired estimate. Unequal invalid subsets cannot either.
+    if not candidate_ids or not champion_ids or (invalid_arms and candidate_ids != champion_ids):
+        anchor = {'status': 'NOT_COMPUTED',
+                  'reason': 'ARM_INVALID' if invalid_arms else 'NO_VALID_ANCHOR_PAIRS'}
     else:
         anchor = anchor_difference(arms['candidate_vs_anchor']['table'], arms['champion_vs_anchor']['table'],
                                    contract['stats'], (contract.get('anchor') or {}).get('margin'))

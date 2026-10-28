@@ -71,6 +71,9 @@ def world(tmp: Path) -> dict:
 
 class FlowTest(unittest.TestCase):
     def setUp(self):
+        git_patch = mock.patch.object(cli, '_git', return_value=dict(CLEAN))
+        git_patch.start()
+        self.addCleanup(git_patch.stop)
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.w = world(Path(self.tmp.name))
@@ -133,7 +136,7 @@ class FlowTest(unittest.TestCase):
         self.assertEqual(verdict['decision'], 'PROMOTE', verdict['reasons'])
         self.assertIn('changes no champion', verdict['meaning'])
         self.assertEqual({e['category'] for e in verdict['ledger']['entries']},
-                         {'contract', 'seed', 'holdout-use', 'judgment'})
+                         {'contract', 'seed', 'holdout-use', 'judgment', 'judge-code'})
         self.assertEqual(cli.judge(args, root=self.w['root']), verdict)  # identical audit recomputation
         # a tampered record is refused
         rec = json.loads(records['candidate_vs_champion'].read_text())
