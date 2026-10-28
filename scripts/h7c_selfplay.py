@@ -22,6 +22,12 @@ device, the four model SHA-256 and their hash, code commit and dirty flag) and t
         --policy-checkpoint runs/h3_policy_64x4/best.pt --value-checkpoint runs/h6_value_head_v3/best.pt \\
         --device cuda --jsonl runs/h7c/c1/selfplay_8801.jsonl --output runs/h7c/c1/selfplay_8801.json
 
+Holdout (``--holdout-contract``, H7-R, docs/h7-rl-plan.md): evaluation games, never training data. The contract
+(``hybrid.h7r_eval``, purpose ``holdout``, status ``fixed``, committed) names the run seed (reserved, from the H7-R
+block), the cycle number used for the seeds, the number of games and the actor's four SHA-256; the identity gets
+``purpose: holdout`` and the contract's id and SHA-256. The label step refuses such games for training
+(``h7c_labels.check_games``), and their seed is reserved. Without the flag nothing changes.
+
 Resume: rerun the same command; finished game indices in ``--jsonl`` are skipped, and a file of another run
 (seed, cycle, models, engine, runtime, sampling, or another generator commit) is refused, as is an index twice or an
 unreadable line before the last; an incomplete last line (a crash while appending) is cut and its game played again. A dirty tree is refused (``--allow-dirty`` only for
@@ -66,13 +72,18 @@ def opening_seed(run_seed: int, cycle: int, index: int) -> int:
     return derive_seed(run_seed, 'h7c-opening', cycle, index)
 
 
-def check_seeds(run_seed: int, cycle: int, indices, *, measurement: bool = False) -> None:
-    from hybrid.h6_labels import check_reserved_seed
+def check_seeds(run_seed: int, cycle: int, indices, *, measurement: bool = False, holdout: bool = False) -> None:
+    from hybrid.h6_labels import RESERVED_SEEDS, check_reserved_seed
 
-    if measurement != (run_seed == MEASURE_SEED) or (not measurement and run_seed not in RUN_SEEDS):
-        raise ValueError(f'--run-seed {run_seed}: H7-c training runs use {RUN_SEEDS.start}-{RUN_SEEDS.stop - 1}; '
-                         f'{MEASURE_SEED} is for the throughput measurement only')
-    check_reserved_seed(run_seed)
+    if holdout:  # the contract named this reserved H7-R seed (checked by the caller)
+        from hybrid.h7r_eval import SEED_BLOCK
+        if run_seed not in SEED_BLOCK or run_seed not in RESERVED_SEEDS:
+            raise ValueError(f'--run-seed {run_seed}: a holdout run uses a reserved H7-R seed')
+    else:
+        if measurement != (run_seed == MEASURE_SEED) or (not measurement and run_seed not in RUN_SEEDS):
+            raise ValueError(f'--run-seed {run_seed}: H7-c training runs use {RUN_SEEDS.start}-{RUN_SEEDS.stop - 1}; '
+                             f'{MEASURE_SEED} is for the throughput measurement only')
+        check_reserved_seed(run_seed)
     if cycle < 1:
         raise ValueError('--cycle starts at 1')
     seeds = [s for i in indices for s in (game_seed(run_seed, cycle, i), opening_seed(run_seed, cycle, i))]
@@ -207,6 +218,25 @@ def load_finished(path: Path, identity: dict, log=print) -> dict[int, dict]:
     return done
 
 
+def holdout_identity(path: Path, args, models: dict) -> dict:
+    """The holdout contract allows exactly this run: its seed, cycle, games, actor; fixed and committed."""
+    from hybrid import h7r_eval as ev
+    from hybrid.h7c_nmask import committed
+
+    contract, sha = ev.load_contract(path, ROOT, check_files=False, contracts_dir=path.parent)
+    h = contract.get('holdout') or {}
+    actor = (contract.get('models') or {}).get(h.get('actor'), {}).get('identity')
+    checks = {'purpose holdout': contract['purpose'] == 'holdout', 'fixed': contract['status'] == 'fixed',
+              'committed': args.allow_dirty or committed(path, ROOT), 'seed': args.run_seed == h.get('seed'),
+              'cycle': args.cycle == h.get('cycle'), 'games': 0 <= args.start
+              and args.start + args.games <= h.get('games', 0), 'actor': actor == models}
+    failed = sorted(k for k, ok in checks.items() if not ok)
+    if failed:
+        raise ValueError(f'{path}: not the holdout contract of this run ({", ".join(failed)})')
+    return {'purpose': 'holdout', 'holdout': {'contract_id': contract['contract_id'], 'contract_sha256': sha,
+                                              'split': h['split']}}
+
+
 def summarize(rows: list[dict]) -> dict:
     results, routes, events, kinds = {}, {}, {}, {}
     seconds = sorted(p['seconds'] for r in rows for p in r['plies'])
@@ -232,13 +262,17 @@ def run(args, log=print) -> dict:
     from run_mcts_v8_benchmark import _git_commit, _git_dirty
 
     indices = list(range(args.start, args.start + args.games))
-    check_seeds(args.run_seed, args.cycle, indices, measurement=getattr(args, 'measurement', False))
+    holdout = getattr(args, 'holdout_contract', None)
+    check_seeds(args.run_seed, args.cycle, indices, measurement=getattr(args, 'measurement', False),
+                holdout=holdout is not None)
     git = {'commit': _git_commit(), 'dirty': _git_dirty()}
     if git['dirty'] is not False and not args.allow_dirty:
         raise ValueError('the tree is dirty (or git is unavailable): self-play data must name its code commit')
     models = tb_v3_net.model_identity(args.policy_checkpoint, args.value_checkpoint)
     # The generator's commit is part of the run: a resumed file never mixes games of two code versions.
     identity = {**run_identity(args.cycle, args.run_seed, models, args.device), 'generator_git': git}
+    if holdout is not None:
+        identity.update(holdout_identity(Path(holdout), args, models))
     finished = load_finished(args.jsonl, identity, log=log)
     todo = [i for i in indices if i not in finished]
     tasks = [{'identity': identity, 'game_index': i, 'game_seed': game_seed(args.run_seed, args.cycle, i),
@@ -280,6 +314,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--jsonl', type=Path, required=True)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--allow-dirty', action='store_true', help='tests only: data from a dirty tree')
+    parser.add_argument('--holdout-contract', type=Path, help='H7-R holdout games (evaluation only, never training)')
     return parser
 
 

@@ -107,6 +107,8 @@ def require(ok, message) -> None:
 def committed(path, root=None) -> bool:
     """The file is tracked and the same as in HEAD (a pre-registration must be in the history before it is used)."""
     root = Path(root or ROOT)
+    if not Path(path).resolve().is_relative_to(root.resolve()):
+        return False
     relative = Path(path).resolve().relative_to(root.resolve()).as_posix()
     try:
         subprocess.run(['git', 'ls-files', '--error-unmatch', relative], cwd=root, capture_output=True, check=True)

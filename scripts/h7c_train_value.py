@@ -52,8 +52,14 @@ def check_cycle_cache(cache: Path, cycle: int, run_seed: int | None = None, *, r
     Game lists are not covered by the tensor hashes. Read the source rows independently so an edited or empty
     list cannot hide games from another run, including games whose rows were all masked by the label pipeline.
     """
+    from hybrid.h6_labels import RESERVED_SEEDS
+
     prefix = f'h7c:c{cycle}:' + ('' if run_seed is None else f'{run_seed}:')
     expected = {s: [] for s in ('train', 'val', 'test')}
+
+    def reserved(game):  # h7c:c<cycle>:<run seed>:<index>; an evaluation (reserved) seed is never training data
+        parts = str(game).split(':')
+        return len(parts) == 4 and parts[2].isdigit() and int(parts[2]) in RESERVED_SEEDS
     if rows is not None:
         seen, current = {}, None
         opener = gzip.open if rows.suffix == '.gz' else open
@@ -65,6 +71,8 @@ def check_cycle_cache(cache: Path, cycle: int, run_seed: int | None = None, *, r
                 game, split = row.get('game_id'), row.get('split')
                 if not isinstance(game, str) or not game.startswith(prefix):
                     raise ValueError(f'{rows}: game {game!r} is not from {prefix}')
+                if reserved(game):
+                    raise ValueError(f'{rows}: game {game} has a reserved (evaluation) seed: never training data')
                 if split not in expected or (game in seen and seen[game] != split):
                     raise ValueError(f'{rows}: invalid or inconsistent split for {game}')
                 if game != current:
@@ -82,6 +90,8 @@ def check_cycle_cache(cache: Path, cycle: int, run_seed: int | None = None, *, r
         if not isinstance(games, list) or any(not isinstance(g, str) for g in games):
             raise ValueError(f'{path}: expected a list of game IDs')
         bad = [g for g in games if not g.startswith(prefix)]
+        if any(reserved(g) for g in games):
+            raise ValueError(f'{cache}: {split} holds a game of a reserved (evaluation) seed')
         if bad:
             raise ValueError(f'{cache}: {split} holds games of another source or cycle, e.g. {bad[0]}')
         if len(games) != len(set(games)) or (rows is not None and games != expected[split]):

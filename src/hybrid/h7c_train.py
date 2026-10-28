@@ -71,6 +71,8 @@ def rows_source(provenances, game_ids, cycle: int) -> dict:
             raise ValueError(f'a row of game {game_id} is not of cycle {cycle}')
         if not isinstance(detail, dict) or any(not detail.get(k) for k in SOURCE_MODEL_KEYS):
             raise ValueError(f'a row of game {game_id} has no H7-c self-play provenance')
+        if detail.get('purpose') is not None:
+            raise ValueError(f"a row of game {game_id} is {detail['purpose']} data, never training data")
         sources.add(json.dumps({k: detail[k] for k in (*SOURCE_MODEL_KEYS, 'runtime_hash', 'selfplay_git_commit')},
                                sort_keys=True))
     if rows == 0 or len(sources) != 1:

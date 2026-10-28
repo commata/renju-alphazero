@@ -160,6 +160,10 @@ def check_games(games: list[dict]) -> dict:
 
     if not games:
         raise ValueError('no games')
+    for g in games:  # first: whatever else is wrong, an evaluation game is never training data
+        if g.get('purpose') is not None or g.get('holdout') is not None:
+            raise ValueError(f"{game_id(g)}: a {g.get('purpose') or 'holdout'} game is evaluation data, never "
+                             f'training data')
     first = {k: games[0].get(k) for k in IDENTITY_KEYS}
     git = first.get('generator_git') or {}
     if not git.get('commit') or git.get('dirty') is not False:
@@ -274,9 +278,13 @@ def mask_policy(policy: list[dict], row_probes: set[str]) -> dict:
 
 def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: float, proof_weight: float,
           prove_losses: bool, vct1: bool, probe_game_min_ply: int, workers: int, fast: str,
-          progress_seconds: float = 60.0, retarget: dict | None = None) -> tuple[list, list[dict], dict]:
-    """``retarget``: ``{'records': [...], 'sha256': ...}`` of ``scripts/h7c_retarget.py run`` (v2 policy rows)."""
-    identity = check_games(games)
+          progress_seconds: float = 60.0, retarget: dict | None = None,
+          evaluation: dict | None = None) -> tuple[list, list[dict], dict]:
+    """``retarget``: ``{'records': [...], 'sha256': ...}`` of ``scripts/h7c_retarget.py run`` (v2 policy rows).
+    ``evaluation`` (``scripts/h7r_holdout.py labels`` only): ``{'check': fn, 'purpose': str, 'split': str}``: the
+    games are checked by ``check`` instead of the training check, every row gets ``split`` and the provenance
+    ``purpose`` (which the training row sources refuse)."""
+    identity = check_games(games) if evaluation is None else evaluation['check'](games)
     if retarget is not None:  # over every game of the file, before any is dropped (the run searched them all)
         retarget = retarget_rows(games, retarget['records'], retarget['sha256'])
     retarget_counts: dict = {}
@@ -322,9 +330,12 @@ def build(games: list[dict], *, probes: dict, from_ply: int, outcome_weight: flo
     # Beside the H6 row fields (which h6_value_cache reads; it ignores the rest): what exactly made the data.
     detail = {'runtime_hash': identity['runtime_hash'], **identity['models'],
               'selfplay_git_commit': identity['generator_git']['commit'], 'label_git_commit': provenance['git_commit']}
+    if evaluation is not None:
+        detail['purpose'] = evaluation['purpose']
     rows, policy = [], []
     for g, proof in zip(kept, proofs):
-        split = split_for(game_id(g), fractions=SPLIT_FRACTIONS, salt=SPLIT_SALT)
+        split = split_for(game_id(g), fractions=SPLIT_FRACTIONS, salt=SPLIT_SALT) if evaluation is None \
+            else evaluation['split']
         result = {'id': game_id(g), 'moves': g['moves'], 'winner': g['winner'], 'real_draw': g['real_draw']}
         these = game_rows(result, source=SOURCE, split=split, outcome_weight=outcome_weight,
                           proof_weight=proof_weight, proofs=proof, solver_class=solver_class, solver_budget=budget,
