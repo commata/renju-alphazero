@@ -12,8 +12,9 @@ champion, the canonical engine or the web model; a judgment is a record.
     size       a sizing proposal from pilot arm records (pairs for delta / power, the chance of m informative pairs,
                the cost); it starts nothing
     timing     the time gate: the same positions, one process, alternating order, warm-up discarded
-    selection  selection-quality non-inferiority from per-observation rows (source-game bootstrap)
-    judge      the promotion rule v3 on a confirm contract's records (never overwritten, never re-judged)
+    selection-source  complete H-conf sensitivity and registered Rapfi branches, with resumable raw records
+    selection  confirmation from bound source evidence; delta rows are development-only
+    judge      promotion rule v3; identical audit recomputation allowed, changed inputs refused
 
 A pilot contract or a confirm contract is played only when ``status`` is ``fixed`` and the file is committed; a
 confirm contract also needs every rule value set. A dirty tree is refused (``--allow-dirty`` only for tests).
@@ -40,7 +41,7 @@ from hybrid.progress import Progress, run_chunks  # noqa: E402
 from renju import BLACK, WHITE, Game  # noqa: E402
 
 ARENA_FORMAT = 'h7r-arena-v1'
-TIMING_FORMAT = 'h7r-timing-v1'
+TIMING_FORMAT = 'h7r-timing-v2'
 SELECTION_FORMAT = 'h7r-selection-v1'
 VERDICT_FORMAT = 'h7r-verdict-v1'
 
@@ -163,8 +164,12 @@ def play(args, log=print, root: Path = ROOT) -> dict:
     openings = op.pick(_suite(arm, root), arm['pairs'], arm['seed'])
     identity = arm_identity(contract, sha, arm, args.device, git)
     sig = _sha_json(identity)
+    if contract['purpose'] == 'confirm':
+        from hybrid.h7r_ledger import bind_contract
+        bind_contract(root, contract, sha)
     tasks = build_tasks(arm, openings)
     finished = ar.load_finished(Path(args.jsonl), {t['key'] for t in tasks}, sig, log=log)
+    check_games(list(finished.values()), tasks, arm['name'], sig)
     side = lambda s: {'policy': str(root / contract['models'][arm[s]['model']]['policy']),  # noqa: E731
                       'value': str(root / contract['models'][arm[s]['model']]['value']), 'budget': arm[s]['budget']}
     sides = {'tested': side('tested'), 'opponent': side('opponent')}
@@ -185,6 +190,7 @@ def play(args, log=print, root: Path = ROOT) -> dict:
             lambda: ProcessPoolExecutor(max_workers=args.workers, mp_context=get_context('spawn')))
         with Path(args.jsonl).open('a', encoding='utf-8') as out, pool_of() as pool:
             def keep(_, rows):
+                check_games(rows, tasks, arm['name'], sig)
                 for row in rows:
                     out.write(json.dumps(row, separators=(',', ':')) + '\n')
                     finished[row['key']] = row
@@ -197,6 +203,22 @@ def play(args, log=print, root: Path = ROOT) -> dict:
               'games_played_now': len(todo), 'games': games}
     record['summary'] = ev.arm_summary(ev.pair_table(games, openings), contract['stats'])
     return record
+
+
+def check_games(games, tasks, arm_name, signature):
+    wanted = {task['key']: task for task in tasks}
+    seen = set()
+    for game in games:
+        task = wanted.get(game.get('key'))
+        ev.require(task is not None and game['key'] not in seen, 'unexpected or duplicate game key')
+        seen.add(game['key'])
+        color = 'black' if task['tested_color'] == BLACK else 'white'
+        ev.require((game.get('signature'), game.get('arm'), game.get('pair'), game.get('seed'),
+                    game.get('tested_color'), game.get('opening_id')) ==
+                   (signature, arm_name, task['pair'], task['seed'], color, task['opening_id']),
+                   'game task identity differs (seed, pair, colour, opening or signature)')
+        ev.require(not game.get('truncated'), 'truncated game')
+        ev.validate_game(game, task['opening'])
 
 
 def load_arm(path, contract: dict, sha: str, root: Path = ROOT) -> dict:
@@ -215,6 +237,10 @@ def load_arm(path, contract: dict, sha: str, root: Path = ROOT) -> dict:
     openings = op.pick(_suite(arm, root), arm['pairs'], arm['seed'])
     ev.require([o['history_id'] for o in record['openings']] == [o['history_id'] for o in openings],
                f'{path}: other openings than the arm\'s')
+    expected = arm_identity(contract, sha, arm, identity['value_device'], identity['git'])
+    ev.require(expected == identity, 'arm engine/runtime/model identity differs')
+    ev.require(record['openings'] == openings, 'arm opening payload differs')
+    check_games(record['games'], build_tasks(arm, openings), arm['name'], record['signature'])
     table = ev.pair_table(record['games'], openings)
     summary = ev.arm_summary(table, contract['stats'])
     ev.require(summary == record['summary'], f'{path}: its summary is not the one its games give')
@@ -272,8 +298,18 @@ def timing(args, log=print, root: Path = ROOT) -> dict:
         m = contract['models'][name]
         sides[spec] = {'policy': str(root / m['policy']), 'value': str(root / m['value']), 'budget': int(budget)}
     ev.require(len(sides) == 2, 'timing compares two sides: --side CANDIDATE[:budget] --side CHAMPION[:budget]')
+    ev.require(args.positions > 0 and args.warmup > 0 and args.bootstrap_samples > 0, 'timing needs positive sample counts and warm-up')
+    for name, side in sides.items():
+        ev.require(ev.model_identity(side['policy'], side['value']) == contract['models'][name.split(':')[0]]['identity'],
+                   'timing model files differ')
+    if contract['purpose'] == 'confirm':
+        ev.require([(n.split(':')[0], side['budget']) for n, side in sides.items()] ==
+                   [(contract['roles']['candidate'], 1), (contract['roles']['champion'], 1)],
+                   'confirmation timing must be candidate / champion at S50')
+        sides = {n.split(':')[0]: side for n, side in sides.items()}
     suite_body = _json(args.suite)
     op.check_suite(suite_body)
+    ev.require(suite_body['count'] >= args.warmup + args.positions, 'timing suite too small')
     positions = [o['moves'] for o in suite_body['openings'][:args.warmup + args.positions]]
     names = list(sides)
     seconds = {n: [] for n in names}
@@ -308,8 +344,10 @@ def timing(args, log=print, root: Path = ROOT) -> dict:
                                                            'p95_ratio_max': args.p95_ratio_max}
     return {'format': TIMING_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha, 'git': git,
             'environment': environment(args.device), 'suite_sha256': ev.file_sha256(args.suite),
-            'positions': len(seconds[a]), 'warmup': args.warmup, 'order': 'alternating, a fresh agent per move',
-            'sides': {n: {**sides[n], **{k: round(v, 5) for k, v in stat(seconds[n]).items()}} for n in names},
+            'positions': len(seconds[a]), 'warmup': args.warmup,
+            'comparison': names, 'position_ids': [o['history_id'] for o in suite_body['openings'][args.warmup:args.warmup + args.positions]], 'order': 'alternating, a fresh agent per move',
+            'sides': {n: {**sides[n], 'model': n.split(':')[0], 'identity': contract['models'][n.split(':')[0]]['identity'],
+                         'samples': seconds[n], **{k: round(v, 5) for k, v in stat(seconds[n]).items()}} for n in names},
             'ratio': {k: round(v, 4) for k, v in ratios.items()},
             'mean_ratio_ci95': [round(draws[int(0.025 * (len(draws) - 1))], 4),
                                 round(draws[int(0.975 * (len(draws) - 1))], 4)],
@@ -320,19 +358,127 @@ def timing(args, log=print, root: Path = ROOT) -> dict:
 
 # --- selection and judge -----------------------------------------------------------------------------------------
 
+def _sensitivity_chunk(tasks):
+    import h7c_sensitivity as sn
+    return [{**sn.replay_game(t['game'], t['models'], t['device']), 'identity': t['identity']} for t in tasks]
+
+
+def _branch_chunk(tasks):
+    import h7c_adjudicate as ad
+    return [ad.play_branch(task) for task in tasks]
+
+
+def selection_source(args, log=print, root=ROOT):
+    """Produce bound selection evidence using the existing sensitivity/Rapfi runners, not arbitrary deltas."""
+    from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+    from multiprocessing import get_context
+    import h7r_holdout as ho
+    import h7c_sensitivity as sn
+    import h7c_adjudicate as ad
+    import h7c_labels as lab
+    from hybrid.h7r_ledger import bind, bind_contract
+    import h7c_selfplay as sp
+
+    root = Path(getattr(args, 'root', None) or root)
+    git = _git(args.allow_dirty)
+    contract, sha = _contract(args, root, playing=True)
+    ev.require(contract['purpose'] == 'confirm', 'selection-source requires a confirmation contract')
+    bind_contract(root, contract, sha)
+    hc, hsha, games, binding = ho.checked_cache(args.cache, root)
+    ev.require(hc['holdout']['split'] == 'conf' and hsha == contract['selection'].get('holdout_contract_sha256'),
+               'source requires the contracted H-conf')
+    models = {role: contract['models'][contract['roles'][role]] for role in ('candidate', 'champion')}
+    ev.require(hc['models'][hc['holdout']['actor']]['identity'] == models['champion']['identity'], 'holdout actor differs')
+    ev.require(all(g['value_device'] == args.device.split(':')[0] for g in games), 'holdout device differs')
+    spec = ad.engine_spec(args.program, args.rapfi_dir)
+    ev.require(spec['identity'] == contract['selection'].get('engine'), 'Rapfi engine differs from contract')
+    bind(root, 'holdout-use', hsha, {'confirmation': sha})
+    folder = Path(args.source_dir)
+    ev.require(lab._under_data_or_runs(folder), 'selection source records go under data/ or runs/')
+    folder.mkdir(parents=True, exist_ok=True)
+    ident = {'format': 'h7r-selection-source-v1', 'contract_sha256': sha, 'git': git,
+             'models': {k: m['identity'] for k, m in models.items()}, 'holdout_contract_sha256': hsha,
+             'selfplay_sha256': binding['games']['sha256']}
+    by_index = {g['game_index']: g for g in games}
+    source = folder / 'sensitivity.jsonl'
+    # Hold a source-directory lock across resume, append, and publication. Never run two writers.
+    from hybrid.h7r_ledger import file_lock
+    with file_lock(folder / '.lock', nonblocking=True):
+        done = sp.load_finished(source, {'identity': ident}, log=log)
+        for row in done.values():
+            sn.check_replay(row, by_index, models, 'champion')
+        if source.exists() and source.stat().st_size and not source.read_bytes().endswith(b'\n'):
+            with source.open('ab') as stream:
+                stream.write(b'\n')
+        paths = {name: {k: str(root / model[k]) for k in ('policy', 'value')} for name, model in models.items()}
+        tasks = [{'game': g, 'models': paths, 'device': args.device, 'identity': ident}
+                 for g in games if g['game_index'] not in done]
+        pool_of = (lambda: ThreadPoolExecutor(max_workers=1)) if getattr(args, 'threads_for_tests', False) else (
+            lambda: ProcessPoolExecutor(max_workers=args.workers, mp_context=get_context('spawn')))
+        with source.open('a', encoding='utf-8') as stream, pool_of() as pool:
+            def keep(_, rows):
+                for row in rows:
+                    sn.check_replay(row, by_index, models, 'champion')
+                    stream.write(json.dumps(row, separators=(',', ':')) + '\n')
+                    done[row['game_index']] = row
+                stream.flush()
+            run_chunks(pool, _sensitivity_chunk, [[t] for t in tasks], Progress('h7r-source', len(tasks), 'games'), len,
+                       unit_name='games', on_result=keep)
+        ordered = [done[g['game_index']] for g in games]
+        observations = ad.observations(ordered, by_index, {'comparisons': [{'pair': 'candidate:champion'}]})
+        table = ad.branch_table(observations)
+        cache_path = Path(args.cache) / 'holdout.json'
+        branch_ident = {'source': ident, 'sensitivity_sha256': ev.file_sha256(source),
+                        'holdout_binding_sha256': ev.file_sha256(cache_path), 'engine': spec['identity']}
+        bsha = ad.sha_json(branch_ident)
+        bpath = folder / 'branches.jsonl'
+        finished = ad.load_finished(bpath, bsha, set(table))
+        todo = [{**table[key], 'order': i, 'identity_sha256': bsha, 'spec': spec}
+                for i, key in enumerate(sorted(table)) if key not in finished]
+        with bpath.open('a', encoding='utf-8') as stream, pool_of() as pool:
+            def keep_branch(_, rows):
+                for row in rows:
+                    stream.write(json.dumps(row, separators=(',', ':')) + '\n')
+                stream.flush()
+            run_chunks(pool, _branch_chunk, [[t] for t in todo], Progress('h7r-rapfi', len(todo), 'branches'), len,
+                       unit_name='branches', on_result=keep_branch)
+        base = Path(args.output).parent
+        return {'format': 'h7r-selection-evidence-v1', 'contract_sha256': sha, 'engine': spec['identity'],
+                'source_git': git, 'holdout_binding': ho.file_ref(cache_path, base),
+                'sensitivity': ho.file_ref(source, base), 'branches': ho.file_ref(bpath, base)}
+
+
 def selection(args) -> dict:
     contract, sha = _contract(args)
-    rows = [json.loads(x) for x in Path(args.rows).read_text(encoding='utf-8').splitlines() if x.strip()]
+    from hybrid import h7r_evidence as evidence
+    import h7r_holdout as ho
+    if contract['purpose'] == 'confirm':
+        ev.require(getattr(args, 'evidence', None) is not None and contract['status'] == 'fixed',
+                   'confirm selection requires fixed contract and --evidence, never arbitrary delta rows')
+        root = Path(getattr(args, 'root', None) or ROOT)
+        result = evidence.selection(args.evidence, contract, sha, root)
+        base = Path(getattr(args, 'output', args.evidence)).parent
+        return {'format': SELECTION_FORMAT, 'contract_id': contract['contract_id'],
+                'source': ho.file_ref(args.evidence, base), **result}
+    ev.require(getattr(args, 'rows', None) is not None, 'development selection requires --rows')
+    rows = [json.loads(x) for x in Path(args.rows).read_text().splitlines() if x.strip()]
     sel = contract.get('selection') or {}
     out = ev.cluster_noninferiority(rows, sel.get('margin'), sel.get('alpha') or contract['stats']['alpha_one_sided'],
                                     contract['stats']['bootstrap'], sel.get('min_observations') or 1)
     return {'format': SELECTION_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha,
-            'rows_sha256': ev.file_sha256(args.rows), **out}
+            'development_only': True, 'rows_sha256': ev.file_sha256(args.rows), **out}
 
 
 def judge(args, root: Path = ROOT) -> dict:
     contract, sha = _contract(args, root)
     ev.require(contract['purpose'] == 'confirm', 'only a confirm contract is judged')
+    from hybrid import h7r_evidence as evidence
+    from hybrid.h7r_ledger import bind, bind_contract
+    from hybrid.h7c_nmask import committed
+    import h7r_holdout as ho
+    ev.require(contract['status'] == 'fixed' and not ev.unset(contract), 'confirm rule values unset or draft')
+    ev.require(args.allow_dirty or committed(args.contract, root), 'commit the confirm contract before judging')
+    bind_contract(root, contract, sha)
     roles = contract['roles']
     expected = {'candidate_vs_champion': ('candidate', 'champion'), 'candidate_vs_anchor': ('candidate', 'anchor'),
                 'champion_vs_anchor': ('champion', 'anchor')}
@@ -353,11 +499,24 @@ def judge(args, root: Path = ROOT) -> dict:
         records[name] = None if path is None else _json(path)
         if records[name] is not None and name in ('selection', 'timing'):
             ev.require(records[name].get('contract_sha256') == sha, f'{path}: a record of another contract')
-    tactical = records['tactical']
-    tact = None if tactical is None else {'verdict': (tactical.get('judge') or tactical).get('verdict')}
-    out = ev.judge(contract, arms, records['selection'], tact, records['timing'])
+    tact = None if records['tactical'] is None else evidence.tactical(records['tactical'], contract)
+    time = None if records['timing'] is None else evidence.timing(records['timing'], contract, sha, root)
+    sel = None
+    if records['selection'] is not None:
+        record = records['selection']
+        ev.require(record.get('format') == SELECTION_FORMAT and not record.get('development_only'),
+                   'selection record is not confirm evidence')
+        source = ho.read_ref(record.get('source'), Path(args.selection).parent)
+        sel = evidence.selection(source, contract, sha, root)
+        ev.require(all(record.get(k) == v for k, v in sel.items()), 'selection verdict differs from raw evidence')
+    inputs = {name: ev.file_sha256(getattr(args, name)) if getattr(args, name) else None
+              for name in ('selection', 'tactical', 'timing')}
+    inputs['arms'] = {name: ev.file_sha256(path) for name, path in
+                      zip([_json(path)['identity']['arm'] for path in args.arm_record], args.arm_record)}
+    bind(root, 'judgment', sha, inputs)
+    out = ev.judge(contract, arms, sel, tact, time)
     return {'format': VERDICT_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha,
-            'roles': roles, 'arm_records_sha256': {n: ev.file_sha256(p) for n, p in zip(
+            'roles': roles, 'evidence_records_sha256': inputs, 'arm_records_sha256': {n: ev.file_sha256(p) for n, p in zip(
                 [_json(p)['identity']['arm'] for p in args.arm_record], args.arm_record)}, **out,
             'meaning': 'a record of the promotion rule v3; it changes no champion, canonical engine or web model'}
 
@@ -394,8 +553,16 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument('--bootstrap-samples', type=int, default=2000)
     t.add_argument('--mean-ratio-max', type=float, default=1.10, help='used when the contract sets none')
     t.add_argument('--p95-ratio-max', type=float, default=1.20)
+    src = sub.add_parser('selection-source')
+    src.add_argument('--cache', type=Path, required=True)
+    src.add_argument('--source-dir', type=Path, required=True)
+    src.add_argument('--program', type=Path, required=True, help='registered Rapfi program manifest')
+    src.add_argument('--rapfi-dir', type=Path, required=True)
+    src.add_argument('--device', default='cuda')
+    src.add_argument('--workers', type=int, default=4)
     e = sub.add_parser('selection')
-    e.add_argument('--rows', type=Path, required=True, help='JSONL rows {"game": ..., "delta": ...}')
+    e.add_argument('--evidence', type=Path, help='source manifest for a confirmation (H-conf + sensitivity + Rapfi branches)')
+    e.add_argument('--rows', type=Path, help='JSONL rows {"game": ..., "delta": ...}')
     j = sub.add_parser('judge')
     j.add_argument('--arm-record', type=Path, nargs=3, required=True)
     for name in ('selection', 'tactical', 'timing'):
@@ -415,11 +582,12 @@ def main(argv=None) -> int:
         parser.error(f'{args.output} exists: an H7-R record is never overwritten')
     try:
         out = {'suite': suite, 'play': play, 'summarize': summarize, 'size': size, 'timing': timing,
-               'selection': selection, 'judge': judge}[args.command](args)
-    except ValueError as exc:
+               'selection': selection, 'selection-source': selection_source, 'judge': judge}[args.command](args)
+    except (ValueError, KeyError, TypeError, IndexError, OSError) as exc:
         parser.error(str(exc))
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.output).write_text(json.dumps(out, indent=1) + '\n', encoding='utf-8')
+    from hybrid.h7r_ledger import publish_json
+    publish_json(args.output, out)
     brief = out.get('summary') or {k: v for k, v in out.items() if k not in ('openings', 'games', 'arms')}
     print(json.dumps(brief, indent=1, default=str)[:3000], flush=True)
     return 0

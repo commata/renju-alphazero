@@ -20,6 +20,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import gzip
 from pathlib import Path
 from random import Random
 import sys
@@ -61,8 +63,9 @@ def check_holdout_games(games: list[dict], contract: dict, contract_sha: str) ->
             raise ValueError(f'{lab.game_id(g)}: listed twice')
         seen.add(lab.game_id(g))
         lab.check_game(g)
-    if len(seen) > h['games']:
-        raise ValueError(f"{len(seen)} games, the contract allows {h['games']}")
+    if (len(seen) != h['games'] or {g.get('game_index') for g in games} != set(range(h['games']))
+            or any(type(g.get('game_index')) is not int for g in games)):
+        raise ValueError(f"holdout incomplete: expected indexes 0..{h['games'] - 1}, got {len(seen)} games")
     return first
 
 
@@ -94,10 +97,73 @@ def labels(args, log=print) -> dict:
     lab.write_atomic({Path(args.value_output): [lab.value_row_dict(r) for r in rows]})
     manifest = build_value_cache(Path(args.value_output), Path(args.cache_dir), progress_seconds=60.0,
                                  git_commit=git['commit'])
+    seal_cache(args.cache_dir, args.contract, args.games, args.value_output)
     return {'format': LABELS_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha, 'git': git,
             'games_sha256': ev.file_sha256(args.games), 'rows_sha256': ev.file_sha256(args.value_output),
             'cache_labels_sha256': manifest['labels_sha256'], 'cache_splits': manifest['splits'],
             'purpose': PURPOSE, 'summary': summary['value']}
+
+
+def file_ref(path, base):
+    from hybrid.h7r_eval import file_sha256
+    path = Path(path).resolve()
+    return {'path': os.path.relpath(path, Path(base).resolve()), 'sha256': file_sha256(path)}
+
+
+def read_ref(ref, base):
+    from hybrid.h7r_eval import require, file_sha256
+    require(isinstance(ref, dict) and set(ref) == {'path', 'sha256'}, 'invalid evidence reference')
+    path = (Path(base) / ref['path']).resolve()
+    require(path.is_file() and file_sha256(path) == ref['sha256'], f'evidence file missing or changed: {path}')
+    return path
+
+
+def seal_cache(cache, contract, games, rows):
+    """Written only after the complete games and their evaluation labels have been checked."""
+    cache = Path(cache)
+    body = {'format': 'h7r-holdout-cache-binding-v1',
+            'contract': file_ref(contract, cache), 'games': file_ref(games, cache), 'rows': file_ref(rows, cache),
+            'cache_files': {p.name: file_ref(p, cache) for p in cache.iterdir()
+                            if p.name == 'manifest.json' or p.suffix == '.pt' or p.name.endswith('_games.json')}}
+    path = cache / 'holdout.json'
+    from hybrid.h7r_ledger import publish_json
+    publish_json(path, body)
+
+
+def checked_cache(cache, root=ROOT):
+    """Bind contract -> complete self-play -> eval rows -> every cache file. A test split alone is not holdout."""
+    from hybrid import h7r_eval as ev
+    from hybrid.h6_value_cache import iter_games
+    import h7c_labels as lab
+    cache = Path(cache)
+    binding = json.loads((cache / 'holdout.json').read_text())
+    ev.require(binding.get('format') == 'h7r-holdout-cache-binding-v1', 'missing holdout cache binding')
+    cpath = read_ref(binding['contract'], cache)
+    contract, sha = ev.load_contract(cpath, root, check_files=False)
+    ev.require(contract['purpose'] == 'holdout' and contract['status'] == 'fixed', 'not a fixed holdout contract')
+    games_path = read_ref(binding['games'], cache)
+    games = lab.read_games([games_path])
+    check_holdout_games(games, contract, sha)
+    by_id = {lab.game_id(g): g for g in games}
+    rows_path = read_ref(binding['rows'], cache)
+    expected_names = {'manifest.json'} | {f'{split}{suffix}' for split in ('train', 'val', 'test')
+                                        for suffix in ('.pt', '_games.json')}
+    ev.require(set(binding['cache_files']) == expected_names, 'incomplete cache binding')
+    for name, ref in binding['cache_files'].items():
+        ev.require(read_ref(ref, cache) == (cache / name).resolve(), 'cache reference points to another cache')
+    manifest = json.loads((cache / 'manifest.json').read_text())
+    opener = gzip.open if rows_path.suffix == '.gz' else open
+    with opener(rows_path, 'rb') as handle:
+        ev.require(hashlib.sha256(handle.read()).hexdigest() == manifest['labels_sha256'], 'cache labels differ')
+    actor = contract['models'][contract['holdout']['actor']]['identity']
+    for gid, rows in iter_games(rows_path):
+        ev.require(gid in by_id, 'label of a game outside holdout')
+        for row in rows:
+            provenance = row.get('h7c_provenance') or {}
+            ev.require(row['split'] == 'test' and provenance.get('purpose') == PURPOSE
+                       and all(provenance.get(k) == v for k, v in actor.items()), 'not holdout evaluation rows')
+            ev.require(row['moves'] == by_id[gid]['moves'][:row['ply']], 'label position differs from source game')
+    return contract, sha, games, binding
 
 
 # --- the evaluation ----------------------------------------------------------------------------------------------
@@ -187,6 +253,7 @@ def evaluate(args, log=print) -> dict:
     from hybrid import h7r_eval as ev
     from hybrid.h6_value_cache import load_value_cache
 
+    contract, contract_sha, _, _ = checked_cache(args.cache, getattr(args, 'root', ROOT))
     data, manifest = load_value_cache(Path(args.cache), 'test', verify_hash=True)
     n = data['value'].shape[0]
     if n == 0:
@@ -225,7 +292,8 @@ def evaluate(args, log=print) -> dict:
                 sd = (sum((v - mean) ** 2 for v in values) / (len(values) - 1)) ** 0.5 if len(values) > 1 else None
                 spread[name][k][c] = {'seeds': len(values), 'mean': round(mean, 6),
                                       'sd': None if sd is None else round(sd, 6)}
-    return {'format': EVAL_FORMAT, 'cache_labels_sha256': manifest['labels_sha256'],
+    return {'format': EVAL_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': contract_sha,
+            'holdout_split': contract['holdout']['split'], 'purpose': PURPOSE, 'cache_labels_sha256': manifest['labels_sha256'],
             'cache_sha256': manifest['splits']['test']['sha256'], 'rows': n, 'games': len(set(games)),
             'route_counts': {r: route.count(r) for r in ('network', 'exact_leaf')}, 'models': report,
             'paired': pairs, 'seed_spread': spread,
@@ -270,7 +338,8 @@ def main(argv=None) -> int:
         parser.error(str(exc))
     out['output_note'] = 'measurement only'
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.output).write_text(json.dumps(out, indent=1) + '\n', encoding='utf-8')
+    from hybrid.h7r_ledger import publish_json
+    publish_json(args.output, out)
     print(hashlib.sha256(Path(args.output).read_bytes()).hexdigest(), flush=True)
     return 0
 

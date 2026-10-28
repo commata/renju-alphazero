@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from hybrid import h7r_eval as ev
 from hybrid import h7r_openings as op
@@ -20,7 +21,7 @@ def openings(n=20):
     return op.build_suite('O0', n, 8781)['openings']
 
 
-def games(ops, results, split=None):
+def games(ops, results, split=None, replayable=False):
     """``results``: per opening (black game, white game) of the tested side; ``split``: openings whose two games
     have different move sequences (default: the score-split ones)."""
     out = []
@@ -28,8 +29,15 @@ def games(ops, results, split=None):
         differ = (b, w) not in (('win', 'loss'), ('loss', 'win'), ('draw', 'draw')) if split is None else i in split
         for color, result in (('black', b), ('white', w)):
             moves = o['moves'] + ([[0, 0]] if differ and color == 'white' else [[0, 1]])
+            from tests.h7r_helpers import winning_moves
+            from renju import BLACK, WHITE
+            tested = BLACK if color == 'black' else WHITE
+            moves = o['moves'] + ([[0, 0]] if differ and color == 'white' else [[0, 1]])
+            if replayable and result in ('win', 'loss'):
+                moves = winning_moves(o['moves'], tested if result == 'win' else -tested)
             out.append({'key': f'a/{i}/{color}', 'opening_id': o['history_id'], 'tested_color': color,
-                        'result': result, 'moves': moves, 'illegal': None, 'truncated': False, 'game_seconds': 1.0})
+                        'result': result, 'moves': moves, 'length': len(moves),
+                        'winner': (tested if result == 'win' else -tested) if result != 'draw' else None, 'illegal': None, 'truncated': False, 'game_seconds': 1.0})
     return out
 
 
@@ -47,7 +55,8 @@ def contract(root: Path, **change) -> dict:
             'arms': [arm('candidate_vs_champion', 'cand', 'champ'), arm('candidate_vs_anchor', 'cand', 'orig'),
                      arm('champion_vs_anchor', 'champ', 'orig')],
             'stats': STATS, 'informative': {'kind': 'score_split', 'm': 3},
-            'anchor': {'model': 'orig', 'margin': -0.02}, 'selection': {'margin': -0.02, 'alpha': 0.025},
+            'anchor': {'model': 'orig', 'margin': -0.02}, 'selection': {'margin': -0.02, 'alpha': 0.025, 'min_observations': 20,
+                'holdout_contract_sha256': 'f'*64, 'engine': {'registered_engine': True}},
             'gates': {'time': {'mean_ratio_max': 1.1, 'p95_ratio_max': 1.2}, 'tactical_rule': 'h7c-tactical-v2',
                       'forbidden_errors': 0}}
     body.update(change)
@@ -93,10 +102,17 @@ class ContractTest(unittest.TestCase):
 
 def table(results, split=None, n=None):
     ops = openings(n or len(results))
-    return ev.pair_table(games(ops, results, split), ops), ops
+    with patch.object(ev, 'validate_game'):
+        return ev.pair_table(games(ops, results, split), ops), ops
 
 
 class PairTest(unittest.TestCase):
+    def setUp(self):
+        # Pure statistics include synthetic draw samples; replay itself is tested separately.
+        patcher = patch.object(ev, 'validate_game')
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_every_valid_pair_counts_and_two_information_counts(self):
         results = [('win', 'loss')] * 12 + [('win', 'win')] * 3 + [('loss', 'loss')] + [('draw', 'win')] * 2 + \
             [('win', 'loss')] * 2
@@ -183,7 +199,7 @@ class JudgeTest(unittest.TestCase):
         out = {}
         for name, results in (('candidate_vs_champion', cand_results), ('candidate_vs_anchor', cand_anchor),
                               ('champion_vs_anchor', champ_anchor)):
-            t = ev.pair_table(games(ops, results), ops)
+            t = ev.pair_table(games(ops, results, replayable=True), ops)
             out[name] = {'table': t, 'summary': ev.arm_summary(t, STATS)}
         return out
 
@@ -195,8 +211,12 @@ class JudgeTest(unittest.TestCase):
     def judge(self, body=None, arms=None, selection=PASS, tactical=None, timing=TIME):
         with TemporaryDirectory() as tmp:
             body = body or contract(Path(tmp))
+        models = {r: body['models'][n]['identity'] for r, n in body['roles'].items()}
+        def bound(record): return {'evidence_verified': True, 'models': models, **record}
+        selection = bound(selection) if selection is not None else None
+        timing = bound(timing) if timing is not None else None
         return ev.judge(body, arms or self.arms(**self.GOOD), selection,
-                        {'verdict': 'PASS'} if tactical is None else tactical, timing)
+                        bound({'verdict': 'PASS'}) if tactical is None else tactical, timing)
 
     def test_promote_only_when_every_item_passes(self):
         out = self.judge()
@@ -225,8 +245,9 @@ class JudgeTest(unittest.TestCase):
                     self.assertTrue(any(r.startswith(reason.split('_')[0]) and reason in r or r == reason
                                         for r in out['reasons']), out['reasons'])
             arms = self.arms(**self.GOOD)
-            g = games(openings(40), self.GOOD['cand_results'])
-            g[0] = {**g[0], 'result': 'loss', 'illegal': {'side': 'tested'}}
+            g = games(openings(40), self.GOOD['cand_results'], replayable=True)
+            g[0] = {**g[0], 'result': 'loss', 'winner': None, 'moves': g[0]['moves'][:4], 'length': 4,
+                    'illegal': {'side': 'tested', 'ply': 4, 'move': [7, 7]}}
             arms['candidate_vs_champion']['table'] = ev.pair_table(g, openings(40))
             arms['candidate_vs_champion']['summary'] = ev.arm_summary(arms['candidate_vs_champion']['table'], STATS)
             self.assertIn('GATE_FORBIDDEN', self.judge(arms=arms)['reasons'])

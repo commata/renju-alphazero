@@ -24,10 +24,13 @@ def fake_play_game(task, make_tested=None, make_opponent=None, max_plies=None):
     black = task['tested_color'] == BLACK
     bonus = ctx['arm'].startswith('candidate') and task['opening'][-1][1] % 2 == 0
     result = 'win' if black or bonus else 'loss'
+    from tests.h7r_helpers import winning_moves
+    tested = BLACK if black else -BLACK
+    winner = tested if result == 'win' else -tested
+    moves = winning_moves(task['opening'], winner)
     return {'key': task['key'], 'signature': ctx['signature'], 'arm': task['arm'], 'pair': task['pair'],
             'seed': task['seed'], 'tested_color': 'black' if black else 'white', 'result': result,
-            'winner': None, 'length': 9, 'moves': task['opening'] + [[0, (1 if black else 2) if bonus else 0]],
-            'illegal': None,
+            'winner': winner, 'length': len(moves), 'moves': moves, 'illegal': None,
             'truncated': False, 'tested_moves': [], 'opponent_routes': {}, 'game_seconds': 2.0}
 
 
@@ -55,7 +58,8 @@ def world(tmp: Path) -> dict:
                      arm('champion_vs_anchor', 'champ', 'orig')],
             'stats': STATS, 'informative': {'kind': 'score_split', 'm': 5},
             'anchor': {'model': 'orig', 'margin': -0.02}, 'selection': {'margin': -0.02, 'alpha': 0.025,
-                                                                         'min_observations': 20},
+                                                                         'min_observations': 20, 'holdout_contract_sha256': 'f'*64,
+                                                                         'engine': {'registered_engine': True}},
             'gates': {'time': {'mean_ratio_max': 1.1, 'p95_ratio_max': 1.2}, 'tactical_rule': 'h7c-tactical-v2',
                       'forbidden_errors': 0}}
     (tmp / 'contracts').mkdir()
@@ -99,28 +103,36 @@ class FlowTest(unittest.TestCase):
         self.assertEqual(len({tuple(v) for v in ids.values()}), 1)
         self.assertEqual(len(set(ids['candidate_vs_champion'])), 30)
         # selection rows, timing record (as the tools write them), judgment
-        rows = self.w['root'] / 'rows.jsonl'
-        rows.write_text(''.join(json.dumps({'game': g, 'delta': 0.0}) + '\n' for g in range(40)))
-        sel = cli.selection(argparse.Namespace(contract=self.w['contract'], rows=rows, allow_dirty=True,
-                                               root=self.w['root']))
+        from tests.h7r_helpers import selection_source, timing_record, tactical_record
+        # Freeze the holdout and registered engine in the confirmation contract before evidence generation.
+        selection_source(self.w['root'], self.w['body'], 'pending')
+        self.w['contract'].write_text(json.dumps(self.w['body']))
+        _, sha = ev.load_contract(self.w['contract'], self.w['root'], check_files=False)
+        # Replay arm fixtures under the final contract identity.
+        import shutil
+        shutil.rmtree(self.w['root'] / 'runs')
+        records = {a: self.save(self.play(a), a) for a in ev.ROLE_ARMS}
+        source = selection_source(self.w['root'], self.w['body'], sha)
+        selpath = self.w['root'] / 'out' / 'sel.json'
+        sel = cli.selection(argparse.Namespace(contract=self.w['contract'], evidence=source, output=selpath,
+                                               allow_dirty=True, root=self.w['root']))
         self.assertEqual(sel['status'], 'NONINFERIOR')
-        _, sha = ev.load_contract(self.w['contract'], self.w['root'], check_files=False,
-                                  contracts_dir=self.w['contract'].parent)
-        timing = {'contract_sha256': sha, 'gate': {'pass': True, 'limits': self.w['body']['gates']['time']}}
+        timing = timing_record(self.w['body'], sha, self.w['root'])
         args = argparse.Namespace(contract=self.w['contract'], arm_record=list(records.values()),
-                                  selection=self.save(sel, 'sel'), tactical=self.save({'verdict': 'PASS'}, 'tact'),
+                                  selection=self.save(sel, 'sel'), tactical=self.save(tactical_record(self.w['body']), 'tact'),
                                   timing=self.save(timing, 'time'), allow_dirty=True)
         verdict = cli.judge(args, root=self.w['root'])
         self.assertEqual(verdict['decision'], 'PROMOTE', verdict['reasons'])
         self.assertIn('changes no champion', verdict['meaning'])
         # missing records keep the champion
-        kept = cli.judge(argparse.Namespace(**{**vars(args), 'selection': None, 'timing': None}), root=self.w['root'])
-        self.assertEqual(kept['decision'], 'KEEP_CHAMPION')
-        self.assertTrue({'SELECTION_MISSING', 'GATE_TIME'} <= set(kept['reasons']))
+        with self.assertRaisesRegex(ValueError, 'different confirmation inputs'):
+            cli.judge(argparse.Namespace(**{**vars(args), 'selection': None, 'timing': None}), root=self.w['root'])
+        self.assertEqual(cli.judge(args, root=self.w['root'])['decision'], verdict['decision'])
         # a tampered record is refused
+        rec = json.loads(records['candidate_vs_champion'].read_text())
         rec['games'][0]['result'] = 'draw'
         bad = self.save(rec, 'bad')
-        with self.assertRaisesRegex(ValueError, 'summary'):
+        with self.assertRaisesRegex(ValueError, 'result|summary'):
             cli.load_arm(bad, *ev.load_contract(self.w['contract'], self.w['root'], check_files=False,
                                                 contracts_dir=self.w['contract'].parent), root=self.w['root'])
         # sizing from a (pilot-like) arm record
@@ -148,7 +160,7 @@ class FlowTest(unittest.TestCase):
         changed = {**body, 'arms': [dict(a, pairs=29) if a['name'] == 'candidate_vs_champion' else a
                                     for a in body['arms']]}
         self.w['contract'].write_text(json.dumps(changed))
-        with self.assertRaisesRegex(ValueError, 'another setup'):  # the same file, another contract
+        with self.assertRaisesRegex(ValueError, 'different confirmation inputs|another setup'):  # immutable binding
             self.play('candidate_vs_champion')
 
     def test_main_never_overwrites(self):

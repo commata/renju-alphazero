@@ -459,3 +459,71 @@ python -u scripts/h7c_labels.py --games runs/h7r/smoke/holdout.jsonl --value-out
   - holdout 기록의 `purpose: holdout`, 4)의 거부
 - smoke 결과는 `runs/`에 두고 커밋하지 않는다. 비용 수치만 다음 계약 검토 때 옮긴다.
 - 전체 pilot, H-dev · H-conf 생성, 학습, 확인 Arena는 이 명령에 없다. 각각 별도 승인 뒤에 한다.
+
+### 9.6 R1 코드 검토 후 보완: 원본 증거 검증과 확인 계약 잠금
+
+초기 구현의 7개 오류 경로를 수정했다. 이 보완은 평가 도구에 한정되며, pilot 규모·승급 문턱·학습법을 새로 확정하거나 champion을 바꾸지 않는다. 9.4절의 기존 pilot·smoke 계약과 suite 파일도 그대로다.
+
+| 검토 항목 | 수정한 동작 |
+|---|---|
+| 다른 모델의 tactical PASS 재사용 | 기존 cycle·NMASK tactical 원본 형식만 받는다. candidate·champion의 네 SHA, rule, probe·E1 manifest SHA, clean 코드 출처를 대조한다. fresh sign과 E1 원본 run에서 판정을 재계산하고 must_block 건수를 검사한다. |
+| 시간 비교 방향·모델 혼동 | `h7r-timing-v2`는 candidate / champion 순서, 양쪽 모델 SHA·S50 예산, suite·국면 ID, warm-up·환경·원시 시간 표본을 기록한다. 확인 판정은 원시 표본에서 평균·p95 비율과 통과 여부를 다시 계산한다. |
+| 임의 delta를 확인용 선택 품질로 사용 | 확인 계약에서는 `selection --rows`를 거부한다. 완전한 H-conf, 두 모델의 전체 sensitivity, 등록된 Rapfi의 원본 분기를 SHA로 연결하고 모든 불일치에서 delta를 만든다. 분기를 기보로 재생해 결과를 대조하며 INVALID가 있으면 INCONCLUSIVE다. |
+| 결과 flag만으로 Arena 집계 | 저장·재개·요약·판정 때 task seed·pair·색·opening·모델·엔진·runtime을 대조하고, 전체 착수를 `renju.Game`으로 재생한다. 종료 상태·승자·결과와 불법 수 사건을 확인한다. |
+| 일부 holdout 또는 일반 test cache 사용 | 계약의 판 수와 `game_index=0..N-1`을 모두 요구한다. `holdout.json`이 계약 → 원본 대국 → 평가 행 → cache 파일을 SHA로 연결한다. `test` split이라는 이유만으로는 평가에 쓰지 않는다. |
+| 출력 경로를 바꿔 재판정 | 로컬 영구 기록이 계약 ID·seed·H-conf 사용·판정 입력 SHA를 묶는다. 동일 입력의 감사용 재계산은 허용하지만, 같은 계약의 입력 변경이나 같은 H-conf의 다른 확인 계약 사용은 거부한다. |
+| 누락 모델 SHA가 null로 일치 | 모델 identity에는 네 개의 유효한 SHA-256이 필수다. 실행 시 네 파일이 실제로 존재하며 각각 계약 SHA와 같은지도 확인한다. |
+
+**확인 계약에 추가로 고정할 값**
+
+- `selection.min_observations`: 필요한 최소 불일치 관측 수
+- `selection.holdout_contract_sha256`: 해당 확인에만 사용할 fixed H-conf 계약의 SHA
+- `selection.engine`: 기존 `h7c_adjudicate.engine_spec(program, rapfi_dir)['identity']`가 반환하는 등록 Rapfi identity 전체(실행 파일·부속 파일·INFO·rule·인자·timeout)
+
+이 값이 없으면 confirm 실행·판정을 시작하지 않는다. 확인용 최소 관측 수는 이제 암묵적 기본값을 쓰지 않는다. 값과 계약을 확정·커밋하는 일은 본 확인 실행 전 단계로 남아 있다.
+
+**선택 품질 원본 생성 절차**
+
+확인 계약과 H-conf가 확정되어 있고 `h7r_holdout.py labels`가 완료된 뒤에 사용하는 명령 형식이다. 아래 경로의 `CONFIRM_ID`, `HCONF_ID`는 실제 계약명으로 바꾼다. 이번 수정에서는 이 실험을 실행하지 않았다.
+
+```bash
+python -u scripts/h7r_eval.py selection-source \
+  --contract docs/h7r/contracts/CONFIRM_ID.json \
+  --cache runs/h7r/HCONF_ID/value_cache \
+  --source-dir runs/h7r/CONFIRM_ID/selection_source \
+  --program docs/h7c/b2_program.json --rapfi-dir /path/to/registered/rapfi \
+  --device cuda --workers 4 --output runs/h7r/CONFIRM_ID/selection_source.json
+python -u scripts/h7r_eval.py selection \
+  --contract docs/h7r/contracts/CONFIRM_ID.json \
+  --evidence runs/h7r/CONFIRM_ID/selection_source.json \
+  --output runs/h7r/CONFIRM_ID/selection.json
+```
+
+- 원본 생성은 기존 `h7c_sensitivity.replay_game`과 `h7c_adjudicate.play_branch`를 재사용한다. 후보 factory를 직접 사용하는 새 경로를 만들지 않는다.
+- H-conf 전체 게임·전체 ply를 처리한다. champion의 move·route·visits가 원본 self-play와 재현되는지 확인한다. 불일치 관측을 임의로 골라 넣는 입력은 없다.
+- `sensitivity.jsonl`과 `branches.jsonl`을 재개하며, 완료한 분기를 다시 실행하지 않는다. 중단으로 마지막 JSONL 행이 잘렸으면 그 행만 제거해 재개한다. 다른 identity·중간 손상·중복은 거부한다. source 디렉터리는 동시 작성 잠금을 사용한다.
+- H-conf 사용은 원본 평가 시작 전에 확인 계약에 묶는다. 원본 manifest와 하위 파일을 함께 보존해야 `selection`과 `judge`가 다시 검증할 수 있다.
+- pilot·개발용 `selection --rows`는 남겨 두되 `development_only`로 표시하고 확인 판정에는 쓰지 않는다.
+
+**호환성과 보관**
+
+- 기존 `h7r-timing-v1` 요약은 원시 표본이 없어 새 확인 판정에서 받지 않는다. `timing`으로 v2를 생성해야 한다.
+- 기존 평가 cache에 `holdout.json`이 없으면 일반 cache와 구분할 수 없으므로 거부한다. 전체 원본 holdout을 `labels`에 넣고 새 행 출력·새 cache 경로에서 다시 만든다. 기존 파일에 PASS나 봉인 표시만 덧붙이지 않는다.
+- 판정 입력은 세 Arena arm과 selection·tactical·timing을 모두 준비한 뒤 넘긴다. 증거 없이 KEEP_CHAMPION을 기록한 경우도 그 입력 조합에 묶이므로, 같은 계약에 나중에 새 증거를 추가해 재판정할 수 없다.
+- `runs/h7r/confirmations/`는 커밋하지 않는 **현재 checkout의 로컬 기록**이다. 다른 PC·worktree에서 실행을 이어가면 원본 증거와 이 디렉터리도 함께 옮겨 사용한다. 지우거나 누락하면 과거 사용을 추적할 수 없다. 여러 PC를 아우르는 중앙 등록 서비스는 구현하지 않았다.
+- 최종 JSON은 임시 파일을 완성한 후 배타적으로 공개한다. 이미 있는 출력은 덮어쓰지 않고, 직렬화 실패가 불완전한 결과 파일을 남기지 않는다.
+
+**검증**
+
+`tests/test_h7r_evidence.py`에 위 7개 경로의 거부 테스트, 원본 생성·재개, 출력 원자성 검사를 추가했다. 실제 모델이나 외부 Rapfi를 실행하지 않는 fixture 테스트이며, R1 CLI 통합 테스트는 합법적인 완주 기보와 연결된 원본 증거를 사용하도록 바꿨다.
+
+```bash
+PYTHONPATH=src:scripts python -m unittest \
+  tests.test_h7r_eval tests.test_h7r_cli tests.test_h7r_holdout \
+  tests.test_h7r_openings tests.test_h7r_evidence -v
+python scripts/check_track_b_frozen.py --no-models
+```
+
+실제 GPU 모델·등록 Rapfi의 end-to-end 실행과 전체 pilot은 이번 회귀 테스트에 포함되지 않는다. 그 결과 없이 R1 완료나 기력 향상을 주장하지 않는다.
+
+검증 결과: 최종 R1 묶음 38개는 모두 통과했다. 기존 경로를 포함한 회귀 묶음은 187개 중 185개 통과, 실제 frozen 모델이 필요한 2개 skip이었다. `check_track_b_frozen.py --no-models`는 PASS다. 전체 checker는 이 컨테이너에 H3 policy·H6 value checkpoint가 없어 두 모델 검사만 FAIL이며, code·engine·runtime·TB-V3 identity·promotion·canonical 검사는 모두 PASS다.

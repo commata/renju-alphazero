@@ -27,7 +27,7 @@ def holdout_contract(folder: Path, **change) -> Path:
     return path
 
 
-def holdout_games(path: Path, n=3):
+def holdout_games(path: Path, n=4):
     sha = ev.file_sha256(path)
     return [game(i, run_seed=8785, purpose='holdout', holdout={'contract_id': 'T-HOLDOUT', 'contract_sha256': sha,
                                                                'split': 'dev'}) for i in range(n)]
@@ -158,6 +158,9 @@ class EvaluationLabelsTest(unittest.TestCase):
             self.assertTrue(all(d['h7c_provenance']['purpose'] == 'holdout_eval' for d in dicts))
             lab.write_atomic({tmp / 'rows.jsonl.gz': dicts})
             build_value_cache(tmp / 'rows.jsonl.gz', tmp / 'cache', progress_seconds=1e9)
+            rawpath = tmp / 'games.jsonl'
+            rawpath.write_text(''.join(json.dumps(g) + '\n' for g in games))
+            ho.seal_cache(tmp / 'cache', path, rawpath, tmp / 'rows.jsonl.gz')
             with self.assertRaisesRegex(ValueError, 'never training data'):
                 tr.value_rows_source(tmp / 'rows.jsonl.gz', 1, json.loads(
                     (tmp / 'cache/manifest.json').read_text())['labels_sha256'])
@@ -165,7 +168,7 @@ class EvaluationLabelsTest(unittest.TestCase):
             _, v1 = write_models(tmp / 'm1', seed=1)
             _, v2 = write_models(tmp / 'm2', seed=2)
             _, v3 = write_models(tmp / 'm3', seed=3)
-            args = argparse.Namespace(cache=tmp / 'cache', model=[f'a={v1}', f'b={v2}', f'c={v3}'], pair=['a:b'],
+            args = argparse.Namespace(root=tmp, cache=tmp / 'cache', model=[f'a={v1}', f'b={v2}', f'c={v3}'], pair=['a:b'],
                                       group=['r=b,c'], device='cpu', d4=True, bootstrap_samples=200,
                                       bootstrap_seed=5)
             out = ho.evaluate(args, log=lambda *a, **k: None)
@@ -173,7 +176,7 @@ class EvaluationLabelsTest(unittest.TestCase):
             self.assertEqual(sum(out['route_counts'].values()), out['rows'])
             self.assertGreater(out['route_counts']['exact_leaf'], 0)  # the fixture game ends in a five
             cell = out['paired']['a:b']['raw']['all']
-            self.assertEqual(cell['games'], 3)
+            self.assertEqual(cell['games'], 4)
             self.assertLessEqual(cell['ci95'][0], cell['difference'] + 1e-9)
             self.assertIn('d4', out['models']['a'])
             self.assertEqual(out['seed_spread']['r']['raw']['all']['seeds'], 2)

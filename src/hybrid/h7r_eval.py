@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import math
 from math import ceil
 from pathlib import Path
 from random import Random
@@ -35,7 +37,17 @@ PURPOSES = ('pilot', 'confirm', 'holdout')
 BUDGETS = (1, 2, 4, 8)
 SCORE = {'win': 1.0, 'draw': 0.5, 'loss': 0.0}
 ROLE_ARMS = ('candidate_vs_champion', 'candidate_vs_anchor', 'champion_vs_anchor')
-CONFIRM_KEYS = {'informative': ('kind', 'm'), 'anchor': ('model', 'margin'), 'selection': ('margin', 'alpha'),
+MODEL_KEYS = ('policy_checkpoint_sha256', 'policy_metadata_sha256', 'value_checkpoint_sha256', 'value_metadata_sha256')
+
+
+def check_model_identity(identity):
+    require(isinstance(identity, dict) and set(identity) == set(MODEL_KEYS)
+            and all(isinstance(v, str) and re.fullmatch(r'[0-9a-f]{64}', v) for v in identity.values()),
+            'model identity must contain four SHA-256 values')
+
+
+CONFIRM_KEYS = {'informative': ('kind', 'm'), 'anchor': ('model', 'margin'),
+                'selection': ('margin', 'alpha', 'min_observations', 'holdout_contract_sha256', 'engine'),
                 'gates': ('time', 'tactical_rule', 'forbidden_errors')}
 
 
@@ -82,8 +94,11 @@ def check_contract(contract: dict, path, root, check_files: bool = True) -> None
     models = contract.get('models') or {}
     for name, m in models.items():
         require(set(m) >= {'policy', 'value', 'identity'}, f'{path}: model {name} needs policy, value, identity')
+        check_model_identity(m['identity'])
         if check_files:
-            require(model_identity(root / m['policy'], root / m['value']) == m['identity'],
+            actual = model_identity(root / m['policy'], root / m['value'])
+            require(actual is not None, f'{path}: model {name} identity files are missing')
+            require(actual == m['identity'],
                     f'{path}: model {name} files are missing or not its recorded identity')
     seeds = []
     names = set()
@@ -115,6 +130,25 @@ def check_contract(contract: dict, path, root, check_files: bool = True) -> None
         require(set(roles) == {'candidate', 'champion', 'anchor'} and all(r in models for r in roles.values()),
                 f'{path}: roles')
         require(names >= set(ROLE_ARMS), f'{path}: a confirm contract plays {ROLE_ARMS}')
+        informative = contract.get('informative') or {}
+        require(informative.get('kind') in (None, 'move_split', 'score_split'), 'invalid informative kind')
+        if informative.get('m') is not None:
+            require(type(informative['m']) is int and informative['m'] > 0, 'invalid minimum information count')
+        for name in ('selection', 'anchor'):
+            block = contract.get(name) or {}
+            margin = block.get('margin')
+            if margin is not None:
+                require(type(margin) in (float, int) and math.isfinite(margin) and -1 <= margin <= 0,
+                        f'{name}: invalid non-inferiority margin')
+        selection = contract.get('selection') or {}
+        if selection.get('alpha') is not None:
+            require(0 < selection['alpha'] <= stats['alpha_one_sided'], 'selection alpha exceeds error budget')
+        if selection.get('min_observations') is not None:
+            require(type(selection['min_observations']) is int and selection['min_observations'] > 0,
+                    'invalid selection minimum observations')
+        for limit in ((contract.get('gates') or {}).get('time') or {}).values():
+            if limit is not None:
+                require(type(limit) in (int, float) and math.isfinite(limit) and limit > 0, 'invalid time limit')
 
 
 def _paired_seeds(contract: dict) -> bool:
@@ -138,9 +172,12 @@ def load_contract(path, root, check_files: bool = True, contracts_dir=None) -> t
     path = Path(path)
     contract = json.loads(path.read_text(encoding='utf-8'))
     check_contract(contract, path, root, check_files)
-    folder = Path(contracts_dir) if contracts_dir is not None else Path(root) / 'docs/h7r/contracts'
+    folders = {Path(root) / 'docs/h7r/contracts', path.parent}
+    if contracts_dir is not None:
+        folders.add(Path(contracts_dir))
+    others = {p.resolve() for folder in folders if folder.exists() for p in folder.glob('*.json')}
     mine = contract_seeds(contract)
-    for other in sorted(folder.glob('*.json')) if folder.exists() else []:
+    for other in sorted(others):
         if other.resolve() == path.resolve():
             continue
         theirs = json.loads(other.read_text(encoding='utf-8'))
@@ -152,6 +189,46 @@ def load_contract(path, root, check_files: bool = True, contracts_dir=None) -> t
 
 # --- pairs -------------------------------------------------------------------------------------------------------
 
+def validate_game(record: dict, opening: list) -> None:
+    """Replay without an engine; never score a terminal flag without checking the stones."""
+    from renju import Game, IllegalMove, BLACK, WHITE
+    moves = record.get('moves')
+    require(isinstance(moves, list) and moves[:len(opening)] == opening,
+            'game does not start with its contracted opening')
+    require(record.get('tested_color') in ('black', 'white'), 'unknown tested colour')
+    require(record.get('length') == len(moves), 'game length differs from its moves')
+    board = Game()
+    try:
+        for move in moves:
+            require(isinstance(move, (list, tuple)) and len(move) == 2
+                    and all(type(x) is int and 0 <= x < 15 for x in move), 'invalid move coordinate')
+            board.play(*move)
+    except IllegalMove as exc:
+        raise ValueError(f'illegal recorded move: {exc}') from exc
+    illegal = record.get('illegal')
+    if illegal is not None:
+        require(not board.done and illegal.get('ply') == len(moves), 'illegal event at wrong position')
+        tested = BLACK if record['tested_color'] == 'black' else WHITE
+        require(illegal.get('side') == ('tested' if board.to_play == tested else 'opponent'),
+                'illegal event has wrong side')
+        move = illegal.get('move')
+        require(isinstance(move, list) and len(move) == 2 and all(type(x) is int for x in move),
+                'illegal event has no attempted move')
+        try:
+            board.play(*move)
+        except (IllegalMove, IndexError):
+            pass
+        else:
+            raise ValueError('recorded illegal move is legal')
+        expected = 'loss' if illegal['side'] == 'tested' else 'opponent_illegal'
+    else:
+        require(board.done, 'game is not terminal (truncated or missing moves)')
+        tested = BLACK if record['tested_color'] == 'black' else WHITE
+        expected = 'draw' if board.winner is None else 'win' if board.winner == tested else 'loss'
+    require(record.get('result') == expected and record.get('winner') == board.winner,
+            'recorded result/winner differs from replay')
+
+
 def pair_table(games: list[dict], openings: list[dict]) -> dict:
     """The colour-swapped pairs of one arm: every opening played as black and as white by the tested side.
     Refused: a truncated game, a missing colour, a game twice, an opening outside the arm. ``valid`` is False when
@@ -161,6 +238,7 @@ def pair_table(games: list[dict], openings: list[dict]) -> dict:
     for g in games:
         require(g.get('opening_id') in wanted, f"{g.get('key')}: an opening outside this arm")
         require(not g.get('truncated') and g['result'] != 'truncated', f"{g['key']}: a truncated game")
+        validate_game(g, wanted[g['opening_id']]['moves'])
         key = (g['opening_id'], g['tested_color'])
         require(key not in by, f"{g['key']}: the same opening and colour twice")
         by[key] = g
@@ -316,14 +394,16 @@ def judge(contract: dict, arms: dict, selection: dict | None, tactical: dict | N
                                contract['stats'], (contract.get('anchor') or {}).get('margin'))
     if anchor['status'] != 'NONINFERIOR':
         reasons.append(f"ANCHOR_{anchor['status']}")
-    sel = (selection or {}).get('status', 'MISSING')
+    bound = lambda r: isinstance(r, dict) and r.get('evidence_verified') is True and r.get('models') == {
+        role: contract.get('models', {}).get(name, {}).get('identity') for role, name in contract.get('roles', {}).items()}
+    sel = (selection or {}).get('status', 'MISSING') if bound(selection) else 'MISSING'
     if sel != 'NONINFERIOR':
         reasons.append(f'SELECTION_{sel}')
     gates = contract.get('gates') or {}
-    gate = {'tactical': (tactical or {}).get('verdict') == 'PASS',
+    gate = {'tactical': bound(tactical) and (tactical or {}).get('verdict') == 'PASS',
             'forbidden': summary['tested_illegal'] == 0 and all(arms[r]['summary']['tested_illegal'] == 0
-                                                                 for r in ('candidate_vs_anchor',)),
-            'time': (timing or {}).get('gate', {}).get('pass') is True
+                                                                 for r in ROLE_ARMS),
+            'time': bound(timing) and (timing or {}).get('gate', {}).get('pass') is True
             and (timing or {}).get('gate', {}).get('limits') == gates.get('time')}
     reasons += [f'GATE_{k.upper()}' for k, ok in gate.items() if not ok]
     return {'decision': 'KEEP_CHAMPION' if reasons else 'PROMOTE', 'reasons': reasons, 'unset': missing,
