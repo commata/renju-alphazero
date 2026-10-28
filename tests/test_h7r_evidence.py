@@ -36,7 +36,8 @@ class EvidenceTest(unittest.TestCase):
         cls.w['contract'].write_text(json.dumps(body))
         _, cls.sha = ev.load_contract(cls.w['contract'], root, check_files=False)
         cls.source = selection_source(root, body, cls.sha)
-        cls.tactical = tactical_record(body)
+        cls.tactical = tactical_record(body, cls.sha)
+        cls.legacy_tactical = tactical_record(body)
         cls.timing = timing_record(body, cls.sha, root)
 
     @classmethod
@@ -44,9 +45,16 @@ class EvidenceTest(unittest.TestCase):
         cls.tmp.cleanup()
 
     def test_tactical_binds_models_rule_probes_and_raw_checks(self):
-        self.assertEqual(evidence.tactical(self.tactical, self.w['body'])['verdict'], 'PASS')
+        tactical = lambda r: evidence.tactical(r, self.w['body'], self.sha, 'test', confirmation=True)  # noqa: E731
+        self.assertEqual(tactical(self.tactical)['verdict'], 'PASS')
+        self.assertEqual(evidence.tactical(self.legacy_tactical, self.w['body'])['verdict'], 'PASS')
         for mutate in (
             lambda r: r.update(candidate=self.w['body']['models']['orig']['identity']),
+            lambda r: r.update(champion=self.w['body']['models']['orig']['identity']),
+            lambda r: r.update(contract_sha256='0' * 64),
+            lambda r: r['roles'].update(candidate='orig'),
+            lambda r: r.update(git={'commit': 'other', 'dirty': False}),
+            lambda r: r.update(git={'commit': 'test', 'dirty': True}),
             lambda r: r.update(rule_version='old'),
             lambda r: r['files'].update(fresh_probes='0'*64),
             lambda r: r['candidate_result']['value_probes']['fresh']['rows'][0].update(value=-r['candidate_result']['value_probes']['fresh']['rows'][0]['value']),
@@ -57,9 +65,13 @@ class EvidenceTest(unittest.TestCase):
             record = deepcopy(self.tactical)
             mutate(record)
             with self.assertRaises(ValueError):
-                evidence.tactical(record, self.w['body'])
+                tactical(record)
         with self.assertRaises(ValueError):
-            evidence.tactical({'verdict': 'PASS'}, self.w['body'])
+            tactical({'verdict': 'PASS'})
+        # A cycle-format record (or one given the current contract's SHA) is never confirmation evidence.
+        for legacy in (self.legacy_tactical, {**self.legacy_tactical, 'contract_sha256': self.sha}):
+            with self.assertRaisesRegex(ValueError, 'never re-bound'):
+                tactical(legacy)
 
     def test_committed_cycle_and_nmask_tactical_records_remain_readable(self):
         paths = sorted((cli.ROOT / 'docs/h7c').glob('*/arena/tactical.json'))

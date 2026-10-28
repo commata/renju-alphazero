@@ -14,7 +14,10 @@ champion, the canonical engine or the web model; a judgment is a record.
     timing     the time gate: the same positions, one process, alternating order, warm-up discarded
     selection-source  complete H-conf sensitivity and registered Rapfi branches, with resumable raw records
     selection  confirmation from bound source evidence; delta rows are development-only
-    judge      promotion rule v3; identical audit recomputation allowed, changed inputs refused
+    tactical   the tactical gate v2 of a confirm contract's candidate and champion (``h7c_arena`` probes, must_block
+               and E1 on the contract's model files; no cycle lineage asked)
+    judge      promotion rule v3; every evidence record required, verified before the ledger is bound; identical
+               audit recomputation allowed, changed inputs refused
 
 A pilot contract or a confirm contract is played only when ``status`` is ``fixed`` and the file is committed; a
 confirm contract also needs every rule value set. A dirty tree is refused (``--allow-dirty`` only for tests).
@@ -43,6 +46,7 @@ from renju import BLACK, WHITE, Game  # noqa: E402
 ARENA_FORMAT = 'h7r-arena-v1'
 TIMING_FORMAT = 'h7r-timing-v2'
 SELECTION_FORMAT = 'h7r-selection-v1'
+TACTICAL_FORMAT = ev.TACTICAL_FORMAT
 VERDICT_FORMAT = 'h7r-verdict-v1'
 
 
@@ -166,7 +170,7 @@ def play(args, log=print, root: Path = ROOT) -> dict:
     sig = _sha_json(identity)
     if contract['purpose'] == 'confirm':
         from hybrid.h7r_ledger import bind_contract
-        bind_contract(root, contract, sha)
+        bind_contract(root, contract, sha, args.allow_dirty)
     tasks = build_tasks(arm, openings)
     finished = ar.load_finished(Path(args.jsonl), {t['key'] for t in tasks}, sig, log=log)
     check_games(list(finished.values()), tasks, arm['name'], sig)
@@ -224,10 +228,14 @@ def check_games(games, tasks, arm_name, signature):
 def load_arm(path, contract: dict, sha: str, root: Path = ROOT) -> dict:
     """An arm record of this contract, re-checked; its pair table and recomputed summary."""
     record = _json(path)
+    ev.require(isinstance(record, dict) and record.get('format') == f'{ARENA_FORMAT}-arm'
+               and isinstance(record.get('identity'), dict) and isinstance(record.get('games'), list)
+               and isinstance(record.get('openings'), list), f'{path}: not an {ARENA_FORMAT} arm record')
     identity = record['identity']
-    arm = _arm(contract, identity['arm'])
-    ev.require(record.get('format') == f'{ARENA_FORMAT}-arm' and identity['contract_sha256'] == sha
-               and _sha_json(identity) == record['signature'], f'{path}: not an arm record of this contract')
+    arm = _arm(contract, identity.get('arm'))
+    ev.require(identity.get('contract_sha256') == sha and _sha_json(identity) == record.get('signature'),
+               f'{path}: not an arm record of this contract')
+    ev.require(all(isinstance(g, dict) for g in record['games']), f'{path}: a game is not a JSON object')
     ev.require(all(g['signature'] == record['signature'] and g['arm'] == arm['name'] for g in record['games']),
                f'{path}: a game of another setup or arm')
     ev.require((identity['tested']['model'], identity['tested']['budget'], identity['opponent']['model'],
@@ -376,14 +384,14 @@ def selection_source(args, log=print, root=ROOT):
     import h7c_sensitivity as sn
     import h7c_adjudicate as ad
     import h7c_labels as lab
-    from hybrid.h7r_ledger import bind, bind_contract
+    from hybrid.h7r_ledger import bind_all, contract_bindings, guard
     import h7c_selfplay as sp
 
     root = Path(getattr(args, 'root', None) or root)
+    guard(root, args.allow_dirty)
     git = _git(args.allow_dirty)
     contract, sha = _contract(args, root, playing=True)
     ev.require(contract['purpose'] == 'confirm', 'selection-source requires a confirmation contract')
-    bind_contract(root, contract, sha)
     hc, hsha, games, binding = ho.checked_cache(args.cache, root)
     ev.require(hc['holdout']['split'] == 'conf' and hsha == contract['selection'].get('holdout_contract_sha256'),
                'source requires the contracted H-conf')
@@ -392,9 +400,12 @@ def selection_source(args, log=print, root=ROOT):
     ev.require(all(g['value_device'] == args.device.split(':')[0] for g in games), 'holdout device differs')
     spec = ad.engine_spec(args.program, args.rapfi_dir)
     ev.require(spec['identity'] == contract['selection'].get('engine'), 'Rapfi engine differs from contract')
-    bind(root, 'holdout-use', hsha, {'confirmation': sha})
     folder = Path(args.source_dir)
     ev.require(lab._under_data_or_runs(folder), 'selection source records go under data/ or runs/')
+    # Every input checked: reserve the H-conf for this confirmation before any evaluation (a resume with the same
+    # inputs finds the same entries; another confirmation of this H-conf is refused, the ledger unchanged).
+    bind_all(root, [*contract_bindings(contract, sha), ('holdout-use', hsha, {'confirmation': sha})],
+             args.allow_dirty)
     folder.mkdir(parents=True, exist_ok=True)
     ident = {'format': 'h7r-selection-source-v1', 'contract_sha256': sha, 'git': git,
              'models': {k: m['identity'] for k, m in models.items()}, 'holdout_contract_sha256': hsha,
@@ -469,20 +480,66 @@ def selection(args) -> dict:
             'development_only': True, 'rows_sha256': ev.file_sha256(args.rows), **out}
 
 
+EVIDENCE = ('selection', 'tactical', 'timing')
+
+
+def tactical(args, log=print, root: Path = ROOT) -> dict:
+    """The tactical gate v2 of a confirm contract's candidate and champion (``TACTICAL_FORMAT``): the cycle Arena's
+    value probes, must_block and E1 suite (``h7c_arena``) on the contract's model files. No cycle lineage or
+    ``h7c_stage`` is asked of the candidate: the contract names it by its four SHA-256."""
+    import h7c_arena as ar
+
+    root = Path(getattr(args, 'root', None) or root)
+    git = _git(args.allow_dirty)
+    contract, sha = _contract(args, root, playing=True)  # fixed, committed, rule values set, model files = SHA
+    ev.require(contract['purpose'] == 'confirm', 'the tactical record is made for a confirm contract')
+    roles = {r: contract['roles'][r] for r in ('candidate', 'champion')}
+    sides, identities = {}, {}
+    for role, name in roles.items():
+        model = contract['models'][name]
+        sides[role] = {'policy': str(root / model['policy']), 'value': str(root / model['value'])}
+        identities[role] = ev.model_identity(sides[role]['policy'], sides[role]['value'])
+        ev.require(identities[role] == model['identity'], f'{role} model files are not its contract identity')
+    ev.require(identities['candidate'] != identities['champion'], 'the candidate is the champion')
+    out = {'format': TACTICAL_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha, 'git': git,
+           'device': args.device, 'roles': roles, **identities, 'rule_version': ar.TACTICAL_RULE,
+           'files': {'value_probes': ev.file_sha256(ar.PROBE_FILE), 'fresh_probes': ev.file_sha256(ar.FRESH_PROBES),
+                     'policy_probes': ev.file_sha256(ar.POLICY_PROBES), 'e1_manifest': ev.file_sha256(ar.E1_MANIFEST)}}
+    for role, side in sides.items():
+        log(f'[h7r-tactical] {role}: value probes, must_block, E1 ({roles[role]})', flush=True)
+        out[f'{role}_result'] = {'value_probes': ar.value_probes(side['value'], args.device),
+                                 'must_block': ar.must_block(side['policy']),
+                                 'e1': ar.e1_suite(side, args.device, args.workers, role, log=log)}
+    out['judge'] = ar.tactical_judge(out['candidate_result'], out['champion_result'])
+    log(f"[h7r-tactical] verdict {out['judge']['verdict']}", flush=True)
+    return out
+
+
 def judge(args, root: Path = ROOT) -> dict:
-    contract, sha = _contract(args, root)
-    ev.require(contract['purpose'] == 'confirm', 'only a confirm contract is judged')
+    """Promotion rule v3 of a confirm contract. Order: inputs checked, source evidence verified, judgment computed,
+    then the ledger bound (contract, seeds, H-conf use, judgment inputs, one lock, every conflict checked first);
+    ``main`` publishes. Any refusal before the ledger step leaves the ledger unchanged; an identical recomputation is
+    allowed, changed inputs for a judged contract are refused."""
     from hybrid import h7r_evidence as evidence
-    from hybrid.h7r_ledger import bind, bind_contract
+    from hybrid.h7r_ledger import FOLDER, bind_all, contract_bindings, guard
     from hybrid.h7c_nmask import committed
     import h7r_holdout as ho
+
+    root = Path(getattr(args, 'root', None) or root)
+    guard(root, args.allow_dirty)
+    contract, sha = _contract(args, root)
+    ev.require(contract['purpose'] == 'confirm', 'only a confirm contract is judged')
     ev.require(contract['status'] == 'fixed' and not ev.unset(contract), 'confirm rule values unset or draft')
     ev.require(args.allow_dirty or committed(args.contract, root), 'commit the confirm contract before judging')
-    bind_contract(root, contract, sha)
+    missing = [f'--{name}' for name in EVIDENCE if getattr(args, name, None) is None]
+    ev.require(not missing, f'a confirmation judgment needs every evidence record, missing {missing} '
+                            '(nothing was recorded)')
+    for path in [*args.arm_record, *(getattr(args, name) for name in EVIDENCE)]:
+        ev.require(Path(path).is_file(), f'{path}: no such evidence file (nothing was recorded)')
     roles = contract['roles']
     expected = {'candidate_vs_champion': ('candidate', 'champion'), 'candidate_vs_anchor': ('candidate', 'anchor'),
                 'champion_vs_anchor': ('champion', 'anchor')}
-    arms = {}
+    arms, arm_files = {}, {}
     for path in args.arm_record:
         arm = load_arm(path, contract, sha, root)
         name = arm['record']['identity']['arm']
@@ -491,33 +548,37 @@ def judge(args, root: Path = ROOT) -> dict:
         ev.require((arm['record']['identity']['tested']['model'], arm['record']['identity']['opponent']['model'])
                    == (roles[t], roles[o]) and arm['record']['identity']['tested']['budget'] == 1
                    and arm['record']['identity']['opponent']['budget'] == 1, f'{path}: not the {name} arm')
-        arms[name] = arm
+        arms[name], arm_files[name] = arm, Path(path)
     ev.require(set(arms) == set(expected), f'the judgment needs the arms {sorted(expected)}')
-    records = {}
-    for name in ('selection', 'tactical', 'timing'):
-        path = getattr(args, name)
-        records[name] = None if path is None else _json(path)
-        if records[name] is not None and name in ('selection', 'timing'):
-            ev.require(records[name].get('contract_sha256') == sha, f'{path}: a record of another contract')
-    tact = None if records['tactical'] is None else evidence.tactical(records['tactical'], contract)
-    time = None if records['timing'] is None else evidence.timing(records['timing'], contract, sha, root)
-    sel = None
-    if records['selection'] is not None:
-        record = records['selection']
-        ev.require(record.get('format') == SELECTION_FORMAT and not record.get('development_only'),
-                   'selection record is not confirm evidence')
-        source = ho.read_ref(record.get('source'), Path(args.selection).parent)
-        sel = evidence.selection(source, contract, sha, root)
-        ev.require(all(record.get(k) == v for k, v in sel.items()), 'selection verdict differs from raw evidence')
-    inputs = {name: ev.file_sha256(getattr(args, name)) if getattr(args, name) else None
-              for name in ('selection', 'tactical', 'timing')}
-    inputs['arms'] = {name: ev.file_sha256(path) for name, path in
-                      zip([_json(path)['identity']['arm'] for path in args.arm_record], args.arm_record)}
-    bind(root, 'judgment', sha, inputs)
+    gits = [arm['record']['identity']['git'] for arm in arms.values()]
+    commits = {g.get('commit') for g in gits}
+    ev.require(len(commits) == 1 and None not in commits, 'the three Arena arms were played from different code commits')
+    ev.require(args.allow_dirty or all(g.get('dirty') is False for g in gits), 'an Arena arm names a dirty tree')
+    commit = commits.pop()
+    records = {name: _json(getattr(args, name)) for name in EVIDENCE}
+    for name, record in records.items():
+        ev.require(isinstance(record, dict) and record.get('contract_sha256') == sha,
+                   f'{getattr(args, name)}: a record of another contract')
+    tact = evidence.tactical(records['tactical'], contract, sha, commit, confirmation=True)
+    time = evidence.timing(records['timing'], contract, sha, root)
+    record = records['selection']
+    ev.require(record.get('format') == SELECTION_FORMAT and not record.get('development_only'),
+               'selection record is not confirm evidence')
+    source = ho.read_ref(record.get('source'), Path(args.selection).parent)
+    sel = evidence.selection(source, contract, sha, root)
+    ev.require(all(record.get(k) == v for k, v in sel.items()), 'selection verdict differs from raw evidence')
     out = ev.judge(contract, arms, sel, tact, time)
+    inputs = {name: ev.file_sha256(getattr(args, name)) for name in EVIDENCE}
+    inputs['arms'] = {name: ev.file_sha256(path) for name, path in arm_files.items()}
+    entries = bind_all(root, [*contract_bindings(contract, sha),
+                              ('holdout-use', sel['holdout_contract_sha256'], {'confirmation': sha}),
+                              ('judgment', sha, inputs)], args.allow_dirty)
     return {'format': VERDICT_FORMAT, 'contract_id': contract['contract_id'], 'contract_sha256': sha,
-            'roles': roles, 'evidence_records_sha256': inputs, 'arm_records_sha256': {n: ev.file_sha256(p) for n, p in zip(
-                [_json(p)['identity']['arm'] for p in args.arm_record], args.arm_record)}, **out,
+            'roles': roles, 'code_commit': commit, 'evidence_records_sha256': inputs,
+            'arm_records_sha256': inputs['arms'], **out,
+            'ledger': {'folder': FOLDER, 'entries': entries,
+                       'scope': 'local to this checkout: keep the folder with the source records '
+                                '(a fresh clone or another machine starts empty)'},
             'meaning': 'a record of the promotion rule v3; it changes no champion, canonical engine or web model'}
 
 
@@ -560,18 +621,21 @@ def build_parser() -> argparse.ArgumentParser:
     src.add_argument('--rapfi-dir', type=Path, required=True)
     src.add_argument('--device', default='cuda')
     src.add_argument('--workers', type=int, default=4)
+    c = sub.add_parser('tactical')
+    c.add_argument('--device', default='cuda')
+    c.add_argument('--workers', type=int, default=6)
     e = sub.add_parser('selection')
     e.add_argument('--evidence', type=Path, help='source manifest for a confirmation (H-conf + sensitivity + Rapfi branches)')
     e.add_argument('--rows', type=Path, help='JSONL rows {"game": ..., "delta": ...}')
     j = sub.add_parser('judge')
     j.add_argument('--arm-record', type=Path, nargs=3, required=True)
-    for name in ('selection', 'tactical', 'timing'):
-        j.add_argument('--' + name, type=Path)
+    for name in EVIDENCE:
+        j.add_argument('--' + name, type=Path, help='required (checked before anything is recorded)')
     for q in sub.choices.values():
         if q is not s:
             q.add_argument('--contract', type=Path, required=True)
         q.add_argument('--output', type=Path, required=True)
-        q.add_argument('--allow-dirty', action='store_true', help='tests only')
+        q.add_argument('--allow-dirty', action='store_true', help='tests only (never the real ledger)')
     return parser
 
 
@@ -582,8 +646,9 @@ def main(argv=None) -> int:
         parser.error(f'{args.output} exists: an H7-R record is never overwritten')
     try:
         out = {'suite': suite, 'play': play, 'summarize': summarize, 'size': size, 'timing': timing,
-               'selection': selection, 'selection-source': selection_source, 'judge': judge}[args.command](args)
-    except (ValueError, KeyError, TypeError, IndexError, OSError) as exc:
+               'selection': selection, 'selection-source': selection_source, 'tactical': tactical,
+               'judge': judge}[args.command](args)
+    except (ValueError, FileNotFoundError) as exc:  # input errors; anything else is a bug and keeps its traceback
         parser.error(str(exc))
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)
     from hybrid.h7r_ledger import publish_json

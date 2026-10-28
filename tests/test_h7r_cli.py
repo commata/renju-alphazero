@@ -14,6 +14,7 @@ from scripts import h7r_eval as cli
 from tests.test_h7r_eval import STATS
 
 QUIET = lambda *a, **k: None  # noqa: E731
+CLEAN = {'commit': 'test', 'dirty': False}  # the code commit the fixture evidence names
 
 
 def fake_play_game(task, make_tested=None, make_opponent=None, max_plies=None):
@@ -78,7 +79,7 @@ class FlowTest(unittest.TestCase):
         args = argparse.Namespace(contract=self.w['contract'], arm=arm, device='cpu', workers=1,
                                   jsonl=self.w['root'] / 'runs' / f'{arm}.jsonl', allow_dirty=True,
                                   threads_for_tests=True, **kw)
-        with mock.patch('h7c_arena.play_game', fake_play_game):
+        with mock.patch('h7c_arena.play_game', fake_play_game), mock.patch.object(cli, '_git', lambda _: CLEAN):
             return cli.play(args, log=QUIET, root=self.w['root'])
 
     def save(self, record, name):
@@ -119,15 +120,21 @@ class FlowTest(unittest.TestCase):
         self.assertEqual(sel['status'], 'NONINFERIOR')
         timing = timing_record(self.w['body'], sha, self.w['root'])
         args = argparse.Namespace(contract=self.w['contract'], arm_record=list(records.values()),
-                                  selection=self.save(sel, 'sel'), tactical=self.save(tactical_record(self.w['body']), 'tact'),
+                                  selection=self.save(sel, 'sel'),
+                                  tactical=self.save(tactical_record(self.w['body'], sha), 'tact'),
                                   timing=self.save(timing, 'time'), allow_dirty=True)
+        ledger = self.w['root'] / 'runs/h7r/confirmations'
+        before = sorted(p.name for p in ledger.glob('*.json'))
+        # an incomplete judgment is refused before anything is recorded; the complete one then succeeds
+        with self.assertRaisesRegex(ValueError, 'needs every evidence record'):
+            cli.judge(argparse.Namespace(**{**vars(args), 'selection': None, 'timing': None}), root=self.w['root'])
+        self.assertEqual(sorted(p.name for p in ledger.glob('*.json')), before)
         verdict = cli.judge(args, root=self.w['root'])
         self.assertEqual(verdict['decision'], 'PROMOTE', verdict['reasons'])
         self.assertIn('changes no champion', verdict['meaning'])
-        # missing records keep the champion
-        with self.assertRaisesRegex(ValueError, 'different confirmation inputs'):
-            cli.judge(argparse.Namespace(**{**vars(args), 'selection': None, 'timing': None}), root=self.w['root'])
-        self.assertEqual(cli.judge(args, root=self.w['root'])['decision'], verdict['decision'])
+        self.assertEqual({e['category'] for e in verdict['ledger']['entries']},
+                         {'contract', 'seed', 'holdout-use', 'judgment'})
+        self.assertEqual(cli.judge(args, root=self.w['root']), verdict)  # identical audit recomputation
         # a tampered record is refused
         rec = json.loads(records['candidate_vs_champion'].read_text())
         rec['games'][0]['result'] = 'draw'

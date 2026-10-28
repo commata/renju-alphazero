@@ -187,6 +187,7 @@
      - Δ(후보 − 기준)의 평균을 원본 게임 단위로 bootstrap한다(같은 게임의 관측은 함께 움직인다).
      - 단측 하한 ≥ −margin이면 비열등이다.
      - **INCONCLUSIVE · 표본 부족은 통과가 아니다** → champion 유지
+     - INVALID 분기는 계약의 `selection.invalid_policy`(9.7)를 따른다. 정책이 없는 계약은 INVALID가 하나라도 있으면 INCONCLUSIVE다.
   4. gate: tactical v2 PASS, 금수 오류 0, 수당 시간(평균 +10%, p95 +20%, 잠정)
 - 설정 미확정(`unset`), 기록 누락, 표본 부족, gate 미통과는 모두 승급하지 않는 상태다.
 - 확인 평가 결과를 보고 후보를 고친 뒤 같은 확인 자료로 다시 판정하지 않는다.
@@ -199,7 +200,7 @@
 |---|---|
 | `src/hybrid/h7r_openings.py` | O0 / O1 / O2 생성 · 검사, ID, 대칭, 중복 없는 추출, 이전 평가와의 겹침 |
 | `src/hybrid/h7r_eval.py` | 계약 검사(seed 예약 · 계약 간 재사용 금지 · suite SHA · 모델 SHA), 쌍 표(잘림 · 누락 · 중복 거부), pair bootstrap, anchor 차이, 선택 품질 비열등, 규모 제안, 승급 규칙 v3 |
-| `scripts/h7r_eval.py` | `suite`, `play`(계약의 한 arm, 재개, 예산 arm), `summarize`, `size`, `timing`, `selection`, `judge` |
+| `scripts/h7r_eval.py` | `suite`, `play`(계약의 한 arm, 재개, 예산 arm), `summarize`, `size`, `timing`, `selection-source`, `selection`, `tactical`(9.7), `judge` |
 | `scripts/h7r_holdout.py` | `labels`(holdout 대국 → 평가 전용 라벨 · cache), `eval`(경로 × 종류 WMSE, 짝 차이, 게임 단위 bootstrap, seed 간 분산) |
 | `h7c_selfplay.py --holdout-contract` | 계약에 등록된 예약 seed만 허용, identity에 `purpose: holdout` · 계약 ID · SHA |
 | 학습 진입 거부 | `h7c_labels.check_games`(holdout 표시 → 거부, 표시를 지워도 예약 seed로 거부), `h7c_train.rows_source`(`purpose` 있는 행 거부), `h7c_train_value.check_cycle_cache`(예약 seed 게임 거부) |
@@ -466,9 +467,9 @@ python -u scripts/h7c_labels.py --games runs/h7r/smoke/holdout.jsonl --value-out
 
 | 검토 항목 | 수정한 동작 |
 |---|---|
-| 다른 모델의 tactical PASS 재사용 | 기존 cycle·NMASK tactical 원본 형식만 받는다. candidate·champion의 네 SHA, rule, probe·E1 manifest SHA, clean 코드 출처를 대조한다. fresh sign과 E1 원본 run에서 판정을 재계산하고 must_block 건수를 검사한다. |
+| 다른 모델의 tactical PASS 재사용 | candidate·champion의 네 SHA, rule, probe·E1 manifest SHA, clean 코드 출처를 대조한다. fresh sign과 E1 원본 run에서 판정을 재계산하고 must_block 건수를 검사한다. **9.7에서 변경:** 확인 판정은 계약 SHA를 담은 `h7r-tactical-v1`만 받는다. 기존 cycle·NMASK 형식은 읽기만 호환한다. |
 | 시간 비교 방향·모델 혼동 | `h7r-timing-v2`는 candidate / champion 순서, 양쪽 모델 SHA·S50 예산, suite·국면 ID, warm-up·환경·원시 시간 표본을 기록한다. 확인 판정은 원시 표본에서 평균·p95 비율과 통과 여부를 다시 계산한다. |
-| 임의 delta를 확인용 선택 품질로 사용 | 확인 계약에서는 `selection --rows`를 거부한다. 완전한 H-conf, 두 모델의 전체 sensitivity, 등록된 Rapfi의 원본 분기를 SHA로 연결하고 모든 불일치에서 delta를 만든다. 분기를 기보로 재생해 결과를 대조하며 INVALID가 있으면 INCONCLUSIVE다. |
+| 임의 delta를 확인용 선택 품질로 사용 | 확인 계약에서는 `selection --rows`를 거부한다. 완전한 H-conf, 두 모델의 전체 sensitivity, 등록된 Rapfi의 원본 분기를 SHA로 연결하고 모든 불일치에서 delta를 만든다. 분기를 기보로 재생해 결과를 대조한다. INVALID 처리: 정책이 없는 계약은 INVALID가 있으면 INCONCLUSIVE다. 새 계약은 9.7의 버전 정책을 고를 수 있다. |
 | 결과 flag만으로 Arena 집계 | 저장·재개·요약·판정 때 task seed·pair·색·opening·모델·엔진·runtime을 대조하고, 전체 착수를 `renju.Game`으로 재생한다. 종료 상태·승자·결과와 불법 수 사건을 확인한다. |
 | 일부 holdout 또는 일반 test cache 사용 | 계약의 판 수와 `game_index=0..N-1`을 모두 요구한다. `holdout.json`이 계약 → 원본 대국 → 평가 행 → cache 파일을 SHA로 연결한다. `test` split이라는 이유만으로는 평가에 쓰지 않는다. |
 | 출력 경로를 바꿔 재판정 | 로컬 영구 기록이 계약 ID·seed·H-conf 사용·판정 입력 SHA를 묶는다. 동일 입력의 감사용 재계산은 허용하지만, 같은 계약의 입력 변경이나 같은 H-conf의 다른 확인 계약 사용은 거부한다. |
@@ -509,8 +510,8 @@ python -u scripts/h7r_eval.py selection \
 
 - 기존 `h7r-timing-v1` 요약은 원시 표본이 없어 새 확인 판정에서 받지 않는다. `timing`으로 v2를 생성해야 한다.
 - 기존 평가 cache에 `holdout.json`이 없으면 일반 cache와 구분할 수 없으므로 거부한다. 전체 원본 holdout을 `labels`에 넣고 새 행 출력·새 cache 경로에서 다시 만든다. 기존 파일에 PASS나 봉인 표시만 덧붙이지 않는다.
-- 판정 입력은 세 Arena arm과 selection·tactical·timing을 모두 준비한 뒤 넘긴다. 증거 없이 KEEP_CHAMPION을 기록한 경우도 그 입력 조합에 묶이므로, 같은 계약에 나중에 새 증거를 추가해 재판정할 수 없다.
-- `runs/h7r/confirmations/`는 커밋하지 않는 **현재 checkout의 로컬 기록**이다. 다른 PC·worktree에서 실행을 이어가면 원본 증거와 이 디렉터리도 함께 옮겨 사용한다. 지우거나 누락하면 과거 사용을 추적할 수 없다. 여러 PC를 아우르는 중앙 등록 서비스는 구현하지 않았다.
+- ~~증거 없이 KEEP_CHAMPION을 기록한 경우도 그 입력 조합에 묶여 재판정할 수 없다.~~ **9.7에서 변경:** 확인 `judge`는 세 Arena arm과 selection·tactical·timing을 모두 요구한다. 하나라도 없거나, 파일이 없거나, 검증에 실패하면 영구 기록 전에 거부한다. 증거를 갖춰 다시 실행하면 정상 판정된다. 한 번 판정된 계약의 입력 변경은 계속 거부한다.
+- `runs/h7r/confirmations/`는 커밋하지 않는 **현재 checkout의 로컬 기록**이다(보관 절차는 9.7). 다른 PC·worktree에서 실행을 이어가면 원본 증거와 이 디렉터리도 함께 옮겨 사용한다. 지우거나 누락하면 과거 사용을 추적할 수 없다. 여러 PC를 아우르는 중앙 등록 서비스는 구현하지 않았다.
 - 최종 JSON은 임시 파일을 완성한 후 배타적으로 공개한다. 이미 있는 출력은 덮어쓰지 않고, 직렬화 실패가 불완전한 결과 파일을 남기지 않는다.
 
 **검증**
@@ -527,3 +528,184 @@ python scripts/check_track_b_frozen.py --no-models
 실제 GPU 모델·등록 Rapfi의 end-to-end 실행과 전체 pilot은 이번 회귀 테스트에 포함되지 않는다. 그 결과 없이 R1 완료나 기력 향상을 주장하지 않는다.
 
 검증 결과: 최종 R1 묶음 38개는 모두 통과했다. 기존 경로를 포함한 회귀 묶음은 187개 중 185개 통과, 실제 frozen 모델이 필요한 2개 skip이었다. `check_track_b_frozen.py --no-models`는 PASS다. 전체 checker는 이 컨테이너에 H3 policy·H6 value checkpoint가 없어 두 모델 검사만 FAIL이며, code·engine·runtime·TB-V3 identity·promotion·canonical 검사는 모두 PASS다.
+
+### 9.7 확인 평가를 끝까지 수행하기 위한 보완: INVALID 정책 · 일반 후보 tactical · 판정 순서
+
+`e97df11` 검토의 네 가지 문제를 고쳤다.
+- INVALID 하나로 확인이 사실상 불가능했다.
+- 일반 R3 후보의 tactical 기록을 만들 수 없었다.
+- 증거가 빠진 판정이 ledger를 잠갔다.
+- champion의 금수가 후보 실패로 기록됐다.
+
+평가 도구에 한정한 변경이다. 기존 계약 · 원본 기록 · 판정은 고치거나 다시 판정하지 않는다. 확인 계약을 fixed로 바꾸지도 않았다. pilot · H-conf 생성 · 확인 Arena · champion 교체 · SER5 배포는 하지 않았다.
+
+**INVALID 처리 정책 `h7r-invalid-v1` (새 확인 계약에서 선택)**
+
+- 위치: 확인 계약의 `selection.invalid_policy`. 계약 SHA에 포함된다.
+- 이 필드가 없는 계약은 기존의 엄격한 규칙 그대로다(INVALID 분기가 하나라도 있으면 `INCONCLUSIVE`, `INVALID_BRANCHES`).
+- draft 예시: `docs/h7r/invalid_policy_v1.draft.json`
+  - `contracts/` 밖에 두어 계약으로 읽히지 않는다.
+  - 상한 0.05는 제안값이다. 실제 확인 계약에 넣고 확정하는 일은 본 확인 전 단계로 남긴다.
+
+```json
+"invalid_policy": {
+  "version": "h7r-invalid-v1",
+  "structural_abnormal_end": "evaluation_draw",
+  "unresolved": "worst_case",
+  "unresolved_reasons": ["timeout", "engine_error", "engine_illegal", "forbid_mismatch"],
+  "max_invalid_share": 0.05,
+  "denominator": "disagreement_observations"
+}
+```
+
+모든 키가 필수다. 다른 버전 · 값 · 키가 있으면 계약 검사가 거부한다.
+
+1. **구조적 `abnormal_end`**(`structural_abnormal_end`: `evaluation_draw` 또는 `unresolved`)
+   - 원본 prefix + 고정 수 + continuation을 `renju.Game`으로 모두 재생한다.
+   - 기록의 identity · 고정 수 · ply · length가 재생과 같아야 한다.
+   - 다음 조건을 모두 만족해야 한다.
+     - 승자가 없다.
+     - 흑 차례다.
+     - 빈 점이 정확히 하나다.
+     - 흑의 합법 수가 없다.
+     - 그 빈 점이 실제 흑 금수다.
+   - `evaluation_draw`일 때만 평가 점수 0.5로 정규화한다.
+     - 이를 "평가상 무승부"로 표시한다.
+     - 출력에 `normalized.abnormal_end_evaluation_draw`(분기 수)와 `structural_observations`(관측 수)를 낸다.
+   - 원본 INVALID 분기 기록은 그대로 둔다. `renju.Game`과 엔진의 종료 규칙도 바꾸지 않았다.
+   - 조건을 하나라도 만족하지 않는 `abnormal_end`는 데이터 오류로 거부한다. 정의되지 않은 사건이므로 새 정책 버전이 필요하다.
+2. **미해결 분기**(`unresolved: worst_case`)
+   - 관측을 삭제하지 않는다.
+   - 정상 분기는 재생으로 확인한 점수를 쓴다.
+   - 미해결 후보 분기는 0점, 미해결 champion 분기는 1점으로 둔다. delta = 후보 − champion이므로, 양쪽 모두 미해결이면 delta = −1이다.
+   - 같은 분기가 여러 관측에 쓰이면 각 관측에 반영한다.
+3. **비율과 판정**
+   - `invalid_share` = 미해결 분기가 하나 이상인 불일치 관측 수 / 전체 불일치 관측 수(`denominator`)
+   - 구조적으로 정규화한 분기는 미해결에서 빼고, 따로 센다.
+   - 다음 경우는 모두 `INCONCLUSIVE`다(사유를 기록한다).
+     - 관측 0개: `NO_OBSERVATIONS`
+     - 정책에 없는 실행 실패: `UNHANDLED_INVALID`
+     - 비율 초과: `INVALID_SHARE_EXCEEDED`. 경계값은 정확한 분수로 비교하며, 상한과 같으면 통과다.
+     - 실측(미해결 없는) 관측이 `min_observations` 미만: `TOO_FEW_RESOLVED`. 대체값이 최소 실측 관측 수를 채우지 못한다.
+   - 이 조건을 넘으면 보수적 delta를 포함한 게임 단위 bootstrap이 비열등을 보여야 통과한다.
+4. **실행 실패와 데이터 오류**
+   - 처리 가능한 실행 실패는 `timeout`, `engine_error`, `engine_illegal`, `forbid_mismatch`다. 정책의 `unresolved_reasons`에 있는 것만 미해결로 처리한다.
+   - 실행 실패에도 재생 검사를 한다.
+     - 실패가 대국 종료 뒤에 기록되면 거부한다.
+     - `engine_illegal`의 수가 실제로 합법이면 거부한다.
+     - `forbid_mismatch`가 우리 금수점과 맞지 않으면 거부한다.
+   - 다음은 미해결로 낮추지 않고 데이터 오류로 거부한다.
+     - 누락 · 중복 · identity 불일치
+     - 불법 기보 · 변조된 결과 · 길이 불일치
+     - `truncated` · `fixed_move_illegal` 같은 다른 사유
+   - 정책이 없는 엄격한 계약에도 같은 재생 검사를 적용한다. 엄격한 판정이 통과로 바뀌는 경우는 없다.
+
+**일반 후보 tactical: `scripts/h7r_eval.py tactical --contract`**
+
+- 계약의 candidate / champion 경로를 사용하고, 네 SHA를 실제 파일과 대조한다.
+- 다음을 확인한 뒤에만 실행한다.
+  - fixed · committed 확인 계약, 규칙 값 모두 설정
+  - clean 코드 상태
+- cycle 계보와 `h7c_stage`는 요구하지 않는다.
+- 측정은 기존 `h7c_arena.value_probes`, `must_block`, `e1_suite`, `tactical_judge`를 그대로 쓴다. 후보 factory는 `scripts/h7c_*` 경로로만 쓰인다.
+- 기록 형식은 `h7r-tactical-v1`이다.
+  - 계약 ID와 SHA, 역할, 두 모델 identity
+  - git, rule, probe · E1 manifest SHA, 원본 결과
+- 진행 상황은 측정 단계와 E1 `Progress`로 출력한다. 출력 파일이 이미 있으면 덮어쓰지 않는다.
+- 판정 때 검증하는 것
+  - 계약 SHA · 역할 · 모델 SHA가 일치한다.
+  - tactical 기록의 코드 commit이 세 Arena arm의 clean commit과 같다. 세 arm의 commit이 서로 다르면 그것도 거부한다.
+  - H-conf 생성 commit은 별도 출처이므로 같을 것을 요구하지 않는다.
+- 기존 cycle · NMASK tactical 기록은 계속 읽을 수 있다. 확인 판정에는 받지 않는다. 계약 SHA를 덧붙여도 거부한다.
+
+**판정 순서와 ledger**
+
+- `judge` 순서: 입력 확인 → 원본 증거 검증 → 판정 계산 → ledger 등록 → 결과 공개
+  - 입력 확인: 확인 계약, fixed · committed, 세 arm과 selection · tactical · timing 파일
+  - 원본 증거 검증: arm 재생 · commit 일치, tactical · timing · selection 재계산
+  - ledger 등록: contract · seed · H-conf 사용 · 판정 입력
+- 검증 함수(`h7r_evidence.selection`)는 이제 ledger를 쓰지 않는다. 다른 확인 계약에 묶인 H-conf만 읽기 전용으로 거부한다.
+- 여러 binding은 `h7r_ledger.bind_all`이 한 잠금 안에서 처리한다. 충돌을 모두 먼저 검사하므로, 거부되면 아무 항목도 남지 않는다.
+- 동일 입력의 감사용 재계산은 허용한다. 판정된 계약의 입력 변경은 거부한다. 입력 누락으로 실패한 뒤 증거를 갖춰 다시 실행하면 정상 판정된다.
+- `selection-source`는 모든 입력을 확인한 뒤, 평가를 시작하기 전에 계약 · seed · H-conf 사용을 한 번에 예약한다. 중단 후 같은 입력으로 재개할 수 있다. 같은 H-conf를 다른 확인 계약이 쓰면 거부한다.
+- `--allow-dirty`(테스트 전용)는 저장소 자체의 `runs/h7r/confirmations/`에 쓰지 못한다. 테스트는 임시 root를 쓴다.
+- 최종 verdict의 `ledger.entries`에 사용한 ledger 항목의 경로와 저장 바이트의 SHA-256을 기록한다.
+
+**ledger 보관 절차**
+
+- ledger는 **로컬 규율 장치**다. 새 clone이나 다른 PC는 빈 ledger로 시작하므로, 그곳까지 보장하지 않는다.
+- 확인 계약 하나를 끝내면 다음을 함께 보관한다.
+  - `runs/h7r/confirmations/` 전체
+  - 그 확인의 원본 증거: arm JSONL · 기록, selection-source 디렉터리, tactical, timing
+  - verdict
+- 다른 PC에서 이어서 하면 이 묶음을 먼저 옮긴다.
+- verdict의 `ledger.entries` SHA와 보관본을 대조할 수 있다.
+- ledger를 지우거나 강제로 초기화해 거부를 우회하지 않는다.
+
+**금수 오류의 책임**
+
+- 후보의 `GATE_FORBIDDEN` 실패는 후보가 tested인 두 arm(`candidate_vs_champion`, `candidate_vs_anchor`)의 불법 수만 센다(`candidate_illegal_games`).
+- `champion_vs_anchor`에서 champion이 둔 불법 수는 기준 arm 오염이다.
+  - `ARM_INVALID`로 처리하고, `arm_invalid`에 원인 `CHAMPION_ILLEGAL_IN_REFERENCE_ARM`을 기록한다.
+  - 승급은 막지만 후보 금수 오류로 보고하지 않는다.
+- 상대의 불법 수(`OPPONENT_ILLEGAL`)는 기존대로 arm을 invalid로 한다. 그 쌍이 한 anchor arm에서만 빠지면 anchor 차이를 `NOT_COMPUTED`로 둔다(예외로 중단하지 않는다).
+- `decision`은 그대로 `PROMOTE` / `KEEP_CHAMPION`이다. KEEP일 때 `keep_kind`와 `reason_classes`가 판정 불가와 후보 실패를 구별한다.
+  - `NOT_JUDGEABLE`: 누락 · 미설정 · invalid · INCONCLUSIVE
+  - `CANDIDATE_FAILED`: `NOT_SUPERIOR`, `ANCHOR_INFERIOR`, `SELECTION_INFERIOR`, `GATE_*`
+  - arm이 invalid이면 Arena에서 나온 `NOT_SUPERIOR` · `ANCHOR_INFERIOR`는 후보 실패로 세지 않는다.
+  - tactical · timing이 없으면 `TACTICAL_MISSING` · `TIME_MISSING`으로 쓴다(판정 불가).
+
+**오류 처리와 신뢰 경계**
+
+- `main`은 입력 오류(`ValueError`, `FileNotFoundError`)만 사용법 오류로 보여 준다. 예상하지 못한 코드 오류는 traceback을 남긴다. arm 기록의 형식은 검증 단계에서 `ValueError`로 설명한다.
+- tactical의 추론값(fresh probe 값) · must_block hit와 timing의 원시 표본은 **기록된 측정값을 신뢰**한다.
+  - 오프라인 검증은 identity · 완전성 · 형식과, 그 값이 함축하는 판정을 다시 계산한다.
+  - 모델 실행 자체를 재증명하지는 않는다.
+
+**명령 예시** (본 확인 단계에서만, `CONFIRM_ID`는 실제 계약명)
+
+```bash
+python -u scripts/h7r_eval.py tactical --contract docs/h7r/contracts/CONFIRM_ID.json \
+  --device cuda --workers 6 --output runs/h7r/CONFIRM_ID/tactical.json
+python -u scripts/h7r_eval.py judge --contract docs/h7r/contracts/CONFIRM_ID.json \
+  --arm-record runs/h7r/CONFIRM_ID/candidate_vs_champion.json \
+               runs/h7r/CONFIRM_ID/candidate_vs_anchor.json \
+               runs/h7r/CONFIRM_ID/champion_vs_anchor.json \
+  --selection runs/h7r/CONFIRM_ID/selection.json --tactical runs/h7r/CONFIRM_ID/tactical.json \
+  --timing runs/h7r/CONFIRM_ID/timing.json --output runs/h7r/CONFIRM_ID/verdict.json
+```
+
+**검증**
+
+`tests/test_h7r_confirm.py`(20개)를 추가하고, 기존 R1 테스트를 새 동작에 맞췄다. 모두 fixture · stand-in 모델 · mock 실행기를 쓴다. 실제 GPU 모델, 등록 Rapfi, 전체 pilot, H-conf 생성, 확인 Arena는 실행하지 않았다.
+
+- 구조적 `abnormal_end` 정규화
+  - 고정 fixture `tests/fixtures/h7r_abnormal_end_branch.json`을 쓴다. 합성 기보이고 RenjuNet 자료가 아니다. 224수 뒤 흑 차례이고, 빈 점 (5, 12)가 장목 금수다.
+  - 세 정책(`evaluation_draw` · `unresolved` · 정책 없음)에서 각각 다르게 처리되는지 본다. 원본 INVALID 기록이 보존되는지도 본다.
+- 거부: 조건 불일치, 변조(불법 수 · 길이 · 고정 수 · ply · 점수), 실행 실패 사유 검사
+- 정책 계산
+  - 한쪽 · 양쪽 미해결의 최악값
+  - 관측 단위 비율(공유 분기 포함)
+  - 상한 경계(2/40, 1/20)와 초과, 관측 0개, 최소 실측 관측 수, 정책에 없는 실패
+  - INVALID를 버리면 통과하지만 보수적으로 대체하면 통과하지 못하는 사례
+- tactical과 판정 통합
+  - cycle 메타데이터가 없는 후보로 `tactical` 생성 → 검증 → `judge` PROMOTE까지 간다.
+  - 다른 계약 · 모델 · probe · 코드 commit의 tactical, 과거 형식 tactical, 서로 다른 commit의 arm을 거부한다.
+- ledger
+  - 증거 누락 · 파일 부재 · 검증 실패 뒤 ledger가 바뀌지 않는다. 증거를 갖춰 다시 실행하면 정상 판정된다.
+  - 동일 입력의 재계산은 허용하고, 확정 후 입력 변경은 거부한다.
+  - `bind_all`은 충돌을 먼저 검사한다(일부만 기록되지 않는다).
+  - `selection-source`는 평가 전에 H-conf를 예약하고, 중단 후 재개하며, 다른 계약의 사용을 거부한다.
+  - 실제 ROOT에 `--allow-dirty`로 쓰는 경로를 차단한다.
+- 후보 금수와 champion 기준 arm 오류를 다르게 분류한다(opponent 불법 수 포함).
+
+결과
+- R1 묶음(`test_h7r_*` 6개 파일): 58개 모두 통과
+- 기존 경로를 포함한 회귀(`test_h7*`, `test_tb_v3*`, `test_h6_labels`, `test_track_b*`, `test_canonical*`): 414개 실행, 412개 통과, 2개 skip
+  - skip 2개는 실제 frozen H3 / H6 checkpoint가 필요한 `test_tb_v3_net` 테스트다. 코드 실패가 아니다.
+  - 이 실행에는 `test_h7r_confirm`이 `JudgeTest`를 이름으로 가져와 2개가 중복 실행된 것이 포함돼 있다. 그 import를 고친 뒤 R1 묶음만 다시 실행했다(58개 통과).
+- frozen checker
+  - `check_track_b_frozen.py --no-models`: PASS
+  - 전체 checker: policy / value checkpoint 두 항목만 FAIL이다. 이 컨테이너에 `runs/h3_policy_64x4/best.pt` · `runs/h6_value_head_v3/best.pt`가 없기 때문이며, 코드 실패가 아니다. code · engine · runtime · TB-V3 identity · promotion · canonical 검사는 모두 PASS다.
+
+이 보완만으로 R1 완료나 기력 향상을 주장하지 않는다. 실제 모델로 만든 tactical 기록과 등록 Rapfi의 분기 기록은 본 확인 단계에서 처음 생긴다.

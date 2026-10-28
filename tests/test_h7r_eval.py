@@ -215,13 +215,15 @@ class JudgeTest(unittest.TestCase):
         def bound(record): return {'evidence_verified': True, 'models': models, **record}
         selection = bound(selection) if selection is not None else None
         timing = bound(timing) if timing is not None else None
-        return ev.judge(body, arms or self.arms(**self.GOOD), selection,
-                        bound({'verdict': 'PASS'}) if tactical is None else tactical, timing)
+        tactical = {'verdict': 'PASS'} if tactical is None else tactical
+        tactical = bound({'source_format': ev.TACTICAL_FORMAT, **tactical}) if tactical != 'missing' else None
+        return ev.judge(body, arms or self.arms(**self.GOOD), selection, tactical, timing)
 
     def test_promote_only_when_every_item_passes(self):
         out = self.judge()
         self.assertEqual((out['decision'], out['reasons']), ('PROMOTE', []), out)
         self.assertEqual(out['anchor']['status'], 'NONINFERIOR')
+        self.assertIsNone(out['keep_kind'])
 
     def test_every_failure_keeps_the_champion(self):
         with TemporaryDirectory() as tmp:
@@ -235,6 +237,8 @@ class JudgeTest(unittest.TestCase):
                 'SELECTION_INCONCLUSIVE': dict(selection={'status': 'INCONCLUSIVE'}),
                 'SELECTION_MISSING': dict(selection=None),
                 'GATE_TACTICAL': dict(tactical={'verdict': 'FAIL'}),
+                'TACTICAL_MISSING': dict(tactical='missing'),
+                'TIME_MISSING': dict(timing=None),
                 'GATE_TIME': dict(timing={'gate': {'pass': True, 'limits': {'mean_ratio_max': 1.5,
                                                                             'p95_ratio_max': 2.0}}}),
             }

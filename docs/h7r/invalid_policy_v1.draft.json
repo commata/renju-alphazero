@@ -1,0 +1,22 @@
+{
+ "status": "draft",
+ "applies_to": "new confirm contracts only, as selection.invalid_policy; a contract without it keeps the strict rule (any INVALID branch: INCONCLUSIVE). Past contracts, records and verdicts are not re-judged.",
+ "invalid_policy": {
+  "version": "h7r-invalid-v1",
+  "structural_abnormal_end": "evaluation_draw",
+  "unresolved": "worst_case",
+  "unresolved_reasons": [
+   "timeout",
+   "engine_error",
+   "engine_illegal",
+   "forbid_mismatch"
+  ],
+  "max_invalid_share": 0.05,
+  "denominator": "disagreement_observations"
+ },
+ "meaning": {
+  "structural_abnormal_end": "a replay-verified end with black to move, one empty point that is black-forbidden and no winner scores 0.5 in this evaluation only (an evaluation draw); the INVALID branch record stays as it is",
+  "unresolved": "an unresolved candidate branch scores 0, an unresolved champion branch 1",
+  "max_invalid_share": "proposed 0.05, not fixed: observations with an unresolved branch / all disagreement observations"
+ }
+}

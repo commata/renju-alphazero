@@ -28,9 +28,9 @@ def timing_record(body, sha, root):
             'gate': {'pass': True, 'limits': body['gates']['time']}}
 
 
-def tactical_record(body):
+def tactical_results():
+    """One side's raw tactical results that pass the v2 rule (fixture values, no model run)."""
     import h7c_arena as ar
-    from hybrid.h7r_eval import file_sha256
     from training.probes import load_probe_set
     from eval_h3_gate import B400_MUST_BLOCK
     from e1_evaluate import summarize, outcome
@@ -54,20 +54,35 @@ def tactical_record(body):
         e1rows.append({'key': p['key'], 'class': p['class'], 'truths_added': {},
                        'runs': [{**run, 'seed': seed} for seed in p['e1_seeds']]})
     metrics = summarize(e1rows, {p['key']: p['truths'] for p in e1positions})['metrics']
-    result = {'value_probes': {'device': 'cpu', 'inference': ar.FRESH_RULE['inference'], 'fresh': fresh,
-                               'p93_p94': {}},
-              'must_block': {'hits': total, 'total': total, 'anchor': B400_MUST_BLOCK, 'probe_sha256': psha},
-              'e1': {'rows': e1rows, 'metrics': metrics}}
-    return {'format': f'{ar.FORMAT}-tactical', 'git': {'commit': 'test', 'dirty': False},
-            'candidate': body['models'][body['roles']['candidate']]['identity'],
-            'parent': body['models'][body['roles']['champion']]['identity'], 'rule_version': ar.TACTICAL_RULE,
-            'files': {k: file_sha256(p) for k, p in {'value_probes': ar.PROBE_FILE, 'fresh_probes': ar.FRESH_PROBES,
-                                                    'policy_probes': ar.POLICY_PROBES, 'e1_manifest': ar.E1_MANIFEST}.items()},
-            'candidate_result': deepcopy(result), 'parent_result': deepcopy(result),
-            'judge': ar.tactical_judge(result, result)}
+    return {'value_probes': {'device': 'cpu', 'inference': ar.FRESH_RULE['inference'], 'fresh': fresh,
+                             'p93_p94': {}},
+            'must_block': {'hits': total, 'total': total, 'anchor': B400_MUST_BLOCK, 'probe_sha256': psha},
+            'e1': {'rows': e1rows, 'metrics': metrics}}
 
 
-def selection_source(root, body, confirm_sha):
+def tactical_record(body, sha=None, commit='test'):
+    """``sha`` given: an ``h7r-tactical-v1`` record of that contract (as ``h7r_eval.py tactical`` writes it);
+    otherwise a cycle-format record (candidate / parent), readable but never confirmation evidence."""
+    import h7c_arena as ar
+    from hybrid.h7r_eval import TACTICAL_FORMAT, file_sha256
+    result = tactical_results()
+    files = {k: file_sha256(p) for k, p in {'value_probes': ar.PROBE_FILE, 'fresh_probes': ar.FRESH_PROBES,
+                                           'policy_probes': ar.POLICY_PROBES, 'e1_manifest': ar.E1_MANIFEST}.items()}
+    ident = {r: body['models'][body['roles'][r]]['identity'] for r in ('candidate', 'champion')}
+    common = {'git': {'commit': commit, 'dirty': False}, 'rule_version': ar.TACTICAL_RULE, 'files': files,
+              'candidate_result': deepcopy(result), 'judge': ar.tactical_judge(result, result)}
+    if sha is None:
+        return {'format': f'{ar.FORMAT}-tactical', 'candidate': ident['candidate'], 'parent': ident['champion'],
+                'parent_result': deepcopy(result), **common}
+    return {'format': TACTICAL_FORMAT, 'contract_id': body['contract_id'], 'contract_sha256': sha,
+            'roles': {r: body['roles'][r] for r in ('candidate', 'champion')}, 'device': 'cpu', **ident,
+            'champion_result': deepcopy(result), **common}
+
+
+def selection_source(root, body, confirm_sha, candidate_moves=None, branch_records=None):
+    """Bound selection evidence over 25 H-conf fixture games; the disagreement is at ply 8 (the champion's five).
+    ``candidate_moves``: game index -> the candidate's ply-8 move (default [7, 6], also a five); ``branch_records``:
+    fixed move (tuple) -> the branch record's fields (default: a VALID five, which only a winning move is)."""
     import h7c_labels as lab
     import h7c_selfplay as sp
     import h7r_holdout as ho
@@ -108,7 +123,7 @@ def selection_source(root, body, confirm_sha):
     for g in raw:
         plies = []
         for p in g['plies']:
-            move = [7, 6] if p['ply'] == 8 else p['engine_move']
+            move = (candidate_moves or {}).get(g['game_index'], [7, 6]) if p['ply'] == 8 else p['engine_move']
             plies.append({'ply': p['ply'], 'color': p['color'], 'actor_route': p['route'], 'actor_move': p['engine_move'],
                           'sets': {'candidate': {'engine_move': move, 'route': p['route'], 'visits': p['visits']},
                                    'champion': {'engine_move': p['engine_move'], 'route': p['route'], 'visits': p['visits']}}})
@@ -119,9 +134,9 @@ def selection_source(root, body, confirm_sha):
     spath.write_text(''.join(json.dumps(r)+'\n' for r in records))
     bid = {'source': ident, 'sensitivity_sha256': ev.file_sha256(spath),
            'holdout_binding_sha256': ev.file_sha256(cache/'holdout.json'), 'engine': engine}
-    branches = [{'key': k, 'identity_sha256': ad.sha_json(bid), 'status': 'VALID', 'score': 1.,
-                 'ply': 8, 'move': v['move'], 'length': 9, 'winner': 'black', 'continuation': []}
-                for k, v in ad.branch_table(obs).items()]
+    five = {'status': 'VALID', 'score': 1., 'length': 9, 'winner': 'black', 'continuation': []}
+    branches = [{'key': k, 'identity_sha256': ad.sha_json(bid), 'ply': 8, 'move': v['move'],
+                 **(branch_records or {}).get(tuple(v['move']), five)} for k, v in ad.branch_table(obs).items()]
     bpath = folder / 'branches.jsonl'
     bpath.write_text(''.join(json.dumps(r)+'\n' for r in branches))
     evidence = {'format': 'h7r-selection-evidence-v1', 'contract_sha256': confirm_sha, 'engine': engine, 'source_git': ident['git'],

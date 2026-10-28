@@ -49,6 +49,37 @@ def check_model_identity(identity):
 CONFIRM_KEYS = {'informative': ('kind', 'm'), 'anchor': ('model', 'margin'),
                 'selection': ('margin', 'alpha', 'min_observations', 'holdout_contract_sha256', 'engine'),
                 'gates': ('time', 'tactical_rule', 'forbidden_errors')}
+TACTICAL_FORMAT = 'h7r-tactical-v1'  # the only tactical source a confirmation judgment accepts
+
+# Selection INVALID policy (``selection.invalid_policy``, optional, versioned). Without it a confirmation keeps the
+# strict rule: any INVALID branch makes the selection INCONCLUSIVE. Execution failures are the Rapfi branch runner's
+# (``h7c_adjudicate.play_branch``) reasons after which the outcome is unknown; any other INVALID reason
+# (``truncated``, ``fixed_move_illegal``) or a record its replay contradicts is a data error, never unresolved.
+INVALID_POLICY_VERSION = 'h7r-invalid-v1'
+EXECUTION_FAILURES = ('timeout', 'engine_error', 'engine_illegal', 'forbid_mismatch')
+STRUCTURAL_CHOICES = ('evaluation_draw', 'unresolved')
+INVALID_DENOMINATOR = 'disagreement_observations'
+INVALID_POLICY_KEYS = ('version', 'structural_abnormal_end', 'unresolved', 'unresolved_reasons',
+                       'max_invalid_share', 'denominator')
+
+
+def check_invalid_policy(policy) -> None:
+    """``h7r-invalid-v1``: every key explicit. ``structural_abnormal_end``: ``evaluation_draw`` scores a replay-verified
+    structural ``abnormal_end`` (black to move, one empty point, black-forbidden, no winner) 0.5 for this evaluation
+    only, or ``unresolved``; ``unresolved``: ``worst_case`` (a candidate branch 0, a champion branch 1);
+    ``unresolved_reasons``: the execution failures handled so; ``max_invalid_share`` over ``denominator``
+    (``disagreement_observations``: observations with an unresolved branch / all disagreement observations)."""
+    require(isinstance(policy, dict) and set(policy) == set(INVALID_POLICY_KEYS),
+            f'selection.invalid_policy needs exactly {INVALID_POLICY_KEYS}')
+    require(policy['version'] == INVALID_POLICY_VERSION, f"invalid policy version {policy['version']!r}")
+    require(policy['structural_abnormal_end'] in STRUCTURAL_CHOICES, 'invalid structural_abnormal_end choice')
+    require(policy['unresolved'] == 'worst_case', 'unresolved branches are scored worst_case only')
+    reasons = policy['unresolved_reasons']
+    require(isinstance(reasons, list) and reasons and len(set(reasons)) == len(reasons)
+            and set(reasons) <= set(EXECUTION_FAILURES), f'unresolved_reasons: a subset of {EXECUTION_FAILURES}')
+    share = policy['max_invalid_share']
+    require(type(share) in (int, float) and math.isfinite(share) and 0 <= share < 1, 'invalid max_invalid_share')
+    require(policy['denominator'] == INVALID_DENOMINATOR, f'invalid share denominator: {INVALID_DENOMINATOR}')
 
 
 def file_sha256(path) -> str:
@@ -146,6 +177,8 @@ def check_contract(contract: dict, path, root, check_files: bool = True) -> None
         if selection.get('min_observations') is not None:
             require(type(selection['min_observations']) is int and selection['min_observations'] > 0,
                     'invalid selection minimum observations')
+        if 'invalid_policy' in selection:
+            check_invalid_policy(selection['invalid_policy'])
         for limit in ((contract.get('gates') or {}).get('time') or {}).values():
             if limit is not None:
                 require(type(limit) in (int, float) and math.isfinite(limit) and limit > 0, 'invalid time limit')
@@ -332,6 +365,76 @@ def cluster_noninferiority(rows: list[dict], margin: float | None, alpha: float,
             'lower_one_sided': lower, 'upper_one_sided': upper, 'margin': margin, 'status': status}
 
 
+BRANCH_KINDS = ('resolved', 'structural', 'unresolved', 'unhandled')
+
+
+def worst_case_rows(observations: list[dict], outcomes: dict) -> list[dict]:
+    """One row per observation (none dropped): ``delta`` = candidate - champion with an unresolved candidate branch
+    at 0 and an unresolved champion branch at 1; ``resolved`` when neither branch is unresolved (a structural one
+    counts as resolved, flagged ``structural``)."""
+    require(all(o['key_a'] in outcomes and o['key_b'] in outcomes for o in observations), 'a branch without outcome')
+    require(all(v['kind'] in BRANCH_KINDS for v in outcomes.values()), 'unknown branch outcome kind')
+    rows = []
+    for o in observations:
+        a, b = outcomes[o['key_a']], outcomes[o['key_b']]
+        kinds = {a['kind'], b['kind']}
+        score_a = a['score'] if a['kind'] in ('resolved', 'structural') else 0.0
+        score_b = b['score'] if b['kind'] in ('resolved', 'structural') else 1.0
+        rows.append({'game': o['game'], 'delta': score_a - score_b,
+                     'resolved': not kinds & {'unresolved', 'unhandled'}, 'structural': 'structural' in kinds,
+                     'unhandled': 'unhandled' in kinds})
+    return rows
+
+
+def policy_selection(observations: list[dict], outcomes: dict, policy: dict, spec: dict, bootstrap: dict) -> dict:
+    """Selection quality under ``h7r-invalid-v1`` (``check_invalid_policy``). ``observations``: every disagreement
+    ``{'game', 'key_a', 'key_b'}`` (a: the candidate's branch, b: the champion's); ``outcomes``: branch key ->
+    ``{'kind', 'score', 'reason'}``, kind one of ``BRANCH_KINDS`` (``structural``: a verified structural abnormal_end
+    the policy scores 0.5; ``unhandled``: an execution failure the policy does not list).
+
+    No observation is dropped: an unresolved candidate branch scores 0 and an unresolved champion branch 1, so each
+    affected observation takes the worst delta for the candidate (both unresolved: -1); a branch shared by several
+    observations affects each. INCONCLUSIVE: no observation, an unhandled failure, an invalid share above the
+    policy's maximum, fewer resolved observations than ``min_observations`` (the imputed ones never fill it), or the
+    source-game bootstrap of every delta (worst-case ones included) not showing non-inferiority."""
+    from fractions import Fraction
+
+    rows = worst_case_rows(observations, outcomes)
+    used = {o[k]: outcomes[o[k]] for o in observations for k in ('key_a', 'key_b')}
+    unresolved = sum(not r['resolved'] for r in rows)
+    structural = sum(r['resolved'] and r['structural'] for r in rows)
+    unhandled = sum(r['unhandled'] for r in rows)
+    n = len(rows)
+    resolved = n - unresolved
+    share = Fraction(unresolved, n) if n else None
+    reasons = {}
+    for v in used.values():
+        if v['kind'] in ('unresolved', 'unhandled'):
+            reasons[v['reason']] = reasons.get(v['reason'], 0) + 1
+    counts = {'invalid_policy': policy, 'observations_total': n, 'resolved_observations': resolved,
+              'unresolved_observations': unresolved, 'structural_observations': structural,
+              'unhandled_observations': unhandled,
+              'invalid_share': None if share is None else round(float(share), 6),
+              'max_invalid_share': policy['max_invalid_share'],
+              'branches': {'used': len(used), 'resolved': sum(v['kind'] == 'resolved' for v in used.values()),
+                           'structural_abnormal_end': sum(v['kind'] == 'structural' for v in used.values()),
+                           'unresolved_by_reason': dict(sorted(reasons.items()))},
+              'normalized': {'abnormal_end_evaluation_draw': sum(v['kind'] == 'structural' for v in used.values()),
+                             'meaning': 'an evaluation draw (0.5) for this selection only; the INVALID source '
+                                        'branch records are unchanged'},
+              'worst_case': 'unresolved candidate branch 0, unresolved champion branch 1 '
+                            '(delta = candidate - champion)'}
+    reason = ('NO_OBSERVATIONS' if not n else 'UNHANDLED_INVALID' if unhandled
+              else 'INVALID_SHARE_EXCEEDED' if share > Fraction(str(policy['max_invalid_share']))
+              else 'TOO_FEW_RESOLVED' if resolved < spec['min_observations'] else None)
+    if reason is not None:
+        return {'observations': n, 'status': 'INCONCLUSIVE', 'reason': reason,
+                'mean_delta': round(fmean(r['delta'] for r in rows), 5) if rows else None, **counts}
+    result = cluster_noninferiority([{'game': r['game'], 'delta': r['delta']} for r in rows], spec['margin'],
+                                    spec['alpha'], bootstrap, spec['min_observations'])
+    return {**result, **counts}
+
+
 # --- sizing ------------------------------------------------------------------------------------------------------
 
 def wilson(k: int, n: int, z: float = 1.96) -> list[float]:
@@ -374,24 +477,50 @@ def sizing(summary_pairs: list[dict], stats: dict, delta: float, power: float, m
 
 # --- the promotion rule v3 ---------------------------------------------------------------------------------------
 
+CANDIDATE_ARMS = ('candidate_vs_champion', 'candidate_vs_anchor')  # the candidate is the tested side
+# Reasons that say the candidate failed a criterion; every other reason says the judgment could not be made
+# (missing, unset, invalid or inconclusive input). Either way the decision is KEEP_CHAMPION.
+CANDIDATE_FAILURES = ('NOT_SUPERIOR', 'ANCHOR_INFERIOR', 'SELECTION_INFERIOR', 'GATE_TACTICAL', 'GATE_FORBIDDEN',
+                      'GATE_TIME')
+
+
+def arm_invalid_causes(arms: dict) -> list[dict]:
+    """Arms that cannot carry the judgment: an opponent's illegal move (no score is given for it), and the reference
+    arm ``champion_vs_anchor`` with an illegal move of the champion (a reference fault, not the candidate's)."""
+    out = [{'arm': r, 'cause': 'OPPONENT_ILLEGAL', 'pairs': arms[r]['summary']['opponent_illegal_pairs']}
+           for r in ROLE_ARMS if not arms[r]['summary']['valid']]
+    reference = arms['champion_vs_anchor']['summary']['tested_illegal']
+    if reference:
+        out.append({'arm': 'champion_vs_anchor', 'cause': 'CHAMPION_ILLEGAL_IN_REFERENCE_ARM', 'games': reference})
+    return out
+
+
 def judge(contract: dict, arms: dict, selection: dict | None, tactical: dict | None, timing: dict | None) -> dict:
     """PROMOTE only when every rule value is set and every item passes; anything else keeps the champion.
-    ``arms``: role -> {'table', 'summary'} for ``ROLE_ARMS``."""
+    ``arms``: role -> {'table', 'summary'} for ``ROLE_ARMS``. ``keep_kind`` tells a candidate failure
+    (``CANDIDATE_FAILURES``) from a judgment that could not be made; only the candidate's own illegal moves (in
+    ``CANDIDATE_ARMS``) fail its forbidden gate."""
     reasons = []
     missing = unset(contract)
     if missing:
         reasons.append('CONFIG_UNSET')
     summary = arms['candidate_vs_champion']['summary']
     informative = contract.get('informative') or {}
-    if not all(arms[r]['summary']['valid'] for r in ROLE_ARMS):
+    invalid_arms = arm_invalid_causes(arms)
+    if invalid_arms:
         reasons.append('ARM_INVALID')
     kind, m = informative.get('kind'), informative.get('m')
     if kind is not None and m is not None and summary[kind] < m:
         reasons.append('TOO_FEW_INFORMATIVE')
     if summary['lower_one_sided'] is None or not summary['lower_one_sided'] > 0:
         reasons.append('NOT_SUPERIOR')
-    anchor = anchor_difference(arms['candidate_vs_anchor']['table'], arms['champion_vs_anchor']['table'],
-                               contract['stats'], (contract.get('anchor') or {}).get('margin'))
+    same = ({p['opening_id'] for p in arms['candidate_vs_anchor']['table']['pairs']}
+            == {p['opening_id'] for p in arms['champion_vs_anchor']['table']['pairs']})
+    if invalid_arms and not same:  # an invalid pair left one anchor arm only: there is no paired difference
+        anchor = {'status': 'NOT_COMPUTED', 'reason': 'ARM_INVALID'}
+    else:
+        anchor = anchor_difference(arms['candidate_vs_anchor']['table'], arms['champion_vs_anchor']['table'],
+                                   contract['stats'], (contract.get('anchor') or {}).get('margin'))
     if anchor['status'] != 'NONINFERIOR':
         reasons.append(f"ANCHOR_{anchor['status']}")
     bound = lambda r: isinstance(r, dict) and r.get('evidence_verified') is True and r.get('models') == {
@@ -400,13 +529,26 @@ def judge(contract: dict, arms: dict, selection: dict | None, tactical: dict | N
     if sel != 'NONINFERIOR':
         reasons.append(f'SELECTION_{sel}')
     gates = contract.get('gates') or {}
-    gate = {'tactical': bound(tactical) and (tactical or {}).get('verdict') == 'PASS',
-            'forbidden': summary['tested_illegal'] == 0 and all(arms[r]['summary']['tested_illegal'] == 0
-                                                                 for r in ROLE_ARMS),
-            'time': bound(timing) and (timing or {}).get('gate', {}).get('pass') is True
-            and (timing or {}).get('gate', {}).get('limits') == gates.get('time')}
-    reasons += [f'GATE_{k.upper()}' for k, ok in gate.items() if not ok]
+    tactical_ok = bound(tactical) and (tactical or {}).get('source_format') == TACTICAL_FORMAT
+    timing_ok = bound(timing)
+    candidate_illegal = {r: arms[r]['summary']['tested_illegal'] for r in CANDIDATE_ARMS}
+    gate = {'tactical': tactical_ok and tactical.get('verdict') == 'PASS',
+            'forbidden': not any(candidate_illegal.values()),
+            'time': timing_ok and timing.get('gate', {}).get('pass') is True
+            and timing.get('gate', {}).get('limits') == gates.get('time')}
+    if not tactical_ok:
+        reasons.append('TACTICAL_MISSING')
+    if not timing_ok:
+        reasons.append('TIME_MISSING')
+    reasons += [f'GATE_{k.upper()}' for k, ok in gate.items() if not ok
+                and not (k == 'tactical' and not tactical_ok) and not (k == 'time' and not timing_ok)]
+    failed = [r for r in reasons if r in CANDIDATE_FAILURES
+              and not (invalid_arms and r in ('NOT_SUPERIOR', 'ANCHOR_INFERIOR'))]  # moot on invalid arms
     return {'decision': 'KEEP_CHAMPION' if reasons else 'PROMOTE', 'reasons': reasons, 'unset': missing,
+            'keep_kind': None if not reasons else 'CANDIDATE_FAILED' if failed else 'NOT_JUDGEABLE',
+            'reason_classes': {'candidate_failed': failed,
+                               'not_judgeable': [r for r in reasons if r not in failed]},
+            'arm_invalid': invalid_arms, 'candidate_illegal_games': candidate_illegal,
             'candidate_vs_champion': {k: summary[k] for k in ('pairs', 'score', 'improvement', 'ci95',
                                                                'lower_one_sided', 'move_split', 'score_split')},
             'anchor': anchor, 'selection': selection, 'gates': gate,

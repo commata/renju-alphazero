@@ -1,7 +1,12 @@
 """Validate gate evidence from source records. Status strings alone are never evidence.
 
 Imports of existing script readers/judges are lazy; no candidate factory is used
-here. This module never starts an engine or changes a champion.
+here. This module never starts an engine, writes the confirmation ledger or changes a
+champion: verification is read-only, and the caller binds the ledger afterwards.
+
+Boundary: recorded measurements are trusted as measured. Fresh-probe values, must_block
+hits and timing samples are checked for identity, completeness, form and the verdict
+they imply, but re-running the models is not part of the offline verification.
 """
 from copy import deepcopy
 import json
@@ -9,6 +14,8 @@ import math
 from pathlib import Path
 
 from . import h7r_eval as ev
+
+LEGACY_TACTICAL = ('h7c-arena-v1-tactical', 'h7c-nmask-arena-v1-tactical')  # read, never confirmation evidence
 
 
 def role_models(contract):
@@ -19,28 +26,51 @@ def verified(contract, **result):
     return {'evidence_verified': True, 'models': role_models(contract), **result}
 
 
-def tactical(record, contract):
+def tactical(record, contract, sha=None, commit=None, confirmation=False):
+    """A tactical record's verdict recomputed from its raw checks.
+
+    ``h7r-tactical-v1`` (``scripts/h7r_eval.py tactical``): the contract's SHA and roles, the candidate / champion
+    identities. The cycle and NMASK formats stay readable (candidate / parent) but are refused when
+    ``confirmation``: a past record is never re-bound to a new contract. ``commit``: the Arena arms' clean commit,
+    which the record's code commit must equal."""
     import h7c_arena as ar
     from training.probes import load_probe_set
     from e1_evaluate import summarize, outcome, CLEAR
 
+    ev.require(isinstance(record, dict), 'tactical record is not a JSON object')
     expected_files = {name: ev.file_sha256(path) for name, path in {
         'value_probes': ar.PROBE_FILE, 'fresh_probes': ar.FRESH_PROBES,
         'policy_probes': ar.POLICY_PROBES, 'e1_manifest': ar.E1_MANIFEST}.items()}
     models = role_models(contract)
-    ev.require(record.get('format') in (f'{ar.FORMAT}-tactical', 'h7c-nmask-arena-v1-tactical')
-               and record.get('candidate') == models['candidate'] and record.get('parent') == models['champion'],
-               'tactical record is not of the candidate and champion')
+    fmt = record.get('format')
+    if fmt == ev.TACTICAL_FORMAT:
+        ev.require(sha is not None and record.get('contract_sha256') == sha
+                   and record.get('contract_id') == contract.get('contract_id'), 'tactical record of another contract')
+        ev.require(record.get('roles') == {r: contract['roles'][r] for r in ('candidate', 'champion')}
+                   and record.get('candidate') == models['candidate'] and record.get('champion') == models['champion'],
+                   'tactical record is not of the candidate and champion')
+        result_keys = ('candidate_result', 'champion_result')
+    else:
+        ev.require(not confirmation, f'a confirmation takes only {ev.TACTICAL_FORMAT} records made for its contract '
+                                     '(cycle and NMASK records are read, never re-bound)')
+        ev.require(fmt in LEGACY_TACTICAL and record.get('candidate') == models['candidate']
+                   and record.get('parent') == models['champion'],
+                   'tactical record is not of the candidate and champion')
+        result_keys = ('candidate_result', 'parent_result')
     ev.require(record.get('rule_version') == contract['gates']['tactical_rule'] == ar.TACTICAL_RULE,
                'tactical rule differs')
-    ev.require(record.get('files') == expected_files and (record.get('git') or {}).get('commit')
-               and (record.get('git') or {}).get('dirty') is False,
+    git = record.get('git') or {}
+    ev.require(record.get('files') == expected_files and git.get('commit') and git.get('dirty') is False,
                'tactical probes or code provenance differ')
+    if confirmation:
+        ev.require(commit is not None and git['commit'] == commit,
+                   'tactical code commit differs from the Arena arms\' commit')
     fresh_probes = json.loads(ar.FRESH_PROBES.read_text())['probes']
     e1_positions = json.loads(ar.E1_MANIFEST.read_text())['positions']
     policy_probes, policy_sha = load_probe_set(ar.POLICY_PROBES)
     sides = []
-    for side in ('candidate_result', 'parent_result'):
+    for side in result_keys:
+        ev.require(isinstance(record.get(side), dict), f'tactical record has no {side}')
         source = deepcopy(record[side])
         vp = source['value_probes']
         fresh = vp['fresh']
@@ -88,7 +118,8 @@ def tactical(record, contract):
         sides.append(source)
     result = ar.tactical_judge(*sides)
     ev.require(record.get('judge') == result, 'tactical verdict does not match raw checks')
-    return verified(contract, **result)
+    return verified(contract, **result, source_format=fmt, contract_sha256=record.get('contract_sha256'),
+                    code_commit=git['commit'])
 
 
 def time_statistics(values):
@@ -133,17 +164,109 @@ def timing(record, contract, sha, root):
     return verified(contract, ratio=ratios, gate=gate)
 
 
+# --- selection branches ------------------------------------------------------------------------------------------
+
+def structural_failures(board) -> list[str]:
+    """The conditions of a structural ``abnormal_end`` that this final position does not meet (empty: it is one):
+    over without a winner, black to move, exactly one empty point, no legal move, that point black-forbidden."""
+    from renju import BLACK
+    from renju.rules import EMPTY, SIZE, forbidden_reason, legal_black_points
+
+    empty = [(r, c) for r in range(SIZE) for c in range(SIZE) if board.board[r][c] == EMPTY]
+    out = []
+    if not board.done:
+        out.append('the game is not over')
+    if board.winner is not None:
+        out.append('the game has a winner')
+    if board.to_play != BLACK:
+        out.append('white is to move')
+    if len(empty) != 1:
+        out.append(f'{len(empty)} empty points, not one')
+    if legal_black_points(board.board):
+        out.append('black has a legal move')
+    if len(empty) == 1 and not forbidden_reason(board.board, *empty[0]):
+        out.append('the last empty point is not black-forbidden')
+    return out
+
+
+def _replay_branch(result: dict, task: dict):
+    from renju import Game, IllegalMove
+
+    ev.require(result.get('ply') == len(task['moves']) and result.get('move') == task['move'], 'wrong fixed branch')
+    continuation = result.get('continuation')
+    ev.require(isinstance(continuation, list) and all(
+        isinstance(m, list) and len(m) == 2 and all(type(x) is int and 0 <= x < 15 for x in m) for m in continuation),
+        'branch continuation is not a move list')
+    board = Game()
+    try:
+        for move in task['moves']:
+            board.play(*move)
+        mover = board.to_play
+        for move in [task['move'], *continuation]:
+            board.play(*move)
+    except IllegalMove as exc:
+        raise ValueError(f"branch {result['key'][:12]}: its replay has an illegal move ({exc})") from exc
+    ev.require(result.get('length') == len(board.history), 'branch length differs from its replay')
+    return board, mover
+
+
+def branch_outcome(result: dict, task: dict, policy: dict | None) -> dict:
+    """One branch record replayed (prefix, fixed move, continuation): ``{'kind', 'score', 'reason'}`` for
+    ``h7r_eval.policy_selection``. Data errors (refused, never unresolved): a record its replay contradicts, an
+    INVALID reason that is no execution failure, an ``abnormal_end`` that is not structural, an execution failure
+    after the game was over. Without a policy (the strict rule) every INVALID branch is unresolved."""
+    import h7c_adjudicate as ad
+    from renju import BLACK
+
+    board, mover = _replay_branch(result, task)
+    status, reason = result.get('status'), result.get('reason')
+    if status == 'VALID':
+        score = ad.score_for(mover, board)
+        winner = None if board.winner is None else 'black' if board.winner == BLACK else 'white'
+        ev.require(board.done and (board.winner is not None or len(board.history) == 225)
+                   and result.get('winner') == winner and result.get('score') == score,
+                   'adjudication outcome differs from replay')
+        return {'kind': 'resolved', 'score': score, 'reason': None}
+    ev.require(status == 'INVALID' and result.get('score') is None, 'branch status / score malformed')
+    if reason == 'abnormal_end':
+        failures = structural_failures(board)
+        ev.require(not failures, f"branch {result['key'][:12]}: abnormal_end is not structural ({'; '.join(failures)})")
+        if policy is not None and policy['structural_abnormal_end'] == 'evaluation_draw':
+            return {'kind': 'structural', 'score': 0.5, 'reason': reason}
+        return {'kind': 'unresolved', 'score': None, 'reason': reason}
+    ev.require(reason in ev.EXECUTION_FAILURES,
+               f'INVALID reason {reason!r} is a data error in a confirmation, not an execution failure')
+    ev.require(not board.done, f'{reason} recorded after the game was over')
+    if reason == 'engine_illegal':
+        move = result.get('move_at')
+        ev.require(isinstance(move, list) and len(move) == 2 and tuple(move) not in set(board.legal_moves()),
+                   'engine_illegal names a legal move')
+    elif reason == 'forbid_mismatch':
+        from agents.external_engine import our_forbidden_points
+        ours = our_forbidden_points(board)
+        mine, theirs = ({tuple(m) for m in result.get(k) or []} for k in ('ours_only', 'engine_only'))
+        ev.require(board.to_play == BLACK and result.get('ply_at') == len(board.history) and (mine or theirs)
+                   and mine <= ours and not theirs & ours, 'forbid_mismatch differs from our forbidden points')
+    handled = policy is None or reason in policy['unresolved_reasons']
+    return {'kind': 'unresolved' if handled else 'unhandled', 'score': None, 'reason': reason}
+
+
 def selection(path, contract, sha, root):
     """Rebuild deltas from complete holdout sensitivity and replayed Rapfi branch records.
 
     The manifest references a sealed H-conf cache, sensitivity JSONL and branch
     JSONL. Branch identities bind their source hashes and the registered engine;
     all observations are derived, never selected from a user-supplied delta list.
+    INVALID branches follow ``selection.invalid_policy`` (``h7r_eval.policy_selection``)
+    or, without one, the strict rule (any INVALID branch: INCONCLUSIVE).
+    Read-only: an H-conf already bound to another confirmation is refused here, and
+    the caller binds it.
     """
     import h7r_holdout as ho
     import h7c_labels as lab
     import h7c_adjudicate as ad
-    from renju import Game, BLACK
+    from renju import Game
+    from .h7r_ledger import conflicts
 
     path = Path(path)
     body = json.loads(path.read_text())
@@ -154,6 +277,8 @@ def selection(path, contract, sha, root):
     hc, hsha, games, _ = ho.checked_cache(cache_binding.parent, root)
     ev.require(hc['holdout']['split'] == 'conf' and hsha == contract['selection'].get('holdout_contract_sha256'),
                'selection requires the contracted H-conf, not development/training data')
+    clash = conflicts(root, [('holdout-use', hsha, {'confirmation': sha})])
+    ev.require(not clash, f'this H-conf is already bound to another confirmation ({clash})')
     engine = contract['selection'].get('engine')
     ev.require(isinstance(engine, dict) and engine.get('registered_engine') is True
                and engine.get('registered') == engine.get('actual') and body.get('engine') == engine,
@@ -199,41 +324,28 @@ def selection(path, contract, sha, root):
     identity_sha = ad.sha_json(branch_identity)
     results = [json.loads(line) for line in bpath.read_text().splitlines() if line.strip()]
     table = ad.branch_table(observations)
-    ev.require(len(results) == len(table) and {r['key'] for r in results} == set(table),
+    ev.require(len(results) == len(table) and {r.get('key') for r in results} == set(table),
                'missing/duplicate/extra adjudication branches')
-    valid = {}
-    for result in results:
-        task = table[result['key']]
-        ev.require(result.get('identity_sha256') == identity_sha, 'adjudication identity differs')
-        if result.get('status') != 'VALID':
-            continue
-        board = Game()
-        for move in task['moves']:
-            board.play(*move)
-        mover = board.to_play
-        ev.require(result['ply'] == len(task['moves']) and result['move'] == task['move'], 'wrong fixed branch')
-        for move in [task['move'], *result['continuation']]:
-            board.play(*move)
-        score = ad.score_for(mover, board)
-        winner = None if board.winner is None else 'black' if board.winner == BLACK else 'white'
-        ev.require(board.done and (board.winner is not None or len(board.history) == 225) and result['length'] == len(board.history) and result['winner'] == winner
-                   and result['score'] == score, 'adjudication outcome differs from replay')
-        valid[result['key']] = score
-    rows = []
-    invalid = 0
-    for o in observations:
-        ka, kb = (ad.branch_key(o['moves'], o[f'move_{side}']) for side in ('a', 'b'))
-        if ka not in valid or kb not in valid:
-            invalid += 1
-        else:
-            rows.append({'game': o['game'], 'delta': valid[ka] - valid[kb]})
     spec = contract['selection']
-    result = ev.cluster_noninferiority(rows, spec['margin'], spec['alpha'], contract['stats']['bootstrap'],
-                                     spec.get('min_observations', 1))
-    # No outcome-dependent dropping: invalid branches cannot provide a confirmation certificate.
-    if invalid:
-        result.update(status='INCONCLUSIVE', reason='INVALID_BRANCHES')
-    from .h7r_ledger import bind
-    bind(root, 'holdout-use', hsha, {'confirmation': sha})
-    return verified(contract, **result, observations_total=len(observations), invalid=invalid,
-                    contract_sha256=sha, evidence_sha256=ev.file_sha256(path))
+    policy = spec.get('invalid_policy')
+    outcomes = {}
+    for result in results:
+        ev.require(result.get('identity_sha256') == identity_sha, 'adjudication identity differs')
+        outcomes[result['key']] = branch_outcome(result, table[result['key']], policy)
+    keyed = [{'game': o['game'], **{f'key_{s}': ad.branch_key(o['moves'], o[f'move_{s}']) for s in ('a', 'b')}}
+             for o in observations]
+    if policy is None:
+        rows = [{'game': o['game'], 'delta': outcomes[o['key_a']]['score'] - outcomes[o['key_b']]['score']}
+                for o in keyed if outcomes[o['key_a']]['kind'] == outcomes[o['key_b']]['kind'] == 'resolved']
+        invalid = len(keyed) - len(rows)
+        result = ev.cluster_noninferiority(rows, spec['margin'], spec['alpha'], contract['stats']['bootstrap'],
+                                         spec.get('min_observations', 1))
+        # No outcome-dependent dropping: without a policy, invalid branches give no confirmation certificate.
+        if invalid:
+            result.update(status='INCONCLUSIVE', reason='INVALID_BRANCHES')
+        result.update(invalid_policy=None, observations_total=len(keyed), invalid=invalid)
+    else:
+        result = ev.policy_selection(keyed, outcomes, policy, spec, contract['stats']['bootstrap'])
+        result['invalid'] = result['unresolved_observations']
+    return verified(contract, **result, contract_sha256=sha, holdout_contract_sha256=hsha,
+                    evidence_sha256=ev.file_sha256(path))
