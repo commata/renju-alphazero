@@ -1,0 +1,226 @@
+{
+ "format": "h7c-sensitivity-v1-summary",
+ "identity": {
+  "format": "h7c-sensitivity-v1",
+  "salt": "h7c-sensitivity-v1",
+  "selfplay_jsonl_sha256": "ca91d706299c5d0729f69fd3372f790812181258e49ebcac2d8bb1f944cc7831",
+  "evidence_sha256": "b16da6b1da0650491ca79f538cf450e51a920b74c541284f762fc81b68e0b45d",
+  "selfplay": {
+   "cycle": 8,
+   "run_seed": 8808,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "value_device": "cuda",
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   },
+   "model_hash": "d490b1ba1ae5487f2b2f4ab499919c14920f6125d22e39af70ec67c066fff7de",
+   "generator_git": {
+    "commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf",
+    "dirty": false
+   }
+  },
+  "games_sample": 800,
+  "sample_sha256": "62473c4eeab29d1da46cdd05516e4d8bfd7ebe1ee22f44a91cc6372236f0b822",
+  "models": {
+   "c5": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   },
+   "c8": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+    "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+   },
+   "mask": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "8efe85866378f30bc84593b1270a485937c4ffda549feaa8b750ba47053bfa4c",
+    "value_metadata_sha256": "0babe95ea797dd79c77f0efed37d1fa6e4ddc6451bb2a40211d0a3765b797d86"
+   }
+  },
+  "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+  "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+  "device": "cuda",
+  "git": {
+   "commit": "06a9106d1c5ae7a424f2672dfee111eef387cbb4",
+   "dirty": false
+  },
+  "sample_file": {
+   "sha256": "4b1d77d53387c3602b6755405074abb3a1626090f39eb89e6af8e78249c125f9",
+   "rule": "the listed games, in the listed order"
+  }
+ },
+ "jsonl_sha256": "97e9b8e343650b228a9c671246013449cc8b5e261bb8529fc66b2f50e2ceebf6",
+ "bootstrap": {
+  "samples": 2000,
+  "seed": 20261027
+ },
+ "actor_check": {
+  "model_set": "c5",
+  "plies": 33150,
+  "same_move": 33150,
+  "same_route": 33150,
+  "same_visits": 33150,
+  "reproduced": true
+ },
+ "comparisons": [
+  {
+   "pair": "mask:c8",
+   "games": 800,
+   "all_plies": {
+    "plies": 33150,
+    "different_moves": 599,
+    "share": 0.01807,
+    "ci95_games": [
+     0.01556,
+     0.02053
+    ]
+   },
+   "tree_plies": {
+    "plies": 15986,
+    "different_moves": 599,
+    "share": 0.03747,
+    "ci95_games": [
+     0.03343,
+     0.04121
+    ]
+   },
+   "route_different_share": 0.0,
+   "tree_js_mean": 0.00422,
+   "tree_chosen_q_abs_diff_mean": 0.01927,
+   "games_with_a_different_move": {
+    "games": 236,
+    "share": 0.295,
+    "first_ply_median": 17.0
+   },
+   "tree_plies_by_side": {
+    "black": {
+     "plies": 8260,
+     "different_moves": 268,
+     "share": 0.03245,
+     "ci95_games": [
+      0.0281,
+      0.03679
+     ]
+    },
+    "white": {
+     "plies": 7726,
+     "different_moves": 331,
+     "share": 0.04284,
+     "ci95_games": [
+      0.03752,
+      0.04808
+     ]
+    }
+   }
+  },
+  {
+   "pair": "mask:c5",
+   "games": 800,
+   "all_plies": {
+    "plies": 33150,
+    "different_moves": 613,
+    "share": 0.01849,
+    "ci95_games": [
+     0.0163,
+     0.02057
+    ]
+   },
+   "tree_plies": {
+    "plies": 15986,
+    "different_moves": 613,
+    "share": 0.03835,
+    "ci95_games": [
+     0.03472,
+     0.04165
+    ]
+   },
+   "route_different_share": 0.0,
+   "tree_js_mean": 0.00481,
+   "tree_chosen_q_abs_diff_mean": 0.0246,
+   "games_with_a_different_move": {
+    "games": 285,
+    "share": 0.35625,
+    "first_ply_median": 10
+   },
+   "tree_plies_by_side": {
+    "black": {
+     "plies": 8260,
+     "different_moves": 279,
+     "share": 0.03378,
+     "ci95_games": [
+      0.02962,
+      0.03782
+     ]
+    },
+    "white": {
+     "plies": 7726,
+     "different_moves": 334,
+     "share": 0.04323,
+     "ci95_games": [
+      0.03833,
+      0.04808
+     ]
+    }
+   }
+  },
+  {
+   "pair": "c8:c5",
+   "games": 800,
+   "all_plies": {
+    "plies": 33150,
+    "different_moves": 855,
+    "share": 0.02579,
+    "ci95_games": [
+     0.02266,
+     0.02903
+    ]
+   },
+   "tree_plies": {
+    "plies": 15986,
+    "different_moves": 855,
+    "share": 0.05348,
+    "ci95_games": [
+     0.04846,
+     0.05834
+    ]
+   },
+   "route_different_share": 0.0,
+   "tree_js_mean": 0.0072,
+   "tree_chosen_q_abs_diff_mean": 0.03305,
+   "games_with_a_different_move": {
+    "games": 331,
+    "share": 0.41375,
+    "first_ply_median": 11
+   },
+   "tree_plies_by_side": {
+    "black": {
+     "plies": 8260,
+     "different_moves": 397,
+     "share": 0.04806,
+     "ci95_games": [
+      0.04228,
+      0.05383
+     ]
+    },
+    "white": {
+     "plies": 7726,
+     "different_moves": 458,
+     "share": 0.05928,
+     "ci95_games": [
+      0.05342,
+      0.06543
+     ]
+    }
+   }
+  }
+ ],
+ "reading": "the behaviour of these model sets on this position sample (not a bound for other models)"
+}
