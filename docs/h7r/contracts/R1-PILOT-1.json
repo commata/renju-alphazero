@@ -1,0 +1,297 @@
+{
+ "format": "h7r-eval-contract-v1",
+ "contract_id": "R1-PILOT-1",
+ "purpose": "pilot",
+ "status": "draft",
+ "meaning": "calibration only: the suites, the two information counts, the pair SD and the positive control; it judges no model, changes no champion and is not rerun until a result",
+ "models": {
+  "c5": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  },
+  "c8": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/c8/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+    "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+   }
+  },
+  "mask": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/nmask/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "8efe85866378f30bc84593b1270a485937c4ffda549feaa8b750ba47053bfa4c",
+    "value_metadata_sha256": "0babe95ea797dd79c77f0efed37d1fa6e4ddc6451bb2a40211d0a3765b797d86"
+   }
+  },
+  "orig": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h6_value_head_v3/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+    "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+   }
+  }
+ },
+ "arms": [
+  {
+   "name": "O0_c8_vs_c5",
+   "tested": {
+    "model": "c8",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8781,
+   "pairing": "O0",
+   "suite": {
+    "path": "docs/h7r/suites/O0.json",
+    "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+   }
+  },
+  {
+   "name": "O0_mask_vs_c5",
+   "tested": {
+    "model": "mask",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8781,
+   "pairing": "O0",
+   "suite": {
+    "path": "docs/h7r/suites/O0.json",
+    "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+   }
+  },
+  {
+   "name": "O0_c5_vs_orig",
+   "tested": {
+    "model": "c5",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "orig",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8781,
+   "pairing": "O0",
+   "suite": {
+    "path": "docs/h7r/suites/O0.json",
+    "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+   }
+  },
+  {
+   "name": "O0_c5s400_vs_c5",
+   "tested": {
+    "model": "c5",
+    "budget": 8
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8781,
+   "pairing": "O0",
+   "suite": {
+    "path": "docs/h7r/suites/O0.json",
+    "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+   }
+  },
+  {
+   "name": "O1_c8_vs_c5",
+   "tested": {
+    "model": "c8",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8782,
+   "pairing": "O1",
+   "suite": {
+    "path": "docs/h7r/suites/O1.json",
+    "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
+   }
+  },
+  {
+   "name": "O1_mask_vs_c5",
+   "tested": {
+    "model": "mask",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8782,
+   "pairing": "O1",
+   "suite": {
+    "path": "docs/h7r/suites/O1.json",
+    "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
+   }
+  },
+  {
+   "name": "O1_c5_vs_orig",
+   "tested": {
+    "model": "c5",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "orig",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8782,
+   "pairing": "O1",
+   "suite": {
+    "path": "docs/h7r/suites/O1.json",
+    "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
+   }
+  },
+  {
+   "name": "O1_c5s400_vs_c5",
+   "tested": {
+    "model": "c5",
+    "budget": 8
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8782,
+   "pairing": "O1",
+   "suite": {
+    "path": "docs/h7r/suites/O1.json",
+    "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
+   }
+  },
+  {
+   "name": "O2_c8_vs_c5",
+   "tested": {
+    "model": "c8",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8783,
+   "pairing": "O2",
+   "suite": {
+    "path": "docs/h7r/suites/O2.json",
+    "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
+   }
+  },
+  {
+   "name": "O2_mask_vs_c5",
+   "tested": {
+    "model": "mask",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8783,
+   "pairing": "O2",
+   "suite": {
+    "path": "docs/h7r/suites/O2.json",
+    "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
+   }
+  },
+  {
+   "name": "O2_c5_vs_orig",
+   "tested": {
+    "model": "c5",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "orig",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8783,
+   "pairing": "O2",
+   "suite": {
+    "path": "docs/h7r/suites/O2.json",
+    "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
+   }
+  },
+  {
+   "name": "O2_c5s400_vs_c5",
+   "tested": {
+    "model": "c5",
+    "budget": 8
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 100,
+   "seed": 8783,
+   "pairing": "O2",
+   "suite": {
+    "path": "docs/h7r/suites/O2.json",
+    "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
+   }
+  }
+ ],
+ "stats": {
+  "alpha_one_sided": 0.025,
+  "bootstrap": {
+   "samples": 20000,
+   "seed": 20261028,
+   "method": "percentile",
+   "unit": "opening pair"
+  },
+  "error_budget": {
+   "max_cycles": 3,
+   "per_cycle_alpha": 0.025,
+   "expected_false_promotions_max": 0.075
+  },
+  "delta": 0.03,
+  "power": 0.8
+ },
+ "suite_selection": {
+  "rank_by": null,
+  "colour_gap_max": null,
+  "tie": "the simpler suite: O0, then O2, then O1",
+  "note": "fixed before the pilot is played (docs/h7-rl-plan.md 2.2)"
+ },
+ "positive_control": {
+  "arms": [
+   "O0_c5s400_vs_c5",
+   "O1_c5s400_vs_c5",
+   "O2_c5s400_vs_c5"
+  ],
+  "report": "the measured effect and interval, once; a miss is reported with its cause (wide interval / suite / tool), never rerun to success"
+ }
+}

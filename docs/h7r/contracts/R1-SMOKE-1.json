@@ -1,0 +1,83 @@
+{
+ "format": "h7r-eval-contract-v1",
+ "contract_id": "R1-SMOKE-1",
+ "purpose": "pilot",
+ "status": "fixed",
+ "meaning": "a tool and cost smoke on the desktop; its games judge nothing",
+ "models": {
+  "c5": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  },
+  "c8": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/c8/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+    "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+   }
+  }
+ },
+ "arms": [
+  {
+   "name": "smoke_s50",
+   "tested": {
+    "model": "c8",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 2,
+   "seed": 8798,
+   "pairing": "O0",
+   "suite": {
+    "path": "docs/h7r/suites/O0.json",
+    "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+   }
+  },
+  {
+   "name": "smoke_s400",
+   "tested": {
+    "model": "c5",
+    "budget": 8
+   },
+   "opponent": {
+    "model": "c5",
+    "budget": 1
+   },
+   "pairs": 1,
+   "seed": 8799,
+   "pairing": "O0",
+   "suite": {
+    "path": "docs/h7r/suites/O0.json",
+    "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+   }
+  }
+ ],
+ "stats": {
+  "alpha_one_sided": 0.025,
+  "bootstrap": {
+   "samples": 20000,
+   "seed": 20261028,
+   "method": "percentile",
+   "unit": "opening pair"
+  },
+  "error_budget": {
+   "max_cycles": 3,
+   "per_cycle_alpha": 0.025,
+   "expected_false_promotions_max": 0.075
+  },
+  "delta": 0.03,
+  "power": 0.8
+ }
+}

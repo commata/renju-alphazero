@@ -1,0 +1,8475 @@
+{
+ "format": "h7r-opening-suite-v1",
+ "suite": "O1",
+ "rule": {
+  "moves": 5,
+  "stages": [
+   [
+    "white",
+    2
+   ],
+   [
+    "black",
+    2
+   ],
+   [
+    "white",
+    3
+   ],
+   [
+    "black",
+    3
+   ]
+  ],
+  "next": "white",
+  "kind": "random"
+ },
+ "next_to_move": "white",
+ "seed": 202610282,
+ "count": 300,
+ "openings": [
+  {
+   "index": 0,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "339f3fcb511bd730cb2b6639e2722e60828df6edadc17ecfbf219b2c5c8e7aea",
+   "position_id": "42e36d0fb9f107eb73f78157790594b91004d99bb29bc73e8e3e4d3e8b65dcc3",
+   "class_id": "81d7d290416b5bf24f0b18775ab86fbf57731fccfd38e794dab24733eff77e43"
+  },
+  {
+   "index": 1,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     4,
+     10
+    ]
+   ],
+   "history_id": "e564e09811a5bc26bf76b195a2d34b53c85fb377e3e6e0f0b2a28afa9482ff2b",
+   "position_id": "20885a45e7d2f0711ec5728d0d1ea3ff92f2a290e876058dd77d760d6fbf87cf",
+   "class_id": "9d81177b6d2ebe36ad7ead7efd9c532e46ff975793c8a5a974def53aaf3d86e4"
+  },
+  {
+   "index": 2,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "f440b6b29ec565e0a8e0b6ae4ec81dd5f7ea986468f005f73c5925c5a1307f72",
+   "position_id": "291b6df8bd00d78ac6876c478b20f6e2a15fb993984cc0ad148ac82f246d926d",
+   "class_id": "235f995aa5cd0a87795a83aa32f11bb39024b1f6222b89bf87413c86bd66cace"
+  },
+  {
+   "index": 3,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "97f3c6cb14e0601d981531d48f5b7bdf0cab77aa1e7984677de5164e2c59fe21",
+   "position_id": "37b181f3fe02244d280475e4c1d6aaa34d62c15171b0ac96082499b32cd75392",
+   "class_id": "0261c584c6447d8da6d048a387f1b160c575158bfa1e4b2473b036b9ce63bd5f"
+  },
+  {
+   "index": 4,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     9
+    ]
+   ],
+   "history_id": "4e210f7f3e83dfb8ed50694ac73ccc73d14ede180f25f734b4b3fdded411de25",
+   "position_id": "05dcb80c59478bf5d55b99b706512a26a4ebf7ed3399e33c909455002a97db22",
+   "class_id": "c314eb7c2bcd8bfe44f310f77f40b6c6d53f4fc829dcfd580188b7c312e94137"
+  },
+  {
+   "index": 5,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "history_id": "e35185d5052dec92be6197c6ddab0ff7af4bc9b83ad71f13067f3685af80c9c2",
+   "position_id": "61edf43c851a1526382cfc156978430386cd0620d09bafc92be70ff6bbcc32b6",
+   "class_id": "61edf43c851a1526382cfc156978430386cd0620d09bafc92be70ff6bbcc32b6"
+  },
+  {
+   "index": 6,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "history_id": "fb8b7304d190d03e9a46e9ca05bd48f42493cad34dfbb75295addfd46767ca66",
+   "position_id": "217c7956a07b94c01d7c8c4e9cd77d01be297fb711a6444e7d9c311f546fcff1",
+   "class_id": "122a8b10d37f408809ea79eda96b33bd13e0d6b807062eca6f390f871e75bf93"
+  },
+  {
+   "index": 7,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "d8c1d0aac247ae4684cb5ca81c21a785d6084aa89aeb000d24c716f6493b2fc3",
+   "position_id": "802d743fcee6eb4ec284bd405f788006c493382aabb2247eebd497adfd8d80cd",
+   "class_id": "b16be6c03b5091ee1793172792f4ee5c7042c57f24bd0e06da6250b93b831867"
+  },
+  {
+   "index": 8,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "5b1a5b98664f7bd0e3e063f3103e53cfb45392ac7044073a1b50bf8ed325e2c6",
+   "position_id": "8bddfde2045bf9d77347fd1208da054f96774599743d3d3d7c9fd3ba56a5246c",
+   "class_id": "3e71f7fe8a9666a120e4245fb4f9592c287fb610bac3891a0dfdab9051e4e602"
+  },
+  {
+   "index": 9,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "cc547c8cbac0ba161b487e95e1d4a73b5eb8689bca2aab976bfb5afa86a8d399",
+   "position_id": "7dbf11ede58c8f62129d22c13e6aa3e78757a4482cd09248efa7a3397a2f66c1",
+   "class_id": "522f37140c28960ae80c2a9e56e588439edc76f8361b309cabf331d023fa857c"
+  },
+  {
+   "index": 10,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "history_id": "882499dc91a676781bcab46b161cc24814132a48810191ffd438e15a036d2ba8",
+   "position_id": "2255e8666db684b6aa388616a016bd7478b5440db7264e9a9bf30a75f1ac2243",
+   "class_id": "60d2972871fc68666a8bc829b89cb40aac8043d8256dbefc2c6cff7226ec34d4"
+  },
+  {
+   "index": 11,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "cb6a2d273647f92ca1e1f394912609d1e892686ec08824c1d7b88109c3723625",
+   "position_id": "dbefe0e8ac2c1fafe91dcdebb7cc7ed375c718f5c9a9fd75628c134bf400afbe",
+   "class_id": "18c824f566463438074545a87719cdd9510182dada60d95146d666810cfdf19e"
+  },
+  {
+   "index": 12,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     4
+    ]
+   ],
+   "history_id": "0454eb7d36efa9b6ec6cf909792cce9a72e0d1dff005a072f2ef5faafea4071b",
+   "position_id": "60ccfe1f55333f9203f1c4194a2cdc6e79b0500a2801e3d3851a5965935632e1",
+   "class_id": "a9ad8120ecbeb2da98d9bf06db9532f31f6b02aafd3b6e279a53b5338d4f2622"
+  },
+  {
+   "index": 13,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     7
+    ]
+   ],
+   "history_id": "07f3d0bedc149ef4249b40a68af30049165fe68d442c4d51a11311965f110161",
+   "position_id": "3c7f7138196cf1a3e5a7e80d1521b48718a36a94b569c660bf645fb613c0b57f",
+   "class_id": "1b8abfa27e48d7df6d859f47bc1b4d595e22fc48e5b4d6e60b89ee56cf9cbfad"
+  },
+  {
+   "index": 14,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "ed15b0850b3be6de84f6e3728d20debc5acf7f0729dd836938095320ceac120a",
+   "position_id": "dc44e6612816aa795ed631e10d7bcd74e3c033fe1b9266562886fabe03f2abfe",
+   "class_id": "7f46cb0563cc7ee5eb2298272b11b9d692084ae9705c2d74deee6b67e37762aa"
+  },
+  {
+   "index": 15,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "bcaa0f3677d8ac56e646cb1909f69f6ea57d70453358caeb1153bcfe1ce1ca75",
+   "position_id": "1d1ffa3abe5b970a0733d728eb0b2182072cc7a372f8605e28272d1e518c7818",
+   "class_id": "0c6b42a1471656e8bfbfea1dffd6f9893d0838ae56a79d0c3592258ffee03fde"
+  },
+  {
+   "index": 16,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     6,
+     10
+    ]
+   ],
+   "history_id": "c9ef468cbf2b2dd341912b60c9d4e198042f1a26c938b10b35479e36567edcf1",
+   "position_id": "e0109fe859877a1a547d74f207a8d3128a78b0d0bfcf924b4a7c6a7fe335d574",
+   "class_id": "51ce268dbabc2b782fc09f4bd99bcf666b3bd50d5bc86e632bbdcf3c86c728be"
+  },
+  {
+   "index": 17,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "cc017834ee9e7fca0b300b5b6e38c3be195645ab5690f119124015c57247cd9a",
+   "position_id": "60507c5b67f7791ed53a2bd7bb89538fd1263b7e883ded1257cd18586308ccd8",
+   "class_id": "fee8067d84d69aa938d66f2177a79c8c73c9deee4fd430340dea46c4d58aaecf"
+  },
+  {
+   "index": 18,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     4,
+     6
+    ]
+   ],
+   "history_id": "b316f50cb7853c1d83b56b813f2f3356c13f2ee65dc04084569f8c33d3d398c2",
+   "position_id": "0448a74a39b170591fc50b6e2b241e0117067a4eb1a92391bdf509fa21e67309",
+   "class_id": "0448a74a39b170591fc50b6e2b241e0117067a4eb1a92391bdf509fa21e67309"
+  },
+  {
+   "index": 19,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "history_id": "31413095774377812b4411f57cbd9852b7ab4e9b0e12380de04ab168bb36f064",
+   "position_id": "d735966abe30ace17c6621ad2fbc14c340c5c05a69e157d49d39cda35a8a35eb",
+   "class_id": "8bb097c4cdfb2fd24df62ff86d755fd04dbb0ea321a307250b8dbca96d77ce02"
+  },
+  {
+   "index": 20,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     10,
+     4
+    ]
+   ],
+   "history_id": "fd6615c393bd5692af048c4e95e11f28afcf373634bfa8d3de8f81535dd2d6b9",
+   "position_id": "a3d34913a0dd4c3692b64e7a54170e89dd688bf9b51252318a472651ef575bb9",
+   "class_id": "b1bbf7ed8755b350a182a247e0f6f472a0b3cc1ed41b93dc672ffbf4353bf237"
+  },
+  {
+   "index": 21,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     4,
+     5
+    ]
+   ],
+   "history_id": "a3ffac2f87fe157afed60f336f304ee2f65a684873cbb797e0ed761b336c4946",
+   "position_id": "410c7463fca3576021b20d592ba339b4e806db32f5db8cc6835a7a18c0bf5c28",
+   "class_id": "410c7463fca3576021b20d592ba339b4e806db32f5db8cc6835a7a18c0bf5c28"
+  },
+  {
+   "index": 22,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     5,
+     6
+    ]
+   ],
+   "history_id": "dace64f7cfb24593d8ba135d6182d5cbfbed32277230d9fa0e37bb6ca0f56146",
+   "position_id": "2dd497b5568e3c32265ed2e3b9b28d129fbcb94894d8656185d2524020045a49",
+   "class_id": "2dd497b5568e3c32265ed2e3b9b28d129fbcb94894d8656185d2524020045a49"
+  },
+  {
+   "index": 23,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     4,
+     7
+    ]
+   ],
+   "history_id": "8be64cba7819edf6b4d1401625f5a2f89a0f1448094611ed31576e99513e35cb",
+   "position_id": "a2abb031bbe73c4f4fd91df53ad229b0bff557651d899a1b378c051d31be92d6",
+   "class_id": "81e005e3dab5b292463af0c29b9389890e9969e5acc7c568987ae2c22daa585a"
+  },
+  {
+   "index": 24,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     10
+    ]
+   ],
+   "history_id": "7767581cd4d3d67519d3d60c5f043d35da0b52908349b970a8f31ec3e5af8258",
+   "position_id": "ca19c92d61b424ebe02649abd9116582d51ec25919a6c14b738b91d1c034e614",
+   "class_id": "150dcb4d8166a1eebf7cb03742aa646fc03542b7c13d2b8f84af0a2fb6b41c0f"
+  },
+  {
+   "index": 25,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     4,
+     6
+    ]
+   ],
+   "history_id": "cfe6f48ef33e86020190d7ac3cc2371e7fe6a30e1a22daaa7384c8338bbbcbc6",
+   "position_id": "8edad5dda975ccfd4d443cb636e4e6dd4c1065be061eeb0c807915c357ab7777",
+   "class_id": "8edad5dda975ccfd4d443cb636e4e6dd4c1065be061eeb0c807915c357ab7777"
+  },
+  {
+   "index": 26,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "713bada560b80cd56575ab0301acc255a16dee426b9331065ee0228c3cc58f69",
+   "position_id": "9135140c85d9c967f314360045a184732f228414a9915b6198249fdc1d7379bd",
+   "class_id": "78893bfefbd398be02a6834b0c87d17a0161c6b58b676afe710f7f9c7a69205d"
+  },
+  {
+   "index": 27,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "dc9678621364369a7b851a86429ee8858700252bd954d897f065b986ee623129",
+   "position_id": "2b9a5783245640cae511a58f0b760b2636c51f01dcf0ca9cb409be94a2cce8da",
+   "class_id": "6c18d1752b45850e742ce89d7ed6302654efaecbeb7855645f96dafa5b3d18fe"
+  },
+  {
+   "index": 28,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     10,
+     7
+    ]
+   ],
+   "history_id": "3612db97ae14425a194e0d3cc8f20cdc6c8bef3d0e8f1067fec56f72aca20f7a",
+   "position_id": "edcb25d6c48d0372f8ba08bf35fa5a60e1ffdd65b71616a29be6208d2eba649e",
+   "class_id": "f47e854b9f51b7437784de95ab2e808778c27dde51dcd70d04e950fe9133d2f7"
+  },
+  {
+   "index": 29,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     4,
+     8
+    ]
+   ],
+   "history_id": "676b4a0a7b0ee2087efd4db8067e143664b9ee463009322dafb5b242626eb568",
+   "position_id": "725821d32801bf38fd242d71dd87d15ce0d6cf6a46fd3f035544c4e3c668e939",
+   "class_id": "d5af36298665afc1f3b02f6e2b5ca0a637a6a9b61dadad7191bb3e52250ecae6"
+  },
+  {
+   "index": 30,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "history_id": "89b99a9812d926dd99703dd77fe04375064e5cc23fc920b48aa93c81c6932a37",
+   "position_id": "60f35c465015fbc290d18dc6586a33b79aac3031cc19762830b192c38701846d",
+   "class_id": "1bf415f9915ddd83382cf7e875779ba5660382e3329d8f17d55585855d769953"
+  },
+  {
+   "index": 31,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "b1814d1935a9f3bdc1eb33c3cf986640bcda8d54fba3aa202d08adc5712eef5b",
+   "position_id": "b57d90d632aea43a82a27ee5a3cc42d9429338adefb367ff5f410a4f5e30f685",
+   "class_id": "3a5c211112b2da70a5391839143e3d460b59c827226e7b28be823ce5d4f5e88f"
+  },
+  {
+   "index": 32,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     4
+    ]
+   ],
+   "history_id": "c725b3cd26676de8cb3448f12c8fad38f34ab8f55b6469352d638814a393b557",
+   "position_id": "0a5794eba02b25f25ea5c5009458414b912bf472f06f8a23827c004377fed3a4",
+   "class_id": "2f8531b958d03f2f9dfcad0ef68df28b99c1933842d6bc6507a6fcd971846d72"
+  },
+  {
+   "index": 33,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     7
+    ]
+   ],
+   "history_id": "c6595db3c64d58fc0a2211650e0ff7462c5de34197014d8a9886380d97434119",
+   "position_id": "5c16486ec89e40b3c684eb509a858dbe017f2269e04fd4bd9c200ad260d5f063",
+   "class_id": "b75ac62819a58014dae09f81b170406e1fdb26d723dd4a539acce68a9135edd8"
+  },
+  {
+   "index": 34,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "957b9a3b82a034859359488806ed5e0096d6db05f5c3089f2d742ba3979cabab",
+   "position_id": "fe53ef8e12db6594afcf1823bce8f55c408cd1fe293d270a44bc547f24e61db7",
+   "class_id": "9017aacac587baecf1cebf1f99b0827734639d91d7aecbd185ebab5488f224fd"
+  },
+  {
+   "index": 35,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "history_id": "975883111dfca487f653f21c553d0a3dc639be06e97de9b1232a578c06d39585",
+   "position_id": "ea62325f7e4d6fa4fbced5e394ded22adda7ba5892fab20a35c16f351592ff5b",
+   "class_id": "bb547c21ee92c5d8a8e6f05302c84496f56ce85ddd9f0525da63b947114548a3"
+  },
+  {
+   "index": 36,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     8,
+     6
+    ]
+   ],
+   "history_id": "9d8e04acf2b523bc535928c3a7245b134d47fd268d101522e8aa8ae6efee0226",
+   "position_id": "5cbd921af4c56354249ec5321fbf5cd27e1bf154f3701aa117380bf109d145cd",
+   "class_id": "bf2d350d9972897243f63e6af8342bccc1ec9dd1bb27c9cde1526027a3f62bfd"
+  },
+  {
+   "index": 37,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "history_id": "0b08620df8adb6bc1b3008a003c6462d77c61f68922a84b370ae620290e72a6a",
+   "position_id": "dd30add807e1a760dbc927a0ba05e2121da10b2f990a07f9f807241c43bea56a",
+   "class_id": "79202b07c30ab98af36294e78eab0bddef3f8705ff34564344584aad28dbc459"
+  },
+  {
+   "index": 38,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     4
+    ]
+   ],
+   "history_id": "383b8f9a7e7f2e6c4a5987fe9baeba91e8cf9e69c1ec6350a2d68716d6f5774d",
+   "position_id": "6980674ce865f0ccaee0a2302d32c339c94f0f00cc68564a280deb2109b08b69",
+   "class_id": "912b6af07ee7fe11f726429dd6dc98a70c7f277d595196a527b1e7b47d75f6d6"
+  },
+  {
+   "index": 39,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     4,
+     10
+    ]
+   ],
+   "history_id": "862ddd20c290f66f63d796894803ff2c9b94a3691cd7b04759fe0114215377fd",
+   "position_id": "77e1b3831336bd8666bd2653878e703a12d9d3e43cbe84aed66982314afb90ae",
+   "class_id": "847d59f680637ea08a7af60b15b1835c26da4f3c020a13ee5deef58d60c548c2"
+  },
+  {
+   "index": 40,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "6ae2dfc4e57f8b5effaf184ce3c3fec8eadbea7cc9e7b143d4452e76891d1012",
+   "position_id": "2a86082fb8d1fea6960ae0700cd37811e3b3b23a4803757074930d0f69e6b03e",
+   "class_id": "f45a1dc0a9336f59ecea7b06a8c07b81a255a86632f5301604df4c41816cbac8"
+  },
+  {
+   "index": 41,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     4,
+     5
+    ]
+   ],
+   "history_id": "8e7c1cfb111b5b527a3ef2901f5ec1d2ef02cbf0cd669b544312138d687cb617",
+   "position_id": "178a51a1c483568380d8c623eddce5acfbc2750fefa973c2c867fe75dd1859da",
+   "class_id": "178a51a1c483568380d8c623eddce5acfbc2750fefa973c2c867fe75dd1859da"
+  },
+  {
+   "index": 42,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "689a80da74347b97f2039c699df63d45c20ba262871936a615970256473c0f63",
+   "position_id": "26e4522d7c52add2b378211082e73e3ee91c8eb0d9252a665fde443b70aa0d0d",
+   "class_id": "d0d44d6d2670f0e1a582a7c2b99eb886009265f2cacab0eb1f6c7064aada9278"
+  },
+  {
+   "index": 43,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "ae5aba48af3eefdcdcfd4e7d1ac4c97cad083b6a950e92861a8bac883ab616b7",
+   "position_id": "27095b4ee7d5708417150b111aff82f3d8a4cad1ee6e3c39f88817691b69e834",
+   "class_id": "27095b4ee7d5708417150b111aff82f3d8a4cad1ee6e3c39f88817691b69e834"
+  },
+  {
+   "index": 44,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "f086c6f9ab25d334a787f9e33b5c78e67af675d4cb26d7572c28bdd627d48fea",
+   "position_id": "d4df468d50244dd0c188bde8b57313bf1a9c25e12b16153abbb7eeb5ab7f3095",
+   "class_id": "24f6ac2a121d40c43185e75cc1d2ed85fc256e2467797981c20b528b1e5e6331"
+  },
+  {
+   "index": 45,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "7735dab3ed5f0c8db5694241cbe2a067d65bb85a0247c64d9d9a0afc580a990a",
+   "position_id": "6ea00818569e03df925bafada2580ba859024a858717da586e5b6c8d89af7800",
+   "class_id": "dd36ad74a7b1e609618c8e0459b4f7d9e9d217236327bb22f70136b9827add13"
+  },
+  {
+   "index": 46,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "history_id": "dd8ef073a5e6266cd2d0c467f524f6b085ef9dbdbca2e20bfc845e7570788434",
+   "position_id": "c74148e1d91af321f6596f9c3ac1ea3119807df889b77719edb747c71852e93f",
+   "class_id": "7db2b3d876fb9ccfb7c82cc2c3189f363a01ea8aec951647aa31ce7de48b53e6"
+  },
+  {
+   "index": 47,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "1305255bf4a457a94f843e798f5de3ba3a7b69126ed02e64494a519154e657ec",
+   "position_id": "93e9f8049133b82af2e2660962eab339a4ffc515c9abcf7902d81e919ae1c2cd",
+   "class_id": "28cd081aaae9516b886fc52dd59284cfbd5acd557bb748edb03d9ad843d77509"
+  },
+  {
+   "index": 48,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     9
+    ]
+   ],
+   "history_id": "09a6436701b5d372360cc998afebf90b350b86b83c9c4b4ade0b2418c34f79e9",
+   "position_id": "b0c37833911ea647832406b14539c310513a4cd4071ef89c1fe1e111c6a0aa9c",
+   "class_id": "ca965c7d318d1db0121f1f7ad6e5f0d7f28028a5fdd9698420313687157594ae"
+  },
+  {
+   "index": 49,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "de9e06127c7dbbc9b04ca85a6091abc3b5753ea819dd927e6cf654b85993e98e",
+   "position_id": "c72ee3284e102f997e188861e6ea59331bf0d7dd4b7f647fb75495cde3f7a4d5",
+   "class_id": "dfb25781a9ecf008d025e653cf009cb1c1d608d56bd268f93aab21a057f50751"
+  },
+  {
+   "index": 50,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "e5e29f3ad7ee91b3716da58fa5afbb57d2ba31adbaa2b4093656944d1fd12d03",
+   "position_id": "8821727f14c11b69d79b81e42a46c95b0567a693c4ac5dc7df0972e1531aaea3",
+   "class_id": "83565666302061b2f9e4f4dc517965e4646e746a632d0829bea1682dd1644df9"
+  },
+  {
+   "index": 51,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "history_id": "b7612c13812b0af955640c670f5a6ff46a9cbe8420970d77643e8c31463089e1",
+   "position_id": "c7efa4797278980e582ba497e979c01ee76390c0a33cd24870da5f127b1988c3",
+   "class_id": "004c7d6603670be5c1a3d226d1db7a8fc29fb736ea8bd7cf65eb9a9ba1f5d3d5"
+  },
+  {
+   "index": 52,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     7
+    ]
+   ],
+   "history_id": "d5ee67991db1e412c98b4b4b6cafdc914ea61ff3c34748a864a73c5dc6b5be99",
+   "position_id": "8e2cd1b76857ab9f46722966f367a396667bca8946968f46322d68b45fafc72a",
+   "class_id": "56fdea53bcda8ea6410a788eec3dd89589cf55bcd25a426820cfaf90b20a4772"
+  },
+  {
+   "index": 53,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     6
+    ]
+   ],
+   "history_id": "4a2218e82a3c3d3eff2c73be55dde992d4107983ea77003d9fc177c91ed80cb4",
+   "position_id": "79110bc9c47a77ca35d7007d776374c037031f1011c30a28926742bb35d4f184",
+   "class_id": "79110bc9c47a77ca35d7007d776374c037031f1011c30a28926742bb35d4f184"
+  },
+  {
+   "index": 54,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "b21f755276497356de3279d0d1384e93d9126523f2f51ae43eac0203cb614b2c",
+   "position_id": "08ad474185d328232a60040d0e43d90f0aa9afcfc6fe14ee886e9d147e433253",
+   "class_id": "8bb03662370ad4ba9b10cc7449477854bcd90e6adf52edb6fb9d0bdfa6409599"
+  },
+  {
+   "index": 55,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     5,
+     10
+    ]
+   ],
+   "history_id": "a370e56422e54d31dc7d64b1f1feed9468fad06f89366d0c8e8865a5747fcf89",
+   "position_id": "43fce85a6dff0225ae0f8a3133e29544f67a0a74c08d4f873a76b3cefe6dd3b4",
+   "class_id": "26e78a09c7bd99b24d246198cc845fff8f3f7e6ddbe782e883dda8803fd848b9"
+  },
+  {
+   "index": 56,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "history_id": "8547a7ba12899b0f5224af72cb6346b1fc838a4a110d6e344b8672332fb08940",
+   "position_id": "80d1a2696dddf94a2497212cfcf752902372c36cfd8c50b65c77a38aea9b55b5",
+   "class_id": "f08918ef72cbf172b6fadf6fa7dcc4f9521cc79e4356f1c094e250b5666d88eb"
+  },
+  {
+   "index": 57,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "history_id": "153ef066c2bbad59f540e07fd54fbb4de2eb5992fca0e3155206bbd7bce274e3",
+   "position_id": "f12f512866c3a73cd0f287b19ba14c5dce28110fcb3480d31f66e940ef4d93bb",
+   "class_id": "f12f512866c3a73cd0f287b19ba14c5dce28110fcb3480d31f66e940ef4d93bb"
+  },
+  {
+   "index": 58,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     9,
+     7
+    ]
+   ],
+   "history_id": "6fad202df9fcc0235d6481253386204d5196243de2b7ce1255afcaaa54b15470",
+   "position_id": "2ced7d9fe2c2a988b8b656dbcd4ad000e952752a94ecff1950efa87cab8ad3de",
+   "class_id": "e0f540464a1245d960ee4755ae84933ce01d5ab680c391b4f1b18f44e78c2cf5"
+  },
+  {
+   "index": 59,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     4,
+     6
+    ]
+   ],
+   "history_id": "04a3303169f578a6daf8a9d211187a4e821e271530e1f079cb368645dc16c0d8",
+   "position_id": "6d4165a7ac378c0e0c56dd8b90f9fe6305b72d355b31843fe1dff9409ab1e799",
+   "class_id": "6d4165a7ac378c0e0c56dd8b90f9fe6305b72d355b31843fe1dff9409ab1e799"
+  },
+  {
+   "index": 60,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "a86a5aecd6d03ab29a443dfd525a0ac122b07c5588e6fe572a6fa8931fef7917",
+   "position_id": "b5b7327a49b01dc1615296cc674c7484fa7b3863f039ee6d372b7cfcf046416a",
+   "class_id": "f3d310786006aac15e40f65897ad70b05ee949d3340782423aaf7b4de4a30346"
+  },
+  {
+   "index": 61,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     10
+    ]
+   ],
+   "history_id": "eebb067c0b15b0c296b1a86d33e1c7e1a7b50a6693483b809fec80a355102ec5",
+   "position_id": "208769cf5b2a50d5a351a3de276b1cc986b5c1ab87783608f2108d7c2ad3c6d0",
+   "class_id": "66f92bc9626ac4a273f1d9c7b14b012287ee6d942ce301a3dcff0fc61978b894"
+  },
+  {
+   "index": 62,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "6c602f8c52bef301d57065190b1c5ab44526097f94be910411dff589251caba2",
+   "position_id": "ba6c2638d491e2aaa42b8c69dd74b8f04a9b2f02f85e6a9088b790c8b11ea474",
+   "class_id": "4dfe890a1ac205c1e50d55567c4ac52e07a22834d91d3fed4ec863a4d972cb24"
+  },
+  {
+   "index": 63,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "08ea78a14181deaddffd30b99e8ee4b87ac04b745c56089e058344b134c2930e",
+   "position_id": "541caaf0b3dfb073788636387c47c1e14102d3ac7ae3421df1e5984ccdcf1d7b",
+   "class_id": "b5a118d6e894cef5c5ba29f5a26b81704830c06c745ec582848d395de88874ac"
+  },
+  {
+   "index": 64,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "c79e2d4d70b0b22986e84203d93ad40522350515843aac2739955c1d471dce71",
+   "position_id": "95870226eb0f9bbeee47bd8dbb562e1fee5c2ce3f1eaf78b1708e46f2eecc9a9",
+   "class_id": "8ef65fcfa398cdf3982f13e7510d0e2b0feeee1bd21738d7f0c9421f3dc3a812"
+  },
+  {
+   "index": 65,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "history_id": "7de330179242888133ceed80b973985730b8f7decba080964c0062b0733b9b5f",
+   "position_id": "33ae1e1a01c2387e43ea7280dc3b8ee693b44fd216f10b5750443fb05a0cbb88",
+   "class_id": "dedde69997dc293a0194c2b99ddb22eeef4589106365aafa1c8507c618a0c0f5"
+  },
+  {
+   "index": 66,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "3111a107ebc8bcfe262ed306720033c252cae9b089787a3c9e0701d0e0f4cb66",
+   "position_id": "1764d33627f812eba6ca628052e6f7c773452d054573363e945fe753690360a3",
+   "class_id": "b533e3c94b5d809ae6dccaf32090b25c2eb27309ca44bb8ec4babd3bf4c2396e"
+  },
+  {
+   "index": 67,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     10,
+     9
+    ]
+   ],
+   "history_id": "78431228087c4f10edfbcbb712c31e15224a45e7117a4ac2e895cb5be01d7b66",
+   "position_id": "5e96ad2575133344055b917ac0ce7f82954b894e69b61e6bfe01acd0715e0bac",
+   "class_id": "492c1a502e7658279b89300b5da6e0e8ae4f4edb7bfbb896e29052967cc4c6fc"
+  },
+  {
+   "index": 68,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     10
+    ]
+   ],
+   "history_id": "083308c3e434f8b063207053a0c98f22d04ddcdc0bc572bf5e96b3c87aa0a08c",
+   "position_id": "7c619f5e72e8f3048c6105b171fa5f08ef9ac9b998df1748a5cb7af91bb433c0",
+   "class_id": "761fb8eccddb89ed6c18a2b68e801fb01657a7d901fbe40e9e5bf96d5749f536"
+  },
+  {
+   "index": 69,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "aacb65639c6695ee15cc969bebfe19bb2e36b51484262bd0f6e7be1356412d6e",
+   "position_id": "fcbaa765d6eff8a7a23a2a7b723e44312ee8950df404c021691b91a51a7b98cd",
+   "class_id": "aff53b46d3823c51abc9d018d1e5215906ef8a6b1aaf8096a631c400b1922bb3"
+  },
+  {
+   "index": 70,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     9,
+     7
+    ]
+   ],
+   "history_id": "68de06b54dd17ab7b437f019465269d5ce462c10fecab4c879b5d7152a78ce29",
+   "position_id": "e9c6fcccdb0f83b116ba6de8b91fe3a26df18af4c0ea01791cd602a1c9fb1c22",
+   "class_id": "9378dc1165cd0bd84c14707f48622de4066365e733fb66548c1bb45c5832b5fe"
+  },
+  {
+   "index": 71,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     6,
+     9
+    ]
+   ],
+   "history_id": "c3c67a54e0fbc17fa359f3c574c72e5d551991f1584edbef6c87a1307b78a09f",
+   "position_id": "dd6def374f2a483b7bb3eca8081abcef97c3ef036491a82ee7377dddeda6b738",
+   "class_id": "72971901f1b075abd2b2dda328086fa187cc7ed7ec2440b2d5e0d69a16091645"
+  },
+  {
+   "index": 72,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     6
+    ]
+   ],
+   "history_id": "b7d9810c100152354faa0f963af038c2dfaa31bf391f626e7719fbe0ab73b813",
+   "position_id": "6cc57cf65a82f96e879c5f1b73b22a08cae508d9362810e47031c66bc2b49df0",
+   "class_id": "4e7c7855009c47e8b06ce0647e862d8641e078191ec5aa5b37551ee1ccce71f9"
+  },
+  {
+   "index": 73,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     6
+    ]
+   ],
+   "history_id": "3f7994fc856c20d4e6753a631fd81018a3c7db8e1fdb240ffef8289cd9c431dc",
+   "position_id": "e84ce6b96c01eb67de9142d5775996527fbf9f7db29e6a8915d41fdfbce24aed",
+   "class_id": "c2b106a64b79b3130a7423010a7fe8409a11a299c050fecebe419961ab186026"
+  },
+  {
+   "index": 74,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "a540a4ecd625a702f316cf56756d518125d8c57245e4bfe475fc4114241ae041",
+   "position_id": "7234f4c507d0ea72adb60fa61de7073fbbb36aed2975bacbf51535189f42c327",
+   "class_id": "ad9bf4db3a12321d181cc386c467934b08ff3316d80221647930d974919faf0e"
+  },
+  {
+   "index": 75,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "history_id": "a034b4942aea088ab7ce87450580229fb7d99c6bb8db294e3ebb935b592fab1c",
+   "position_id": "de95fbd49756c2feec73c62e0445b08039b2616688ff062914371fb542d24ff7",
+   "class_id": "e1842a18899d4eab511287fcc4d5d8c4e1d70ee9ae989f75eb8602d502ae1800"
+  },
+  {
+   "index": 76,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     9,
+     7
+    ]
+   ],
+   "history_id": "7880cb569e91a4639cb3604ce36ee5cb8001cd74d3612b3fd4022e9cd91871aa",
+   "position_id": "3b22a1c3e8af32aa04eb8616d80ae00ebb891b3d1aed670151ddd93b738d7112",
+   "class_id": "b6a43133b26c1a0a79096ccc57330a9f7546b65de6eb5e5bd9994ac3ac48e665"
+  },
+  {
+   "index": 77,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     7,
+     5
+    ]
+   ],
+   "history_id": "5c0db09ed62ee1bc7b42214b8f847c80fc51bde12ae253ce8b9565dc06482075",
+   "position_id": "6f3065f71f5d88eee5d064f4576f401e247e2a8ac274fc3e24ed4c4fe5521d43",
+   "class_id": "5b7b21f5a7d855385762e507da8272f2bbf616960cd516891ca89522a99e36eb"
+  },
+  {
+   "index": 78,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "12de741ef625d246690ca9927098ecbb74e505e303abb6ef79e3cd620dca9e1e",
+   "position_id": "13d95aa2441434fe9ccf78542f4d6bee57336868c0c4e2bd9f2e3c5c556e022f",
+   "class_id": "ee210660f53753f66dcd9f14e4856b810161596626cdf4a281c9321ae22bca19"
+  },
+  {
+   "index": 79,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "169bb043d2bd3b8ccda9fca5b82e3cb2e31140408aa0f536eb47d4de0dfadacd",
+   "position_id": "1b246092ec691e8821a2aac2ec9fe8c43bde4516981ca94b947878a95d0428b7",
+   "class_id": "a2258d7cf03f307a34ac609edb99e5ec16b027ef5a609d356ec8dead55c96244"
+  },
+  {
+   "index": 80,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     6,
+     8
+    ]
+   ],
+   "history_id": "a22b98d5a485ed99c2cd6b8662a861fba490fe3b3481635721a22ebf21386b45",
+   "position_id": "b77af75e90a4240f994c18f7706e19c7019ca45df1d91f1c7e8ea52c253ddad4",
+   "class_id": "ed2c67140fcb10ea64f44dd6c32b5f956158e684bd04ee2e56cd06b61a1ab7f3"
+  },
+  {
+   "index": 81,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     6,
+     9
+    ]
+   ],
+   "history_id": "fe73a320c6612a9d10262a532a10b94b243c1b8121dff6cd39a0a7a1d19731a6",
+   "position_id": "d692d59a54316ad520e570f270a20d594407b2cf07fd91b1f0e40b99feb34979",
+   "class_id": "ca846b0f4eefebe5815ab1fc8cceeb249d2cb9e54b9555f131c5ee9efaaf21c5"
+  },
+  {
+   "index": 82,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "e622226e975bb90811a5defa1c249f23e9241a70fc5dfa8b4d8f418249fa1963",
+   "position_id": "d772776e0c655cf119d930dbf72d6a55639162d9f8145ebc1de3044e4231208d",
+   "class_id": "a1fe1476872a40305822c58769241cd74a9155235c5e6e4f2071056a356f6b1d"
+  },
+  {
+   "index": 83,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "e698de25fbad0b2be4bc3344893d099282498a18aca842bbe5d02038736446c3",
+   "position_id": "e5499588565280dfa6f938708af4888488786ee69eb939c33258719349a9562e",
+   "class_id": "167b68faefcac79750cb14ab6fa99f769e4ee2e360b5cb535e480a9a04e840d3"
+  },
+  {
+   "index": 84,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     9,
+     4
+    ]
+   ],
+   "history_id": "57a0fabeb9044bfe13a4599e57a220b5e46a5038d337bb545ef301d0abb99036",
+   "position_id": "e7dbd8e996b9044bcd8ec00ebad623dbb55c35948697de67894100816cc73033",
+   "class_id": "92f8dcecf20b8e54dfa0b50b14f50fee5bc4a96fc31fb384571eab7ecd2b1ff8"
+  },
+  {
+   "index": 85,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     4,
+     7
+    ]
+   ],
+   "history_id": "862c6a01bd5cbc6f840aad51a7e49959b2e803ff1e271a0f0b001d755fe4e019",
+   "position_id": "0a0434a6284d8055112a23930915739651e7427347fbe32f9f47e885b4636e49",
+   "class_id": "8df4a013c003bdb5be3b05e0a6fb499b0a66d4aa6e0393e194985ea0d05cf2f6"
+  },
+  {
+   "index": 86,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "history_id": "dd273068e916a276bcdb1680cf902eb9dc4c200cbc777613ac23b0fa870a6460",
+   "position_id": "7c8d184a35a648d24843e9d6e8b7bdf04d588baa4656ef22fd544228c84f3ce4",
+   "class_id": "cb9afa2011109ef6eb0ce9226c9c9ae0f2aacb6b8dd77720f2a0e8bef82fff0a"
+  },
+  {
+   "index": 87,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     4
+    ]
+   ],
+   "history_id": "a06a0451f14ffe9a9e457469f4a94a88d08dfc207f69cdb22c7804ca2baf1ff8",
+   "position_id": "8f7a1253110fe9b5eaf8f1ef6069db7eeeb65ecdf8039afc3ec9a7faea1c2e28",
+   "class_id": "313585f711ecd68d0d0f11500cd4d71ca534686b24bdaf86dba08a71226507ac"
+  },
+  {
+   "index": 88,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     10
+    ]
+   ],
+   "history_id": "0eda3ff491077c60a01cd47013d0b0c03b455dff8f06e570bd4477751a04f0c3",
+   "position_id": "872a76935c166f4a487c3542d1436b99f99cd654c97f8b7f4b0b75404a2eb821",
+   "class_id": "0de55596f5d61dc5fe8d76b1ae1bdb774e2e66747c684ed8ba3bdc8aaf283e29"
+  },
+  {
+   "index": 89,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     6
+    ]
+   ],
+   "history_id": "eb34e522520c013ef80c5ebc24dcd0f820c7659ddbf72bbfcb082e2b83f4cfd0",
+   "position_id": "5d1a02651830e4c09401cd1f4dc9b83c0dfc3a8d569b0f01df1aa3da7aa1bf13",
+   "class_id": "0df104060b8b7edf55e6e454fa03e24de2dd523d5cac065c49874baf9d8fec21"
+  },
+  {
+   "index": 90,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "9c66f8cf0c23eb6170252c07368c0882b83a25a2ace9df38971ce82029fb5fc7",
+   "position_id": "e90c8d012e63d73c75a6c4e434b5e4f760e28d13553ddaa191f67878e9694d56",
+   "class_id": "4596b2e97652a03cb5e35c9f274a042854640df955fdc1e00086d69f87536939"
+  },
+  {
+   "index": 91,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "history_id": "c5eb45fd3338dbe971b80408ea136bffa9f902dce54bbfcca9eea44a0f48b0d9",
+   "position_id": "80433994038ce6ec76ede0d75bfeb2f9d51da7ced0c1587f9a7d1acca835ea24",
+   "class_id": "a8f5d3e9c74b6e23e144c360425507b31587b52eb9227a6a78ecce88e2e97cab"
+  },
+  {
+   "index": 92,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "512eb876cb78a892cfbbcee71bd3654ef1d0d1e2bf3473813ac1af5f73bab4a7",
+   "position_id": "3ad8d48069b228e2a5c659d33fc73cf01d47fb1d9d4bb2ea1bd9b92bb69ac26e",
+   "class_id": "60b4f8b780913454578e7c41711f7c0cf0d37bed7b064fb25f63d656dc048865"
+  },
+  {
+   "index": 93,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "2abf481bb2443fe8373ec76a844ba01235ba1031be929baa1e8bf1e267503a97",
+   "position_id": "3460b82f2bb1c7c7439bfabe8bfde538334bf72775393fc6e6f8e5616c32379d",
+   "class_id": "171d5375985cb329867bda59a0f1e5a401ad17a4087571c99c54279d663d301c"
+  },
+  {
+   "index": 94,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     10,
+     7
+    ]
+   ],
+   "history_id": "1267c91ef62a60a080a14ae63f9f8fa2590393fa17f1f10eae3d48e8bd4a9340",
+   "position_id": "550d080abfc057d47131b0f4e2afd3d00c6d76b25849ba43769d0dd6e33a6253",
+   "class_id": "019ad505a5d2646f568952bd51111956661e42bd8c372ceefa049d666d251a93"
+  },
+  {
+   "index": 95,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "04fa92572f05a8e53ada99b5a3cc13374009cdfc742748385860f1820910fc3e",
+   "position_id": "876e30463add41fe5c0b07b5ec6a55f72ada38604c030c370fff88ec603bc13a",
+   "class_id": "a637819090fdeb5ebc71878150ec7f7814d1a85a50cac30b711779d7d0df0409"
+  },
+  {
+   "index": 96,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     6,
+     8
+    ]
+   ],
+   "history_id": "561f53770f2e4f6e91749c931bea7d335da9587f463c9539d23f44420d149fef",
+   "position_id": "0649c01d77364214ca47f6cbd88d3c1ae7db0bb588f283ec06204b1443158c4f",
+   "class_id": "8ba9da8bc731513a83725cee3def54080807b6050979e63fc8a11a891a572457"
+  },
+  {
+   "index": 97,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "history_id": "2e038c82f3250eb674ee057d4453b6383adff4bba4f34138be8359580513334b",
+   "position_id": "6a219aba3f75de3a50de11f1e42baf76b3f2463ecbb5ccfbc22231196b7838a5",
+   "class_id": "203546dd32392d4a179be2e5eeeacf8473a1869ce44dc6d67d01d429cb695f17"
+  },
+  {
+   "index": 98,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "1c54e853da8ebed50ea552cb03b1492d5c8c0e9cca3c5768a1e83a1439f9b8f3",
+   "position_id": "334974d8685f59461614268f81ffecbcdfb3cc0fb106b899000460aae6ce259d",
+   "class_id": "ff46c0fcf3c7e1b56de69d72f54389990e34c5517e8b412cbb6fe4b01a39a108"
+  },
+  {
+   "index": 99,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "0a6bdf7356185c35d1ec14c93a2e76ce233632efab35e52b10e8e242feabead4",
+   "position_id": "1ced775dd87529fe832189d2a8b8f3cfe378467b44d51becd762238426dedcf4",
+   "class_id": "9661b4f888567e64b211247fa3354c3cba9b0f9a4539baa8734804e2a76668dd"
+  },
+  {
+   "index": 100,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "b90e9d6795e7147e0134d8a8c887f185449aa20547564878ff8d11c109297efa",
+   "position_id": "8a3a1a796e37c77188ad6d8e22a9087ad37e513c4011705d479f4dab06fb3d8f",
+   "class_id": "7c7659fb06b3281cd78938006cc4ea5abc1de9608233d9e20e8f58477fbd6d09"
+  },
+  {
+   "index": 101,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "47cae029ac32a9d5a02f79036985b4610bc7f963c80c49ee156a79328f22696a",
+   "position_id": "372a7a51ee9dc0fb45cf7e1447996419c8dc0794fef792f9d738d3d72a3170c5",
+   "class_id": "372a7a51ee9dc0fb45cf7e1447996419c8dc0794fef792f9d738d3d72a3170c5"
+  },
+  {
+   "index": 102,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     6,
+     10
+    ]
+   ],
+   "history_id": "3ec4f69724270a9872ef6abf7335150a78a9e61b206c3a4e911643105d3d7b16",
+   "position_id": "f920792265246b7c6343b2e38674990910c53ba7fd53b5e6ec7e66e50a0869e7",
+   "class_id": "78a67a5b5d8f37be193bc14e84646f3ebe1416b242fb36e9ec2cbdad722383d9"
+  },
+  {
+   "index": 103,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     10,
+     7
+    ]
+   ],
+   "history_id": "bc779f1dbf3015aefb5ab0680e20eb6af20afb21bbb71c704aafab5fc5dc11fa",
+   "position_id": "6f2805655605c6e2ac1ada9acf19680c1d6560f572d471810b56aa0d496fad61",
+   "class_id": "578f6a13369090a0a3c45c60cdb4dd6eec674298be53fea42cc4c9ce5f02d3c2"
+  },
+  {
+   "index": 104,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "history_id": "5f8dfab4c3ef210e4ec7766d8a601ccb20cb9dc9dcee261fca32100ca9203805",
+   "position_id": "a2ee9abf8551b7fdbd132080969d75f00100ea9afb786377aa5e475788c67de5",
+   "class_id": "5272927a96a89e2fe51793c27ba057592ad95aa72ce8a43fa8663377ed6df812"
+  },
+  {
+   "index": 105,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     10,
+     9
+    ]
+   ],
+   "history_id": "41fba79c5a2a698417a1f09424a79ea36b93a216caa91d786faf2c952e3ca1c9",
+   "position_id": "ba29a85834ea7f71edb87854f7fd082485a0f232f432c7c994dbc2b920d9a1c9",
+   "class_id": "2a96d835953a7e93de79d9582a415675a7250bced428452c0be87937a84c3c39"
+  },
+  {
+   "index": 106,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "2c138a932ad7e5b459c800245cef1f32662fa8919db2c07d96f7d0f5166c1127",
+   "position_id": "bb2b8499f890b60ad9efec271bc21535e229efed1879cb39c3030de10478172f",
+   "class_id": "b0dbeb00f1fb587d2210bfa0d58f4b3a64bf9655360e93085dd76d3ff7af9d62"
+  },
+  {
+   "index": 107,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "04115e3ea6f9c0de8d04fcab954d1e0da08aca714544b76bbc1036e76429614e",
+   "position_id": "aa9295c853bae542d29962808ad4380437b9df81534ce166c207c90dcf35fbbb",
+   "class_id": "c1310da201e63006be76a96d4e9fc7cfd3dd2ac80274421c4d11f4d47e64a5a1"
+  },
+  {
+   "index": 108,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "6d74762b7e5f2e453bf867b66add9eb09f0ef9d11bb94cdcd3004bd99aacdc61",
+   "position_id": "26ddbf0a6b992f04fe24b130ab78e783cc44d8a30764b4535a82f211c817b0bf",
+   "class_id": "69a35856c7ab26f7a43db4a42424e39ce6e5edd4ae04ff00f6c3a55c69cadc9c"
+  },
+  {
+   "index": 109,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "5f62e18f4f8e940808d61f310e072260ca1931b03b3ead5380b5ac0bc9ab6815",
+   "position_id": "b348625b58e3ab495a15063a6c9ca5a21edabf7318470d568d760a4997995c55",
+   "class_id": "d9eeb8d3205efe2d598b11e4018db72f560f58ec028f4667b588c77fd9f0ad0b"
+  },
+  {
+   "index": 110,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "e1eb05a4fd59ebddb2dd99d9efa57506e2176951d3039338362b0d46c0e038fa",
+   "position_id": "8518f456ad6f2a186e991664e5eb76a176fe6a8946f8be1d38e00492713e2394",
+   "class_id": "560319c26deb4769bb4bc623fc742852b0ab2de049b79c632757383c32618ab0"
+  },
+  {
+   "index": 111,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     5,
+     10
+    ]
+   ],
+   "history_id": "2fd9598cc1aee7280274693d1371a14f49f65156176fe5f9cf1b85dcd67ecb08",
+   "position_id": "70fe74d8a67e575f4459cdffed1d3c4cd4923ee7527eb2b5ca96f55fc9343a73",
+   "class_id": "6c13cd37655fd3c01a94bcde676c9bd5f97b0713690d5de72c4fdfaa05684033"
+  },
+  {
+   "index": 112,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "fcb6366b9fb6e2a41eab2b07ee61d3269ec18827a66d27134c363055d51986ce",
+   "position_id": "b05f37c3b759498abafdd1346140ac50e06c2fb69245bf55f55093fcd4a3295b",
+   "class_id": "7958a97250646885e6a235d59f1a914466f9514a13e814b811f4f2edd3d954e4"
+  },
+  {
+   "index": 113,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     7
+    ]
+   ],
+   "history_id": "704f02317291595055278b6a1e7bbddadd71fc62b93584f13d1b132b868714cc",
+   "position_id": "3922c41ef62a7d1f09dfa1c4b4143d7582c265a9e488f604356fb6cdc091b2c4",
+   "class_id": "43aa7632a21f221fedbdef808f04e22320a6b3b1d7cb8da4ee3fbff5f1903306"
+  },
+  {
+   "index": 114,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "8ffa38ae9785f9a92763f19e651042dba4333df724757ac7b42d7f88226e124d",
+   "position_id": "ba37cf515bcc4f0c155d7ffd5a7a5f8df4614b763c6f37ab1e76893f9f119537",
+   "class_id": "28e594587ddb1935aedd405a555440603737b1c81cf549d784971cd9a7d1881e"
+  },
+  {
+   "index": 115,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "d3afc3b6082a5bdca4aa0b7d40762ba82d8dfb6844744bb24913f461a86410d5",
+   "position_id": "e07f7ac65f4971e53e566681d11392b5ce8269d4894da3500afba741c28ad027",
+   "class_id": "aed1c50ec5db89a9d99e34e7173a28f088f646230c22d785961cf415fb3574c7"
+  },
+  {
+   "index": 116,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "ba9d8f3fcc64d18ef0044ea1055d514c3520e524b21169412773f7011aac7dad",
+   "position_id": "b3e76404cecc784ffc84bfb432384b05f9f13935ea6a76f90ce1af3fa3caf57f",
+   "class_id": "757856c4cf7e95335d4b3a04ef152b270ad5f826cb0c8dd570020afe8e25e3e9"
+  },
+  {
+   "index": 117,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "c0f0c93c611d23ab3cfbe97d38c1ddedf47de6085c3263a6eddffb4626d9982e",
+   "position_id": "1b964b1d42efb30abe3f8ae52842321e2d634934473b9bf8c356df3e4f675e07",
+   "class_id": "51b2c4b601d2b0b373eabc548ed7237851c0c48679dabdc09ccff809effabd49"
+  },
+  {
+   "index": 118,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     6,
+     10
+    ]
+   ],
+   "history_id": "64bb14772a7694a1da9dadda922aab9673215b15c23ddc8565549b342a212eec",
+   "position_id": "fb783edaa3d57e40964340bebf05853df9adfc6a6ba7c89aedfaf8fb8ec2d491",
+   "class_id": "aeb4fbb81166aa66d80e667b760172272e61196e44cae8f3dcf8dbf1f50abf88"
+  },
+  {
+   "index": 119,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "433d62b8c92b7badebb12cb215a9341282cbd5397bc586e43fbc3a54a02b2459",
+   "position_id": "bc49c2b7ee67510f3793bc599a604b8e6ec9b738152ce509afb3ffd39968bc73",
+   "class_id": "2531b51846e23b971e6088bc8841fe7274e95960d5b60e6da33e184501fe1607"
+  },
+  {
+   "index": 120,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "history_id": "22a414dcadc044d515ae3cc8900d456ec52a854cc56c40a76935ca98408f76b7",
+   "position_id": "be2283d96e1ba29ab35f927f081c0b3984db4e31a0705cf35a866e6aecf0e16e",
+   "class_id": "85e0b50382250b86e3e98edbc6a32b053c7b6cc0c6df80854be27e30d7f47720"
+  },
+  {
+   "index": 121,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     7,
+     10
+    ]
+   ],
+   "history_id": "ed64bb7eab411294de695fcdaab4e439409d3abfe419c53edee61a4ad8093944",
+   "position_id": "a72fb5a266320b1beecab31e456eabd061b053abc1a2c43ce3d8efaa5959cad4",
+   "class_id": "ae1523092088723d6c3a614c5ef9fd86a92e81ab13845dc344b29b22a7b9a4b1"
+  },
+  {
+   "index": 122,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "ffe13001b8531a5afd71656e58c6caa3893a6a6df3c6ea56e9a70660c87ae1fd",
+   "position_id": "e33c418efb17e55085d1d9168ab696518ec127b57664d360d5c186525f1e6205",
+   "class_id": "dbba2bde5028deffcd9d1d00885756c02296d2f4c0f7a28f5aaa237f31b47a4b"
+  },
+  {
+   "index": 123,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "history_id": "061264a6e3ac290c65cb08348485096c607ab7ce448afe3e40d7ae3b8cb6a3c8",
+   "position_id": "a139cffee30f3f7eab5584ef6a010de95d4b292837b41a77123f7633d69acc97",
+   "class_id": "e69273b4655f5cc7435bdb4b348c5db3573cc1500586c05b5f05d4d8f6a91748"
+  },
+  {
+   "index": 124,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "fa8f6227d8fcbeae6aab26a7b81db32b79ab78f7fae6cf9f36b2ac94af6b834b",
+   "position_id": "f05d7f50b5b07fbd33fa6e8d437e4a6c33125b7daa5fdd0ac0a368a70ba8f293",
+   "class_id": "9b830b0b9f65a7447025b992e5fc991299d8f516484f1dbe9f1f307a23a58988"
+  },
+  {
+   "index": 125,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "d083bf10269e14c32c6642572591fbfa68719db28e6c0d885ea9ebcec41ac6d2",
+   "position_id": "bb7b6ec8fa3a60126b2a7da97eae4cfe016675af350536e19500bab027813b06",
+   "class_id": "bb7b6ec8fa3a60126b2a7da97eae4cfe016675af350536e19500bab027813b06"
+  },
+  {
+   "index": 126,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "741128bf847536668e4c7abe23934fe6a137822eaf922d74e65babc1e15f456c",
+   "position_id": "8c43b269ff2e35782f1ca0a770e3a40c0db71418dca738358ad660c77a072b82",
+   "class_id": "0b656fbf5abb3f6173cdfc014baca4ffa7086c728237231bf2ea505bb72adf18"
+  },
+  {
+   "index": 127,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     4,
+     6
+    ]
+   ],
+   "history_id": "6c4d9239a1283879764d289ec0808b631ab6511e01c50ad2785472cbb1bda2cc",
+   "position_id": "a7c48321194d48a9c897144bd25a85133ed7d6eb2a973967623b690a6c6b7f34",
+   "class_id": "a7c48321194d48a9c897144bd25a85133ed7d6eb2a973967623b690a6c6b7f34"
+  },
+  {
+   "index": 128,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     7
+    ]
+   ],
+   "history_id": "22e61cb693e83e0565db1ad1dc600c93f9ed8f6d0aa81ac0102382d5f8123389",
+   "position_id": "3e7d91523971e2384a15588f5bacadebd2d57a55f978b5adcead3d1c1d323932",
+   "class_id": "28cd081aaae9516b886fc52dd59284cfbd5acd557bb748edb03d9ad843d77509"
+  },
+  {
+   "index": 129,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "history_id": "cab06d269cff6960dab0329a3393dfbeb2e2e317da98fecb8f6b5f1fa887d080",
+   "position_id": "40137194ec8c082599afa88575e012638dddc2ffaa5aa155b578be2562e6ba20",
+   "class_id": "db67be3bbbe39f31d28908571ede5cb44ea6e2e9620fee1a789339de09993b37"
+  },
+  {
+   "index": 130,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     5,
+     9
+    ]
+   ],
+   "history_id": "2cd6a08a4adecd5ec582e2b5a87bd06eb427a5e6161ff43e7bb6dd045c387325",
+   "position_id": "012c8798870f845cb06c1e94add85ef2008df3bf2d619bcae50b31fe27e8f59b",
+   "class_id": "6170238def414a750abc5af87ecf1b47e44657b990c31ca8a160c1c003c5cd84"
+  },
+  {
+   "index": 131,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "history_id": "70d229c412f2bbc56689233640c9ac330bb14c48024ae0280fd5c4689d63d99c",
+   "position_id": "c470c0441d7605946bea963c95c67de7a9fc2e6b65b7aee350fdbfb3b6994cd9",
+   "class_id": "0a7400a49c44753d046df193feab7b99eb184a84e368d0c7478472e7880ffdc1"
+  },
+  {
+   "index": 132,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "bb398e6c218e2a162f010a39b971e9f86a07d7da0922300b4cde5feffb9c3f9a",
+   "position_id": "5334c4bcc864a28c3c70efba70ce50a7981f443a7f9d04a3285b4aeff50c5cbd",
+   "class_id": "d90151fec458fd354f0e5c4968e48a847d5dec3357f7b23155d845289ca46630"
+  },
+  {
+   "index": 133,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     9,
+     5
+    ]
+   ],
+   "history_id": "280ae666383dfe1370da4f73b076ce0926f9c74ed916f94aeef77e16a4c93069",
+   "position_id": "3e8a148344d236a1b1b7cba461b25aaf16f7922324703d0f607ad6389914331c",
+   "class_id": "82bd6bde67083a9876a3c974022f288c7c1dd7471314413579d895e7596fa511"
+  },
+  {
+   "index": 134,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     4,
+     5
+    ]
+   ],
+   "history_id": "a83009c58cdf64c768dbf204fa82900b505f4a387fcdaa8df809dbbeca39b214",
+   "position_id": "5d91875587cd796d463d1b05430f2e7b6c438eb50a94422a3547c4d9d9c1ab20",
+   "class_id": "5d91875587cd796d463d1b05430f2e7b6c438eb50a94422a3547c4d9d9c1ab20"
+  },
+  {
+   "index": 135,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     10,
+     5
+    ]
+   ],
+   "history_id": "cba8c8cf3d7f5fa490e81f2fad96982d7e6d3b95daffaad448ee00025b47c8b7",
+   "position_id": "4c209c287db8ac14cf945750d59c0b77bb22b61dccbc27a9794dfca28d28d4e8",
+   "class_id": "c2892f090fbb9b0f02af0c8041977b5427e9aeb0b67df5385a6090dea3e1316a"
+  },
+  {
+   "index": 136,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "fc2a405afcd41bbf9732cfefb50d39d25e72fcb8f8137e9b6e2c5ce4ead23b8f",
+   "position_id": "1af3b4f047fcdb2d964dafd0a3c0b10f2262833c42e3c8b0ca13214ad9b357e5",
+   "class_id": "32e94264153b7169bc539ee0bee382f9b244319d7301441957b3be4051416466"
+  },
+  {
+   "index": 137,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "history_id": "7f7aaf1b54a0ce37d6226092e35737cb7793b968a14afe2db04281d4acef6dd6",
+   "position_id": "eaea686ea8d1651713e1c4cd86e572e80f7479aa24d68e4031b12a27ed2e74ab",
+   "class_id": "e1d32e33d3bec5e228a986d9970322e716b4a58e179c331008f511d5501905d0"
+  },
+  {
+   "index": 138,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "3f2de0f7dfaabd2354b2ab08d0c680b19f586072a15f5f1aa690b4a4c964fc73",
+   "position_id": "800eff36b6780756f527379fe9949a0a5d2a433800125e10055866fa72895de3",
+   "class_id": "08c05336430cbb6c9d9f1c2efb6838bb6eaa49e442f342ac6c1bdfe47333391d"
+  },
+  {
+   "index": 139,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "history_id": "d055cb2f530beaf797ba020ce0aeba84ba8695a92e72cf086038bbe564256bb2",
+   "position_id": "83ee193c18241a3173f7c88255f42a4eb88ab19be267b0bd324835592a3087c7",
+   "class_id": "2e5b1c481cd05db059ed881c58206cdebcb7a7a0394c95b9b1a5ca47edb82a29"
+  },
+  {
+   "index": 140,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "136b89cba5cff0c7fd122eb88a9dbbb3de258a0e3a581d8cf945441ec664a0d9",
+   "position_id": "89ed6b29ed0b0834cf6c78bc2622cda00a054ce5be93e88caf3352d8e6602a10",
+   "class_id": "b7d6ccfb9345b96c5dba0e8c781a648170f211511c5513de585306c995dfd4d7"
+  },
+  {
+   "index": 141,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "history_id": "3269dd1e7b3ed20109de06f57252a0d5efc31813dbd4800a95788e40a5d25dd7",
+   "position_id": "4111a92bd1c012f892dc691f3343f826a176f4ccb0efa8b0e03d23b709931468",
+   "class_id": "4111a92bd1c012f892dc691f3343f826a176f4ccb0efa8b0e03d23b709931468"
+  },
+  {
+   "index": 142,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     8,
+     6
+    ]
+   ],
+   "history_id": "0ad43e5becbc0da4ec2a3eac131aefccfb406b7c52438adc4fb2f2ce833e7f67",
+   "position_id": "f3130f5d6554f4736fc53c5744583c30d84f68381ea24efdb9a8c9156fcdb5cc",
+   "class_id": "82f7b2513e3f869500edbb6fb36e839c33ed9fcb1ebc69347709b3c325a835ea"
+  },
+  {
+   "index": 143,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "history_id": "2ab5690d779facfa7c06e0b8cf8d97d7f4138a7fcd11c1b612854d91be1026bc",
+   "position_id": "252f8e7e56bf7f6646c8d6648ed7ac7eb8e19e5c1e40698c373d2f1447579b0a",
+   "class_id": "e6986c1917d87e1f80856df9b7a8229668c94ebc6a4bb411f014c86cec5f89be"
+  },
+  {
+   "index": 144,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "9073181a9a5e818e6c949919ca249f2393ad43b153596dfcdfa616af8e20b5ab",
+   "position_id": "5f6fc1a3da760c204c463be49a38073ccfb254fa70609d31bc860f0e92b1a9d5",
+   "class_id": "75fd8229ef63fe4ce794ab39c73577bef75a11eb37714a2b17132d58fa2097f9"
+  },
+  {
+   "index": 145,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "720f821e9f9d942f97e4ef55fa881fe174c596cbb1666e6ffad70efedcac6de2",
+   "position_id": "b78016f02041edf915778fa6dc976352cca240af7375aee2bfb50a24137b9801",
+   "class_id": "5b7d71e690d890dfc2990a01bd67fb3e23c0f1a54d36c257dd65f66e795856bd"
+  },
+  {
+   "index": 146,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     10,
+     7
+    ]
+   ],
+   "history_id": "81aba5860ad83ec7df81a450720fa6349868fb5e5194adc1655b16fc1fd5e0c0",
+   "position_id": "4e5cdcb6ccc5842112eb2112ea0be5ad964d010441123d3a855fadcf74c1d382",
+   "class_id": "ced924afb959b0768155b81e825f765aa459ac4c0da7fc40d004fd759cb77fc5"
+  },
+  {
+   "index": 147,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     10,
+     4
+    ]
+   ],
+   "history_id": "da8b4ad219097d0cae4d4b789a5b5fd69339265642ac10d3beae1a8dcc82e1b8",
+   "position_id": "1096ce8447870874b804d1024d6b6b12ba185eb689538d4375de25bd5ed4ac5b",
+   "class_id": "4c17c421aaedd2e7d8359d4f23da55a0236b50b53d23d8618c4b0b38003ac6ee"
+  },
+  {
+   "index": 148,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "e6d84ecaef96e613350c6e98a430b8e745b958d3bff90e173d2096893afa7708",
+   "position_id": "44af3411ebbc35ab2ed98a3d95fc8b6f02aec01a1c05d2690bffb981c8a03feb",
+   "class_id": "44af3411ebbc35ab2ed98a3d95fc8b6f02aec01a1c05d2690bffb981c8a03feb"
+  },
+  {
+   "index": 149,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     4
+    ]
+   ],
+   "history_id": "f519761c5d3dc2b4fb55bf4f4b91626bd22a508aa995a10149b5f07f7542ccb6",
+   "position_id": "c98921f4c61fdce52279332be570547296f1d02be3264028eef645ed8a0143ac",
+   "class_id": "7c2c4f4d5049ecb32ba1c266b56318cf257ec51e6c6aabcd0f4e9d71ed5ff6a8"
+  },
+  {
+   "index": 150,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "72edfce0a21ae660d8dd8d6e341b54ac69cdd269986b19dc569ac9563f515d1b",
+   "position_id": "3ff2957bef6913f2ba3755529017272befdc517f963f8fd3c0dbb039ecb3c4ca",
+   "class_id": "ebeceb5b7cd8d2e238eda94cd531a2fbe790908f40ee1f335a37650b7eaba65e"
+  },
+  {
+   "index": 151,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     10
+    ]
+   ],
+   "history_id": "e367d59dc8ecf51b1175f093e94045118ca0401745d9eaf219adc76075134c8c",
+   "position_id": "26a2054b8d412c3028a34629d8ea962d46143100e51d396cdddfeaac8edf464d",
+   "class_id": "fb68ee230ac214c2f9b108e207bd85d023b06e7509b0f0487239664f9f3e7924"
+  },
+  {
+   "index": 152,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "cb8b5264dd3ba01f4cde72f58da55db9cabf289b11a31f147849681b71efef57",
+   "position_id": "027297f30050be90a70b8c149c5f0b27947b66626558f8db08c0d4a1464bfff8",
+   "class_id": "fd7827d5b25af55817019768e2525ebafe99fdf99afe060b8d66d66a27028f98"
+  },
+  {
+   "index": 153,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     6
+    ]
+   ],
+   "history_id": "2308f4903fab46e00509a94ab9c3b08da9e22d8d29b70f1dd136c1ee2e59cf4c",
+   "position_id": "bd7a857d8ce00d9f331860324598ef567518a9c62ebf4a37b5c6c579a000d8d4",
+   "class_id": "bd7a857d8ce00d9f331860324598ef567518a9c62ebf4a37b5c6c579a000d8d4"
+  },
+  {
+   "index": 154,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "87cd31cdc9f1264bb859089d9cdd6b1736538a654f42fbd1cfc0d8c3bcc456ef",
+   "position_id": "6fb0b34dc56617e82dfebb26ccc458bd710a14be7e3d40816ca822794bc7786e",
+   "class_id": "083246da11d2766f5faf7a70a16cb49ee758449fe5b70fb6ad22fe60c521b825"
+  },
+  {
+   "index": 155,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     7,
+     5
+    ]
+   ],
+   "history_id": "ce15c54022b8f3b66e3e729d45c5a73be7eb0d63bed8b4b92a554583b936a356",
+   "position_id": "4ec9b8747b50d7ca957b708933e52a4ccefcfdb30cf466644a8586e4507591f3",
+   "class_id": "46c91d03a2bbb3c2ee12da665c478aafef00620d7ac7e426f72339dd0166c165"
+  },
+  {
+   "index": 156,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "46bb6867ffcd3a8192c6c46e1a19c70912bc3523f89895ed7170ba2cad1ca5de",
+   "position_id": "41c2dcb2950c6a3f819f89fc39865a61ad7204249a6b0c0bae03b2dc181bc084",
+   "class_id": "4f875ab0a16ea8ce3e8cbabcf9070309703bfee9670f4cc4b1b2e058f3704031"
+  },
+  {
+   "index": 157,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     10,
+     4
+    ]
+   ],
+   "history_id": "feee79f9f5b9ef6685f4e66baba763db414e5d8dca93813a0580493908c70355",
+   "position_id": "ca9e326f2d771ad44d5ccb42d2b1f60da15ba9ea74811fef2832dc40025d53d1",
+   "class_id": "d556795a68c02681048085bb6c4878c6579a34490bcba6b081b035a603934d18"
+  },
+  {
+   "index": 158,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     4,
+     8
+    ]
+   ],
+   "history_id": "cc1cc154a3d25ec7f467e6fd2cc9b0b5cb42f41541775013601e68670a1485f9",
+   "position_id": "1a000c1a828790b29568227148ebdbe89d8a5698e8e332c752dbb16015b07690",
+   "class_id": "8f8497aa44ed0e9b80b6b0aa7ff9bf341698b83ec3caafe7e6f5966892219b11"
+  },
+  {
+   "index": 159,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     4
+    ]
+   ],
+   "history_id": "0b5a46a50df1aeef8ea2be9c2a132e1d2694df9b9f1f84ec7430bf453fb6532a",
+   "position_id": "e7fb167dd9760325761b5c9817cdc2cff147d6d0d753c882bd4dde1185a688a0",
+   "class_id": "310887ff83f764a09092d80d75dbe1d1c0fc555011088e3c063ce66ac3040bad"
+  },
+  {
+   "index": 160,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     10,
+     5
+    ]
+   ],
+   "history_id": "0c1ce58cebf90c68b0a04f892a15197012fe66644f287587393349dd21435b2e",
+   "position_id": "3207a76be2cf1756502c9422368a98b36f9622a02feafcdd3f18e6aa3ca8dce4",
+   "class_id": "ffe8543ccc34e9e25457271df21efd3baec226c9a4ca30c8f50805ebb156dcd7"
+  },
+  {
+   "index": 161,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     6,
+     7
+    ]
+   ],
+   "history_id": "16812fe1c1ff471154926aadfa7308aab5035c9a9b5e67bd27727508233e29f1",
+   "position_id": "94a132c38d3775c76423d5c03c889ae95ea194abf5c79c4dc85b1ba1eedccb75",
+   "class_id": "433958aa81dd7dd4a701a6505bf6796b504e46cb3d7b3585682efc1c22710a61"
+  },
+  {
+   "index": 162,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "3b58976a7a2fd90df3280519802bf90f16330293817d71244a616b1bb9117f1c",
+   "position_id": "6e64d5a6443748cf6442f44757dfe2b3bac62615d67e192a1f0d24fa3c8df962",
+   "class_id": "6cd5ff460a6fb451c111d85ef9e6e9b80b61b671446cfc9ed06b6c8e6f11580c"
+  },
+  {
+   "index": 163,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "429709e93990024bee2ac6270f8fabd2268fd734367f21f6d779e3b4282b8a67",
+   "position_id": "5a115aa3e9983a334282fe3aa4d53afd1b3fb8fc95b6764a5fca88182ce6fd2a",
+   "class_id": "5a115aa3e9983a334282fe3aa4d53afd1b3fb8fc95b6764a5fca88182ce6fd2a"
+  },
+  {
+   "index": 164,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "4218c3737f60b1b8f4f5dd8c5a201756e4cd6c28138089044418008669cace61",
+   "position_id": "17f54d1cde24befe1d18aa98c4805a34df96e3553e297be915875093d9a4f0d2",
+   "class_id": "e0c9e076bb2bfea91f2c91fc491259710d7dc21c7fb7c86ed2dabae18477fb6b"
+  },
+  {
+   "index": 165,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "history_id": "0c77099936112b5c046d576be0021dcfe84d2da7ab7addb1c0c741273c20a5eb",
+   "position_id": "2dad44fc30c744497415e7a90b209cd87dc5414ada3dbafb1426e339cea53624",
+   "class_id": "ce8b3d27d04ed2b439dcf06dd5bc00a3014eefaaa75147ecda48ccbc967938ff"
+  },
+  {
+   "index": 166,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "fc6f689c9bcb110483bfd523c3d37b7cb0270359f6dabf26fea4abc1d8e6e26c",
+   "position_id": "1a6c59a6ade8c7fb0698a008fc9eb76cb51562825a123225e5a38a51950b6372",
+   "class_id": "252ce0ba18e0bb8af8255c77bfa63334b422d4c99f87192c42d6ab27675b825f"
+  },
+  {
+   "index": 167,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "d86146262f98999f96d82eb815c671752b853b8b21f573c7d62b02351017fc78",
+   "position_id": "018b435a0af7623377739827fbf2917ef3ac65db70d109b666610308f3f72035",
+   "class_id": "631b5369da2b1e9f5ccf93e3dfc60a41524c6c186c42c9913939e9f2c9b63e36"
+  },
+  {
+   "index": 168,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     9,
+     4
+    ]
+   ],
+   "history_id": "e89da4b08226ea0248df49e9eebcd042efec72b265e01963d8a25b53f5da0c8c",
+   "position_id": "a2cc2d4101c9fd8a6a6260b161aa506cdb40723f5b889af92c76b5a73bcf982a",
+   "class_id": "2b09904ecf341de041bc042ff5eb45d9be995f943cd873aad05aa77056e01365"
+  },
+  {
+   "index": 169,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     4,
+     5
+    ]
+   ],
+   "history_id": "76d6ce9aab4d9c05a33b28d0204e0dee0bb7476f33168ad3ff6ab93121d5cad3",
+   "position_id": "222d368935394a8ea8c3a64f97943267dc1175ea2fe4f39d6c4a4e45a40306f7",
+   "class_id": "222d368935394a8ea8c3a64f97943267dc1175ea2fe4f39d6c4a4e45a40306f7"
+  },
+  {
+   "index": 170,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     8,
+     4
+    ]
+   ],
+   "history_id": "e3055af9631ebd455ad3c3c710f15a931553b810dc5d702eeda54c3617ae9ba7",
+   "position_id": "fd1f190e8584978d993874974b7d6001dcb1ee5b2465b78d66627caa3e20773f",
+   "class_id": "b9a1cc1a70cc196b0019a106317a18f62ba11ce3ddbcdacd1733393d3cdbb9f0"
+  },
+  {
+   "index": 171,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "fe7ee8a46d274002bad15c5e87b928dfbb737c683d9506f60287b85c341963bd",
+   "position_id": "7ee01516532c0bbab3b8c1957a67fd491091407c904916bc1b62cb8eefde2391",
+   "class_id": "7a9b562ad4ee73465d4d4e729cf9aece6bacdce2142135d02bac991b8949aadc"
+  },
+  {
+   "index": 172,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "history_id": "c1e3b658fcb6174b065a2e15967806e93a65320012b8c63bd94dabc586e1a0b0",
+   "position_id": "3e6c7a5e566a412a68932b0beb89e1e214977860d39fde138a035cf36fbda658",
+   "class_id": "a7f07f9499ec512faf0d55392feba31855f9146464ab814576cf778e03cf4440"
+  },
+  {
+   "index": 173,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     4,
+     6
+    ]
+   ],
+   "history_id": "11953f28e434b2571ae731c7e8b6f4daa9938f5131adadb79627226547831669",
+   "position_id": "02c9e3a88a0bb96fd4f82a5a1afb63f3462977095179f3fd6fcbf4d8c3951aff",
+   "class_id": "02c9e3a88a0bb96fd4f82a5a1afb63f3462977095179f3fd6fcbf4d8c3951aff"
+  },
+  {
+   "index": 174,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "ac92941b1414b23062a39ac63d4f8353378308ef9ae9bd49725aa97cc1ffe016",
+   "position_id": "9d54d4f51204e6671991e6cba856f4f3d0f3c2879221ee15adad52f19fdde298",
+   "class_id": "82ab05be184870dce892b04ea134f7daac2e60fb7c8cfd8e714198c1cbd3112d"
+  },
+  {
+   "index": 175,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     10
+    ]
+   ],
+   "history_id": "00cc62d9187341f330a106859a1032f1a3835aa2ee378a2f8edc31e3b3a7e172",
+   "position_id": "cad6badafa6c59549ea965c46e99edfac512a955eae35331406741cbafe9eaf6",
+   "class_id": "8b0e42cbfbf35da78f83dd9133d06044ef7d1919b0d7e0938dc4a03196af17e0"
+  },
+  {
+   "index": 176,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "247e8a93eb5cd8ab138794c4d4e99160871448b988f373c71cd8f0f70b98d85c",
+   "position_id": "6961d324a4ac71a625517ca3e503bc349a1334b3b52e5389e7ef3e4f4357777e",
+   "class_id": "b94dffb5843b9ff040b31b153b4f62293bccb81217b3ff1b8da5de5e42bbdc32"
+  },
+  {
+   "index": 177,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "dcf40a9c27c9ed81fedcb86b7543119482a740796c425ca011adc6fe2ed4b536",
+   "position_id": "67ea07a7bf097ba5996b035d5ec8e437fc1c678c1ea25140be65b25cef39dcb3",
+   "class_id": "1d4ea5093a4dc09b51f9c525d8352810ef791db5c68a12e22764aa8fa327d027"
+  },
+  {
+   "index": 178,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     10,
+     6
+    ]
+   ],
+   "history_id": "25e89cf90ecc97bece42d825bb0b80eeb2c2ef7c6ed3cb10ea7904153560ee01",
+   "position_id": "92107b09633fa667204e7040793c7c9ba6c89c245381925281ea0706e9542bfc",
+   "class_id": "8a81768abb0a554068f58a263369905950c0f3a8b6dafff8e188a9f016765c9d"
+  },
+  {
+   "index": 179,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "46e17fd9b498fddeb5e86c889facb01d8da390f1e880fd85ce0a13db72dfa2ca",
+   "position_id": "0bd327cfed32573f51b0e4a80db59bdbb27af1fb54484df957252bc7152c5496",
+   "class_id": "17aec9f3feef70f0806feab1b500a3e5cb8925acb4a1a36334b8321b4d0cc6e4"
+  },
+  {
+   "index": 180,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     10,
+     9
+    ]
+   ],
+   "history_id": "1b1244d41bb33ec6d9d3ac857808b7f2bdd847676c317a47e2fb3f893566f35d",
+   "position_id": "a34257e69f91703f5456dfbef004183dcefd72e61b03cdff9befe30080ed2cc1",
+   "class_id": "25e4a3a33df84b1a76c5f26cbd002aa146fbb3c5d20622f21aaf2810e504e192"
+  },
+  {
+   "index": 181,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "1b81985cf0283bf6cc261c0daeb300650b7fbf4a753117925a10c638dd6220aa",
+   "position_id": "b00caf802958b0866c70efc4bca881d657656d049b2f4375dccb7bb35be998ec",
+   "class_id": "00aaec8c9174f8950c323c30f2224389622a24f876ddb6eed19c7e9007e85b72"
+  },
+  {
+   "index": 182,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     4,
+     10
+    ]
+   ],
+   "history_id": "687f6044e823ff83bf2e7ebf7801d5b6b4d918f46ca48295a98af648ff6de4cf",
+   "position_id": "471adfd41ba9babb7d7488e25ee0da7bebef7379d146571a2bacd0dd3a6def6b",
+   "class_id": "1c1a67018cbd17ec54e8410d3064571c905586a8781e1bc47ab61b5635811dd1"
+  },
+  {
+   "index": 183,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     10
+    ]
+   ],
+   "history_id": "5cab648ec6af1a5f9918b84b0ade82f5f25d0f434379de6082b3b6b026a26bc9",
+   "position_id": "ad69a113b00091b43eab6e580b351dd8b192d6c4ab1f58c0775719d1af0ec987",
+   "class_id": "998449e65045c5cdf9d22b1493841ad789ff54096e82dc5d9971852b145386f7"
+  },
+  {
+   "index": 184,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "909507a1067759b98bddf9bc34cf9e83d58fc76a9f94999778dc3a1b2b4be593",
+   "position_id": "1f9a8a6ee10bb230a324cc55582d9d7a2e7228ed72d6a83075d94f0ce8d0a09a",
+   "class_id": "5d472b204dd4cc6ef71ab06a03aa125cea8c028152b69499b1cd2ccac1585785"
+  },
+  {
+   "index": 185,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "7e82872ebdb236323c4ca73f6be8175f32fca1b6cfd317b08461a672b145cf7f",
+   "position_id": "9b0ad7a666fa080f648110afaf94c52a9301788c90bfc662456f395d09664f7e",
+   "class_id": "006145887d9d77c7384e9989be98d1c012d83d9bf9096d196240ca3f2452a36d"
+  },
+  {
+   "index": 186,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "7ed53163a1ae8f28cd8d263d67714f44acde670d2d7b49ebad3d5be876709bbc",
+   "position_id": "2193ceec4131116cb4d184d004ca36c1ea7042efed421a06222814150da7dc5f",
+   "class_id": "2193ceec4131116cb4d184d004ca36c1ea7042efed421a06222814150da7dc5f"
+  },
+  {
+   "index": 187,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "history_id": "c5a12d88975f326e623407feea1bceb2dab616e90494709681affbda5442be0f",
+   "position_id": "a64ac3eeefda35021f8e5e49ee124bddcc830584050221faa4402a6359fd09ae",
+   "class_id": "72c3f90a7b3512b24ec0cafa9e861a3510df02a746c457fa1dadf3f180599a7a"
+  },
+  {
+   "index": 188,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "history_id": "456d89d7121508f48a24a12fe3dfcce735f56c6a8807ee370a047cfd7fd56f79",
+   "position_id": "0cdeaea8808b17f7247dbd2993af6d92b84118bc09b6856ff031b55eeb379818",
+   "class_id": "d64bfe8bad602c183e497d3172f4a07373262d8897013214f5b0cbca2aa44b1c"
+  },
+  {
+   "index": 189,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "4befce8667addf681d74c07b7579b8203587a620ff82b326b6bbe3d338517a56",
+   "position_id": "70afc79291165ee8a0c84f860d435af1ebb175d84fcff78d27f04d71bebd6eed",
+   "class_id": "70afc79291165ee8a0c84f860d435af1ebb175d84fcff78d27f04d71bebd6eed"
+  },
+  {
+   "index": 190,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     10,
+     4
+    ]
+   ],
+   "history_id": "63be40e4116f6f14f5af40d9539b182e47d0f7b6301368ca8b79e646bf3aca99",
+   "position_id": "ecf53d5da10d667c5cd93d61aa5b22534b5c902f7a0fb9b0bc04de357c1d89c3",
+   "class_id": "a1d6ed938a66b8ceda22b738463a07f21d23c5ce0ad90e5e5855f7c7323610f6"
+  },
+  {
+   "index": 191,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     7
+    ]
+   ],
+   "history_id": "9bba76f7d24bf71b04e4339b4f693478541d586417775ee448d324b81bc823d9",
+   "position_id": "cad8399d3568da74ce931f8bc9601b77aec167c1cfd14e459b22483dede44c96",
+   "class_id": "7ec90c60de8097218a70679aeb4855b9385dab34b714504e6db051705a073f0a"
+  },
+  {
+   "index": 192,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "8dc77079f36680ab0ffdd48c62719726b262ae15a675283ccf42da62af43ffed",
+   "position_id": "1062cd8f8c20cd8c4e87c257bf43f45a48ac2381a041a6ee98dc21201ff5c210",
+   "class_id": "1062cd8f8c20cd8c4e87c257bf43f45a48ac2381a041a6ee98dc21201ff5c210"
+  },
+  {
+   "index": 193,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     6
+    ]
+   ],
+   "history_id": "2c0a309e864eeda27fdee7d27c76088962483bb861afbd4c50b34ba958787eaa",
+   "position_id": "0c3de647f9963c8a2a660327b4ac5509d5c7c811b1214271d947191eddb63c18",
+   "class_id": "0c3de647f9963c8a2a660327b4ac5509d5c7c811b1214271d947191eddb63c18"
+  },
+  {
+   "index": 194,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     9
+    ]
+   ],
+   "history_id": "a7958c7e8d01159e356694f1cf73c380160e313b66079d3cb27a56d57d413569",
+   "position_id": "89a8e410a5750c980d879e6ca41c937e204fc4b2e9174a097f7fd5d33d096d8f",
+   "class_id": "3e562d114363fe5817cabbbe4248d9b3aa9d5163d24810f955f782f3a20c109b"
+  },
+  {
+   "index": 195,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     10,
+     7
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "history_id": "3f18302176025e0f302573fa8ae360f844d7e0837ca7514ebfa9d2f79f01159b",
+   "position_id": "230444ecebca6d65b44fa8ea96b34bc24cf51c03640a68670a109e533eb80b71",
+   "class_id": "3c84668c1fb4edde9fd99a1eab14ce208dfc8cad528db00287fa0df6c50a5459"
+  },
+  {
+   "index": 196,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "history_id": "2b73b4e2d687788607195afa50eb615449de0f9aff703ea98313bda4d660495d",
+   "position_id": "a1d755aa8248e12f0848e2428ca7bf02639cedbffec9cbbea2e565045d562ec4",
+   "class_id": "5f3716feb56af55976f63e64615b809f1bb15258d0f9838adfe24c11a353d6e3"
+  },
+  {
+   "index": 197,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "f9a0bb9a8a0229459b1869fd8cebd49b9bafd4678aff4ed1b5cddf44c55d1df1",
+   "position_id": "28810be3b5eb4cd808ec03fe8dbd560004676608e5d0a9398384c00874068242",
+   "class_id": "5decad6f2614981469763e0706f9708e24c777e01387e4c8db803cbc9d1aef3e"
+  },
+  {
+   "index": 198,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "743f4353a2f2f7bdaa115723b7c59cc0816d2f7ce164ea8fdafaa6b4a2a22f2c",
+   "position_id": "64daefb9d5f1f4ef49e2742e0d9c17f7b63a9e0788c4ff7ae947caf83e724e40",
+   "class_id": "2fb9da77f0842c186bffd2aa693865b7b812397af7a74defeba41900ae2e174f"
+  },
+  {
+   "index": 199,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "8e5e6b5531cda05974ca9dfb406195c315bc17a728671aec6726ee877f56e4a9",
+   "position_id": "a5f528d6ffd5675842ab2d7ba97c542fb3e38f014aa2bb1f7ee01b3584be7a2e",
+   "class_id": "c7c360feec53065d5b0901541189f7a564b1545bc6afd5d2fee7974b7511ed37"
+  },
+  {
+   "index": 200,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     5,
+     9
+    ]
+   ],
+   "history_id": "1635a71ca6318ac4790f3ad5606bdad6a92c35de0c40506e2228db34caea88b0",
+   "position_id": "1143d2d6d747c7c375a6b65fedd06f60be45feace2d2e82ac502749e6ac7b019",
+   "class_id": "502f1007665a593d7bee5b5b3d6e5f6e3a4bce4eb23e88d0fba864d2a4f8c74c"
+  },
+  {
+   "index": 201,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "f5909288787b44f0f6d84bd2e2191580e4adbce5adb08bd3888b1c2162246612",
+   "position_id": "e2d5c90c2de111b6cc4a77781e7e2fe786b76bcfa8acdc868273d8b6f021a996",
+   "class_id": "4497b9add67395f8f571191f0d9ec89c0515c4d6e7708727453ddc886e98a6f6"
+  },
+  {
+   "index": 202,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "history_id": "492a44ad800f2c4559ff39bd4a2cbd7daa4eb4db85ec58f204fa18afaff89fbb",
+   "position_id": "888fd8c6c378949e5b3282f892dbea14342c84a507665eaddf212ac6d0537921",
+   "class_id": "5587b1e30dc1556507e47c6e0c7a1cd675135cd0dc0157f3fa47568b3b1cd3c7"
+  },
+  {
+   "index": 203,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "6fb451a665f3bccb64a324696afe4a065d031dedec402ab45e632696b9954585",
+   "position_id": "e28f5d4273821be9b2b891608b6afba68a751c2d9b73f91c6aaad8a064e16aa3",
+   "class_id": "be7f2e6f2037a6e691c4688f8d5995b605355e25beb769d8749ea289e044e5ae"
+  },
+  {
+   "index": 204,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     9,
+     4
+    ]
+   ],
+   "history_id": "9a201e28ee1490554e10b5a0e85208131a986b36890707c83be4d60d476e110e",
+   "position_id": "0d962ca074d4a7a662adb83cadd83eddc6867394c2a20d507168a9ae28c0c2f2",
+   "class_id": "e2074741026c3dbaa21a0053e1b453db32e055547aab770fbbce883d79564827"
+  },
+  {
+   "index": 205,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "history_id": "f9d4e5e23bc8d0086b1126f8766eca49920a08fe4ab91927b769449bcd1ff35c",
+   "position_id": "8f8372e452cf63dc3f85c6c81218ef6ca16ab3ea3e167097552c428999209ff3",
+   "class_id": "6b1d3ded7fffdadec24fb28ed0ea61a0140e660bfc01899c14abcf9c1b595c2e"
+  },
+  {
+   "index": 206,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "2cb6acc33e1cb1b2ecb40c266da1ab1c882a865353a8729a699bfe2d2498bc63",
+   "position_id": "814a0e267a2223fe580b758818d881d2ed89c628efa8a5aab73ebc9cfdef526b",
+   "class_id": "f27d6fe5bcad03a231db3997f42c4279f4f0aec864f5b8b370f6f9ac90688ac4"
+  },
+  {
+   "index": 207,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "history_id": "28e47ecf22d96fc7505d68d42912104af0b4dcf04dfa03e2cf02692935dd51a5",
+   "position_id": "5f06b45e981bf9d90f88dea6236d6cc236fa9597576c89ac2e588f62a25c7520",
+   "class_id": "a54abbc946cd9937d5cea6e666d34936fb86814eb4adcdc000d56766b1aeb643"
+  },
+  {
+   "index": 208,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     9,
+     5
+    ]
+   ],
+   "history_id": "b7229986d0a3c346cf7781cb908e92fea90d89463a7267379523cc6899e14ead",
+   "position_id": "7838c1737d59c23f6d44adc2870b461d73010a5475dbe67a986bf644dad1d324",
+   "class_id": "cd56a11260afaaa08af773681145e2193f0c59be779879f62a92377971556caf"
+  },
+  {
+   "index": 209,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     4,
+     8
+    ]
+   ],
+   "history_id": "b9a068677c1ec4ea02237a3b1ff39e7bb043d962f3fe91236fc0b1c7b90effcd",
+   "position_id": "cb46083b90778d04a98a19872367438b9103a024a7ece692595032080dd128e1",
+   "class_id": "0c5ec1b6d41fec86826f84d96562da10e984c6598c497f557a230e3f69e14e2e"
+  },
+  {
+   "index": 210,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "1b09878c1fafe6202965923586348c65ccfa07b9711533a6b750fddf31e24777",
+   "position_id": "294784eeff80a79b5d95168c945a523e0d8469e3f36681eaf7750eb8a4e0bda9",
+   "class_id": "ed537795e0f7a82b73552b0c72d93c26eadb3f0f7899675e990818fcf6dcfd96"
+  },
+  {
+   "index": 211,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     4,
+     9
+    ],
+    [
+     10,
+     10
+    ]
+   ],
+   "history_id": "5704faccd8e2af80a0c9a981e77edcf5f934e7860cb87382d673b563bdd97bd8",
+   "position_id": "789a3c022a92a104c1d23d705297ea77fc5500fa3aba9ee77703678485035062",
+   "class_id": "4f997ff7266f0627cbeb69f6fc370c3791a7b1f34f792531f7f77d7a5b1221e7"
+  },
+  {
+   "index": 212,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     8,
+     10
+    ]
+   ],
+   "history_id": "3b231b52597ceb8881b3c1b6efc7344ea16f15171e3392240ebe4ed154a9432f",
+   "position_id": "abd5ba4b4737c4907e566493607aaa19d6ed4508c56724295ee11f8692a497da",
+   "class_id": "ef5f713c00eefe247c411d39b3e3497a620e749822b1af61863cb251e122947e"
+  },
+  {
+   "index": 213,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     7,
+     10
+    ]
+   ],
+   "history_id": "d352de06a0b2c2ec51d779f9479993218b52607541f14340333853fffbd18a51",
+   "position_id": "7c1df4db7754835aecef10e887da42f8c9185d5b0aeb7932dd42c74a689debc8",
+   "class_id": "d9ffee80d9b23e79776f3db9609956f52611c4fde4d2670c123173fd94f26320"
+  },
+  {
+   "index": 214,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "history_id": "21ecc4aa424e6a34e3122eab59f4c08d23d6ff03b0c22484657db0e5aae14928",
+   "position_id": "40449937f38b38642a78b47b76401ce35ed8e47fa1ba2c026ae68b6ade0fe1e6",
+   "class_id": "9b0f2ddba3b6250758349ae14cda159631711e961ce3cf330c45835d6df99a2f"
+  },
+  {
+   "index": 215,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "history_id": "57c75df72b06948480cfaea5641faf8d4ef38efdca7c9c7585c9cf27376562ea",
+   "position_id": "e56b326ec6eba3f986262af15c92377d5bc2b24e4a2c5e1073d97a40b5a7d4c8",
+   "class_id": "2703ec2ec1452a93c3360e09f894fca66d358cf8fd96a4b6acd0b73472893edb"
+  },
+  {
+   "index": 216,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     10
+    ]
+   ],
+   "history_id": "2477e9c20a51a273ef7788b64bbaa953c6d155011e8c9233ae022ea02cdccfbb",
+   "position_id": "556992c75f79985efa5b5dc0dc651b9929fcc27c8445acb46f9e274fdd6cb7a5",
+   "class_id": "132ec5c5f32557ca0bca90646f10357aed8f5109298e20d2c9ff3bc2e09489d8"
+  },
+  {
+   "index": 217,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "history_id": "82eadd509de97cf30264183d0db72092d8792edff929cb558f0fe7967d0ef204",
+   "position_id": "989ca31051920600d00c746fd405c9c91d847d03dac5217dcb60c6bfc0f729dc",
+   "class_id": "5f7daf2c498dc46f6cdceafa08faaaab5aeb0317dff1aabb930f9a59dacc9654"
+  },
+  {
+   "index": 218,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     6,
+     9
+    ]
+   ],
+   "history_id": "5f11643cc3f98c175d846cbca52ebf9e33667d9e3e77786afa92d1bb0c72a900",
+   "position_id": "8bebc1d98c1bff533102d83e6f21e5c5c0c1b2581b7817fae9eb055da79c7e04",
+   "class_id": "86b3a7f9acaf91c36d01e365633e847607d64aeafea212d80b4623d1b6a4bcd8"
+  },
+  {
+   "index": 219,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "history_id": "31917bf6bace2913e505029de9f3080bc38c020d26b1ba617342f586363692fc",
+   "position_id": "b96e008837285c3e6552b6a621b06728e9ea7600c9dcf1aea43b2532d8eb0ee0",
+   "class_id": "144bef881ff239277a4f67a29d2d6a6e7eab376c9e7be10e4a1e44f29fa8bdfb"
+  },
+  {
+   "index": 220,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     10,
+     6
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "cad89ff65871b0709e813c719f86be8eb65433f04a38b5ef3a6f45d780e31a86",
+   "position_id": "0613b3abed59c43815e86174db7b946298f8538b72bc40c717357a73e4a6f3d9",
+   "class_id": "54a2d8a08ba5c08c7cbb4270fffc87ea2cbae009e60bf8eaa1eb373c0edee1c1"
+  },
+  {
+   "index": 221,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "2696d7e55c0c8476891316cdc5942ed8950c168242adc24b6434ca4f9d3a670c",
+   "position_id": "47d54abbf7800c3af0dbf56482fff188fefe95c1fab1a640159c14c070970b2e",
+   "class_id": "ecec671dd75332fed3ff76410287ae1b1d744e7fbedf68ea838a6939098787d0"
+  },
+  {
+   "index": 222,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "32d214674effe984094bf91e3e31438a63ed012e720fbd6fc7003809b184ab1d",
+   "position_id": "4e0e7eb0537a0160137ae8bc920b25bed49d7f235def935e4c04ec6feb56fe72",
+   "class_id": "efcfbdb47cbc2f30c5a4ce03536323e9c0d977038e5036cd34bb45a08dcac1e6"
+  },
+  {
+   "index": 223,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     6,
+     10
+    ]
+   ],
+   "history_id": "8b79c3b837cc543750041c84d930259012ff8a37fb40bd2b0b40d6913f100406",
+   "position_id": "ed578d4dbb3a0cd26f06ffeb725d1d14f7c3e5a233acdc2aacaba7f8f89aa1e3",
+   "class_id": "3d8fde150969f9fc92bd2a233679ec6bde32dacbd7cba95bb4ab66ed0776d9ae"
+  },
+  {
+   "index": 224,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "927877c41dee420d06e93f0441fe463248d8a7d8657025352b8ac0360e041028",
+   "position_id": "e3e319ce659fc3362d5cd05eb47f3473baee389bfd56e27f61339b8bac086309",
+   "class_id": "8c84dd2ded903d058ca73d8fd376e7a83c6fdcd4bebed1fabd7a94a438108139"
+  },
+  {
+   "index": 225,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     7
+    ]
+   ],
+   "history_id": "7861d737c1f38089c5247f562bc0cee1e0ec6c8083f726145072ac53578034eb",
+   "position_id": "a0c5576e2db89cd4d4a1fcc9c60b86f15cbbc5660fb86e1736ec9426dbb4ed1f",
+   "class_id": "d84b80b7f6dac8f44979a35fc3577d16be282979e05dd29da78050b3870f6ba4"
+  },
+  {
+   "index": 226,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "history_id": "61376b819255e27a8356631d1c8552ec154329f56a5272593f191b773ebd05d7",
+   "position_id": "d60fb7a0c57005dc586f8472f9c728f56485d24ff85294ad180d35c0ec78bfed",
+   "class_id": "4e9bff6430c14e0490a5da75509bd7e4d9243d718f308b473bc40c4e4eda7a25"
+  },
+  {
+   "index": 227,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "1e56fed90183675dd146d224cc51fd900b826e38e270e1d7a3a637d9b8e83271",
+   "position_id": "da6e4dccd23835ccebb712065318c39bba54766952d2f00649a59ac585b04f67",
+   "class_id": "d48c3df55b688a7ff58a063548074e3ba51bb56c2574688f010a2c156d746e89"
+  },
+  {
+   "index": 228,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "history_id": "e18e55e4ac0a4f3179b1797f9d3c62d4e3d620f0c1cf47bebfa45085ba5f8bd9",
+   "position_id": "a90fcd7e80e8e169fae79e352a493cec23fc91511e96341525121dddb728ded6",
+   "class_id": "a90fcd7e80e8e169fae79e352a493cec23fc91511e96341525121dddb728ded6"
+  },
+  {
+   "index": 229,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     7,
+     10
+    ]
+   ],
+   "history_id": "b1c1bd99a7967c24021910758522a0a51ec58a9b5f40690442c23e43202a4797",
+   "position_id": "55e5c143c944b71a61b970cdcf0e24471142423013f4a677f7471b47f06108c9",
+   "class_id": "62fa31c46876d95e083f48c4a1ff7396ad693e85d824af91f4be9eda7d19f165"
+  },
+  {
+   "index": 230,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "19a980dec52527bab641ae57e6a6db8290a5b4503830a21d62e1a14099f82fd5",
+   "position_id": "1827925dee47487269e79f204eb782c4d4f90a63b3d9f5a1404484d0bd2e5af5",
+   "class_id": "9dbb17c598c6254b97935665c579551c71c6d68180f1807cdf45547511e98dbc"
+  },
+  {
+   "index": 231,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "a175cb6f029ad365e36cd8d7f0e8000e88f5b4107b7067e6c2d56a06d5ddb7a5",
+   "position_id": "4ed316a069d30481cd02ff7f958332480796c8c7d97492d8418562ed4af13c06",
+   "class_id": "c42b33c9759bf028780020a46d4b5e8ebee9b7f07097e02cee13d2c21bcd96c4"
+  },
+  {
+   "index": 232,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     8,
+     7
+    ]
+   ],
+   "history_id": "e53f2ece110312b6aa7adc3e1ff77d0143fbb96cf3a618217bc754f39cd3d0e4",
+   "position_id": "cb4c67ad947a870acb8bdd35a7e65d77c67793cf2fa447dbc736b13da5b42553",
+   "class_id": "04378541d8ac410644647a882972bf050fa2175af88b25187c8c14705cfa607f"
+  },
+  {
+   "index": 233,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "485c46deaa4be4e0453728e97b16332873cd57738488e51a7ebb69c711fde797",
+   "position_id": "5d4ae040d059ca1a7ca4c6f5e3f43a41bdf44761b1ca77a0f7c93797e677c251",
+   "class_id": "81c7921d06c0ed07725e0961384d86d4f6822089083cd99ed63ec5d41111ec99"
+  },
+  {
+   "index": 234,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "49eaf20d641e6bcbd361353c5393d7d4d3e41f37815dd687ccfb39fc745f5b56",
+   "position_id": "128b93e679bd9f90b7bb821d6e198eb1c4866bb362c9c01e78611762f6318e90",
+   "class_id": "928208a5ac781cefa961d26e225af5f02f96d0ba22ba09dfa5e25be384f52449"
+  },
+  {
+   "index": 235,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     4
+    ]
+   ],
+   "history_id": "98129ce9b6d8839286e8d78b5de2c7169c811d12da984649158698164804e4c4",
+   "position_id": "11733311fcdd834a7668a2b7d3603bb6669ee66e3446273624fcac74d3953e89",
+   "class_id": "8cdf27a0397df1f091213fa6b101fa722b4bff4c92cd99ce33e9a4323cd91b56"
+  },
+  {
+   "index": 236,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     10
+    ]
+   ],
+   "history_id": "c26d872544be7e1d73c9c87265b87e46171b918993423f5a111297ffba9e2a35",
+   "position_id": "a90e013156db00af88adc7f5940141adeda73cae2b4a2959de3eb533b4c170c6",
+   "class_id": "d977a282f9d56f4e6e3929d699ddba122b5fc1fc558a0883ea06c2c578b56f0b"
+  },
+  {
+   "index": 237,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "c54deec1bc8c1a6f370b48be32069b61bd9c79408dc90baaa621b1d11803f8be",
+   "position_id": "b49d2073ae05a54d37e0f270591f6110a07f241cbad9fe8e73053495f38cc56f",
+   "class_id": "9b3b39d3d8910807d0b984f34a02bd5144d8f256562823c44bffc46b97efcdbb"
+  },
+  {
+   "index": 238,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     10,
+     9
+    ]
+   ],
+   "history_id": "b9e4c0a9f99bc3fc6c77c5fec0c2b1241853a413b03a29a54b8e96c820cb7615",
+   "position_id": "221ef67eb50993749a322c2a7050eaba1a280ca9d1c04ee8c06d3ea97f04ec31",
+   "class_id": "92905b3c18b440775abc68ce7d6318b58da5e840b3906db1143bdf25b9f66c20"
+  },
+  {
+   "index": 239,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     4,
+     8
+    ]
+   ],
+   "history_id": "dec8e57773b902f6ed5e8e4695d6149ea833d327cf75a490884d285cc9dfeb23",
+   "position_id": "b6807904efd962541df967346fb5bdb6983797fcc065c7a0272ffa72c921bea8",
+   "class_id": "bc316409f0baaf61a16360ebbfd2071b77d4be575cc257225c90a0bccfbed4aa"
+  },
+  {
+   "index": 240,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     6,
+     7
+    ]
+   ],
+   "history_id": "71d6c22b5171dc646cf44f8e2d1ba820d287259b5d6a5d3c6018bebd1328bd28",
+   "position_id": "508dd37397bcd954342c9fa23701cd4f08fda9f1a79d58cbb8f5b1c39d69a185",
+   "class_id": "4067d85179eba770460bb61445115c17df8b0c1679b3e996705da5532e9cce88"
+  },
+  {
+   "index": 241,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     4
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "6383f2849fa63f6055e5c470f9dc52e4b4c7d5d7b54744a7b78d3872aa3e9b36",
+   "position_id": "d39a9f8ac4f1ac104e960522f7fba3c1aff18dead1e50b4392f0f9df60b3da4e",
+   "class_id": "daf91ad572d9da33cae47cbf5db33324ea79bae8c9104fb03abd39b52e7ab725"
+  },
+  {
+   "index": 242,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "2ea504c5fba50f42bd9bac73951ae83274d8affd378b98c08d570de50b472908",
+   "position_id": "e8f3b345efe35519a228f899704e108c97ec3b6f505f0e8c140709bcf8b30a25",
+   "class_id": "c3b187a8bfa1779b912065a944ff1db0d41ad80bd017674a8c24b1d371373df4"
+  },
+  {
+   "index": 243,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     10,
+     9
+    ],
+    [
+     9,
+     6
+    ]
+   ],
+   "history_id": "64d15c8b696f3d62de227cf87fd599e25455e5403d682e52fbb89006aed23485",
+   "position_id": "e0d4a567241b4c1df2bbc281c7a01e37450a0ab024559fb4d50a760852494e9b",
+   "class_id": "aa230509a1592d457e03d7c7d594c4d689c353153e9c2320dbe2afa5ba13f6ac"
+  },
+  {
+   "index": 244,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     5,
+     9
+    ]
+   ],
+   "history_id": "19198b76c95a6f0fb8c55cbde4f31d6cc7e5a3aced9954fe8e5122f97f44b8c7",
+   "position_id": "709d114b17f9fdebc1be815e33e2e18d23326f5060c584b54df0dba9fb5dbfa9",
+   "class_id": "43eb757d4ae25b87f7745bf02b0590889eefc8b39b041c60c8ab5d8ae15b165b"
+  },
+  {
+   "index": 245,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "6591727542da9102588554d54406a729bce3c9aa8f0aa7cb441c2a9f5ce79a08",
+   "position_id": "b189de7c625ddbcc03cff66a3926b8b05d602fc25784c3050af61faa12be7510",
+   "class_id": "b189de7c625ddbcc03cff66a3926b8b05d602fc25784c3050af61faa12be7510"
+  },
+  {
+   "index": 246,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "history_id": "5e67e0d366644de5e2d2f4483b8d762f727a5e0dca74a08394adbfa415572ddb",
+   "position_id": "31a193dba157a1ef9a7ecdebc1d176062ba382b8cf37f5b9cc78692ac5f0add3",
+   "class_id": "494ebea96549118c895751e1107d023b41580b90c1074f07fca97d177cdb0fab"
+  },
+  {
+   "index": 247,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     10,
+     6
+    ]
+   ],
+   "history_id": "d42afa6f14fb2398e2363cddee73febacfb2ccee5cc4e202616c3a2344694e88",
+   "position_id": "b20ee631d43cf258b497af33732f2f3f17fe297daf6faf6662806afba2aac8bb",
+   "class_id": "33e6f9d55b48ff2bd115d742f149b7528c5796a19e32e119d5b4b6839026d0cd"
+  },
+  {
+   "index": 248,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "history_id": "fd02e0a1e1035575482d0ff71d8da8f37b0c646752cbb714759b40ea9ae38807",
+   "position_id": "909ae86f1fa70a673ee15fc2833220488a2c39eb40aecceacaf9f3e985f9c08e",
+   "class_id": "909ae86f1fa70a673ee15fc2833220488a2c39eb40aecceacaf9f3e985f9c08e"
+  },
+  {
+   "index": 249,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     10
+    ]
+   ],
+   "history_id": "324b5b5ffa650228e815fc86248234c2ffee91f316449512513fabb329c32e6b",
+   "position_id": "0302a6e1a579f90d4c0eaea96e3aea8c26554b3f2e61b04f95ee7870b6536122",
+   "class_id": "d74b46699196dc4faaaea40b1c0014848ebc8aa6074caf3d033de6c3603bd586"
+  },
+  {
+   "index": 250,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     9,
+     7
+    ]
+   ],
+   "history_id": "d766338ea7a4b96d42befff8e0ac12a27b97e50d2657e33c7155dc5729c5cae5",
+   "position_id": "c0c6c52af09869f156c9733107f81dacbbf67b91cd38791926c6e79c268b6929",
+   "class_id": "7bc6f25b2a6e704c95ebde0621e196475826ea97893a2904b003f057ef9eda06"
+  },
+  {
+   "index": 251,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "history_id": "14943f675bb19122c20621aa541c61a5f9cbab6cc86e825fba2de48905de989c",
+   "position_id": "f954d89a665c409eb1ac5971e8ba366f7e5c07b4199d6dc7347740f92a176ca9",
+   "class_id": "f954d89a665c409eb1ac5971e8ba366f7e5c07b4199d6dc7347740f92a176ca9"
+  },
+  {
+   "index": 252,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "193427e4b0dc0e298f4d00199738984bb0ce3558a32c69ff922f99126691d6da",
+   "position_id": "7704872436f3e84f2b3be5db07e51092610b3710eea7bcd0a712405e2b99265f",
+   "class_id": "7704872436f3e84f2b3be5db07e51092610b3710eea7bcd0a712405e2b99265f"
+  },
+  {
+   "index": 253,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "9137ef4205a19ffb664c9204149cec47dafe13b1a217b87d7a4be7311fdb7d11",
+   "position_id": "c0516ec8659e2ce3a59ba8fc1a1e3c6d746c6fb95df4cab58f9ca6ce28e339ca",
+   "class_id": "c57c825e25df3df8f2c3f726ebca75acecb9c3488a860e09caa86efa99d6af53"
+  },
+  {
+   "index": 254,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "history_id": "e5bda9889e34df3ecf4c1319ffa39307baab249c630144ae686fe0c85297c1c2",
+   "position_id": "db057aada4e4cc0eeb659f183db3338e8d1d44b92a124947bc3d5600475b6229",
+   "class_id": "60e20181785b8a6407868e0cc3c7c262d88b463a50d2fc8aec2eb70cfbdcd0b7"
+  },
+  {
+   "index": 255,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     6,
+     10
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "2bf5cc16159d9517f354b9c96f04eb5f7815413a8efcc62d8ebad1ca4563c9a8",
+   "position_id": "78951716e174b674fa373b656f0b78ede7f0d429546910c8417288a676c53a25",
+   "class_id": "f1b9ab10f0361d07eea249312dec6d224a532d665a5fba3dbee6fec278b637d5"
+  },
+  {
+   "index": 256,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     7
+    ]
+   ],
+   "history_id": "9fd2d633fc83f3fdb3df0deb393a3d377a43a3345bce81ea8be30fd38b7e3bdf",
+   "position_id": "66b39e1cd34d9befccd39092340a1eb88f8356427c861a49fdeef1ddb71794d9",
+   "class_id": "761255af35a071b2a94002f9758761aef966f9d630023a13ead5ca2672e8f9c9"
+  },
+  {
+   "index": 257,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     10,
+     10
+    ],
+    [
+     9,
+     6
+    ]
+   ],
+   "history_id": "7a1abd77e6135732bfd13bcef4e994bf3de99f0ee2bd7bc8966c0b98f303dfe2",
+   "position_id": "51e554da174ee2c434727a3e769cb89a22534089c6a3d19ec794d0ac3ec254e6",
+   "class_id": "b68040b00ec3925df1e34ce639cea93f5313da2994355a46ede020d97fc566b1"
+  },
+  {
+   "index": 258,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     4,
+     8
+    ],
+    [
+     8,
+     5
+    ]
+   ],
+   "history_id": "45ff42fdecb057bb8f18476d0889b700a9ad1688d08958341c43fe8e832ed550",
+   "position_id": "76c0387a75a34a6c4c91f759d181e7c6b949e82b82962947b88c3dfb9ea6c806",
+   "class_id": "70e50af328fd6c95566ce22bceb4081ce3f1d14e8cb2f5193c18fd749b43b82d"
+  },
+  {
+   "index": 259,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     6,
+     4
+    ]
+   ],
+   "history_id": "2e330480a9478825ffcd854f4c4195d0df23c8346b751e6a112df58e1040c63e",
+   "position_id": "c3b6d0577dccac2c4f018568727e4293ccfe7a43e4bbaeaa7e47143cbb7f77a2",
+   "class_id": "238ad0e524d5d6bfb9b33efd30e149c5fc58c56c28f38a84be03ad3e6ba0277b"
+  },
+  {
+   "index": 260,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     9
+    ]
+   ],
+   "history_id": "0ebef7c4d7eab1b1b31e326f85e717e6447d224c55c55237deb7fa671406774c",
+   "position_id": "5845652fbe801393def5bae0d838bff05d94aa7c89f07c63ff67724130e6be16",
+   "class_id": "cd0162ee4c13bc444ce3ae07325ecaaada19a94c1663411c95defc7192b7ba9c"
+  },
+  {
+   "index": 261,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "ac981047c69da34552faa7e7b9fa5927bd09dd2e3e93c24ba285d29d7cb284f6",
+   "position_id": "72a24bd79bb376b3c4775322e0e40de29c51f845604101314e0c0273ac572530",
+   "class_id": "72a24bd79bb376b3c4775322e0e40de29c51f845604101314e0c0273ac572530"
+  },
+  {
+   "index": 262,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "156c2e604874c52e8309646243fe1e08bf0b7db9cca1b8a3215e0d21bb5f401a",
+   "position_id": "605a5d93277a053da91b0464ba0269cfb3d2ba71fc27b82f56faa48a64115c4c",
+   "class_id": "12be95575362635866dc182185f311e0c17c8432559e2f52096ed513bd9c1158"
+  },
+  {
+   "index": 263,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     8
+    ]
+   ],
+   "history_id": "75335a3949f2fb029e2eb7953ace374f0e952ffb9b0f66a9c69f212c9dead0b8",
+   "position_id": "ec2c23252deb4b3886d1c12d8a40514bddb461ce769fb5d28d1fc2f02b195888",
+   "class_id": "6e02c77bbc5334ea8ab67d9d1c896b9b9a77e7d2a3d43026f8fd884bb9825cb4"
+  },
+  {
+   "index": 264,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "2ee4f4b47e579556be81a77893085172c7ea26a5b60d70c7d6b7f5d0f260316f",
+   "position_id": "f90274179f71a266324a7f37538eb487660ce7a8b663210e578caf99db972c24",
+   "class_id": "aa32f0fdf76303b60d3915b653a800fe689683276e34a6702c25cf5069e15323"
+  },
+  {
+   "index": 265,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     9,
+     7
+    ]
+   ],
+   "history_id": "4f75b6f40fc7ab7a3aa398df00347200f70c37f8ddf8e0eafb512f7bc0dcb00e",
+   "position_id": "980fa2b8a7271b71cf311fa5c30fb4b7a419a6cf1b5ef11e17665184f4330a4c",
+   "class_id": "1ff40c7440fdf4e6aa86b270dad69315d405bd061e7dad912941f1e63f860d1a"
+  },
+  {
+   "index": 266,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "9580d5fe80761331637aff3d9a67b9ea95a5861ef84e3e055034d803f581b27f",
+   "position_id": "3f5e3b5186409c5ab97d68a7efc2daec05e15011f5e960aa234f511973c45017",
+   "class_id": "c1cd7412934f3f8218d8a6d16b28330a3b6d77c1ec69b386d7fc5e4b05355bfe"
+  },
+  {
+   "index": 267,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "history_id": "336b96f84291a5a84af07cfbabb28d99611e8e9367e9fe8f1b026897f443c40c",
+   "position_id": "d7cdfc31eddcaf27d3f4a43b9ddf0819a0ac4e1a1b1f350fd928388547bf69a7",
+   "class_id": "c302cf730e140ffdffd3f695e3ffa993ae7cd8ffaff938fd1f5ebfc997d71fd5"
+  },
+  {
+   "index": 268,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     9,
+     6
+    ]
+   ],
+   "history_id": "c5ac4a73d81b894683813f457d63e778b1cf340ed3267675ad77763baec599ff",
+   "position_id": "c5e814bf7b4aebcc8f2530c9c85004b717aa52f5f49c294f33b455513bd61e93",
+   "class_id": "4f49db4618a09dfa501c92cd335c075b74386b62975598b639961ca9d9b95c69"
+  },
+  {
+   "index": 269,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     10,
+     4
+    ]
+   ],
+   "history_id": "34a9c60b56ed729054c7022d8c6c983b709849a0ab7722b31d4d69877d69fd6c",
+   "position_id": "ba19ef3d20257128f08b0ec620362d7f9495c93bfa77949c92eadecc447d7515",
+   "class_id": "ee49bbcc08a251f27555acfae6f77db461f432571f10595ef4b35596a7443b64"
+  },
+  {
+   "index": 270,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     4,
+     10
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "14114c2c9cba827b9c2c2129fe68d97095e2e3b6056e5de438ad4264c3b0f088",
+   "position_id": "9e293dcf3b3cbffc3a6d6ba11d28b4d1837bec8c3c5fe547a94ad6912f60ee72",
+   "class_id": "89efe343ba73922ccac9a82bdd4ef7a2425cbcb7b265948cb96b4651fe7f13b8"
+  },
+  {
+   "index": 271,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     7,
+     5
+    ]
+   ],
+   "history_id": "dd87743839c3e46fa8cdf0014e35f40162fddde7d6be1c93a0aa12327a30fad0",
+   "position_id": "b459c4a65ab10996c30ff6d50a38bd3bf0affc9d8dd7930ab2b8eca523448d7b",
+   "class_id": "4067d85179eba770460bb61445115c17df8b0c1679b3e996705da5532e9cce88"
+  },
+  {
+   "index": 272,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     8,
+     8
+    ]
+   ],
+   "history_id": "d8dd97dcc50b9bce9765c17e5804b0e33e1984c9742246de0a4fb319b74ff98a",
+   "position_id": "48bfb01ce0a8b3e46fa010a2c93663479e027fcd654e154e103d8604d5bdc144",
+   "class_id": "3fa57d6b36eba1389bf7ca2790407857ac118a31b17a667f8163b4c52d3eb5be"
+  },
+  {
+   "index": 273,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     5,
+     10
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "history_id": "7e13057865825bec71af2526b0c36dff640cb73e1b4e5f22bb5629192b283dae",
+   "position_id": "58718f3c48b3ebd4b8b91f2d95d4efdab6d9e2ba5b118ed2be4ab8a7ece002d1",
+   "class_id": "78c9598e79ac5cda3e065b0037cac4ef138762bb46f44d2a7df18b601a4fc5c6"
+  },
+  {
+   "index": 274,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     5
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     4,
+     5
+    ]
+   ],
+   "history_id": "ae452cba4f277694cc69f1d10a31f9806b52ca1a9ec0f6bf73ebe6c40e295fb2",
+   "position_id": "bc95d4fa45018df8ebe88558f6115e9fd5f951171e7cf51c88f6748ba334b263",
+   "class_id": "bc95d4fa45018df8ebe88558f6115e9fd5f951171e7cf51c88f6748ba334b263"
+  },
+  {
+   "index": 275,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     9,
+     9
+    ],
+    [
+     9,
+     5
+    ]
+   ],
+   "history_id": "ef9f4b3c3618b9a9f1bcdf6a10c7f145e31678bcf2bfb0736c0217ff44ffcd95",
+   "position_id": "a76eab10ca658c50e9082971fb329c8ba79e16b3d003faa402ce39d146ba59a8",
+   "class_id": "26136b76dffa383ca1a710f6eef6be7883a8c9f298f27f3a8e23bbea9e0753c1"
+  },
+  {
+   "index": 276,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     10,
+     5
+    ],
+    [
+     4,
+     10
+    ]
+   ],
+   "history_id": "433ee92728372f3ba3d6493541edb7b78528cf64e24d40c21e4e4c1c8d218776",
+   "position_id": "e6494824568716d6567ece811cf5bb5d4732c0718c128778b675fb2026732327",
+   "class_id": "0e02f8d071d1abb1b653b7baafc6be99b6996e8f1b5b242f03fb2d7005dc913c"
+  },
+  {
+   "index": 277,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     4,
+     7
+    ]
+   ],
+   "history_id": "b39fc5602c71dcde186cab9650003620735219e87a7f75291ba5f4f37b520a5e",
+   "position_id": "11aa28f82305b1163945de87f2959f1ec67440f2846152e056b93f15534ff756",
+   "class_id": "9a053fca4b3bdfae0ce85ed906c604ef321b25dcc719724ce918f57839589d04"
+  },
+  {
+   "index": 278,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     5,
+     7
+    ]
+   ],
+   "history_id": "8cbd0d99cfea0b8e4c9337edba8916b112a21946fee80dac53faa9ff10e0e683",
+   "position_id": "0ebafbd1446544f7641b1879c091404cbc3fd5df844f1bfe74cc0781bdedcbe4",
+   "class_id": "db68fa74ff4f5c58a9fdd1985f7943d4282e2e2596d8d16d152535cfc5d4b59d"
+  },
+  {
+   "index": 279,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     8
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     8
+    ]
+   ],
+   "history_id": "ff4f19f3e901356d5bc32b4b7f3b8e6fa8ce9b67b5d4df87c9c6a550c65738f3",
+   "position_id": "f48233d8d96c7e3140b5b25db522198b9a4013725cc1934be96dba402cc87b54",
+   "class_id": "791121c45ad8428fff79564b732981c8086f36514911fc4e6d1eef007deeab14"
+  },
+  {
+   "index": 280,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     10,
+     4
+    ],
+    [
+     6,
+     10
+    ]
+   ],
+   "history_id": "8f1668982217bab2ea6a29ae419e16911957c8826b4e7ef7b38ac25acb083a1c",
+   "position_id": "b3ad3460970511e0ef0cdb62f94e45adedb811adf4a48bbb6bb872bca7fbbe84",
+   "class_id": "b082231dc738100d476faedf59a849040b20a454a564be7820f1b7d14cff791e"
+  },
+  {
+   "index": 281,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     5,
+     9
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     8
+    ]
+   ],
+   "history_id": "94314343799efc940a13836b4fb4ca279cfba13e1ace5812f7ef81dbc482da95",
+   "position_id": "de7392854ccf3c82d64c511f201005540713db7e8983af906b74245f756530b5",
+   "class_id": "17e4327729b44fcecadef8de8c91de823cd8216ba9de84703731f976400cbc86"
+  },
+  {
+   "index": 282,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     9,
+     9
+    ]
+   ],
+   "history_id": "b3aa3e7d7f8464be36274fb86c15cf24846e606eef49715bdc56740f0f142575",
+   "position_id": "22da6c9eeebdb33eb3f73b3144fa13dc63a30af276cc6aa9b9aeeb2ab781ba49",
+   "class_id": "5a6e91cdaef59c950818dcf81f0f2e22ba2774f8b42e1b4cfcc6e22d06c511e0"
+  },
+  {
+   "index": 283,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     6
+    ],
+    [
+     6,
+     7
+    ]
+   ],
+   "history_id": "3f2aec1e5f0dfbc33f16ac099e22c6518aba5cdf9c8dee49ff36f5a48ce3d937",
+   "position_id": "e88181f4fcec5d572b1fb3d16180b8dd3bff5c0c685dbe5c3e29d966ac1567b4",
+   "class_id": "c8bef487a276bc7d83fc24c2b3c960cb85d0b7e157075cd92a86bb83b854d214"
+  },
+  {
+   "index": 284,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     10,
+     8
+    ]
+   ],
+   "history_id": "cd209ef960ddf6a84ef0709d71845196cc844ba79f8d2cdafab1df9c7b46b313",
+   "position_id": "5ea4e0b3d049262cfe9a29695cb616fe9c08b6b644d820166a0632b4603e0183",
+   "class_id": "88373f738dd439420cb2e096ec46519c48afd141030c06468fd42c7545251f90"
+  },
+  {
+   "index": 285,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     4
+    ],
+    [
+     7,
+     5
+    ]
+   ],
+   "history_id": "763d180ffcf7b09a713a57e579c7bc13e6cba8bd6abd48024e731b9e0d76a133",
+   "position_id": "75c69886a32738320861240f1b0a9a5526581d86d9bbaf74f9996c8245249a67",
+   "class_id": "7afd0e139e7bc4f3574d5509af141381b892eb686a57c7db72026626d2e254e7"
+  },
+  {
+   "index": 286,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     6,
+     5
+    ]
+   ],
+   "history_id": "20a1157b7963faea3797c9d413b0095004952238b19fd5f5e1b1415a33b9333c",
+   "position_id": "8dad88caa61b83b4bd7a5ba78486ba7859a745d6ddee02d8b68caf4d0aff717a",
+   "class_id": "eb69e93fc300d124247a7168b2a5b04fdb677bab4848be75cd9d655739dcff5d"
+  },
+  {
+   "index": 287,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     7
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     4,
+     4
+    ]
+   ],
+   "history_id": "52d4c7d1acfb613a0c0b1382b34fd276c98b55ffc4459cc00919b137ff7979a9",
+   "position_id": "ab54860ba269ae160f101898aeb0e3c55d6cd9f397f6bc139e14d45ff4a5bf89",
+   "class_id": "ab54860ba269ae160f101898aeb0e3c55d6cd9f397f6bc139e14d45ff4a5bf89"
+  },
+  {
+   "index": 288,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     4
+    ],
+    [
+     9,
+     5
+    ]
+   ],
+   "history_id": "46bd1347d1b2a89012666fbbd0f68a546889abab4cf4337d8dfb3ec458eacef3",
+   "position_id": "67b84a23ba96c6cb0a8f3cce596b89c29171faea76b733ae35c5bf599a499151",
+   "class_id": "0b44b1a22b9b05694e4898948d19256429a1b221b980ab9905ecadd9dc8892b4"
+  },
+  {
+   "index": 289,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "history_id": "615afa4ec2f61da2af888aa9c0e907b22ff5c9b40ac654f72e27c0343ada5114",
+   "position_id": "87423dfc0e917e26daf96444c1892b85c62c50565586cd7228f1849b361590c9",
+   "class_id": "87423dfc0e917e26daf96444c1892b85c62c50565586cd7228f1849b361590c9"
+  },
+  {
+   "index": 290,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     4,
+     9
+    ]
+   ],
+   "history_id": "993108729c603dc3b0cd08f5f1ea09ccaf330cec09c65faed83a601cbd31d48f",
+   "position_id": "ea14b51ba473f23475a3998e583eac6725ee38537aa7cd53c159d98ff79160c5",
+   "class_id": "4326ddfe18d70fdb6e0c09c03e868a2ea2800878f0de5b49d1653bd9f9de791b"
+  },
+  {
+   "index": 291,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     10,
+     8
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "history_id": "18af5021fcb6a983ff295aa50eb8508623a03655f124834818ec9212eb76317a",
+   "position_id": "8f703ef524592a2251e49d2221d2deb39aae167bb9f75696ed582392b3401dbc",
+   "class_id": "b5cad946c6aecff75be305cd397c37af1ff142f31e6a9e8b82b53646e0bf7081"
+  },
+  {
+   "index": 292,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     10
+    ]
+   ],
+   "history_id": "1b039f55c139189490f2498488a549e9a2494dcf3fbb4a3059b01e0a84fa0431",
+   "position_id": "9633fe8c9fb213cd62a5ab96581218412638a3d28c9b1cf5a11a98bf0e6dba47",
+   "class_id": "d300cf4d901109f1d6389bffc87310ab92e4a39e804d5355c06a145d65f23133"
+  },
+  {
+   "index": 293,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     7,
+     6
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     5,
+     8
+    ]
+   ],
+   "history_id": "8868861afd000a1e444b410a3b351c2231f1df6603b247b36f13e73ce2d8557e",
+   "position_id": "fb5194a8e9b264d4e301fd2226cba0692d14c9d175c0f9b5fe9a3169ca72bf8d",
+   "class_id": "c3b7a3dda1390932e4c2a00e16230c1a4bc3deb8d003c51ac9244f7a05b1b78b"
+  },
+  {
+   "index": 294,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     9,
+     5
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     8,
+     9
+    ]
+   ],
+   "history_id": "e8ec1cf9af220ee964b19e4ca3821c641d0cd680c284d76ba7ac27cf9271270f",
+   "position_id": "8bc4dc23d5bd193a6168e0a93d598cad3c342574780b084400d94861b568718b",
+   "class_id": "0f09faf66d47dcc980d17ebfae79b4b5491cebd295540a42670bbf0e56ff839a"
+  },
+  {
+   "index": 295,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     9
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     5,
+     9
+    ]
+   ],
+   "history_id": "e80b86573c54d0b08a3dbaf908c8eda70040c80e867508ba618ba73bf41f3333",
+   "position_id": "6c20859cca7cbcb33df6f665f2b5ddeab68811f20e29c31d9b0e54451499fef8",
+   "class_id": "c6c0598fea32cb885ef166e230ade5d2ca23d76c605ded4d56fb8ea48591da62"
+  },
+  {
+   "index": 296,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     5,
+     8
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "history_id": "f20741890be30083f61e35b4bc67e0148e9e699f906fed9d3d6b4e34597ee1a7",
+   "position_id": "2649788336ae2e73fbe5e624cec742bfc463b66bbcf2e53760b0797dca2ba6e9",
+   "class_id": "af6fe595d60809755d6fd961865e7e152581c5c7a4c925ee7b1e9ced992ddeea"
+  },
+  {
+   "index": 297,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     8
+    ],
+    [
+     7,
+     5
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     10,
+     5
+    ]
+   ],
+   "history_id": "c58de2709b429fd2a514ca3625f1676fc8dccae8e463bd6089dfce42db205b8d",
+   "position_id": "dbc22ce079af0e315691c1b9982ee5ac497e49a319e9be629563269548d8f07a",
+   "class_id": "37918c4a4979dc8fa91b446440e6aa3abbfd6767027c7a08f5e40fbbd056ce26"
+  },
+  {
+   "index": 298,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     9,
+     10
+    ]
+   ],
+   "history_id": "870d91463d457e550d61e94dfeccf65978ff8931b15ecb176dd09c1379326830",
+   "position_id": "e34da1ac25e5513cc41b2079b0d9076ae6fc4f7931935b0620a5f07b24494dfb",
+   "class_id": "0814219f629d8954115ea2a1204f4dd151a0384d61af84ff5842d13cce9d63cf"
+  },
+  {
+   "index": 299,
+   "moves": [
+    [
+     7,
+     7
+    ],
+    [
+     8,
+     7
+    ],
+    [
+     8,
+     6
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     6,
+     10
+    ]
+   ],
+   "history_id": "c385d69f0b1eb5d44aa6915473ed54ee4e74e4430762e017a4872cca69cd9ea3",
+   "position_id": "6daf268de0abd0d9fd55882d6c7f3c4b6894933ff7648212944e38363de9032a",
+   "class_id": "7b0bccff09b5f4d51e713b4c6acf4daf0efcca47a7313a89eb2d4c2e17b0b55b"
+  }
+ ],
+ "distinct": {
+  "history_id": 300,
+  "position_id": 300,
+  "class_id": 298
+ },
+ "rejected": {},
+ "openings_sha256": "8c9ec4d2c76381a33644f60e38a70dfa8125142108a535fbc869314df8d63cf9",
+ "git": {
+  "commit": "0ced742fdc72cd6d8321d685a1cf29f3f0ba0577",
+  "dirty": false
+ },
+ "overlap_with_earlier": {
+  "docs/h7c/c4/arena/official.json": {
+   "history_id": 0,
+   "position_id": 0,
+   "class_id": 0
+  },
+  "docs/h7c/c5/arena/official.json": {
+   "history_id": 0,
+   "position_id": 0,
+   "class_id": 0
+  },
+  "docs/h7c/c6/arena/official.json": {
+   "history_id": 0,
+   "position_id": 0,
+   "class_id": 0
+  },
+  "docs/h7c/c7/arena/official.json": {
+   "history_id": 0,
+   "position_id": 0,
+   "class_id": 0
+  },
+  "docs/h7c/c8/arena/official.json": {
+   "history_id": 0,
+   "position_id": 0,
+   "class_id": 0
+  },
+  "docs/h7c/nmask/arena/official.json": {
+   "history_id": 0,
+   "position_id": 0,
+   "class_id": 0
+  }
+ }
+}

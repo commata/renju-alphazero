@@ -403,3 +403,59 @@ champion으로 self-play(학습 seed)
 4. m의 대상((a) / (b))과 값은 pilot 뒤 확인 계약에서 정한다.
 5. holdout 계약(seed, seed용 cycle 번호, H-dev 400판, actor c5)과 그 생성 시점
 6. pilot 계약 `R1-PILOT-1`의 `status: fixed` 전환과 커밋(그 전에는 도구가 실행하지 않는다)
+
+### 9.4 커밋한 suite · 계약 파일
+
+- suite(`docs/h7r/suites/`, 코드 `0ced742` clean에서 생성)
+
+  | suite | opening | 대칭 동치류 | 이전 Arena 6개와 겹친 수순(합) | 겹친 동치류(합) | SHA |
+  |---|---:|---:|---:|---:|---|
+  | O0 | 300 | 75 | 168 | 219 | `f6da0ed5ccff` |
+  | O1 | 300 | 298 | 0 | 0 | `50b0e75ffef8` |
+  | O2 | 184 | 26 | 102 | 74 | `28b4424b19fe` |
+
+  - O1은 이전 평가와 겹치는 수순이 없다. O0 · O2는 이전 cycle Arena가 쓴 opening과 겹친다.
+  - 겹침 처리는 확인 계약에서 정한다(2.2절).
+- 계약(`docs/h7r/contracts/`)
+  - `R1-PILOT-1`(`ab48eb996271`): **draft**. suite 3 × arm 4 × 100쌍, seed 8781 / 8782 / 8783(suite별 pairing). 9.3절 항목을 정한 뒤 `fixed`로 바꿔 커밋해야 실행된다.
+  - `R1-SMOKE-1`(`42e9ac6b7b27`): fixed. 데스크톱 smoke용 c8 : c5 S50 2쌍(seed 8798), c5 S400 : c5 S50 1쌍(seed 8799). 판정에 쓰지 않는다.
+  - `R1-SMOKE-HOLDOUT`(`a56b0ac6ccdf`): fixed. holdout 경로 확인용 c5 2판(seed 8797, cycle 1). 학습에 쓰이지 않는다.
+- 남은 H7-R seed: 8784–8796(holdout · 확인 계약용)
+
+### 9.5 데스크톱 smoke 명령 (`~/renju-h6`, `.venv`, `PYTHONPATH="$PWD/src"`)
+
+```bash
+cd ~/renju-h6 && source .venv/bin/activate && export PYTHONPATH="$PWD/src"
+git pull origin feat/h7-c1 && python scripts/check_track_b_frozen.py
+mkdir -p runs/h7r/smoke
+# 1) Arena arm: S50, then S400 (cost per arm type)
+python -u scripts/h7r_eval.py play --contract docs/h7r/contracts/R1-SMOKE-1.json --arm smoke_s50 \
+  --device cuda --workers 2 --jsonl runs/h7r/smoke/s50.jsonl --output runs/h7r/smoke/s50.json
+python -u scripts/h7r_eval.py play --contract docs/h7r/contracts/R1-SMOKE-1.json --arm smoke_s400 \
+  --device cuda --workers 2 --jsonl runs/h7r/smoke/s400.jsonl --output runs/h7r/smoke/s400.json
+python -u scripts/h7r_eval.py summarize --contract docs/h7r/contracts/R1-SMOKE-1.json \
+  --arm-record runs/h7r/smoke/s50.json --output runs/h7r/smoke/s50_summary.json
+# 2) time gate format (same process, alternating, warm-up discarded)
+python -u scripts/h7r_eval.py timing --contract docs/h7r/contracts/R1-SMOKE-1.json --side c8 --side c5 \
+  --suite docs/h7r/suites/O0.json --positions 20 --warmup 3 --device cuda --output runs/h7r/smoke/timing.json
+# 3) holdout path: 2 games, evaluation labels, value evaluation
+python -u scripts/h7c_selfplay.py --cycle 1 --run-seed 8797 --games 2 --workers 2 \
+  --policy-checkpoint runs/h3_policy_64x4/best.pt --value-checkpoint runs/h7c/c5/value/best.pt --device cuda \
+  --jsonl runs/h7r/smoke/holdout.jsonl --holdout-contract docs/h7r/contracts/R1-SMOKE-HOLDOUT.json
+python -u scripts/h7r_holdout.py labels --contract docs/h7r/contracts/R1-SMOKE-HOLDOUT.json \
+  --games runs/h7r/smoke/holdout.jsonl --value-output runs/h7r/smoke/holdout_rows.jsonl.gz \
+  --cache-dir runs/h7r/smoke/holdout_cache --workers 2 --output runs/h7r/smoke/holdout_labels.json
+python -u scripts/h7r_holdout.py eval --cache runs/h7r/smoke/holdout_cache --model c5=runs/h7c/c5/value/best.pt \
+  --model c8=runs/h7c/c8/value/best.pt --pair c8:c5 --d4 --device cuda --output runs/h7r/smoke/holdout_eval.json
+# 4) the training path must refuse the holdout games (expected: an error saying "never training data")
+python -u scripts/h7c_labels.py --games runs/h7r/smoke/holdout.jsonl --value-output runs/h7r/smoke/x_rows.jsonl.gz \
+  --policy-output runs/h7r/smoke/x_policy.jsonl.gz || echo "refused as expected"
+```
+
+- 확인할 것
+  - `s50.json` · `s400.json`의 `wall_seconds` · `games[].game_seconds`: 9.2절 비용 추정을 실측으로 바꾼다.
+  - `summary`의 `move_split` · `score_split`
+  - `timing.json`의 `environment`, `ratio`
+  - holdout 기록의 `purpose: holdout`, 4)의 거부
+- smoke 결과는 `runs/`에 두고 커밋하지 않는다. 비용 수치만 다음 계약 검토 때 옮긴다.
+- 전체 pilot, H-dev · H-conf 생성, 학습, 확인 Arena는 이 명령에 없다. 각각 별도 승인 뒤에 한다.
