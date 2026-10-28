@@ -1,0 +1,396 @@
+{
+ "format": "h7c-nmask-train-v1",
+ "experiment": "H7C-NMASK-1",
+ "smoke": false,
+ "git": {
+  "commit": "06a9106d1c5ae7a424f2672dfee111eef387cbb4",
+  "dirty": false
+ },
+ "decision_sha256": "36cc1ffd229630303bc4162e09664d4512d802254f631953761f25a09b7cc029",
+ "config": {
+  "seed": 20261025,
+  "batch_size": 1024,
+  "epochs": 3.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "augment_d4": true,
+  "evaluations": 10,
+  "h6_guard_ratio": 1.05,
+  "device": "cuda"
+ },
+ "inputs": {
+  "parent": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "control": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+   "value_metadata_sha256": "d1345fce42561d41780431e4418902e44473f4bb69d715b3684fad64150c5aa2"
+  },
+  "config_sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0",
+  "cycle_labels_sha256": "dd6dd35aa25c4bc3185cace838eb9e997fe445854373ed34e89000b5b89d60ca",
+  "replay_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084",
+  "source": {
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   },
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "selfplay_git_commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf",
+   "rows": 37936
+  },
+  "mask_keep_sha256": "9c5d42df3e53be823d96d9b68b7fa5a9d342e606aeef1f64c04b8ed5496d7fb2",
+  "mask_manifest_sha256": "65a3cd17051bad60bddcdfb6309d1544e65d6b90c39c8c5f2c4323fdfa9d3fb0"
+ },
+ "total_steps": 210,
+ "steps_per_epoch": 70,
+ "warmup_steps": 10,
+ "train_rows_per_epoch": 71632,
+ "union_masking": {
+  "cycle_val_dropped": 109,
+  "replay_val_dropped": 51
+ },
+ "parent_val": {
+  "objective": 0.432307595249332,
+  "cycle_wmse": 0.28749882029755314,
+  "replay_wmse": 0.5771163702011108,
+  "cycle_val": {
+   "states": 1744,
+   "mse": 0.6428264379501343,
+   "sign_acc": 0.7156789302825928,
+   "mean_value": 0.18627791106700897,
+   "mean_target": 0.01777523010969162,
+   "saturated": 0.06995412707328796
+  },
+  "replay_val": {
+   "states": 106223,
+   "mse": 0.8624909520149231,
+   "sign_acc": 0.6606290340423584,
+   "mean_value": 0.14222308993339539,
+   "mean_target": 0.033523812890052795,
+   "saturated": 0.03664931282401085
+  },
+  "cycle_wmse_original": 0.3252624273300171
+ },
+ "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+ "evaluations": [
+  {
+   "step": 21,
+   "objective": 0.4340940784763452,
+   "cycle_wmse": 0.29144592510683465,
+   "replay_wmse": 0.5767422318458557,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6522737145423889,
+    "sign_acc": 0.7089272141456604,
+    "mean_value": 0.1914338320493698,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.07282110303640366
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8631593585014343,
+    "sign_acc": 0.6603183746337891,
+    "mean_value": 0.1310884654521942,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.037571899592876434
+   },
+   "cycle_wmse_original": 0.3327859342098236
+  },
+  {
+   "step": 42,
+   "objective": 0.4343500708622945,
+   "cycle_wmse": 0.29042297106647735,
+   "replay_wmse": 0.5782771706581116,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6572020053863525,
+    "sign_acc": 0.6939234733581543,
+    "mean_value": 0.2176511287689209,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.07683486491441727
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.867392897605896,
+    "sign_acc": 0.659311056137085,
+    "mean_value": 0.154250368475914,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.03937000408768654
+   },
+   "cycle_wmse_original": 0.3363760709762573
+  },
+  {
+   "step": 63,
+   "objective": 0.4340498697930905,
+   "cycle_wmse": 0.2901039624560541,
+   "replay_wmse": 0.577995777130127,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.64554363489151,
+    "sign_acc": 0.6969242095947266,
+    "mean_value": 0.182163268327713,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.06536697596311569
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8599631786346436,
+    "sign_acc": 0.6605255007743835,
+    "mean_value": 0.11592482030391693,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.03350498527288437
+   },
+   "cycle_wmse_original": 0.3334389925003052
+  },
+  {
+   "step": 84,
+   "objective": 0.43282126822615796,
+   "cycle_wmse": 0.2881519682913051,
+   "replay_wmse": 0.5774905681610107,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6409803032875061,
+    "sign_acc": 0.7029257416725159,
+    "mean_value": 0.17605732381343842,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.06823394447565079
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8613235354423523,
+    "sign_acc": 0.6604125499725342,
+    "mean_value": 0.11654538661241531,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.0347476527094841
+   },
+   "cycle_wmse_original": 0.3299731910228729
+  },
+  {
+   "step": 105,
+   "objective": 0.4333040105816187,
+   "cycle_wmse": 0.2886291121475819,
+   "replay_wmse": 0.5779789090156555,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6439416408538818,
+    "sign_acc": 0.7006751894950867,
+    "mean_value": 0.1868477463722229,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.06880734115839005
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8624404072761536,
+    "sign_acc": 0.6595087647438049,
+    "mean_value": 0.13234879076480865,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.034455813467502594
+   },
+   "cycle_wmse_original": 0.3304029405117035
+  },
+  {
+   "step": 126,
+   "objective": 0.43481374437817766,
+   "cycle_wmse": 0.29085250010507974,
+   "replay_wmse": 0.5787749886512756,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6540272831916809,
+    "sign_acc": 0.6939234733581543,
+    "mean_value": 0.20402194559574127,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.07282110303640366
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8660681843757629,
+    "sign_acc": 0.6585673689842224,
+    "mean_value": 0.14950193464756012,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.03732713311910629
+   },
+   "cycle_wmse_original": 0.3347693383693695
+  },
+  {
+   "step": 147,
+   "objective": 0.4330141222159196,
+   "cycle_wmse": 0.2889211129506686,
+   "replay_wmse": 0.5771071314811707,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6403511762619019,
+    "sign_acc": 0.6984245777130127,
+    "mean_value": 0.17492392659187317,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.06594036519527435
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.859563946723938,
+    "sign_acc": 0.6618058085441589,
+    "mean_value": 0.12135462462902069,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.033730924129486084
+   },
+   "cycle_wmse_original": 0.32931390404701233
+  },
+  {
+   "step": 168,
+   "objective": 0.4330864292279255,
+   "cycle_wmse": 0.2888247453958534,
+   "replay_wmse": 0.5773481130599976,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6448328495025635,
+    "sign_acc": 0.6976743936538696,
+    "mean_value": 0.187260702252388,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.06823394447565079
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8624607920646667,
+    "sign_acc": 0.6601018905639648,
+    "mean_value": 0.13144414126873016,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.03573613986372948
+   },
+   "cycle_wmse_original": 0.33127376437187195
+  },
+  {
+   "step": 189,
+   "objective": 0.4325492398785619,
+   "cycle_wmse": 0.2881159815881785,
+   "replay_wmse": 0.5769824981689453,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6403874158859253,
+    "sign_acc": 0.6991748213768005,
+    "mean_value": 0.17633987963199615,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.06766054779291153
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8604540228843689,
+    "sign_acc": 0.6614010334014893,
+    "mean_value": 0.12272272258996964,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.03463468328118324
+   },
+   "cycle_wmse_original": 0.329445481300354
+  },
+  {
+   "step": 210,
+   "objective": 0.43248143064455125,
+   "cycle_wmse": 0.2878452989950962,
+   "replay_wmse": 0.5771175622940063,
+   "eligible": true,
+   "cycle_val": {
+    "states": 1744,
+    "mse": 0.6436577439308167,
+    "sign_acc": 0.6961740255355835,
+    "mean_value": 0.18735966086387634,
+    "mean_target": 0.01777523010969162,
+    "saturated": 0.0693807303905487
+   },
+   "replay_val": {
+    "states": 106223,
+    "mse": 0.8626340627670288,
+    "sign_acc": 0.6601960062980652,
+    "mean_value": 0.13330018520355225,
+    "mean_target": 0.033523812890052795,
+    "saturated": 0.036150362342596054
+   },
+   "cycle_wmse_original": 0.3302416503429413
+  }
+ ],
+ "mask": {
+  "zero_cycle_weight_batches": 0,
+  "batches_without_cycle_rows": 0,
+  "epochs": [
+   {
+    "cycle_weight": 8103.200045883656,
+    "cycle_kept_weight": 6393.200045883656,
+    "replay_weight": 5668.70004991442
+   },
+   {
+    "cycle_weight": 8103.200045883656,
+    "cycle_kept_weight": 6393.200045883656,
+    "replay_weight": 5654.3000499382615
+   },
+   {
+    "cycle_weight": 8103.200045883656,
+    "cycle_kept_weight": 6393.200045883656,
+    "replay_weight": 5687.600049883127
+   }
+  ],
+  "loss": "sum_i k_i w_i (v_i - t_i)^2 / sum_i w_i (batch; original weights)"
+ },
+ "best": {
+  "step": 210,
+  "objective": 0.43248143064455125,
+  "cycle_wmse": 0.2878452989950962,
+  "replay_wmse": 0.5771175622940063,
+  "eligible": true,
+  "cycle_val": {
+   "states": 1744,
+   "mse": 0.6436577439308167,
+   "sign_acc": 0.6961740255355835,
+   "mean_value": 0.18735966086387634,
+   "mean_target": 0.01777523010969162,
+   "saturated": 0.0693807303905487
+  },
+  "replay_val": {
+   "states": 106223,
+   "mse": 0.8626340627670288,
+   "sign_acc": 0.6601960062980652,
+   "mean_value": 0.13330018520355225,
+   "mean_target": 0.033523812890052795,
+   "saturated": 0.036150362342596054
+  },
+  "cycle_wmse_original": 0.3302416503429413
+ },
+ "verdict": "CANDIDATE",
+ "control_val": {
+  "cycle_wmse_masked": 0.29059492136585324,
+  "cycle_wmse_original": 0.3259740173816681,
+  "replay_wmse": 0.5768555998802185,
+  "objective_masked": 0.43372526062303585,
+  "objective_original": 0.4514148086309433,
+  "cycle_val_rows": 1744,
+  "cycle_val_kept_rows": 1647
+ },
+ "definitions": {
+  "masked": "sum_{val} k_i w_i (v_i - t_i)^2 / sum_{val} w_i over the effective cycle val set (after the union masking); the selection objective is its mean with the replay val WMSE; the H6 guard is unchanged (replay val WMSE <= 1.05 x the parent's)",
+  "original": "the c8 record's unmasked metrics",
+  "note": "masked and original numbers are separate definitions: compare like with like"
+ },
+ "reproduction": {
+  "parent original cycle / replay WMSE = the c8 record's parent": true,
+  "control original cycle / replay WMSE = the c8 record's best": true,
+  "frozen trunk and policy head = c8's": true,
+  "steps and rows = c8's": true
+ },
+ "candidate": {
+  "checkpoint_sha256": "8efe85866378f30bc84593b1270a485937c4ffda549feaa8b750ba47053bfa4c",
+  "metadata_sha256": "0babe95ea797dd79c77f0efed37d1fa6e4ddc6451bb2a40211d0a3765b797d86"
+ }
+}

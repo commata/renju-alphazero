@@ -1,0 +1,176 @@
+{
+ "format": "h7c-nmask-arena-v1-verdict",
+ "experiment": "H7C-NMASK-1",
+ "seed": 8761,
+ "decision_sha256": "36cc1ffd229630303bc4162e09664d4512d802254f631953761f25a09b7cc029",
+ "git_commit": "06a9106d1c5ae7a424f2672dfee111eef387cbb4",
+ "candidate": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "8efe85866378f30bc84593b1270a485937c4ffda549feaa8b750ba47053bfa4c",
+  "value_metadata_sha256": "0babe95ea797dd79c77f0efed37d1fa6e4ddc6451bb2a40211d0a3765b797d86"
+ },
+ "parent": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "candidate_record_sha256": "77de5ff5832623d89393255eb5c57ec4b9e9419dbcff6dd44aeb5816bf84f064",
+ "official": {
+  "score": 0.525,
+  "score_ci95": [
+   0.505,
+   0.555
+  ],
+  "improvement": 0.025,
+  "improvement_ci95": [
+   0.005,
+   0.055
+  ],
+  "elo": 17.4,
+  "wins": 49,
+  "draws": 7,
+  "losses": 44,
+  "score_by_color": {
+   "black": 0.68,
+   "white": 0.37
+  },
+  "complete_pairs": 50,
+  "valid": true,
+  "opponent_illegal_pairs": []
+ },
+ "tactical": {
+  "rule_version": "h7c-tactical-v2",
+  "items": {
+   "unsound_witness == 0": true,
+   "fresh value sign (H6 G4 dev v2: win, loss >= 0.80, >= 20 each)": true,
+   "must_block >= max(B400 anchor, parent - 2)": true,
+   "forbidden errors == 0 (all Arena games)": true
+  },
+  "verdict": "PASS",
+  "forbidden_errors": 0,
+  "evidence": {
+   "rule_version": "h7c-tactical-v2",
+   "fresh_rule": {
+    "sign_accuracy_min": 0.8,
+    "min_probes_per_sign": 20,
+    "inference": "d4_average"
+   },
+   "fresh_file_sha256": "96407fb0cae50dcf10b3d064f23b286cda49b8adfd7b36155b7aaf60222abcc9",
+   "value_device": "cuda",
+   "inference": "d4_average",
+   "must_block_device": "cpu",
+   "fresh": {
+    "candidate": {
+     "win": {
+      "correct": 93,
+      "probes": 93,
+      "accuracy": 1.0,
+      "mean_value": 0.855965188113592
+     },
+     "loss": {
+      "correct": 75,
+      "probes": 81,
+      "accuracy": 0.9259259259259259,
+      "mean_value": -0.43957235084639656
+     },
+     "pass": true
+    },
+    "parent_diagnostic": {
+     "win": {
+      "correct": 93,
+      "probes": 93,
+      "accuracy": 1.0,
+      "mean_value": 0.8527855607130195
+     },
+     "loss": {
+      "correct": 77,
+      "probes": 81,
+      "accuracy": 0.9506172839506173,
+      "mean_value": -0.4379242755426669
+     },
+     "pass": true
+    }
+   },
+   "p93_p94_diagnostic": {
+    "candidate": {
+     "P93": {
+      "original": -0.05082148313522339,
+      "d4_mean": -0.05082148313522339,
+      "expected_sign": 1,
+      "pass": false,
+      "side_to_move": "white"
+     },
+     "P94": {
+      "original": 0.9747441411018372,
+      "d4_mean": 0.9747442007064819,
+      "expected_sign": -1,
+      "pass": false,
+      "side_to_move": "black"
+     }
+    },
+    "parent": {
+     "P93": {
+      "original": -0.11041878163814545,
+      "d4_mean": -0.11041878163814545,
+      "expected_sign": 1,
+      "pass": false,
+      "side_to_move": "white"
+     },
+     "P94": {
+      "original": 0.9746840000152588,
+      "d4_mean": 0.9746838808059692,
+      "expected_sign": -1,
+      "pass": false,
+      "side_to_move": "black"
+     }
+    }
+   },
+   "must_block": {
+    "candidate": 40,
+    "parent": 40,
+    "min": 38
+   }
+  },
+  "compare": {
+   "rescue_rate": {
+    "candidate": 1.0,
+    "parent": 1.0
+   },
+   "veto_recall": {
+    "candidate": null,
+    "parent": null
+   },
+   "false_veto": {
+    "candidate": 0,
+    "parent": 0
+   },
+   "must_block_hits": {
+    "candidate": 40,
+    "parent": 40
+   }
+  },
+  "regressions_reported": []
+ },
+ "fingerprint": "2647715d8eef45df13d537fb9ee63cf2760d0d45558c134ec63f1b3734a4688e",
+ "arm_sha256": "9871d7fe5169fe6930cbb9b3a1afc28b5e442e63a6d1c9e759d8b487139943b5",
+ "tactical_sha256": "610e9cb1df643ff3f315df5223686c9390fa678cc1b3c6853a0accff0f5ba97c",
+ "promotion": {
+  "rule": {
+   "score_above": 0.5,
+   "improvement_lower_min": -0.05
+  },
+  "checks": {
+   "official_valid": true,
+   "score_above_0.50": true,
+   "improvement_lower_ge_-0.05": true,
+   "tactical_gate": true
+  },
+  "improvement_lower": 0.005,
+  "decision": "PROMOTE",
+  "reason": "PROMOTED",
+  "next_parent": "candidate"
+ },
+ "meaning": "the existing promotion rule on this experiment; it changes no champion, program, canonical engine or web model"
+}

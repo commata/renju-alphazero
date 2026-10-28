@@ -1,0 +1,85 @@
+{
+ "stage": "H6-2a",
+ "h7c_stage": "H7-c-value",
+ "track": "B",
+ "cycle": 8,
+ "experiment": "H7C-NMASK-1",
+ "recipe": "VALUE_ONLY_NETWORK_MASK",
+ "smoke": false,
+ "nmask_decision_sha256": "36cc1ffd229630303bc4162e09664d4512d802254f631953761f25a09b7cc029",
+ "mask_keep_sha256": "9c5d42df3e53be823d96d9b68b7fa5a9d342e606aeef1f64c04b8ed5496d7fb2",
+ "loss": "L_B = sum_{i in B} k_i w_i (v_i - t_i)^2 / sum_{i in B} w_i; k_i = 0 for a masked cycle row, else 1; w the original row weights (no renormalization, no redistribution); replay rows k = 1",
+ "policy_trained": true,
+ "value_trained": true,
+ "trunk_frozen": true,
+ "policy_head_frozen": true,
+ "parent_h3_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+ "parent_h3_metadata_sha256": "33679875e0ece99b6590959b03cf95557868b93894936a89891cb98cd1177e4e",
+ "parent_value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+ "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+ "model_config": {
+  "board_size": 15,
+  "input_planes": 6,
+  "channels": 64,
+  "blocks": 4,
+  "policy_channels": 2,
+  "value_channels": 1,
+  "value_hidden": 64
+ },
+ "encoder_version": "renju-relative-6p-v1",
+ "action_index_version": "row-major-15x15-v1",
+ "training_sources": {
+  "cycle_labels_sha256": "dd6dd35aa25c4bc3185cace838eb9e997fe445854373ed34e89000b5b89d60ca",
+  "replay_anchor_labels_sha256": "b80f617f203b7bf1a579ff48a1056fe4d54fa2b1718818d5d83187a7ecda5084"
+ },
+ "source_models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "source_selfplay_git_commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf",
+ "source_runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+ "mix": "cycle:replay = 50:50 per epoch",
+ "config": {
+  "seed": 20261025,
+  "batch_size": 1024,
+  "epochs": 3.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "augment_d4": true,
+  "evaluations": 10,
+  "h6_guard_ratio": 1.05,
+  "device": "cuda"
+ },
+ "recipe_decision_sha256": null,
+ "best": {
+  "step": 210,
+  "objective": 0.43248143064455125,
+  "cycle_wmse": 0.2878452989950962,
+  "replay_wmse": 0.5771175622940063,
+  "eligible": true,
+  "cycle_val": {
+   "states": 1744,
+   "mse": 0.6436577439308167,
+   "sign_acc": 0.6961740255355835,
+   "mean_value": 0.18735966086387634,
+   "mean_target": 0.01777523010969162,
+   "saturated": 0.0693807303905487
+  },
+  "replay_val": {
+   "states": 106223,
+   "mse": 0.8626340627670288,
+   "sign_acc": 0.6601960062980652,
+   "mean_value": 0.13330018520355225,
+   "mean_target": 0.033523812890052795,
+   "saturated": 0.036150362342596054
+  },
+  "cycle_wmse_original": 0.3302416503429413
+ },
+ "git": {
+  "commit": "06a9106d1c5ae7a424f2672dfee111eef387cbb4",
+  "dirty": false
+ }
+}

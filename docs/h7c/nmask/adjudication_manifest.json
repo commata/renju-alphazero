@@ -1,0 +1,21 @@
+{
+ "format": "h7c-adjudicate-v2-manifest",
+ "identity_sha256": "a67d1aa1032934386ab303785da0d0f38299eff81d2143d3f375e7bf3fad8343",
+ "code_git": {
+  "commit": "06a9106d1c5ae7a424f2672dfee111eef387cbb4",
+  "dirty": false
+ },
+ "inputs_sha256": {
+  "summary": "25c5a89774ef24046d35110cb02218b5b4f3adb9e978ba7ac34a845bb17f62fc",
+  "sensitivity_jsonl": "97e9b8e343650b228a9c671246013449cc8b5e261bb8529fc66b2f50e2ceebf6",
+  "selfplay": "ca91d706299c5d0729f69fd3372f790812181258e49ebcac2d8bb1f944cc7831",
+  "sample": "4b1d77d53387c3602b6755405074abb3a1626090f39eb89e6af8e78249c125f9"
+ },
+ "decision_sha256": "36cc1ffd229630303bc4162e09664d4512d802254f631953761f25a09b7cc029",
+ "files_sha256": {
+  "runs/h7c/nmask/adjudicate/branches.jsonl": "e0c28a297d6586c1fb80e7664fc7078be8b6f4c499f2fcbcdd0d3d452e07807d"
+ },
+ "document_files_sha256": {
+  "docs/h7c/nmask/adjudication.json": "78dbf2feb650fa1f5893468c747a067f2daff0dfd3674dbcc53936c5f42c3d35"
+ }
+}
