@@ -433,6 +433,15 @@ draft JSON에 기록한 계획 수치(쌍·판 수, 비용 시나리오, 검출�
 - 같은 c5·같은 국면의 S50/S400 `timing`은 **선택 사항**으로 둔다. 기존 고정 smoke 계약과 `--side c5 --side c5:8`로 가능하다. 이 순서의 ratio는 **S50/S400**이며, S400/S50가 필요하면 역수 또는 side 순서를 바꾼다. 이는 시작 국면 한 수의 비율로, 쌍 전체 비용 3.0배를 직접 검증하는 측정은 아니다.
 - 실행 전에 c5/c8뿐 아니라 mask/orig를 포함한 checkpoint·metadata 네 SHA를 모두 확인한다. 확인을 마친 후에만 fixed 전환과 커밋을 검토한다.
 
+#### 선택 기준·예산 제안 검토 — 아직 확정하지 않음
+
+- **score_split(b)를 중심으로 검토하는 방향은 타당하지만, 180개를 독립 Bernoulli 표본으로 간주하는 pooled Wilson 하한은 쓰지 않는다.** 작은 차이 세 arm이 같은 60개 opening을 공유하므로, 같은 opening에서 나온 세 값은 연관될 수 있다. 기록 수 180과 재표집 단위 60을 구분한다.
+- 대안 초안은 opening별 `q_i=(세 arm의 score_split 표시 합)/3`를 만든 뒤 60개 `history_id`를 단위로 세 결과를 함께 bootstrap하는 것이다. 점추정은 기존 pooled 비율과 같고, 불확실성 계산만 opening 연관성을 유지한다. 하위 2.5% 분위, 20,000회, seed20261029를 제안 메타데이터에 기록했다. S400은 표본·목적이 다르므로 순위 통계에 섞지 않는다.
+- 이 통계는 아직 `rank_by`로 확정하지 않았고 도구에 자동 selector를 구현한 것도 아니다. 같은 suite의 세 arm 결과를 묶는 분석이 필요하다. 분산이 0인 bootstrap 구간을 확실성으로 해석하지 않고, 이전 평가와의 겹침·대칭의 연관성도 계속 보고한다.
+- 색 편향은 기존 c4–c8·NMASK 공식 기록의 `abs(tested_black_score-tested_white_score)`가 **0.07–0.33**임을 대조했다. 각 원본 경로·SHA·값을 draft에 기록했다. 이 분포만으로 O1/O2의 배제 문턱을 정하지 않는다. `colour_gap_max`와 여러 arm의 색 차이를 합치는 방식(최댓값/평균 등)은 fixed 전에 별도로 결정한다.
+- **14시간은 검토용 soft 예산 제안**으로만 기록했다(6 worker 비용 대용값10.1299시간의 약1.38배). 실제 예산 필드는 null이다. 누적 시간인지 세션별 시간인지, 일시중단 시간을 어떻게 셀지, 예산 도달 후 재개 조건을 먼저 정해야 한다. arm 도중 강제로 끊지 않으므로 hard 14시간 상한도 아니며 현재 CLI가 자동으로 강제하지 않는다.
+- 원격 `e49a53e`의 suite별 실행 순서·opening 겹침 기록·SD 민감도·fixture seed 충돌 수정은 유지한다. **0.35가 0.318보다 크다는 것은 그 민감도 가정보다 보수적이라는 뜻이며, 새 suite 모두에 대한 SD 상한을 보장하지 않는다.**
+
 ### 9.3 본 pilot 전에 확정할 것
 
 1. arm당 쌍 수(9.2절 권장 검토안: 작은 차이60 / S400 160), 포함할 suite · 비교, worker 수
@@ -458,7 +467,7 @@ draft JSON에 기록한 계획 수치(쌍·판 수, 비용 시나리오, 검출�
   - O1은 이전 평가와 겹치는 수순이 없다. O0 · O2는 이전 cycle Arena가 쓴 opening과 겹친다.
   - 겹침 처리는 확인 계약에서 정한다(2.2절).
 - 계약(`docs/h7r/contracts/`)
-  - `R1-PILOT-1`(`6706ebd7e996`): **수정 draft**. 작은 차이9 arm ×60쌍 + S400 3 arm ×160쌍 =1,020쌍/2,040판. 작은 차이는 seed8781–8783(`O*_small`), S400은 seed8784–8786(`O*_positive_control`)을 제안한다. 초기 100쌍 균등 초안 SHA는 `ab48eb996271`이었다. 9.3절의 미정 항목을 정한 뒤 fixed 전환·커밋을 검토한다.
+  - `R1-PILOT-1`(`c977490e2ebd`): **수정 draft**. 작은 차이9 arm ×60쌍 + S400 3 arm ×160쌍 =1,020쌍/2,040판. 작은 차이는 seed8781–8783(`O*_small`), S400은 seed8784–8786(`O*_positive_control`)을 제안한다. 초기 100쌍 균등 초안 SHA는 `ab48eb996271`이었다. 9.3절의 미정 항목을 정한 뒤 fixed 전환·커밋을 검토한다.
   - `R1-SMOKE-1`(`42e9ac6b7b27`): fixed. 데스크톱 smoke용 c8 : c5 S50 2쌍(seed 8798), c5 S400 : c5 S50 1쌍(seed 8799). 판정에 쓰지 않는다.
   - `R1-SMOKE-HOLDOUT`(`a56b0ac6ccdf`): fixed. holdout 경로 확인용 c5 2판(seed 8797, cycle 1). 학습에 쓰이지 않는다.
 - 수정 draft에서 제안한 seed까지 제외하면 남는 H7-R seed는 **8787–8796**(holdout·확인 계약용)이다. 이 중 8795 · 8796은 테스트 fixture가 쓰므로(`tests/h7r_helpers.py`의 `FIXTURE_*_SEED`; 커밋된 계약이 가져가면 `test_h7r_holdout`이 알린다) 실제 계약은 8787–8794부터 쓴다. draft 계약도 seed를 차지한다: holdout 생성기는 커밋된 모든 계약과 seed 중복을 검사한다. 이번 문서 수정으로 실행 ledger를 생성하거나 seed를 실제 사용하지는 않았다.

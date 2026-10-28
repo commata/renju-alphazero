@@ -284,7 +284,83 @@
   "rank_by": null,
   "colour_gap_max": null,
   "tie": "the simpler suite: O0, then O2, then O1",
-  "note": "fixed before the pilot is played (docs/h7-rl-plan.md 2.2)"
+  "note": "fixed before the pilot is played (docs/h7-rl-plan.md 2.2)",
+  "ranking_proposal": {
+   "status": "proposal_only_not_selected_or_implemented; rank_by stays null until agreement",
+   "metric": "mean score_split indicator over the three small-difference arms, with equal arm weights",
+   "per_opening": "q_i = (I[c8:c5 pair_score != 0.5] + I[mask:c5 pair_score != 0.5] + I[c5:orig pair_score != 0.5]) / 3",
+   "estimate": "mean(q_i) over the 60 shared history_id values in one suite",
+   "uncertainty_proposed": {
+    "method": "percentile cluster bootstrap",
+    "unit": "opening history_id, carrying all three arm outcomes together",
+    "lower_quantile": 0.025,
+    "samples": 20000,
+    "seed": 20261029
+   },
+   "recorded_arm_pairs_per_suite": 180,
+   "exclude_from_ranking": "S400 control is reported separately; do not pool its different sample or choose by candidate wins",
+   "not_allowed": "a Wilson interval treating 180 shared-opening arm outcomes as independent Bernoulli trials",
+   "limitations": "zero-variation bootstrap intervals can collapse; report that limitation, not certainty or a power guarantee. Point rate remains a mean over 180 recorded arm-pairs, but uncertainty uses 60 opening clusters. Prior-evaluation overlap and symmetry dependence remain reported design limitations.",
+   "resampling_clusters_per_suite": 60
+  },
+  "colour_gap_reference": {
+   "status": "descriptive reference only; colour_gap_max and its exact aggregation rule remain unset",
+   "historical_absolute_gap_range": [
+    0.07,
+    0.33
+   ],
+   "records": [
+    {
+     "comparison": "c4",
+     "path": "docs/h7c/c4/arena/official.json",
+     "sha256": "f73de9edf0aa72d9d94d41719584ec1f0d39acdfa0b01eace184a83f104c6838",
+     "tested_black_score": 0.62,
+     "tested_white_score": 0.4,
+     "absolute_gap": 0.22
+    },
+    {
+     "comparison": "c5",
+     "path": "docs/h7c/c5/arena/official.json",
+     "sha256": "d9bdd4bdf41e8eea64ae0d3051257f25cb03f3628d40ce54c5870619fe4f7f85",
+     "tested_black_score": 0.48,
+     "tested_white_score": 0.55,
+     "absolute_gap": 0.07
+    },
+    {
+     "comparison": "c6",
+     "path": "docs/h7c/c6/arena/official.json",
+     "sha256": "d029ceb6ec92f9428abe986ab28855b715c17fdc3f9d14ec57776b03b8e0cffe",
+     "tested_black_score": 0.6,
+     "tested_white_score": 0.35,
+     "absolute_gap": 0.25
+    },
+    {
+     "comparison": "c7",
+     "path": "docs/h7c/c7/arena/official.json",
+     "sha256": "52ec13154cda313644dabdd6830dc094c5a440e4a43da518624ec4fe0c6ecaf5",
+     "tested_black_score": 0.58,
+     "tested_white_score": 0.39,
+     "absolute_gap": 0.19
+    },
+    {
+     "comparison": "c8",
+     "path": "docs/h7c/c8/arena/official.json",
+     "sha256": "b8fe5e8646b920cc8dcf4900eaea3055e75964dea57347141a637f0a4f733f47",
+     "tested_black_score": 0.66,
+     "tested_white_score": 0.33,
+     "absolute_gap": 0.33
+    },
+    {
+     "comparison": "nmask",
+     "path": "docs/h7c/nmask/arena/official.json",
+     "sha256": "9871d7fe5169fe6930cbb9b3a1afc28b5e442e63a6d1c9e759d8b487139943b5",
+     "tested_black_score": 0.68,
+     "tested_white_score": 0.37,
+     "absolute_gap": 0.31
+    }
+   ],
+   "note": "These are historical tested-colour score gaps on existing cycle openings, not an estimate of O1/O2 bias or a validated exclusion threshold. Fix both aggregation across arms and threshold before pilot results are opened."
+  }
  },
  "positive_control": {
   "arms": [
@@ -318,7 +394,7 @@
     "basis": "docs/h7c/e2/sb_c5_saturation.json saturation block: 150 pairs, improvement_ci95 [0.025, 0.1267]; half-width * sqrt(150) / 1.96",
     "pair_sd_approx": 0.3177,
     "power_at_160_approx": 0.8655,
-    "note": "the same source as delta_assumed; 0.35 stays the planning value (conservative); neither is a raw S400 pair SD"
+    "note": "the same source as delta_assumed; 0.35 is larger than the 0.318 sensitivity estimate, but is not a conservative bound for every new suite; neither is a raw S400 pair SD"
    }
   }
  },
@@ -401,7 +477,8 @@
    "agree positive-control reporting without reruns",
    "verify actual policy/value checkpoint and metadata SHA for c5/c8/mask/orig",
    "confirm no conflicting reserved seeds or prior use",
-   "review and commit the final contract; keep this file draft until then"
+   "review and commit the final contract; keep this file draft until then",
+   "agree opening-cluster ranking uncertainty (60 clusters, not 180 independent trials) and the colour-gap aggregation rule"
   ],
   "opening_overlap_small_vs_control": {
    "O0": 30,
@@ -433,6 +510,12 @@
   "errors": "stop on integrity/runtime errors immediately; interrupted work may resume only with the same contract, code, models and JSONL; never rerun completed arms to obtain a desired result",
   "incomplete": "report completed/missing arms and failure reasons; do not make a final suite choice from incomplete prescribed comparisons",
   "note": "max_wall_hours and pause/termination handling remain unset for review; the current CLI runs one arm and does not enforce this schedule or budget",
-  "arm_order_reason": "suite by suite (control first within a suite): a pause at an arm boundary leaves whole suites with all four comparisons; the order is fixed before play and independent of results"
+  "arm_order_reason": "suite by suite (control first within a suite): a pause at an arm boundary leaves whole suites with all four comparisons; the order is fixed before play and independent of results",
+  "budget_review_proposal": {
+   "status": "discussion only; max_wall_hours and pause_or_termination_handling stay null",
+   "soft_wall_hours_suggested": 14,
+   "ratio_to_6_worker_estimate": 1.382,
+   "note": "about 1.4x the cost proxy, not a guaranteed bound. Before fixed, choose cumulative vs per-session accounting, paused-time treatment and resumption authorization. Arm-boundary checks do not enforce a hard 14-hour cap and the current CLI does not enforce this proposal."
+  }
  }
 }
