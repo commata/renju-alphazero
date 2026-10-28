@@ -3,6 +3,11 @@ from copy import deepcopy
 import json
 from pathlib import Path
 
+# H7-R reserved seeds that no committed contract uses: tools that check seeds against docs/h7r/contracts (the
+# holdout generator) must not see a fixture's seed as taken. tests/test_h7r_holdout.py guards this.
+FIXTURE_HOLDOUT_SEED = 8796
+FIXTURE_OTHER_SEED = 8795
+
 
 def winning_moves(opening, winner):
     from renju import Game
@@ -100,14 +105,14 @@ def selection_source(root, body, confirm_sha, candidate_moves=None, branch_recor
     from tests.test_h7r_holdout import holdout_contract
     models = {role: body['models'][name]['identity'] for role, name in body['roles'].items()}
     hcpath = holdout_contract(root / 'contracts', models={'c5': {**body['models'][body['roles']['champion']]}},
-                             holdout={'seed': 8785, 'split': 'conf', 'games': 25, 'cycle': 1, 'actor': 'c5'})
+                             holdout={'seed': FIXTURE_HOLDOUT_SEED, 'split': 'conf', 'games': 25, 'cycle': 1, 'actor': 'c5'})
     hc, hsha = ev.load_contract(hcpath, root, check_files=False)
     body['selection']['holdout_contract_sha256'] = hsha
     engine = {'registered_engine': True, 'registered': {'executable_sha256': 'e'*64, 'files': {}, 'info': []},
               'actual': {'executable_sha256': 'e'*64, 'files': {}, 'info': []}, 'rule': 'renju', 'move_timeout': 30}
     body['selection']['engine'] = engine
     # Caller saves this changed contract, then calls again with the final SHA.
-    raw = [game(i, **sp.run_identity(1, 8785, models['champion'], 'cuda'), purpose='holdout',
+    raw = [game(i, **sp.run_identity(1, FIXTURE_HOLDOUT_SEED, models['champion'], 'cuda'), purpose='holdout',
                 holdout={'contract_id': hc['contract_id'], 'contract_sha256': hsha, 'split': 'conf'}) for i in range(25)]
     folder = root / folder_name; folder.mkdir(exist_ok=True)
     gpath = folder / 'games.jsonl'

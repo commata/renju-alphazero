@@ -8,7 +8,10 @@ from tempfile import TemporaryDirectory
 import unittest
 
 from hybrid import h7r_eval as ev
+from tests.h7r_helpers import FIXTURE_HOLDOUT_SEED as SEED, FIXTURE_OTHER_SEED as OTHER_SEED
 from tests.test_h7c_labels import build, game
+
+ROOT = Path(__file__).resolve().parents[1]
 
 ACTOR = {'policy_checkpoint_sha256': 'a' * 64, 'policy_metadata_sha256': 'b' * 64,
          'value_checkpoint_sha256': 'c' * 64, 'value_metadata_sha256': 'd' * 64}  # test_h7c_labels.game's models
@@ -17,7 +20,7 @@ ACTOR = {'policy_checkpoint_sha256': 'a' * 64, 'policy_metadata_sha256': 'b' * 6
 def holdout_contract(folder: Path, **change) -> Path:
     body = {'format': ev.CONTRACT_FORMAT, 'contract_id': 'T-HOLDOUT', 'purpose': 'holdout', 'status': 'fixed',
             'models': {'c5': {'policy': 'p.pt', 'value': 'v.pt', 'identity': ACTOR}}, 'arms': [],
-            'holdout': {'seed': 8785, 'split': 'dev', 'games': 4, 'actor': 'c5', 'cycle': 1},
+            'holdout': {'seed': SEED, 'split': 'dev', 'games': 4, 'actor': 'c5', 'cycle': 1},
             'stats': {'alpha_one_sided': 0.025, 'bootstrap': {'samples': 1000, 'seed': 1, 'method': 'percentile',
                                                               'unit': 'opening pair'}}}
     body.update(change)
@@ -29,28 +32,41 @@ def holdout_contract(folder: Path, **change) -> Path:
 
 def holdout_games(path: Path, n=4):
     sha = ev.file_sha256(path)
-    return [game(i, run_seed=8785, purpose='holdout', holdout={'contract_id': 'T-HOLDOUT', 'contract_sha256': sha,
+    return [game(i, run_seed=SEED, purpose='holdout', holdout={'contract_id': 'T-HOLDOUT', 'contract_sha256': sha,
                                                                'split': 'dev'}) for i in range(n)]
+
+
+class FixtureSeedTest(unittest.TestCase):
+    def test_fixture_seeds_are_reserved_and_free_of_committed_contracts(self):
+        from hybrid.h6_labels import RESERVED_SEEDS
+        used = set()
+        for path in (ROOT / 'docs/h7r/contracts').glob('*.json'):
+            used |= ev.contract_seeds(json.loads(path.read_text()))
+        for seed in (SEED, OTHER_SEED):
+            self.assertIn(seed, ev.SEED_BLOCK)
+            self.assertIn(seed, RESERVED_SEEDS)
+            self.assertNotIn(seed, used, 'a committed contract took a test fixture seed: move tests/h7r_helpers.py '
+                                         'FIXTURE_*_SEED to a free H7-R seed')
 
 
 class GeneratorTest(unittest.TestCase):
     def test_holdout_seed_rules(self):
         from scripts import h7c_selfplay as sp
-        sp.check_seeds(8785, 1, range(3), holdout=True)
+        sp.check_seeds(SEED, 1, range(3), holdout=True)
         for seed in (8801, 8771):  # a training seed, a reserved seed outside the H7-R block
             with self.assertRaises(ValueError):
                 sp.check_seeds(seed, 1, range(3), holdout=True)
         with self.assertRaises(ValueError):
-            sp.check_seeds(8785, 1, range(3))  # the training path refuses the reserved seed
+            sp.check_seeds(SEED, 1, range(3))  # the training path refuses the reserved seed
 
     def test_holdout_identity_is_the_contract_run_only(self):
         from scripts import h7c_selfplay as sp
         with TemporaryDirectory() as tmp:
             path = holdout_contract(Path(tmp) / 'contracts')
-            ok = argparse.Namespace(run_seed=8785, cycle=1, start=0, games=4, allow_dirty=True)
+            ok = argparse.Namespace(run_seed=SEED, cycle=1, start=0, games=4, allow_dirty=True)
             out = sp.holdout_identity(path, ok, ACTOR)
             self.assertEqual((out['purpose'], out['holdout']['contract_id']), ('holdout', 'T-HOLDOUT'))
-            for change, models in (({'run_seed': 8786}, ACTOR), ({'games': 5}, ACTOR), ({'cycle': 2}, ACTOR),
+            for change, models in (({'run_seed': OTHER_SEED}, ACTOR), ({'games': 5}, ACTOR), ({'cycle': 2}, ACTOR),
                                    ({}, {**ACTOR, 'value_checkpoint_sha256': 'e' * 64})):
                 with self.assertRaises(ValueError):
                     sp.holdout_identity(path, argparse.Namespace(**{**vars(ok), **change}), models)
@@ -83,7 +99,7 @@ class GeneratorRunTest(unittest.TestCase):
             actor = tb_v3_net.model_identity(policy, value)
             path = holdout_contract(Path(tmp) / 'contracts', models={'c5': {'policy': 'p', 'value': 'v',
                                                                             'identity': actor}})
-            args = args_for(tmp, policy, value, run_seed=8785, games=1, holdout_contract=path)
+            args = args_for(tmp, policy, value, run_seed=SEED, games=1, holdout_contract=path)
             out = sp.run(args, log=lambda *a, **k: None)
             self.assertEqual(out['identity']['purpose'], 'holdout')
             rows = [json.loads(x) for x in args.jsonl.read_text().splitlines()]
@@ -92,7 +108,7 @@ class GeneratorRunTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'never training data'):
                 lab.check_games(rows)
             with self.assertRaises(ValueError):  # without the contract the reserved seed is refused
-                sp.run(args_for(tmp, policy, value, run_seed=8785, games=1, jsonl=Path(tmp) / 'x.jsonl'),
+                sp.run(args_for(tmp, policy, value, run_seed=SEED, games=1, jsonl=Path(tmp) / 'x.jsonl'),
                        log=lambda *a, **k: None)
             plain = sp.run_identity(1, 8801, actor, 'cpu')
             self.assertNotIn('purpose', plain)  # the training identity is unchanged
@@ -122,13 +138,13 @@ class TrainingEntryTest(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             rows = Path(tmp) / 'rows.jsonl.gz'
             with gzip.open(rows, 'wt') as handle:
-                handle.write(json.dumps({'game_id': 'h7c:c1:8785:0', 'split': 'train'}) + '\n')
+                handle.write(json.dumps({'game_id': f'h7c:c1:{SEED}:0', 'split': 'train'}) + '\n')
             with self.assertRaisesRegex(ValueError, 'reserved'):
                 tv.check_cycle_cache(Path(tmp), 1, rows=rows)
             cache = Path(tmp) / 'cache'
             cache.mkdir()
             for split in ('train', 'val', 'test'):
-                (cache / f'{split}_games.json').write_text(json.dumps(['h7c:c1:8785:0'] if split == 'test' else []))
+                (cache / f'{split}_games.json').write_text(json.dumps([f'h7c:c1:{SEED}:0'] if split == 'test' else []))
             with self.assertRaisesRegex(ValueError, 'reserved'):
                 tv.check_cycle_cache(cache, 1)
 
@@ -147,7 +163,7 @@ class EvaluationLabelsTest(unittest.TestCase):
             contract, sha = ev.load_contract(path, tmp, check_files=False, contracts_dir=path.parent)
             games = holdout_games(path)
             with self.assertRaisesRegex(ValueError, 'not a game of this holdout'):
-                ho.check_holdout_games([{**games[0], 'run_seed': 8786}] + games[1:], contract, sha)
+                ho.check_holdout_games([{**games[0], 'run_seed': OTHER_SEED}] + games[1:], contract, sha)
             with self.assertRaisesRegex(ValueError, 'not a game of this holdout'):
                 ho.check_holdout_games([{**games[0], 'holdout': {**games[0]['holdout'],
                                                                  'contract_sha256': '0' * 64}}], contract, sha)

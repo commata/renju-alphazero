@@ -3,7 +3,7 @@
  "contract_id": "R1-PILOT-1",
  "purpose": "pilot",
  "status": "draft",
- "meaning": "calibration only: the suites, the two information counts, the pair SD and the positive control; it judges no model, changes no champion and is not rerun until a result",
+ "meaning": "draft calibration proposal only: small-difference arms 60 pairs, S400 positive controls 160 pairs; no model selection, promotion or deployment; all run rules must be agreed and committed before fixed",
  "models": {
   "c5": {
    "policy": "runs/h3_policy_64x4/best.pt",
@@ -57,9 +57,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8781,
-   "pairing": "O0",
+   "pairing": "O0_small",
    "suite": {
     "path": "docs/h7r/suites/O0.json",
     "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
@@ -75,9 +75,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8781,
-   "pairing": "O0",
+   "pairing": "O0_small",
    "suite": {
     "path": "docs/h7r/suites/O0.json",
     "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
@@ -93,9 +93,9 @@
     "model": "orig",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8781,
-   "pairing": "O0",
+   "pairing": "O0_small",
    "suite": {
     "path": "docs/h7r/suites/O0.json",
     "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
@@ -111,9 +111,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
-   "seed": 8781,
-   "pairing": "O0",
+   "pairs": 160,
+   "seed": 8784,
+   "pairing": "O0_positive_control",
    "suite": {
     "path": "docs/h7r/suites/O0.json",
     "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
@@ -129,9 +129,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8782,
-   "pairing": "O1",
+   "pairing": "O1_small",
    "suite": {
     "path": "docs/h7r/suites/O1.json",
     "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
@@ -147,9 +147,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8782,
-   "pairing": "O1",
+   "pairing": "O1_small",
    "suite": {
     "path": "docs/h7r/suites/O1.json",
     "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
@@ -165,9 +165,9 @@
     "model": "orig",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8782,
-   "pairing": "O1",
+   "pairing": "O1_small",
    "suite": {
     "path": "docs/h7r/suites/O1.json",
     "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
@@ -183,9 +183,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
-   "seed": 8782,
-   "pairing": "O1",
+   "pairs": 160,
+   "seed": 8785,
+   "pairing": "O1_positive_control",
    "suite": {
     "path": "docs/h7r/suites/O1.json",
     "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
@@ -201,9 +201,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8783,
-   "pairing": "O2",
+   "pairing": "O2_small",
    "suite": {
     "path": "docs/h7r/suites/O2.json",
     "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
@@ -219,9 +219,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8783,
-   "pairing": "O2",
+   "pairing": "O2_small",
    "suite": {
     "path": "docs/h7r/suites/O2.json",
     "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
@@ -237,9 +237,9 @@
     "model": "orig",
     "budget": 1
    },
-   "pairs": 100,
+   "pairs": 60,
    "seed": 8783,
-   "pairing": "O2",
+   "pairing": "O2_small",
    "suite": {
     "path": "docs/h7r/suites/O2.json",
     "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
@@ -255,9 +255,9 @@
     "model": "c5",
     "budget": 1
    },
-   "pairs": 100,
-   "seed": 8783,
-   "pairing": "O2",
+   "pairs": 160,
+   "seed": 8786,
+   "pairing": "O2_positive_control",
    "suite": {
     "path": "docs/h7r/suites/O2.json",
     "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768"
@@ -292,6 +292,147 @@
    "O1_c5s400_vs_c5",
    "O2_c5s400_vs_c5"
   ],
-  "report": "the measured effect and interval, once; a miss is reported with its cause (wide interval / suite / tool), never rerun to success"
+  "report": "the measured effect and interval, once; a miss is reported with its cause (wide interval / suite / tool), never rerun to success",
+  "planning_power": {
+   "method": "normal approximation: Phi(delta * sqrt(n) / pair_sd - z_(1-alpha)); per suite, not joint power",
+   "delta_assumed": 0.077,
+   "pair_sd_assumed": 0.35,
+   "alpha_one_sided": 0.025,
+   "pairs_per_suite_proposed": 160,
+   "power_approx": 0.794701,
+   "comparison_sizes": {
+    "60": 0.399033,
+    "100": 0.594849,
+    "120": 0.67365,
+    "160": 0.794701
+   },
+   "pairs_for_power_at_least_0_8_approx": 163,
+   "effect_source": {
+    "path": "docs/h7c/e2/sb_c5_saturation.json",
+    "sha256": "952751bf83afefb423521d668bd927e43a7dbad397fb49a958bc3a8516edbae9"
+   },
+   "effect_source_observed_improvement": 0.0767,
+   "sd_basis": "planning approximation, not raw S400 pair SD: 50-pair bootstrap half-widths / 1.96 * sqrt(50) give about 0.36 (original) and 0.33 (c5)",
+   "note": "0.795 is approximately 80%, not a guarantee of power >=0.80; effect and SD may differ in O0/O1/O2; neither joint detection nor bootstrap-test power is guaranteed; no rerun to success",
+   "sd_sensitivity": {
+    "basis": "docs/h7c/e2/sb_c5_saturation.json saturation block: 150 pairs, improvement_ci95 [0.025, 0.1267]; half-width * sqrt(150) / 1.96",
+    "pair_sd_approx": 0.3177,
+    "power_at_160_approx": 0.8655,
+    "note": "the same source as delta_assumed; 0.35 stays the planning value (conservative); neither is a raw S400 pair SD"
+   }
+  }
+ },
+ "planning": {
+  "status": "proposal_only_not_enforced_by_the_current_CLI",
+  "workers_proposed": 6,
+  "suite_count": 3,
+  "small_difference_arms": 9,
+  "positive_control_arms": 3,
+  "total_pairs_proposed": 1020,
+  "total_games_proposed": 2040,
+  "cost": {
+   "unit": "hours, arm wall time only; predictions, not bounds or measurements of this pilot",
+   "s50_seconds_per_pair_6_workers_proxy": 18.418,
+   "s50_seconds_per_pair_2_workers_smoke": 39.2,
+   "s400_arm_cost_multiplier_assumed": 3.0,
+   "multiplier_basis": "approximation (1 + tested_seconds/opponent_seconds)/2, assuming the measured S50 side proxies both S50 sides; not a direct matched-pair wall-time ratio",
+   "original_sb_side_ratio": 5.06618,
+   "original_sb_arm_proxy": 3.03309,
+   "c5_sb_side_ratio": 4.941154,
+   "c5_sb_arm_proxy": 2.970577,
+   "sources": [
+    {
+     "path": "docs/h7c/c8/arena/official.json",
+     "sha256": "b8fe5e8646b920cc8dcf4900eaea3055e75964dea57347141a637f0a4f733f47"
+    },
+    {
+     "path": "docs/h7c/sb_summary.json",
+     "sha256": "8d2df6920f463ebd9a3d88b5a879889a4ab96a519e89c0de54be60fd284aae06"
+    },
+    {
+     "path": "docs/h7c/e2/sb_c5_summary.json",
+     "sha256": "f54b90d41dd49b08505a884e0e56a79cd731a3a69523f454fa1f6d976510f0f1"
+    }
+   ],
+   "smoke_source": {
+    "archive": "smoke-112fd97-20261028-223610-results.tar.gz",
+    "archive_sha256": "f1bc5fc60741fe72678c9855b99fa0af20da1c394124fc43857eb30749825728",
+    "commit": "112fd9730e6adfa05398fd069200e23ab0a794da",
+    "s50_wall_seconds": 78.4,
+    "pairs": 2,
+    "workers": 2
+   },
+   "scenario_estimates": [
+    {
+     "small_pairs_per_arm": 60,
+     "control_pairs_per_arm": 60,
+     "hours_6_workers_proxy": 5.5254,
+     "hours_2_workers_proxy": 11.76,
+     "control_power_per_suite_approx": 0.399033
+    },
+    {
+     "small_pairs_per_arm": 100,
+     "control_pairs_per_arm": 100,
+     "hours_6_workers_proxy": 9.209,
+     "hours_2_workers_proxy": 19.6,
+     "control_power_per_suite_approx": 0.594849
+    },
+    {
+     "small_pairs_per_arm": 60,
+     "control_pairs_per_arm": 120,
+     "hours_6_workers_proxy": 8.2881,
+     "hours_2_workers_proxy": 17.64,
+     "control_power_per_suite_approx": 0.67365
+    },
+    {
+     "small_pairs_per_arm": 60,
+     "control_pairs_per_arm": 160,
+     "hours_6_workers_proxy": 10.1299,
+     "hours_2_workers_proxy": 21.56,
+     "control_power_per_suite_approx": 0.794701
+    }
+   ],
+   "limitations": "6 workers is the historical execution setting documented in the plan; official.json has no workers/environment field. Different hardware, opening distributions, game lengths and S400 runs are mixed. No measured 2-to-6-worker scaling factor or pilot ETA is claimed. No direct S50/S400 rate is inferred from the one-pair S400 smoke. Labels, holdout, Rapfi and training are excluded."
+  },
+  "before_fixed": [
+   "agree small/control pair allocation and workers",
+   "set suite_selection.rank_by and colour_gap_max",
+   "agree run order, time budget and handling of a paused/incomplete pilot",
+   "agree positive-control reporting without reruns",
+   "verify actual policy/value checkpoint and metadata SHA for c5/c8/mask/orig",
+   "confirm no conflicting reserved seeds or prior use",
+   "review and commit the final contract; keep this file draft until then"
+  ],
+  "opening_overlap_small_vs_control": {
+   "O0": 30,
+   "O1": 30,
+   "O2": 55,
+   "note": "openings shared by the 60-pair small-difference sample and the 160-pair control sample of a suite (different seeds); recorded, not treated as paired or independent comparisons"
+  }
+ },
+ "execution_plan": {
+  "status": "draft_operator_procedure_not_a_scheduler",
+  "workers_proposed": 6,
+  "arm_order_proposed": [
+   "O0_c5s400_vs_c5",
+   "O0_c8_vs_c5",
+   "O0_mask_vs_c5",
+   "O0_c5_vs_orig",
+   "O1_c5s400_vs_c5",
+   "O1_c8_vs_c5",
+   "O1_mask_vs_c5",
+   "O1_c5_vs_orig",
+   "O2_c5s400_vs_c5",
+   "O2_c8_vs_c5",
+   "O2_mask_vs_c5",
+   "O2_c5_vs_orig"
+  ],
+  "max_wall_hours": null,
+  "pause_or_termination_handling": null,
+  "budget_stop_proposed": "result-blind time-budget checks at arm boundaries; finish the active arm, then pause before the next. This can exceed the nominal limit by one arm; it is not a hard timeout.",
+  "errors": "stop on integrity/runtime errors immediately; interrupted work may resume only with the same contract, code, models and JSONL; never rerun completed arms to obtain a desired result",
+  "incomplete": "report completed/missing arms and failure reasons; do not make a final suite choice from incomplete prescribed comparisons",
+  "note": "max_wall_hours and pause/termination handling remain unset for review; the current CLI runs one arm and does not enforce this schedule or budget",
+  "arm_order_reason": "suite by suite (control first within a suite): a pause at an arm boundary leaves whole suites with all four comparisons; the order is fixed before play and independent of results"
  }
 }
