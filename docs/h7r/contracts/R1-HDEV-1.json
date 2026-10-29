@@ -1,0 +1,52 @@
+{
+ "format": "h7r-eval-contract-v1",
+ "contract_id": "R1-HDEV-1",
+ "purpose": "holdout",
+ "status": "draft",
+ "meaning": "draft H-dev: 400 self-play games of the research champion c5 for R2 diagnosis and R3 development and selection (docs/h7-rl-plan.md 9.11); never training data; not a confirmation sample (H-conf is a separate later contract); nothing is generated while this is a draft",
+ "models": {
+  "c5": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  }
+ },
+ "arms": [],
+ "holdout": {
+  "seed": 8787,
+  "split": "dev",
+  "games": 400,
+  "actor": "c5",
+  "cycle": 1
+ },
+ "holdout_notes": {
+  "seed": "reserved H7-R seed 8787 (hybrid.h6_labels.RESERVED_SEEDS): the run seed of h7c_selfplay --holdout-contract; not an opening-suite generation seed",
+  "cycle": "the cycle number of the derived game / opening seeds and game ids (h7c:c1:8787:i); checked collision-free for 400 games; it names no H7-c training cycle",
+  "use": "R2 / R3 development and selection only: once a choice has looked at it, it is not independent confirmation evidence",
+  "before_fixed": [
+   "the generation time and who may read the labels before R3 candidates are chosen",
+   "that c5 stays the research champion (docs/h7-rl-plan.md 9.11)"
+  ]
+ },
+ "stats": {
+  "alpha_one_sided": 0.025,
+  "bootstrap": {
+   "samples": 20000,
+   "seed": 20261028,
+   "method": "percentile",
+   "unit": "opening pair"
+  },
+  "error_budget": {
+   "max_cycles": 3,
+   "per_cycle_alpha": 0.025,
+   "expected_false_promotions_max": 0.075
+  },
+  "delta": 0.03,
+  "power": 0.8
+ }
+}

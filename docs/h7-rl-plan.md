@@ -200,7 +200,7 @@
 |---|---|
 | `src/hybrid/h7r_openings.py` | O0 / O1 / O2 생성 · 검사, ID, 대칭, 중복 없는 추출, 이전 평가와의 겹침 |
 | `src/hybrid/h7r_eval.py` | 계약 검사(seed 예약 · 계약 간 재사용 금지 · suite SHA · 모델 SHA), 쌍 표(잘림 · 누락 · 중복 거부), pair bootstrap, anchor 차이, 선택 품질 비열등, 규모 제안, 승급 규칙 v3 |
-| `scripts/h7r_eval.py` | `suite`, `play`(계약의 한 arm, 재개, 예산 arm), `summarize`, `size`, `timing`, `selection-source`, `selection`, `tactical`(9.7), `judge` |
+| `scripts/h7r_eval.py` | `suite`(제외 · disjoint 출처, 9.11), `play`(계약의 한 arm, 재개, 예산 arm), `summarize`, `size`, `anchor-size`(9.11), `timing`, `selection-source`, `selection`, `tactical`(9.7), `judge` |
 | `scripts/h7r_holdout.py` | `labels`(holdout 대국 → 평가 전용 라벨 · cache), `eval`(경로 × 종류 WMSE, 짝 차이, 게임 단위 bootstrap, seed 간 분산) |
 | `h7c_selfplay.py --holdout-contract` | 계약에 등록된 예약 seed만 허용, identity에 `purpose: holdout` · 계약 ID · SHA |
 | 학습 진입 거부 | `h7c_labels.check_games`(holdout 표시 → 거부, 표시를 지워도 예약 seed로 거부), `h7c_train.rows_source`(`purpose` 있는 행 거부), `h7c_train_value.check_cycle_cache`(예약 seed 게임 거부) |
@@ -979,7 +979,7 @@ pilot은 사전 등록한 대로 한 번 실행했고 끝났다. 결과는 데�
 - 계약 `15293ca9…`, 대국 commit `540b16a`(clean)
 - 세션 1개, 누적 4.955시간(14시간 예산 미도달, 예산 중단 · 연장 0)
 - 12/12 arm complete, 1,020쌍 / 2,040판
-  - 모든 판을 재생으로 확인했다. 잘린 판과 양쪽의 불법 수는 0이다(`load_arm` 검증, 완료 판정).
+  - `report`가 12개 arm 기록 전부를 `load_arm`으로 다시 검증해 COMPLETE를 냈다. 이 검증은 코드상 모든 판의 재생, 잘린 판 거부를 포함하고, 완료 판정은 상대 불법 수가 없고 계획 쌍이 채워졌다는 조건을 포함한다. 원본 파일을 이 저장소에서 다시 계산하지는 않았다(아래 "필요한 원본").
   - `report`는 `bd893a8`에서 만들었다. `540b16a`와의 차이는 `report`가 세션 로그를 읽는 방식(읽기 전용), 문서, 테스트뿐이라 계산에는 영향이 없다.
 - 비용(6 worker, 쌍당)
   - S50 작은 차이: O1 5.7–7.3초, O0 · O2 11.0–12.2초
@@ -1011,7 +1011,7 @@ pilot은 사전 등록한 대로 한 번 실행했고 끝났다. 결과는 데�
 
 - c8 대 c5, mask 대 c5: 모든 suite에서 구간이 0을 포함한다(점추정 −0.42 ~ +1.67%p). 동등성이 입증된 것도 아니다.
 - c5 대 원본: O0 −2.08, O1 −1.25, O2 −4.17%p. O2만 구간 [−7.92, −0.83]이 0을 벗어난다.
-  - 비교 9개가 모두 실제 차이 0이어도 하나 이상이 0을 벗어날 확률은 약 37%다.
+  - 참고 예시: 비교 9개가 서로 독립이고 각각 5% 오류라면, 하나 이상이 0을 벗어날 확률은 약 37%다. 실제 비교는 모델과 opening을 공유하므로 정확한 확률이 아니고, O2의 음수 결과를 무시할 근거도 아니다.
   - 이전 drift arm(기존 opening, 50쌍): c4 대 원본 −1.5%p [−6.5, +3.5], c5 대 원본 −1.0%p [−7.5, +5.5]
   - 방향은 일관되게 약간 음수이지만 확정이 아니다. 운영(canonical · web · SER5)은 원본 H3 / H6를 쓰므로 영향이 없다. 확인 계약의 champion과 R2 / R3의 출발점(계획상 c5)을 정할 때 고려한다.
 - 색 편향(배제 기준 아님, arm별): O0 작은 차이 22.5–25.8%p, O1 15.0–15.8%p, O2 1.7–11.7%p, S400 6.9–17.2%p
@@ -1024,33 +1024,152 @@ pilot은 사전 등록한 대로 한 번 실행했고 끝났다. 결과는 데�
 | mask 대 c5 (0.206 / 0.216) | 369 | 409 |
 | c5 대 원본 (0.212 / 0.213) | 391 | 398 |
 
-**확인 계약 suite에 대한 결론(제안, 승인 전)**
+**확인 suite에 대한 결론**(9.11에서 결정)
 
-- O0 생성 규칙의 수순은 모두 552개다.
-  - 이전 cycle Arena와 겹치는 수순: 278개
+- O0 생성 규칙의 수순은 모두 552개다(이 저장소에서 전수 계산).
+  - 이전 cycle Arena 기록(공식 · 모니터링 · drift · NMASK Arena)과 겹치는 수순: 278개
   - pilot이 쓴 수순: 190개
   - pilot만 제외하면 362개, 둘 다 제외하면 179개가 남는다.
-  - 필요 규모(369–553쌍)를 O0로는 채울 수 없다. 이 공간 크기는 생성 규칙만으로 정해지는 설계 정보이고, 결과로 만든 기준이 아니다.
-- 따라서 확인 계약은 **O1을 새 생성 seed로 다시 만든 suite**를 제안한다.
-  - pilot 수순을 제외하고, 이전 평가와의 겹침은 기록한다.
-  - O1은 동치류가 사실상 opening마다 하나이고, 이전 평가와 겹치지 않으며, 쌍당 비용이 가장 낮다.
-  - suite 순위는 O0이지만 공간 제약 때문에 O1을 쓴다는 점을 확인 계약에 명시한다.
-- 규모 제안
-  - candidate 대 champion 약 560쌍. 정보 쌍(score_split) m = 20이면 mask 수준의 낮은 비율 하한에서도 달성 확률이 약 1.0이고, m = 30이면 0.94다.
-- anchor 비열등(margin −2%p)은 별도 규모가 필요하다.
-  - 실제 차이가 0일 때 검출력 0.8에 필요한 쌍은 차이의 SD 0.18–0.23에서 약 640–1,040쌍이다.
-  - pilot은 candidate 대 원본을 두지 않았으므로 차이의 SD는 추정치다. 400쌍이면 검출력이 약 0.44다.
-  - 선택지: anchor arm 약 800쌍, 또는 margin −3%p(필요 약 280–460쌍)
-- 비용(O1, 6 worker, 실측 쌍당 시간 기준)
-  - candidate 대 champion 560쌍: 약 68분
-  - anchor arm 2개: 800쌍이면 약 2.7시간, 400쌍이면 약 80분
+- 결론은 다음 설계 조건에서만 성립한다.
+  - 조건: pilot · 이전 평가와 정확한 수순 중복이 없고, 중복 없이 추출하며, 현재 계획 검출력을 확보한다.
+  - 이 조건에서는 O0 공간이 필요한 규모를 담지 못한다. 다른 평가 설계(예: 이전 평가와의 겹침 허용, 더 작은 규모)까지 불가능하다는 뜻은 아니다.
+  - 이 조건을 유지하고 O1을 쓴다. 공간 크기는 생성 규칙만으로 정해지는 설계 정보이고, 결과로 만든 기준이 아니다.
+- 수순이 서로 다르다는 것은 통계적 독립성을 보장하지 않는다. 다른 국면이어도 구조가 비슷할 수 있다.
+  - pilot O1의 60개가 동치류 60개였다는 것은 그 표본의 관측일 뿐이다.
+  - 새 suite의 속성은 생성한 뒤 따로 기록한다(9.11의 시험 생성: 560개 → 동치류 558개, 1,040개 → 1,033개).
+- 쌍 수와 정보 쌍 m은 기존 후보(c8 · mask · c5 대 원본)로 추정한 계획값이다. 새 후보가 champion과 거의 같으면 정보 쌍이 부족할 수 있다. 그때는 예정대로 KEEP / INCONCLUSIVE이며 표본을 보충하지 않는다.
 
-**pilot 뒤 결정할 것**
+**필요한 원본**(이 절의 수치를 독립적으로 다시 계산하려면, 데스크톱 `runs/h7r/R1-PILOT-1/`)
 
-1. 확인 suite: O1 재생성(제안). 생성 seed와 pilot 수순 제외 방식
-2. 규모: candidate 대 champion 쌍 수와 m, anchor arm 쌍 수 또는 margin
-3. champion: c5 유지 또는 원본(위의 c5 대 원본 신호)
-4. H-dev / H-conf holdout 계약(seed는 8787–8794 중, actor는 3번과 연동)
-5. R2 진단의 출발 모델
+- `report-final.json`, `size.json`, `sessions.jsonl`, `preflight.json`, `run-*.log`
+- `arms/*.json`(12개 arm 기록), `arms/*.jsonl`(재개 원본)
 
-확인 계약은 평가할 R3 후보가 생긴 뒤 모델 identity와 함께 확정한다. 이번 단계에서 계약 · seed · ledger를 만들지 않았다.
+### 9.11 pilot 뒤 평가 준비: 연구 기준 · 확인 설계 초안 · opening 제외 · H-dev 초안 (2026-10-30)
+
+확인 Arena, H-dev / H-conf 생성, R2 / R3 학습, champion 변경, SER5 배포는 하지 않았다. 확인 계약 · 확인 seed · ledger · holdout-use 예약도 만들지 않았다.
+
+**연구 기준 모델(사용자 결정)**
+
+- 연구 champion과 R2 출발점은 **c5**를 유지한다. 원본 H3 / H6는 **anchor**로 둔다.
+- c5 대 원본의 음수 신호(9.10)는 기록해 두고 anchor 판정으로 계속 감시한다. 이번 pilot만으로 기존 승급을 취소하지 않는다.
+- 운영 canonical · web · SER5는 바꾸지 않는다(이미 원본을 쓴다).
+
+**확인 평가 설계 초안**(실제 계약은 R3 후보와 모델 identity가 나온 뒤 작성 · fixed)
+
+| 항목 | 계획값 |
+|---|---|
+| suite | 새 O1(아래 제외 기능으로 생성). 9.10의 설계 조건을 유지한 선택 |
+| candidate_vs_champion | 560쌍. 정보 쌍 `score_split` 최소 20쌍. 미달이면 KEEP / INCONCLUSIVE이고 표본을 보충하지 않는다 |
+| anchor margin | −0.02 |
+| candidate_vs_anchor · champion_vs_anchor | 각 1,040쌍(잠정). 같은 opening · pairing · seed · pairs · suite SHA(계약 검사가 강제) |
+| 표본 구성 | 주 비교와 anchor 묶음은 서로 다른 opening. suite 파일 2개(주 560개, anchor 1,040개, 서로 겹치지 않음)를 만들고 각 arm이 자기 suite 전체를 쓴다. 고유 opening은 1,600개 |
+
+- suite 파일의 크기(opening 수)와 arm의 표본 수(쌍 수)는 다른 값이다. 이 설계에서는 둘이 같도록 만든다(`pairs` = suite의 `count`).
+- 가짜 candidate identity로 실행 가능한 확인 계약을 만들지 않는다.
+
+**anchor 규모: paired difference 기준** (`h7r_eval.py anchor-size`, `ev.anchor_sizing`)
+
+- 판정량은 같은 opening에서의 D_i = (candidate_vs_anchor pair score) − (champion_vs_anchor pair score)다. 필요한 SD는 **D_i의 SD**다.
+- 개별 arm의 SD를 그대로 쓰거나 공분산을 무시한 값은 paired SD 실측이 아니다. pilot에는 candidate_vs_anchor가 없어서 D_i의 SD는 아직 가정값이다.
+- 두 anchor arm 기록이 생기면 `anchor-size --contract … --arm-record A B`가 공유 opening에서 D_i의 SD를 계산한다(`ev.paired_difference_sd`).
+- 조건: margin −2%p, 실제 평균 차이 0, 단측 α 0.025, 검출력 0.8, 정규 근사
+
+| D_i의 SD 가정 | 필요 쌍 | 400쌍 검출력 | 800쌍 검출력 | 1,040쌍 검출력 |
+|---|---:|---:|---:|---:|
+| 0.18 | 636 | 0.603 | 0.882 | 0.948 |
+| 0.205 | 825 | 0.497 | 0.788 | 0.882 |
+| 0.23 | 1,039 | 0.413 | 0.691 | 0.801 |
+
+- 1,040쌍도 SD 가정에 의존하는 계획값이고 보장된 검출력이 아니다. 실제 SD가 0.23보다 크면 0.8에 못 미친다.
+- 향상 검출 규모(`size`)와 anchor 비열등 규모(`anchor-size`)는 입력과 출력이 다른 별도 명령이다. 기존 판정 규칙은 바꾸지 않았다.
+- 예상 비용(6 worker, pilot O1의 60쌍 arm에서 잰 쌍당 시간. 예측일 뿐 상한이 아니다)
+  - candidate_vs_champion 560쌍 × 6.1–7.3초: 약 57–68분
+  - candidate_vs_anchor 1,040쌍 × 5.7–7.3초: 약 99–127분
+  - champion_vs_anchor 1,040쌍 × 5.7초: 약 99분
+  - 합계: 약 4.2–4.9시간
+
+**opening 제외 기능** (`h7r_eval.py suite --exclude-from … --disjoint-from …`)
+
+- 제외 출처
+  - 실제로 둔 opening 기록(`PLAYED_FORMATS`: H7-R arm · cycle Arena · drift · NMASK · 외부 대국 · 벤치마크 기록)
+  - H7-R 계약: 각 arm이 뽑은 표본(`pick`). suite 파일의 SHA를 먼저 확인한다. 완료된 arm이 둔 opening과 같다.
+- 거부하는 출처
+  - suite 파일: 후보 목록이지 사용한 opening이 아니다. 다른 표본용으로 비워 둘 suite는 `--disjoint-from`으로 따로 준다.
+  - 형식을 모르는 파일, 잘못된 수순, SHA가 맞지 않는 계약 suite
+- 판단 기준: 정확한 중복은 기록에 적힌 ID가 아니라 수순에서 다시 계산한 `history_id`로 판단한다.
+- 기록 항목: suite 파일의 `exclusion`에 다음을 남긴다.
+  - 제외 ID 목록과 그 SHA, 제외로 건너뛴 추출 수
+  - 출처별 경로 · SHA · 종류 · opening 수 · 고유 수순 수 · 수 길이
+  - 출처별 history / position / class 겹침, 짧은 opening과 시작이 같은 수(shared beginnings)
+  - `check_suite`가 제외 ID가 suite에 없는지와 목록의 SHA를 다시 확인한다.
+- 재현성: 같은 seed와 같은 제외 집합이면 같은 suite가 나온다. 추출 순서는 같고, 제외된 것만 건너뛴다.
+- 공간 부족: 부족하면 중복으로 채우지 않는다. 정해진 시도 한도에서 원인(찾은 수, 제외된 추출, 반복)을 밝히고 실패한다.
+- 결과에 따라 추출 기준을 바꾸거나 특정 모델에 유리한 opening을 고르는 기능은 없다.
+- position_id · class_id 겹침은 history 중복이 아니다. 기록만 하고 제외하지 않는다.
+- 3수 opening과 5수 opening이 앞 세 수를 공유하는 것도 정확한 중복이 아니다. O1의 앞 세 수는 O0형 opening이고 그런 수순은 552개뿐이라, 공유가 흔하다.
+
+**시험 생성**(이 컨테이너, 커밋하지 않음)
+
+- 제외 출처는 세 가지다.
+  - `R1-PILOT-1` 계약(12개 arm 표본 1,020개, 고유 486개)
+  - `R1-SMOKE-1` 계약
+  - 저장소의 이전 평가 기록 70개
+- 생성 seed: 202610301(주), 202610302(anchor). 계약의 예약 seed(8781–8799)와 용도가 다르다.
+
+| suite | opening | 고유 history / position / class | 제외 ID | `openings_sha256` |
+|---|---:|---|---:|---|
+| 주(560) | 560 | 560 / 560 / 558 | 898 | `3f6eb598cc31…` |
+| anchor(1,040, 주와 disjoint) | 1,040 | 1,040 / 1,040 / 1,033 | 1,458 | `47a4f03255cf…` |
+
+- 주와 anchor의 history 겹침은 0이고, class 겹침은 10이다(대칭 변형이며 중복 아님).
+- 주 suite 560개 중 478개는 앞 세 수가 이전 평가의 3수 opening과 같다. 정확한 수순 중복은 모든 출처에서 0이다.
+- 데스크톱에서 실제 arm 기록으로 만들 때 `openings_sha256`이 위와 같으면, 실제로 둔 표본이 계약의 추출과 같다는 뜻이다.
+
+**H-dev / H-conf**
+
+- `docs/h7r/contracts/R1-HDEV-1.json`(**draft**)
+  - actor c5, 400판, split dev
+  - 예약 seed 8787. 기존 계약의 seed와 겹치지 않고, 테스트 fixture의 8795 · 8796과도 다르다.
+  - cycle 1: 파생 seed 충돌 없음을 확인했다. H7-c 학습 cycle을 가리키지 않는다.
+  - draft도 seed 검사에 들어가므로 seed는 하나만 차지했다.
+- H-dev는 R2 / R3 개발 · 선택용이다. 선택에 한 번 쓰이면 독립 확인 근거가 아니다.
+- fixed 전에 정할 것: 생성 시점, R3 후보 선택 전 라벨 접근 범위
+- H-conf는 지금 만들지 않는다. 후보 선택과 확인 시점 · 접근 규칙을 정한 뒤 별도 계약 · 자료로 둔다.
+- 남은 예약 seed: 8788–8794
+
+**데스크톱 명령**(확인 suite 생성. 대국은 두지 않는다)
+
+```bash
+cd ~/renju-h6 && source .venv/bin/activate && export PYTHONPATH="$PWD/src:$PWD/scripts"
+git status --short && git pull --ff-only origin feat/h7-c1
+PRIOR=$(python - <<'PY'
+import json, glob
+from hybrid.h7r_openings import PLAYED_FORMATS
+out = []
+for f in sorted(glob.glob('docs/**/*.json', recursive=True)):
+    try:
+        b = json.load(open(f))
+    except Exception:
+        continue
+    if isinstance(b, dict) and b.get('format') in PLAYED_FORMATS and b.get('openings'):
+        out.append(f)
+print(' '.join(out))
+PY
+)
+USED="runs/h7r/R1-PILOT-1/arms/O0_c5_vs_orig.json runs/h7r/R1-PILOT-1/arms/O0_c5s400_vs_c5.json \
+  runs/h7r/R1-PILOT-1/arms/O0_c8_vs_c5.json runs/h7r/R1-PILOT-1/arms/O0_mask_vs_c5.json \
+  runs/h7r/R1-PILOT-1/arms/O1_c5_vs_orig.json runs/h7r/R1-PILOT-1/arms/O1_c5s400_vs_c5.json \
+  runs/h7r/R1-PILOT-1/arms/O1_c8_vs_c5.json runs/h7r/R1-PILOT-1/arms/O1_mask_vs_c5.json \
+  runs/h7r/R1-PILOT-1/arms/O2_c5_vs_orig.json runs/h7r/R1-PILOT-1/arms/O2_c5s400_vs_c5.json \
+  runs/h7r/R1-PILOT-1/arms/O2_c8_vs_c5.json runs/h7r/R1-PILOT-1/arms/O2_mask_vs_c5.json \
+  docs/h7r/contracts/R1-SMOKE-1.json"
+python -u scripts/h7r_eval.py suite --name O1 --count 560 --seed 202610301 --exclude-from $USED $PRIOR \
+  --output docs/h7r/suites/O1-confirm-main.json
+python -u scripts/h7r_eval.py suite --name O1 --count 1040 --seed 202610302 --exclude-from $USED $PRIOR \
+  --disjoint-from docs/h7r/suites/O1-confirm-main.json --output docs/h7r/suites/O1-confirm-anchor.json
+python -c "import json; [print(f, json.load(open(f))['openings_sha256'][:12]) for f in ('docs/h7r/suites/O1-confirm-main.json', 'docs/h7r/suites/O1-confirm-anchor.json')]"
+# 예상: 3f6eb598cc31, 47a4f03255cf. 같으면 두 suite 파일을 커밋한다(다르면 커밋하지 말고 출력을 보낸다)
+```
+
+- smoke 계약 대신 데스크톱의 smoke arm 기록(`runs/h7r/smoke/s50.json`, `s400.json`)을 줘도 된다. 그때는 smoke 계약을 빼고 두 기록을 `USED`에 넣는다.
+- 이 suite 파일은 R3 후보가 나오기 전에 고정해 두는 확인용 opening 목록이다. 이것만으로는 실행 가능한 계약이 아니다.

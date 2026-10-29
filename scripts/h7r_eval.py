@@ -106,13 +106,39 @@ def previous_openings(paths) -> dict[str, list]:
 
 
 def suite(args, log=print) -> dict:
+    """A suite file. ``--exclude-from``: evaluation records whose used openings are never drawn (exact history ids
+    recomputed from moves; ``op.used_openings``); ``--disjoint-from``: suites reserved for another sample of the same
+    design. The sources (path, SHA-256, counts) and the overlaps with them (history / position / class, and shared
+    beginnings with shorter openings) are recorded."""
+    root = Path(getattr(args, 'root', None) or ROOT)
     git = _git(args.allow_dirty)
-    body = op.build_suite(args.name, args.count, args.seed)
+    used, disjoint = getattr(args, 'exclude_from', None) or [], getattr(args, 'disjoint_from', None) or []
+    ex = op.exclusion(used, root, disjoint) if used or disjoint else None
+    body = op.build_suite(args.name, args.count, args.seed, exclude=None if ex is None else ex['history_ids'])
     body['git'] = git
     body['overlap_with_earlier'] = op.overlap(body['openings'], previous_openings(args.compare_with))
+    if ex is not None:
+        body['exclusion']['sources'] = ex['sources']
+        body['exclusion']['overlap'] = {
+            'note': 'history overlap with an exclusion source is 0 by construction; position / class overlaps and '
+                    'shared beginnings are not repeats and are reported only',
+            'by_source': op.overlap(body['openings'], {s['path']: m for s, m in _source_moves(ex, used, disjoint, root)}),
+            'shared_beginnings': op.prefix_overlap(body['openings'], ex['moves'])}
     log(f"[h7r-suite] {args.name}: {body['count']} openings, distinct {body['distinct']}, rejected "
         f"{body['rejected']}", flush=True)
     return body
+
+
+def _source_moves(ex, used, disjoint, root):
+    """Each exclusion source with its own openings (for the per-source overlap report)."""
+    out = []
+    for source, path in zip(ex['sources'], [*used, *disjoint]):
+        if source['format'] == op.FORMAT:
+            moves = [o['moves'] for o in _json(path)['openings']]
+        else:
+            moves = op.used_openings(path, root)['moves']
+        out.append((source, moves))
+    return out
 
 
 # --- play --------------------------------------------------------------------------------------------------------
@@ -283,6 +309,24 @@ def size(args) -> dict:
         result = ev.sizing(arm['table']['pairs'], stats, args.delta, args.power, args.m, per_pair)
         out['arms'][rec['identity']['arm']] = {**result, 'workers': rec.get('workers'),
                                                 'worker_seconds_per_pair': round(worker, 1)}
+    return out
+
+
+def anchor_size(args) -> dict:
+    """Anchor non-inferiority planning (``ev.anchor_sizing``) for assumed SDs of D_i; with ``--contract`` and the two
+    anchor arm records of one pairing, also the measured SD of D_i on their shared openings."""
+    out = {'format': 'h7r-anchor-sizing-v1',
+           **ev.anchor_sizing(args.margin, args.sd, args.pairs, args.true_difference, args.alpha, args.power)}
+    if args.arm_record:
+        ev.require(args.contract is not None and len(args.arm_record) == 2,
+                   '--arm-record takes the candidate_vs_anchor and champion_vs_anchor records with --contract')
+        contract, sha = _contract(args)
+        a, b = (load_arm(p, contract, sha, Path(getattr(args, 'root', None) or ROOT)) for p in args.arm_record)
+        measured = ev.paired_difference_sd(a['table'], b['table'])
+        out['measured'] = {**measured, 'contract_sha256': sha,
+                           'arms': [r['record']['identity']['arm'] for r in (a, b)],
+                           'pairs_needed_at_measured_sd': ev.noninferiority_pairs(
+                               max(measured['sd'], 1e-6), args.margin, args.true_difference, args.alpha, args.power)}
     return out
 
 
@@ -615,6 +659,10 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument('--count', type=int)
     s.add_argument('--seed', type=int)
     s.add_argument('--compare-with', nargs='*', default=[], help='earlier suite files or Arena records')
+    s.add_argument('--exclude-from', nargs='*', default=[], type=Path,
+                   help='evaluation records (arm / Arena / match records, H7-R contracts) whose openings are never drawn')
+    s.add_argument('--disjoint-from', nargs='*', default=[], type=Path,
+                   help='suite files reserved for another sample of the same design (their openings are not drawn)')
     p = sub.add_parser('play')
     p.add_argument('--arm', required=True)
     p.add_argument('--device', default='cuda')
@@ -637,6 +685,14 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument('--bootstrap-samples', type=int, default=2000)
     t.add_argument('--mean-ratio-max', type=float, default=1.10, help='used when the contract sets none')
     t.add_argument('--p95-ratio-max', type=float, default=1.20)
+    n = sub.add_parser('anchor-size', help='anchor non-inferiority planning (not the improvement sizing of size)')
+    n.add_argument('--margin', type=float, default=-0.02)
+    n.add_argument('--true-difference', type=float, default=0.0)
+    n.add_argument('--alpha', type=float, default=0.025)
+    n.add_argument('--power', type=float, default=0.8)
+    n.add_argument('--sd', type=float, nargs='+', default=[0.18, 0.205, 0.23], help='assumed SDs of D_i')
+    n.add_argument('--pairs', type=int, nargs='+', default=[400, 800, 1040])
+    n.add_argument('--arm-record', type=Path, nargs='*', default=[])
     src = sub.add_parser('selection-source')
     src.add_argument('--cache', type=Path, required=True)
     src.add_argument('--source-dir', type=Path, required=True)
@@ -655,7 +711,9 @@ def build_parser() -> argparse.ArgumentParser:
     for name in EVIDENCE:
         j.add_argument('--' + name, type=Path, help='required (checked before anything is recorded)')
     for q in sub.choices.values():
-        if q is not s:
+        if q is n:
+            q.add_argument('--contract', type=Path, help='with --arm-record only')
+        elif q is not s:
             q.add_argument('--contract', type=Path, required=True)
         q.add_argument('--output', type=Path, required=True)
         q.add_argument('--allow-dirty', action='store_true', help='tests only (never the real ledger)')
@@ -670,7 +728,7 @@ def main(argv=None) -> int:
     try:
         out = {'suite': suite, 'play': play, 'summarize': summarize, 'size': size, 'timing': timing,
                'selection': selection, 'selection-source': selection_source, 'tactical': tactical,
-               'judge': judge}[args.command](args)
+               'judge': judge, 'anchor-size': anchor_size}[args.command](args)
     except (ValueError, FileNotFoundError) as exc:  # input errors; anything else is a bug and keeps its traceback
         parser.error(str(exc))
     Path(args.output).parent.mkdir(parents=True, exist_ok=True)

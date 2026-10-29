@@ -1,0 +1,158 @@
+"""H7-R preparation after the pilot (docs/h7-rl-plan.md 9.11): suites drawn without openings already used (exact
+history ids recomputed from moves, sources recorded, shortfalls refused, reproducible), the anchor non-inferiority
+sizing on the paired difference, and the H-dev draft contract. No game is played."""
+import argparse
+from copy import deepcopy
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+
+from hybrid import h7r_eval as ev
+from hybrid import h7r_openings as op
+from scripts import h7r_eval as cli
+from tests.test_h7r_cli import QUIET
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def record(tmp: Path, name: str, moves: list, fmt='h7c-arena-v1-arm', history_id='0' * 64) -> Path:
+    path = tmp / name
+    path.write_text(json.dumps({'format': fmt, 'openings': [{'pair': i, 'moves': m, 'history_id': history_id}
+                                                            for i, m in enumerate(moves)]}))
+    return path
+
+
+class ExclusionTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.base = op.build_suite('O1', 40, 11)
+
+    def test_union_of_sources_with_ids_recomputed_from_moves(self):
+        first = [o['moves'] for o in self.base['openings'][:5]]
+        second = [o['moves'] for o in self.base['openings'][3:8]]  # three shared with the first
+        a = record(self.root, 'a.json', first)  # a wrong stored history_id is ignored
+        b = record(self.root, 'b.json', second, fmt='external-match-v1')
+        ex = op.exclusion([a, b], self.root)
+        self.assertEqual(ex['history_ids'], {o['history_id'] for o in self.base['openings'][:8]})
+        self.assertEqual([(s['path'], s['openings'], s['distinct_histories']) for s in ex['sources']],
+                         [('a.json', 5, 5), ('b.json', 5, 5)])
+        self.assertEqual(ex['sources'][0]['sha256'], ev.file_sha256(a))
+        suite = op.build_suite('O1', 40, 11, exclude=ex['history_ids'])
+        self.assertFalse({o['history_id'] for o in suite['openings']} & ex['history_ids'])
+        self.assertEqual(suite['exclusion']['excluded_draws'], 8)  # the same draws, the used ones skipped
+        self.assertEqual(op.build_suite('O1', 40, 11, exclude=ex['history_ids']), suite)  # reproducible
+        op.check_suite(suite)
+        tampered = deepcopy(suite)
+        tampered['exclusion']['history_ids'].append(suite['openings'][0]['history_id'])
+        tampered['exclusion']['history_ids_sha256'] = op._sha(sorted(tampered['exclusion']['history_ids']))
+        with self.assertRaisesRegex(ValueError, 'excluded'):
+            op.check_suite(tampered)
+
+    def test_contract_source_takes_each_arm_sample_not_the_suite(self):
+        used = op.used_openings(ROOT / 'docs/h7r/contracts/R1-PILOT-1.json', ROOT)
+        self.assertEqual(len(used['moves']), 1020)  # 9 x 60 + 3 x 160 drawn openings, not 3 suites of 300 / 184
+        self.assertEqual(len({op.ids(m)['history_id'] for m in used['moves']}), 486)
+        smoke = op.used_openings(ROOT / 'docs/h7r/contracts/R1-SMOKE-HOLDOUT.json', ROOT)
+        self.assertEqual(smoke['moves'], [])  # a holdout contract has no arm openings
+
+    def test_refused_sources(self):
+        suite_file = self.root / 'suite.json'
+        suite_file.write_text(json.dumps(self.base))
+        with self.assertRaisesRegex(ValueError, 'lists candidates'):
+            op.exclusion([suite_file], self.root)
+        with self.assertRaisesRegex(ValueError, 'not a known evaluation record'):
+            op.exclusion([record(self.root, 'x.json', [[[7, 7]]], fmt='something-else')], self.root)
+        with self.assertRaisesRegex(ValueError, 'not a move list'):
+            op.exclusion([record(self.root, 'y.json', [[[7, 7], [99, 1]]])], self.root)
+        with self.assertRaises(FileNotFoundError):
+            op.exclusion([self.root / 'absent.json'], self.root)
+        broken = json.loads((ROOT / 'docs/h7r/contracts/R1-SMOKE-1.json').read_text())
+        broken['arms'][0]['suite']['sha256'] = '0' * 64
+        (self.root / 'c.json').write_text(json.dumps(broken))
+        with self.assertRaisesRegex(ValueError, 'not its SHA-256'):
+            op.used_openings(self.root / 'c.json', ROOT)
+
+    def test_a_shortfall_fails_and_is_explained(self):
+        o2 = op.build_suite('O2', None, None)
+        used = record(self.root, 'u.json', [o['moves'] for o in o2['openings'][:150]])
+        ex = op.exclusion([used], self.root)
+        with self.assertRaisesRegex(ValueError, '34 distinct openings left after excluding 150 used ones; 40 asked'):
+            op.build_suite('O2', 40, None, exclude=ex['history_ids'])
+        with self.assertRaisesRegex(ValueError, 'draws excluded.*no repeat fills'):
+            op.build_suite('O1', 40, 11, max_attempts=45, exclude={o['history_id'] for o in self.base['openings']})
+
+    def test_disjoint_suites_and_shared_beginnings(self):
+        main = op.build_suite('O1', 30, 5)
+        path = self.root / 'main.json'
+        path.write_text(json.dumps(main))
+        ex = op.exclusion([], self.root, [path])
+        anchor = op.build_suite('O1', 30, 6, exclude=ex['history_ids'])
+        self.assertFalse({o['history_id'] for o in main['openings']} & {o['history_id'] for o in anchor['openings']})
+        self.assertEqual(ex['sources'][0]['kind'], 'suite reserved for another sample (disjoint)')
+        prefixes = [o['moves'][:3] for o in main['openings'][:4]]
+        self.assertEqual(op.prefix_overlap(main['openings'], prefixes)['3'],
+                         sum(o['moves'][:3] in prefixes for o in main['openings']))
+        self.assertEqual(op.prefix_overlap(main['openings'], [o['moves'] for o in main['openings']]), {})
+
+    def test_suite_command_records_sources_and_overlaps(self):
+        used = record(self.root, 'arena.json', [o['moves'] for o in self.base['openings'][:6]])
+        three = record(self.root, 'old.json', [o['moves'][:3] for o in self.base['openings'][:2]])
+        args = argparse.Namespace(name='O1', count=40, seed=11, compare_with=[], exclude_from=[used, three],
+                                  disjoint_from=[], allow_dirty=True, root=self.root)
+        body = cli.suite(args, log=QUIET)
+        ex = body['exclusion']
+        self.assertEqual([s['path'] for s in ex['sources']], ['arena.json', 'old.json'])
+        self.assertEqual(ex['overlap']['by_source']['arena.json']['history_id'], 0)
+        self.assertIn('3', ex['overlap']['shared_beginnings'])
+        op.check_suite(body)
+
+
+class AnchorSizingTest(unittest.TestCase):
+    def test_known_values(self):
+        out = ev.anchor_sizing(-0.02, [0.18, 0.205, 0.23], [400, 800, 1040])
+        self.assertEqual([r['pairs_needed'] for r in out['rows']], [636, 825, 1039])
+        self.assertEqual([r['power_at']['800'] for r in out['rows']], [0.8815, 0.788, 0.6913])
+        self.assertEqual([r['power_at']['400'] for r in out['rows']], [0.6034, 0.4965, 0.4126])
+        self.assertEqual(out['rows'][2]['power_at']['1040'], 0.8007)
+        with self.assertRaisesRegex(ValueError, 'above the margin'):
+            ev.noninferiority_pairs(0.2, -0.02, true_difference=-0.03)
+
+    def test_paired_sd_uses_the_covariance(self):
+        ids = [f'o{i}' for i in range(8)]
+        a_scores = [1.0, 0.5, 0.5, 0.0, 1.0, 0.5, 0.5, 0.0]
+        table = lambda scores: {'pairs': [{'opening_id': i, 'pair_score': s} for i, s in zip(ids, scores)]}  # noqa
+        same = ev.paired_difference_sd(table(a_scores), table(a_scores))
+        self.assertEqual((same['sd'], same['mean']), (0.0, 0.0))  # identical arms: D_i = 0 whatever each arm's SD
+        flipped = ev.paired_difference_sd(table(a_scores), table([1 - s for s in a_scores]))
+        self.assertGreater(flipped['sd'], 0.5)
+        with self.assertRaisesRegex(ValueError, 'same openings'):
+            ev.paired_difference_sd(table(a_scores), {'pairs': [{'opening_id': 'x', 'pair_score': 0.5}] * 8})
+
+    def test_command(self):
+        args = argparse.Namespace(margin=-0.02, true_difference=0.0, alpha=0.025, power=0.8, sd=[0.205],
+                                  pairs=[1040], arm_record=[], contract=None)
+        out = cli.anchor_size(args)
+        self.assertEqual((out['format'], out['rows'][0]['pairs_needed']), ('h7r-anchor-sizing-v1', 825))
+        with self.assertRaisesRegex(ValueError, '--contract'):
+            cli.anchor_size(argparse.Namespace(**{**vars(args), 'arm_record': [Path('a'), Path('b')]}))
+
+
+class HdevDraftTest(unittest.TestCase):
+    def test_one_reserved_seed_and_a_collision_free_cycle(self):
+        import h7c_selfplay as sp
+        from hybrid.h6_labels import RESERVED_SEEDS
+        contract, _ = ev.load_contract(ROOT / 'docs/h7r/contracts/R1-HDEV-1.json', ROOT, check_files=False)
+        h = contract['holdout']
+        self.assertEqual((contract['status'], h['split'], h['games'], h['actor']), ('draft', 'dev', 400, 'c5'))
+        self.assertEqual(ev.contract_seeds(contract), {8787})
+        self.assertIn(8787, RESERVED_SEEDS)
+        sp.check_seeds(h['seed'], h['cycle'], range(h['games']), holdout=True)
+        pilot = json.loads((ROOT / 'docs/h7r/contracts/R1-PILOT-1.json').read_text())
+        self.assertEqual(contract['models']['c5'], pilot['models']['c5'])
+
+
+if __name__ == '__main__':
+    unittest.main()

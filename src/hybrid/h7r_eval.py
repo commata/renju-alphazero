@@ -510,6 +510,45 @@ def sizing(summary_pairs: list[dict], stats: dict, delta: float, power: float, m
             'note': 'a planning proposal: it starts nothing and is not a guarantee of the effect size'}
 
 
+def paired_difference_sd(table_a: dict, table_b: dict) -> dict:
+    """The anchor difference D_i = (A pair score) - (B pair score) on the openings both arms played (as
+    ``anchor_difference`` pairs them): its count, mean and SD. The SD of D_i is what anchor sizing needs; the two
+    arms' own SDs are not, since D_i depends on their covariance."""
+    a = {p['opening_id']: p['pair_score'] for p in table_a['pairs']}
+    b = {p['opening_id']: p['pair_score'] for p in table_b['pairs']}
+    require(set(a) == set(b) and len(a) >= 2, 'the two arms were not played on the same openings')
+    d = [a[k] - b[k] for k in sorted(a)]
+    return {'pairs': len(d), 'mean': round(fmean(d), 5), 'sd': round(pstdev(d), 5)}
+
+
+def noninferiority_power(n: int, sd: float, margin: float, true_difference: float = 0.0,
+                         alpha: float = 0.025) -> float:
+    """Normal approximation: P(one-sided lower bound of mean D >= margin) with n paired openings."""
+    z = NormalDist().inv_cdf(1 - alpha)
+    return NormalDist().cdf((true_difference - margin) * n ** 0.5 / sd - z)
+
+
+def noninferiority_pairs(sd: float, margin: float, true_difference: float = 0.0, alpha: float = 0.025,
+                         power: float = 0.8) -> int:
+    require(true_difference > margin, 'the assumed true difference must lie above the margin')
+    z = NormalDist().inv_cdf(1 - alpha) + NormalDist().inv_cdf(power)
+    return ceil((z * sd / (true_difference - margin)) ** 2)
+
+
+def anchor_sizing(margin: float, sds: list[float], pairs: list[int], true_difference: float = 0.0,
+                  alpha: float = 0.025, power: float = 0.8) -> dict:
+    """Anchor non-inferiority planning (not the improvement sizing of ``sizing``): per assumed SD of D_i, the pairs
+    for ``power`` and the power at each planned size. A normal approximation under an assumed SD: no guarantee."""
+    require(-1 <= margin < 0 and sds and pairs, 'margin in [-1, 0), assumed SDs and planned sizes')
+    rows = [{'sd': sd, 'pairs_needed': noninferiority_pairs(sd, margin, true_difference, alpha, power),
+             'power_at': {str(n): round(noninferiority_power(n, sd, margin, true_difference, alpha), 4)
+                          for n in pairs}} for sd in sds]
+    return {'margin': margin, 'true_difference': true_difference, 'alpha_one_sided': alpha, 'power': power,
+            'rows': rows, 'method': 'normal approximation for the mean paired difference D_i = candidate_vs_anchor '
+                                    '- champion_vs_anchor pair score on shared openings',
+            'note': 'planning values under an assumed SD of D_i; they guarantee no power'}
+
+
 # --- the promotion rule v3 ---------------------------------------------------------------------------------------
 
 CANDIDATE_ARMS = ('candidate_vs_champion', 'candidate_vs_anchor')  # the candidate is the tested side
