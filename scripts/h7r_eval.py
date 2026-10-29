@@ -313,20 +313,52 @@ def size(args) -> dict:
 
 
 def anchor_size(args) -> dict:
-    """Anchor non-inferiority planning (``ev.anchor_sizing``) for assumed SDs of D_i; with ``--contract`` and the two
-    anchor arm records of one pairing, also the measured SD of D_i on their shared openings."""
+    """Anchor non-inferiority planning (``ev.anchor_sizing``) for assumed SDs of D_i. With ``--contract`` (a confirm
+    contract) and ``--arm-record``: exactly its ``candidate_vs_anchor`` and ``champion_vs_anchor`` records (two files,
+    either order, one paired sample from one clean commit), and the measured SD of D_i = candidate - champion on their
+    shared openings. A measured SD of 0 gives no empirical size (``ZERO_EMPIRICAL_VARIANCE``): the assumed-SD rows stay
+    the planning basis."""
     out = {'format': 'h7r-anchor-sizing-v1',
            **ev.anchor_sizing(args.margin, args.sd, args.pairs, args.true_difference, args.alpha, args.power)}
-    if args.arm_record:
-        ev.require(args.contract is not None and len(args.arm_record) == 2,
-                   '--arm-record takes the candidate_vs_anchor and champion_vs_anchor records with --contract')
-        contract, sha = _contract(args)
-        a, b = (load_arm(p, contract, sha, Path(getattr(args, 'root', None) or ROOT)) for p in args.arm_record)
-        measured = ev.paired_difference_sd(a['table'], b['table'])
-        out['measured'] = {**measured, 'contract_sha256': sha,
-                           'arms': [r['record']['identity']['arm'] for r in (a, b)],
-                           'pairs_needed_at_measured_sd': ev.noninferiority_pairs(
-                               max(measured['sd'], 1e-6), args.margin, args.true_difference, args.alpha, args.power)}
+    if not args.arm_record:
+        return out
+    ev.require(args.contract is not None and len(args.arm_record) == 2
+               and len({Path(p).resolve() for p in args.arm_record}) == 2,
+               '--arm-record takes two different files (candidate_vs_anchor, champion_vs_anchor) with --contract')
+    root = Path(getattr(args, 'root', None) or ROOT)
+    contract, sha = _contract(args, root)
+    ev.require(contract['purpose'] == 'confirm', 'measured anchor sizing reads the anchor arms of a confirm contract')
+    roles = contract['roles']
+    expected = {'candidate_vs_anchor': (roles['candidate'], roles['anchor']),
+                'champion_vs_anchor': (roles['champion'], roles['anchor'])}
+    arms, paths = {}, {}
+    for path in args.arm_record:
+        arm = load_arm(path, contract, sha, root)
+        identity = arm['record']['identity']
+        name = identity['arm']
+        ev.require(name in expected and name not in arms,
+                   f'{path}: arm {name}: anchor sizing takes candidate_vs_anchor and champion_vs_anchor once each')
+        ev.require((identity['tested']['model'], identity['opponent']['model']) == expected[name],
+                   f'{path}: not the {name} arm of this contract')
+        ev.require(arm['table']['valid'], f'{path}: invalid pairs (an opponent illegal move)')
+        arms[name], paths[name] = arm, path
+    cand, champ = (arms[n]['record']['identity'] for n in ('candidate_vs_anchor', 'champion_vs_anchor'))
+    ev.require(all(cand[k] == champ[k] for k in ('seed', 'pairs', 'pairing', 'suite_sha256'))
+               and (cand['tested']['budget'], cand['opponent']['budget'])
+               == (champ['tested']['budget'], champ['opponent']['budget']),
+               'the two anchor arms are not one paired sample (seed, pairs, pairing, suite or budgets differ)')
+    ev.require(cand['git'].get('commit') and cand['git'].get('commit') == champ['git'].get('commit')
+               and (args.allow_dirty or (cand['git'].get('dirty') is False and champ['git'].get('dirty') is False)),
+               'the two anchor arms were not played from one clean code commit')
+    measured = ev.paired_difference_sd(arms['candidate_vs_anchor']['table'], arms['champion_vs_anchor']['table'])
+    zero = measured['status'] == 'ZERO_EMPIRICAL_VARIANCE'
+    out['measured'] = {
+        **measured, 'direction': 'candidate_vs_anchor - champion_vs_anchor', 'contract_sha256': sha,
+        'arm_records_sha256': {n: ev.file_sha256(p) for n, p in paths.items()},
+        'pairs_needed_at_measured_sd': None if zero else ev.noninferiority_pairs(
+            measured['sd'], args.margin, args.true_difference, args.alpha, args.power),
+        'note': ('every D_i is equal in this sample: no empirical size; the assumed-SD rows stay the planning basis'
+                 if zero else 'the SD of this sample: an estimate, itself uncertain at this size')}
     return out
 
 

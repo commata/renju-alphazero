@@ -510,27 +510,61 @@ def sizing(summary_pairs: list[dict], stats: dict, delta: float, power: float, m
             'note': 'a planning proposal: it starts nothing and is not a guarantee of the effect size'}
 
 
+PAIR_SCORES = (0.0, 0.25, 0.5, 0.75, 1.0)  # the mean of two game scores (1, 0.5, 0)
+
+
 def paired_difference_sd(table_a: dict, table_b: dict) -> dict:
     """The anchor difference D_i = (A pair score) - (B pair score) on the openings both arms played (as
-    ``anchor_difference`` pairs them): its count, mean and SD. The SD of D_i is what anchor sizing needs; the two
-    arms' own SDs are not, since D_i depends on their covariance."""
-    a = {p['opening_id']: p['pair_score'] for p in table_a['pairs']}
-    b = {p['opening_id']: p['pair_score'] for p in table_b['pairs']}
+    ``anchor_difference`` pairs them; A the candidate's arm, B the champion's): its count, mean and SD. The SD of D_i
+    is what anchor sizing needs; the two arms' own SDs are not, since D_i depends on their covariance. ``status``
+    ``ZERO_EMPIRICAL_VARIANCE`` when every D_i is equal (no empirical size can come from it)."""
+    tables = []
+    for name, table in (('A', table_a), ('B', table_b)):
+        pairs = table.get('pairs') if isinstance(table, dict) else None
+        require(isinstance(pairs, list) and pairs, f'arm {name}: no pair table')
+        require(table.get('valid', True) is True, f'arm {name}: invalid pairs (an opponent illegal move)')
+        ids = [p.get('opening_id') for p in pairs]
+        require(len(set(ids)) == len(ids), f'arm {name}: an opening twice')
+        require(all(p.get('pair_score') in PAIR_SCORES for p in pairs), f'arm {name}: a pair score that is no pair score')
+        tables.append({p['opening_id']: p['pair_score'] for p in pairs})
+    a, b = tables
     require(set(a) == set(b) and len(a) >= 2, 'the two arms were not played on the same openings')
     d = [a[k] - b[k] for k in sorted(a)]
-    return {'pairs': len(d), 'mean': round(fmean(d), 5), 'sd': round(pstdev(d), 5)}
+    sd = pstdev(d)
+    return {'pairs': len(d), 'mean': round(fmean(d), 5), 'sd': round(sd, 5),
+            'status': 'ZERO_EMPIRICAL_VARIANCE' if sd == 0 else 'MEASURED'}
+
+
+def _finite(x) -> bool:
+    return type(x) in (int, float) and math.isfinite(x)
+
+
+def check_planning(margin, true_difference=0.0, alpha=0.025, power=None, sd=None, n=None) -> None:
+    """The inputs of the non-inferiority planning formulas, checked wherever they are called."""
+    require(_finite(margin) and -1 <= margin < 0, f'margin {margin!r}: a finite value in [-1, 0)')
+    require(_finite(true_difference) and -1 <= true_difference <= 1 and true_difference > margin,
+            f'true difference {true_difference!r}: finite, in [-1, 1] and above the margin')
+    require(_finite(alpha) and 0 < alpha < 0.5, f'alpha {alpha!r}: one-sided, in (0, 0.5)')
+    if power is not None:
+        require(_finite(power) and 0.5 <= power < 1,
+                f'power {power!r}: in [0.5, 1) (a size planned below 0.5 is planned to miss)')
+    if sd is not None:
+        require(_finite(sd) and sd > 0, f'SD of D_i {sd!r}: finite and positive (0 or less gives no size)')
+    if n is not None:
+        require(type(n) is int and n > 0, f'planned pairs {n!r}: a positive integer')
 
 
 def noninferiority_power(n: int, sd: float, margin: float, true_difference: float = 0.0,
                          alpha: float = 0.025) -> float:
     """Normal approximation: P(one-sided lower bound of mean D >= margin) with n paired openings."""
+    check_planning(margin, true_difference, alpha, sd=sd, n=n)
     z = NormalDist().inv_cdf(1 - alpha)
     return NormalDist().cdf((true_difference - margin) * n ** 0.5 / sd - z)
 
 
 def noninferiority_pairs(sd: float, margin: float, true_difference: float = 0.0, alpha: float = 0.025,
                          power: float = 0.8) -> int:
-    require(true_difference > margin, 'the assumed true difference must lie above the margin')
+    check_planning(margin, true_difference, alpha, power, sd=sd)
     z = NormalDist().inv_cdf(1 - alpha) + NormalDist().inv_cdf(power)
     return ceil((z * sd / (true_difference - margin)) ** 2)
 
@@ -539,7 +573,8 @@ def anchor_sizing(margin: float, sds: list[float], pairs: list[int], true_differ
                   alpha: float = 0.025, power: float = 0.8) -> dict:
     """Anchor non-inferiority planning (not the improvement sizing of ``sizing``): per assumed SD of D_i, the pairs
     for ``power`` and the power at each planned size. A normal approximation under an assumed SD: no guarantee."""
-    require(-1 <= margin < 0 and sds and pairs, 'margin in [-1, 0), assumed SDs and planned sizes')
+    require(isinstance(sds, list) and sds and isinstance(pairs, list) and pairs, 'assumed SDs and planned sizes')
+    check_planning(margin, true_difference, alpha, power)
     rows = [{'sd': sd, 'pairs_needed': noninferiority_pairs(sd, margin, true_difference, alpha, power),
              'power_at': {str(n): round(noninferiority_power(n, sd, margin, true_difference, alpha), 4)
                           for n in pairs}} for sd in sds]

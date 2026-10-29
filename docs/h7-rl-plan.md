@@ -1092,7 +1092,7 @@ pilot은 사전 등록한 대로 한 번 실행했고 끝났다. 결과는 데�
 
 - 제외 출처
   - 실제로 둔 opening 기록(`PLAYED_FORMATS`: H7-R arm · cycle Arena · drift · NMASK · 외부 대국 · 벤치마크 기록)
-  - H7-R 계약: 각 arm이 뽑은 표본(`pick`). suite 파일의 SHA를 먼저 확인한다. 완료된 arm이 둔 opening과 같다.
+  - H7-R 계약: 각 arm이 뽑은 표본(`pick`). suite 파일의 SHA와 `check_suite`를 먼저 확인한다. 이것은 검증된 표본 계획이고, 실제로 두었다는 증거는 아니다(실제 arm과의 직접 비교는 아래 검증 명령 2번).
 - 거부하는 출처
   - suite 파일: 후보 목록이지 사용한 opening이 아니다. 다른 표본용으로 비워 둘 suite는 `--disjoint-from`으로 따로 준다.
   - 형식을 모르는 파일, 잘못된 수순, SHA가 맞지 않는 계약 suite
@@ -1123,7 +1123,7 @@ pilot은 사전 등록한 대로 한 번 실행했고 끝났다. 결과는 데�
 
 - 주와 anchor의 history 겹침은 0이고, class 겹침은 10이다(대칭 변형이며 중복 아님).
 - 주 suite 560개 중 478개는 앞 세 수가 이전 평가의 3수 opening과 같다. 정확한 수순 중복은 모든 출처에서 0이다.
-- 데스크톱에서 실제 arm 기록으로 만들 때 `openings_sha256`이 위와 같으면, 실제로 둔 표본이 계약의 추출과 같다는 뜻이다.
+- 수순 SHA가 같다는 것은 생성 결과가 같다는 뜻일 뿐이다. 실제로 둔 표본이 계약의 추출과 같다는 증명이 아니다. 생성 중 만나지 않은 제외 ID는 달라도 같은 suite가 나올 수 있다(3수 history 차이는 5수 추출에 영향이 없다). 두 검사는 아래처럼 따로 한다.
 
 **H-dev / H-conf**
 
@@ -1137,39 +1137,81 @@ pilot은 사전 등록한 대로 한 번 실행했고 끝났다. 결과는 데�
 - H-conf는 지금 만들지 않는다. 후보 선택과 확인 시점 · 접근 규칙을 정한 뒤 별도 계약 · 자료로 둔다.
 - 남은 예약 seed: 8788–8794
 
-**데스크톱 명령**(확인 suite 생성. 대국은 두지 않는다)
+**확인 suite 커밋(`f0b6600`)과 검증**
+
+- 데스크톱에서 `022922e`(clean)로, pilot의 실제 arm 기록 12개를 제외 출처로 써서 만들었다.
+  - `O1-confirm-main.json`: 560개, `openings_sha256` `3f6eb598cc31…`
+  - `O1-confirm-anchor.json`: 1,040개, `47a4f03255cf…`
+- 이 저장소에서 확인한 것
+  - 두 파일 모두 `check_suite`를 통과한다. 두 파일 사이의 정확한 수순 겹침은 0이다.
+  - 기록된 생성 seed로 다시 생성하면 opening 배열이 같다. 제외 출처는 계약 기반 pilot 표본, smoke 계약, 이전 기록 70개이며, 강화한 출처 검사를 모두 통과한다.
+  - 파일에 기록된 제외 집합(898개 / 1,458개)은 계약 기반 시험 생성의 집합과 같다. 이는 출처 전체의 합집합이 같다는 뜻이다. 다른 출처와 겹치는 부분이 있으므로, 실제 arm 집합과 계약 추출 집합이 같다는 직접 증명은 아니다. 직접 비교는 아래 2번 명령으로 한다.
+  - 파일에 기록된 데스크톱 arm 기록 12개는 이 환경에 없어 원본을 검증하지 못했다.
+
+**데스크톱 검증 명령**(대국을 두지 않고, 추적 파일을 바꾸지 않는다)
 
 ```bash
 cd ~/renju-h6 && source .venv/bin/activate && export PYTHONPATH="$PWD/src:$PWD/scripts"
-git status --short && git pull --ff-only origin feat/h7-c1
+if [ -n "$(git status --porcelain)" ]; then echo "STOP: 작업 트리가 clean하지 않습니다"; else git pull --ff-only origin feat/h7-c1; fi
+# 1) 커밋된 suite 검사
+python - <<'PY'
+import json
+from hybrid import h7r_openings as op
+m, a = (json.load(open(f'docs/h7r/suites/O1-confirm-{n}.json')) for n in ('main', 'anchor'))
+for name, b in (('main', m), ('anchor', a)):
+    op.check_suite(b)
+    print(name, b['count'], b['openings_sha256'][:12], b['distinct'])
+print('history overlap', len({o['history_id'] for o in m['openings']} & {o['history_id'] for o in a['openings']}))
+PY
+# 2) 실제 arm 기록의 opening과 계약의 추출(pick)을 arm마다 직접 비교
+python - <<'PY'
+import json
+from hybrid import h7r_openings as op
+c = json.load(open('docs/h7r/contracts/R1-PILOT-1.json'))
+for arm in c['arms']:
+    played = [op.ids(o['moves'])['history_id'] for o in json.load(open(f"runs/h7r/R1-PILOT-1/arms/{arm['name']}.json"))['openings']]
+    planned = [op.ids(o['moves'])['history_id'] for o in op.pick(json.load(open(arm['suite']['path'])), arm['pairs'], arm['seed'])]
+    print(arm['name'], 'same order', played == planned, 'same set', set(played) == set(planned))
+PY
+# 3) (선택) 무시 경로에서 다시 생성해 수순 SHA 대조. anchor는 커밋된 main을 disjoint 출처로 쓴다
+mkdir -p runs/h7r/confirm-suite-check
 PRIOR=$(python - <<'PY'
 import json, glob
 from hybrid.h7r_openings import PLAYED_FORMATS
-out = []
-for f in sorted(glob.glob('docs/**/*.json', recursive=True)):
-    try:
-        b = json.load(open(f))
-    except Exception:
-        continue
-    if isinstance(b, dict) and b.get('format') in PLAYED_FORMATS and b.get('openings'):
-        out.append(f)
-print(' '.join(out))
+print(' '.join(f for f in sorted(glob.glob('docs/**/*.json', recursive=True))
+               if (lambda b: isinstance(b, dict) and b.get('format') in PLAYED_FORMATS and b.get('openings'))(json.load(open(f)))))
 PY
 )
-USED="runs/h7r/R1-PILOT-1/arms/O0_c5_vs_orig.json runs/h7r/R1-PILOT-1/arms/O0_c5s400_vs_c5.json \
-  runs/h7r/R1-PILOT-1/arms/O0_c8_vs_c5.json runs/h7r/R1-PILOT-1/arms/O0_mask_vs_c5.json \
-  runs/h7r/R1-PILOT-1/arms/O1_c5_vs_orig.json runs/h7r/R1-PILOT-1/arms/O1_c5s400_vs_c5.json \
-  runs/h7r/R1-PILOT-1/arms/O1_c8_vs_c5.json runs/h7r/R1-PILOT-1/arms/O1_mask_vs_c5.json \
-  runs/h7r/R1-PILOT-1/arms/O2_c5_vs_orig.json runs/h7r/R1-PILOT-1/arms/O2_c5s400_vs_c5.json \
-  runs/h7r/R1-PILOT-1/arms/O2_c8_vs_c5.json runs/h7r/R1-PILOT-1/arms/O2_mask_vs_c5.json \
-  docs/h7r/contracts/R1-SMOKE-1.json"
+USED="$(ls runs/h7r/R1-PILOT-1/arms/*.json) docs/h7r/contracts/R1-SMOKE-1.json"
 python -u scripts/h7r_eval.py suite --name O1 --count 560 --seed 202610301 --exclude-from $USED $PRIOR \
-  --output docs/h7r/suites/O1-confirm-main.json
+  --output runs/h7r/confirm-suite-check/main.json
 python -u scripts/h7r_eval.py suite --name O1 --count 1040 --seed 202610302 --exclude-from $USED $PRIOR \
-  --disjoint-from docs/h7r/suites/O1-confirm-main.json --output docs/h7r/suites/O1-confirm-anchor.json
-python -c "import json; [print(f, json.load(open(f))['openings_sha256'][:12]) for f in ('docs/h7r/suites/O1-confirm-main.json', 'docs/h7r/suites/O1-confirm-anchor.json')]"
-# 예상: 3f6eb598cc31, 47a4f03255cf. 같으면 두 suite 파일을 커밋한다(다르면 커밋하지 말고 출력을 보낸다)
+  --disjoint-from docs/h7r/suites/O1-confirm-main.json --output runs/h7r/confirm-suite-check/anchor.json
+python -c "
+import json
+for n in ('main', 'anchor'):
+    x, y = json.load(open(f'runs/h7r/confirm-suite-check/{n}.json')), json.load(open(f'docs/h7r/suites/O1-confirm-{n}.json'))
+    print(n, 'openings', x['openings_sha256'] == y['openings_sha256'], 'exclusion', x['exclusion']['history_ids_sha256'] == y['exclusion']['history_ids_sha256'])"
 ```
 
-- smoke 계약 대신 데스크톱의 smoke arm 기록(`runs/h7r/smoke/s50.json`, `s400.json`)을 줘도 된다. 그때는 smoke 계약을 빼고 두 기록을 `USED`에 넣는다.
+- 비교는 수순 SHA(`openings_sha256`)와 제외 집합 SHA로 한다. 파일 전체 SHA는 비교하지 않는다. 출처 경로 · 출처 SHA · 생성 Git 정보가 달라 원래 다르다.
+- 커밋된 suite를 지우고 다시 만들지 않는다. 출력 파일은 덮어쓰지 않으므로, 확인용 생성은 `runs/` 아래 새 경로에 한다.
 - 이 suite 파일은 R3 후보가 나오기 전에 고정해 두는 확인용 opening 목록이다. 이것만으로는 실행 가능한 계약이 아니다.
+
+**검토 보완(코드 검토 초안 반영, `022922e` 이후)**
+
+- `anchor-size` 실측 모드
+  - 확인 계약의 `candidate_vs_anchor`와 `champion_vs_anchor` 기록을 정확히 하나씩 요구한다. 서로 다른 두 파일이어야 하고, 순서는 상관없다.
+  - 다음은 거부한다: 같은 파일 두 번, 같은 arm 두 번, anchor 이외의 arm, 상대 불법 수가 있는 표, 한 쌍 표본이 아닌 경우(seed · pairs · pairing · suite · 예산 불일치), 서로 다르거나 dirty인 코드 commit
+  - 계산 방향은 항상 candidate − champion이다.
+  - 실측 SD가 0이면 `ZERO_EMPIRICAL_VARIANCE`로 표시하고 실측 규모는 내지 않는다(`null`). 작은 양수로 바꿔 "1쌍" 같은 값을 만들지 않는다. 사전 SD 가정 표는 그대로 계획 근거로 남는다.
+  - 기존 검토에서 재현된 "같은 일반 arm 두 개 → 필요 1쌍"은 이제 거부된다.
+- 규모 수치 검사(`ev.check_planning`)
+  - margin은 [−1, 0), 실제 차이는 유한하고 margin보다 크며, alpha는 (0, 0.5), 검출력은 [0.5, 1)이어야 한다.
+  - SD는 유한한 양수, 쌍 수는 양의 정수여야 한다.
+  - CLI뿐 아니라 하위 함수(`noninferiority_power` · `noninferiority_pairs`)에서도 검사한다.
+- 제외 출처 검사
+  - 실제로 둔 기록은 `openings` 목록이 있어야 하고 비어 있으면 안 된다. 없거나 null이거나 비어 있으면 원인을 밝히고 거부한다.
+  - 각 opening을 `renju.Game`으로 재생한다. 중앙 시작, 반복 착수, 흑 금수, 끝난 국면을 거부한다.
+  - 계약 출처는 arm이 있어야 하고(holdout 계약 거부), 각 suite가 SHA와 `check_suite`를 통과해야 한다.
+  - 강화한 검사 아래에서도 저장소의 모든 실제 출처(이전 기록 70개, smoke · pilot 계약)가 통과한다. 커밋된 두 suite도 그대로 재현된다.

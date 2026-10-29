@@ -55,8 +55,9 @@ class ExclusionTest(unittest.TestCase):
         used = op.used_openings(ROOT / 'docs/h7r/contracts/R1-PILOT-1.json', ROOT)
         self.assertEqual(len(used['moves']), 1020)  # 9 x 60 + 3 x 160 drawn openings, not 3 suites of 300 / 184
         self.assertEqual(len({op.ids(m)['history_id'] for m in used['moves']}), 486)
-        smoke = op.used_openings(ROOT / 'docs/h7r/contracts/R1-SMOKE-HOLDOUT.json', ROOT)
-        self.assertEqual(smoke['moves'], [])  # a holdout contract has no arm openings
+        with self.assertRaisesRegex(ValueError, 'without arms'):  # a holdout contract has no arm samples
+            op.used_openings(ROOT / 'docs/h7r/contracts/R1-SMOKE-HOLDOUT.json', ROOT)
+        self.assertIn('not proof the arms were played', used['kind'])
 
     def test_refused_sources(self):
         suite_file = self.root / 'suite.json'
@@ -69,6 +70,16 @@ class ExclusionTest(unittest.TestCase):
             op.exclusion([record(self.root, 'y.json', [[[7, 7], [99, 1]]])], self.root)
         with self.assertRaises(FileNotFoundError):
             op.exclusion([self.root / 'absent.json'], self.root)
+        for name, body in (('missing', {'format': 'h7r-arena-v1-arm'}),
+                           ('null', {'format': 'h7c-arena-v1-arm', 'openings': None}),
+                           ('empty', {'format': 'external-match-v1', 'openings': []})):
+            (self.root / f'{name}.json').write_text(json.dumps(body))
+            with self.subTest(name), self.assertRaisesRegex(ValueError, 'without its openings list'):
+                op.exclusion([self.root / f'{name}.json'], self.root)
+        for name, moves in (('twice', [[7, 7], [7, 7]]), ('off-centre', [[6, 6], [7, 7], [8, 8]]),
+                            ('no moves', None)):
+            with self.subTest(name), self.assertRaisesRegex(ValueError, 'illegal|not a move list'):
+                op.exclusion([record(self.root, f'{name.replace(" ", "_")}.json', [moves])], self.root)
         broken = json.loads((ROOT / 'docs/h7r/contracts/R1-SMOKE-1.json').read_text())
         broken['arms'][0]['suite']['sha256'] = '0' * 64
         (self.root / 'c.json').write_text(json.dumps(broken))
@@ -110,6 +121,63 @@ class ExclusionTest(unittest.TestCase):
         op.check_suite(body)
 
 
+class AnchorRecordsTest(unittest.TestCase):
+    """Measured anchor sizing reads exactly the two anchor arms of a confirm contract (fake games, no engine)."""
+
+    def setUp(self):
+        from unittest import mock
+        from tests.test_h7r_cli import CLEAN, fake_play_game, world
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.w = world(Path(self.tmp.name))
+        self.mock, self.clean, self.fake = mock, CLEAN, fake_play_game
+
+    def play(self, arm, name=None, git=None, game=None):
+        args = argparse.Namespace(contract=self.w['contract'], arm=arm, device='cpu', workers=1,
+                                  jsonl=self.w['root'] / 'runs' / f'{name or arm}.jsonl', allow_dirty=True,
+                                  threads_for_tests=True)
+        with self.mock.patch('h7c_arena.play_game', game or self.fake), \
+                self.mock.patch.object(cli, '_git', lambda _: git or self.clean):
+            record = cli.play(args, log=QUIET, root=self.w['root'])
+        path = self.w['root'] / 'out' / f'{name or arm}.json'
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(json.dumps(record))
+        return path
+
+    def measure(self, *records):
+        return cli.anchor_size(argparse.Namespace(margin=-0.02, true_difference=0.0, alpha=0.025, power=0.8,
+                                                  sd=[0.205], pairs=[1040], arm_record=list(records),
+                                                  contract=self.w['contract'], allow_dirty=True,
+                                                  root=self.w['root']))
+
+    def test_roles_order_and_refusals(self):
+        cand, champ = self.play('candidate_vs_anchor'), self.play('champion_vs_anchor')
+        out = self.measure(cand, champ)['measured']
+        self.assertEqual((out['status'], out['direction'], out['pairs']),
+                         ('MEASURED', 'candidate_vs_anchor - champion_vs_anchor', 30))
+        self.assertGreater(out['pairs_needed_at_measured_sd'], 1)
+        self.assertEqual(self.measure(champ, cand)['measured'], out)  # either order: candidate minus champion
+        copy = self.w['root'] / 'out/candidate_copy.json'
+        copy.write_bytes(cand.read_bytes())
+        main = self.play('candidate_vs_champion')
+        other = self.play('champion_vs_anchor', name='cva_other', git={'commit': 'other', 'dirty': False})
+        for records, message in (((cand, cand), 'two different files'), ((cand, copy), 'once each'),
+                                 ((main, champ), 'once each'), ((cand,), 'two different files'),
+                                 ((cand, other), 'one clean code commit')):
+            with self.subTest(message=message), self.assertRaisesRegex(ValueError, message):
+                self.measure(*records)
+
+    def test_zero_empirical_variance_gives_no_size(self):
+        def flat(task, **kw):  # the candidate never gets the colour bonus: every pair 0.5, like the champion's
+            ctx = task['context']
+            return self.fake({**task, 'context': {**ctx, 'arm': 'flat'}}, **kw) | {'arm': task['arm']}
+        out = self.measure(self.play('candidate_vs_anchor', name='flat', game=flat),
+                           self.play('champion_vs_anchor'))['measured']
+        self.assertEqual((out['status'], out['sd'], out['pairs_needed_at_measured_sd']),
+                         ('ZERO_EMPIRICAL_VARIANCE', 0.0, None))
+        self.assertIn('no empirical size', out['note'])
+
+
 class AnchorSizingTest(unittest.TestCase):
     def test_known_values(self):
         out = ev.anchor_sizing(-0.02, [0.18, 0.205, 0.23], [400, 800, 1040])
@@ -120,6 +188,22 @@ class AnchorSizingTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'above the margin'):
             ev.noninferiority_pairs(0.2, -0.02, true_difference=-0.03)
 
+    def test_inputs_are_checked_in_the_library(self):
+        bad = (dict(sds=[-0.2]), dict(sds=[0]), dict(sds=[float('nan')]), dict(sds=[float('inf')]),
+               dict(pairs=[0]), dict(pairs=[-5]), dict(pairs=[1.5]), dict(pairs=[True]), dict(alpha=0.0),
+               dict(alpha=0.6), dict(power=0.3), dict(power=1.0), dict(margin=0.0), dict(margin=float('nan')),
+               dict(true_difference=float('nan')), dict(sds=[]), dict(pairs=[]))
+        for change in bad:
+            kw = {'margin': -0.02, 'sds': [0.2], 'pairs': [400], 'true_difference': 0.0, 'alpha': 0.025,
+                  'power': 0.8, **change}
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                ev.anchor_sizing(kw['margin'], kw['sds'], kw['pairs'], kw['true_difference'], kw['alpha'],
+                                 kw['power'])
+        with self.assertRaises(ValueError):
+            ev.noninferiority_power(400, 0, -0.02)  # the lower-level functions check too
+        with self.assertRaises(ValueError):
+            ev.noninferiority_pairs(-0.2, -0.02)
+
     def test_paired_sd_uses_the_covariance(self):
         ids = [f'o{i}' for i in range(8)]
         a_scores = [1.0, 0.5, 0.5, 0.0, 1.0, 0.5, 0.5, 0.0]
@@ -128,8 +212,15 @@ class AnchorSizingTest(unittest.TestCase):
         self.assertEqual((same['sd'], same['mean']), (0.0, 0.0))  # identical arms: D_i = 0 whatever each arm's SD
         flipped = ev.paired_difference_sd(table(a_scores), table([1 - s for s in a_scores]))
         self.assertGreater(flipped['sd'], 0.5)
-        with self.assertRaisesRegex(ValueError, 'same openings'):
+        with self.assertRaisesRegex(ValueError, 'twice'):
             ev.paired_difference_sd(table(a_scores), {'pairs': [{'opening_id': 'x', 'pair_score': 0.5}] * 8})
+        with self.assertRaisesRegex(ValueError, 'same openings'):
+            ev.paired_difference_sd(table(a_scores), table(a_scores[:7] + [0.5]) | {'pairs': table(a_scores)['pairs'][:7]})
+        with self.assertRaisesRegex(ValueError, 'no pair score'):
+            ev.paired_difference_sd(table(a_scores), table([0.3] + a_scores[1:]))
+        with self.assertRaisesRegex(ValueError, 'invalid pairs'):
+            ev.paired_difference_sd(table(a_scores), {**table(a_scores), 'valid': False})
+        self.assertEqual(same['status'], 'ZERO_EMPIRICAL_VARIANCE')
 
     def test_command(self):
         args = argparse.Namespace(margin=-0.02, true_difference=0.0, alpha=0.025, power=0.8, sd=[0.205],

@@ -236,9 +236,21 @@ def _file_sha(path) -> str:
 
 
 def _moves(value, where) -> list[list[int]]:
+    """A recorded opening, replayed: a move list from the centre, every move legal (no stone twice, no black forbidden
+    point, colours alternating), the game not over after it. A record that fails is refused, never skipped."""
+    from renju import Game, IllegalMove
+
     if not (isinstance(value, list) and value and all(
             isinstance(m, list) and len(m) == 2 and all(type(x) is int and 0 <= x < SIZE for x in m) for m in value)):
         raise ValueError(f'{where}: an opening that is not a move list')
+    game = Game()
+    try:
+        for move in value:
+            game.play(*move)
+    except IllegalMove as exc:
+        raise ValueError(f'{where}: an opening whose replay is illegal ({exc})') from exc
+    if game.done:
+        raise ValueError(f'{where}: an opening after which the game is over')
     return [list(m) for m in value]
 
 
@@ -253,18 +265,28 @@ def used_openings(path, root) -> dict:
         raise ValueError(f'{path}: a suite file lists candidates, not the openings an evaluation used (give the arm '
                          'records or the contract; --disjoint-from reserves a suite for another sample)')
     if fmt in PLAYED_FORMATS:
-        moves = [_moves(o['moves'] if isinstance(o, dict) else o, f'{path} opening {i}')
-                 for i, o in enumerate(body.get('openings') or [])]
+        openings = body.get('openings')
+        if not isinstance(openings, list) or not openings:
+            raise ValueError(f'{path}: a {fmt} record without its openings list (missing, null or empty): a summary or '
+                             'a damaged record cannot say which openings were used')
+        moves = [_moves(o.get('moves') if isinstance(o, dict) else o, f'{path} opening {i}')
+                 for i, o in enumerate(openings)]
         kind = 'played openings'
     elif fmt == CONTRACT_FORMAT:
-        moves = []
-        for arm in body.get('arms', []):
+        arms = body.get('arms')
+        if not isinstance(arms, list) or not arms:
+            raise ValueError(f'{path}: a contract without arms has no arm samples to exclude')
+        moves, suites = [], {}
+        for arm in arms:
             suite_path = Path(root) / arm['suite']['path']
             if _file_sha(suite_path) != arm['suite']['sha256']:
                 raise ValueError(f"{path}: arm {arm['name']}: {suite_path} is not its SHA-256")
-            suite = json.loads(suite_path.read_text(encoding='utf-8'))
-            moves += [_moves(o['moves'], f"{path} arm {arm['name']}") for o in pick(suite, arm['pairs'], arm['seed'])]
-        kind = 'contract arm samples (pick of each arm)'
+            if suite_path not in suites:
+                suites[suite_path] = json.loads(suite_path.read_text(encoding='utf-8'))
+                check_suite(suites[suite_path])
+            moves += [_moves(o['moves'], f"{path} arm {arm['name']}")
+                      for o in pick(suites[suite_path], arm['pairs'], arm['seed'])]
+        kind = 'contract arm samples (pick of each arm: the plan, not proof the arms were played)'
     else:
         raise ValueError(f'{path}: format {fmt!r} is not a known evaluation record ({PLAYED_FORMATS}, {CONTRACT_FORMAT})')
     return {'kind': kind, 'format': fmt, 'moves': moves}
