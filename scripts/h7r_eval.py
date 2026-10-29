@@ -677,6 +677,10 @@ def main(argv=None) -> int:
     from hybrid.h7r_ledger import publish_json
     publish_json(args.output, out)
     brief = out.get('summary') or {k: v for k, v in out.items() if k not in ('openings', 'games', 'arms')}
+    if args.command == 'size':  # the sizing is per arm: show it, not only the header
+        brief['arms'] = {name: {k: a[k] for k in ('pilot_pairs', 'pair_sd', 'pair_sd_upper', 'pairs_needed',
+                                                  'seconds_per_pair', 'estimated_seconds')}
+                         for name, a in out['arms'].items()}
     print(json.dumps(brief, indent=1, default=str)[:3000], flush=True)
     return 0
 
