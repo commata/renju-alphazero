@@ -294,6 +294,15 @@ class RunnerTest(unittest.TestCase):
         beat = [x for x in lines if x.startswith('[h7r-pilot]') and 'pair-units' in x]
         self.assertTrue(beat and all('cumulative' in x and 'ETA' in x for x in beat))
 
+    def test_report_never_modifies_the_session_log(self):
+        self.run_pilot()
+        path = self.root / 'runs/pilot/sessions.jsonl'
+        with path.open('ab') as out:
+            out.write(b'{"format": "h7r-pilot')  # a runner's append in progress
+        before = path.read_bytes()
+        self.assertEqual(self.report()['status'], 'COMPLETE')
+        self.assertEqual(path.read_bytes(), before)
+
     def test_an_error_stops_the_session_and_a_rerun_resumes(self):
         with self.assertRaisesRegex(RuntimeError, 'worker lost'):
             self.run_pilot(fail=self.w['order'][1])

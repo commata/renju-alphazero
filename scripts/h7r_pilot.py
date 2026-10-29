@@ -7,7 +7,8 @@
                it the active arm finishes and no further arm starts; resuming past it needs
                ``--budget-extension-hours`` with ``--approval``); an error stops the session, nothing is retried
     report     every arm record re-checked; per suite the score_split ranking (opening-cluster bootstrap), move_split,
-               per-arm colour scores, the positive control; the budget from the session log
+               per-arm colour scores, the positive control; the budget from the session log (read-only: it never
+               repairs the log, so it is safe while a runner appends)
 
 Measurement only: nothing here trains, selects a model, or changes a champion, the canonical engine or the web
 model. A dirty tree is refused (``--allow-dirty`` only for tests).
@@ -239,7 +240,7 @@ def report(args, root: Path = ROOT) -> dict:
     ev.require(pilot.is_run_by_plan(contract), f"{contract['contract_id']}: not a fixed pilot contract run by plan")
     rules = pilot.check_rules(contract, args.contract)
     folder = _runs_folder(args.runs_dir, root)
-    events = pilot.load_log(folder / 'sessions.jsonl')
+    events = pilot.load_log(folder / 'sessions.jsonl', repair=False)  # read-only: a runner may be appending
     commits = {e['commit'] for e in events if e['event'] == 'session_start'}
     ev.require(len(commits) <= 1, f'sessions of different commits: {sorted(commits)}')
     if commits:

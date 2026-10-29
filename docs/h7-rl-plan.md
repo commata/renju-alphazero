@@ -937,15 +937,17 @@ mkdir -p runs/h7r/R1-PILOT-1
 python -u scripts/h7r_pilot.py preflight --contract docs/h7r/contracts/R1-PILOT-1.json --device cuda \
   --output runs/h7r/R1-PILOT-1/preflight.json   # "pass": true
 # 본 실행: 약 10시간 예측(상한 아님). 터미널을 닫아도 계속되도록 nohup(또는 tmux)
+LOG=runs/h7r/R1-PILOT-1/run-$(date +%Y%m%d-%H%M%S).log
 nohup python -u scripts/h7r_pilot.py run --contract docs/h7r/contracts/R1-PILOT-1.json \
-  --runs-dir runs/h7r/R1-PILOT-1 --device cuda > runs/h7r/R1-PILOT-1/run-$(date +%Y%m%d-%H%M%S).log 2>&1 &
-tail -f runs/h7r/R1-PILOT-1/run-*.log    # 1분마다 [h7r-pilot] 진행 줄
-# 끝난 뒤(또는 예산 중단 뒤)
+  --runs-dir runs/h7r/R1-PILOT-1 --device cuda > "$LOG" 2>&1 &
+sleep 5; tail -f "$LOG"                  # 1분마다 [h7r-pilot] 진행 줄 (Ctrl-C는 tail만 끝낸다)
+# runner가 끝난 뒤(또는 예산 중단 뒤)에만. 출력 파일은 덮어쓰지 않으므로 새 이름을 쓴다
 python -u scripts/h7r_pilot.py report --contract docs/h7r/contracts/R1-PILOT-1.json \
-  --runs-dir runs/h7r/R1-PILOT-1 --output runs/h7r/R1-PILOT-1/report.json
+  --runs-dir runs/h7r/R1-PILOT-1 --output runs/h7r/R1-PILOT-1/report-final.json
 ```
 
 - 중단(오류 · 재부팅 · WSL 종료)되면 같은 `run` 명령을 다시 실행해 재개한다. 끝난 arm은 다시 두지 않는다.
+- 명령을 한 번에 붙여 넣으면 `report`가 runner보다 먼저 돌 수 있다(빈 INCOMPLETE 보고). `report`는 runner가 끝난 뒤에 따로 실행한다. 540b16a의 `report`는 세션 로그를 복구 모드로 읽었다. runner가 쓰는 도중 실행하면 쓰고 있던 줄을 잘라낼 수 있었다. 이후 commit에서 읽기 전용으로 고쳤다. 고친 `report`는 pilot이 끝난 뒤 `git pull`하고 써도 된다(report는 실행 commit이 아니라 세션 · arm 기록의 commit을 대조한다).
 - 예산에 도달해 멈췄다면, 재개는 별도 승인을 받은 뒤 `--budget-extension-hours`와 `--approval`을 함께 줘서 한다.
 - 실행 중에는 `git pull`이나 문서 커밋으로 HEAD를 바꾸지 않는다. 바뀌면 runner가 재개를 거부한다.
 - 결과와 로그는 `runs/h7r/R1-PILOT-1/`(gitignore 대상)에 남는다. 커밋하지 않는다.
