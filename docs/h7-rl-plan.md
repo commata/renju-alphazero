@@ -1434,3 +1434,16 @@ git push origin feat/h7-c1
 - fixed로 바꾸기 전에 필요한 것
   - 사용자가 초안 §10의 선택 다섯 가지를 확정한다.
   - R2 평가 도구를 구현하고 테스트한다. 기존 `h7r_holdout.py eval`의 출력 의미는 바꾸지 않는다.
+
+**2차 검토 반영과 R2-0A 도구**(같은 날)
+
+- 초안에 반영한 것(`docs/h7r/r2/R2-DIAG-1-draft.md` §12)
+  - seed가 replay 추출까지 바꾼다는 것과 ε_seed의 의미
+  - 같은 seed가 같은 배정을 보장하는 조건(크기가 모두 같을 때)
+  - 하위 실험별 직접 control
+  - 재현 대조의 비교 항목, 판정, 중단 규칙
+  - checkpoint에서 재계산하는 trunk hash
+  - `mask:c8`이 선택 지표까지 다른 recipe 비교라는 점
+- 구현: `scripts/h7r_r2.py eval`, `src/hybrid/h7r_r2.py`, 계약 draft `docs/h7r/r2/R2-DIAG-1.contract.json`, 테스트 `tests/test_h7r_r2.py`
+  - 계약이 draft이므로 실행을 거부한다. R2-0A를 실행하려면 사용자가 §10의 선택을 확정하고, 계약을 `fixed` + `stages.R2-0A.approved: true`로 바꿔 커밋해야 한다.
+  - R2-0B 학습 도구와 재현 허용 오차는 아직 없다. 그 전에 계약과 도구를 추가한다.

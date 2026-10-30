@@ -8,7 +8,7 @@
 2. 계약 형식과 검증기를 구현한다.
 3. 계약을 fixed로 커밋한다.
 
-이 초안을 커밋한 단계에서는 평가, 학습, 평가 코드 변경을 하지 않았다. 검토 반영 내역은 §11에 있다.
+검토 반영 내역은 §11(1차)과 §12(2차)에 있다. 2차 반영과 함께 R2-0A 평가 도구(`scripts/h7r_r2.py`, `src/hybrid/h7r_r2.py`)와 계약 draft(`docs/h7r/r2/R2-DIAG-1.contract.json`)를 구현했다(§9). 계약은 아직 draft이고 평가·학습은 실행하지 않았다.
 
 ## 1. 목적과 범위
 
@@ -17,7 +17,7 @@
 | 단계 | 내용 | 승인 |
 |---|---|---|
 | R2-0A | 기존 여섯 모델을 같은 H-dev에서 재측정한다. 평가만 하고 새 학습은 하지 않는다. | 별도 |
-| R2-0B | 같은 recipe를 학습 seed 세 개로 재학습해 변동을 재고 ε를 보정한다. 앞 제안의 "R2-1"이며, 계획 §3.1에 맞춰 R2-0의 내부 단계로 이름을 통일한다. 재현 대조 1회를 포함한다(§7). | 별도 |
+| R2-0B | 같은 recipe를 학습 seed 세 개로 재학습해 변동을 재고 ε를 보정한다. 앞 제안의 "R2-1"이며, 계획 §3.1에 맞춰 R2-0의 내부 단계로 이름을 통일한다. 재현 대조 1회를 포함한다(§7). | 별도. 재현 허용 오차와 하위 실험 control 규칙을 정한 뒤 |
 | R2-D1~D5 | 원인별 진단이다. | 하위 계약별 별도 |
 
 이 초안은 어떤 실행도 승인하지 않는다. 실행 권한과 계약 상태는 따로 기록한다.
@@ -74,14 +74,17 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 공통 H3 policy checkpoint는 `efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61`, metadata는 `5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609`다.
 
 **identity 검사**
-- value 예측은 value checkpoint와 그 metadata의 `model_config`로만 정해진다. 평가 도구는 policy checkpoint를 읽지 않는다.
-- 그래도 policy identity는 출처 기록으로 함께 남긴다.
-- 대신 각 value metadata의 `frozen_state_sha256`(trunk·policy head)이 `c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d`로 모두 같은지 확인한다. 그래야 모델 간 차이가 value head에서만 나온다고 말할 수 있다.
-- metadata 파일은 checkpoint 옆의 `best.json`으로 추정하지 않는다. 명시한 경로를 SHA로 대조한다.
+- value 예측은 value checkpoint와 그 metadata의 `model_config`로만 정해진다. 평가 도구는 policy checkpoint를 읽지 않는다. policy identity는 출처 기록으로만 남긴다.
+- 모델마다 다음 세 가지를 대조한다. 하나라도 어긋나면 멈춘다.
+  1. 명시한 checkpoint 파일과 metadata 파일의 SHA-256 = 계약의 값. metadata는 checkpoint 옆 `best.json`으로 추정하지 않고 경로를 따로 받는다.
+  2. **로드한 checkpoint에서 재계산한** frozen state hash(`state_sha256(frozen_state(model))`, trunk·policy head의 parameter와 BN buffer)
+  3. 계약의 기대값 `c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d`, 그리고 metadata가 선언한 `frozen_state_sha256`
+- metadata의 선언값만으로는 checkpoint의 실제 trunk가 같다고 볼 수 없다. 재계산한 값이 셋 모두와 같을 때만 모델 간 차이가 value head에서만 나온다고 말한다.
 
 **비교 해석**
 - c6/c7/c8은 모두 c5에서 출발한 형제 후보다. 학습 seed(20261025)와 설정이 같고, cycle 자료(self-play seed 8806/8807/8808)만 다르다. 순차 학습 추세로 읽지 않는다.
-- mask는 c8과 parent, 자료, step, seed가 같고 cycle loss의 마스킹만 다르다(`reproduction` 기록). 그래서 `mask:c8`이 변수 하나만 바꾼 비교다. 다만 기존 실행 한 번씩의 비교이므로 seed 변동은 담지 않는다.
+- mask는 c8과 parent, 자료, step, seed가 같다(`reproduction` 기록). 다른 것은 mask 처방이며, NMASK 계약은 이 처방을 **학습 loss와 cycle val 선택 지표 둘 다에** 적용했다. 그래서 선택된 step도 다르다(c8 147, mask 210).
+- 따라서 `mask:c8`은 "학습과 checkpoint 선택에 같은 mask 처방을 적용한 recipe 비교"다. 학습 loss만 바꾼 효과를 분리한 실험이 아니다. 기존 실행 한 번씩의 비교이므로 seed 변동도 담지 않는다.
 - 원본과의 비교는 기력의 우열을 뜻하지 않는다.
 
 ## 4. 지표 — 표본 수와 분모를 구분
@@ -118,8 +121,8 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 - raw와 D4 각각에 대해 다음 그룹의 pooled WMSE: outcome, proof, network/outcome, network/proof, exact_leaf/outcome, exact_leaf/proof, all
 - 게임 결과별(흑승/백승/무승부), side-to-move별, proof 세부 종류별 손실
 - ply 구간별 손실과 게임·행 수
-  - 구간: [cache 최소 ply, 20), [20, 40), [40, 80), [80, ∞)
-  - 빈틈이 없는 반열린 구간을 쓰고, 경계는 평가 전에 확정한다.
+  - 구간: [5, 20), [20, 40), [40, 80), [80, ∞). 평가 라벨은 ply 5부터 만든다(`h7r_holdout.labels`의 `from_ply=5`).
+  - 빈틈이 없는 반열린 구간이다. 5보다 작은 ply의 행이 있으면 도구가 멈춘다.
 - 게임 균등 sign 정확도
   - t≠0인 행에서 v·t>0이면 맞음, v=0이면 실패로 센다.
   - trainer의 `sign_acc`는 `(v>0)==(t>0)`을 행 단위로 계산해 v=0, t<0을 맞음으로 센다. 이와 섞이지 않게 이름을 `sign_acc_strict_macro`로 구분한다.
@@ -185,22 +188,41 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 - 바꾸는 것: 학습 seed만
 - H-dev는 학습, early stopping, checkpoint 선택에 쓰지 않는다. 원래 T-val 선택을 마친 모델을 H-dev로 평가한다.
 
-**학습 seed가 바꾸는 것**
-- trainer의 seed는 batch 순서, D4 augmentation 표본, torch 전역 난수를 정한다. value head는 parent c5에서 이어 학습하므로, 무작위 초기화의 변동은 들어 있지 않다.
-- 따라서 ε_seed는 "같은 자료·같은 출발점에서 자료 순서와 augmentation이 만드는 변동"이다. 처음부터 학습할 때의 변동이나 자료 표본의 변동이 아니다.
+**학습 seed가 바꾸는 것**(`src/hybrid/h7c_train.py`)
+- `mixed_epoch`: epoch마다 replay train에서 cycle 행 수만큼 비복원 추출하는 **replay 부분집합**과, 합친 행의 순서(생성기 seed × 1000 + epoch)
+- D4 augmentation: batch마다 방향을 뽑는 생성기(seed)
+- torch 전역 난수(`torch.manual_seed(seed)`)
+- value head는 parent c5에서 이어 학습하므로, head 초기화의 변동은 없다.
+
+따라서 ε_seed의 의미는 다음과 같다.
+
+> 고정된 cycle 자료·replay 모집단·parent에서, replay 추출·batch 순서·augmentation과 실행 비결정성이 만드는 관측 변동. head 초기화와 새 self-play 표본의 변동은 포함하지 않는다.
+
+**같은 seed의 짝맞춤이 보장하는 범위**
+- cycle 행 수, replay 모집단 크기, batch 크기, step 수가 모두 같으면, 같은 seed는 epoch별 replay 추출·행 순서·augmentation 배정을 똑같이 만든다. 이것은 문구로 가정하지 않고 도구로 확인한다(`h7r_r2.data_assignment`가 trainer의 `mixed_epoch`를 그대로 불러 지문을 만든다).
+- 이 가운데 하나라도 다르면(D1·D2·D5처럼 자료 크기나 혼합 비율이 바뀌는 조건), 같은 seed라도 replay 추출량과 batch 배치가 달라진다. 이때는 같은 부분(예: cycle 행 순서의 공통 접두, augmentation 수열)만 짝으로 기록하고, 나머지 차이를 결과에 적는다.
+- "같은 seed이므로 자료 순서가 같다"는 일반 판단은 쓰지 않는다.
 
 **seed 배정(제안)**
 - 학습 seed: **31001 / 31002 / 31003**. 저장소 기록에서 충돌은 찾지 못했다. self-play 예약 seed와는 용도가 다르다.
 - 세 seed 모두 새 실행 기록을 만든다. 기존 c8(seed 20261025)을 세 seed 중 하나로 대신하지 않는다.
 
 **재현 대조 1회**
-- seed 20261025로 c8 recipe를 현재 commit에서 한 번 더 학습한다.
-- c8의 checkpoint SHA와 H-dev 주 지표를 대조해 결과를 다음 중 하나로 기록한다.
-  - `BITWISE_REPRODUCED`
-  - `METRIC_ONLY`: SHA는 다르고, 주 지표 차이 |ΔL|를 함께 기록한다.
-  - `NOT_REPRODUCED`
-- 이 대조는 trainer의 결정성과 commit 간 동등성을 확인하는 용도이며, ε 계산에는 넣지 않는다.
-- `NOT_REPRODUCED`이면 ε를 계산하기 전에 원인을 기록한다. 원인 후보는 GPU 비결정성, 코드 차이, 자료 차이다.
+- seed 20261025로 c8 recipe를 현재 commit에서 한 번 더 학습한다. 이것은 재현 문제를 **발견하는 점검**이다. 한 번의 재실행으로 GPU 비결정성의 크기를 추정하지 않는다.
+- 비교 항목(구분해서 기록)
+  1. checkpoint 파일 SHA. 직렬화 방식 때문에 내용이 같아도 다를 수 있다.
+  2. state_dict 내용의 동일성: 이름·dtype·shape·bytes의 hash(`state_sha256`). value head만 따로도 기록한다.
+  3. 자료 배정 지문: replay 추출, 행 순서, augmentation(`data_assignment`)
+  4. 선택된 step, 평가 시점별 T-val objective 곡선
+  5. H-dev 예측: 행별 |Δv|의 최댓값과 평균(raw, D4)
+  6. H-dev 주 지표 차이 |ΔL|
+- 판정
+  - `BITWISE_REPRODUCED`: 2의 state_dict 내용이 같다.
+  - `METRIC_ONLY`: 2는 다르지만, 3이 같고, 4의 선택 step이 같고, 5와 6이 **실행 전에 고정한 허용 오차** 안이다.
+  - `NOT_REPRODUCED`: 그 밖의 모든 경우. 허용 오차가 정해지지 않았거나 항목이 빠진 경우도 여기에 넣는다.
+- 허용 오차(예측 |Δv| 최대, 주 지표 |ΔL|)는 R2-0B 실행 승인 전에 계약에 적는다. 이 초안에서는 null이며, null인 동안 도구는 `METRIC_ONLY`를 내지 않는다.
+- `NOT_REPRODUCED`이면 **ε 확정과 그 뒤 진단 판독을 멈춘다.** 원인(GPU 비결정성, 코드 차이, 자료 차이)을 기록하고 별도 판단을 받는다. 도구의 `epsilon`은 재현 판정이 `BITWISE_REPRODUCED` 또는 `METRIC_ONLY`가 아니면 값을 내지 않는다.
+- 이 대조 결과는 ε 계산 자체에는 넣지 않는다.
 
 **ε 산출식(제안)**
 
@@ -219,19 +241,22 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 
 **이후 조건별 개선의 판독(제안)**
 
-비교 기준은 c5가 아니라 **같은 seed의 기준 recipe 실행**(B_s, s ∈ {31001, 31002, 31003})이다. 조건 C의 seed s 실행 C_s는 B_s와 학습 seed가 같고, 조건이 바꾸는 변수 하나만 다르다.
+비교 기준은 c5도, 공통 c8 기준 실행도 아니다. **각 하위 계약이 지정한 직접 control**(§8 표)이다. control K는 조건 C와 바꾸는 변수 하나만 다르고, 학습 seed s ∈ {31001, 31002, 31003}마다 따로 학습한다(K_s, C_s).
 
-    I_s = L(B_s) − L(C_s)           (양수가 개선)
+    I_s = L(K_s) − L(C_s)           (양수가 개선)
+
+- 예: D1의 넓은 head를 전체 자료로 학습한 c8 기준과 비교하면 자료량과 head 폭이 동시에 달라진다. 그래서 D1의 control은 같은 부분집합·같은 학습 예산의 기존 head다.
+- 짝을 이룬 K_s와 C_s의 자료 배정이 실제로 얼마나 같은지는 위의 지문으로 기록한다.
 
 `DEVELOPMENT_SIGNAL`은 세 조건을 모두 만족할 때다.
 1. 세 seed 모두 I_s > ε
-2. 세 seed 모두 paired Δ(C_s:B_s)의 95% 상한이 0보다 작다. 즉 I_s 구간의 하한이 0보다 크다.
+2. 세 seed 모두 paired Δ(C_s:K_s)의 95% 상한이 0보다 작다. 즉 I_s 구간의 하한이 0보다 크다.
 3. 위 1–2가 주 지표에서 성립한다.
 
 그 밖의 결과는 모두 `NOT_ESTABLISHED`다.
 
-- c5 대비 결과(L(c5) − L(C_s))도 함께 보고한다. 다만 판독에는 쓰지 않는다. c5 대비 차이에는 "c8 recipe로 학습했다는 것" 자체의 효과가 섞이기 때문이다.
-- 같은 seed끼리 짝을 지으면 자료 순서가 같아진다. 그래서 조건 효과와 순서 변동이 덜 섞인다.
+- c5 대비 결과와 공통 c8 기준 실행(B_s) 대비 결과도 공통 참고값으로 함께 보고한다. 판독에는 쓰지 않는다.
+- ε는 c8 recipe의 seed 변동에서 나온 값이다. 자료 크기나 구조가 다른 control에서는 seed 변동이 다를 수 있으므로, 하위 계약은 control의 seed 범위(세 값의 max − min)도 함께 보고하고, 그것이 ε보다 크면 판독을 보류한다.
 - 이 기준은 개발 단계의 선별용이다. 다중 실험의 확인적 오류 제어를 보장하지 않는다.
 - 구성·보조 지표에 주 지표의 ε를 그대로 적용하지 않는다. 그 지표용으로 따로 보정하지 않았기 때문이다.
 
@@ -241,17 +266,18 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 - 전체 조합을 한꺼번에 실행하지 않는다.
 - R2-0A/B 뒤에 조건, 연산량, 소스 SHA, 학습 시간 한도를 담은 하위 계약을 각각 fixed로 만든다.
 - 평가를 본 뒤에 이 문서의 문턱을 유리한 쪽으로 바꾸지 않는다.
-- 학습 조건은 모두 §7의 seed 세 개와 같은 seed 짝의 기준 recipe를 쓴다.
+- 학습 조건은 모두 §7의 seed 세 개를 쓰고, 아래 표의 **직접 control**을 같은 seed로 학습해 짝을 이룬다. c8 기준 실행과 c5 대비 수치는 공통 참고값이다.
 
-| 진단 | 제안 설계 | 결과와 다음 행동 |
-|---|---|---|
-| D1 표현/최적화 | c8 T-train에서 게임 단위로 고정한 부분집합(1k / 5k / 전체에 가까운 규모). head 폭과 lr/BN은 따로 대비한다. 원래 val과 H-dev로는 학습하지 않는다. | 현재 head가 작은 부분집합을 못 맞추고 넓은 head가 더 잘 맞추면 용량 가설이다. 둘 다 못 맞추면 최적화나 target 모순도 조사한다. train 성공 문턱은 target 구성에 맞춘 절대 오차 기준으로 하위 계약에서 먼저 고정한다. H-dev용 ε를 그대로 가져다 쓰지 않는다. |
-| D2 자료량/다양성 | c8만, c6+c7+c8, 그리고 게임 단위로 중첩된 25/50% 부분집합. 모델과 최적화는 고정한다. gradient step을 고정한 자료 효과와, epoch을 고정해 생기는 추가 연산 효과를 분리한다. | 세 seed가 같은 방향이고 주 지표가 `DEVELOPMENT_SIGNAL`이면 자료 확대 후보다. train만 개선되면 과적합이나 분포 가설이다. 판 수가 늘었다는 것만으로 원인을 확정하지 않는다. |
-| D3 label 목표 | outcome weight 0.1 / 0(= proof만), replay는 같게 둔다. cycle loss의 원래 분모를 유지해, 제거된 기여를 다른 행에 재분배하지 않는다. selection metric은 조건 간 공통 T-val 정의로 고정한다. | outcome/proof별 오차 크기만으로 label noise를 확정하지 않는다. 목표 변경이 주 지표에서 `DEVELOPMENT_SIGNAL`을 내는지, 종류별 교환관계가 어떤지 확인한다. |
-| D4 예측→선택 | 주 지표에서 `DEVELOPMENT_SIGNAL`이 나온 조건만 대상이다. H-dev의 사전 고정 부분표본에서 sensitivity와 Rapfi 개발 판정을 한다. | 선택이 바뀌지 않거나 개선 방향이 확인되지 않으면 "예측-선택 연결 미입증"으로 기록한다. 곧바로 "목표 불일치 확정"으로 쓰지 않는다. Rapfi 표본·예산·판독은 별도로 fixed한다. |
-| D5 replay | D1–D4 뒤에 필요하면 50:50 대 75:25 등을 비교한다. 총 batch/step을 고정하고 H6 guard를 유지한다. | 주 지표 신호와 guard를 둘 다 만족할 때만 다음 후보가 된다. replay를 줄이면서 늘어난 cycle 노출량을 함께 기록하고, 원인을 한 요인으로 과장하지 않는다. |
+| 진단 | 직접 control | 제안 설계 | 결과와 다음 행동 |
+|---|---|---|---|
+| D1 표현/최적화 | head 폭: 같은 부분집합·같은 학습 예산의 기존 head. lr/BN: 같은 부분집합·같은 head의 원래 설정 | c8 T-train에서 게임 단위로 고정한 부분집합(1k / 5k / 전체에 가까운 규모). head 폭과 lr/BN은 따로 대비한다. 원래 val과 H-dev로는 학습하지 않는다. | 현재 head가 작은 부분집합을 못 맞추고 넓은 head가 더 잘 맞추면 용량 가설이다. 둘 다 못 맞추면 최적화나 target 모순도 조사한다. train 성공 문턱은 target 구성에 맞춘 절대 오차 기준으로 하위 계약에서 먼저 고정한다. H-dev용 ε를 그대로 가져다 쓰지 않는다. |
+| D2 자료량/다양성 | 같은 구조·사전 지정 연산 예산(step 고정, epoch 고정 각각)의 기준 자료(c8만) | c8만, c6+c7+c8, 그리고 게임 단위로 중첩된 25/50% 부분집합. 모델과 최적화는 고정한다. gradient step을 고정한 자료 효과와, epoch을 고정해 생기는 추가 연산 효과를 분리한다. | 세 seed가 같은 방향이고 주 지표가 `DEVELOPMENT_SIGNAL`이면 자료 확대 후보다. train만 개선되면 과적합이나 분포 가설이다. 판 수가 늘었다는 것만으로 원인을 확정하지 않는다. |
+| D3 label 목표 | 같은 자료·같은 학습 예산의 원래 loss(outcome weight 0.1) | outcome weight 0.1 / 0(= proof만), replay는 같게 둔다. cycle loss의 원래 분모를 유지해, 제거된 기여를 다른 행에 재분배하지 않는다. selection metric은 조건 간 공통 T-val 정의로 고정한다. | outcome/proof별 오차 크기만으로 label noise를 확정하지 않는다. 목표 변경이 주 지표에서 `DEVELOPMENT_SIGNAL`을 내는지, 종류별 교환관계가 어떤지 확인한다. |
+| D4 예측→선택 | 그 조건을 낸 하위 계약의 control 모델 | 주 지표에서 `DEVELOPMENT_SIGNAL`이 나온 조건만 대상이다. H-dev의 사전 고정 부분표본에서 sensitivity와 Rapfi 개발 판정을 한다. | 선택이 바뀌지 않거나 개선 방향이 확인되지 않으면 "예측-선택 연결 미입증"으로 기록한다. 곧바로 "목표 불일치 확정"으로 쓰지 않는다. Rapfi 표본·예산·판독은 별도로 fixed한다. |
+| D5 replay | 같은 총 step·batch의 원래 혼합 비율(50:50) | D1–D4 뒤에 필요하면 50:50 대 75:25 등을 비교한다. 총 batch/step을 고정하고 H6 guard를 유지한다. | 주 지표 신호와 guard를 둘 다 만족할 때만 다음 후보가 된다. replay를 줄이면서 늘어난 cycle 노출량을 함께 기록하고, 원인을 한 요인으로 과장하지 않는다. |
 
 **하위 계약에서 확정해야 할 값**
+- 모든 하위 계약: 직접 control의 정의, control과 조건의 자료 배정 지문 비교 방식
 - D1: head 크기, 학습 epoch 한도, train 성공 문턱
 - D2: 부분집합 목록과 연산 배정
 - D3: 조건별 공통 선택 지표
@@ -262,33 +288,38 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 
 ## 9. 코드·산출물·완료 기준
 
-**현재 도구로 되는 것**
+**R2-0A 도구(구현, 2차 검토 반영)**
 
-`h7r_holdout.py eval`이 제공하는 기능:
-- 행 가중 WMSE
-- 그룹별 조건부 source-game bootstrap
-- raw/D4
-- network/exact_leaf와 그 안의 outcome/proof 칸
-- `--group` seed 변동(pooled WMSE의 mean/sd)
+- `src/hybrid/h7r_r2.py`(계산·검사)와 `scripts/h7r_r2.py eval`(실행)이다. 출력 형식은 `h7r-r2-eval-v1`, 지표 정의는 `h7r-r2-metrics-v1`이다.
+- 기존 `h7r_holdout.py eval`의 출력과 의미는 바꾸지 않았다. 그 도구의 `routes`(frozen `exact_leaf`)와 `checked_cache`만 다시 쓴다.
+- 실행 조건(하나라도 어긋나면 멈춤)
+  - 계약이 `fixed`이고 커밋돼 있으며, `stages.R2-0A.approved`가 true다. 지금 계약은 draft라서 실행을 거부한다.
+  - 작업 트리가 깨끗하다.
+  - H-dev cache가 계약의 hash(계약, binding, 대국, 행, labels, test tensor)와 게임 396 / 행 15,985에 맞는다.
+  - `--model NAME=checkpoint,metadata`가 계약의 모델 집합과 정확히 같다. 모델마다 파일 SHA, 로드한 checkpoint에서 재계산한 frozen state hash, metadata 선언값, 계약 기대값을 대조한다.
+  - 예측에 NaN/Inf가 없다. 출력 파일과 예측 파일이 이미 있으면 덮어쓰지 않는다. 예측 파일은 `data/`나 `runs/` 아래에만 둔다.
+- 계산
+  - 그룹: all / route / kind / route×kind / t=0, 그리고 network 안의 결과·side·ply 구간·proof 세부 종류·t=0·t≠0
+  - 모델 × raw/D4 × 그룹마다 macro, pooled, `sign_acc_strict_macro`, 평균 |v|, games/rows/weight_sum, 판독 가능 여부(기여 게임 ≥ 20), macro 구간
+  - 계약 비교마다 macro / pooled 차이와 구간. 공통 재표집 20,000회를 게임별 합계로 계산하며, H-dev 규모에서 몇 초다.
+  - 비교마다 주 지표, 구성 지표 3개, 방향 역전 목록(raw↔D4, macro↔pooled, 전체↔network, outcome↔proof)
+  - ε: `value` null, 상태 `AWAITING_R2_0B`. `c8:c5` 구간의 반폭(sample 부분)만 기록한다.
+- R2-0B용으로 미리 구현한 순수 함수(실행 도구는 아직 없음)
+  - `epsilon`: 재현 판정이 통과하지 않으면 `BLOCKED_REPRODUCTION`으로 값을 내지 않는다.
+  - `reproduction_verdict`: 허용 오차가 null이거나 항목이 빠지면 `NOT_REPRODUCED`다.
+  - `data_assignment` / `compare_assignments`: trainer의 `mixed_epoch`를 그대로 불러 replay 추출·행 순서 지문을 만들고, augmentation 수열을 trainer와 같은 순서로 뽑는다. 테스트가 실제 `train_value`의 batch와 symmetry를 가로채 지문과 같은지 확인한다.
 
-**추가 구현·테스트가 필요한 것**
-- 게임 균등 macro 손실, `sign_acc_strict_macro`, t=0 지표. 전역 outcome/proof, ply, side, 결과별 집계
-- 396게임 공통 재표집(충분통계 방식)과 빈 그룹 처리
-- R2 전용 계약 형식
-  - draft/fixed 상태와 승인 단계
-  - 모델 identity 네 개(policy·value × checkpoint·metadata)
-  - metadata 명시 경로
-  - `frozen_state_sha256` 일치 검사
-  - H-dev binding 검증
-- metric 정의와 ε 산출식의 버전, 모든 입력·출력 SHA
-- R2-0B 학습 기록: seed별 trainer 기록, 재현 대조 판정
+**R2-0B 전에 더 구현할 것**
+- seed별 학습 실행과 기록: 자료 배정 지문, 평가 곡선, 선택 step, state_dict 내용 hash
+- 재현 대조 실행: 기준 실행과 재실행의 위 항목, H-dev 예측 |Δv|, 주 지표 |ΔL|
+- 계약의 재현 허용 오차와 하위 실험 control 규칙
 
-미구현 지표를 기존 명령 한 번으로 만들 수 있다고 쓰지 않는다. 기존 기록의 metric 의미는 바꾸지 않고, 새 형식·버전으로 추가한다(기존 `h7r_holdout.py eval` 출력은 그대로 둔다).
+미구현 지표를 기존 명령 한 번으로 만들 수 있다고 쓰지 않는다.
 
 **산출물 경로**
+- 계약: `docs/h7r/r2/R2-DIAG-1.contract.json`(draft). R1의 `docs/h7r/contracts/`에 두지 않는다. 그 폴더의 JSON은 모두 R1 Arena 계약으로 읽혀 seed 충돌 검사를 받기 때문이다.
 - 결과 요약: `docs/h7r/r2/R2-DIAG-1/`. 집계 수치와 SHA만 둔다.
-- 대국·행·tensor·checkpoint·행별 예측: `runs/h7r/R2-DIAG-1/`. 커밋하지 않는다.
-- 계약 예상 경로: `docs/h7r/contracts/R2-DIAG-1.json`. 파일, schema, loader는 아직 만들지 않았다.
+- 행별 예측(`--predictions`), 대국·행·tensor·checkpoint: `runs/h7r/R2-DIAG-1/`. 커밋하지 않는다.
 
 **fail closed**
 - 다음 경우에는 멈춘다.
@@ -316,9 +347,9 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 fixed 전에 정할 핵심 선택은 다섯 가지다.
 1. D4/network 게임 균등 평균을 주 지표로 삼고, 구성 지표 세 개를 필수로 할지
 2. ε의 경험식과 학습 seed 세 개
-3. 개발 신호를 같은 seed의 기준 recipe와 비교하고, 3/3 seed·ε·paired 구간 조건으로 판정할지
-4. 재현 대조 1회를 R2-0B에 넣을지
-5. R2-0A만 먼저 실행 승인할지
+3. 개발 신호를 하위 계약의 직접 control(같은 seed)과 비교하고, 3/3 seed·ε·paired 구간 조건으로 판정할지
+4. 재현 대조 1회와 그 판정·중단 규칙을 R2-0B에 넣을지. 허용 오차 값은 R2-0B 승인 전에 정한다.
+5. R2-0A만 먼저 실행 승인할지. 승인하면 계약을 `fixed`, `stages.R2-0A.approved: true`로 바꿔 커밋한 뒤 실행한다.
 
 이 초안은 제안값을 표시한 설계 문서이며, 실행 승인을 대신하지 않는다.
 
@@ -326,7 +357,7 @@ fixed 전에 정할 핵심 선택은 다섯 가지다.
 
 | # | 원 초안 | 수정 | 이유 |
 |---|---|---|---|
-| 1 | 개선 판정 기준이 "parent 대비" | 같은 seed의 기준 recipe(B_s) 대비. c5 대비는 보고만 함 | c5 대비 차이에는 c8 recipe 학습 자체의 효과가 섞인다. 같은 seed로 짝지으면 자료 순서 변동도 줄어든다. |
+| 1 | 개선 판정 기준이 "parent 대비" | 같은 seed의 기준 recipe(B_s) 대비. c5 대비는 보고만 함(§12의 2차 반영에서 직접 control로 다시 바꿈) | c5 대비 차이에는 c8 recipe 학습 자체의 효과가 섞인다. 같은 seed로 짝지으면 자료 순서 변동도 줄어든다. |
 | 2 | 부호 규칙이 혼재(Δ 음수 = 개선 vs "개선 하한 > 0") | Δ와 I = −Δ를 분리해 정의 | 판정식의 부호 오독을 막는다. |
 | 3 | 주 지표 하나 | 구성 지표 세 개(outcome macro, proof macro, pooled WMSE) 필수 | 게임 안의 proof/outcome 혼합 비율이 게임마다 달라, 주 지표 하나로는 원인을 가릴 수 없다. |
 | 4 | policy identity로 출처를 식별 | value metadata의 `frozen_state_sha256` 일치 검사와 명시적 metadata 경로 | 평가 도구는 policy checkpoint를 읽지 않는다. 차이가 value head에서만 나온다는 근거는 trunk hash다. |
@@ -337,6 +368,18 @@ fixed 전에 정할 핵심 선택은 다섯 가지다.
 | 9 | ply 구간 5–19 … | cache 최소 ply부터 시작하는 빈틈 없는 반열린 구간 | 최소 ply를 확인하지 않은 경계라 빈틈이나 누락이 생길 수 있었다. |
 | 10 | 공통 재표집만 명시 | 충분통계 방식과 계산량 명시 | 행 단위 Python 반복으로는 20,000회가 수 시간 걸린다. |
 | 11 | 출처 근거 | 모델별 커밋된 기록 경로를 표에 넣음 | 근거 섹션의 서술을 대신한다. |
+
+## 12. 2차 검토 반영 (2026-10-30)
+
+| # | 지적 | 반영 |
+|---|---|---|
+| 1 | seed는 replay에서 뽑히는 자료도 바꾼다(`mixed_epoch`) | §7에 seed가 정하는 것(replay 부분집합, 행 순서, augmentation, 전역 난수)을 적고, ε_seed의 의미를 "고정된 cycle 자료·replay 모집단·parent에서의 관측 변동, head 초기화와 새 self-play 표본 변동 제외"로 고쳤다. |
+| 2 | 같은 seed가 같은 자료 순서를 보장하지 않는다 | 크기가 모두 같을 때만 같은 배정이 된다는 것을 도구(`data_assignment`, 실제 trainer와 대조하는 테스트)로 확인하게 했다. 크기가 다르면 공통 부분만 짝으로 기록한다. 일반 문구는 지웠다. |
+| 3 | 공통 c8 기준과 비교하면 원인이 섞인다 | 판정 기준을 하위 계약의 직접 control로 바꾸고, §8 표에 D1–D5별 control을 넣었다. c8 기준과 c5 대비는 공통 참고값이다. control의 seed 범위가 ε보다 크면 판독을 보류한다. |
+| 4 | 재현 대조의 판정·중단 기준이 없다 | 비교 항목 여섯 개(파일 SHA, state_dict 내용, 자료 배정, 선택 step·곡선, 예측 차이, 주 지표 차이)와 판정 규칙을 정했다. 허용 오차는 실행 전에 고정하며, null이면 `METRIC_ONLY`가 나올 수 없다. `NOT_REPRODUCED`이면 ε와 후속 판독을 멈춘다(`epsilon`이 값을 내지 않음). 한 번의 재실행은 발견용 점검이라고 적었다. |
+| 5 | trunk hash는 실제 모델에서 재계산해야 한다 | `check_model`이 로드한 checkpoint에서 `state_sha256(frozen_state(model))`을 다시 계산해 계약 기대값, metadata 선언값과 대조한다. trunk를 바꾸고 선언값만 맞춘 checkpoint를 거부하는 테스트가 있다. |
+| 6 | `mask:c8`은 선택 지표도 다르다 | §3에 "학습과 checkpoint 선택에 같은 mask 처방을 적용한 recipe 비교, 학습 loss만의 효과가 아님"으로 고치고 선택 step(147 / 210)을 적었다. |
+| — | 확인한 사실 | 평가 라벨은 ply 5부터 만든다(`from_ply=5`). ply 구간을 [5, 20) … [80, ∞)로 고정하고, 5보다 작은 ply의 행이 있으면 도구가 멈춘다. |
 
 ## 근거
 
