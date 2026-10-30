@@ -1408,3 +1408,29 @@ git add docs/h7r/hdev/R1-HDEV-1-manifest.json
 git commit -m "H7-R: R1-HDEV-1 generated (manifest only)"
 git push origin feat/h7-c1
 ```
+
+### 9.14 H-dev 생성 결과와 R2 계약 초안 (2026-10-30)
+
+**H-dev 생성 기록**(`0065564`, `docs/h7r/hdev/R1-HDEV-1-manifest.json`)
+
+- self-play: 400 / 400판, 39.3분이 걸렸다. 결과는 흑 211 / 백 174 / 무 15, 17,164수다.
+- 생성 commit과 라벨 commit은 모두 `37dec66`이다(계약 확정 커밋). 계약 SHA `348fecda98c4…`가 manifest와 같다.
+- 평가 cache는 396판, 15,985행이다.
+  - outcome 13,805행: weight 0.1, weight 몫 38.8%
+  - proof 2,180행: weight 1.0, weight 몫 61.2%
+  - train / val은 0행이다.
+- 4판은 benchmark probe 국면에 도달해 기존 라벨 규칙(`probe_game_min_ply` 4)으로 대국 전체가 빠졌다. 생성 실패가 아니다. 400판 전부 `check_holdout_games`를 통과했다.
+- 무승부 15판(3.8%)에서 나온 t=0 outcome 행이 3,080개로 outcome 행의 22%다. 행 단위로 평균하면 이 몇 판이 결과를 좌우하므로, R2 주 지표는 게임 균등 평균으로 제안한다.
+
+**R2 계약 초안**: `docs/h7r/r2/R2-DIAG-1-draft.md`(draft, 실행 불가)
+
+- 이번 단계에서 하지 않은 것: R2-0A 평가, R2-0B 학습, 평가 도구 구현.
+- 초안의 주요 제안
+  - 주 지표: D4 / network의 게임 균등 손실. 구성 지표 세 개를 필수로 함께 보고한다.
+  - bootstrap: 396게임 공통 재표집 20,000회, seed 20261030
+  - ε = max(`c8:c5` 구간 반폭, 학습 seed 3개의 범위). 경험적 개발용 문턱이며 통계적 MDE가 아니다.
+  - 학습 seed: 31001 / 31002 / 31003. seed 20261025 재현 대조 1회를 따로 둔다.
+  - 개선 판정: 같은 seed의 기준 recipe와 비교한다.
+- fixed로 바꾸기 전에 필요한 것
+  - 사용자가 초안 §10의 선택 다섯 가지를 확정한다.
+  - R2 평가 도구를 구현하고 테스트한다. 기존 `h7r_holdout.py eval`의 출력 의미는 바꾸지 않는다.
