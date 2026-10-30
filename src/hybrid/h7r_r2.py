@@ -478,3 +478,142 @@ def predict(model, data: dict, device: str, batch: int = 2048) -> dict:
     for key, values in out.items():
         require(all(math.isfinite(v) for v in values), f'non-finite {key} prediction')
     return out
+
+
+# --- amendment A1: the X1 exploratory addendum and the R2-0B preparation ------------------------------------------
+
+AMENDMENT_FORMAT = 'h7r-r2-amendment-v1'
+X1_VERSION = 'h7r-r2-x1-v1'
+X1_FORMAT = 'h7r-r2-x1-v1'
+TRAIN_FORMAT = 'h7r-r2-train-v1'
+REPRODUCE_FORMAT = 'h7r-r2-reproduce-v1'
+SIDES = ('black', 'white')
+
+
+def _ref(value) -> bool:
+    return isinstance(value, dict) and isinstance(value.get('path'), str) and is_sha(value.get('sha256'))
+
+
+def check_amendment(amendment: dict, contract: dict, contract_sha: str) -> None:
+    """An amendment of a fixed R2 contract: it never changes the contract's metrics, comparisons or readings; it
+    adds the X1 exploratory addendum (inputs pinned by SHA-256) and the R2-0B preparation (operational tolerances)."""
+    require(isinstance(amendment, dict) and amendment.get('format') == AMENDMENT_FORMAT, 'not an R2 amendment')
+    require(amendment.get('status') == 'fixed', 'an amendment is used only when fixed')
+    parent = amendment.get('parent')
+    require(_ref(parent) and parent['sha256'] == contract_sha and contract['status'] == 'fixed',
+            'the amendment names another contract (or the contract is not fixed)')
+    x1 = amendment.get('x1')
+    require(isinstance(x1, dict) and x1.get('version') == X1_VERSION and x1.get('exploratory') is True
+            and type(x1.get('approved')) is bool, f'x1 must be the exploratory {X1_VERSION}')
+    require(all(_ref((x1.get('inputs') or {}).get(k)) for k in ('result', 'predictions')), 'x1 inputs by SHA-256')
+    require(isinstance(x1.get('predictions'), list) and set(x1['predictions']) <= set(PREDICTIONS)
+            and x1['predictions'], 'x1 predictions: raw / d4')
+    require(isinstance(x1.get('groups'), list) and x1['groups']
+            and set(x1['groups']) <= {'network', 'network/outcome', 'network/proof'}, 'x1 groups')
+    folds = x1.get('folds')
+    require(isinstance(folds, dict) and type(folds.get('k')) is int and folds['k'] >= 2
+            and folds.get('assignment') == 'int(sha256(game_id), 16) % k', 'x1 folds: k >= 2, the game id hash')
+    require(x1.get('offset') == 'constant per side to move', 'x1 offset: constant per side to move')
+    b = amendment.get('r2_0b')
+    require(isinstance(b, dict) and type(b.get('approved')) is bool, 'r2_0b with an approved flag')
+    require(b.get('training_seeds') == contract['epsilon']['training_seeds']
+            and b.get('reproduction_seed') == contract['reproduction']['seed'], 'r2_0b seeds = the contract seeds')
+    require(_ref(b.get('reference_record')) and _ref(b.get('config')), 'r2_0b reference record and config by SHA')
+    tol = (b.get('reproduction') or {}).get('tolerance')
+    require(isinstance(tol, dict) and set(tol) == {'max_abs_prediction', 'abs_primary'}
+            and all(v is not None and _positive_or_none(v) for v in tol.values()),
+            'r2_0b reproduction tolerances: positive numbers')
+
+
+def load_amendment(path, contract: dict, contract_sha: str) -> tuple[dict, str]:
+    amendment = json.loads(Path(path).read_text(encoding='utf-8'))
+    check_amendment(amendment, contract, contract_sha)
+    return amendment, file_sha256(path)
+
+
+def game_folds(game_ids: list[str], k: int) -> list[int]:
+    """Fixed source-game folds: int(sha256(game_id), 16) % k (independent of results and predictions)."""
+    return [int(hashlib.sha256(g.encode()).hexdigest(), 16) % k for g in game_ids]
+
+
+def side_sums(pred, target, weight, game, ply, rows: list[int], n_games: int) -> dict:
+    """Per game (rows) and side to move (columns black, white) sums with the group's game-macro weights
+    u_i = w_i / W_g (W_g the game's group weight): u, u r, u r^2, u v, u t (r = v - t); ``present`` per game."""
+    import torch
+
+    idx = torch.as_tensor(rows, dtype=torch.long)
+    g = torch.as_tensor(game, dtype=torch.long)[idx]
+    side = (torch.as_tensor(ply, dtype=torch.long)[idx] % 2)  # 0 black to move, 1 white
+    v = torch.as_tensor(pred, dtype=torch.float64)[idx]
+    t = torch.as_tensor(target, dtype=torch.float64)[idx]
+    w = torch.as_tensor(weight, dtype=torch.float64)[idx]
+    total = torch.zeros(n_games, dtype=torch.float64).index_add_(0, g, w)
+    u = w / total[g]
+    r = v - t
+    cell = g * 2 + side
+    out = {}
+    for name, x in (('u', u), ('ur', u * r), ('urr', u * r * r), ('uv', u * v), ('ut', u * t)):
+        out[name] = torch.zeros(n_games * 2, dtype=torch.float64).index_add_(0, cell, x).reshape(n_games, 2)
+    out['present'] = (total > 0).double()
+    return out
+
+
+def decompose(sums: dict, counts=None) -> dict:
+    """The group's game-macro loss split by side: L = sum_s Omega_s (mu_s^2 + sigma_s^2), with Omega_s the side's
+    weight share, mu_s its weighted mean residual and sigma_s^2 the weighted residual variance (exact identity).
+    ``counts`` [B, G]: the same per bootstrap replicate (tensors [B]); otherwise floats."""
+    import torch
+
+    c = torch.ones((1, sums['present'].shape[0]), dtype=torch.float64) if counts is None else counts
+    n = c @ sums['present']
+    out = {'loss': (c @ sums['urr'].sum(1)) / n, 'sides': {}}
+    for j, s in enumerate(SIDES):
+        a, b1, b2 = c @ sums['u'][:, j], c @ sums['ur'][:, j], c @ sums['urr'][:, j]
+        mean = lambda x: torch.where(a > 0, x / a.clamp_min(1e-300), torch.full_like(a, math.nan))  # noqa: E731
+        mu = torch.where(a > 0, b1 / a.clamp_min(1e-300), torch.zeros_like(a))  # a side without weight adds 0
+        out['sides'][s] = {'share': a / n, 'mean_residual': mean(b1), 'bias': a * mu * mu / n,
+                           'variance': (b2 - a * mu * mu) / n, 'mean_prediction': mean(c @ sums['uv'][:, j]),
+                           'mean_target': mean(c @ sums['ut'][:, j])}
+    out['bias'] = sum(out['sides'][s]['bias'] for s in SIDES)
+    out['variance'] = sum(out['sides'][s]['variance'] for s in SIDES)
+    if counts is None:
+        to_float = lambda x: None if math.isnan(float(x[0])) else float(x[0])  # noqa: E731
+        out = {'loss': to_float(out['loss']), 'bias': to_float(out['bias']), 'variance': to_float(out['variance']),
+               'sides': {s: {k: to_float(v) for k, v in d.items()} for s, d in out['sides'].items()}}
+    return out
+
+
+def crossfit(sums: dict, folds: list[int], k: int, counts=None) -> dict:
+    """The group's game-macro loss after a constant offset per side, the offset of each fold estimated (weighted mean
+    residual) on the other folds only: L_cf = (1 / N) sum_k sum_s sum_{g in k} c_g (urr - 2 b uR + b^2 u).
+    With ``counts`` the offsets are re-estimated inside every replicate. A fold side with weight to evaluate but
+    none outside the fold to estimate its offset is ``undefined`` (counted per replicate); a side without weight
+    in the fold adds nothing."""
+    import torch
+
+    c = torch.ones((1, sums['present'].shape[0]), dtype=torch.float64) if counts is None else counts
+    fold = torch.as_tensor(folds, dtype=torch.long)
+    n = c @ sums['present']
+    total = torch.zeros(c.shape[0], dtype=torch.float64)
+    undefined = torch.zeros(c.shape[0], dtype=torch.bool)
+    offsets = {}
+    for f in range(k):
+        inside = (fold == f).double()
+        outside = 1.0 - inside
+        for j, s in enumerate(SIDES):
+            a_out, a_in = c @ (sums['u'][:, j] * outside), c @ (sums['u'][:, j] * inside)
+            b = (c @ (sums['ur'][:, j] * outside)) / a_out.clamp_min(1e-300)
+            undefined |= (a_out <= 0) & (a_in > 0)  # a side to evaluate in the fold, none to learn its offset from
+            total += (c @ (sums['urr'][:, j] * inside) - 2 * b * (c @ (sums['ur'][:, j] * inside))
+                      + b * b * (c @ (sums['u'][:, j] * inside)))
+            offsets[(f, s)] = b
+    loss = total / n
+    if counts is None:
+        return {'loss': float(loss[0]), 'undefined': bool(undefined[0]),
+                'offsets': {f'{f}/{s}': float(b[0]) for (f, s), b in offsets.items()}}
+    return {'loss': loss, 'undefined': int(undefined.sum())}
+
+
+def interval(draws, level: float, undefined: int = 0) -> dict:
+    """The percentile interval of replicates (the ``paired`` convention); none when a replicate was undefined."""
+    return _interval(draws, undefined, level)

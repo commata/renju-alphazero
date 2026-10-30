@@ -443,5 +443,244 @@ class EvaluateTest(unittest.TestCase):
                              log=QUIET)
 
 
+def committed_amendment() -> dict:
+    return json.loads((ROOT / 'docs/h7r/r2/R2-DIAG-1-A1.json').read_text(encoding='utf-8'))
+
+
+class AmendmentTest(unittest.TestCase):
+    def test_committed_amendment(self):
+        contract, sha = r2.load_contract(CONTRACT)
+        a, _ = r2.load_amendment(ROOT / 'docs/h7r/r2/R2-DIAG-1-A1.json', contract, sha)
+        self.assertTrue(a['x1']['approved'] and a['x1']['exploratory'])
+        self.assertFalse(a['r2_0b']['approved'])  # no training run
+        self.assertEqual(a['r2_0b']['reproduction']['tolerance'], {'max_abs_prediction': 0.001, 'abs_primary': 0.0002})
+        self.assertEqual(a['x1']['inputs']['result']['sha256'],
+                         r2.file_sha256(ROOT / 'docs/h7r/r2/R2-DIAG-1/r2_0a.json'))
+        result = json.loads((ROOT / 'docs/h7r/r2/R2-DIAG-1/r2_0a.json').read_text())
+        self.assertEqual(a['x1']['inputs']['predictions']['sha256'], result['predictions']['sha256'])
+        self.assertEqual(result['contract_sha256'], sha)
+        for key in ('reference_record', 'config'):
+            self.assertEqual(r2.file_sha256(ROOT / a['r2_0b'][key]['path']), a['r2_0b'][key]['sha256'])
+        self.assertIsNone(contract['epsilon']['value'])  # the contract itself is unchanged
+
+    def test_rules(self):
+        contract, sha = r2.load_contract(CONTRACT)
+
+        def refused(change, message, contract_sha=sha):
+            body = committed_amendment()
+            change(body)
+            with self.assertRaisesRegex(ValueError, message):
+                r2.check_amendment(body, contract, contract_sha)
+
+        refused(lambda b: None, 'names another contract', contract_sha='0' * 64)
+        refused(lambda b: b.update(status='draft'), 'only when fixed')
+        refused(lambda b: b['r2_0b']['reproduction']['tolerance'].update(abs_primary=None), 'positive numbers')
+        refused(lambda b: b['r2_0b'].update(training_seeds=[1, 2, 3]), 'the contract seeds')
+        refused(lambda b: b['x1'].update(exploratory=False), 'exploratory')
+        refused(lambda b: b['x1']['folds'].update(k=1), 'k >= 2')
+        refused(lambda b: b['x1'].update(groups=['all']), 'x1 groups')
+
+
+class SideOffsetTest(unittest.TestCase):
+    def data(self, shift=(0.0, 0.0), seed=3):
+        g = torch.Generator().manual_seed(seed)
+        n_games, rows = 40, []
+        game, ply, target, weight = [], [], [], []
+        for gi in range(n_games):
+            for p in range(5, 5 + int(torch.randint(4, 20, (1,), generator=g))):
+                game.append(gi), ply.append(p)
+                target.append(float(torch.randint(-1, 2, (1,), generator=g)))
+                weight.append(0.1 if p % 3 else 1.0)
+        noise = (torch.rand(len(game), generator=g) - 0.5) * 0.4
+        pred = [t + shift[p % 2] + float(e) for t, p, e in zip(target, ply, noise)]
+        return pred, target, weight, game, ply, list(range(len(game))), n_games
+
+    def test_exact_decomposition_with_the_contract_weights(self):
+        pred, target, weight, game, ply, rows, n = self.data(shift=(0.1, -0.05))
+        s = r2.side_sums(pred, target, weight, game, ply, rows, n)
+        d = r2.decompose(s)
+        macro = r2.point_metrics(r2.game_sums(pred, target, weight, game, rows, n))['macro']
+        self.assertAlmostEqual(d['loss'], macro, places=12)  # the same weights as the primary metric
+        self.assertAlmostEqual(d['bias'] + d['variance'], d['loss'], places=12)
+        self.assertAlmostEqual(sum(d['sides'][x]['share'] for x in r2.SIDES), 1.0, places=12)
+        self.assertGreater(d['sides']['black']['mean_residual'], 0.05)
+        self.assertLess(d['sides']['white']['mean_residual'], 0.0)
+        ones = torch.ones((1, n), dtype=torch.float64)
+        self.assertAlmostEqual(float(r2.decompose(s, ones)['loss'][0]), d['loss'], places=12)
+
+    def test_crossfit_removes_a_side_shift_out_of_fold(self):
+        pred, target, weight, game, ply, rows, n = self.data(shift=(0.3, -0.2))
+        s = r2.side_sums(pred, target, weight, game, ply, rows, n)
+        ids = [f'h7c:c1:8787:{i}' for i in range(n)]
+        folds = r2.game_folds(ids, 5)
+        self.assertEqual(folds, r2.game_folds(ids, 5))
+        self.assertEqual(set(folds), set(range(5)))
+        d, cf = r2.decompose(s), r2.crossfit(s, folds, 5)
+        self.assertFalse(cf['undefined'])
+        self.assertLess(cf['loss'], d['loss'] * 0.5)  # the shift dominates and is learnt out of fold
+        self.assertGreaterEqual(cf['loss'], d['variance'] - 1e-12)  # out of fold never beats the in-sample optimum
+        for f in range(5):
+            self.assertAlmostEqual(cf['offsets'][f'{f}/black'], 0.3, delta=0.05)
+        counts = r2.multiplicities(n, 200, seed=1)
+        rep = r2.crossfit(s, folds, 5, counts)
+        self.assertEqual(rep['undefined'], 0)
+        self.assertEqual(rep['loss'].shape[0], 200)
+        ones = torch.ones((1, n), dtype=torch.float64)
+        self.assertAlmostEqual(float(r2.crossfit(s, folds, 5, ones)['loss'][0]), cf['loss'], places=12)
+        # a fold whose games are its side's only weight cannot learn the offset: undefined, never a silent 0
+        lone = {k: v.clone() for k, v in s.items()}
+        only = [i for i, f in enumerate(folds) if f == 0]
+        keep = torch.zeros(n, dtype=torch.float64)
+        keep[only] = 1.0
+        for key in ('u', 'ur', 'urr', 'uv', 'ut'):
+            lone[key][:, 1] *= keep  # white rows only in fold 0
+        self.assertTrue(r2.crossfit(lone, folds, 5)['undefined'])
+        no_shift = self.data()
+        s0 = r2.side_sums(*no_shift[:6], no_shift[6])
+        self.assertGreaterEqual(r2.crossfit(s0, folds, 5)['loss'], r2.decompose(s0)['loss'] - 1e-3)
+
+
+class X1Test(unittest.TestCase):
+    def test_x1(self):
+        from scripts import h7r_r2 as cli
+        from scripts import h7r_r2_x1 as x1
+
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            ev = EvaluateTest()
+            cpath, models = ev.fixture(tmp)
+            result = cli.evaluate(ev.args(tmp, cpath, models), log=QUIET)
+            contract, csha = r2.load_contract(cpath)
+            body = committed_amendment()
+            body['parent'] = {'path': str(cpath), 'sha256': csha}
+            body['x1']['inputs'] = {
+                'result': {'path': 'out/r2_0a.json', 'sha256': r2.file_sha256(tmp / 'out/r2_0a.json')},
+                'predictions': {'path': 'runs/r2/predictions.pt',
+                                'sha256': r2.file_sha256(tmp / 'runs/r2/predictions.pt')}}
+            apath = tmp / 'A1.json'
+            apath.write_text(json.dumps(body))
+            args = argparse.Namespace(root=tmp, contract=cpath, amendment=apath, cache=tmp / 'runs/cache',
+                                      result=tmp / 'out/r2_0a.json', predictions=tmp / 'runs/r2/predictions.pt',
+                                      output=tmp / 'out/x1.json', allow_dirty=True, allow_draft=True)
+            out = x1.run(args, log=QUIET)
+            self.assertTrue(out['exploratory'])
+            for name in models:
+                for p in ('d4', 'raw'):
+                    for g in ('network', 'network/outcome', 'network/proof'):
+                        cell = out['models'][name][p][g]
+                        self.assertAlmostEqual(cell['descriptive']['loss'], result['models'][name]['metrics'][p][g]['macro'],
+                                               places=9)
+                        d = cell['descriptive']
+                        self.assertAlmostEqual(d['bias'] + d['variance'], d['loss'], places=12)
+            twin = out['comparisons']['twin:c5']['d4']['network']
+            for key in ('loss', 'bias', 'variance', 'crossfit'):
+                self.assertEqual(twin[key]['difference'], 0.0)
+            for key in ('loss', 'bias', 'variance'):
+                self.assertEqual(twin[key]['ci95'], [0.0, 0.0])
+            # 4 fixture games: some replicates draw no game outside a fold, so the cross-fitted interval is unread
+            self.assertIsNone(twin['crossfit']['ci95'])
+            self.assertGreater(twin['crossfit']['zero_denominator_resamples'], 0)
+            self.assertEqual(sum(out['folds']['games']), result['hdev']['games'])
+            with self.assertRaisesRegex(ValueError, 'exists'):
+                x1.run(args, log=QUIET)
+            body['x1']['inputs']['predictions']['sha256'] = '0' * 64
+            apath.write_text(json.dumps(body))
+            with self.assertRaisesRegex(ValueError, 'not the predictions the amendment pins'):
+                x1.run(argparse.Namespace(**{**vars(args), 'output': tmp / 'out/x1b.json'}), log=QUIET)
+            body['x1']['inputs']['predictions']['sha256'] = r2.file_sha256(tmp / 'runs/r2/predictions.pt')
+            body['x1']['approved'] = False
+            apath.write_text(json.dumps(body))
+            with self.assertRaisesRegex(ValueError, 'X1 is not approved'):
+                x1.run(argparse.Namespace(**{**vars(args), 'output': tmp / 'out/x1c.json'}), log=QUIET)
+
+
+class SeedRunTest(unittest.TestCase):
+    """R2-0B on stand-ins: a reference 'c8' run, the seed run refused until approved, the reproduction run bitwise
+    equal on CPU, another seed with another assignment."""
+
+    def test_train_and_reproduce(self):
+        from hybrid.h6_labels import game_rows
+        from hybrid.h6_value_cache import build_value_cache
+        from scripts import h7c_train_value as tv
+        from scripts import h7r_r2_seed as seed_tool
+        from scripts.h7c_labels import write_atomic
+        from tests.test_h7c_train import cycle_value_rows, random_game
+
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            ev = EvaluateTest()
+            cpath, hmodels = ev.fixture(tmp)  # the H-dev fixture; its models are replaced below
+            parent = hmodels['c5'][0]
+            replay_rows = []
+            for g in range(30):
+                replay_rows += game_rows({'id': f'renjunet:{g}', 'moves': random_game(500 + g, 12), 'winner': 1,
+                                          'real_draw': False}, source='renjunet', split='val' if g < 4 else 'train',
+                                         outcome_weight=0.1, from_ply=3)
+            write_atomic({tmp / 'replay_rows.jsonl.gz': [r.to_dict() for r in replay_rows]})
+            manifest = build_value_cache(tmp / 'replay_rows.jsonl.gz', tmp / 'replay_cache', progress_seconds=1e9)
+            meta = json.loads(parent.with_name('best.json').read_text())
+            meta['labels_sha256'] = manifest['labels_sha256']
+            parent.with_name('best.json').write_text(json.dumps(meta))
+            from tests.test_tb_v3_net import write_models
+            policy, _ = write_models(tmp / 'pol', seed=9)
+            cycle_rows, cycle_cache = cycle_value_rows(tmp, 'c8', policy, parent, cycle=8)
+            config = tmp / 'value.json'
+            config.write_text(json.dumps({'seed': 20261025, 'batch_size': 16, 'epochs': 1.0, 'evaluations': 2,
+                                          'h6_guard_ratio': 100.0}))
+            ref = tv.run(argparse.Namespace(cycle=8, config=config, cycle_cache=cycle_cache, cycle_rows=cycle_rows,
+                                            replay_cache=tmp / 'replay_cache', parent=parent, device='cpu',
+                                            out_dir=tmp / 'ref', recipe_decision=None, allow_dirty=True,
+                                            allow_stand_in=True), log=QUIET)
+            self.assertEqual(ref['verdict'], 'CANDIDATE')
+            body = json.loads(cpath.read_text())
+            body['models'] = {'c5': identity((parent, parent.with_name('best.json'))),
+                              'c8': identity((tmp / 'ref/best.pt', tmp / 'ref/best.json'))}
+            body['comparisons'] = ['c8:c5']
+            body['frozen_state_sha256'] = ref['frozen_state_sha256']
+            cpath.write_text(json.dumps(body))
+            contract, csha = r2.load_contract(cpath)
+            amendment = committed_amendment()
+            amendment['parent'] = {'path': str(cpath), 'sha256': csha}
+            amendment['r2_0b']['reference_record'] = {'path': 'ref/record.json',
+                                                      'sha256': r2.file_sha256(tmp / 'ref/record.json')}
+            amendment['r2_0b']['config'] = {'path': 'value.json', 'sha256': r2.file_sha256(config)}
+            apath = tmp / 'A1.json'
+            apath.write_text(json.dumps(amendment))
+
+            def train_args(seed, out, **change):
+                return argparse.Namespace(**{
+                    'root': tmp, 'contract': cpath, 'amendment': apath, 'seed': seed, 'cycle_cache': cycle_cache,
+                    'cycle_rows': cycle_rows, 'replay_cache': tmp / 'replay_cache', 'parent': parent,
+                    'device': 'cpu', 'out_dir': tmp / out, 'allow_dirty': True, 'allow_draft': True,
+                    'allow_stand_in': True, 'allow_unapproved': True, **change})
+
+            with self.assertRaisesRegex(ValueError, 'R2-0B is not approved'):
+                seed_tool.train(train_args(20261025, 'runs_x', allow_unapproved=False), log=QUIET)
+            self.assertFalse((tmp / 'runs_x').exists())
+            with self.assertRaisesRegex(ValueError, 'not a training seed'):
+                seed_tool.train(train_args(999, 'runs_y'), log=QUIET)
+            with self.assertRaisesRegex(ValueError, 'not the reference run\'s replay'):
+                seed_tool.train(train_args(31001, 'runs_z', replay_cache=cycle_cache), log=QUIET)
+            rep = seed_tool.train(train_args(20261025, 'rep'), log=QUIET)
+            self.assertEqual((rep['role'], rep['verdict'], rep['hdev_used']), ('reproduction', 'CANDIDATE', False))
+            self.assertEqual(rep['best_step'], ref['best']['step'])
+            other = seed_tool.train(train_args(31001, 'seed-31001'), log=QUIET)
+            self.assertEqual(other['role'], 'seed_spread')
+            self.assertFalse(r2.compare_assignments(rep['assignment'], other['assignment'])['identical'])
+            self.assertEqual(json.loads((tmp / 'seed-31001/config.json').read_text())['seed'], 31001)
+            rargs = argparse.Namespace(root=tmp, contract=cpath, amendment=apath, cache=tmp / 'runs/cache',
+                                       reference_model=f"{tmp / 'ref/best.pt'},{tmp / 'ref/best.json'}",
+                                       run_dir=tmp / 'rep', device='cpu', output=tmp / 'out/repro.json',
+                                       allow_dirty=True, allow_draft=True, allow_unapproved=True)
+            out = seed_tool.reproduce(rargs, log=QUIET)
+            self.assertEqual(out['verdict']['verdict'], 'BITWISE_REPRODUCED', out['verdict'])
+            self.assertTrue(out['assignment']['compare']['identical'])
+            self.assertEqual(out['predictions']['d4']['max_abs'], 0.0)
+            self.assertEqual(out['primary']['abs_difference'], 0.0)
+            with self.assertRaisesRegex(ValueError, 'not the reproduction run'):
+                seed_tool.reproduce(argparse.Namespace(**{**vars(rargs), 'run_dir': tmp / 'seed-31001',
+                                                          'output': tmp / 'out/r2.json'}), log=QUIET)
+
+
 if __name__ == '__main__':
     unittest.main()

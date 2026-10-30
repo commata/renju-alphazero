@@ -1606,3 +1606,136 @@ git push origin feat/h7-c1
 ```
 
 - D의 출력(주 지표, 구성 지표, 방향 역전, 기여 게임 수, 분모 0 회차)을 그대로 보고한다. 이 결과로 ε를 확정하거나 승급·기력 향상을 판정하지 않는다.
+
+### 9.16 R2-0A 결과, 수정안 A1(X1 탐색 부록 · R2-0B 준비) (2026-10-30)
+
+**R2-0A**(`docs/h7r/r2/R2-DIAG-1/r2_0a.json`, 커밋 `4944acd`): 결과 표와 읽기는 초안 §14에 있다.
+
+- 비교 6개 모두 주 지표 구간이 0을 포함하지 않는다.
+- 과거 T-val과 결과가 다른 원인은 분리되지 않았다. 평가 분포와 지표 정의(raw/D4, 전체/network, pooled/macro)도 다르다.
+- c8:c5의 pooled 구간은 0을 포함한다.
+- ε는 null이고, 승급·기력 판정은 하지 않는다.
+
+**수정안 A1**(`docs/h7r/r2/R2-DIAG-1-A1.json`, fixed): 고정 계약을 바꾸지 않고 덧붙인다.
+
+- X1(승인): 차례별 기술적 분해와 게임 단위 교차 보정 평가. 사후 탐색 분석이다.
+- R2-0B(미승인)
+  - 재현 허용 오차 `abs_primary` ≤ 0.0002, `max_abs_prediction` ≤ 0.001을 운영상 허용치로 고정했다.
+  - 학습 4회와 ε 확정은 별도 승인을 받아야 한다.
+- 도구
+  - `scripts/h7r_r2_x1.py`
+  - `scripts/h7r_r2_seed.py`(`train` / `reproduce`, 승인 전에는 실행 거부)
+  - 계산 함수: `src/hybrid/h7r_r2.py`
+- 테스트(`tests/test_h7r_r2.py`)
+  - 주 지표와 같은 가중치로 분해되는지(합 = 원 손실)
+  - fold 밖 보정의 정의
+  - X1 실행 전체
+  - stand-in 기준으로 처음부터 끝까지
+    - 승인 전 거부
+    - seed 20261025 재실행이 CPU에서 `BITWISE_REPRODUCED`
+    - 다른 seed는 다른 배정
+
+**X1 명령**(데스크톱 `~/renju-h6`. 블록이 실패하면 멈추고 다음으로 가지 않는다. 출력이 이미 있으면 도구가 덮어쓰지 않는다)
+
+A. 상태 확인과 입력 SHA
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "STOP: 추적 파일 변경 있음"; git status --short; exit 1; }
+python scripts/check_track_b_frozen.py
+python - <<'PY'
+from pathlib import Path
+from hybrid import h7r_r2 as r2
+from hybrid.h7c_nmask import committed
+c, sha = r2.load_contract('docs/h7r/r2/R2-DIAG-1.contract.json')
+a, asha = r2.load_amendment('docs/h7r/r2/R2-DIAG-1-A1.json', c, sha)
+assert committed(Path('docs/h7r/r2/R2-DIAG-1-A1.json')) and a['x1']['approved'] and not a['r2_0b']['approved']
+for name, pin in a['x1']['inputs'].items():
+    assert r2.file_sha256(pin['path']) == pin['sha256'], f'{name}: SHA differs'
+print('PASS contract', sha[:12], 'amendment', asha[:12], 'inputs pinned')
+PY
+[ ! -e docs/h7r/r2/R2-DIAG-1/x1_side_offset.json ] || { echo "STOP: X1 출력이 이미 있음 (보존)"; exit 1; }
+echo "A PASS"
+SH
+```
+
+B. X1 실행(CPU 계산과 경로 판정, 수 분 이내)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+LOG=runs/h7r/R2-DIAG-1/x1-$(date +%Y%m%d-%H%M%S).log
+python -u scripts/h7r_r2_x1.py --contract docs/h7r/r2/R2-DIAG-1.contract.json \
+  --amendment docs/h7r/r2/R2-DIAG-1-A1.json --cache runs/h7r/R1-HDEV-1/cache \
+  --result docs/h7r/r2/R2-DIAG-1/r2_0a.json --predictions runs/h7r/R2-DIAG-1/predictions.pt \
+  --output docs/h7r/r2/R2-DIAG-1/x1_side_offset.json 2>&1 | tee "$LOG"
+echo "log: $LOG"
+SH
+```
+
+C. 연결 확인과 요약 출력
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+python - <<'PY'
+import json
+import subprocess
+from pathlib import Path
+from hybrid import h7r_r2 as r2
+out = json.loads(Path('docs/h7r/r2/R2-DIAG-1/x1_side_offset.json').read_text())
+c, sha = r2.load_contract('docs/h7r/r2/R2-DIAG-1.contract.json')
+a, asha = r2.load_amendment('docs/h7r/r2/R2-DIAG-1-A1.json', c, sha)
+head = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
+assert out['format'] == r2.X1_FORMAT and out['exploratory'] is True
+assert out['contract_sha256'] == sha and out['amendment_sha256'] == asha
+assert out['git'] == {'commit': head, 'dirty': False}, out['git']
+assert out['inputs']['result_sha256'] == a['x1']['inputs']['result']['sha256']
+assert out['inputs']['predictions_sha256'] == a['x1']['inputs']['predictions']['sha256']
+print('PASS links: contract', sha[:12], 'amendment', asha[:12], 'commit', head[:12], 'folds', out['folds']['games'])
+fmt = lambda x: 'n/a' if x is None else f'{x:+.6f}'
+for p in ('d4', 'raw'):
+    for g in ('network', 'network/outcome', 'network/proof'):
+        print(f'== {p} {g}')
+        for name, m in out['models'].items():
+            cell = m[p][g]
+            d = cell['descriptive']
+            sides = '  '.join(f"{s}: share {d['sides'][s]['share']:.3f} mu {fmt(d['sides'][s]['mean_residual'])}"
+                              for s in ('black', 'white'))
+            print(f"  {name:5s} L {d['loss']:.6f} bias {d['bias']:.6f} var {d['variance']:.6f} "
+                  f"L_cf {cell['crossfit']['loss']:.6f}  {sides}")
+        for spec, comp in out['comparisons'].items():
+            cell = comp[p][g]
+            parts = []
+            for key in ('loss', 'bias', 'variance', 'crossfit'):
+                ci = cell[key]['ci95']
+                ci_text = 'n/a' if ci is None else f'[{ci[0]:+.6f}, {ci[1]:+.6f}]'
+                parts.append(f"{key} {fmt(cell[key]['difference'])} {ci_text} z{cell[key]['zero_denominator_resamples']}")
+            print(f'  {spec:8s} ' + '  '.join(parts))
+PY
+sha256sum docs/h7r/r2/R2-DIAG-1/x1_side_offset.json
+SH
+```
+
+D. 요약만 커밋
+
+```bash
+cd ~/renju-h6
+git status --short                       # docs/h7r/r2/R2-DIAG-1/x1_side_offset.json 하나만 새로 보여야 한다
+git add docs/h7r/r2/R2-DIAG-1/x1_side_offset.json
+git commit -m "H7-R R2-0A X1: side offset decomposition (exploratory, summary only)"
+git push origin feat/h7-c1
+```
+
+- X1은 사후 탐색이다. 결과가 한 방향을 보여도 D3을 바로 정하지 않는다. 원 지표, 교차 보정 지표, 종류별 결과, R2-0B의 seed 변동을 모두 모은 뒤 다음 하위 계약을 제안한다.
+- R2-0B 명령은 승인할 때 준다. `scripts/h7r_r2_seed.py`는 지금 실행해도 "R2-0B is not approved"로 멈춘다.
