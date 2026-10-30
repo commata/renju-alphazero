@@ -1445,5 +1445,164 @@ git push origin feat/h7-c1
   - checkpoint에서 재계산하는 trunk hash
   - `mask:c8`이 선택 지표까지 다른 recipe 비교라는 점
 - 구현: `scripts/h7r_r2.py eval`, `src/hybrid/h7r_r2.py`, 계약 draft `docs/h7r/r2/R2-DIAG-1.contract.json`, 테스트 `tests/test_h7r_r2.py`
-  - 계약이 draft이므로 실행을 거부한다. R2-0A를 실행하려면 사용자가 §10의 선택을 확정하고, 계약을 `fixed` + `stages.R2-0A.approved: true`로 바꿔 커밋해야 한다.
+  - 계약이 draft이므로 실행을 거부한다. R2-0A를 실행하려면 사용자가 §10의 선택을 확정하고, 계약을 `fixed` + `stages.R2-0A.approved: true`로 바꿔 커밋해야 한다. (§9.15에서 확정)
   - R2-0B 학습 도구와 재현 허용 오차는 아직 없다. 그 전에 계약과 도구를 추가한다.
+
+### 9.15 R2-0A 계약 확정과 실행 명령 (2026-10-30)
+
+**확정**(`docs/h7r/r2/R2-DIAG-1.contract.json`, 사용자 승인)
+
+| 항목 | 값 |
+|---|---|
+| status | `fixed` |
+| R2-0A | 승인: 기존 모델 6개를 H-dev에서 평가만 한다 |
+| R2-0B | 미승인 |
+| ε | null |
+| 재현 허용 오차 | null |
+
+- 주 지표·구성 지표 3개, 모델·비교 6개, bootstrap 20,000회 / seed 20261030, ply 구간은 초안대로다.
+- 승인하지 않은 것: R2-0B 학습, ε 확정, D1–D5, 새 대국, Rapfi, H-conf / A-conf, champion 교체
+- 구현 보완(자세한 내용은 초안 §13)
+  - `preflight`: 검사만 한다.
+  - `eval`: 모델 6개를 모두 검사한 뒤에 평가를 시작한다.
+  - 재현 판정이 state hash 일치만으로 조기 통과하던 경로를 막았다.
+- 원본 H6 v3 metadata의 `frozen_state_sha256` 선언은 이 저장소에서 확인할 수 없다(파일 없음). 아래 A가 데스크톱에서 먼저 확인한다. 선언이 없으면 멈추고, 호환 규칙을 정한 뒤 다시 실행한다.
+
+이 세션 환경에는 H-dev와 모델 파일이 없어서 **R2-0A를 실행하지 않았다**. 아래 명령은 데스크톱(`~/renju-h6`)용이다. 각 블록은 실패하면 멈추며, 앞 블록이 PASS일 때만 다음으로 간다. 정식 실행에는 `--allow-dirty`를 쓰지 않는다. draft 우회는 명령행 옵션 자체가 없다.
+
+**A. 상태 확인**(브랜치, clean tree, fixed 계약과 승인, frozen 검사, 모델 파일과 선언, 출력 없음)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+[ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: 브랜치"; exit 1; }
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "STOP: 추적 파일 변경 있음"; git status --short; exit 1; }
+python scripts/check_track_b_frozen.py
+python - <<'PY'
+import json
+from pathlib import Path
+from hybrid import h7r_r2 as r2
+from hybrid.h7c_nmask import committed
+path = Path('docs/h7r/r2/R2-DIAG-1.contract.json')
+c, sha = r2.load_contract(path)
+assert c['status'] == 'fixed' and committed(path), 'contract not fixed / committed'
+assert c['stages']['R2-0A']['approved'] and not c['stages']['R2-0B']['approved'], 'stage approvals'
+assert c['epsilon']['value'] is None
+files = {'c5': 'runs/h7c/c5/value', 'c6': 'runs/h7c/c6/value', 'c7': 'runs/h7c/c7/value',
+         'c8': 'runs/h7c/c8/value', 'mask': 'runs/h7c/nmask/value', 'orig': 'runs/h6_value_head_v3'}
+for name, folder in files.items():
+    pt, meta = Path(folder) / 'best.pt', Path(folder) / 'best.json'
+    spec = c['models'][name]
+    ok = (r2.file_sha256(pt) == spec['value_checkpoint_sha256']
+          and r2.file_sha256(meta) == spec['value_metadata_sha256'])
+    declared = json.loads(meta.read_text()).get('frozen_state_sha256')
+    print(f"{name:5s} files {'PASS' if ok else 'FAIL'}  declared frozen {declared}")
+    assert ok, f'{name}: file SHA differs from the contract'
+    assert declared == c['frozen_state_sha256'], f'{name}: declaration missing or different: STOP'
+print('PASS contract', sha[:12], '+ six model files and declarations')
+PY
+for p in docs/h7r/r2/R2-DIAG-1/r2_0a.json runs/h7r/R2-DIAG-1/predictions.pt; do
+  [ ! -e "$p" ] || { echo "STOP: $p 이미 있음 (지우지 말고 보존)"; exit 1; }
+done
+echo "A PASS"
+SH
+```
+
+**B. preflight**(계약 → H-dev binding → 모델 6개의 파일 SHA와 checkpoint에서 재계산한 frozen state. 아무것도 쓰지 않는다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+python -u scripts/h7r_r2.py preflight --contract docs/h7r/r2/R2-DIAG-1.contract.json \
+  --cache runs/h7r/R1-HDEV-1/cache --device cuda \
+  --model c5=runs/h7c/c5/value/best.pt,runs/h7c/c5/value/best.json \
+  --model c6=runs/h7c/c6/value/best.pt,runs/h7c/c6/value/best.json \
+  --model c7=runs/h7c/c7/value/best.pt,runs/h7c/c7/value/best.json \
+  --model c8=runs/h7c/c8/value/best.pt,runs/h7c/c8/value/best.json \
+  --model mask=runs/h7c/nmask/value/best.pt,runs/h7c/nmask/value/best.json \
+  --model orig=runs/h6_value_head_v3/best.pt,runs/h6_value_head_v3/best.json
+SH
+```
+
+**C. R2-0A 평가**(한 번만 실행한다. 예상 시간은 수 분이며, 단계마다 진행 줄을 출력한다. 원시 예측은 `runs/`에 남는다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+mkdir -p runs/h7r/R2-DIAG-1
+LOG=runs/h7r/R2-DIAG-1/r2_0a-$(date +%Y%m%d-%H%M%S).log
+python -u scripts/h7r_r2.py eval --contract docs/h7r/r2/R2-DIAG-1.contract.json \
+  --cache runs/h7r/R1-HDEV-1/cache --device cuda \
+  --model c5=runs/h7c/c5/value/best.pt,runs/h7c/c5/value/best.json \
+  --model c6=runs/h7c/c6/value/best.pt,runs/h7c/c6/value/best.json \
+  --model c7=runs/h7c/c7/value/best.pt,runs/h7c/c7/value/best.json \
+  --model c8=runs/h7c/c8/value/best.pt,runs/h7c/c8/value/best.json \
+  --model mask=runs/h7c/nmask/value/best.pt,runs/h7c/nmask/value/best.json \
+  --model orig=runs/h6_value_head_v3/best.pt,runs/h6_value_head_v3/best.json \
+  --predictions runs/h7r/R2-DIAG-1/predictions.pt \
+  --output docs/h7r/r2/R2-DIAG-1/r2_0a.json 2>&1 | tee "$LOG"
+echo "log: $LOG"
+SH
+```
+
+- 실패하면 남은 파일을 지우지 않는다. 그 출력을 그대로 보고하고 다음 블록으로 가지 않는다.
+
+**D. 출력과 예측의 연결 확인, 요약 출력**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+python - <<'PY'
+import json
+import subprocess
+from pathlib import Path
+from hybrid import h7r_r2 as r2
+out = json.loads(Path('docs/h7r/r2/R2-DIAG-1/r2_0a.json').read_text())
+c, sha = r2.load_contract('docs/h7r/r2/R2-DIAG-1.contract.json')
+head = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
+assert out['format'] == r2.RESULT_FORMAT and out['stage'] == 'R2-0A'
+assert out['contract_sha256'] == sha and out['contract_status'] == 'fixed'
+assert out['git'] == {'commit': head, 'dirty': False}, out['git']
+assert out['predictions']['sha256'] == r2.file_sha256(out['predictions']['path']), 'predictions SHA'
+assert all(out['hdev'][k] == c['hdev'][k] for k in r2.HDEV_SHA_KEYS) and out['hdev']['games'] == 396
+assert out['epsilon']['value'] is None
+print('PASS links: contract', sha[:12], 'commit', head[:12], 'predictions', out['predictions']['sha256'][:12])
+print('routes', out['route_counts'], 'minutes', out['minutes'])
+fmt = lambda x: 'n/a' if x is None else f'{x:+.6f}'
+for spec, s in out['summary'].items():
+    items = [('primary', s['primary'])] + [(f"{m['metric']['group']}/{m['metric']['aggregate']}", m)
+                                           for m in s['components']]
+    for label, m in items:
+        ci = m.get('ci95')
+        ci_text = 'n/a' if ci is None else f'[{ci[0]:+.6f}, {ci[1]:+.6f}]'
+        print(f"{spec:8s} {label:24s} {fmt(m['difference'])} CI95 {ci_text}  games {m['games']}"
+              f"  zero-den {m.get('zero_denominator_resamples')}  readable {m['readable']}")
+    print(f"{spec:8s} reversals: {', '.join(s['reversals']) or 'none'}")
+print('epsilon: null; sample part', fmt(out['epsilon']['sample']))
+PY
+sha256sum docs/h7r/r2/R2-DIAG-1/r2_0a.json runs/h7r/R2-DIAG-1/predictions.pt
+SH
+```
+
+**E. 요약만 커밋**(원시 예측과 로그는 `runs/`에 남고 커밋하지 않는다)
+
+```bash
+cd ~/renju-h6
+git status --short                       # docs/h7r/r2/R2-DIAG-1/r2_0a.json 하나만 새로 보여야 한다
+git add docs/h7r/r2/R2-DIAG-1/r2_0a.json
+git commit -m "H7-R R2-0A: existing value models on H-dev (R2-DIAG-1, summary only)"
+git push origin feat/h7-c1
+```
+
+- D의 출력(주 지표, 구성 지표, 방향 역전, 기여 게임 수, 분모 0 회차)을 그대로 보고한다. 이 결과로 ε를 확정하거나 승급·기력 향상을 판정하지 않는다.

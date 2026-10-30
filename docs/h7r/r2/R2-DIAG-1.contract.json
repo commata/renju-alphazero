@@ -1,7 +1,7 @@
 {
  "format": "h7r-r2-contract-v1",
  "contract_id": "R2-DIAG-1",
- "status": "draft",
+ "status": "fixed",
  "purpose": "r2_diagnosis",
  "design": "docs/h7r/r2/R2-DIAG-1-draft.md",
  "hdev": {
@@ -128,7 +128,8 @@
  },
  "stages": {
   "R2-0A": {
-   "approved": false
+   "approved": true,
+   "scope": "evaluation of the six existing models on H-dev only"
   },
   "R2-0B": {
    "approved": false

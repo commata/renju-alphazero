@@ -22,11 +22,30 @@ def committed_contract() -> dict:
     return json.loads(CONTRACT.read_text(encoding='utf-8'))
 
 
+def draft_contract() -> dict:
+    """An explicit draft fixture from the committed contract: draft status, no stage approved."""
+    body = committed_contract()
+    body['status'] = 'draft'
+    body['stages'] = {'R2-0A': {'approved': False}, 'R2-0B': {'approved': False}}
+    return body
+
+
 class ContractTest(unittest.TestCase):
-    def test_committed_draft(self):
+    def test_committed_contract(self):
         contract, _ = r2.load_contract(CONTRACT)
-        self.assertEqual(contract['status'], 'draft')
-        self.assertFalse(any(s['approved'] for s in contract['stages'].values()))
+        self.assertEqual(contract['status'], 'fixed')
+        self.assertTrue(contract['stages']['R2-0A']['approved'])
+        self.assertFalse(contract['stages']['R2-0B']['approved'])  # no training, no epsilon
+        self.assertIsNone(contract['epsilon']['value'])
+        self.assertEqual(contract['reproduction']['tolerance'], {'max_abs_prediction': None, 'abs_primary': None})
+        self.assertEqual(contract['comparisons'], ['c6:c5', 'c7:c5', 'c8:c5', 'mask:c5', 'orig:c5', 'mask:c8'])
+        self.assertEqual(contract['bootstrap'], {'samples': 20000, 'seed': 20261030, 'unit': 'source game',
+                                                 'method': 'percentile', 'level': 0.95})
+        self.assertEqual(contract['metrics']['ply_bins'], [5, 20, 40, 80])
+        self.assertEqual(contract['metrics']['components'], [
+            {'prediction': 'd4', 'group': 'network/outcome', 'aggregate': 'macro'},
+            {'prediction': 'd4', 'group': 'network/proof', 'aggregate': 'macro'},
+            {'prediction': 'd4', 'group': 'network', 'aggregate': 'pooled'}])
         self.assertEqual(contract['metrics']['primary'], {'prediction': 'd4', 'group': 'network', 'aggregate': 'macro'})
         self.assertEqual(contract['epsilon']['reference'], 'c8:c5')
         manifest = json.loads((ROOT / contract['hdev']['manifest']).read_text())
@@ -40,7 +59,8 @@ class ContractTest(unittest.TestCase):
             self.assertIn(spec['value_metadata_sha256'], (ROOT / spec['source']).read_text(), name)
 
     def test_rules(self):
-        base = committed_contract()
+        base = draft_contract()
+        r2.check_contract(base)
 
         def refused(change, message):
             body = copy.deepcopy(base)
@@ -60,6 +80,7 @@ class ContractTest(unittest.TestCase):
         refused(lambda b: b['reproduction'].update(seed=31001), 'outside the training seeds')
         refused(lambda b: b['reproduction']['tolerance'].update(abs_primary=0), 'positive or null')
         refused(lambda b: b['models']['c5'].update(value_checkpoint_sha256='x'), 'four SHA-256')
+        refused(lambda b: b['stages']['R2-0B'].update(approved=True), 'a draft contract approves no stage')
         fixed = copy.deepcopy(base)
         fixed['status'] = 'fixed'
         fixed['stages']['R2-0A']['approved'] = True
@@ -144,15 +165,25 @@ class GateTest(unittest.TestCase):
     TOL = {'max_abs_prediction': 1e-3, 'abs_primary': 1e-4}
 
     def test_reproduction(self):
-        same = {'state_sha256': ('a', 'a')}
-        self.assertEqual(r2.reproduction_verdict(same, {'max_abs_prediction': None, 'abs_primary': None})['verdict'],
-                         'BITWISE_REPRODUCED')
-        close = {'state_sha256': ('a', 'b'), 'assignment': ('x', 'x'), 'best_step': (147, 147),
+        open_tol = {'max_abs_prediction': None, 'abs_primary': None}
+        same = {'state_sha256': ('a' * 64, 'a' * 64), 'assignment': ('x', 'x'), 'best_step': (147, 147)}
+        self.assertEqual(r2.reproduction_verdict(same, open_tol)['verdict'], 'BITWISE_REPRODUCED')
+        # an equal state never skips the required checks
+        for change, reason in (({'assignment': None}, 'assignment missing'),
+                               ({'assignment': ('x', 'y')}, 'assignment differs'),
+                               ({'best_step': None}, 'best_step missing'),
+                               ({'best_step': (147, None)}, 'best_step missing'),
+                               ({'best_step': (147, 210)}, 'best_step differs'),
+                               ({'state_sha256': ('a', 'a')}, 'state_sha256 missing')):
+            out = r2.reproduction_verdict({**same, **change}, self.TOL)
+            self.assertEqual(out['verdict'], 'NOT_REPRODUCED', change)
+            self.assertIn(reason, out['reasons'])
+        close = {'state_sha256': ('a' * 64, 'b' * 64), 'assignment': ('x', 'x'), 'best_step': (147, 147),
                  'max_abs_prediction': 5e-4, 'abs_primary': 1e-5}
         self.assertEqual(r2.reproduction_verdict(close, self.TOL)['verdict'], 'METRIC_ONLY')
-        open_tol = r2.reproduction_verdict(close, {'max_abs_prediction': None, 'abs_primary': None})
-        self.assertEqual(open_tol['verdict'], 'NOT_REPRODUCED')  # no tolerance fixed: never METRIC_ONLY
-        self.assertIn('abs_primary tolerance not fixed', open_tol['reasons'])
+        unfixed = r2.reproduction_verdict(close, open_tol)
+        self.assertEqual(unfixed['verdict'], 'NOT_REPRODUCED')  # no tolerance fixed: never METRIC_ONLY
+        self.assertIn('abs_primary tolerance not fixed', unfixed['reasons'])
         for change, reason in (({'assignment': ('x', 'y')}, 'assignment differs'),
                                ({'best_step': (147, 210)}, 'best_step differs'),
                                ({'max_abs_prediction': 0.01}, 'max_abs_prediction'),
@@ -270,6 +301,14 @@ class ModelIdentityTest(unittest.TestCase):
                 r2.check_model('a', identity(models['bad']), *models['a'], frozen, 'cpu')
             with self.assertRaisesRegex(ValueError, 'metadata frozen_state_sha256'):
                 r2.check_model('a', identity(models['a']), *models['a'], '0' * 64, 'cpu')
+            # a metadata file without the declaration is refused (no compatibility rule in R2-DIAG-1)
+            meta = json.loads(models['a'][1].read_text())
+            del meta['frozen_state_sha256']
+            bare = Path(tmp) / 'bare.json'
+            bare.write_text(json.dumps(meta))
+            with self.assertRaisesRegex(ValueError, 'metadata frozen_state_sha256 None'):
+                r2.check_model('a', {**identity(models['a']), 'value_metadata_sha256': r2.file_sha256(bare)},
+                               models['a'][0], bare, frozen, 'cpu')
 
 
 class EvaluateTest(unittest.TestCase):
@@ -320,6 +359,44 @@ class EvaluateTest(unittest.TestCase):
         for k, v in change.items():
             setattr(a, k, v)
         return a
+
+    def test_contract_gate_and_model_preflight(self):
+        from scripts import h7r_holdout as ho
+        from scripts import h7r_r2 as cli
+
+        with TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            cpath, models = self.fixture(tmp)
+            fixed = json.loads(cpath.read_text())
+
+            def gate(body, message):
+                cpath.write_text(json.dumps(body))
+                with mock.patch('hybrid.h7c_nmask.committed', return_value=True), \
+                        self.assertRaisesRegex(ValueError, message):
+                    cli.evaluate(self.args(tmp, cpath, models, allow_draft=False), log=QUIET)
+
+            draft = {**copy.deepcopy(fixed), 'status': 'draft',
+                     'stages': {'R2-0A': {'approved': False}, 'R2-0B': {'approved': False}}}
+            gate(draft, 'not a fixed, committed R2 contract')
+            unapproved = copy.deepcopy(fixed)
+            unapproved['stages']['R2-0A']['approved'] = False
+            gate(unapproved, 'R2-0A is not approved')
+            cpath.write_text(json.dumps(fixed))
+            with mock.patch('hybrid.h7c_nmask.committed', return_value=True):
+                out = cli.preflight(self.args(tmp, cpath, models, allow_draft=False), log=QUIET)
+            self.assertEqual(set(out['models']), set(models))
+            self.assertFalse((tmp / 'out/r2_0a.json').exists())  # preflight writes nothing
+            # every model is checked before any route or prediction: a bad last model stops the run first
+            bad, frozen = shared_trunk_models(tmp / 'bad', ['x'], tamper='x')
+            body = copy.deepcopy(fixed)
+            body['models']['twin'] = identity(bad['x'])
+            cpath.write_text(json.dumps(body))
+            with mock.patch.object(ho, 'routes') as routes, mock.patch.object(r2, 'predict') as predict, \
+                    self.assertRaisesRegex(ValueError, "model twin: the loaded checkpoint's frozen state"):
+                cli.evaluate(self.args(tmp, cpath, {**models, 'twin': bad['x']}), log=QUIET)
+            routes.assert_not_called()
+            predict.assert_not_called()
+            self.assertFalse((tmp / 'out/r2_0a.json').exists())
 
     def test_eval(self):
         from scripts import h7r_r2 as cli

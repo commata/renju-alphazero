@@ -1,6 +1,8 @@
 """H7-R R2-0A: the existing value models on the H-dev cache under a fixed R2 contract (docs/h7r/r2/R2-DIAG-1-draft.md).
 
-    eval    checks the contract (fixed, committed, R2-0A approved), the H-dev cache against the contract's hashes
+    preflight  the checks of eval only (contract, H-dev cache, every model's files and recomputed frozen state);
+               evaluates and writes nothing
+    eval       checks the contract (fixed, committed, R2-0A approved), the H-dev cache against the contract's hashes
             (contract -> 400 games -> rows -> cache files, ``h7r_holdout.checked_cache``), every model's checkpoint and
             metadata files and the frozen state recomputed from the loaded checkpoint; then the raw and D4 values of
             every row, the metrics of ``hybrid.h7r_r2`` per model / prediction / group, and the contract's paired
@@ -86,20 +88,51 @@ def check_hdev(contract: dict, cache: Path, root: Path):
     return hcontract, data, info, checks
 
 
+def approved_contract(args, root: Path) -> tuple[dict, str]:
+    """The contract, fixed, committed and with R2-0A approved (``allow_draft``: tests only, no command-line option)."""
+    from hybrid.h7c_nmask import committed
+
+    contract, sha = r2.load_contract(args.contract)
+    if not getattr(args, 'allow_draft', False):
+        r2.require(contract['status'] == 'fixed' and committed(args.contract, root),
+                   f'{args.contract}: not a fixed, committed R2 contract')
+        r2.require(contract['stages']['R2-0A']['approved'], 'R2-0A is not approved in the contract')
+    return contract, sha
+
+
+def check_models(contract: dict, models: dict, device: str, log=print) -> tuple[dict, dict]:
+    """Every model's files and recomputed frozen state, all of them before any evaluation starts."""
+    loaded, identity = {}, {}
+    for i, (name, (checkpoint, metadata)) in enumerate(models.items(), 1):
+        loaded[name], identity[name] = r2.check_model(name, contract['models'][name], checkpoint, metadata,
+                                                      contract['frozen_state_sha256'], device)
+        log(f"[h7r-r2] PASS model {i}/{len(models)} {name}: files, frozen state recomputed "
+            f"{identity[name]['frozen_state_sha256']['recomputed'][:12]} (declared "
+            f"{str(identity[name]['frozen_state_sha256']['declared'])[:12]})", flush=True)
+    return loaded, identity
+
+
+def preflight(args, log=print) -> dict:
+    """The checks of ``eval`` without evaluating or writing: contract, H-dev cache, every model."""
+    root = Path(getattr(args, 'root', ROOT))
+    contract, sha = approved_contract(args, root)
+    models = parse_models(args.model, contract)
+    hcontract, _, info, hdev_checks = check_hdev(contract, Path(args.cache), root)
+    log(f"[h7r-r2] PASS H-dev {hcontract['contract_id']}: {len(info['game_ids'])} games, {len(info['ply']):,} rows, "
+        f"binding {hdev_checks['cache_binding_sha256'][:12]}", flush=True)
+    _, identity = check_models(contract, models, args.device, log)
+    return {'contract_sha256': sha, 'hdev': hdev_checks, 'models': identity}
+
+
 def evaluate(args, log=print) -> dict:
     import torch
 
     import h7r_holdout as ho
-    from hybrid.h7c_nmask import committed
     from run_mcts_v8_benchmark import _git_commit, _git_dirty
 
     root = Path(getattr(args, 'root', ROOT))
     started = time.monotonic()
-    contract, contract_sha = r2.load_contract(args.contract)
-    if not getattr(args, 'allow_draft', False):  # tests only: not a command-line option
-        r2.require(contract['status'] == 'fixed' and committed(args.contract, root),
-                   f'{args.contract}: not a fixed, committed R2 contract')
-        r2.require(contract['stages']['R2-0A']['approved'], 'R2-0A is not approved in the contract')
+    contract, contract_sha = approved_contract(args, root)
     git = {'commit': _git_commit(), 'dirty': _git_dirty()}
     r2.require(git['dirty'] is False or args.allow_dirty, 'the tree is dirty: R2 records must name a clean commit')
     for path in [args.output] + ([args.predictions] if args.predictions else []):
@@ -111,6 +144,7 @@ def evaluate(args, log=print) -> dict:
 
     log('[h7r-r2] checking the H-dev cache', flush=True)
     hcontract, data, info, hdev_checks = check_hdev(contract, Path(args.cache), root)
+    loaded, identity = check_models(contract, models, args.device, log)
     log('[h7r-r2] routes (frozen exact_leaf)', flush=True)
     route = ho.routes(data)
     target, weight = data['value'].double().tolist(), data['weight'].double().tolist()
@@ -120,13 +154,10 @@ def evaluate(args, log=print) -> dict:
                            metrics['ply_bins'])
     n_games = len(info['game_ids'])
 
-    identity, predictions = {}, {}
-    for i, (name, (checkpoint, metadata)) in enumerate(models.items(), 1):
-        log(f'[h7r-r2] model {i}/{len(models)} {name}: identity and {len(target):,} rows x (raw, D4)', flush=True)
-        model, identity[name] = r2.check_model(name, contract['models'][name], checkpoint, metadata,
-                                               contract['frozen_state_sha256'], args.device)
-        predictions[name] = r2.predict(model, data, args.device)
-        del model
+    predictions = {}
+    for i, name in enumerate(models, 1):
+        log(f'[h7r-r2] predictions {i}/{len(models)} {name}: {len(target):,} rows x (raw, D4)', flush=True)
+        predictions[name] = r2.predict(loaded.pop(name), data, args.device)
 
     boot = contract['bootstrap']
     log(f"[h7r-r2] bootstrap: {boot['samples']:,} replicates over {n_games} source games", flush=True)
@@ -213,6 +244,11 @@ def build_parser() -> argparse.ArgumentParser:
     ev.add_argument('--predictions', type=Path, help='row-level predictions (under data/ or runs/)')
     ev.add_argument('--output', type=Path, required=True)
     ev.add_argument('--allow-dirty', action='store_true', help='tests only')
+    pre = sub.add_parser('preflight', help='the checks of eval only: contract, H-dev cache, every model')
+    pre.add_argument('--contract', type=Path, required=True)
+    pre.add_argument('--cache', type=Path, required=True)
+    pre.add_argument('--model', action='append', required=True, help='NAME=value checkpoint,value metadata')
+    pre.add_argument('--device', default='cuda')
     return parser
 
 
@@ -231,6 +267,10 @@ def main(argv=None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        if args.command == 'preflight':
+            preflight(args)
+            print('[h7r-r2] preflight PASS (nothing evaluated or written)', flush=True)
+            return 0
         out = evaluate(args)
     except (ValueError, FileNotFoundError) as exc:
         parser.error(str(exc))

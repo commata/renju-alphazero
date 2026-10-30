@@ -328,28 +328,32 @@ def epsilon(reference_difference, reference_ci, seed_values, reproduction: str) 
 def reproduction_verdict(checks: dict, tolerance: dict) -> dict:
     """``h7r-r2-reproduction-v1`` of one re-run against the reference run.
 
-    ``checks``: ``state_sha256`` and ``assignment`` (pairs reference / re-run), ``best_step`` (pair),
-    ``max_abs_prediction`` and ``abs_primary`` (floats). Missing items or tolerances never pass."""
+    ``checks``: ``state_sha256`` (pair of state_dict content hashes, reference / re-run), ``assignment`` and
+    ``best_step`` (pairs), ``max_abs_prediction`` and ``abs_primary`` (floats). The assignment and the selected step
+    must be present and equal on every path, a bitwise-equal state included. With equal states that is
+    BITWISE_REPRODUCED; with different states only the pre-registered tolerances can give METRIC_ONLY. Missing
+    items or tolerances never pass."""
     reasons = []
     pair = lambda k: checks.get(k) if isinstance(checks.get(k), (list, tuple)) and len(checks[k]) == 2 else None  # noqa: E731
     state, assignment, step = pair('state_sha256'), pair('assignment'), pair('best_step')
-    if state is not None and state[0] is not None and state[0] == state[1]:
-        return {'version': REPRODUCTION_VERSION, 'verdict': 'BITWISE_REPRODUCED', 'reasons': []}
-    if state is None or state[0] is None:
-        reasons.append('state_sha256 missing')
     for name, value in (('assignment', assignment), ('best_step', step)):
-        if value is None or value[0] is None:
+        if value is None or value[0] is None or value[1] is None:
             reasons.append(f'{name} missing')
         elif value[0] != value[1]:
             reasons.append(f'{name} differs')
-    for name, key in (('max_abs_prediction', 'max_abs_prediction'), ('abs_primary', 'abs_primary')):
-        limit, value = tolerance.get(key), checks.get(name)
+    if state is None or not all(is_sha(x) for x in state):
+        reasons.append('state_sha256 missing')
+    elif state[0] == state[1]:
+        verdict = 'NOT_REPRODUCED' if reasons else 'BITWISE_REPRODUCED'
+        return {'version': REPRODUCTION_VERSION, 'verdict': verdict, 'reasons': reasons}
+    for key in ('max_abs_prediction', 'abs_primary'):
+        limit, value = tolerance.get(key), checks.get(key)
         if limit is None:
             reasons.append(f'{key} tolerance not fixed')
-        elif not isinstance(value, (int, float)) or not math.isfinite(value):
-            reasons.append(f'{name} missing')
+        elif not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+            reasons.append(f'{key} missing')
         elif value > limit:
-            reasons.append(f'{name} {value:.3g} > {limit:.3g}')
+            reasons.append(f'{key} {value:.3g} > {limit:.3g}')
     verdict = 'NOT_REPRODUCED' if reasons else 'METRIC_ONLY'
     return {'version': REPRODUCTION_VERSION, 'verdict': verdict, 'reasons': reasons}
 

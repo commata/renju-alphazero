@@ -1,6 +1,6 @@
 # R2-DIAG-1 — value 학습 병목 진단 계약 초안
 
-작성일: 2026-10-30. 상태: **draft / 미승인 / 실행 불가**. 연구 champion: c5. anchor: 원본 H3 policy / H6 v3 value.
+작성일: 2026-10-30. 상태: 설계 문서. 계약 `docs/h7r/r2/R2-DIAG-1.contract.json`은 **fixed, R2-0A만 승인**(§13). R2-0B·ε 확정·D1–D5는 미승인. 연구 champion: c5. anchor: 원본 H3 policy / H6 v3 value.
 
 이 문서는 계획과 구현을 대조한 검토용 초안이다. 기존 `h7r-eval-contract-v1` 형식의 Arena 계약이 아니므로 그 loader로 읽을 수 없다. 평가 전에 할 일은 세 가지다.
 
@@ -8,7 +8,7 @@
 2. 계약 형식과 검증기를 구현한다.
 3. 계약을 fixed로 커밋한다.
 
-검토 반영 내역은 §11(1차)과 §12(2차)에 있다. 2차 반영과 함께 R2-0A 평가 도구(`scripts/h7r_r2.py`, `src/hybrid/h7r_r2.py`)와 계약 draft(`docs/h7r/r2/R2-DIAG-1.contract.json`)를 구현했다(§9). 계약은 아직 draft이고 평가·학습은 실행하지 않았다.
+검토 반영 내역은 §11(1차)과 §12(2차)에 있다. 2차 반영과 함께 R2-0A 평가 도구(`scripts/h7r_r2.py`, `src/hybrid/h7r_r2.py`)와 계약 draft(`docs/h7r/r2/R2-DIAG-1.contract.json`)를 구현했다(§9). 그 뒤 사용자 승인으로 계약을 fixed로 바꾸고 R2-0A만 승인했다(§13).
 
 ## 1. 목적과 범위
 
@@ -293,7 +293,7 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 - `src/hybrid/h7r_r2.py`(계산·검사)와 `scripts/h7r_r2.py eval`(실행)이다. 출력 형식은 `h7r-r2-eval-v1`, 지표 정의는 `h7r-r2-metrics-v1`이다.
 - 기존 `h7r_holdout.py eval`의 출력과 의미는 바꾸지 않았다. 그 도구의 `routes`(frozen `exact_leaf`)와 `checked_cache`만 다시 쓴다.
 - 실행 조건(하나라도 어긋나면 멈춤)
-  - 계약이 `fixed`이고 커밋돼 있으며, `stages.R2-0A.approved`가 true다. 지금 계약은 draft라서 실행을 거부한다.
+  - 계약이 `fixed`이고 커밋돼 있으며, `stages.R2-0A.approved`가 true다. R2-0B는 승인되지 않았다.
   - 작업 트리가 깨끗하다.
   - H-dev cache가 계약의 hash(계약, binding, 대국, 행, labels, test tensor)와 게임 396 / 행 15,985에 맞는다.
   - `--model NAME=checkpoint,metadata`가 계약의 모델 집합과 정확히 같다. 모델마다 파일 SHA, 로드한 checkpoint에서 재계산한 frozen state hash, metadata 선언값, 계약 기대값을 대조한다.
@@ -306,7 +306,7 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
   - ε: `value` null, 상태 `AWAITING_R2_0B`. `c8:c5` 구간의 반폭(sample 부분)만 기록한다.
 - R2-0B용으로 미리 구현한 순수 함수(실행 도구는 아직 없음)
   - `epsilon`: 재현 판정이 통과하지 않으면 `BLOCKED_REPRODUCTION`으로 값을 내지 않는다.
-  - `reproduction_verdict`: 허용 오차가 null이거나 항목이 빠지면 `NOT_REPRODUCED`다.
+  - `reproduction_verdict`: 자료 배정과 선택 step은 state hash가 같아도 반드시 있고 같아야 한다. 허용 오차가 null이거나 항목이 빠지면 `NOT_REPRODUCED`다.
   - `data_assignment` / `compare_assignments`: trainer의 `mixed_epoch`를 그대로 불러 replay 추출·행 순서 지문을 만들고, augmentation 수열을 trainer와 같은 순서로 뽑는다. 테스트가 실제 `train_value`의 batch와 symmetry를 가로채 지문과 같은지 확인한다.
 
 **R2-0B 전에 더 구현할 것**
@@ -317,7 +317,7 @@ H-dev는 `R1-HDEV-1`로 생성·검증한 자료만 쓴다.
 미구현 지표를 기존 명령 한 번으로 만들 수 있다고 쓰지 않는다.
 
 **산출물 경로**
-- 계약: `docs/h7r/r2/R2-DIAG-1.contract.json`(draft). R1의 `docs/h7r/contracts/`에 두지 않는다. 그 폴더의 JSON은 모두 R1 Arena 계약으로 읽혀 seed 충돌 검사를 받기 때문이다.
+- 계약: `docs/h7r/r2/R2-DIAG-1.contract.json`(fixed, R2-0A 승인). R1의 `docs/h7r/contracts/`에 두지 않는다. 그 폴더의 JSON은 모두 R1 Arena 계약으로 읽혀 seed 충돌 검사를 받기 때문이다.
 - 결과 요약: `docs/h7r/r2/R2-DIAG-1/`. 집계 수치와 SHA만 둔다.
 - 행별 예측(`--predictions`), 대국·행·tensor·checkpoint: `runs/h7r/R2-DIAG-1/`. 커밋하지 않는다.
 
@@ -380,6 +380,39 @@ fixed 전에 정할 핵심 선택은 다섯 가지다.
 | 5 | trunk hash는 실제 모델에서 재계산해야 한다 | `check_model`이 로드한 checkpoint에서 `state_sha256(frozen_state(model))`을 다시 계산해 계약 기대값, metadata 선언값과 대조한다. trunk를 바꾸고 선언값만 맞춘 checkpoint를 거부하는 테스트가 있다. |
 | 6 | `mask:c8`은 선택 지표도 다르다 | §3에 "학습과 checkpoint 선택에 같은 mask 처방을 적용한 recipe 비교, 학습 loss만의 효과가 아님"으로 고치고 선택 step(147 / 210)을 적었다. |
 | — | 확인한 사실 | 평가 라벨은 ply 5부터 만든다(`from_ply=5`). ply 구간을 [5, 20) … [80, ∞)로 고정하고, 5보다 작은 ply의 행이 있으면 도구가 멈춘다. |
+
+## 13. 계약 확정과 R2-0A 승인 (2026-10-30)
+
+**사용자가 확정한 것**
+- 주 지표: D4 / network 게임 균등 손실
+- 구성 지표 3개, 모델 6개와 비교 6개
+- bootstrap 20,000회, seed 20261030
+- ply 구간 [5, 20) / [20, 40) / [40, 80) / [80, ∞)
+
+**계약 상태**(`R2-DIAG-1.contract.json`)
+
+| 항목 | 값 |
+|---|---|
+| status | `fixed` |
+| R2-0A | 승인 |
+| R2-0B | 미승인 |
+| epsilon.value | null |
+| 재현 허용 오차 | null |
+
+- 학습 seed 31001–31003과 ε 산출식은 이후 단계의 설계값이다.
+- 이 승인으로 학습이나 ε 계산을 할 수 있게 되지는 않는다. R2-0B 학습 도구가 없고, `epsilon`은 재현 판정이 통과해야 값을 낸다.
+
+**구현 보완**
+- `scripts/h7r_r2.py preflight`를 추가했다. 계약, H-dev cache, 모델 여섯 개를 검사만 하고 아무것도 쓰지 않는다.
+- `eval`도 모델 여섯 개를 모두 검사한 뒤에야 경로 판정과 예측을 시작한다.
+- 재현 판정이 state hash가 같다는 것만으로 다른 필수 검사를 건너뛰지 않게 고쳤다.
+
+**원본 H6 v3 metadata의 `frozen_state_sha256`**
+- 이 저장소에는 그 파일(`runs/h6_value_head_v3/best.json`)이 없어서 직접 확인하지 못했다.
+- 있을 것이라는 근거는 두 가지다.
+  - 그 파일을 쓴 trainer(`h6_value_train.metadata`)는 이 값을 기록한다.
+  - `docs/h6-value.md`의 H6-2a′ 결과가 같은 `c2fbaac3…`를 보고한다.
+- 그래서 호환 규칙은 넣지 않고 엄격한 대조를 유지한다. 선언이 없으면 preflight가 멈춘다. 그때는 metadata를 고치지 않고, 호환 규칙을 계약·문서에 먼저 적은 뒤 다시 실행한다.
 
 ## 근거
 
