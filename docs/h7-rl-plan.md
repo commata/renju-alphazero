@@ -1215,3 +1215,196 @@ for n in ('main', 'anchor'):
   - 각 opening을 `renju.Game`으로 재생한다. 중앙 시작, 반복 착수, 흑 금수, 끝난 국면을 거부한다.
   - 계약 출처는 arm이 있어야 하고(holdout 계약 거부), 각 suite가 SHA와 `check_suite`를 통과해야 한다.
   - 강화한 검사 아래에서도 저장소의 모든 실제 출처(이전 기록 70개, smoke · pilot 계약)가 통과한다. 커밋된 두 suite도 그대로 재현된다.
+
+**데스크톱 검증 결과**(사용자가 제공한 데스크톱 출력에 근거. 이 환경에서 raw arm을 직접 검사하지 않았다)
+
+- 실행 전 `f0686d0`으로 fast-forward했다.
+- `O1-confirm-main.json` 560개, `O1-confirm-anchor.json` 1,040개. 두 suite 모두 `check_suite`를 통과했다.
+- 세 ID는 의미가 다르다.
+  - `history_id`(수순, 중복 판단의 단위): main 560 / anchor 1,040, 두 suite의 교집합 0
+  - `position_id`(돌 배치와 둘 차례): main 560 / anchor 1,040
+  - `class_id`(8대칭 동치류, 기록용): main 558 / anchor 1,033
+  - 같은 동치류가 main 안에 2쌍, anchor 안에 7쌍 있다. 대칭 opening은 다른 opening이라(2.2절) 오류가 아니다. 이 수를 독립 표본 수로 해석하지도 않는다.
+- pilot 12개 arm 모두, 실제 기록의 opening이 계약의 `pick` 결과와 순서 · 집합 모두 같았다.
+- main과 anchor를 `runs/` 아래에서 다시 생성하자 opening SHA와 제외 집합 SHA가 커밋된 값과 같았다.
+
+**R1 상태**
+
+pilot 보고서와 평가 체계 준비는 완료됐으며, 확인 계약 E3는 후보 · 규모 · margin · gate 확정을 기다린다. R1 전체 완료나 기력 향상은 선언하지 않는다. E3가 아직 없는 것과 별개로 H-dev 준비를 진행한다(9.12).
+
+### 9.12 H-dev 계약 확정(R1-HDEV-1)과 R2 경계 (2026-10-30)
+
+이번 단계는 문서 · 계약 · 검증 보완과 명령 준비까지다. H-dev 생성, 라벨 생성, R2 / R3 학습 · 평가는 실행하지 않았다.
+
+**확정 값**(`docs/h7r/contracts/R1-HDEV-1.json`, **fixed**)
+
+| 항목 | 값 |
+|---|---|
+| 생성 시점 | 지금. R2 진단 결과를 보기 전 |
+| actor | c5(기존 policy · value checkpoint와 metadata identity 그대로) |
+| 판 수 · split | 400판, dev |
+| run seed · cycle | 8787 · 1 |
+
+- cycle 1은 파생 seed와 game ID(`h7c:c1:8787:i`)를 위한 값이다. H7-c 학습 cycle을 뜻하지 않는다.
+- 재확인한 것
+  - 커밋된 계약 4개 사이에 seed 충돌이 없다. fixed로 바꾼 자신을 중복 계약으로 보지 않는다.
+  - 400판의 파생 seed가 서로 겹치지 않는다.
+  - 학습용 생성기는 8787을 거부한다.
+  - 생성기(`holdout_identity`)는 이 계약의 run(seed 8787, cycle 1, 400판 이하, actor c5)만 받는다.
+- 이 저장소에는 생성 자료가 없다. 데스크톱에 같은 계약의 자료가 있으면 덮어쓰지 않는다. 생성기의 재개 기능이 identity(계약 SHA, 생성 commit 포함)를 대조해 이어 쓰거나 거부한다.
+
+**라벨 접근 규칙**(계약의 `access`와 같다)
+
+- R2 / R3 담당자는 H-dev의 기보 · 라벨 · metric을 진단, 개발, checkpoint / recipe 선택에 반복해서 쓸 수 있다.
+- H-dev 행은 gradient 학습, replay, distillation target, 다른 학습 cache에 넣지 않는다(`never training data`).
+- H-dev 결과는 승급 · 최종 확인 · 독립 일반화 근거로 쓰지 않는다. 한 번 선택을 이끈 H-dev는 그 선택의 독립 근거가 될 수 없다.
+- H-conf · A-conf는 별도 자료 · 계약이며, 이번에 만들거나 쓰지 않는다.
+
+**평가 전용 출처의 연결**
+
+- 생성: `h7c_selfplay.py --holdout-contract`
+  - 각 대국 identity에 `purpose: holdout`, 계약 ID · SHA, split이 들어간다.
+- 라벨: `h7r_holdout.py labels`
+  - fixed · committed holdout 계약만 받는다.
+  - `check_holdout_games`가 0..399 전부, 중복 · 누락, 계약 SHA, seed, cycle, actor, 완료 여부를 확인한다.
+- cache: `holdout.json`이 계약 → 대국 → 평가 행 → cache 파일을 SHA로 묶는다. 일반 학습용 label · cache 경로로 우회하지 않는다.
+- 학습 진입은 거부된다(`h7c_labels.check_games`의 holdout 표시 확인, 표시를 지워도 예약 seed로 확인).
+- 계약의 `stats` 블록은 계약 형식의 Arena 설정(opening-pair bootstrap)이다. H-dev WMSE의 판독 기준이 아니다. R2는 R2 계약에서 정할 원본 게임 단위 bootstrap으로 읽는다.
+
+**R2와의 경계**(이번에 실행하지 않음, 다음 R2 계약에서 정한다)
+
+- 실행하지 않은 것
+  - 기존 모델의 H-dev WMSE 비교
+  - 같은 recipe의 seed 3개 재학습
+  - D1–D5, H-conf, 확인 suite를 쓰는 진단 대국, E3 판정, champion 교체
+- R2-0 안에서도 둘을 구분한다.
+  - 기존 모델 재측정(c5 / c6 / c7 / c8 / mask, 원본 포함): 평가만 한다.
+  - seed 3개로 변동을 재는 단계: 새 학습이 필요하다. 이번 승인에서 제외한다.
+- R2 계약에 실험 전에 적을 것
+  - 비교 대상(기존 후보와 원본)
+  - metric 정의와 분모(raw / D4, 전체 / network)
+  - 게임 단위 쌍 차이 bootstrap
+  - 학습 seed 3개와 변동 측정 방법
+  - ε의 산출식 · 단위 · 적용 방법
+  - D1–D5의 판단 기준과 seed 일치 조건
+- ε 순서: 산출 방법은 보정 결과를 보기 전에 고정하고, 수치는 보정 실험 뒤에 정한다.
+- 학습 seed 3개로는 변동 추정이 거칠다. 안정적인 분산이나 검출력을 보장하지 않는다.
+
+### 9.13 H-dev 생성 명령 (Ubuntu, `~/renju-h6`, 새 터미널에서 실행 가능)
+
+예상 시간은 기존 측정에서 계산한 추정이다.
+- self-play: 6 worker 처리량 측정(`docs/h7c/h7c1_throughput.json`, 약 514판/시간)으로 400판 약 45–50분
+- 라벨 · cache: 이 규모의 측정 기록이 없다. 수 분에서 수십 분으로 보고, 실제 시간을 기록한다.
+
+각 블록은 `bash <<'SH' … SH` 하위 셸에서 `set -euo pipefail`로 실행한다. 실패하면 그 블록의 이후 단계가 실행되지 않고 터미널은 닫히지 않는다. 출력이 이미 있으면 삭제하거나 덮어쓰지 않고 멈춘다.
+
+**A. 사전 검사**(수 분)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+[ "$(git rev-parse --abbrev-ref HEAD)" = feat/h7-c1 ] || { echo "STOP: feat/h7-c1 브랜치가 아닙니다"; exit 1; }
+[ -z "$(git status --porcelain)" ] || { echo "STOP: 작업 트리가 clean하지 않습니다"; exit 1; }
+git pull --ff-only origin feat/h7-c1
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/feat/h7-c1)" ] || { echo "STOP: 원격과 다릅니다"; exit 1; }
+python -m rt30.native.build --if-stale
+python -m rt30.vcfcore.build --if-stale
+python scripts/check_track_b_frozen.py
+python - <<'PY'
+from pathlib import Path
+from hybrid.h7r_eval import load_contract
+from hybrid.h7c_nmask import committed
+root, path = Path.cwd(), Path('docs/h7r/contracts/R1-HDEV-1.json')
+contract, sha = load_contract(path, root, check_files=True)   # c5 checkpoint · metadata SHA
+assert contract['status'] == 'fixed' and committed(path, root), 'fixed, committed contract required'
+h = contract['holdout']
+assert (h['seed'], h['cycle'], h['games'], h['actor'], h['split']) == (8787, 1, 400, 'c5', 'dev')
+print('PASS contract', sha)
+PY
+mkdir -p runs/h7r/R1-HDEV-1
+[ ! -e runs/h7r/R1-HDEV-1/labels.json ] || { echo "STOP: 라벨이 이미 있습니다(이미 생성된 H-dev)"; exit 1; }
+echo "사전 검사 완료: $(git rev-parse --short HEAD)"
+SH
+```
+
+**B. c5 self-play 400판**(백그라운드, 약 45–50분)
+
+```bash
+cd ~/renju-h6 && source .venv/bin/activate && export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+STAMP=$(date +%Y%m%d-%H%M%S)
+nohup python -u scripts/h7c_selfplay.py --cycle 1 --run-seed 8787 --games 400 --workers 6 \
+  --policy-checkpoint runs/h3_policy_64x4/best.pt --value-checkpoint runs/h7c/c5/value/best.pt --device cuda \
+  --holdout-contract docs/h7r/contracts/R1-HDEV-1.json --jsonl runs/h7r/R1-HDEV-1/games.jsonl \
+  --output runs/h7r/R1-HDEV-1/selfplay-summary-$STAMP.json > runs/h7r/R1-HDEV-1/selfplay-$STAMP.log 2>&1 &
+sleep 5; tail -f runs/h7r/R1-HDEV-1/selfplay-$STAMP.log   # 1분마다 [h7c-selfplay] 진행 줄. Ctrl-C는 tail만 끝낸다
+```
+
+- 재개: 중단되면 **같은 commit에서** B를 그대로 다시 실행한다.
+  - 생성기가 `games.jsonl`의 identity(계약 SHA, 생성 commit 포함)를 대조하고 끝난 판을 건너뛴다.
+  - 잘린 마지막 줄은 그 판만 다시 둔다.
+  - 요약 파일은 실행마다 새 이름이라 덮어쓰지 않는다.
+- 실행 중에는 `git pull`이나 커밋으로 HEAD를 바꾸지 않는다. 바뀌면 재개가 거부된다.
+
+**C. 완료 검증 · 평가 전용 라벨과 cache · SHA manifest**(self-play가 끝난 뒤)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+O=runs/h7r/R1-HDEV-1
+C=docs/h7r/contracts/R1-HDEV-1.json
+for p in "$O/rows.jsonl.gz" "$O/cache" "$O/labels.json"; do [ ! -e "$p" ] || { echo "STOP: $p 이미 있음"; exit 1; }; done
+python - <<'PY'
+from pathlib import Path
+import h7c_labels as lab, h7r_holdout as ho
+from hybrid.h7r_eval import load_contract
+contract, sha = load_contract(Path('docs/h7r/contracts/R1-HDEV-1.json'), Path.cwd(), check_files=False)
+games = lab.read_games([Path('runs/h7r/R1-HDEV-1/games.jsonl')])
+first = ho.check_holdout_games(games, contract, sha)   # 0..399 전부, 중복 · 누락, 계약 SHA, seed, cycle, actor
+assert first['models'] == contract['models']['c5']['identity']
+print('PASS games', len(games), 'commit', first['generator_git']['commit'])
+PY
+python -u scripts/h7r_holdout.py labels --contract "$C" --games "$O/games.jsonl" \
+  --value-output "$O/rows.jsonl.gz" --cache-dir "$O/cache" --workers 6 --output "$O/labels.json"
+python - <<'PY'
+import json
+from pathlib import Path
+import h7r_holdout as ho
+from hybrid.h7r_eval import file_sha256
+hc, hsha, games, binding = ho.checked_cache(Path('runs/h7r/R1-HDEV-1/cache'))   # 계약 → 대국 → 행 → cache
+labels = json.loads(Path('runs/h7r/R1-HDEV-1/labels.json').read_text())
+manifest = {'format': 'h7r-hdev-manifest-v1', 'contract_id': hc['contract_id'], 'contract_sha256': hsha,
+            'games': len(games), 'generator_commit': games[0]['generator_git']['commit'],
+            'games_sha256': labels['games_sha256'], 'rows_sha256': labels['rows_sha256'],
+            'cache_labels_sha256': labels['cache_labels_sha256'], 'cache_splits': labels['cache_splits'],
+            'cache_binding_sha256': file_sha256('runs/h7r/R1-HDEV-1/cache/holdout.json'),
+            'labels_manifest_sha256': file_sha256('runs/h7r/R1-HDEV-1/labels.json'),
+            'labels_commit': labels['git']['commit'], 'summary': labels['summary'],
+            'note': 'hashes and counts only: the games, rows and cache stay under runs/ (never committed)'}
+out = Path('docs/h7r/hdev/R1-HDEV-1-manifest.json')
+assert not out.exists(), f'{out} exists'
+out.parent.mkdir(parents=True, exist_ok=True)
+out.write_text(json.dumps(manifest, indent=1) + '\n')
+print('PASS cache binding; manifest', out)
+PY
+( cd "$O" && find . -type f ! -name 'SHA256SUMS' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
+mkdir -p ~/renju-h6-backup
+tar -czf ~/renju-h6-backup/R1-HDEV-1-$(date +%Y%m%d-%H%M%S).tar.gz "$O" "$C"
+echo "완료: $O, docs/h7r/hdev/R1-HDEV-1-manifest.json, ~/renju-h6-backup/"
+SH
+```
+
+- 라벨 단계는 재개 기능이 없고 기존 출력을 거부한다. 중간에 실패하면 남은 `rows.jsonl.gz` · `cache`를 지우지 말고 이름을 바꿔 보관한 뒤(예: `cache.failed-<시각>`) C를 다시 실행한다.
+
+**D. 문서 산출물만 커밋**(해시와 개수만 담긴 manifest. 대국 · 행 · cache는 커밋하지 않는다)
+
+```bash
+cd ~/renju-h6
+git status --short                       # docs/h7r/hdev/R1-HDEV-1-manifest.json 하나만 보여야 한다
+git add docs/h7r/hdev/R1-HDEV-1-manifest.json
+git commit -m "H7-R: R1-HDEV-1 generated (manifest only)"
+git push origin feat/h7-c1
+```

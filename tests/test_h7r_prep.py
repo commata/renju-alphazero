@@ -231,18 +231,48 @@ class AnchorSizingTest(unittest.TestCase):
             cli.anchor_size(argparse.Namespace(**{**vars(args), 'arm_record': [Path('a'), Path('b')]}))
 
 
-class HdevDraftTest(unittest.TestCase):
-    def test_one_reserved_seed_and_a_collision_free_cycle(self):
+class HdevContractTest(unittest.TestCase):
+    """R1-HDEV-1 (docs/h7-rl-plan.md 9.12): fixed, one reserved seed, the generator accepts exactly its run, the
+    training path refuses its seed, and the access rules are in the contract."""
+
+    def setUp(self):
+        self.path = ROOT / 'docs/h7r/contracts/R1-HDEV-1.json'
+        self.contract, self.sha = ev.load_contract(self.path, ROOT, check_files=False)
+
+    def test_fixed_run_and_one_reserved_seed(self):
         import h7c_selfplay as sp
         from hybrid.h6_labels import RESERVED_SEEDS
-        contract, _ = ev.load_contract(ROOT / 'docs/h7r/contracts/R1-HDEV-1.json', ROOT, check_files=False)
-        h = contract['holdout']
-        self.assertEqual((contract['status'], h['split'], h['games'], h['actor']), ('draft', 'dev', 400, 'c5'))
-        self.assertEqual(ev.contract_seeds(contract), {8787})
+        h = self.contract['holdout']
+        self.assertEqual((self.contract['status'], h['split'], h['games'], h['actor'], h['seed'], h['cycle']),
+                         ('fixed', 'dev', 400, 'c5', 8787, 1))
+        self.assertEqual(ev.contract_seeds(self.contract), {8787})
         self.assertIn(8787, RESERVED_SEEDS)
-        sp.check_seeds(h['seed'], h['cycle'], range(h['games']), holdout=True)
+        sp.check_seeds(8787, 1, range(400), holdout=True)
+        with self.assertRaisesRegex(ValueError, 'run-seed 8787'):
+            sp.check_seeds(8787, 1, range(3))  # the training generator never takes the H-dev seed
         pilot = json.loads((ROOT / 'docs/h7r/contracts/R1-PILOT-1.json').read_text())
-        self.assertEqual(contract['models']['c5'], pilot['models']['c5'])
+        self.assertEqual(self.contract['models']['c5'], pilot['models']['c5'])  # the research champion c5
+
+    def test_the_generator_accepts_exactly_this_run(self):
+        import h7c_selfplay as sp
+        actor = self.contract['models']['c5']['identity']
+        ok = argparse.Namespace(run_seed=8787, cycle=1, start=0, games=400, allow_dirty=True)
+        self.assertEqual(sp.holdout_identity(self.path, ok, actor)['holdout'],
+                         {'contract_id': 'R1-HDEV-1', 'contract_sha256': self.sha, 'split': 'dev'})
+        orig = json.loads((ROOT / 'docs/h7r/contracts/R1-PILOT-1.json').read_text())['models']['orig']['identity']
+        for change, models in (({'run_seed': 8788}, actor), ({'cycle': 2}, actor), ({'games': 401}, actor),
+                               ({}, orig)):
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'not the holdout contract'):
+                sp.holdout_identity(self.path, argparse.Namespace(**{**vars(ok), **change}), models)
+
+    def test_access_rules_are_fixed(self):
+        access = self.contract['access']
+        self.assertIn('checkpoint / recipe selection', access['allowed'])
+        self.assertTrue(any('gradient training' in f for f in access['forbidden']))
+        self.assertTrue(any('confirmation' in f for f in access['forbidden']))
+        self.assertIn('H-conf', access['separate'])
+        self.assertIn('not the H-dev reading rule', self.contract['holdout_notes']['stats'])
+        self.assertEqual(self.contract['research_baseline']['champion'], 'c5')
 
 
 if __name__ == '__main__':

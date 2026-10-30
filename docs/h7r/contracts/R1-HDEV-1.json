@@ -2,8 +2,8 @@
  "format": "h7r-eval-contract-v1",
  "contract_id": "R1-HDEV-1",
  "purpose": "holdout",
- "status": "draft",
- "meaning": "draft H-dev: 400 self-play games of the research champion c5 for R2 diagnosis and R3 development and selection (docs/h7-rl-plan.md 9.11); never training data; not a confirmation sample (H-conf is a separate later contract); nothing is generated while this is a draft",
+ "status": "fixed",
+ "meaning": "H-dev: 400 self-play games of the research champion c5 (docs/h7-rl-plan.md 9.11, 9.12), generated now, before any R2 result; for R2 diagnosis and R3 development and selection only; never gradient training data; never promotion, final confirmation or independent generalisation evidence",
  "models": {
   "c5": {
    "policy": "runs/h3_policy_64x4/best.pt",
@@ -27,11 +27,8 @@
  "holdout_notes": {
   "seed": "reserved H7-R seed 8787 (hybrid.h6_labels.RESERVED_SEEDS): the run seed of h7c_selfplay --holdout-contract; not an opening-suite generation seed",
   "cycle": "the cycle number of the derived game / opening seeds and game ids (h7c:c1:8787:i); checked collision-free for 400 games; it names no H7-c training cycle",
-  "use": "R2 / R3 development and selection only: once a choice has looked at it, it is not independent confirmation evidence",
-  "before_fixed": [
-   "the generation time and who may read the labels before R3 candidates are chosen",
-   "that c5 stays the research champion (docs/h7-rl-plan.md 9.11)"
-  ]
+  "generation": "now, before R2 results are seen; only through h7c_selfplay --holdout-contract and h7r_holdout labels (never the training label or cache paths)",
+  "stats": "the stats block is the contract format's Arena setting (opening-pair bootstrap); it is not the H-dev reading rule. R2 reads H-dev with a source-game bootstrap fixed in the R2 contract"
  },
  "stats": {
   "alpha_one_sided": 0.025,
@@ -48,5 +45,19 @@
   },
   "delta": 0.03,
   "power": 0.8
+ },
+ "access": {
+  "allowed": "R2 / R3 may read the H-dev games, labels and metrics repeatedly for diagnosis, development and checkpoint / recipe selection",
+  "forbidden": [
+   "gradient training, replay or distillation targets, or any training cache",
+   "promotion, final confirmation or independent generalisation evidence"
+  ],
+  "separate": "H-conf and A-conf are other data under other contracts; this contract neither makes nor uses them",
+  "consequence": "once H-dev has guided a choice, it cannot be independent evidence for that choice"
+ },
+ "research_baseline": {
+  "champion": "c5",
+  "r2_start": "c5",
+  "anchor": "original H3 / H6 v3 (frozen)"
  }
 }
