@@ -1,0 +1,143 @@
+{
+ "format": "h7r-hdev-manifest-v1",
+ "contract_id": "R1-HDEV-1",
+ "contract_sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+ "games": 400,
+ "generator_commit": "37dec664b0943dee225c2e2c99dfe74b8ae052fd",
+ "games_sha256": "93b05a037f20c60104268bc11fa572dc999496ec966bbede482394a3c4bab3f6",
+ "rows_sha256": "ed0e4be2a212d7bcce72c501e4674d4376c1c8293fd1f079c7e17b4d99897131",
+ "cache_labels_sha256": "c903d285f1e5e447a4053407edbb57bbc83ecdc61dd140657b1388e6502aa2ef",
+ "cache_splits": {
+  "train": {
+   "states": 0,
+   "games": 0,
+   "weight_sum": 0.0,
+   "by_kind": {
+    "outcome": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 0,
+   "sha256": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+  },
+  "val": {
+   "states": 0,
+   "games": 0,
+   "weight_sum": 0.0,
+   "by_kind": {
+    "outcome": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    },
+    "proof": {
+     "states": 0,
+     "weight_sum": 0.0,
+     "weight_share": null,
+     "sign": {
+      "+1": 0,
+      "-1": 0,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 0,
+   "sha256": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+  },
+  "test": {
+   "states": 15985,
+   "games": 396,
+   "weight_sum": 3560.500020571053,
+   "by_kind": {
+    "outcome": {
+     "states": 13805,
+     "weight_sum": 1380.500020571053,
+     "weight_share": 0.38772644645277676,
+     "sign": {
+      "+1": 4741,
+      "-1": 5984,
+      "0": 3080
+     }
+    },
+    "proof": {
+     "states": 2180,
+     "weight_sum": 2180.0,
+     "weight_share": 0.6122735535472232,
+     "sign": {
+      "+1": 1798,
+      "-1": 382,
+      "0": 0
+     }
+    }
+   },
+   "masked_rows_dropped": 0,
+   "sha256": "c3b389dad321b82ea98670d7effb1a717d3642abc95718d53b2692dfa5e556fd"
+  }
+ },
+ "cache_binding_sha256": "9724d878eed46c9b2a803d212671bc1bebb2c024ed7ba44398468dfd243d4886",
+ "labels_manifest_sha256": "60d49124cb5b08683298b7f589775b38bd984de1e47bb0acf07b36b5296129f5",
+ "labels_commit": "37dec664b0943dee225c2e2c99dfe74b8ae052fd",
+ "summary": {
+  "cross_split_masked": {
+   "train": 0,
+   "val": 0,
+   "test": 0
+  },
+  "rows": 15985,
+  "labelled": 15985,
+  "by_split": {
+   "test": 15985
+  },
+  "by_kind": {
+   "outcome": 13805,
+   "proof_vcf": 1042,
+   "proof_unstoppable_four": 374,
+   "proof_forced_loss": 382,
+   "proof_immediate_win": 382
+  },
+  "by_depth": {
+   "0": 2180
+  },
+  "sign": {
+   "-1": 6366,
+   "+1": 6539,
+   "0": 3080
+  },
+  "sign_by_side": {
+   "white": {
+    "-1": 2871,
+    "+1": 3668,
+    "0": 1540
+   },
+   "black": {
+    "+1": 2871,
+    "-1": 3495,
+    "0": 1540
+   }
+  },
+  "masked_by_flag": {}
+ },
+ "note": "hashes and counts only: the games, rows and cache stay under runs/ (never committed)"
+}
