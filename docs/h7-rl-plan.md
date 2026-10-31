@@ -1976,6 +1976,70 @@ git push origin feat/h7-c1
 - **기록 사본 폴더**: docs 아래 `runs/`는 `.gitignore`의 `runs/` 규칙에 걸린다(`4180beb`에서 강제 추가). 앞으로 사본은 `records/`에 둔다.
 - **D4 baseline 하위 계약 초안**: `docs/h7r/r2/R2-D4-BASELINE-1-draft.md`(draft, 실행 불가)
   - c5 대 세 seed 모델의 수 선택과 Rapfi continuation을 H-dev 396판에서 본다.
-  - 실행 전에 적어 둔 예상 정밀도: 비교당 약 420 관측, 구간 반폭 약 0.05. 가장 가능성이 높은 결과는 `NOT_ESTABLISHED`다.
+  - 실행 전에 적어 둔 예상 정밀도: 비교당 약 420 관측, 구간 반폭 약 0.05. `NOT_ESTABLISHED`가 충분히 가능한 시나리오다. 특정 검출력이나 결과 확률을 계산한 값은 아니다.
   - 탐색과 Rapfi 비용은 계획용으로 약 2–3시간이다.
   - 문서 검토 → 구현·fixed 계약 → smoke·본 실행의 세 단계로 따로 승인받는다.
+
+### 9.19 D4 baseline 구현과 fixed 계약 (2026-10-31)
+
+사용자의 구현·판단·fixed·테스트·커밋·push 요청으로 `R2-D4-BASELINE-1`의 여섯 설계 선택을 확정했다. H-dev 396판·15,985행 전체, c5 대 세 seed 주 비교와 c8 참고, 평균 continuation delta, 양방향 미해결 bound, 개별 98.333%와 공통 방향 95% 판독을 채택한다. 세부 정의는 D4 설계 §13과 `docs/h7r/r2/R2-D4-BASELINE-1.contract.json`에 있다.
+
+- D1–D3 이전 baseline 연결 진단이라는 범위 확장을 명시한다. ε를 continuation 점수 문턱으로 쓰지 않는다. 새 학습, champion 변경, 승급, V9 진입, 확인 ledger 소비는 없다.
+- 대상을 원본 해시로 고정했지만, 실제 ID 명단은 이 환경에 없는 raw cache에서 데스크톱 `prepare`로 재구성해야 한다. 실행기는 명단이 커밋돼 있고 원본 재생성 값과 같은지 확인한다.
+- 이번에 승인된 것은 구현·fixed·테스트와 명단 준비다. **실제 smoke와 본 실행의 승인 파일은 아직 없으며 도구가 실행을 거부한다.**
+- smoke는 첫 2게임 전체 재생/최대 8고유 분기, 본 실행은 전체다. 출력 폴더와 identity가 분리되며 smoke에서 정식 판독하지 않는다.
+- long-job 단계는 `run_chunks`로 수집하고 60초마다 stdout 진행을 낸다. 실행 도중 HEAD·코드·입력을 바꾸지 않는다. 같은 identity의 미완료 실행만 이어 간다.
+
+**A. 지금 가능한 사전 검사와 명단 준비**(GPU 추론·탐색·Rapfi 없음)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+test "$(git branch --show-current)" = feat/h7-c1
+test -z "$(git status --porcelain --untracked-files=no)"
+git pull --ff-only origin feat/h7-c1
+test "$(git rev-parse HEAD)" = "$(git rev-parse origin/feat/h7-c1)"
+python scripts/check_track_b_frozen.py
+python -m unittest tests.test_h7r_d4 tests.test_h7r_r2 tests.test_h7r_holdout tests.test_h7r_confirm
+python -u scripts/h7r_d4.py prepare \
+  --cache runs/h7r/R1-HDEV-1/cache \
+  --output docs/h7r/r2/R2-D4-BASELINE-1/eligible.json
+SH
+```
+
+기존 `eligible.json`은 덮어쓰지 않는다. 이미 준비·커밋했다면 A의 마지막 명령은 다시 실행하지 않는다. 다른 개수, hash, cache/source 행 불일치면 중단한다. 정상 출력은 396게임 / 15,985행이며 warm-up 수는 실제 원본에서 센다.
+
+**B. 명단만 커밋**(A가 정상 종료한 뒤)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+git add -- docs/h7r/r2/R2-D4-BASELINE-1/eligible.json
+git diff --cached --stat
+git diff --cached --name-only | python3 -c 'import sys; p=sys.stdin.read().splitlines(); assert p == ["docs/h7r/r2/R2-D4-BASELINE-1/eligible.json"], p'
+git commit -m "H7-R: fix the D4 eligible H-dev game and ply list"
+git push origin HEAD:feat/h7-c1
+SH
+```
+
+push가 거부되면 원격 변경을 먼저 검토한다. 강제 push하지 않는다. 명단 준비 완료가 smoke 승인이나 기력 향상 판정은 아니다.
+
+**C. 별도 승인 뒤 사용할 실행 형식**(지금 실행하지 않음)
+
+승인 파일은 `format=h7r-d4-execution-v1`, 현재 계약의 `contract_sha256`, `mode=smoke|full`, `approved=true`를 포함해 커밋한다. 승인 전에 파일을 만들지 않는다. 아래 `<mode>`와 `<approval-file>`은 승인된 값으로 바꿔야 하며, 실행기 자체도 계약·명단·승인 파일의 커밋 여부를 검사한다.
+
+```text
+python -u scripts/h7r_d4.py run --mode <mode> --approval <approval-file> \
+  --sample docs/h7r/r2/R2-D4-BASELINE-1/eligible.json \
+  --model c5=runs/h3_policy_64x4/best.pt,runs/h7c/c5/value/best.pt \
+  --model c8=runs/h3_policy_64x4/best.pt,runs/h7c/c8/value/best.pt \
+  --model seed31001=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31001/best.pt \
+  --model seed31002=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31002/best.pt \
+  --model seed31003=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31003/best.pt \
+  --device cuda --workers 6 --rapfi-dir /mnt/c/engines/rapfi \
+  --out-dir runs/h7r/R2-D4-BASELINE-1/<mode>
+```
+
+실행 후에는 해당 `summary.json`의 SHA 연결을 검토하고 요약 사본만 `docs/.../records/`에 커밋한다. JSONL·모델·tensor는 `runs/`에 보존한다. 신규 연구 실행을 승인받기 전에는 A–B까지만 진행한다.
