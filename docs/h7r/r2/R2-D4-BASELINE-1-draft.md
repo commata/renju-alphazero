@@ -355,6 +355,20 @@ R1과 달라지는 것은 미해결 분기를 다루는 방식 하나다(아래 
 
 검증: 관련 8개 모듈 묶음 156 tests PASS. 최종 D4 suite는 18개이며 합성 입력의 전체 실행·중단·재개·집계, fake protocol engine, 실제 fast5/stand-in 모델의 CPU actor 재생을 구분해 다룬다. frozen 검사 `--no-models` PASS, 명령 블록 2개 `bash -n` PASS. 실제 H-dev·생산 모델·CUDA·등록 Rapfi는 이 checkout에 없어 검증하지 못했다.
 
+## 14. 명단 준비 전 보고 항목 보완 (2026-10-31)
+
+계약을 고정한 뒤, 명단(`eligible.json`)을 만들기 전에 보고 항목만 보완했다. 판독 규칙, 표본, 통계 설정은 바꾸지 않았다.
+
+| 보완 | 내용 |
+|---|---|
+| 결정 관측 | 비교마다 `decisive`(우세 + 열세 관측 수)와 `decisive_games`(결정 관측이 있는 게임 수)를 낸다. §8의 "결정 관측 수와 그 게임 수" |
+| 첫 차이 ply | 민감도에 비교별 `first_difference_ply`(차이가 난 게임 수, 첫 차이 ply의 중앙값·최솟값·최댓값)를 낸다. eligible ply 기준이다. §5의 "첫 차이 ply" |
+| bootstrap 분모 0 | 판독 구간(95%, 98.333%의 하한·상한 bound)에 분모 0 회차가 있으면 `failures`에 `UNDEFINED_BOOTSTRAP`을 남긴다. 이전에도 label은 INCONCLUSIVE였고, 이제 그 이유가 기록에 남는다 |
+
+- 바뀐 소스: `scripts/h7r_d4.py`, `src/hybrid/h7r_d4.py`
+- 계약 `runtime_sources`에서 이 두 파일의 SHA를 새 값으로 바꿨다. 계약 SHA는 `5d6da928…`에서 `74ab77e2…`로 바뀐다.
+- 명단은 아직 만들지 않았으므로 다시 만들 산출물은 없다.
+
 ## 근거
 
 - 계획: `docs/h7-rl-plan.md` §3.2, §9.17

@@ -119,7 +119,9 @@ def selection_stats(observations, outcomes, game_indices, counts, stats=STATS):
     if resolved_games < stats['min_resolved_games']: failures.append('TOO_FEW_RESOLVED_GAMES')
     if total and Fraction(unresolved, total) > Fraction(1, 20): failures.append('UNRESOLVED_OVER_5_PERCENT')
     ldraw, hdraw = ratio(counts, low, n), ratio(counts, high, n)
+    decisive_games = sum(b + w > 0 for b, w in zip(better, worse))
     out = {'observations': total, 'resolved': resolved, 'resolved_games': resolved_games,
+           'decisive': int(sum(better) + sum(worse)), 'decisive_games': decisive_games,
            'unresolved': unresolved, 'structural_observations': structural, 'failures': failures,
            'mean_delta_bounds': [sum(low)/total, sum(high)/total] if total else None,
            'resolved_mean_delta': sum(rdelta)/resolved if resolved else None,
@@ -134,6 +136,8 @@ def selection_stats(observations, outcomes, game_indices, counts, stats=STATS):
                                                             [int(k > 0) for k in rn]), .95),
            'intervals': {str(level): {'lower': interval(ldraw, level), 'upper': interval(hdraw, level)}
                          for level in (stats['joint_level'], stats['individual_level'])}}
+    if any(cell['undefined'] for level in out['intervals'].values() for cell in level.values()):
+        failures.append('UNDEFINED_BOOTSTRAP')  # replicates without a denominator: the interval is not read
     out['label95'] = reading(out, stats['joint_level'])
     out['label_individual'] = reading(out, stats['individual_level'])
     out['upper95_descriptive'] = out['intervals'][str(stats['joint_level'])]['upper']['ci']

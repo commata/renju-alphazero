@@ -64,6 +64,16 @@ class StatisticsTest(unittest.TestCase):
         out = d4.selection_stats(obs, outcomes, list(range(10)), counts)
         self.assertEqual(out['intervals']['0.95']['lower']['undefined'], 1)
         self.assertEqual(out['label95'], 'INCONCLUSIVE')
+        self.assertIn('UNDEFINED_BOOTSTRAP', out['failures'])  # the reason is recorded, not only the label
+        self.assertNotIn('UNDEFINED_BOOTSTRAP', self.stats()['failures'])
+
+    def test_decisive_observations_and_their_games(self):
+        obs, outcomes = observations(40)
+        for i in range(40):  # games 0-1 decisive (better / worse), the rest ties
+            outcomes[f'a{i}']['score'] = {0: 1., 1: 0.}.get(i % 10, .5)
+        out = d4.selection_stats(obs, outcomes, list(range(10)), self.counts)
+        self.assertEqual((out['better'], out['worse'], out['equal']), (4, 4, 32))
+        self.assertEqual((out['decisive'], out['decisive_games'], out['resolved_games']), (8, 2, 10))
 
     def test_macro_does_not_replace_observation_weighting(self):
         obs, outcomes = observations(40)
@@ -86,6 +96,24 @@ class StatisticsTest(unittest.TestCase):
         self.assertEqual(d4.joint_reading(out), 'PARTIAL_SIGNAL')
         out[d4.PRIMARY[1]]['label_individual'] = 'WORSE'
         self.assertEqual(d4.joint_reading(out), 'MIXED_DIRECTION')
+
+
+class SensitivityTest(unittest.TestCase):
+    def test_first_difference_ply_per_game(self):
+        def ply(n, diff):
+            sets = {m: {'route': 'tree', 'engine_move': [7, 7], 'visits': [[7, 7, 10, 0.1]]}
+                    for m in ('c5', 'c8', 'seed31001', 'seed31002', 'seed31003')}
+            if diff:
+                sets['seed31001'] = {'route': 'tree', 'engine_move': [8, 8], 'visits': [[8, 8, 10, 0.2]]}
+            return {'ply': n, 'color': 'black' if n % 2 == 0 else 'white', 'sets': sets}
+        records = [{'game_index': 0, 'plies': [ply(5, False), ply(6, True), ply(7, True)]},
+                   {'game_index': 1, 'plies': [ply(5, False), ply(6, False), ply(9, True)]},
+                   {'game_index': 2, 'plies': [ply(5, False)]}]
+        out = cli.sensitivity(records, d4.multiplicities(3, 50, 1))
+        self.assertEqual(out['seed31001:c5']['first_difference_ply'], {'games': 2, 'median': 7.5, 'min': 6, 'max': 9})
+        self.assertEqual(out['seed31001:c5']['games_with_difference'], 2)
+        self.assertEqual(out['seed31002:c5']['first_difference_ply'],
+                         {'games': 0, 'median': None, 'min': None, 'max': None})
 
 
 class ContractTest(unittest.TestCase):

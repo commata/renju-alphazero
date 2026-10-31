@@ -1990,6 +1990,8 @@ git push origin feat/h7-c1
 - smoke는 첫 2게임 전체 재생/최대 8고유 분기, 본 실행은 전체다. 출력 폴더와 identity가 분리되며 smoke에서 정식 판독하지 않는다.
 - long-job 단계는 `run_chunks`로 수집하고 60초마다 stdout 진행을 낸다. 실행 도중 HEAD·코드·입력을 바꾸지 않는다. 같은 identity의 미완료 실행만 이어 간다.
 
+- 보고 항목 보완(D4 설계 §14): 결정 관측의 게임 수, 첫 차이 ply, 판독 구간의 bootstrap 분모 0을 `failures`에 기록. 판독 규칙과 표본은 그대로다. 계약 SHA는 `74ab77e2…`로 바뀌었다. 명단은 이 계약으로 만든다.
+
 **A. 지금 가능한 사전 검사와 명단 준비**(GPU 추론·탐색·Rapfi 없음)
 
 ```bash

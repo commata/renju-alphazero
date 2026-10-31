@@ -260,7 +260,7 @@
   },
   {
    "path": "scripts/h7r_d4.py",
-   "sha256": "fed994a5fa13d457bd2f533469d00a3a943315bf4de2b4fcc7df89d4215b6caf"
+   "sha256": "db1cc9486122c1cc9bfdac8c9b1f03d5a940bf1af31402401ccccd22b13086e2"
   },
   {
    "path": "scripts/h7r_holdout.py",
@@ -432,7 +432,7 @@
   },
   {
    "path": "src/hybrid/h7r_d4.py",
-   "sha256": "c33e7cbd8667dbeb400c3f2f1935601d58438b4b14a8c821ae2508c589140a6e"
+   "sha256": "2d739b4e3872807b03834bf3ea95a766f4bec27b10e267eb9cf39a212e587b2f"
   },
   {
    "path": "src/hybrid/h7r_eval.py",

@@ -13,6 +13,7 @@ import os
 import platform
 from pathlib import Path
 from random import Random
+import statistics
 import subprocess
 import sys
 import time
@@ -238,6 +239,10 @@ def sensitivity(records, counts):
             num, den = [sum(m['move_diff'] for m in g) for g in rows], [len(g) for g in rows]
             one[name] = {'different': sum(num), 'plies': sum(den), 'share': sum(num)/sum(den) if sum(den) else None,
                          'ci95': d4.interval(d4.ratio(counts, num, den), .95)}
+        firsts = [next(m['ply'] for m in g if m['move_diff']) for g in groups if any(m['move_diff'] for m in g)]
+        one['first_difference_ply'] = ({'games': len(firsts), 'median': statistics.median(firsts),
+                                        'min': min(firsts), 'max': max(firsts)} if firsts else
+                                       {'games': 0, 'median': None, 'min': None, 'max': None})
         tree = [m for g in groups for m in g if m['tree']]
         qs = [m['dq'] for m in tree if m['dq'] is not None]
         all_rows = [m for g in groups for m in g]
