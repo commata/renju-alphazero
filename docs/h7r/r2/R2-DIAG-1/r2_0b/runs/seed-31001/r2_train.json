@@ -1,0 +1,123 @@
+{
+ "format": "h7r-r2-train-v1",
+ "contract_sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d",
+ "amendment_sha256": "268aedfc52478aff69bbee158e3e9445ea80e997e1747b76244a0c7ff04bc32c",
+ "role": "seed_spread",
+ "seed": 31001,
+ "reproduction_sha256": "a6010542756db592b73783e7ec823ca6c974133350aec5cf56481dde25e8fe4d",
+ "reason": null,
+ "tolerance_source": "amendment (the parent contract leaves it null)",
+ "git": {
+  "commit": "68df43b6652718ffd9cfda10ef370b3ebe74de66",
+  "dirty": false
+ },
+ "sources": {
+  "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+  "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+  "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+  "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+  "src/hybrid/h7c_train.py": "529cffb875fb7bf4268badccbaf69506be27770b51360523fa9a851de7b5485b"
+ },
+ "environment": {
+  "torch": "2.14.0+cu130",
+  "python": "3.12.3",
+  "device": "cuda",
+  "cuda": "13.0",
+  "gpu": "NVIDIA GeForce RTX 5070"
+ },
+ "reference_record_sha256": "e47581b5263140802adf84b9c1ff6d44e2bb1e8c48d67c8a00e882c285a56389",
+ "config": {
+  "path": "runs/h7r/R2-DIAG-1/r2_0b/seed-31001/config.json",
+  "sha256": "f7c094d9545a8e56d191f289b803c0091a766c47eff7b4491958ece12bbdcbab"
+ },
+ "assignment": {
+  "version": "h7r-r2-assignment-v1",
+  "n_cycle": 35816,
+  "n_replay": 2683098,
+  "seed": 31001,
+  "batch_size": 1024,
+  "total_steps": 210,
+  "epochs": [
+   {
+    "replay_pick_sha256": "1e91614572f874de27219ed1ebeb6026f963f7da785283512cea939dfeea7c35",
+    "order_sha256": "b6e1dabe1413e51e8009f989e13c1663cb25b75125b412d2751fc6960341b0aa"
+   },
+   {
+    "replay_pick_sha256": "0262de363b2761ca1c77127e2a3ed4c0e64f13500840caa4f723d16c434df0ef",
+    "order_sha256": "0522ed6da89c32a9d83f9c5204f83234592fb8e982d18c88ad435e907ad9a7dc"
+   },
+   {
+    "replay_pick_sha256": "cbf3dab975e54da1d24ab365728df061b2f484b340e1e521e57f4161a8f5186d",
+    "order_sha256": "859d77bca134d2359fb299bad5e73144c632a56021931d62972e81435b9e76a1"
+   }
+  ],
+  "augmentation_sha256": "61b5c1a1c307b37f9586db50e42af2202a91f10e986c7d7892de747cf43097b4",
+  "sha256": "53f466536e6953043fcca75a92dc858d4f3a73238c477acb2d6882a54aeca460"
+ },
+ "trainer_record_sha256": "ea47a90e8a751ed3c3c406a6c6f7209fd481eb58ca60dc40ca5c9c0b7921bb6c",
+ "verdict": "CANDIDATE",
+ "best_step": 126,
+ "curve": [
+  {
+   "step": 21,
+   "objective": 0.45411647856235504,
+   "eligible": true
+  },
+  {
+   "step": 42,
+   "objective": 0.4523373693227768,
+   "eligible": true
+  },
+  {
+   "step": 63,
+   "objective": 0.45088519155979156,
+   "eligible": true
+  },
+  {
+   "step": 84,
+   "objective": 0.45132067799568176,
+   "eligible": true
+  },
+  {
+   "step": 105,
+   "objective": 0.45119528472423553,
+   "eligible": true
+  },
+  {
+   "step": 126,
+   "objective": 0.45081235468387604,
+   "eligible": true
+  },
+  {
+   "step": 147,
+   "objective": 0.4512968957424164,
+   "eligible": true
+  },
+  {
+   "step": 168,
+   "objective": 0.4510590434074402,
+   "eligible": true
+  },
+  {
+   "step": 189,
+   "objective": 0.45137694478034973,
+   "eligible": true
+  },
+  {
+   "step": 210,
+   "objective": 0.4512408822774887,
+   "eligible": true
+  }
+ ],
+ "candidate": {
+  "checkpoint_sha256": "88d1704ce8cc34b680a45551af23b0b411b3f4c7e28dd41e886c1a349eb52ab0",
+  "metadata_sha256": "5bdb50fc60b25435e2dd0f60c4bb00cca54238964628eaafd15d8525bbaec836"
+ },
+ "states": {
+  "state_sha256": "5ab660723256845136683f7d441a612a045979c166adbe146f8be69ef337d2ca",
+  "value_head_sha256": "23eb3deed7b36f06ecf2c2f7168d75cb3978e7d22e6ed1ab7313f74ded31084c",
+  "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+ },
+ "hdev_used": false,
+ "minutes": 4.5
+}
