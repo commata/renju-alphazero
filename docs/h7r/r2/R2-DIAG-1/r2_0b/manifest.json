@@ -1,0 +1,42 @@
+{
+ "format": "h7r-r2-0b-manifest-v1",
+ "head": "68df43b6652718ffd9cfda10ef370b3ebe74de66",
+ "runs": {
+  "20261025": {
+   "best.pt": "bf916f8a259708f2ceb3f6dcad325614bde82fddcff72a8bf12383603c788223",
+   "best.json": "8bded744f564c10109e5fd024b975e393e4cad13fc5382829e7f1e3de6118c55",
+   "r2_train.json": "039b51714d5f5f9b97e9f0f921aaf9c51c74ab93cf26c5fd3759c2747bf69f84",
+   "record.json": "89322863452ef4aff6faf77d26a49424c6ab3d9cf14c79291ed8cdcf518f2a47",
+   "config.json": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0"
+  },
+  "31001": {
+   "best.pt": "88d1704ce8cc34b680a45551af23b0b411b3f4c7e28dd41e886c1a349eb52ab0",
+   "best.json": "5bdb50fc60b25435e2dd0f60c4bb00cca54238964628eaafd15d8525bbaec836",
+   "r2_train.json": "0ced9ed0a24fd6a8c8f8cc3a7537450299b8ecc44b68a35756bc9916bc952fee",
+   "record.json": "ea47a90e8a751ed3c3c406a6c6f7209fd481eb58ca60dc40ca5c9c0b7921bb6c",
+   "config.json": "f7c094d9545a8e56d191f289b803c0091a766c47eff7b4491958ece12bbdcbab"
+  },
+  "31002": {
+   "best.pt": "87b690a07decd6d1c6b8476ded9dc97b152887944df242c97b82eb47ee55021b",
+   "best.json": "b9416725ceaba6fbef622931d1151aebefc2f8df2398ad3adfa3b110d7638b4c",
+   "r2_train.json": "e7479f80ea93201d7a6f809905f4b7537460295f96551cbf9f395c90ce747725",
+   "record.json": "3d52f39fb942ada0b26ff6850a9592fb05a0135c583ec7d30fb9a755a6f12e55",
+   "config.json": "a3f83248e99eee4cdde79869085eae021c91e549b6b4b67ad4fff7a3e951f156"
+  },
+  "31003": {
+   "best.pt": "88a6cc6681a320da2a77a659cd659ed992b323256dd6b8c77e5f008f7bf59d29",
+   "best.json": "eeacd09699cc0bcc6f0abd27c2cc2d89fd5f4557aba260323a5426171ee7d2c7",
+   "r2_train.json": "ce87259cbfd6a73b9a15bdd42cab85e415f804f13d3ab806e6ccc8d1f0e85be7",
+   "record.json": "0224ebdeb88e3b342fb0b8047d5c4608c0ec6cb5ca625e7bf108db7f51d296e3",
+   "config.json": "57870435a6a5da36d7b3b3620f2d040cf889a692133fa336fb11c6402dbc07a2"
+  }
+ },
+ "reproduction_sha256": "a6010542756db592b73783e7ec823ca6c974133350aec5cf56481dde25e8fe4d",
+ "epsilon_sha256": "d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2",
+ "seed_predictions": {
+  "path": "runs/h7r/R2-DIAG-1/r2_0b/seed_predictions.pt",
+  "sha256": "02ea051d76e38683110957b8029bbe9918f8d1f6c4ab374699df320ea9c5862b"
+ },
+ "runs_sha256sums": "8a3e62e79f9d3b799c3d472dfc7643fa3c93a956ddd622bb6334eb25777e867c",
+ "note": "hashes only: checkpoints, tensors, row predictions and logs stay under runs/ (never committed)"
+}

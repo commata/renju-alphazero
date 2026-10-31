@@ -1,0 +1,172 @@
+{
+ "format": "h7r-r2-reproduce-v1",
+ "contract_sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d",
+ "amendment_sha256": "268aedfc52478aff69bbee158e3e9445ea80e997e1747b76244a0c7ff04bc32c",
+ "git": {
+  "commit": "68df43b6652718ffd9cfda10ef370b3ebe74de66",
+  "dirty": false
+ },
+ "sources": {
+  "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+  "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+  "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+  "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+  "src/hybrid/h7c_train.py": "529cffb875fb7bf4268badccbaf69506be27770b51360523fa9a851de7b5485b"
+ },
+ "hdev": {
+  "contract_sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+  "cache_binding_sha256": "9724d878eed46c9b2a803d212671bc1bebb2c024ed7ba44398468dfd243d4886",
+  "games_sha256": "93b05a037f20c60104268bc11fa572dc999496ec966bbede482394a3c4bab3f6",
+  "rows_sha256": "ed0e4be2a212d7bcce72c501e4674d4376c1c8293fd1f079c7e17b4d99897131",
+  "cache_labels_sha256": "c903d285f1e5e447a4053407edbb57bbc83ecdc61dd140657b1388e6502aa2ef",
+  "test_sha256": "c3b389dad321b82ea98670d7effb1a717d3642abc95718d53b2692dfa5e556fd"
+ },
+ "checkpoint_file_sha256": {
+  "reference": "7f665411889aee1e0a3438928c79c24a3e743b2298777d13d2295559c0d74923",
+  "rerun": "bf916f8a259708f2ceb3f6dcad325614bde82fddcff72a8bf12383603c788223"
+ },
+ "state_sha256": {
+  "reference": "d2b95b155e29e23612148837fd2d64b45b3553538b22c0e05ae6521aec1c0222",
+  "rerun": "5ff8d75fc6ca94e89badf247278e17d63e6f80d328bc3ff1d421f6d5fa37166e"
+ },
+ "value_head_sha256": {
+  "reference": "4a87ffa434cf06bc4a1dcf5e85a35de31fbfa3fb7cbe8d94e7bf4e66c76231ae",
+  "rerun": "00edac4849e3092d6382e84c9369cffb04e0253859790f0caf9155bf1e197bef"
+ },
+ "assignment": {
+  "reference": {
+   "version": "h7r-r2-assignment-v1",
+   "n_cycle": 35816,
+   "n_replay": 2683098,
+   "seed": 20261025,
+   "batch_size": 1024,
+   "total_steps": 210,
+   "epochs": [
+    {
+     "replay_pick_sha256": "5064eb6487129b8930db0e81141e946d8f69d3858fe8a7f263bb9d0ae00f6021",
+     "order_sha256": "62ef6a7435d89bf3106ecd859f9fe685ede8907e7073941193e8be4bb3c1b3b8"
+    },
+    {
+     "replay_pick_sha256": "420e23d4452f2e65fee0b44cc0a5e4bc8bff3c2396256c4306b0d25dc9118274",
+     "order_sha256": "5b6db2c8f1493266f2e229ef0560beffb5c6910e712a24830ecc2aa0b434e33a"
+    },
+    {
+     "replay_pick_sha256": "7370cfd41cf44b74f8521b916ef0b49b927ebc7260f97bf4a82a45143ec68785",
+     "order_sha256": "51499adee38b0ee3849fa35d0c5ccef7170cbade07acd4f583f7e6a5b50cee78"
+    }
+   ],
+   "augmentation_sha256": "5f2635e513b1542dc17dbfe78ba1f02572d4d994181ae6aafffcfc66fac16cdf",
+   "sha256": "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224"
+  },
+  "rerun_sha256": "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224",
+  "compare": {
+   "sizes_equal": true,
+   "common_epochs": 3,
+   "replay_pick_equal": [
+    true,
+    true,
+    true
+   ],
+   "order_equal": [
+    true,
+    true,
+    true
+   ],
+   "augmentation_equal": true,
+   "identical": true
+  },
+  "reference_source": {
+   "kind": "reconstructed: the c8 run stored no fingerprint",
+   "record_sha256": "e47581b5263140802adf84b9c1ff6d44e2bb1e8c48d67c8a00e882c285a56389",
+   "config_sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0",
+   "cache_splits": {
+    "cycle": {
+     "train": "487880b9ec97b02e1eec686440a938017f3bcbfa5aba880c60f3a04180f9b3e1",
+     "val": "92a97e2b0e287483ca4693688829cbd1c34fbf1860ef887770bb9d6c03f29d3f",
+     "test": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+    },
+    "replay": {
+     "train": "bedea484532f25385b0598ab0ce813bef894583ddf5449dbc496d74657e7b2c7",
+     "val": "a84ce0f076e5ee905fd50471272c77446af006b10b1272808397745a53ae6939",
+     "test": "faf36023faeefed796553839d1fda12ac0ae06ebce0f55bee18d7cf1097d023e"
+    }
+   },
+   "trainer_sha256": {
+    "src/hybrid/h7c_train.py": "529cffb875fb7bf4268badccbaf69506be27770b51360523fa9a851de7b5485b",
+    "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e"
+   },
+   "reference_trainer_commit": "bab0545b564a38a896a5ec6b031efd375df5f5bf"
+  }
+ },
+ "best_step": {
+  "reference": 147,
+  "rerun": 147
+ },
+ "curve": {
+  "steps_equal": true,
+  "max_abs_objective_difference": 2.9802322387695312e-08
+ },
+ "predictions": {
+  "raw": {
+   "max_abs": 5.21540641784668e-07,
+   "mean_abs": 4.548951459091307e-08
+  },
+  "d4": {
+   "max_abs": 1.341104507446289e-07,
+   "mean_abs": 2.060248960749895e-08
+  }
+ },
+ "primary": {
+  "metric": {
+   "prediction": "d4",
+   "group": "network",
+   "aggregate": "macro"
+  },
+  "reference": 0.3994961068661282,
+  "rerun": 0.39949610735629293,
+  "abs_difference": 4.901647421284849e-10
+ },
+ "checks": {
+  "state_sha256": [
+   "d2b95b155e29e23612148837fd2d64b45b3553538b22c0e05ae6521aec1c0222",
+   "5ff8d75fc6ca94e89badf247278e17d63e6f80d328bc3ff1d421f6d5fa37166e"
+  ],
+  "assignment": [
+   "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224",
+   "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224"
+  ],
+  "best_step": [
+   147,
+   147
+  ],
+  "max_abs_prediction": 5.21540641784668e-07,
+  "abs_primary": 4.901647421284849e-10
+ },
+ "tolerance": {
+  "max_abs_prediction": 0.001,
+  "abs_primary": 0.0002
+ },
+ "tolerance_source": "amendment R2-DIAG-1-A1 (the parent contract leaves it null)",
+ "run_dir": "runs/h7r/R2-DIAG-1/r2_0b/seed-20261025",
+ "verification_inputs": {
+  "cache": "runs/h7r/R1-HDEV-1/cache",
+  "reference_model": [
+   "runs/h7c/c8/value/best.pt",
+   "runs/h7c/c8/value/best.json"
+  ]
+ },
+ "environment": {
+  "torch": "2.14.0+cu130",
+  "python": "3.12.3",
+  "device": "cuda",
+  "cuda": "13.0",
+  "gpu": "NVIDIA GeForce RTX 5070"
+ },
+ "verdict": {
+  "version": "h7r-r2-reproduction-v1",
+  "verdict": "METRIC_ONLY",
+  "reasons": []
+ },
+ "minutes": 0.2,
+ "scope": "a check that finds reproduction problems; one re-run does not estimate GPU nondeterminism"
+}

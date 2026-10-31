@@ -1,0 +1,542 @@
+{
+ "format": "h7r-r2-epsilon-v1",
+ "stage": "R2-0B",
+ "contract_sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d",
+ "amendment_sha256": "268aedfc52478aff69bbee158e3e9445ea80e997e1747b76244a0c7ff04bc32c",
+ "reproduction_sha256": "a6010542756db592b73783e7ec823ca6c974133350aec5cf56481dde25e8fe4d",
+ "reproduction_verdict": {
+  "version": "h7r-r2-reproduction-v1",
+  "verdict": "METRIC_ONLY",
+  "reasons": []
+ },
+ "r2_0a_sha256": "316be86c8d9075247c7abe6a793fd4cda57e9233cabe5be87a2e6c522f6b6b07",
+ "git": {
+  "commit": "68df43b6652718ffd9cfda10ef370b3ebe74de66",
+  "dirty": false
+ },
+ "sources": {
+  "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+  "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+  "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+  "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+  "src/hybrid/h7c_train.py": "529cffb875fb7bf4268badccbaf69506be27770b51360523fa9a851de7b5485b"
+ },
+ "environment": {
+  "torch": "2.14.0+cu130",
+  "python": "3.12.3",
+  "device": "cuda",
+  "cuda": "13.0",
+  "gpu": "NVIDIA GeForce RTX 5070"
+ },
+ "hdev": {
+  "contract_sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+  "cache_binding_sha256": "9724d878eed46c9b2a803d212671bc1bebb2c024ed7ba44398468dfd243d4886",
+  "games_sha256": "93b05a037f20c60104268bc11fa572dc999496ec966bbede482394a3c4bab3f6",
+  "rows_sha256": "ed0e4be2a212d7bcce72c501e4674d4376c1c8293fd1f079c7e17b4d99897131",
+  "cache_labels_sha256": "c903d285f1e5e447a4053407edbb57bbc83ecdc61dd140657b1388e6502aa2ef",
+  "test_sha256": "c3b389dad321b82ea98670d7effb1a717d3642abc95718d53b2692dfa5e556fd"
+ },
+ "tolerance_source": "amendment R2-DIAG-1-A1 (the parent contract leaves it null)",
+ "seeds": {
+  "31001": {
+   "primary": 0.399295328136391,
+   "components": [
+    0.7458753055253842,
+    0.10623547485159036,
+    0.4221562767864076
+   ],
+   "identity": {
+    "value_checkpoint_sha256": "88d1704ce8cc34b680a45551af23b0b411b3f4c7e28dd41e886c1a349eb52ab0",
+    "value_metadata_sha256": "5bdb50fc60b25435e2dd0f60c4bb00cca54238964628eaafd15d8525bbaec836",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "23eb3deed7b36f06ecf2c2f7168d75cb3978e7d22e6ed1ab7313f74ded31084c"
+   },
+   "best_step": 126,
+   "assignment_sha256": "53f466536e6953043fcca75a92dc858d4f3a73238c477acb2d6882a54aeca460",
+   "run_files_sha256": {
+    "r2_train.json": "0ced9ed0a24fd6a8c8f8cc3a7537450299b8ecc44b68a35756bc9916bc952fee",
+    "record.json": "ea47a90e8a751ed3c3c406a6c6f7209fd481eb58ca60dc40ca5c9c0b7921bb6c",
+    "config.json": "f7c094d9545a8e56d191f289b803c0091a766c47eff7b4491958ece12bbdcbab"
+   }
+  },
+  "31002": {
+   "primary": 0.39862238085730595,
+   "components": [
+    0.7473509079230262,
+    0.10383725729146132,
+    0.422146069557071
+   ],
+   "identity": {
+    "value_checkpoint_sha256": "87b690a07decd6d1c6b8476ded9dc97b152887944df242c97b82eb47ee55021b",
+    "value_metadata_sha256": "b9416725ceaba6fbef622931d1151aebefc2f8df2398ad3adfa3b110d7638b4c",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "393e1673ea03a580a582b8e76a35cfc6d16a00da3c1900eca3b3f299a39e8fcf"
+   },
+   "best_step": 84,
+   "assignment_sha256": "a10b78de9ec36dc4dfad46993985d92a49953836364064fd6787e5a920dddb69",
+   "run_files_sha256": {
+    "r2_train.json": "e7479f80ea93201d7a6f809905f4b7537460295f96551cbf9f395c90ce747725",
+    "record.json": "3d52f39fb942ada0b26ff6850a9592fb05a0135c583ec7d30fb9a755a6f12e55",
+    "config.json": "a3f83248e99eee4cdde79869085eae021c91e549b6b4b67ad4fff7a3e951f156"
+   }
+  },
+  "31003": {
+   "primary": 0.3991299627982585,
+   "components": [
+    0.7451688968666398,
+    0.1058202937885,
+    0.42252713738400577
+   ],
+   "identity": {
+    "value_checkpoint_sha256": "88a6cc6681a320da2a77a659cd659ed992b323256dd6b8c77e5f008f7bf59d29",
+    "value_metadata_sha256": "eeacd09699cc0bcc6f0abd27c2cc2d89fd5f4557aba260323a5426171ee7d2c7",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "1a5703e872acd2e04fda84e9f63f27366fc092cb5b29d0ec570eb81a6ebd9c25"
+   },
+   "best_step": 84,
+   "assignment_sha256": "c5fa36301d9aa3bf6180f3f098bccf08132f33d895594e90125ac28ef39302bb",
+   "run_files_sha256": {
+    "r2_train.json": "ce87259cbfd6a73b9a15bdd42cab85e415f804f13d3ab806e6ccc8d1f0e85be7",
+    "record.json": "0224ebdeb88e3b342fb0b8047d5c4608c0ec6cb5ca625e7bf108db7f51d296e3",
+    "config.json": "57870435a6a5da36d7b3b3620f2d040cf889a692133fa336fb11c6402dbc07a2"
+   }
+  }
+ },
+ "epsilon": {
+  "version": "h7r-r2-epsilon-v1",
+  "value": 0.0019461168062766864,
+  "sample": 0.0019461168062766864,
+  "seed": 0.0006729472790850677,
+  "status": "COMPUTED",
+  "reference": "c8:c5",
+  "reference_difference": -0.004547131086254208,
+  "reference_ci95": [
+   -0.0064690540146787184,
+   -0.0026010142799775217
+  ],
+  "seed_values": {
+   "31001": 0.399295328136391,
+   "31002": 0.39862238085730595,
+   "31003": 0.3991299627982585
+  },
+  "seed_mean": 0.39901589059731846,
+  "seed_sd": 0.00035067629001327594,
+  "unit": "squared value error (game macro, D4 / network)",
+  "meaning": "empirical development threshold: not a statistically guaranteed minimal detectable effect, not a strength or promotion criterion"
+ },
+ "paired": {
+  "seed31001:c5": [
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "macro"
+    },
+    "difference": -0.00474790981599138,
+    "ci95": [
+     -0.006914083586721517,
+     -0.002522943454618184
+    ],
+    "zero_denominator_resamples": 0,
+    "beyond_epsilon": true
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/outcome",
+     "aggregate": "macro"
+    },
+    "difference": -0.02230459631139614,
+    "ci95": [
+     -0.026381114600059947,
+     -0.01819833936949186
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/proof",
+     "aggregate": "macro"
+    },
+    "difference": 0.002287411982242041,
+    "ci95": [
+     0.00023967490287385171,
+     0.004423261542630549
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "pooled"
+    },
+    "difference": -0.001161043650970528,
+    "ci95": [
+     -0.003221626034774664,
+     0.0008757415454645263
+    ],
+    "zero_denominator_resamples": 0
+   }
+  ],
+  "seed31001:c8": [
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "macro"
+    },
+    "difference": -0.00020077872973717215,
+    "ci95": [
+     -0.0011232491281531482,
+     0.0007421285061913791
+    ],
+    "zero_denominator_resamples": 0,
+    "beyond_epsilon": false
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/outcome",
+     "aggregate": "macro"
+    },
+    "difference": -0.003367651508341285,
+    "ci95": [
+     -0.004565676738744068,
+     -0.002138704519259626
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/proof",
+     "aggregate": "macro"
+    },
+    "difference": 0.0009899322670856858,
+    "ci95": [
+     -6.756678577586158e-05,
+     0.0021246761880024004
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "pooled"
+    },
+    "difference": 0.0007333973579193853,
+    "ci95": [
+     -0.00014114947539659614,
+     0.0016062683926295889
+    ],
+    "zero_denominator_resamples": 0
+   }
+  ],
+  "seed31002:c5": [
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "macro"
+    },
+    "difference": -0.005420857095076448,
+    "ci95": [
+     -0.007764501603412989,
+     -0.0030722665971382778
+    ],
+    "zero_denominator_resamples": 0,
+    "beyond_epsilon": true
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/outcome",
+     "aggregate": "macro"
+    },
+    "difference": -0.020828993913754146,
+    "ci95": [
+     -0.025369392682329676,
+     -0.016267250748179748
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/proof",
+     "aggregate": "macro"
+    },
+    "difference": -0.00011080557788700762,
+    "ci95": [
+     -0.0019129408457225442,
+     0.0016988690556307836
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "pooled"
+    },
+    "difference": -0.0011712508803071175,
+    "ci95": [
+     -0.0035627022038567458,
+     0.0012021553921905462
+    ],
+    "zero_denominator_resamples": 0
+   }
+  ],
+  "seed31002:c8": [
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "macro"
+    },
+    "difference": -0.0008737260088222398,
+    "ci95": [
+     -0.001604588559789635,
+     -0.00014635805276480633
+    ],
+    "zero_denominator_resamples": 0,
+    "beyond_epsilon": false
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/outcome",
+     "aggregate": "macro"
+    },
+    "difference": -0.0018920491106992898,
+    "ci95": [
+     -0.003102436577731278,
+     -0.0006901711497773386
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/proof",
+     "aggregate": "macro"
+    },
+    "difference": -0.0014082852930433626,
+    "ci95": [
+     -0.0021318235961260744,
+     -0.0006905558064667543
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "pooled"
+    },
+    "difference": 0.0007231901285827957,
+    "ci95": [
+     -8.223373639692144e-05,
+     0.001506705553933116
+    ],
+    "zero_denominator_resamples": 0
+   }
+  ],
+  "seed31003:c5": [
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "macro"
+    },
+    "difference": -0.004913275154123875,
+    "ci95": [
+     -0.00725641387447882,
+     -0.002529734005074384
+    ],
+    "zero_denominator_resamples": 0,
+    "beyond_epsilon": true
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/outcome",
+     "aggregate": "macro"
+    },
+    "difference": -0.023011004970140525,
+    "ci95": [
+     -0.027440655433069398,
+     -0.01856998510778533
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/proof",
+     "aggregate": "macro"
+    },
+    "difference": 0.001872230919151674,
+    "ci95": [
+     -0.00022883199426506574,
+     0.0040488023998664
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "pooled"
+    },
+    "difference": -0.0007901830533723619,
+    "ci95": [
+     -0.003043498346607513,
+     0.001407991603289483
+    ],
+    "zero_denominator_resamples": 0
+   }
+  ],
+  "seed31003:c8": [
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "macro"
+    },
+    "difference": -0.000366144067869667,
+    "ci95": [
+     -0.0012632496446979577,
+     0.0005621923185592133
+    ],
+    "zero_denominator_resamples": 0,
+    "beyond_epsilon": false
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/outcome",
+     "aggregate": "macro"
+    },
+    "difference": -0.004074060167085669,
+    "ci95": [
+     -0.005333637505553602,
+     -0.0027752627398944484
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network/proof",
+     "aggregate": "macro"
+    },
+    "difference": 0.000574751203995319,
+    "ci95": [
+     -0.0003603613995034404,
+     0.0015932815068347447
+    ],
+    "zero_denominator_resamples": 0
+   },
+   {
+    "metric": {
+     "prediction": "d4",
+     "group": "network",
+     "aggregate": "pooled"
+    },
+    "difference": 0.0011042579555175513,
+    "ci95": [
+     0.0002804029706800391,
+     0.0019215279121755629
+    ],
+    "zero_denominator_resamples": 0
+   }
+  ]
+ },
+ "r2_0a_reread": {
+  "c6:c5": {
+   "difference": -0.0011807837115311859,
+   "ci95": [
+    -0.0018271623296199702,
+    -0.0005287215889750398
+   ],
+   "epsilon": 0.0019461168062766864,
+   "reading": "WITHIN_EPSILON"
+  },
+  "c7:c5": {
+   "difference": -0.004366966845266329,
+   "ci95": [
+    -0.00587653492962373,
+    -0.0028123616919778576
+   ],
+   "epsilon": 0.0019461168062766864,
+   "reading": "BEYOND_EPSILON"
+  },
+  "c8:c5": {
+   "difference": -0.004547131086254208,
+   "ci95": [
+    -0.0064690540146787184,
+    -0.0026010142799775217
+   ],
+   "epsilon": 0.0019461168062766864,
+   "reading": "BEYOND_EPSILON"
+  },
+  "mask:c5": {
+   "difference": -0.0020855599531057756,
+   "ci95": [
+    -0.003703082819475806,
+    -0.00045795489319871204
+   ],
+   "epsilon": 0.0019461168062766864,
+   "reading": "BEYOND_EPSILON"
+  },
+  "orig:c5": {
+   "difference": 0.003156563464885298,
+   "ci95": [
+    0.0008974520024598502,
+    0.005495039408210976
+   ],
+   "epsilon": 0.0019461168062766864,
+   "reading": "BEYOND_EPSILON"
+  },
+  "mask:c8": {
+   "difference": 0.0024615711331484325,
+   "ci95": [
+    0.0014085390861969327,
+    0.0035046908398230028
+   ],
+   "epsilon": 0.0019461168062766864,
+   "reading": "BEYOND_EPSILON"
+  }
+ },
+ "predictions": {
+  "path": "runs/h7r/R2-DIAG-1/r2_0b/seed_predictions.pt",
+  "sha256": "02ea051d76e38683110957b8029bbe9918f8d1f6c4ab374699df320ea9c5862b"
+ },
+ "minutes": 0.46,
+ "scope": "R2-0A comparisons are single runs: BEYOND_EPSILON is descriptive, not the DEVELOPMENT_SIGNAL rule (three seeds against a direct control); no promotion, confirmation or strength claim"
+}
