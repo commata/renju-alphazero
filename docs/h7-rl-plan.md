@@ -1956,3 +1956,12 @@ git push origin feat/h7-c1
 - C, D, E의 실패 메시지와 F의 출력을 그대로 보고한다.
 - ε는 경험적 개발용 문턱이다. 통계적 MDE, 기력 향상, 승급 기준이 아니다.
 - R2-0A 비교의 `BEYOND_EPSILON`은 단일 실행에 대한 기술적 표시다. `DEVELOPMENT_SIGNAL`은 세 seed와 직접 control로만 판정한다.
+
+### 9.18 R2-0B 기록 검증 보완 (2026-10-31)
+
+- seed 학습과 ε 계산은 재현 기록의 `checks`를 그대로 신뢰하지 않는다. 재현에 사용한 c8 checkpoint·metadata와 H-dev 경로를 `verification_inputs`로 기록하고, 실제 모델과 cache에서 재현 비교를 읽기 전용으로 다시 계산한다. checks·상세 예측 오차·주 지표·state·배정·선택 step·곡선·판정이 원본과 맞아야 진행한다.
+- 재계산의 부동소수점 값 대조에는 abs 1e-7 / rel 1e-6 반올림 허용만 적용한다. SHA·배정·step·판정은 정확히 일치해야 한다. 수정안의 재현 허용 오차(0.001 / 0.0002)는 바꾸지 않았고, 새로 계산한 판정도 통과해야 한다.
+- seed별로 `config.json`과 `record.json` SHA를 다시 확인한다. seed 외 설정, parent·cycle·replay 출처, 배정 지문, 선택 step·적격성·곡선, metadata와 실제 checkpoint state도 함께 대조한다. ε 결과에는 학습 기록·config의 SHA를 추가한다.
+- 이 검사는 학습 기록과 산출물의 일관성 확인이다. 악의적으로 모든 파일과 기록을 함께 다시 만드는 행위에 대한 서명·인증 체계는 아니다.
+- §9.17 A–G 명령은 그대로 사용한다. seed 진입과 ε 계산 때 두 모델의 H-dev 추론을 다시 하므로 검증 시간이 추가된다. 실제 R2-0B 학습은 이번 보완에서 실행하지 않았다.
+- `verification_inputs`가 없는 이전 재현 기록은 자동 보정하지 않고 거부한다. 기존 파일은 보존하고, 필요하면 새 출력 경로로 `reproduce`를 실행한다. 이미 진행 중인 실행의 HEAD를 바꾸지 않는다.

@@ -704,6 +704,23 @@ class SeedRunTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'does not follow from its checks'):
                 seed_tool.train(train_args(31001, 'runs_e', reproduction=tmp / 'out/edited.json'), log=QUIET)
 
+            # Self-consistent checks and verdict are still not evidence: compare them to the source artifacts.
+            forged = copy.deepcopy(stored)
+            forged['checks']['state_sha256'] = ['a' * 64, 'b' * 64]
+            forged['verdict'] = r2.reproduction_verdict(forged['checks'],
+                                                       amendment['r2_0b']['reproduction']['tolerance'])
+            self.assertEqual(forged['verdict']['verdict'], 'METRIC_ONLY')
+            (tmp / 'out/forged.json').write_text(json.dumps(forged))
+            with self.assertRaisesRegex(ValueError, 'differs from source artifacts'):
+                seed_tool.train(train_args(31001, 'runs_forged', reproduction=tmp / 'out/forged.json'), log=QUIET)
+            self.assertFalse((tmp / 'runs_forged').exists())
+            bad_detail = copy.deepcopy(stored)
+            bad_detail['predictions']['raw']['max_abs'] = 0.1
+            bad_detail['primary']['abs_difference'] = 0.01
+            (tmp / 'out/bad_detail.json').write_text(json.dumps(bad_detail))
+            with self.assertRaisesRegex(ValueError, 'differs from source artifacts'):
+                seed_tool.train(train_args(31001, 'runs_bad_detail', reproduction=tmp / 'out/bad_detail.json'), log=QUIET)
+
             seeds = {}
             for seed in (31001, 31002, 31003):
                 seeds[seed] = seed_tool.train(train_args(seed, f'seed-{seed}', reproduction=tmp / 'out/repro.json'),
@@ -723,6 +740,40 @@ class SeedRunTest(unittest.TestCase):
                     'model': [f'{n}={c},{m}' for n, (c, m) in pair.items()], 'device': 'cpu',
                     'predictions': tmp / 'runs/r2/seeds.pt', 'output': tmp / 'out/eps.json',
                     'allow_dirty': True, 'allow_draft': True, 'allow_unapproved': True, **change})
+
+            # Every seed's source files are revalidated by epsilon, not only its model and self-reported seed.
+            for filename, change, message in (
+                    ('config.json', lambda x: x.update(seed=31003), 'config file changed'),
+                    ('record.json', lambda x: x['inputs'].update(replay_labels_sha256='0' * 64),
+                     'trainer record changed'),
+                    ('r2_train.json', lambda x: x.update(best_step=999), 'selected step / eligibility differs')):
+                path = tmp / 'seed-31001' / filename
+                original = path.read_bytes()
+                changed = json.loads(original)
+                change(changed)
+                path.write_text(json.dumps(changed))
+                try:
+                    with self.assertRaisesRegex(ValueError, message):
+                        seed_tool.epsilon_command(eps_args(predictions=None), log=QUIET)
+                finally:
+                    path.write_bytes(original)
+
+            # Even rewriting the outer hash cannot disguise a seed/config change inside the trainer record.
+            trainer_path = tmp / 'seed-31001/record.json'
+            outer_path = tmp / 'seed-31001/r2_train.json'
+            trainer_bytes, outer_bytes = trainer_path.read_bytes(), outer_path.read_bytes()
+            changed = json.loads(trainer_bytes)
+            changed['config']['seed'] = 31003
+            trainer_path.write_text(json.dumps(changed))
+            outer = json.loads(outer_bytes)
+            outer['trainer_record_sha256'] = r2.file_sha256(trainer_path)
+            outer_path.write_text(json.dumps(outer))
+            try:
+                with self.assertRaisesRegex(ValueError, 'trainer config / seed differs'):
+                    seed_tool.epsilon_command(eps_args(predictions=None), log=QUIET)
+            finally:
+                trainer_path.write_bytes(trainer_bytes)
+                outer_path.write_bytes(outer_bytes)
 
             with self.assertRaisesRegex(ValueError, 'exactly the seeds'):  # a missing seed
                 seed_tool.epsilon_command(eps_args(run_dir=[tmp / 'seed-31001', tmp / 'seed-31002']), log=QUIET)
@@ -760,6 +811,16 @@ class SeedRunTest(unittest.TestCase):
         self.assertFalse(seed_tool.beyond(-0.005, [-0.009, 0.001], 0.002))  # interval crosses 0
         self.assertTrue(seed_tool.beyond(0.004, [0.001, 0.006], 0.002))
         self.assertFalse(seed_tool.beyond(-0.005, [-0.007, -0.003], None))
+
+    def test_source_recheck_roundoff_does_not_relax_identities(self):
+        from scripts import h7r_r2_seed as seed_tool
+        self.assertTrue(seed_tool.same_source_values({'loss': 0.4, 'step': 147},
+                                                     {'loss': 0.4 + 1e-9, 'step': 147}))
+        self.assertFalse(seed_tool.same_source_values({'step': 147}, {'step': 148}))
+        self.assertFalse(seed_tool.same_source_values({'step': 147}, {'step': 147.0}))
+        self.assertFalse(seed_tool.same_source_values({'sha': 'a' * 64}, {'sha': 'b' * 64}))
+        self.assertFalse(seed_tool.same_source_values({'loss': 0.4}, {'loss': 0.401}))
+        self.assertFalse(seed_tool.same_source_values(float('nan'), float('nan')))
 
 if __name__ == '__main__':
     unittest.main()

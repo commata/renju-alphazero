@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 import time
@@ -45,6 +46,22 @@ TOOL_SOURCES = ('scripts/h7r_r2_seed.py', 'scripts/h7r_r2.py', 'src/hybrid/h7r_r
 EPSILON_FORMAT = 'h7r-r2-epsilon-v1'
 SAME_INPUTS = ('parent_checkpoint_sha256', 'parent_metadata_sha256', 'cycle_labels_sha256', 'replay_labels_sha256',
                'cycle_cache_splits', 'replay_cache_splits')
+
+
+def same_source_values(saved, actual) -> bool:
+    """Exact identities and structure, with rounding tolerance for re-evaluated floating-point metrics only.
+    This does not relax the amendment's reproduction thresholds: the freshly computed verdict must also match."""
+    if isinstance(saved, dict) and isinstance(actual, dict):
+        return saved.keys() == actual.keys() and all(same_source_values(saved[k], actual[k]) for k in saved)
+    if isinstance(saved, (list, tuple)) and isinstance(actual, (list, tuple)):
+        return len(saved) == len(actual) and all(same_source_values(a, b) for a, b in zip(saved, actual))
+    if type(saved) in (int, bool) or type(actual) in (int, bool):
+        return type(saved) is type(actual) and saved == actual
+    if isinstance(saved, float) or isinstance(actual, float):
+        return (type(saved) in (int, float) and type(actual) in (int, float)
+                and math.isfinite(saved) and math.isfinite(actual)
+                and math.isclose(saved, actual, rel_tol=1e-6, abs_tol=1e-7))
+    return type(saved) is type(actual) and saved == actual
 
 
 def approved(args, root: Path) -> tuple[dict, str, dict, str]:
@@ -73,7 +90,76 @@ def environment(device: str) -> dict:
     return out
 
 
-def passed_reproduction(path, contract_sha: str, amendment: dict, amendment_sha: str) -> tuple[dict, str]:
+def checked_training_run(run_dir, contract: dict, contract_sha: str, amendment: dict, amendment_sha: str,
+                         root: Path, role: str, reproduction_sha: str | None = None) -> tuple[dict, dict]:
+    """Revalidate the run's config, trainer record, candidate and state against the pinned c8 recipe."""
+    from hybrid import h7c_train as tr
+    from hybrid.h6_value_train import frozen_state, state_sha256
+
+    run_dir = Path(run_dir)
+    rec = json.loads((run_dir / 'r2_train.json').read_text(encoding='utf-8'))
+    b = amendment['r2_0b']
+    r2.require(rec.get('format') == r2.TRAIN_FORMAT and rec.get('role') == role,
+               f'{run_dir}: not the {role.replace("_", "-")} run')
+    r2.require(rec.get('contract_sha256') == contract_sha and rec.get('amendment_sha256') == amendment_sha
+               and rec.get('reference_record_sha256') == b['reference_record']['sha256'],
+               f'{run_dir}: another contract, amendment or reference')
+    allowed = [b['reproduction_seed']] if role == 'reproduction' else b['training_seeds']
+    r2.require(type(rec.get('seed')) is int and rec['seed'] in allowed, f'{run_dir}: unexpected training seed')
+    r2.require(rec.get('reproduction_sha256') == reproduction_sha,
+               f'{run_dir}: another reproduction record')
+    r2.require(rec.get('verdict') == 'CANDIDATE', f'{run_dir}: no candidate')
+    ref, config = reference(amendment, contract, root)
+    trainer_path, config_path = run_dir / 'record.json', run_dir / 'config.json'
+    r2.require(r2.file_sha256(trainer_path) == rec.get('trainer_record_sha256'),
+               f'{run_dir}: the trainer record changed')
+    config_sha = r2.file_sha256(config_path)
+    r2.require(config_sha == (rec.get('config') or {}).get('sha256'), f'{run_dir}: the config file changed')
+    cfg = json.loads(config_path.read_text(encoding='utf-8'))
+    r2.require(cfg == {**config, 'seed': rec['seed']}, f'{run_dir}: config differs beyond the seed')
+    trainer = json.loads(trainer_path.read_text(encoding='utf-8'))
+    r2.require(trainer.get('format') == ref['format'] and trainer.get('cycle') == ref['cycle']
+               and trainer.get('verdict') == 'CANDIDATE', f'{run_dir}: not a candidate trainer record')
+    for key in SAME_INPUTS:
+        r2.require(trainer['inputs'][key] == ref['inputs'][key], f'{run_dir}: trainer {key} differs from reference')
+    r2.require(trainer['inputs']['config_sha256'] == config_sha, f'{run_dir}: trainer config SHA differs')
+    expected_cfg = tr.config_dict(tr.ValueConfig.from_dict({**cfg, 'device': rec['environment']['device']}))
+    r2.require(trainer.get('config') == expected_cfg, f'{run_dir}: trainer config / seed differs')
+    r2.require(trainer.get('git') == rec.get('git') and rec.get('hdev_used') is False,
+               f'{run_dir}: inconsistent training provenance')
+    for key in ('total_steps', 'steps_per_epoch', 'warmup_steps', 'train_rows_per_epoch', 'union_masking'):
+        r2.require(trainer.get(key) == ref.get(key), f'{run_dir}: trainer {key} differs from reference')
+    best = trainer.get('best') or {}
+    r2.require(best.get('eligible') is True and rec.get('best_step') == best.get('step'),
+               f'{run_dir}: selected step / eligibility differs')
+    curve = [{'step': e['step'], 'objective': e['objective'], 'eligible': e['eligible']}
+             for e in trainer['evaluations']]
+    r2.require(curve == rec.get('curve'), f'{run_dir}: training curve differs')
+    sizes = rec['assignment']
+    assignment = r2.data_assignment(trainer['train_rows_per_epoch'] // 2, sizes['n_replay'], rec['seed'],
+                                    cfg['batch_size'], cfg['epochs'], cfg.get('augment_d4', True))
+    r2.require(assignment == sizes, f'{run_dir}: data assignment differs')
+    r2.require(trainer.get('candidate') == rec.get('candidate'), f'{run_dir}: candidate records differ')
+    cand = rec['candidate']
+    spec = {**contract['models']['c5'], 'value_checkpoint_sha256': cand['checkpoint_sha256'],
+            'value_metadata_sha256': cand['metadata_sha256']}
+    model, _ = r2.check_model('run', spec, run_dir / 'best.pt', run_dir / 'best.json',
+                              contract['frozen_state_sha256'], 'cpu')
+    meta = json.loads((run_dir / 'best.json').read_text(encoding='utf-8'))
+    r2.require(meta.get('config') == trainer['config'] and meta.get('best') == trainer['best']
+               and meta.get('git') == trainer['git']
+               and meta.get('parent_value_checkpoint_sha256') == trainer['inputs']['parent_checkpoint_sha256'],
+               f'{run_dir}: candidate metadata differs from trainer')
+    state = model.state_dict()
+    actual = {'state_sha256': state_sha256(state),
+              'value_head_sha256': state_sha256({k: v for k, v in state.items() if k.startswith('value_head.')}),
+              'frozen_state_sha256': state_sha256(frozen_state(model))}
+    r2.require(actual == rec.get('states'), f'{run_dir}: checkpoint state differs from run record')
+    return rec, trainer
+
+
+def passed_reproduction(path, contract: dict, contract_sha: str, amendment: dict, amendment_sha: str,
+                        root: Path, args) -> tuple[dict, str]:
     """The reproduction record, consistent and passed: this contract and amendment, its verdict recomputed from its
     stored checks with the amendment's tolerances, its re-run checkpoint still the file it compared."""
     r2.require(path is not None, 'the passed reproduction record is required first (reproduce)')
@@ -88,6 +174,19 @@ def passed_reproduction(path, contract_sha: str, amendment: dict, amendment_sha:
     run_dir = Path(record['run_dir'])
     r2.require(r2.file_sha256(run_dir / 'best.pt') == record['checkpoint_file_sha256']['rerun'],
                f'{run_dir}: the reproduction checkpoint changed')
+    inputs = record.get('verification_inputs')
+    r2.require(isinstance(inputs, dict) and set(inputs) == {'cache', 'reference_model'},
+               f'{path}: missing reproduction verification inputs; create a new reproduce record')
+    # Re-run the read-only comparison from the pinned models and H-dev. Stored checks are not evidence by themselves.
+    verify_args = argparse.Namespace(**{**vars(args), 'run_dir': run_dir, 'cache': root / inputs['cache'],
+                                       'reference_model': ','.join(str(root / p) for p in inputs['reference_model']),
+                                       'output': path})
+    actual = reproduce(verify_args, log=lambda *a, **k: None,
+                       validation_context=(contract, contract_sha, amendment, amendment_sha))
+    for key in ('checks', 'verdict', 'state_sha256', 'value_head_sha256', 'checkpoint_file_sha256', 'assignment',
+                'best_step', 'curve', 'predictions', 'primary', 'hdev', 'tolerance'):
+        r2.require(same_source_values(record.get(key), actual[key]),
+                   f'{path}: reproduction {key} differs from source artifacts')
     return record, r2.file_sha256(path)
 
 
@@ -122,8 +221,8 @@ def train(args, log=print) -> dict:
                f"seed {args.seed}: not a training seed {b['training_seeds']} nor the reproduction seed")
     reproduction_sha = None
     if args.seed in b['training_seeds']:  # only after the reproduction check passed
-        _, reproduction_sha = passed_reproduction(getattr(args, 'reproduction', None), contract_sha, amendment,
-                                                  amendment_sha)
+        _, reproduction_sha = passed_reproduction(getattr(args, 'reproduction', None), contract, contract_sha,
+                                                  amendment, amendment_sha, root, args)
     else:
         r2.require(getattr(args, 'reproduction', None) is None, 'the reproduction run takes no reproduction record')
     git = {'commit': _git_commit(), 'dirty': _git_dirty()}
@@ -202,7 +301,7 @@ def train(args, log=print) -> dict:
     return body
 
 
-def reproduce(args, log=print) -> dict:
+def reproduce(args, log=print, *, validation_context=None) -> dict:
     import torch
 
     import h7r_holdout as ho
@@ -212,14 +311,16 @@ def reproduce(args, log=print) -> dict:
 
     root = Path(getattr(args, 'root', ROOT))
     started = time.monotonic()
-    contract, contract_sha, amendment, amendment_sha = approved(args, root)
+    contract, contract_sha, amendment, amendment_sha = validation_context or approved(args, root)
     b = amendment['r2_0b']
     git = {'commit': _git_commit(), 'dirty': _git_dirty()}
     r2.require(git['dirty'] is False or args.allow_dirty, 'the tree is dirty: R2 records must name a clean commit')
-    r2.require(not Path(args.output).exists(), f'{args.output} exists')
+    if validation_context is None:
+        r2.require(not Path(args.output).exists(), f'{args.output} exists')
     record_ref, config = reference(amendment, contract, root)
     run_dir = Path(args.run_dir)
-    rerun = json.loads((run_dir / 'r2_train.json').read_text(encoding='utf-8'))
+    rerun, trainer = checked_training_run(run_dir, contract, contract_sha, amendment, amendment_sha, root,
+                                          'reproduction')
     r2.require(rerun.get('format') == r2.TRAIN_FORMAT and rerun['role'] == 'reproduction'
                and rerun['seed'] == b['reproduction_seed'] == record_ref['config']['seed'],
                'the run is not the reproduction run of the reference seed')
@@ -303,11 +404,16 @@ def reproduce(args, log=print) -> dict:
            'checks': {k: list(v) if isinstance(v, tuple) else v for k, v in checks.items()},
            'tolerance': b['reproduction']['tolerance'],
            'tolerance_source': 'amendment R2-DIAG-1-A1 (the parent contract leaves it null)',
-           'run_dir': str(run_dir), 'environment': environment(args.device), 'verdict': verdict,
+           'run_dir': str(run_dir),
+           'verification_inputs': {'cache': str(Path(args.cache).resolve().relative_to(root.resolve())),
+                                   'reference_model': [str(p.resolve().relative_to(root.resolve()))
+                                                       for p in models['c8']]},
+           'environment': environment(args.device), 'verdict': verdict,
            'minutes': round((time.monotonic() - started) / 60, 2),
            'scope': 'a check that finds reproduction problems; one re-run does not estimate GPU nondeterminism'}
-    from hybrid.h7r_ledger import publish_json
-    publish_json(args.output, out)
+    if validation_context is None:
+        from hybrid.h7r_ledger import publish_json
+        publish_json(args.output, out)
     return out
 
 
@@ -340,7 +446,8 @@ def epsilon_command(args, log=print) -> dict:
     if args.predictions:
         import h7c_labels as lab
         r2.require(lab._under_data_or_runs(Path(args.predictions)), 'predictions go under data/ or runs/')
-    reproduction, reproduction_sha = passed_reproduction(args.reproduction, contract_sha, amendment, amendment_sha)
+    reproduction, reproduction_sha = passed_reproduction(args.reproduction, contract, contract_sha, amendment,
+                                                         amendment_sha, root, args)
     pin = amendment['x1']['inputs']['result']
     r2.require(r2.file_sha256(args.result) == pin['sha256'], f'{args.result}: not the committed R2-0A record')
     result = json.loads(Path(args.result).read_text(encoding='utf-8'))
@@ -356,6 +463,8 @@ def epsilon_command(args, log=print) -> dict:
                    and rec['reproduction_sha256'] == reproduction_sha,
                    f'{run_dir}: another contract, amendment or reproduction record')
         r2.require(rec['verdict'] == 'CANDIDATE', f"seed {rec['seed']}: {rec['verdict']}: stop (never dropped)")
+        rec, _ = checked_training_run(run_dir, contract, contract_sha, amendment, amendment_sha, root,
+                                      'seed_spread', reproduction_sha)
         runs[rec['seed']] = (run_dir, rec)
     r2.require(sorted(runs) == sorted(b['training_seeds']),
                f"exactly the seeds {b['training_seeds']} are needed, got {sorted(runs)}")
@@ -414,7 +523,9 @@ def epsilon_command(args, log=print) -> dict:
         own = {(p, g): sums[(name, p, g)] for p, g in cells}
         seed_metrics[seed] = {'primary': pick(own, primary), 'components': [pick(own, m) for m in wanted[1:]],
                               'identity': identity[name], 'best_step': runs[seed][1]['best_step'],
-                              'assignment_sha256': runs[seed][1]['assignment']['sha256']}
+                              'assignment_sha256': runs[seed][1]['assignment']['sha256'],
+                              'run_files_sha256': {f: r2.file_sha256(runs[seed][0] / f)
+                                                   for f in ('r2_train.json', 'record.json', 'config.json')}}
     seed_values = [seed_metrics[s]['primary'] for s in sorted(runs)]
     ref = result['summary'][contract['epsilon']['reference']]['primary']
     eps = r2.epsilon(ref['difference'], ref['ci95'], seed_values, reproduction['verdict']['verdict'])
