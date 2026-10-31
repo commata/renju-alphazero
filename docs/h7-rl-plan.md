@@ -1965,3 +1965,17 @@ git push origin feat/h7-c1
 - 이 검사는 학습 기록과 산출물의 일관성 확인이다. 악의적으로 모든 파일과 기록을 함께 다시 만드는 행위에 대한 서명·인증 체계는 아니다.
 - §9.17 A–G 명령은 그대로 사용한다. seed 진입과 ε 계산 때 두 모델의 H-dev 추론을 다시 하므로 검증 시간이 추가된다. 실제 R2-0B 학습은 이번 보완에서 실행하지 않았다.
 - `verification_inputs`가 없는 이전 재현 기록은 자동 보정하지 않고 거부한다. 기존 파일은 보존하고, 필요하면 새 출력 경로로 `reproduce`를 실행한다. 이미 진행 중인 실행의 HEAD를 바꾸지 않는다.
+
+### 9.18 R2-0B 결과와 D4 baseline 초안 (2026-10-31)
+
+- **R2-0B**(`docs/h7r/r2/R2-DIAG-1/r2_0b/`, 실행 commit `68df43b`)
+  - 재현: `METRIC_ONLY`(\|ΔL\| 4.9e-10, 예측 \|Δv\| 최대 5.2e-7, 같은 배정과 step)
+  - ε = 0.0019461(sample 부분이 정함, seed 부분 0.000673)
+  - seed 세 개 모두 c5 대비 주 지표가 ε보다 크게 개선됐다. 직접 control 대비 `DEVELOPMENT_SIGNAL`은 아니다.
+  - 자세한 내용: 초안 §16
+- **기록 사본 폴더**: docs 아래 `runs/`는 `.gitignore`의 `runs/` 규칙에 걸린다(`4180beb`에서 강제 추가). 앞으로 사본은 `records/`에 둔다.
+- **D4 baseline 하위 계약 초안**: `docs/h7r/r2/R2-D4-BASELINE-1-draft.md`(draft, 실행 불가)
+  - c5 대 세 seed 모델의 수 선택과 Rapfi continuation을 H-dev 396판에서 본다.
+  - 실행 전에 적어 둔 예상 정밀도: 비교당 약 420 관측, 구간 반폭 약 0.05. 가장 가능성이 높은 결과는 `NOT_ESTABLISHED`다.
+  - 탐색과 Rapfi 비용은 계획용으로 약 2–3시간이다.
+  - 문서 검토 → 구현·fixed 계약 → smoke·본 실행의 세 단계로 따로 승인받는다.
