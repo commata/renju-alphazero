@@ -38,10 +38,11 @@
    "assignment": "int(sha256(game_id), 16) % k"
   },
   "bootstrap": "the contract bootstrap (samples, seed, percentile 0.95); cross-fitted offsets re-estimated in every replicate",
-  "reading": "post-hoc exploratory: no promotion, confirmation or independent evidence; no change of the primary metric or of the R2-0A readings"
+  "reading": "post-hoc exploratory: no promotion, confirmation or independent evidence; no change of the primary metric or of the R2-0A readings",
+  "record_note": "the X1 record (x1_side_offset.json) names this amendment before the R2-0B approval (sha256 f0c7da519e9c..., commit b0a2fc4); its inputs and readings are unchanged"
  },
  "r2_0b": {
-  "approved": false,
+  "approved": true,
   "reference_record": {
    "path": "docs/h7c/c8/value_record.json",
    "sha256": "e47581b5263140802adf84b9c1ff6d44e2bb1e8c48d67c8a00e882c285a56389"
@@ -72,6 +73,7 @@
     "equal selected step"
    ],
    "note": "operational tolerances fixed before any R2-0B run, not statistically derived; never relaxed after results"
-  }
+  },
+  "approval": "R2-0B approved (2026-10-31): the reproduction run, the reproduce check, the three seed runs, their H-dev evaluation and epsilon, in that order; recipe, seeds, tolerances and the epsilon rule unchanged. Not approved: D1-D5, new games, Rapfi, X2, H-conf / A-conf, champion change"
  }
 }

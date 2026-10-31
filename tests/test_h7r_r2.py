@@ -452,7 +452,7 @@ class AmendmentTest(unittest.TestCase):
         contract, sha = r2.load_contract(CONTRACT)
         a, _ = r2.load_amendment(ROOT / 'docs/h7r/r2/R2-DIAG-1-A1.json', contract, sha)
         self.assertTrue(a['x1']['approved'] and a['x1']['exploratory'])
-        self.assertFalse(a['r2_0b']['approved'])  # no training run
+        self.assertTrue(a['r2_0b']['approved'])  # R2-0B approved (recipe, seeds, tolerances unchanged)
         self.assertEqual(a['r2_0b']['reproduction']['tolerance'], {'max_abs_prediction': 0.001, 'abs_primary': 0.0002})
         self.assertEqual(a['x1']['inputs']['result']['sha256'],
                          r2.file_sha256(ROOT / 'docs/h7r/r2/R2-DIAG-1/r2_0a.json'))
@@ -639,11 +639,20 @@ class SeedRunTest(unittest.TestCase):
             body['frozen_state_sha256'] = ref['frozen_state_sha256']
             cpath.write_text(json.dumps(body))
             contract, csha = r2.load_contract(cpath)
+            # the committed R2-0A record of these models, pinned by the amendment before any R2-0B run
+            from scripts import h7r_r2 as cli
+            pair = {'c5': (parent, parent.with_name('best.json')), 'c8': (tmp / 'ref/best.pt', tmp / 'ref/best.json')}
+            cli.evaluate(ev.args(tmp, cpath, pair), log=QUIET)
             amendment = committed_amendment()
             amendment['parent'] = {'path': str(cpath), 'sha256': csha}
+            amendment['x1']['inputs'] = {
+                'result': {'path': 'out/r2_0a.json', 'sha256': r2.file_sha256(tmp / 'out/r2_0a.json')},
+                'predictions': {'path': 'runs/r2/predictions.pt',
+                                'sha256': r2.file_sha256(tmp / 'runs/r2/predictions.pt')}}
             amendment['r2_0b']['reference_record'] = {'path': 'ref/record.json',
                                                       'sha256': r2.file_sha256(tmp / 'ref/record.json')}
             amendment['r2_0b']['config'] = {'path': 'value.json', 'sha256': r2.file_sha256(config)}
+            amendment['r2_0b']['approved'] = False  # the approval gate is tested; the other calls pass it explicitly
             apath = tmp / 'A1.json'
             apath.write_text(json.dumps(amendment))
 
@@ -659,15 +668,17 @@ class SeedRunTest(unittest.TestCase):
             self.assertFalse((tmp / 'runs_x').exists())
             with self.assertRaisesRegex(ValueError, 'not a training seed'):
                 seed_tool.train(train_args(999, 'runs_y'), log=QUIET)
-            with self.assertRaisesRegex(ValueError, 'not the reference run\'s replay'):
-                seed_tool.train(train_args(31001, 'runs_z', replay_cache=cycle_cache), log=QUIET)
+            with self.assertRaisesRegex(ValueError, 'reproduction record is required first'):  # the order
+                seed_tool.train(train_args(31001, 'runs_w'), log=QUIET)
+            self.assertFalse((tmp / 'runs_w').exists())
+            with self.assertRaisesRegex(ValueError, "not the reference run's replay"):
+                seed_tool.train(train_args(20261025, 'runs_z', replay_cache=cycle_cache), log=QUIET)
+            with self.assertRaises(ValueError):  # H-dev never enters training: its cache is not the c8 cycle cache
+                seed_tool.train(train_args(20261025, 'runs_h', cycle_cache=tmp / 'runs/cache'), log=QUIET)
             rep = seed_tool.train(train_args(20261025, 'rep'), log=QUIET)
             self.assertEqual((rep['role'], rep['verdict'], rep['hdev_used']), ('reproduction', 'CANDIDATE', False))
             self.assertEqual(rep['best_step'], ref['best']['step'])
-            other = seed_tool.train(train_args(31001, 'seed-31001'), log=QUIET)
-            self.assertEqual(other['role'], 'seed_spread')
-            self.assertFalse(r2.compare_assignments(rep['assignment'], other['assignment'])['identical'])
-            self.assertEqual(json.loads((tmp / 'seed-31001/config.json').read_text())['seed'], 31001)
+            self.assertIn('torch', rep['environment'])
             rargs = argparse.Namespace(root=tmp, contract=cpath, amendment=apath, cache=tmp / 'runs/cache',
                                        reference_model=f"{tmp / 'ref/best.pt'},{tmp / 'ref/best.json'}",
                                        run_dir=tmp / 'rep', device='cpu', output=tmp / 'out/repro.json',
@@ -675,12 +686,80 @@ class SeedRunTest(unittest.TestCase):
             out = seed_tool.reproduce(rargs, log=QUIET)
             self.assertEqual(out['verdict']['verdict'], 'BITWISE_REPRODUCED', out['verdict'])
             self.assertTrue(out['assignment']['compare']['identical'])
+            self.assertTrue(out['assignment']['reference_source']['kind'].startswith('reconstructed'))
             self.assertEqual(out['predictions']['d4']['max_abs'], 0.0)
             self.assertEqual(out['primary']['abs_difference'], 0.0)
+            self.assertIn('amendment', out['tolerance_source'])
+            with self.assertRaisesRegex(ValueError, 'exists'):  # never overwritten
+                seed_tool.reproduce(rargs, log=QUIET)
+
+            # a failed reproduction record, or one whose verdict was edited, stops the seeds and epsilon
+            stored = json.loads((tmp / 'out/repro.json').read_text())
+            failed = {**stored, 'checks': {**stored['checks'], 'best_step': [1, 2]}}
+            failed['verdict'] = r2.reproduction_verdict(failed['checks'], amendment['r2_0b']['reproduction']['tolerance'])
+            (tmp / 'out/failed.json').write_text(json.dumps(failed))
+            with self.assertRaisesRegex(ValueError, 'NOT_REPRODUCED'):
+                seed_tool.train(train_args(31001, 'runs_f', reproduction=tmp / 'out/failed.json'), log=QUIET)
+            (tmp / 'out/edited.json').write_text(json.dumps({**failed, 'verdict': stored['verdict']}))
+            with self.assertRaisesRegex(ValueError, 'does not follow from its checks'):
+                seed_tool.train(train_args(31001, 'runs_e', reproduction=tmp / 'out/edited.json'), log=QUIET)
+
+            seeds = {}
+            for seed in (31001, 31002, 31003):
+                seeds[seed] = seed_tool.train(train_args(seed, f'seed-{seed}', reproduction=tmp / 'out/repro.json'),
+                                              log=QUIET)
+                self.assertEqual(seeds[seed]['role'], 'seed_spread')
+                self.assertEqual(json.loads((tmp / f'seed-{seed}/config.json').read_text())['seed'], seed)
+            self.assertFalse(r2.compare_assignments(rep['assignment'], seeds[31001]['assignment'])['identical'])
             with self.assertRaisesRegex(ValueError, 'not the reproduction run'):
                 seed_tool.reproduce(argparse.Namespace(**{**vars(rargs), 'run_dir': tmp / 'seed-31001',
                                                           'output': tmp / 'out/r2.json'}), log=QUIET)
 
+            def eps_args(**change):
+                return argparse.Namespace(**{
+                    'root': tmp, 'contract': cpath, 'amendment': apath, 'cache': tmp / 'runs/cache',
+                    'result': tmp / 'out/r2_0a.json', 'reproduction': tmp / 'out/repro.json',
+                    'run_dir': [tmp / f'seed-{s}' for s in (31001, 31002, 31003)],
+                    'model': [f'{n}={c},{m}' for n, (c, m) in pair.items()], 'device': 'cpu',
+                    'predictions': tmp / 'runs/r2/seeds.pt', 'output': tmp / 'out/eps.json',
+                    'allow_dirty': True, 'allow_draft': True, 'allow_unapproved': True, **change})
+
+            with self.assertRaisesRegex(ValueError, 'exactly the seeds'):  # a missing seed
+                seed_tool.epsilon_command(eps_args(run_dir=[tmp / 'seed-31001', tmp / 'seed-31002']), log=QUIET)
+            with self.assertRaisesRegex(ValueError, 'given twice'):  # a repeated seed
+                seed_tool.epsilon_command(eps_args(run_dir=[tmp / 'seed-31001', tmp / 'seed-31001',
+                                                            tmp / 'seed-31003']), log=QUIET)
+            with self.assertRaisesRegex(ValueError, 'not a seed-spread run'):  # the reproduction run is not a seed
+                seed_tool.epsilon_command(eps_args(run_dir=[tmp / 'rep', tmp / 'seed-31002', tmp / 'seed-31003']),
+                                          log=QUIET)
+            with self.assertRaisesRegex(ValueError, 'NOT_REPRODUCED'):
+                seed_tool.epsilon_command(eps_args(reproduction=tmp / 'out/failed.json'), log=QUIET)
+            eps = seed_tool.epsilon_command(eps_args(), log=QUIET)
+            e = eps['epsilon']
+            ref_primary = json.loads((tmp / 'out/r2_0a.json').read_text())['summary']['c8:c5']['primary']
+            values = [eps['seeds'][s]['primary'] for s in (31001, 31002, 31003)]
+            self.assertEqual(e['status'], 'COMPUTED')
+            self.assertAlmostEqual(e['seed'], max(values) - min(values), places=15)
+            self.assertAlmostEqual(e['sample'], r2.half_width(ref_primary['difference'], ref_primary['ci95']), places=15)
+            self.assertAlmostEqual(e['value'], max(e['sample'], e['seed']), places=15)
+            self.assertEqual(set(eps['paired']), {f'seed{s}:{o}' for s in (31001, 31002, 31003) for o in ('c5', 'c8')})
+            self.assertIn(eps['r2_0a_reread']['c8:c5']['reading'], ('BEYOND_EPSILON', 'WITHIN_EPSILON'))
+            self.assertIn('amendment', eps['tolerance_source'])
+            with self.assertRaisesRegex(ValueError, 'exists'):
+                seed_tool.epsilon_command(eps_args(), log=QUIET)
+            # a seed checkpoint changed after its run: refused (its file SHA is in its record)
+            with open(tmp / 'seed-31002/best.pt', 'ab') as handle:
+                handle.write(b'0')
+            with self.assertRaisesRegex(ValueError, 'value_checkpoint_sha256'):
+                seed_tool.epsilon_command(eps_args(output=tmp / 'out/eps2.json', predictions=None), log=QUIET)
+
+    def test_beyond(self):
+        from scripts import h7r_r2_seed as seed_tool
+        self.assertTrue(seed_tool.beyond(-0.005, [-0.007, -0.003], 0.002))
+        self.assertFalse(seed_tool.beyond(-0.001, [-0.002, -0.0005], 0.002))  # inside epsilon
+        self.assertFalse(seed_tool.beyond(-0.005, [-0.009, 0.001], 0.002))  # interval crosses 0
+        self.assertTrue(seed_tool.beyond(0.004, [0.001, 0.006], 0.002))
+        self.assertFalse(seed_tool.beyond(-0.005, [-0.007, -0.003], None))
 
 if __name__ == '__main__':
     unittest.main()

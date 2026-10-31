@@ -1739,3 +1739,220 @@ git push origin feat/h7-c1
 
 - X1은 사후 탐색이다. 결과가 한 방향을 보여도 D3을 바로 정하지 않는다. 원 지표, 교차 보정 지표, 종류별 결과, R2-0B의 seed 변동을 모두 모은 뒤 다음 하위 계약을 제안한다.
 - R2-0B 명령은 승인할 때 준다. `scripts/h7r_r2_seed.py`는 지금 실행해도 "R2-0B is not approved"로 멈춘다.
+
+### 9.17 X1 읽기 정정과 R2-0B 승인 · 실행 명령 (2026-10-31)
+
+**X1 읽기**(초안 §15)
+
+- X1이 배제한 것은 "차례별 상수 하나"로 network 차이를 설명하는 경우뿐이다.
+  - 종류·ply·결과에 따른 보정 오차는 배제하지 못했다.
+  - network 잔차 변동이 줄었다고 판별력 개선으로 읽지 않는다.
+  - 교차 보정 뒤 손실이 커진 원인(모형 부적합, fold 추정 변동)은 가설로 남긴다.
+  - proof의 음의 평균 잔차를 포화 부족으로 단정하지 않는다.
+  - outcome에서 평균 잔차 감소는 손실 차이의 일부를 설명할 뿐 인과 근거가 아니다.
+- 확인 범위
+  - 데스크톱 실행: 입력 재해시와 행 정렬 검사를 했다.
+  - 이 저장소의 검토: 커밋된 요약 기록과 SHA 연결만 확인했다.
+- X1 결과와 판독은 바꾸지 않았다. X2는 실행하지 않는다.
+
+**R2-0B 승인**(`docs/h7r/r2/R2-DIAG-1-A1.json`의 `r2_0b.approved: true`)
+
+- 그대로 유지하는 것
+  - recipe(c8 비 mask: parent c5, c8 cycle 자료·split·replay, seed만 바꾼 config, 기존 step·optimizer·augmentation·T-val 선택·H6 guard)
+  - 학습 seed 31001 / 31002 / 31003, 재현 seed 20261025
+  - 재현 허용 오차(`abs_primary` ≤ 0.0002, `max_abs_prediction` ≤ 0.001, raw와 D4 전체)
+  - ε 산출식
+- H-dev는 학습, early stopping, checkpoint 선택에 쓰지 않는다.
+- 부모 계약과 R2-0A·X1 기록은 바꾸지 않았다.
+- 도구: `scripts/h7r_r2_seed.py`(`train`, `reproduce`, `epsilon`). 순서와 중단 조건은 도구가 강제한다(초안 §15).
+- 승인하지 않은 것: D1–D5, 새 대국, Rapfi, X2, H-conf / A-conf, champion 교체, V9·배포 변경
+
+이 세션 환경에는 H-dev, 모델, cycle cache가 없어서 **R2-0B를 실행하지 않았다**. 아래는 데스크톱(`~/renju-h6`)용 명령이다.
+- 블록은 A부터 G까지 순서대로 실행한다. 실패하면 멈추고 다음 블록으로 가지 않는다.
+- 블록 A가 기록한 HEAD와 다르면 모든 블록이 멈춘다. 실행 중 `git pull`이나 checkout을 하지 않는다.
+- 출력 폴더와 파일이 이미 있으면 도구가 거부한다. 지우지 말고 보존한 뒤 보고한다.
+
+**A. 사전 검사**(clean commit, 승인 상태, 입력 파일, 출력 없음, HEAD 기록)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "STOP: 추적 파일 변경 있음"; git status --short; exit 1; }
+python scripts/check_track_b_frozen.py
+R=runs/h7r/R2-DIAG-1/r2_0b; D=docs/h7r/r2/R2-DIAG-1/r2_0b
+for p in "$R" "$D"; do [ ! -e "$p" ] || { echo "STOP: $p 이미 있음 (보존)"; exit 1; }; done
+python - <<'PY'
+import json
+from pathlib import Path
+from hybrid import h7r_r2 as r2
+from hybrid.h7c_nmask import committed
+c, sha = r2.load_contract('docs/h7r/r2/R2-DIAG-1.contract.json')
+a, asha = r2.load_amendment('docs/h7r/r2/R2-DIAG-1-A1.json', c, sha)
+assert committed(Path('docs/h7r/r2/R2-DIAG-1-A1.json')) and a['r2_0b']['approved'], 'R2-0B not approved / committed'
+ref = json.loads(Path(a['r2_0b']['reference_record']['path']).read_text())
+assert r2.file_sha256('runs/h7c/c5/value/best.pt') == ref['inputs']['parent_checkpoint_sha256'], 'parent c5'
+for cache, key in (('runs/h7c/c8/value_cache', 'cycle_labels_sha256'),
+                   ('data/tactical/h6/value_cache_v3', 'replay_labels_sha256')):
+    m = json.loads((Path(cache) / 'manifest.json').read_text())
+    assert m['labels_sha256'] == ref['inputs'][key], cache
+assert Path('runs/h7c/c8/value_rows.jsonl.gz').is_file() and Path('runs/h7r/R1-HDEV-1/cache/holdout.json').is_file()
+print('PASS contract', sha[:12], 'amendment', asha[:12], 'tolerance', a['r2_0b']['reproduction']['tolerance'],
+      'seeds', a['r2_0b']['training_seeds'], 'reproduction seed', a['r2_0b']['reproduction_seed'])
+PY
+mkdir -p "$R/logs"
+git rev-parse HEAD > "$R/head.txt"
+echo "A PASS: HEAD $(cat "$R/head.txt")"
+SH
+```
+
+**B. ① 재현 학습**(seed 20261025. c8 recipe라 수 분 걸린다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+R=runs/h7r/R2-DIAG-1/r2_0b
+[ "$(git rev-parse HEAD)" = "$(cat "$R/head.txt")" ] || { echo "STOP: HEAD 변경"; exit 1; }
+python -u scripts/h7r_r2_seed.py train --contract docs/h7r/r2/R2-DIAG-1.contract.json \
+  --amendment docs/h7r/r2/R2-DIAG-1-A1.json --seed 20261025 \
+  --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+  --replay-cache data/tactical/h6/value_cache_v3 --parent runs/h7c/c5/value/best.pt --device cuda \
+  --out-dir "$R/seed-20261025" 2>&1 | tee "$R/logs/train-20261025.log"
+echo "B PASS"
+SH
+```
+
+**C. ② 재현 판정**(`NOT_REPRODUCED`면 여기서 멈춘다. 결과를 그대로 보고하고 D 이후는 실행하지 않는다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+R=runs/h7r/R2-DIAG-1/r2_0b; D=docs/h7r/r2/R2-DIAG-1/r2_0b
+[ "$(git rev-parse HEAD)" = "$(cat "$R/head.txt")" ] || { echo "STOP: HEAD 변경"; exit 1; }
+mkdir -p "$D"
+python -u scripts/h7r_r2_seed.py reproduce --contract docs/h7r/r2/R2-DIAG-1.contract.json \
+  --amendment docs/h7r/r2/R2-DIAG-1-A1.json --cache runs/h7r/R1-HDEV-1/cache \
+  --reference-model runs/h7c/c8/value/best.pt,runs/h7c/c8/value/best.json \
+  --run-dir "$R/seed-20261025" --device cuda --output "$D/reproduction.json" 2>&1 | tee "$R/logs/reproduce.log" \
+  || { echo "STOP: 재현 판정 실패 (NOT_REPRODUCED 또는 입력 오류). seed 학습과 ε로 진행하지 않는다"; exit 1; }
+echo "C PASS"
+SH
+```
+
+**D. ③ seed 세 개 학습**(재현 기록이 통과했을 때만 실행된다. 하나라도 실패하면 멈춘다. 실패한 seed를 빼거나 대체하지 않는다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+R=runs/h7r/R2-DIAG-1/r2_0b; D=docs/h7r/r2/R2-DIAG-1/r2_0b
+[ "$(git rev-parse HEAD)" = "$(cat "$R/head.txt")" ] || { echo "STOP: HEAD 변경"; exit 1; }
+for SEED in 31001 31002 31003; do
+  python -u scripts/h7r_r2_seed.py train --contract docs/h7r/r2/R2-DIAG-1.contract.json \
+    --amendment docs/h7r/r2/R2-DIAG-1-A1.json --seed "$SEED" --reproduction "$D/reproduction.json" \
+    --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+    --replay-cache data/tactical/h6/value_cache_v3 --parent runs/h7c/c5/value/best.pt --device cuda \
+    --out-dir "$R/seed-$SEED" 2>&1 | tee "$R/logs/train-$SEED.log" \
+    || { echo "STOP: seed $SEED 실패 (기록은 $R/seed-$SEED 에 보존). 다음 seed와 ε로 진행하지 않는다"; exit 1; }
+done
+echo "D PASS"
+SH
+```
+
+**E. ④ seed 모델 H-dev 평가와 ⑤ ε**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+R=runs/h7r/R2-DIAG-1/r2_0b; D=docs/h7r/r2/R2-DIAG-1/r2_0b
+[ "$(git rev-parse HEAD)" = "$(cat "$R/head.txt")" ] || { echo "STOP: HEAD 변경"; exit 1; }
+python -u scripts/h7r_r2_seed.py epsilon --contract docs/h7r/r2/R2-DIAG-1.contract.json \
+  --amendment docs/h7r/r2/R2-DIAG-1-A1.json --cache runs/h7r/R1-HDEV-1/cache \
+  --result docs/h7r/r2/R2-DIAG-1/r2_0a.json --reproduction "$D/reproduction.json" \
+  --run-dir "$R/seed-31001" --run-dir "$R/seed-31002" --run-dir "$R/seed-31003" \
+  --model c5=runs/h7c/c5/value/best.pt,runs/h7c/c5/value/best.json \
+  --model c8=runs/h7c/c8/value/best.pt,runs/h7c/c8/value/best.json --device cuda \
+  --predictions "$R/seed_predictions.pt" --output "$D/epsilon.json" 2>&1 | tee "$R/logs/epsilon.log" \
+  || { echo "STOP: ε 계산 실패 또는 미완료"; exit 1; }
+echo "E PASS"
+SH
+```
+
+**F. 상태 확인, 원본 보존, manifest, 기록 사본**(checkpoint, tensor, 행별 예측, 로그는 `runs/`에 남는다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+R=runs/h7r/R2-DIAG-1/r2_0b; D=docs/h7r/r2/R2-DIAG-1/r2_0b
+[ "$(git rev-parse HEAD)" = "$(cat "$R/head.txt")" ] || { echo "STOP: HEAD 변경"; exit 1; }
+( cd "$R" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
+python - <<'PY'
+import json
+import shutil
+from pathlib import Path
+from hybrid import h7r_r2 as r2
+R, D = Path('runs/h7r/R2-DIAG-1/r2_0b'), Path('docs/h7r/r2/R2-DIAG-1/r2_0b')
+rep = json.loads((D / 'reproduction.json').read_text())
+eps = json.loads((D / 'epsilon.json').read_text())
+assert rep['verdict']['verdict'] in r2.REPRODUCED and eps['epsilon']['status'] == 'COMPUTED'
+assert eps['reproduction_sha256'] == r2.file_sha256(D / 'reproduction.json')
+assert eps['predictions']['sha256'] == r2.file_sha256(eps['predictions']['path'])
+head = (R / 'head.txt').read_text().strip()
+runs = {}
+for seed in (20261025, 31001, 31002, 31003):
+    run = R / f'seed-{seed}'
+    rec = json.loads((run / 'r2_train.json').read_text())
+    assert rec['git'] == {'commit': head, 'dirty': False} and rec['verdict'] == 'CANDIDATE', run
+    copy = D / 'runs' / f'seed-{seed}'
+    copy.mkdir(parents=True, exist_ok=False)
+    for name in ('r2_train.json', 'record.json', 'config.json'):
+        shutil.copy2(run / name, copy / name)
+    runs[seed] = {name: r2.file_sha256(run / name) for name in ('best.pt', 'best.json', 'r2_train.json', 'record.json',
+                                                                'config.json')}
+manifest = {'format': 'h7r-r2-0b-manifest-v1', 'head': head, 'runs': runs,
+            'reproduction_sha256': r2.file_sha256(D / 'reproduction.json'),
+            'epsilon_sha256': r2.file_sha256(D / 'epsilon.json'),
+            'seed_predictions': eps['predictions'], 'runs_sha256sums': r2.file_sha256(R / 'SHA256SUMS'),
+            'note': 'hashes only: checkpoints, tensors, row predictions and logs stay under runs/ (never committed)'}
+(D / 'manifest.json').write_text(json.dumps(manifest, indent=1) + '\n')
+e = eps['epsilon']
+print('reproduction', rep['verdict'], 'state equal', rep['state_sha256']['reference'] == rep['state_sha256']['rerun'],
+      'max|dv|', {p: v['max_abs'] for p, v in rep['predictions'].items()}, '|dL|', rep['primary']['abs_difference'])
+print('epsilon', e['status'], e['value'], 'sample', e['sample'], 'seed', e['seed'], 'values', e['seed_values'],
+      'mean', e['seed_mean'], 'sd', e['seed_sd'])
+for spec, r in eps['r2_0a_reread'].items():
+    print(f"  R2-0A {spec:8s} {r['difference']:+.6f} {r['ci95']} -> {r['reading']}")
+for spec, cells in eps['paired'].items():
+    p = cells[0]
+    print(f"  {spec:14s} primary {p['difference']:+.6f} {p['ci95']} beyond_epsilon {p['beyond_epsilon']}")
+PY
+sha256sum "$D"/*.json
+SH
+```
+
+**G. 집계와 기록 사본만 커밋**
+
+```bash
+cd ~/renju-h6
+git status --short                       # docs/h7r/r2/R2-DIAG-1/r2_0b/ 아래 파일만 새로 보여야 한다
+git add docs/h7r/r2/R2-DIAG-1/r2_0b
+git commit -m "H7-R R2-0B: reproduction check, three seed runs, epsilon (records and hashes only)"
+git push origin feat/h7-c1
+```
+
+- C, D, E의 실패 메시지와 F의 출력을 그대로 보고한다.
+- ε는 경험적 개발용 문턱이다. 통계적 MDE, 기력 향상, 승급 기준이 아니다.
+- R2-0A 비교의 `BEYOND_EPSILON`은 단일 실행에 대한 기술적 표시다. `DEVELOPMENT_SIGNAL`은 세 seed와 직접 control로만 판정한다.
