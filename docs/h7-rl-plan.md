@@ -2045,3 +2045,284 @@ python -u scripts/h7r_d4.py run --mode <mode> --approval <approval-file> \
 ```
 
 실행 후에는 해당 `summary.json`의 SHA 연결을 검토하고 요약 사본만 `docs/.../records/`에 커밋한다. JSONL·모델·tensor는 `runs/`에 보존한다. 신규 연구 실행을 승인받기 전에는 A–B까지만 진행한다.
+
+### 9.20 D4 smoke 승인과 실행·점검 명령 (2026-11-01)
+
+**승인 범위**: smoke 실행만 승인한다. full은 승인하지 않았다.
+
+| 파일 | 내용 |
+|---|---|
+| 승인 파일 `docs/h7r/r2/R2-D4-BASELINE-1/execution-smoke.json` | `h7r-d4-execution-v1`, 계약 `74ab77e2…`, `mode: smoke`, `approved: true` |
+| 점검기 `scripts/h7r_d4_smoke_check.py` | 테스트 `tests/test_h7r_d4_smoke_check.py` |
+
+바꾸지 않은 것: 실행기, fixed 계약, `eligible.json`, frozen 코드, 기존 결과
+
+**smoke 범위**
+- 정렬된 첫 2게임(game_index 0, 1)의 전체 ply를 재생한다: actor replay 43 ply, eligible 39, warm-up 4
+- 고정 순서의 **최대** 8개 분기
+  - 첫 두 게임에 불일치가 없으면 분기도 Rapfi 대국도 없다.
+  - 고정 수로 바로 끝나는 분기는 Rapfi를 부르지 않는다.
+- 명단 검증: `prepare`가 성공해 만든 명단이라면 전체 행 대조를 통과했다. 커밋된 명단만으로 cache 대조를 독립적으로 다시 확인한 것은 아니다. 그 재확인은 smoke 실행기와 점검기가 원본에서 명단을 다시 만들어 커밋본과 같은지로 한다.
+
+**점검기**(읽기 전용, 상태 문자열을 믿지 않고 다시 검증한다)
+
+검증하는 것
+- 계약, 승인 파일, 명단, run identity의 SHA 연결
+- summary가 identity·`identity_sha256`·journal SHA·개수와 맞는지
+- 검증한 H-dev 원본에서 게임 0·1의 전체 재생 기록
+- c5의 move·route·visits/Q 재현(`check_replay`, `actor_check`)
+- 43 / 39 / 4 ply 분할
+- 불일치 관측과 고유 분기를 다시 구성하고, 고정 순서 최대 8개가 정확히 기록됐는지
+- 모든 분기의 Game 재생과 `branch_outcome`
+
+journal은 점검기 자체의 엄격한 reader로 읽는다. 실행기의 reader가 하는 마지막 줄 절단이나 개행 추가는 하지 않는다. 손상, 중복, 누락, 알 수 없는 기록, 비유한 수치는 FAIL이다.
+
+분기가 0개일 때는 `branches.jsonl`이 없어야 하고, summary 목록에도 없어야 한다.
+
+결과는 새 경로에 한 번만 쓰고 덮어쓰지 않는다. GPU 추론과 Rapfi 대국은 새로 실행하지 않는다.
+
+**판정**(smoke 운영 점검이다. D4 통계 판독과 full 승인 기준을 바꾸지 않는다)
+
+| 판정 | 조건 | 종료 코드 |
+|---|---|---|
+| `FAIL` | 무결성·actor 재현 실패, 정의되지 않은 INVALID, 또는 timeout / engine_error / engine_illegal / forbid_mismatch가 하나라도 있음 | 1 |
+| `PASS_WITHOUT_RAPFI` | 위 실패는 없지만, 정상 종료 또는 검증된 구조적 정규화 분기 가운데 외부 엔진의 합법 continuation이 기록된 분기가 0개 | 3 |
+| `PASS` | 위 실패가 없고 그런 continuation이 1개 이상 | 0 |
+
+- `PASS_WITHOUT_RAPFI`는 Rapfi의 정상 continuation 경로가 미확인이라는 뜻이다. 호출 자체가 없었다고 단정하지 않는다.
+- 구조적 abnormal_end는 기존 정책으로 검증해 정규화하고, 원본 INVALID 표시가 남아 있는지도 확인한다.
+- VALID, 구조적 정규화, 실행 실패 사유별 건수, continuation 건수, 고정 수 즉시 종료 건수를 각각 보고한다.
+
+**시간**
+- 로그 줄마다 `date +%s.%N` 시각을 붙이고, `__START__` / `__EXIT__ <code>` 줄을 넣는다. 실행기 종료 코드는 pipefail과 rc로 보존한다.
+- 단계별로 나누는 구간: 사전 검사, identity·잠금, 재생, 관측 구성, Rapfi 경과, 종료 후 재검증과 요약
+- 경계를 읽을 수 없으면 null이다. 추측하지 않는다.
+- 분기 `seconds`의 합은 worker 시간으로 따로 표시한다.
+- 중단·재개가 있으면 세션(로그 파일)별로 나눈다.
+- full ETA는 재생 처리량에서 낸 참고 추정일 뿐이다. 재생 구간 안에는 worker의 모델 로딩과 CUDA 시작이 섞여 있다. 재개된 재생은 처리량 표본으로 쓰지 않는다.
+
+**잠금·재개**
+- 기본 명령은 정상 완주(B)다.
+- 잠금 검사(B-L)와 재개 검사(B-R)는 선택 절차이며, 하지 않으면 `NOT_TESTED`로 기록한다. 정상 완주만으로 검증됐다고 표시하지 않는다.
+- 잠금 검사는 실행기가 잠금을 잡은 뒤(재생 시작 표시 이후) 다른 프로세스가 같은 잠금 파일을 잡으려다 거부되는지 확인한다. 같은 전체 명령을 다시 실행하는 방식이 아니다. 그 명령은 사전 검사를 먼저 하므로 잠금에 도달하는 시점이 다르다.
+- 재개 검사는 완료 전에만 한다. HEAD, 입력, 승인 파일을 유지한다.
+- 완료된 `summary.json`을 지우거나 원본을 바꿔 재개 시험을 만들지 않는다.
+
+**실행 블록**(데스크톱 `~/renju-h6`)
+- 실패하면 멈추고 다음 블록으로 가지 않는다.
+- B, B-L, B-R 중 하나만 실행한다. 셋 모두 같은 smoke 폴더를 쓴다.
+- smoke 폴더가 이미 있으면 A가 멈춘다. 지우지 않는다.
+
+**A. 사전 검사**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "STOP: 추적 파일 변경 있음"; git status --short; exit 1; }
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/feat/h7-c1)" ] || { echo "STOP: 원격과 다름"; exit 1; }
+python - <<'PY'
+import json
+from pathlib import Path
+from hybrid.h7r_r2 import file_sha256
+D = Path('docs/h7r/r2/R2-D4-BASELINE-1')
+c = file_sha256('docs/h7r/r2/R2-D4-BASELINE-1.contract.json')
+assert c == '74ab77e28bceb392c72380c9e03b2de349442df8eb9cebf1de53d8850936b180', c
+assert file_sha256(D / 'eligible.json') == '93aaa113f86723bd79c2d082563d3cbac9d0137dc147138a7e057e2288aa0760'
+a = json.loads((D / 'execution-smoke.json').read_text())
+assert a == {'format': 'h7r-d4-execution-v1', 'contract_sha256': c, 'mode': 'smoke', 'approved': True}, a
+print('PASS contract / eligible / smoke approval')
+PY
+python scripts/check_track_b_frozen.py
+python -m unittest -q tests.test_h7r_d4 tests.test_h7r_d4_smoke_check
+[ ! -e runs/h7r/R2-D4-BASELINE-1/smoke ] || { echo "STOP: smoke 폴더가 이미 있음 (보존하고 보고)"; exit 1; }
+mkdir -p runs/h7r/R2-D4-BASELINE-1/logs
+echo "A PASS: HEAD $(git rev-parse HEAD)"
+SH
+```
+
+**B. smoke 정상 완주**(기본)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+L=runs/h7r/R2-D4-BASELINE-1/logs
+LOG=$L/smoke-$(date +%Y%m%d-%H%M%S).log
+ts() { while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+{ echo __START__; rc=0
+  python -u scripts/h7r_d4.py run --mode smoke \
+    --approval docs/h7r/r2/R2-D4-BASELINE-1/execution-smoke.json \
+    --sample docs/h7r/r2/R2-D4-BASELINE-1/eligible.json \
+    --model c5=runs/h3_policy_64x4/best.pt,runs/h7c/c5/value/best.pt \
+    --model c8=runs/h3_policy_64x4/best.pt,runs/h7c/c8/value/best.pt \
+    --model seed31001=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31001/best.pt \
+    --model seed31002=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31002/best.pt \
+    --model seed31003=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31003/best.pt \
+    --device cuda --workers 6 --rapfi-dir /mnt/c/engines/rapfi \
+    --out-dir runs/h7r/R2-D4-BASELINE-1/smoke 2>&1 || rc=$?
+  echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" \
+  || { echo "STOP: smoke 실행 실패 (로그 $LOG, 폴더는 보존)"; exit 1; }
+echo "B PASS: $LOG"
+SH
+```
+
+**B-L. 잠금 검사를 포함한 smoke**(선택, B 대신)
+
+실행기를 백그라운드로 돌린다. 재생 시작 표시(잠금을 잡은 뒤)가 로그에 나타나면, 다른 프로세스가 같은 잠금 파일을 잡아 본다.
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+L=runs/h7r/R2-D4-BASELINE-1/logs; S=runs/h7r/R2-D4-BASELINE-1/smoke
+LOG=$L/smoke-$(date +%Y%m%d-%H%M%S).log
+ts() { while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+( { echo __START__; rc=0
+    python -u scripts/h7r_d4.py run --mode smoke \
+      --approval docs/h7r/r2/R2-D4-BASELINE-1/execution-smoke.json \
+      --sample docs/h7r/r2/R2-D4-BASELINE-1/eligible.json \
+      --model c5=runs/h3_policy_64x4/best.pt,runs/h7c/c5/value/best.pt \
+      --model c8=runs/h3_policy_64x4/best.pt,runs/h7c/c8/value/best.pt \
+      --model seed31001=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31001/best.pt \
+      --model seed31002=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31002/best.pt \
+      --model seed31003=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31003/best.pt \
+      --device cuda --workers 6 --rapfi-dir /mnt/c/engines/rapfi --out-dir "$S" 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts > "$LOG" ) &
+PID=$!
+for i in $(seq 1 900); do
+  grep -q '\[d4-replay\] resume' "$LOG" 2>/dev/null && break
+  kill -0 "$PID" 2>/dev/null || break
+  sleep 1
+done
+if grep -q '\[d4-replay\] resume' "$LOG" && kill -0 "$PID" 2>/dev/null; then
+  python - "$S/run.lock" > "$L/lock-probe.log" 2>&1 <<'PY' || true
+import sys
+import time
+from hybrid.h7r_ledger import file_lock
+try:
+    with file_lock(sys.argv[1], nonblocking=True):
+        print(f'LOCK_ACQUIRED {time.time():.6f}')
+except ValueError as exc:
+    print(f'LOCK_REFUSED {time.time():.6f} {exc}')
+PY
+  cat "$L/lock-probe.log"
+else
+  echo "잠금 검사 안 함: 재생 시작 전에 실행이 끝났거나 실패 (NOT_TESTED로 기록됨)"
+fi
+rc=0; wait "$PID" || rc=$?
+cat "$LOG"
+[ "$rc" -eq 0 ] || { echo "STOP: smoke 실행 실패 rc=$rc (로그 $LOG, 폴더 보존)"; exit 1; }
+echo "B-L PASS: $LOG"
+SH
+```
+
+**B-R. 재개 검사를 포함한 smoke**(선택, B 대신)
+
+- 1차 세션은 `--workers 1`로 실행해 게임을 차례로 재생하게 한다.
+- 재생 기록이 1게임 쌓이면 실행기에 SIGINT를 보낸다.
+- 2차 세션은 같은 명령에 `--workers 6`으로 실행한다. workers는 run identity에 들어가지 않으므로 이어 실행할 수 있다.
+- 중단 전에 실행이 끝나 `summary.json`이 생기면 재개 시험은 할 수 없다. 그 경우 `NOT_TESTED`로 남기고, summary를 지우지 않는다.
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+L=runs/h7r/R2-D4-BASELINE-1/logs; S=runs/h7r/R2-D4-BASELINE-1/smoke
+ts() { while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+session() {  # $1 = workers, $2 = log
+  { echo __START__; rc=0
+    python -u scripts/h7r_d4.py run --mode smoke \
+      --approval docs/h7r/r2/R2-D4-BASELINE-1/execution-smoke.json \
+      --sample docs/h7r/r2/R2-D4-BASELINE-1/eligible.json \
+      --model c5=runs/h3_policy_64x4/best.pt,runs/h7c/c5/value/best.pt \
+      --model c8=runs/h3_policy_64x4/best.pt,runs/h7c/c8/value/best.pt \
+      --model seed31001=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31001/best.pt \
+      --model seed31002=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31002/best.pt \
+      --model seed31003=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31003/best.pt \
+      --device cuda --workers "$1" --rapfi-dir /mnt/c/engines/rapfi --out-dir "$S" 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts > "$2"
+}
+LOG1=$L/smoke-$(date +%Y%m%d-%H%M%S)-1.log
+( session 1 "$LOG1" ) &
+PID=$!
+for i in $(seq 1 1800); do
+  [ -s "$S/replay.jsonl" ] && break
+  kill -0 "$PID" 2>/dev/null || break
+  sleep 1
+done
+pkill -INT -f 'scripts/h7r_d4.py run --mode smoke' || true
+wait "$PID" || true
+cat "$LOG1"
+if [ -e "$S/summary.json" ]; then
+  echo "중단 전에 완료됨: 재개 검사 NOT_TESTED (summary 보존, 2차 세션 없음)"
+else
+  LOG2=$L/smoke-$(date +%Y%m%d-%H%M%S)-2.log
+  ( session 6 "$LOG2" ) || { cat "$LOG2"; echo "STOP: 재개 세션 실패 (폴더 보존)"; exit 1; }
+  cat "$LOG2"
+fi
+echo "B-R DONE"
+SH
+```
+
+**C. 점검**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+L=runs/h7r/R2-D4-BASELINE-1/logs; R=docs/h7r/r2/R2-D4-BASELINE-1/records/smoke
+[ ! -e "$R/smoke_check.json" ] || { echo "STOP: 점검 결과가 이미 있음"; exit 1; }
+ARGS=(--approval docs/h7r/r2/R2-D4-BASELINE-1/execution-smoke.json --output "$R/smoke_check.json")
+for f in $(ls "$L"/smoke-*.log | sort); do ARGS+=(--log "$f"); done
+[ ! -f "$L/lock-probe.log" ] || ARGS+=(--lock-log "$L/lock-probe.log")
+rc=0; python -u scripts/h7r_d4_smoke_check.py "${ARGS[@]}" || rc=$?
+python - "$R/smoke_check.json" <<'PY'
+import json
+import sys
+r = json.load(open(sys.argv[1]))
+print('verdict', r['verdict'], 'integrity', r['integrity'], 'failures', r['failures'])
+print('plies', r.get('plies'), 'actor', (r.get('actor_check') or {}).get('reproduced'),
+      'observations', r.get('observations'), 'branches', r.get('branches_expected'))
+print('tally', r.get('branch_tally'))
+for s in r['timing'].get('sessions', []):
+    print('session', s['log'], 'exit', s['exit_code'], 'resume', s['resume'], 'seconds', s['seconds'])
+print('branch worker seconds', r['timing'].get('branch_worker_seconds'))
+print('reference', r['timing'].get('reference'))
+print('lock', r['lock_test'], 'resume', r['resume_test'])
+PY
+case "$rc" in
+  0) echo "C: PASS" ;;
+  3) echo "C: PASS_WITHOUT_RAPFI. Rapfi 정상 continuation 경로 미확인. full 전에 확인 방법을 따로 정한다" ;;
+  *) echo "STOP: FAIL. 결과와 폴더를 보존하고 보고한다"; exit 1 ;;
+esac
+SH
+```
+
+**D. 결과 사본만 커밋**(C가 PASS 또는 PASS_WITHOUT_RAPFI일 때)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+S=runs/h7r/R2-D4-BASELINE-1/smoke; L=runs/h7r/R2-D4-BASELINE-1/logs; R=docs/h7r/r2/R2-D4-BASELINE-1/records/smoke
+( cd "$S" && find . -type f ! -name SHA256SUMS ! -name run.lock -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
+cp "$S/identity.json" "$S/summary.json" "$S/SHA256SUMS" "$R/"
+mkdir -p "$R/logs"; cp "$L"/smoke-*.log "$R/logs/"; [ ! -f "$L/lock-probe.log" ] || cp "$L/lock-probe.log" "$R/logs/"
+git add -- "$R"
+git diff --cached --name-only
+git diff --cached --name-only | python3 -c 'import sys; p=sys.stdin.read().splitlines(); assert p and all(x.startswith("docs/h7r/r2/R2-D4-BASELINE-1/records/smoke/") for x in p), p'
+git commit -m "H7-R D4: smoke run check (records only)"
+git push origin HEAD:feat/h7-c1
+SH
+```
+
+- journal, checkpoint, tensor는 `runs/`에 남는다. 커밋하는 것은 identity·summary 사본, SHA256SUMS, 점검 결과, 로그다. 로그에는 실행기 출력만 있고 국면 자료는 없다.
+- `PASS_WITHOUT_RAPFI`나 `FAIL`이 나와도 표본이나 예산을 바꾸지 않고, full을 시작하지 않는다.
