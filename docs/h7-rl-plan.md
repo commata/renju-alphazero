@@ -2326,3 +2326,179 @@ SH
 
 - journal, checkpoint, tensor는 `runs/`에 남는다. 커밋하는 것은 identity·summary 사본, SHA256SUMS, 점검 결과, 로그다. 로그에는 실행기 출력만 있고 국면 자료는 없다.
 - `PASS_WITHOUT_RAPFI`나 `FAIL`이 나와도 표본이나 예산을 바꾸지 않고, full을 시작하지 않는다.
+
+### 9.21 smoke 로그 보완과 별도 Rapfi 경로 점검 (2026-11-02)
+
+**smoke 결과(`29847ea`)는 그대로 둔다**
+- 판정은 `PASS_WITHOUT_RAPFI`, 잠금·재개는 `NOT_TESTED`로 유지한다.
+- 바꾸지 않는 것: smoke 결과 JSON, 기존 `SHA256SUMS`, fixed 계약, 명단, 실행기, 판정기, frozen 코드
+
+**로그 보완**
+- 원인: 블록 D가 로그를 `records/smoke/logs/`에 복사했는데, 이 폴더가 `.gitignore`의 `logs/` 규칙에 걸려 커밋에서 빠졌다. 경로만 보는 검사라 이를 잡지 못했다.
+- 이번에는 원본 로그를 `records/smoke/run-logs/`에 복사한다. 원본과 기존 사본은 지우거나 옮기지 않는다.
+- 사본마다 원본과 SHA를 대조하고, 원본 경로·사본 경로·크기·SHA를 `records/smoke/log_manifest.json`에 기록한다(`scripts/h7r_d4_records.py copy-logs`).
+- 커밋 전에 `verify-staged`가 다음을 확인하고, 하나라도 어긋나면 멈춘다.
+  - 기대한 파일이 모두 있다.
+  - ignore 규칙에 걸리지 않는다.
+  - 추적 파일에 다른 변경이 없다.
+  - 스테이징된 집합이 기대 집합과 정확히 같다.
+- raw journal, 모델, tensor는 커밋하지 않는다.
+- 이 환경에는 로그가 없으므로 복사는 데스크톱 명령으로만 준비했다.
+
+**별도 Rapfi 경로 점검**(`R2-D4-RAPFI-PROBE-1`)
+- 계획·승인 파일: `docs/h7r/r2/R2-D4-BASELINE-1/rapfi-probe-plan.json`. 실행 전에 커밋한다. smoke 승인 파일은 재사용하지 않는다.
+- 분기 2개를 미리 정했다. 모두 공개 테스트 fixture 국면이며 H-dev, H-conf, A-conf는 쓰지 않는다.
+
+  | 분기 | 국면 | 고정 수 | key |
+  |---|---|---|---|
+  | `black-mover` | `tests/test_h7c_labels.py`의 `MOVES[:4]` | (7, 9) | `288af9bf…` |
+  | `white-mover` | `tests/test_h7c_adjudicate.py`의 `DOUBLE_THREE` | (14, 14) | `155e6710…` |
+
+  - `white-mover`는 고정 수 다음에 흑이 금수점 (7, 9)를 가진 채 둔다. 그래서 금수 교차 확인이 빈 집합이 아닌 경우를 실제로 비교한다.
+  - 두 분기 모두 prefix와 고정 수가 합법이고, 고정 수 뒤에도 대국이 끝나지 않는다. 도구가 실행 전에 다시 확인한다.
+- 계획 파일에 고정한 것: 계약 SHA, Rapfi identity(계약과 같음), INVALID 정책, fixture 입력 SHA, helper source SHA(점검 도구 자신 포함), workers 2(spawn), 출력 폴더 `runs/h7r/R2-D4-BASELINE-1/rapfi-probe`(D4 smoke/full과 분리)
+- 실행 경로: `engine_spec`과 `h7c_adjudicate._chunk`를 그대로 쓰고, D4와 같은 spawn `ProcessPoolExecutor`로 넘긴다.
+  - 분기마다 새 엔진 프로세스로 정상 종료까지 둔다.
+  - 예산, identity, 금수 규칙은 바꾸지 않고, truncation도 없다.
+  - 실행 전후에 엔진 파일 SHA를 확인한다.
+  - 결과는 D4 journal이나 통계에 합치지 않는다.
+- 판정(`check`, 읽기 전용)
+  - **PASS** 조건: 두 분기 모두 Game 재생·identity·수순·종료 상태를 통과하고, 각 분기에 합법 continuation이 있고, 흑 금수 교차 확인이 1회 이상 있고, 정상 종료이거나 검증된 구조적 abnormal_end다.
+  - 그 밖은 **FAIL**이다. 실행 실패(timeout / engine_error / engine_illegal / forbid_mismatch), 정의되지 않은 INVALID, 기록 무결성 오류가 포함된다.
+  - 실패해도 기록을 보존한다. 다른 국면으로 바꾸거나 반복하지 않는다.
+- 이 점검은 등록 Rapfi의 프로토콜과 worker 호출 경로 확인이다. 기력 평가도, D4 full 성공 보장도 아니다.
+- PASS가 나와도 full은 자동으로 시작하지 않고, full 승인 파일도 만들지 않는다.
+
+**실행 블록**(데스크톱 `~/renju-h6`)
+- 순서: L → A → B → C → D
+- 실패하면 멈추고 다음 블록으로 가지 않는다.
+- 출력이 이미 있으면 도구가 거부한다. 지우지 않는다.
+
+**L. smoke 로그 보완 커밋**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "STOP: 추적 파일 변경 있음"; git status --short; exit 1; }
+R=docs/h7r/r2/R2-D4-BASELINE-1/records/smoke
+python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D4-BASELINE-1/logs --pattern 'smoke-*.log' \
+  --dest-dir "$R/run-logs" --manifest "$R/log_manifest.json"
+mapfile -t EXPECT < <(python - "$R/log_manifest.json" <<'PY'
+import json
+import sys
+m = json.load(open(sys.argv[1]))
+print(sys.argv[1])
+for e in m['logs']:
+    print(e['copy'])
+PY
+)
+git add -- "${EXPECT[@]}"
+ARGS=(); for f in "${EXPECT[@]}"; do ARGS+=(--expect "$f"); done
+python scripts/h7r_d4_records.py verify-staged "${ARGS[@]}"
+git commit -m "H7-R D4: smoke log copies with manifest (records only)"
+git push origin HEAD:feat/h7-c1
+SH
+```
+
+**A. Rapfi 점검 사전 검사**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "STOP: 추적 파일 변경 있음"; exit 1; }
+git fetch origin feat/h7-c1
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/feat/h7-c1)" ] || { echo "STOP: 원격과 다름"; exit 1; }
+python - <<'PY'
+from pathlib import Path
+import h7r_d4_rapfi_probe as probe
+plan, sha, contract = probe.checked_plan(Path(probe.PLAN), probe.ROOT)
+print('PASS plan', sha[:12], [(b['name'], b['key'][:12]) for b in plan['branches']])
+PY
+python scripts/check_track_b_frozen.py
+python -m unittest -q tests.test_h7r_d4_rapfi_probe tests.test_h7r_d4_smoke_check
+[ ! -e runs/h7r/R2-D4-BASELINE-1/rapfi-probe ] || { echo "STOP: 점검 폴더가 이미 있음 (보존)"; exit 1; }
+mkdir -p runs/h7r/R2-D4-BASELINE-1/logs
+echo "A PASS: HEAD $(git rev-parse HEAD)"
+SH
+```
+
+**B. Rapfi 점검 실행**(분기 2개, 수 분 이내)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+LOG=runs/h7r/R2-D4-BASELINE-1/logs/rapfi-probe-$(date +%Y%m%d-%H%M%S).log
+ts() { while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+{ echo __START__; rc=0
+  python -u scripts/h7r_d4_rapfi_probe.py run --rapfi-dir /mnt/c/engines/rapfi 2>&1 || rc=$?
+  echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" \
+  || { echo "STOP: 점검 실행 실패 (로그 $LOG, 폴더 보존)"; exit 1; }
+echo "B PASS: $LOG"
+SH
+```
+
+**C. 읽기 전용 검증**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+R=docs/h7r/r2/R2-D4-BASELINE-1/records/rapfi-probe
+rc=0; python -u scripts/h7r_d4_rapfi_probe.py check --output "$R/check.json" || rc=$?
+python - "$R/check.json" <<'PY'
+import json
+import sys
+r = json.load(open(sys.argv[1]))
+print('verdict', r['verdict'], 'integrity', r['integrity'], 'failures', r['failures'])
+for name, row in r['branches'].items():
+    print(name, row)
+print('forbid checked total', r.get('forbid_checked_total'), 'timing', r.get('timing'))
+PY
+[ "$rc" -eq 0 ] || { echo "STOP: FAIL. 기록을 보존하고 보고한다 (다른 국면으로 바꾸거나 반복하지 않는다)"; exit 1; }
+echo "C PASS"
+SH
+```
+
+**D. 결과 사본만 커밋**(C가 PASS일 때. FAIL이면 보고 후 결정)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+S=runs/h7r/R2-D4-BASELINE-1/rapfi-probe; R=docs/h7r/r2/R2-D4-BASELINE-1/records/rapfi-probe
+( cd "$S" && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
+for f in identity.json summary.json SHA256SUMS; do [ ! -e "$R/$f" ] || { echo "STOP: $R/$f 이미 있음"; exit 1; }; done
+cp "$S/identity.json" "$S/summary.json" "$S/SHA256SUMS" "$R/"
+python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D4-BASELINE-1/logs --pattern 'rapfi-probe-*.log' \
+  --dest-dir "$R/run-logs" --manifest "$R/log_manifest.json"
+mapfile -t EXPECT < <(python - "$R" <<'PY'
+import json
+import sys
+r = sys.argv[1]
+for name in ('check.json', 'identity.json', 'summary.json', 'SHA256SUMS', 'log_manifest.json'):
+    print(f'{r}/{name}')
+for e in json.load(open(f'{r}/log_manifest.json'))['logs']:
+    print(e['copy'])
+PY
+)
+git add -- "${EXPECT[@]}"
+ARGS=(); for f in "${EXPECT[@]}"; do ARGS+=(--expect "$f"); done
+python scripts/h7r_d4_records.py verify-staged "${ARGS[@]}"
+git commit -m "H7-R D4: registered Rapfi path probe (records only)"
+git push origin HEAD:feat/h7-c1
+SH
+```
+
+- 커밋하는 것: 점검 결과, identity·summary 사본, SHA256SUMS, 로그 사본과 manifest. `branches.jsonl`(raw journal)은 `runs/`에 남는다.
+- B의 로그 하나만 복사된다(`rapfi-probe-*.log`). 이전 smoke 로그는 L에서 따로 처리한다.

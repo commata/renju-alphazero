@@ -389,6 +389,24 @@ R1과 달라지는 것은 미해결 분기를 다루는 방식 하나다(아래 
 
 실행 명령은 계획 문서 §9.20에 있다.
 
+## 16. smoke 결과와 별도 Rapfi 경로 점검 (2026-11-02)
+
+**smoke**(`records/smoke/`, 커밋 `29847ea`)
+- 판정 `PASS_WITHOUT_RAPFI`
+  - c5 재현 43 / 43, ply 분할 43 / 39 / 4
+  - 첫 두 게임의 eligible ply에서 네 비교 모두 불일치가 0이어서, 분기도 Rapfi continuation도 없었다.
+- 잠금·재개: `NOT_TESTED`
+- 시간: 재생 50초. 참고 추정으로 full 재생은 workers 6에서 약 1.6시간이다.
+- 결과 JSON은 바꾸지 않는다.
+- 로그 사본은 `.gitignore`의 `logs/` 규칙 때문에 빠졌다. `run-logs/`와 `log_manifest.json`으로 보완한다(계획 §9.21 L).
+
+**별도 Rapfi 경로 점검**(`R2-D4-RAPFI-PROBE-1`, 계획 `R2-D4-BASELINE-1/rapfi-probe-plan.json`)
+- 공개 fixture 국면의 고정 분기 2개(흑 고정 수 1개, 백 고정 수 1개)를 쓴다.
+- 등록 Rapfi를 D4와 같은 분기 함수와 spawn pool로 실행한다.
+- PASS 조건: 두 분기 모두 합법 continuation, 흑 금수 교차 확인 1회 이상, 실행 실패와 무결성 오류 없음
+- 결과는 D4 journal이나 판독에 합치지 않는다.
+- 이 점검은 프로토콜과 호출 경로 확인이다. 기력 평가나 full 성공 보장이 아니다. full 승인은 별도다.
+
 ## 근거
 
 - 계획: `docs/h7-rl-plan.md` §3.2, §9.17
