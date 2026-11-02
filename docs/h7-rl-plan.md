@@ -2647,11 +2647,39 @@ SH
 - 3단계: 위 확인이 모두 통과하면 B를 같은 명령으로 다시 실행한다. 새 로그가 생기며, 진행 줄이 `[d4-replay] resume k/396`이어야 한다.
 
 ```bash
-# 1단계 (다른 터미널): replay 기록이 20게임 이상 쌓인 뒤 SIGINT
-cd ~/renju-h6
+# 1단계 (다른 터미널): 같은 checkout의 실행기 하나만 골라 SIGINT
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
 until [ -s runs/h7r/R2-D4-BASELINE-1/full/replay.jsonl ] && \
       [ "$(wc -l < runs/h7r/R2-D4-BASELINE-1/full/replay.jsonl)" -ge 20 ]; do sleep 10; done
-pkill -INT -f 'scripts/h7r_d4.py run --mode full'
+python3 - <<'PY'
+import os
+from pathlib import Path
+import signal
+root = Path.cwd().resolve()
+target = root / 'scripts/h7r_d4.py'
+found = []
+for p in Path('/proc').iterdir():
+    if not p.name.isdigit():
+        continue
+    try:
+        cwd = (p / 'cwd').resolve(strict=True)
+        args = (p / 'cmdline').read_bytes().split(b'\0')
+        args = [a.decode() for a in args if a]
+        args = args[1:]
+        while args and args[0] in ('-u', '-B', '-s', '-E', '-I'):
+            args = args[1:]
+        if cwd == root and len(args) > 3 and (cwd / args[0]).resolve() == target and args[1] == 'run':
+            if '--mode' in args and args[args.index('--mode') + 1] == 'full':
+                found.append(int(p.name))
+    except (OSError, UnicodeError, IndexError):
+        continue
+assert len(found) == 1, f'STOP: expected one full runner in {root}, found {found}'
+assert not (root / 'runs/h7r/R2-D4-BASELINE-1/full/summary.json').exists(), 'STOP: already complete'
+os.kill(found[0], signal.SIGINT)
+print('SIGINT sent to runner PID', found[0])
+PY
+SH
 ```
 
 ```bash
@@ -2686,7 +2714,10 @@ F=runs/h7r/R2-D4-BASELINE-1/full; L=runs/h7r/R2-D4-BASELINE-1/logs; R=docs/h7r/r
 mkdir -p "$R"
 OUT=$R/check.json; n=2; while [ -e "$OUT" ]; do OUT=$R/check-$n.json; n=$((n+1)); done
 ARGS=(--approval docs/h7r/r2/R2-D4-BASELINE-1/execution-full.json --output "$OUT")
-for f in $(ls "$L"/full-*.log | sort); do ARGS+=(--log "$f"); done
+shopt -s nullglob
+LOGS=("$L"/full-*.log)
+[ "${#LOGS[@]}" -gt 0 ] || { echo "STOP: full 로그 없음"; exit 1; }
+for f in "${LOGS[@]}"; do ARGS+=(--log "$f"); done
 rc=0; python -u scripts/h7r_d4_full_check.py "${ARGS[@]}" || rc=$?
 python - "$OUT" <<'PY'
 import json
@@ -2716,6 +2747,27 @@ set -euo pipefail
 source .venv/bin/activate
 export PYTHONPATH="$PWD/src:$PWD/scripts"
 F=runs/h7r/R2-D4-BASELINE-1/full; R=docs/h7r/r2/R2-D4-BASELINE-1/records/full
+# C의 과거 PASS를 가정하지 않는다. 현재 원본을 복사하기 직전에 다시 검증한다.
+[ -f "$F/identity.json" ] && [ -f "$F/summary.json" ] || { echo "STOP: full 실행 기록 없음"; exit 1; }
+mkdir -p "$R"
+OUT=$R/check-records.json; n=2; while [ -e "$OUT" ]; do OUT=$R/check-records-$n.json; n=$((n+1)); done
+ARGS=(--approval docs/h7r/r2/R2-D4-BASELINE-1/execution-full.json --output "$OUT")
+shopt -s nullglob
+LOGS=(runs/h7r/R2-D4-BASELINE-1/logs/full-*.log)
+[ "${#LOGS[@]}" -gt 0 ] || { echo "STOP: full 로그 없음"; exit 1; }
+for f in "${LOGS[@]}"; do ARGS+=(--log "$f"); done
+python -u scripts/h7r_d4_full_check.py "${ARGS[@]}"
+python - "$OUT" "$F" <<'PY'
+import json
+import sys
+from pathlib import Path
+from hybrid.h7r_r2 import file_sha256
+r = json.load(open(sys.argv[1]))
+assert r['format'] == 'h7r-d4-full-check-v1' and r['integrity'] == 'PASS', r.get('failures')
+assert r.get('artifacts'), 'STOP: checker artifact hashes missing'
+for name, sha in r['artifacts'].items():
+    assert file_sha256(Path(sys.argv[2]) / name) == sha, name
+PY
 for f in identity.json summary.json SHA256SUMS log_manifest.json records_manifest.json; do
   [ ! -e "$R/$f" ] || { echo "STOP: $R/$f 이미 있음"; exit 1; }; done
 ( cd "$F" && find . -type f ! -name SHA256SUMS ! -name run.lock -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
@@ -2754,3 +2806,11 @@ SH
   - `records_manifest.json`(검증 결과와 로그 사본을 포함한 모든 파일의 SHA)
 - raw journal(`replay.jsonl`, `branches.jsonl`), 모델, tensor는 `runs/`에 남는다.
 - 무결성이 FAIL이면 D를 실행하지 않는다. 기록을 보존하고 보고한 뒤 따로 결정한다.
+
+**full 실행 전 코드 검토 보완**(2026-11-02)
+- full 검증기는 다섯 모델 집합과 policy/value 네 SHA, frozen state의 실제값·선언값·계약값을 모두 대조한다. 건수는 정수형까지 정확히 비교하며, 실수형 허용 오차를 적용하지 않는다.
+- 중복 JSON key와 NaN/Infinity를 거부한다. 누락된 로그도 새 FAIL 보고서로 남긴다. 검증 결과에 원본 identity·summary·journal의 SHA를 기록한다.
+- D는 현재 원본으로 새 검증 결과를 만들고 PASS와 artifact SHA를 확인한 뒤 복사한다. 과거 C의 성공을 가정하지 않는다. 기록 manifest에 raw journal·모델·tensor가 섞이면 거부한다.
+- B-R의 광범위한 `pkill -f`를 제거했다. 현재 checkout의 정확한 full 실행기 PID 하나만 선택한다. SIGINT 후 worker 정리를 기다릴 수 있으므로 B의 종료와 잠금 해제를 확인하기 전에는 재개하지 않는다.
+- 계약·명단·승인·실행기·판정 규칙·기존 결과는 변경하지 않는다. 실제 full 실행은 이 검토에서 시작하지 않는다.
+- 검증: full check·smoke check·probe·D4 4개 모듈 54 tests PASS, frozen `--no-models` PASS, Bash 블록 6개와 내장 Python 구문 검사 PASS. D의 새 검증 실패 시 과거 PASS가 있어도 복사를 차단하는 실제 Bash 테스트, `python -u` 실행기만 골라 다른 checkout을 보존하는 PID 선택 테스트를 포함한다. 실제 H-dev/CUDA/Rapfi full은 이 환경에서 실행하지 않았다.

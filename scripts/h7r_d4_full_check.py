@@ -45,6 +45,35 @@ RECOMPUTED = ('actor_check', 'eligible_plies', 'warmup_plies', 'branches', 'obse
 need, Failure = smoke.need, smoke.Failure
 
 
+def strict_json(text):
+    def pairs(items):
+        out = {}
+        for k, v in items:
+            need(k not in out, f'duplicate JSON key: {k}')
+            out[k] = v
+        return out
+    def constant(value):
+        raise Failure(f'non-finite JSON value: {value}')
+    value = json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
+    def finite(v):
+        if isinstance(v, float): need(math.isfinite(v), 'non-finite JSON number')
+        elif isinstance(v, dict):
+            for item in v.values(): finite(item)
+        elif isinstance(v, list):
+            for item in v: finite(item)
+    finite(value)
+    return value
+
+
+def strict_journal(path, field, identity_sha, expected):
+    # Keep the pinned smoke reader unchanged, but reject ambiguous JSON and boolean game IDs as well.
+    for line in path.read_bytes().splitlines():
+        row = strict_json(line)
+        need(isinstance(row, dict), f'{path.name}: record is not an object')
+        need(type(row.get(field)) is (int if field == 'game_index' else str), f'{path.name}: wrong key type')
+    return smoke.strict_journal(path, field, identity_sha, expected)
+
+
 def differences(saved, actual, path='') -> list[str]:
     """Paths where ``saved`` (from JSON) and ``actual`` differ: exact for everything but floats."""
     if isinstance(saved, dict) and isinstance(actual, dict):
@@ -57,8 +86,8 @@ def differences(saved, actual, path='') -> list[str]:
         return [d for i, (a, b) in enumerate(zip(saved, actual)) for d in differences(a, b, f'{path}[{i}]')]
     if isinstance(saved, bool) or isinstance(actual, bool) or not all(isinstance(x, (int, float)) for x in (saved, actual)):
         return [] if saved == actual and type(saved) is type(actual) else [f'{path}: {saved!r} != {actual!r}']
-    if isinstance(saved, int) and isinstance(actual, int):
-        return [] if saved == actual else [f'{path}: {saved} != {actual}']
+    if isinstance(actual, int):
+        return [] if type(saved) is int and saved == actual else [f'{path}: integer {saved!r} != {actual}']
     ok = (math.isfinite(saved) and math.isfinite(actual)
           and math.isclose(saved, actual, rel_tol=FLOAT_TOLERANCE['rel'], abs_tol=FLOAT_TOLERANCE['abs']))
     return [] if ok else [f'{path}: {saved!r} != {actual!r}']
@@ -97,12 +126,14 @@ def verify(args, root: Path) -> dict:
     contract_path, sample_path, approval_path = root / CONTRACT, root / SAMPLE, Path(args.approval)
     contract, csha = d4.load_contract(contract_path, root)
     need(committed(contract_path, root), 'the contract is not committed')
-    approval = json.loads(approval_path.read_text(encoding='utf-8'))
+    approval = strict_json(approval_path.read_bytes())
+    need(isinstance(approval, dict), 'full approval is not an object')
     need(approval.get('format') == 'h7r-d4-execution-v1' and approval.get('contract_sha256') == csha
          and approval.get('mode') == 'full' and approval.get('approved') is True, 'not the full approval')
     need(committed(approval_path, root), 'the full approval is not committed')
     asha = d4.file_sha256(approval_path)
-    sample = json.loads(sample_path.read_text(encoding='utf-8'))
+    sample = strict_json(sample_path.read_bytes())
+    need(isinstance(sample, dict), 'eligible list is not an object')
     need(sample.get('contract_sha256') == csha and committed(sample_path, root), 'the eligible list is not bound')
     need(sample.get('hdev') == contract['hdev'], 'the eligible list names another H-dev')
     esha = d4.file_sha256(sample_path)
@@ -110,8 +141,9 @@ def verify(args, root: Path) -> dict:
 
     folder = Path(args.full_dir)
     need(folder.resolve() == (root / FULL_DIR).resolve(), f'the full directory is {FULL_DIR}')
-    identity = json.loads((folder / 'identity.json').read_text(encoding='utf-8'))
-    summary = json.loads((folder / 'summary.json').read_text(encoding='utf-8'))
+    identity = strict_json((folder / 'identity.json').read_bytes())
+    summary = strict_json((folder / 'summary.json').read_bytes())
+    need(isinstance(identity, dict) and isinstance(summary, dict), 'identity / summary is not an object')
     identity_sha = d4.digest(identity)
     need(summary.get('format') == 'h7r-d4-summary-v1' and summary.get('reading') != 'SMOKE', 'not a full summary')
     need(summary.get('identity') == identity and summary.get('identity_sha256') == identity_sha,
@@ -122,15 +154,20 @@ def verify(args, root: Path) -> dict:
          'the run identity names another contract, approval, list, mode or device')
     need(identity.get('runtime') == contract['runtime_identity'] and identity.get('rapfi') == contract['rapfi_identity'],
          'the run identity names another engine runtime or Rapfi')
+    need(set(identity.get('models') or {}) == set(contract['models']), 'model coverage differs from the contract')
     for name, spec in contract['models'].items():
         got = (identity.get('models') or {}).get(name) or {}
-        need(all(got.get(k) == spec[k] for k in ('value_checkpoint_sha256', 'value_metadata_sha256'))
-             and (got.get('frozen_state_sha256') or {}).get('recomputed') == contract['frozen_state_sha256'],
+        need(isinstance(got, dict) and isinstance(got.get('frozen_state_sha256'), dict),
+             f'the run identity of model {name} is malformed')
+        need(all(got.get(k) == spec[k] for k in ('value_checkpoint_sha256', 'value_metadata_sha256',
+                                               'policy_checkpoint_sha256', 'policy_metadata_sha256'))
+             and all((got.get('frozen_state_sha256') or {}).get(k) == contract['frozen_state_sha256']
+                     for k in ('recomputed', 'declared', 'contract')),
              f'the run identity of model {name} differs from the contract')
     head = cli.git_state(root)
     need(identity.get('git') == head, f"the run commit {str((identity.get('git') or {}).get('commit'))[:12]} is not "
                                       f"the checked commit {head['commit'][:12]}")
-    need(isinstance(summary.get('seconds'), (int, float)) and math.isfinite(summary['seconds'])
+    need(smoke.finite(summary.get('seconds'))
          and summary['seconds'] >= 0, 'summary seconds are not finite')
     files = summary.get('files') or {}
     need(set(files) <= set(smoke.JOURNALS) and 'replay.jsonl' in files, 'summary journal list differs')
@@ -144,7 +181,7 @@ def verify(args, root: Path) -> dict:
     manifest, games, hdev = cli.inputs(contract, csha, args.cache, root)
     need(manifest == sample, 'the committed eligible list differs from the verified H-dev source')
     need(hdev == identity.get('hdev'), 'the H-dev checks differ from the run identity')
-    replay = smoke.strict_journal(folder / 'replay.jsonl', 'game_index', identity_sha, set(games))
+    replay = strict_journal(folder / 'replay.jsonl', 'game_index', identity_sha, set(games))
     models = {name: {} for name in contract['models']}
     records = [replay[i] for i in sorted(games)]
     for record in records:
@@ -159,12 +196,12 @@ def verify(args, root: Path) -> dict:
     branches = {}
     if keys:
         need((folder / 'branches.jsonl').exists(), 'branches.jsonl is missing')
-        branches = smoke.strict_journal(folder / 'branches.jsonl', 'key', identity_sha, set(keys))
+        branches = strict_journal(folder / 'branches.jsonl', 'key', identity_sha, set(keys))
     else:
         need(not (folder / 'branches.jsonl').exists(), 'branches.jsonl exists although no branch is expected')
     outcomes, reasons = {}, {}
     for key, record in branches.items():
-        need(isinstance(record.get('seconds'), (int, float)) and math.isfinite(record['seconds'])
+        need(smoke.finite(record.get('seconds'))
              and record['seconds'] >= 0, f'branch {key[:12]}: seconds not finite')
         outcomes[key] = cli.validate_branch(record, tasks[key], contract['invalid_policy'])  # Game replay, policy
         if outcomes[key]['kind'] == 'structural':
@@ -187,6 +224,9 @@ def verify(args, root: Path) -> dict:
                                                                   'unresolved', 'mean_delta_bounds', 'failures',
                                                                   'upper95_descriptive')}
                                         for p, c in actual['comparisons'].items()}}
+    facts['artifacts'] = {name: d4.file_sha256(folder / name)
+                          for name in ('identity.json', 'summary.json', *smoke.JOURNALS)
+                          if (folder / name).is_file()}
     return facts
 
 
@@ -200,10 +240,18 @@ def check(args, root=ROOT) -> dict:
     try:
         report.update(verify(args, root))
         report['integrity'] = 'PASS'
-    except (Failure, ValueError, KeyError, OSError, json.JSONDecodeError) as exc:
+    except (Failure, ValueError, KeyError, TypeError, IndexError, OSError) as exc:
         report['integrity'] = 'FAIL'
         report['failures'].append(f'{type(exc).__name__}: {exc}')
-    sessions = [smoke.read_session(Path(p)) for p in (args.log or [])]
+    sessions, log_failures = [], []
+    for path in args.log or []:
+        try:
+            sessions.append(smoke.read_session(Path(path)))
+        except (OSError, ValueError) as exc:
+            log_failures.append(f'{path}: {type(exc).__name__}: {exc}')
+    if log_failures:
+        report['integrity'] = 'FAIL'
+        report['failures'].extend(log_failures)
     report['timing'] = {'sessions': [{'log': s['log'], 'exit_code': s['exit_code'], 'resume': s['resume'],
                                       'seconds': {'total': smoke.span(s['marks']['start'], s['marks']['exit']),
                                                   'preflight': smoke.span(s['marks']['preflight_start'],
@@ -216,7 +264,12 @@ def check(args, root=ROOT) -> dict:
                                                                                          s['marks']['final'])},
                                       'untimed_lines': s['untimed_lines']} for s in sessions]}
     report['resume_test'] = smoke.resume_test(sessions)
-    report['lock_test'] = smoke.lock_test(Path(args.lock_log) if args.lock_log else None, sessions)
+    try:
+        report['lock_test'] = smoke.lock_test(Path(args.lock_log) if args.lock_log else None, sessions)
+    except (OSError, ValueError) as exc:
+        report['lock_test'] = {'status': 'UNKNOWN'}
+        report['integrity'] = 'FAIL'
+        report['failures'].append(f'lock log: {type(exc).__name__}: {exc}')
     from hybrid.h7r_ledger import publish_json
     publish_json(output, report)
     return report

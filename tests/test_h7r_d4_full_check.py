@@ -2,8 +2,11 @@
 ``test_h7r_d4_smoke_check``), then the read-only check: integrity and the recomputed reading, refusals of altered
 records, INVALID handling, untouched inputs."""
 import json
+import os
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
@@ -17,6 +20,11 @@ from tests.test_h7r_d4_smoke_check import Smoke, branch_record, outcome_of, tree
 class Full(Smoke):
     def __init__(self, root: Path, **kw):
         super().__init__(root, **kw)
+        for name, identity in self.identities.items():
+            identity.update({k:self.contract['models'][name][k] for k in
+                             ('policy_checkpoint_sha256', 'policy_metadata_sha256')})
+            identity['frozen_state_sha256'].update(declared=self.contract['frozen_state_sha256'],
+                                                   contract=self.contract['frozen_state_sha256'])
         self.approval.write_text(json.dumps({'format': 'h7r-d4-execution-v1', 'contract_sha256': 's',
                                              'mode': 'full', 'approved': True}))
         self.folder = root / full.FULL_DIR
@@ -39,6 +47,37 @@ class Full(Smoke):
 
 
 class FullCheckTest(unittest.TestCase):
+    def test_model_coverage_policy_and_frozen_declarations_are_required(self):
+        for mutation in ('policy_checkpoint_sha256', 'policy_metadata_sha256', 'declared', 'extra', 'malformed'):
+            with self.subTest(mutation), TemporaryDirectory() as tmp:
+                run = Full(Path(tmp))
+                if mutation == 'extra': run.identities['extra'] = run.identities['c5']
+                elif mutation == 'malformed': run.identities['c5'] = ['bad']
+                elif mutation == 'declared': run.identities['c5']['frozen_state_sha256']['declared'] = '0'*64
+                else: run.identities['c5'][mutation] = '0'*64
+                run.run()
+                report = run.check()
+                self.assertEqual(report['integrity'], 'FAIL', mutation)
+                self.assertIn('model', report['failures'][0])
+
+    def test_missing_log_is_a_preserved_failure_report(self):
+        with TemporaryDirectory() as tmp:
+            run = Full(Path(tmp)); run.run()
+            report = run.check(log=[str(Path(tmp)/'missing.log')])
+            self.assertEqual(report['integrity'], 'FAIL')
+            self.assertIn('FileNotFoundError', report['failures'][0])
+            self.assertTrue((Path(tmp)/'check.json').is_file())
+            report = run.check('lock-failure.json', lock_log=str(Path(tmp)/'missing-lock.log'))
+            self.assertEqual(report['integrity'], 'FAIL')
+            self.assertEqual(report['lock_test']['status'], 'UNKNOWN')
+
+    def test_count_types_and_strict_json(self):
+        self.assertTrue(full.differences(40.000000001, 40))
+        self.assertTrue(full.differences(40.0, 40))
+        self.assertFalse(full.differences(.1+1e-12, .1))
+        for text in ('{"a":1,"a":2}', '{"unused":NaN}', '{"unused":1e999}'):
+            with self.assertRaises(full.Failure): full.strict_json(text)
+
     def test_normal_result_reading_and_untouched_inputs(self):
         with TemporaryDirectory() as tmp:
             run = Full(Path(tmp))
@@ -52,6 +91,7 @@ class FullCheckTest(unittest.TestCase):
             self.assertEqual((report['games'], report['plies']), (4, {'eligible': 16, 'warmup': 8}))
             self.assertEqual((report['observations'], report['branches']), (16, 2))
             self.assertTrue(report['actor_check']['reproduced'])
+            self.assertEqual(report['artifacts']['summary.json'], d4.file_sha256(run.folder/'summary.json'))
             self.assertIsNone(report['reading']['comparisons']['c8:c5']['label95'])
             self.assertEqual(tree_hashes(run.folder), before)
             self.assertEqual((report['resume_test']['status'], report['lock_test']['status']), ('NOT_TESTED',) * 2)
@@ -122,6 +162,8 @@ class TamperTest(unittest.TestCase):
         self.summary(lambda s: s['files'].__setitem__(name, d4.file_sha256(path)))  # a forger fixes the hash
 
     def test_reading_and_statistics_must_match(self):
+        self.summary(lambda s: s['comparisons']['seed31001:c5'].__setitem__('observations', 4.000000001))
+        self.failed('integer')
         self.summary(lambda s: s.__setitem__('reading', 'ALL_THREE_BETTER'))
         self.failed('reading')
         self.summary(lambda s: s['comparisons']['seed31001:c5'].__setitem__('label95', 'BETTER'))
@@ -141,6 +183,16 @@ class TamperTest(unittest.TestCase):
         self.failed('intervals')
         self.summary(lambda s: s['branch_outcomes'].__setitem__('resolved', 0))
         self.failed('branch_outcomes')
+
+    def test_nonfinite_or_duplicate_fields_cannot_hide_in_a_journal(self):
+        self.rewrite('replay.jsonl', lambda lines: lines[0][:-1] + b',"unused":NaN}\n' + b'\n'.join(lines[1:])+b'\n')
+        self.failed('non-finite')
+        self.rewrite('replay.jsonl', lambda lines: lines[0][:-1] + b',"game_index":0}\n' + b'\n'.join(lines[1:])+b'\n')
+        self.failed('duplicate JSON key')
+
+    def test_nonobject_summary_is_a_failure_report(self):
+        (self.run_.folder/'summary.json').write_text('[]')
+        self.failed('not an object')
 
     def test_identity_summary_and_journals(self):
         body = json.loads((self.run_.folder / 'identity.json').read_text())
@@ -175,6 +227,75 @@ class TamperTest(unittest.TestCase):
         self.run_.approval.write_text(json.dumps({'format': 'h7r-d4-execution-v1', 'contract_sha256': 's',
                                                   'mode': 'smoke', 'approved': True}))
         self.failed('not the full approval')
+
+
+class RecordsTest(unittest.TestCase):
+    @unittest.skipUnless(Path('/proc').is_dir(), 'Linux process inventory required')
+    def test_documented_interrupt_selects_the_unbuffered_runner_in_this_checkout_only(self):
+        import re
+        plan = (Path(__file__).resolve().parents[1]/'docs/h7-rl-plan.md').read_text()
+        section = plan.split('### 9.22', 1)[1].split('**B-R.', 1)[1].split('**C.', 1)[0]
+        code = re.search(r"python3 - <<'PY'\n(.*?)\nPY", section, re.S).group(1)
+        with TemporaryDirectory() as tmp:
+            processes = []
+            try:
+                for name in ('selected', 'other-checkout'):
+                    root = Path(tmp)/name
+                    (root/'scripts').mkdir(parents=True)
+                    script = root/'scripts/h7r_d4.py'
+                    script.write_text('import time\ntime.sleep(60)\n')
+                    processes.append(subprocess.Popen([sys.executable, '-u', str(script), 'run', '--mode', 'full'],
+                                                       cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
+                result = subprocess.run([sys.executable, '-c', code], cwd=Path(tmp)/'selected',
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn(str(processes[0].pid), result.stdout)
+                processes[0].wait(timeout=5)
+                self.assertIsNone(processes[1].poll())
+            finally:
+                for process in processes:
+                    if process.poll() is None: process.terminate()
+                    process.wait(timeout=5)
+
+    @unittest.skipUnless(shutil.which('bash'), 'Bash required for the desktop procedure')
+    def test_documented_D_stops_before_copy_when_fresh_check_fails(self):
+        import re
+        plan = (Path(__file__).resolve().parents[1]/'docs/h7-rl-plan.md').read_text()
+        section = plan.split('### 9.22', 1)[1].split('**D. 결과 사본만 커밋**', 1)[1]
+        block = re.search(r'```bash\n(.*?)```', section, re.S).group(1)
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root/'.venv/bin').mkdir(parents=True)
+            (root/'.venv/bin/activate').write_text('export PATH="$PWD/.venv/bin:$PATH"\n')
+            stub = root/'.venv/bin/python'
+            stub.write_text('#!/bin/sh\necho "fixture: fresh verification failed"\nexit 19\n')
+            stub.chmod(0o755)
+            raw = root/full.FULL_DIR
+            raw.mkdir(parents=True)
+            for name in ('identity.json', 'summary.json'): (raw/name).write_text('{}')
+            log = root/'runs/h7r/R2-D4-BASELINE-1/logs/full-fixture.log'
+            log.parent.mkdir(parents=True); log.write_text('fixture')
+            # A previous PASS must never bypass fresh verification.
+            dest = root/'docs/h7r/r2/R2-D4-BASELINE-1/records/full'
+            dest.mkdir(parents=True)
+            (dest/'check.json').write_text('{"integrity":"PASS"}')
+            script = block.replace('cd ~/renju-h6', 'cd "$D4_SCRATCH"', 1)
+            result = subprocess.run(['bash'], input=script, text=True, capture_output=True,
+                                    env={**os.environ, 'D4_SCRATCH':str(root)})
+            self.assertEqual(result.returncode, 19, result.stderr)
+            self.assertFalse((dest/'summary.json').exists())
+            self.assertFalse((dest/'records_manifest.json').exists())
+            self.assertEqual((raw/'summary.json').read_text(), '{}')
+
+    def test_records_manifest_refuses_raw_data_before_staging(self):
+        from scripts.h7r_d4_records import records_manifest
+        for name in ('replay.jsonl', 'branches.jsonl.gz', 'best.pt', 'cache.npy'):
+            with self.subTest(name), TemporaryDirectory() as tmp:
+                folder = Path(tmp)
+                (folder/name).write_bytes(b'artifact')
+                with self.assertRaisesRegex(ValueError, 'raw journal / model / tensor'):
+                    records_manifest(folder, folder/'records_manifest.json')
+                self.assertFalse((folder/'records_manifest.json').exists())
 
 
 if __name__ == '__main__':

@@ -76,6 +76,10 @@ def records_manifest(folder, output) -> dict:
     files = [p for p in sorted(folder.rglob('*')) if p.is_file() and p.resolve() != output.resolve()]
     if not files:
         raise ValueError(f'{folder}: no files')
+    forbidden = [str(p) for p in files if any(s in ('.jsonl', '.pt', '.pth', '.ckpt', '.onnx', '.npz', '.npy', '.h5')
+                                             for s in p.suffixes)]
+    if forbidden:
+        raise ValueError(f'raw journal / model / tensor cannot enter a records manifest: {forbidden}')
     body = {'format': RECORDS_FORMAT, 'folder': str(folder),
             'files': [{'path': str(p.relative_to(folder)), 'bytes': p.stat().st_size, 'sha256': sha256(p)}
                       for p in files]}
