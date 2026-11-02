@@ -4,8 +4,10 @@ provenance without the current HEAD as run commit, and an end-to-end pass on a r
 import contextlib
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import subprocess
+import shutil
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 import unittest
@@ -132,6 +134,11 @@ class PredictionJoinTest(unittest.TestCase):
         nan = predictions_for(info)
         nan['models']['c5']['d4'][2] = float('nan')
         cases['non-finite'] = nan
+        outside = predictions_for(info)
+        outside['models']['c5']['d4'][0] = 1.01
+        cases['outside value range'] = outside
+        cases['boolean game index'] = predictions_for(info, game=torch.tensor(info['game'], dtype=torch.bool))
+        cases['complex game index'] = predictions_for(info, game=torch.tensor(info['game'], dtype=torch.complex128))
         for name, pred in cases.items():
             with self.subTest(name), self.assertRaises(x1.Failure):
                 self.join(pred)
@@ -197,6 +204,12 @@ class ConcentrationTest(unittest.TestCase):
         self.assertEqual((rep['max_repeats'], rep['decisive']), (3, 1))
         self.assertEqual(rep['observations_with_identical_branch_pair'], 2)
 
+    def test_repeated_candidate_branch_alone_is_not_an_identical_pair(self):
+        rows = [row(game=0, move_a=(1,1), move_b=(2,2)), row(game=1, move_a=(1,1), move_b=(3,3))]
+        rep = x1.concentration(rows)['seed31001:c5']['repeated_history']
+        self.assertEqual(rep['observations'], 2)
+        self.assertEqual(rep['observations_with_identical_branch_pair'], 0)
+
 
 class SeedOverlapTest(unittest.TestCase):
     def test_shared_branches_give_automatic_agreement_split_by_candidate_move(self):
@@ -240,6 +253,42 @@ class PlySideTest(unittest.TestCase):
 
 
 class ProvenanceTest(unittest.TestCase):
+    def test_predictions_require_all_hdev_hashes_and_model_metadata(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            keys = ('value_checkpoint_sha256', 'value_metadata_sha256', 'policy_checkpoint_sha256',
+                    'policy_metadata_sha256')
+            identity = {k: str(i) * 64 for i, k in enumerate(keys, 1)}
+            hdev = {k: 'a' * 64 for k in ('contract_sha256', 'cache_binding_sha256', 'games_sha256',
+                                          'rows_sha256', 'cache_labels_sha256', 'test_sha256')}
+            plan = {'inputs': {k: {'path': k + '.json'} for k in ('epsilon', 'r2_contract', 'predictions')}}
+            shas = {'epsilon': 'b' * 64, 'r2_contract': 'c' * 64, 'predictions': 'd' * 64}
+            contract = {'sources': [{'path': plan['inputs'][k]['path'], 'sha256': shas[k]}
+                                    for k in ('epsilon', 'r2_contract')], 'hdev': hdev,
+                        'models': {n: dict(identity) for n in x1.PREDICTION_MODELS}}
+            r2c = {'models': {n: dict(identity) for n in ('c5', 'c8')}}
+            eps = {'stage': 'R2-0B', 'contract_sha256': shas['r2_contract'], 'hdev': hdev,
+                   'predictions': {'path': 'predictions.json', 'sha256': shas['predictions']},
+                   'seeds': {n: {'identity': dict(identity)} for n in ('31001', '31002', '31003')}}
+            def write(e, r):
+                (root / 'epsilon.json').write_text(json.dumps(e))
+                (root / 'r2_contract.json').write_text(json.dumps(r))
+            write(eps, r2c)
+            x1.check_prediction_source(plan, root, shas, contract)
+            bad = deepcopy(eps); bad['hdev'] = {}
+            write(bad, r2c)
+            with self.assertRaisesRegex(x1.Failure, 'another H-dev'):
+                x1.check_prediction_source(plan, root, shas, contract)
+            for key in ('policy_checkpoint_sha256', 'policy_metadata_sha256', 'value_metadata_sha256'):
+                bad = deepcopy(eps); bad['seeds']['31001']['identity'][key] = 'f' * 64
+                write(bad, r2c)
+                with self.assertRaisesRegex(x1.Failure, 'another model'):
+                    x1.check_prediction_source(plan, root, shas, contract)
+                bad_r2 = deepcopy(r2c); bad_r2['models']['c5'][key] = 'f' * 64
+                write(eps, bad_r2)
+                with self.assertRaisesRegex(x1.Failure, 'other models'):
+                    x1.check_prediction_source(plan, root, shas, contract)
+
     def repo(self, tmp):
         root = Path(tmp)
         def git(*a):
@@ -405,6 +454,31 @@ class CommandTest(unittest.TestCase):
             with self.assertRaisesRegex(x1.Failure, 'never overwritten'):
                 x1.run(args, root=root, log=lambda *a, **k: None)
 
+    def test_output_verifier_recomputes_statistics_and_rows_not_success_flags(self):
+        from scripts import h7r_d4_x1_precheck as pre
+        with self.setup() as (root, args), patch.object(pre, 'x1', x1):
+            tool = root/x1.TOOL
+            tool.parent.mkdir(parents=True)
+            shutil.copyfile(x1.__file__, tool)
+            body = x1.run(args, root=root, log=lambda *a, **k: None)
+            path = root/'records/x1/x1_summary.json'
+            quiet = lambda *a,**k:None
+            before = tree_hashes(root)
+            self.assertEqual(pre.verify_output(root, log=quiet), [])
+            self.assertEqual(tree_hashes(root), before)
+            altered = deepcopy(body)
+            altered['analysis']['ply_side'] = {'forged':123}
+            path.write_text(json.dumps(altered))
+            self.assertIn('recomputed analysis differs', pre.verify_output(root, log=quiet)[0])
+            path.write_text(json.dumps(body))
+            rp = root/body['rows']['path']
+            rows = [json.loads(l) for l in rp.read_text().splitlines()]
+            rows[0]['delta'] = 1.0
+            rp.write_text(''.join(json.dumps(r)+'\n' for r in rows))
+            body['rows']['sha256'] = d4.file_sha256(rp)
+            path.write_text(json.dumps(body))
+            self.assertIn('recomputed rows differ', pre.verify_output(root, log=quiet)[0])
+
     def test_an_input_changed_during_the_analysis_stops_without_output(self):
         with self.setup(change_input=True) as (root, args):
             with self.assertRaisesRegex(x1.Failure, 'replay.bin: SHA-256 differs'):
@@ -425,6 +499,43 @@ class CommandTest(unittest.TestCase):
 
 
 class DesktopCheckTest(unittest.TestCase):
+    @unittest.skipUnless(shutil.which('bash'), 'Bash required')
+    def test_desktop_blocks_stop_on_failures_including_the_pipeline_and_staged_check(self):
+        import re
+        doc = (Path(__file__).resolve().parents[1]/'docs/h7-rl-plan.md').read_text()
+        blocks = re.findall(r'```bash\n(.*?)```', doc.split('### 9.24',1)[1], re.S)
+        self.assertEqual(len(blocks),4)
+        for index, failure in ((0, 'fetch'), (0, 'precheck'), (1, 'analysis'), (2, 'verify'),
+                               (3, 'verify'), (3, 'staged')):
+            with self.subTest(index=index,failure=failure), TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                bins = root/'.venv/bin'; bins.mkdir(parents=True)
+                (bins/'activate').write_text('export PATH="$PWD/.venv/bin:$PATH"\n')
+                (bins/'python').write_text('''#!/bin/bash
+case "$D4_FAIL:$*" in
+precheck:*precheck.py*) exit 21;;
+analysis:*h7r_d4_x1.py*) exit 22;;
+verify:*--verify-output*) exit 23;;
+staged:*verify-staged*) exit 24;;
+esac
+exit 0
+''')
+                (bins/'git').write_text('''#!/bin/bash
+if [ "$D4_FAIL:$1" = fetch:fetch ]; then exit 25; fi
+if [ "$1" = commit ] || [ "$1" = push ]; then echo "$1" >> "$D4_SCRATCH/commits"; fi
+exit 0
+''')
+                for name in ('python','git'): (bins/name).chmod(0o755)
+                if failure == 'staged':
+                    logs=root/'docs/h7r/r2/R2-D4-BASELINE-1/records/x1/run-logs'
+                    logs.mkdir(parents=True); (logs/'x1-fixture.log').write_text('fixture')
+                script = blocks[index].replace('cd ~/renju-h6','cd "$D4_SCRATCH"',1)
+                result = subprocess.run(['bash'],input=script,text=True,capture_output=True,
+                                        env={**os.environ,'D4_SCRATCH':str(root),'D4_FAIL':failure})
+                expected={'fetch':25,'precheck':21,'analysis':22,'verify':23,'staged':24}[failure]
+                self.assertEqual(result.returncode,expected,result.stdout+result.stderr)
+                self.assertFalse((root/'commits').exists())
+
     def test_precheck_reports_absent_and_bad_inputs(self):
         from scripts import h7r_d4_x1_precheck as pre
         with TemporaryDirectory() as tmp:

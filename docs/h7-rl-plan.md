@@ -2845,14 +2845,23 @@ SH
 **A. 사전 확인 (읽기 전용)**
 
 ```bash
-cd ~/renju-h6 && source .venv/bin/activate
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
 export PYTHONPATH="$PWD/src:$PWD/scripts"
-git fetch origin feat/h7-c1 && git checkout feat/h7-c1 && git pull --ff-only origin feat/h7-c1
-test -z "$(git status --porcelain --untracked-files=no)" && echo "tree clean: OK"
+test -z "$(git status --porcelain --untracked-files=no)"
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+test -z "$(git status --porcelain --untracked-files=no)"
+echo "tree clean: OK"
 git log -1 --format='X1 commit %H'
 python scripts/check_track_b_frozen.py
 python scripts/h7r_d4_x1_precheck.py
-test ! -e docs/h7r/r2/R2-D4-BASELINE-1/records/x1 && test ! -e runs/h7r/R2-D4-BASELINE-1/x1 && echo "outputs absent: OK"
+test ! -e docs/h7r/r2/R2-D4-BASELINE-1/records/x1
+test ! -e runs/h7r/R2-D4-BASELINE-1/x1
+echo "outputs absent: OK"
+SH
 ```
 
 - `h7r_d4_x1_precheck.py`는 계획의 입력 17개를 하나씩 해시해 `OK` / `BAD` / `ABSENT`를 찍는다. 마지막 줄이 `PRECHECK PASS`가 아니면 멈춘다.
@@ -2861,11 +2870,16 @@ test ! -e docs/h7r/r2/R2-D4-BASELINE-1/records/x1 && test ! -e runs/h7r/R2-D4-BA
 **B. 분석 (CPU 전용, GPU를 숨긴다)**
 
 ```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
 mkdir -p runs/h7r/R2-D4-BASELINE-1/logs
 LOG=runs/h7r/R2-D4-BASELINE-1/logs/x1-$(date +%Y%m%d-%H%M%S).log
 ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
 { echo __START__; rc=0; CUDA_VISIBLE_DEVICES= python -u scripts/h7r_d4_x1.py \
     --plan docs/h7r/r2/R2-D4-BASELINE-1/x1-plan.json 2>&1 || rc=$?; echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+SH
 ```
 
 - 끝줄이 `__EXIT__ 0`이고 그 앞에 `[d4-x1] DONE reading NOT_ESTABLISHED (unchanged)`가 있어야 한다.
@@ -2874,8 +2888,13 @@ ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; don
 **C. 결과 확인**
 
 ```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
 python scripts/h7r_d4_x1_precheck.py --verify-output
 git status --porcelain
+SH
 ```
 
 - `--verify-output`이 확인하는 것
@@ -2883,23 +2902,42 @@ git status --porcelain
   - `inputs_unchanged`, `summary_match`, 판독 `NOT_ESTABLISHED`
   - 실행 commit `265afe3…`, X1 commit = 현재 HEAD
   - 관측 행 파일의 SHA와 행 수
+  - 원본에서 관측·분기를 다시 구성해 X1의 네 분석 집계와 행별 Q·예측 차이를 재계산한 값과의 일치(성공 표시만 신뢰하지 않음). GPU 추론이나 Rapfi 대국은 하지 않는다.
 - 마지막 줄이 `VERIFY PASS`여야 한다.
 - `git status`에는 `records/x1/` 아래의 새 파일만 보여야 한다.
 
 **D. 기록 복사와 커밋 (records only)**
 
 ```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+# C의 이전 성공을 가정하지 않고 현재 자료와 집계를 복사 직전에 다시 검증한다.
+python scripts/h7r_d4_x1_precheck.py --verify-output
 X=docs/h7r/r2/R2-D4-BASELINE-1/records/x1
 python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D4-BASELINE-1/logs --pattern 'x1-*.log' \
     --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
 python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
-git add "$X/x1_summary.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/x1-*.log
-python scripts/h7r_d4_records.py verify-staged --expect "$X/x1_summary.json" --expect "$X/log_manifest.json" \
-    --expect "$X/records_manifest.json" $(for f in "$X"/run-logs/x1-*.log; do printf -- '--expect %s ' "$f"; done)
+shopt -s nullglob
+LOGS=("$X"/run-logs/x1-*.log)
+test "${#LOGS[@]}" -gt 0
+EXPECT=("$X/x1_summary.json" "$X/log_manifest.json" "$X/records_manifest.json" "${LOGS[@]}")
+git add -- "${EXPECT[@]}"
+ARGS=(); for f in "${EXPECT[@]}"; do ARGS+=(--expect "$f"); done
+python scripts/h7r_d4_records.py verify-staged "${ARGS[@]}"
 git commit -m "H7-R D4 X1: post-hoc exploratory description of the full records (records only)"
 git push origin feat/h7-c1
+SH
 ```
 
 - `verify-staged`가 `staged set OK`가 아니면 커밋하지 않는다.
 - `x1_rows.jsonl`과 raw journal은 `runs/`에 남는다(`manifest`가 `.jsonl`과 `.pt`를 거부한다).
 - 이 뒤에 학습이나 후속 평가를 자동으로 시작하지 않는다. 결과를 읽은 뒤 따로 정한다.
+
+**구현 검토 보완**(2026-11-03)
+- `--verify-output`은 입력·HEAD·도구 출처와 X1 집계·행별 결과를 CPU에서 다시 계산해 대조한다. 성공 표시만 유지한 집계 조작은 통과하지 않는다. 검증 중 입력·HEAD·summary 변경도 거부한다.
+- 동일 분기쌍 반복은 전체 history와 후보 수뿐 아니라 c5 수도 같아야 센다. 예측 출처는 여섯 H-dev 해시와 policy/value 네 SHA를 대조하고, tensor 인덱스는 정수형, 값은 유한한 [-1,1] 범위여야 한다.
+- A–D는 모두 하위 셸의 `set -euo pipefail`로 실행한다. 분석 실패가 tee의 성공으로 가려지거나, 사전/스테이징 검사 실패 뒤 커밋으로 넘어가지 않는다. D는 현재 결과를 다시 검증한 뒤 복사한다.
+- 고정 X1 분석 정의·계획 SHA와 D4 계약·명단·기존 기록은 변경하지 않는다. 실제 원본이 없는 이 환경에서 CPU 부록 분석은 실행하지 않았다.
+- 검증: X1 테스트 30개와 D4 실행기·full/smoke 점검·Rapfi probe 회귀 54개가 통과했다. 집계/행 조작 거부, 출처 누락/모델 metadata 불일치 거부, A–D의 실패 종료 코드 보존과 커밋 차단을 포함한다. 명령 블록 4개는 `bash -n`, frozen 검사는 `--no-models`로 PASS다. 실제 H-dev·원본 journal·예측 tensor를 사용한 검증은 데스크톱에서 수행해야 한다.

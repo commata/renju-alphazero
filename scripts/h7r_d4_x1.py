@@ -188,15 +188,20 @@ def check_prediction_source(plan: dict, root: Path, shas: dict, contract: dict) 
     for key in ('epsilon', 'r2_contract'):  # both pinned by the D4 contract's sources
         need({'path': plan['inputs'][key]['path'], 'sha256': shas[key]} in contract['sources'],
              f"{plan['inputs'][key]['path']}: not the version the D4 contract pins")
-    need(set(eps['hdev']) <= set(contract['hdev']) and all(contract['hdev'][k] == v for k, v in eps['hdev'].items()),
+    hdev_keys = ('contract_sha256', 'cache_binding_sha256', 'games_sha256', 'rows_sha256',
+                 'cache_labels_sha256', 'test_sha256')
+    need(set(eps['hdev']) == set(hdev_keys) and all(contract['hdev'][k] == eps['hdev'][k] for k in hdev_keys),
          'the predictions were made on another H-dev')
     for name in ('c5', 'c8'):
-        need(r2c['models'][name]['value_checkpoint_sha256'] == contract['models'][name]['value_checkpoint_sha256'],
+        need(all(r2c['models'][name][k] == contract['models'][name][k] for k in
+                 ('value_checkpoint_sha256', 'value_metadata_sha256', 'policy_checkpoint_sha256',
+                  'policy_metadata_sha256')),
              f'{name}: the R2 and D4 contracts name other models')
     for seed in ('31001', '31002', '31003'):
         got = eps['seeds'][seed]['identity']
         spec = contract['models'][f'seed{seed}']
-        need(all(got.get(k) == spec[k] for k in ('value_checkpoint_sha256', 'value_metadata_sha256')),
+        need(all(got.get(k) == spec[k] for k in ('value_checkpoint_sha256', 'value_metadata_sha256',
+                                               'policy_checkpoint_sha256', 'policy_metadata_sha256')),
              f'seed{seed}: the predictions were made with another model')
     return {'epsilon_sha256': shas['epsilon'], 'predictions_sha256': shas['predictions'],
             'r2_contract_sha256': shas['r2_contract'], 'epsilon_git': eps.get('git')}
@@ -310,10 +315,12 @@ def checked_predictions(pred, info: dict, routes: list, manifest: dict, r2_sha: 
         for kind, t in kinds.items():
             need(isinstance(t, torch.Tensor) and t.dtype == torch.float64 and t.dim() == 1 and t.numel() == n,
                  f'{name} {kind}: {getattr(t, "shape", None)} is not {n} float64 values')
-            need(bool(torch.isfinite(t).all()), f'{name} {kind}: non-finite prediction')
+            need(bool(torch.isfinite(t).all()) and bool((t.abs() <= 1).all()),
+                 f'{name} {kind}: non-finite prediction or outside [-1, 1]')
     for key in ('game', 'ply'):
         t = pred[key]
-        need(isinstance(t, torch.Tensor) and t.dim() == 1 and t.numel() == n and not t.is_floating_point(),
+        need(isinstance(t, torch.Tensor) and t.dim() == 1 and t.numel() == n
+             and t.dtype in (torch.int8, torch.int16, torch.int32, torch.int64, torch.uint8),
              f'prediction {key}: not {n} integers')
     need(isinstance(pred['route'], list) and len(pred['route']) == n
          and all(type(r) is bool for r in pred['route']), f'prediction route: not {n} booleans')
@@ -421,7 +428,7 @@ def concentration(rows: list[dict]) -> dict:
         top_block['decisive_share'] = top_block['decisive'] / total['decisive'] if total['decisive'] else None
         histories = Counter(r['history'] for r in mine)
         repeated = [r for r in mine if histories[r['history']] > 1]
-        same_pair = Counter((r['history'], tuple(r['move_a'])) for r in mine)
+        same_pair = Counter((r['history'], tuple(r['move_a']), tuple(r['move_b'])) for r in mine)
         out[compare] = {
             'observations': len(mine), 'games_with_observations': len(games), 'decisive_games': len(decisive),
             'overall': {'decisive': total['decisive'], 'better': total['better'], 'worse': total['worse'],
@@ -650,6 +657,29 @@ def public_row(r: dict) -> dict:
                               'key_b', 'outcome', 'delta')} | {'q': r.get('q'), 'dv_abs': r.get('dv_abs')}
 
 
+def compute(plan, contract, shas, cache, root, log=print):
+    """Read-only computation shared by the writer and the independent output verification."""
+    provenance = {'run': check_run_links(plan, root), 'records': check_records(plan, root, shas),
+                  'predictions': check_prediction_source(plan, root, shas, contract)}
+    log('[d4-x1] provenance PASS; rebuilding the run with the runner\'s functions', flush=True)
+    rec = reconstruct(plan, contract, shas, cache, root, log)
+    log('[d4-x1] reconstruction equals the summary; joining the H-dev predictions', flush=True)
+    info, routes = hdev_rows(contract, cache, root)
+    values, pred_facts = checked_predictions(load_predictions(root / plan['inputs']['predictions']['path']), info,
+                                             routes, rec['manifest'], shas['r2_contract'])
+    result, rows = analyse(rec, values)
+    return provenance, rec, pred_facts, result, rows
+
+
+def reconstruction_facts(rec):
+    a = rec['actual']
+    return {'identity_sha256': rec['identity_sha256'], 'games': len(rec['games']),
+            'eligible_plies': a['eligible_plies'], 'warmup_plies': a['warmup_plies'],
+            'observations': a['observations'], 'branches': a['branches'],
+            'branch_outcomes': a['branch_outcomes'], 'actor_check': a['actor_check'],
+            'reading': a['reading'], 'summary_match': True}
+
+
 def run(args, root=ROOT, log=print) -> dict:
     import h7r_d4 as cli
     from hybrid.h7c_nmask import committed
@@ -670,16 +700,8 @@ def run(args, root=ROOT, log=print) -> dict:
     before = input_shas(plan, root)
     contract, csha = d4.load_contract(root / plan['inputs']['contract']['path'], root)
     need(csha == before['contract'], 'the contract SHA differs')
-    provenance = {'run': check_run_links(plan, root), 'records': check_records(plan, root, before),
-                  'predictions': check_prediction_source(plan, root, before, contract)}
-    log('[d4-x1] provenance PASS; rebuilding the run with the runner\'s functions', flush=True)
     cache = Path(args.cache) if args.cache else root / plan['hdev_cache']
-    rec = reconstruct(plan, contract, before, cache, root, log)
-    log('[d4-x1] reconstruction equals the summary; joining the H-dev predictions', flush=True)
-    info, routes = hdev_rows(contract, cache, root)
-    values, pred_facts = checked_predictions(load_predictions(root / plan['inputs']['predictions']['path']), info,
-                                             routes, rec['manifest'], before['r2_contract'])
-    result, rows = analyse(rec, values)
+    provenance, rec, pred_facts, result, rows = compute(plan, contract, before, cache, root, log)
     after = input_shas(plan, root)
     need(after == before, 'an input changed during the analysis')
     need(cli.git_state(root) == state, 'HEAD changed during the analysis')
@@ -687,17 +709,12 @@ def run(args, root=ROOT, log=print) -> dict:
     with out_rows.open('x', encoding='utf-8', newline='\n') as handle:
         for r in rows:
             handle.write(json.dumps(public_row(r), allow_nan=False, separators=(',', ':')) + '\n')
-    a = rec['actual']
     body = {'format': FORMAT, 'plan': {'path': PLAN, 'sha256': plan_sha},
             'nature': plan['nature'], 'x1_git': state,
             'x1_sources': {TOOL: d4.file_sha256(tool)},
             'inputs': {k: {'path': plan['inputs'][k]['path'], 'sha256': before[k]} for k in INPUTS},
             'inputs_unchanged': True, 'provenance': provenance,
-            'reconstruction': {'identity_sha256': rec['identity_sha256'], 'games': len(rec['games']),
-                               'eligible_plies': a['eligible_plies'], 'warmup_plies': a['warmup_plies'],
-                               'observations': a['observations'], 'branches': a['branches'],
-                               'branch_outcomes': a['branch_outcomes'], 'actor_check': a['actor_check'],
-                               'reading': a['reading'], 'summary_match': True},
+            'reconstruction': reconstruction_facts(rec),
             'predictions': pred_facts, 'analysis_spec': ANALYSIS, 'analysis': result,
             'rows': {'path': plan['output']['rows'], 'sha256': d4.file_sha256(out_rows), 'count': len(rows)},
             'limits': LIMITS, 'seconds': round(time.monotonic() - started, 1),
