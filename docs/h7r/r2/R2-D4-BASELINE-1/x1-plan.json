@@ -1,0 +1,194 @@
+{
+ "format": "h7r-d4-x1-plan-v1",
+ "plan_id": "R2-D4-BASELINE-1-X1",
+ "status": "fixed",
+ "fixed_on": "2026-11-02",
+ "nature": "post_hoc_exploratory",
+ "nature_note": "written after the D4 full result (NOT_ESTABLISHED) was seen: a descriptive look at existing records, not a pre-registration of a confirmatory experiment; any pattern needs a new sample under a separate contract",
+ "parent": {
+  "contract_id": "R2-D4-BASELINE-1",
+  "reading": "NOT_ESTABLISHED",
+  "unchanged": [
+   "D4 contract, eligible list, approvals, runner, records and reading",
+   "c5 kept",
+   "V9 on hold"
+  ]
+ },
+ "approval_scope": "CPU analysis of existing records only; no new MCTS search, GPU inference, Rapfi game, training or D4 re-evaluation",
+ "run_commit": "265afe3484d01bf5c30e396a7ad05284b28c4ab8",
+ "run_commit_note": "the commit the full run named (identity.json git); the X1 tool commit is recorded separately and is never presented as the run commit",
+ "inputs": {
+  "contract": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1.contract.json",
+   "sha256": "74ab77e28bceb392c72380c9e03b2de349442df8eb9cebf1de53d8850936b180"
+  },
+  "approval": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/execution-full.json",
+   "sha256": "6c71c1d83f65ab830bccd97ca38c59040622d949bac6677234ad4c69bcf56846"
+  },
+  "eligible": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/eligible.json",
+   "sha256": "93aaa113f86723bd79c2d082563d3cbac9d0137dc147138a7e057e2288aa0760"
+  },
+  "identity": {
+   "path": "runs/h7r/R2-D4-BASELINE-1/full/identity.json",
+   "sha256": "bd2fd76786f3a5a0feebd3750509c9e09d159dadfee6abc9144a1b93779c9fe3"
+  },
+  "summary": {
+   "path": "runs/h7r/R2-D4-BASELINE-1/full/summary.json",
+   "sha256": "3d461b4f03492131d9d8f34d2e649c7db5b753ef7135dfb36c86873aedee2606"
+  },
+  "replay": {
+   "path": "runs/h7r/R2-D4-BASELINE-1/full/replay.jsonl",
+   "sha256": "890ac30e2640afe46fc8bc0be047fa05f62f0b288de876c9365a226780c3915d"
+  },
+  "branches": {
+   "path": "runs/h7r/R2-D4-BASELINE-1/full/branches.jsonl",
+   "sha256": "5c022e87879440ba066344ce0e700457fed82968c40d579a7aae618db3397b4f"
+  },
+  "records_identity": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/identity.json",
+   "sha256": "bd2fd76786f3a5a0feebd3750509c9e09d159dadfee6abc9144a1b93779c9fe3"
+  },
+  "records_summary": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/summary.json",
+   "sha256": "3d461b4f03492131d9d8f34d2e649c7db5b753ef7135dfb36c86873aedee2606"
+  },
+  "check": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/check.json",
+   "sha256": "dbd21aa3ef56cea67d6d84bb690391ed53e6870b773edf63069f1f160d5b0e3b"
+  },
+  "check_records": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/check-records.json",
+   "sha256": "dbd21aa3ef56cea67d6d84bb690391ed53e6870b773edf63069f1f160d5b0e3b"
+  },
+  "sha256sums": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/SHA256SUMS",
+   "sha256": "40d7b9bfb9af389f34c59eeed9bb15fb2081aa12c3545423da5b10224aab83bd"
+  },
+  "records_manifest": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/records_manifest.json",
+   "sha256": "5a7c0cc4065a170182f1a109365322aecd60eb1931f250df717d5db5e5c11698"
+  },
+  "log_manifest": {
+   "path": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/log_manifest.json",
+   "sha256": "1819d81b9084cadaf3dfc9da0c2a0c768437212ec1c684650313878cca919344"
+  },
+  "r2_contract": {
+   "path": "docs/h7r/r2/R2-DIAG-1.contract.json",
+   "sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d"
+  },
+  "epsilon": {
+   "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json",
+   "sha256": "d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2"
+  },
+  "predictions": {
+   "path": "runs/h7r/R2-DIAG-1/r2_0b/seed_predictions.pt",
+   "sha256": "02ea051d76e38683110957b8029bbe9918f8d1f6c4ab374699df320ea9c5862b"
+  }
+ },
+ "hdev_cache": "runs/h7r/R1-HDEV-1/cache",
+ "hdev_cache_note": "verified through the D4 contract H-dev checks (binding, games, rows, labels, test tensor)",
+ "run_sources": {
+  "scripts/h7c_adjudicate.py": "3951a0d638b403f440b48ad070b86db2cb22ff767a447c49023b3b1bba26c304",
+  "scripts/h7c_labels.py": "f90a3eb364c53e97eb61563359df6cd516e079046df1d5165d778217b979c996",
+  "scripts/h7c_sensitivity.py": "45afaf0bde427668625124b5a3151177163db0a9e5aa3b3b28f361ed8330e3d9",
+  "scripts/h7r_d4.py": "db1cc9486122c1cc9bfdac8c9b1f03d5a940bf1af31402401ccccd22b13086e2",
+  "scripts/h7r_d4_full_check.py": "6cfd22289d0bd255705ea56d0edfb44b046f25268ffefc557c45fe60487d777a",
+  "scripts/h7r_d4_smoke_check.py": "475c01911387ff7d0cce3a9a91eacc077c075c45dc5e4a534523515ec4f6210f",
+  "scripts/h7r_holdout.py": "e873500fc8362493fc1ff865e989cf1c35b0dd674f5877f95e7be81d53dcfa97",
+  "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+  "src/analysis/puct_value_v1.py": "43f569dcce8c706ddc53121d0557d889b00bdf00f8f6cf14c099ede9def0726b",
+  "src/hybrid/h3_cache.py": "958867fe121155c037284492a855a4ae102de979dd550d049f2a7a9af0ceb25c",
+  "src/hybrid/h6_value_cache.py": "45ace308f7bf9509123f69f18d24177b899872f42f998bb01e6540d322b9cbcd",
+  "src/hybrid/h7c_nmask.py": "9a960a9aae4495ee73e00d3edc1ba75409117e4b7c53cd54ea0b302e1238afaf",
+  "src/hybrid/h7c_retarget.py": "75d9824c5bf83a46c6385081ceebfedf8e09fcd4b4e3de019d059072f74dfa02",
+  "src/hybrid/h7r_d4.py": "2d739b4e3872807b03834bf3ea95a766f4bec27b10e267eb9cf39a212e587b2f",
+  "src/hybrid/h7r_eval.py": "6b7b197babdff170a27948d697c60728693681429627127d258f5d002ff27d1e",
+  "src/hybrid/h7r_evidence.py": "b95551a9a3927c8cb4cbd7e3163758bfd8c823953bfe30ce26006e3114bb233a",
+  "src/hybrid/h7r_ledger.py": "660dcc30307331b8fe59cdc3001189c21f8687c7ec9165416b2763bcc57da349",
+  "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+  "src/hybrid/progress.py": "6529dba76210cc68c0feafe8ca20f179daa9a28b684d2e8ed1a11b5fa9c34d02",
+  "src/renju/game.py": "fc6154aef0884b6a8cbc5337b335c92e61849dc72ae9eb28072b8983e3ae032f",
+  "src/renju/rules.py": "078450600f0aaceecc532a7086a4915d5d5ce29da972991e20e5b331d9b09f7e"
+ },
+ "run_sources_note": "reused reconstruction / statistics code: byte-identical between the run commit and the X1 checkout",
+ "analysis": {
+  "comparisons": [
+   "seed31001:c5",
+   "seed31002:c5",
+   "seed31003:c5",
+   "c8:c5"
+  ],
+  "seed_comparisons": [
+   "seed31001:c5",
+   "seed31002:c5",
+   "seed31003:c5"
+  ],
+  "ply_bins": [
+   [
+    5,
+    20
+   ],
+   [
+    20,
+    40
+   ],
+   [
+    40,
+    80
+   ],
+   [
+    80,
+    null
+   ]
+  ],
+  "sides": [
+   "black",
+   "white"
+  ],
+  "outcomes": [
+   "better",
+   "worse",
+   "equal",
+   "unresolved"
+  ],
+  "top_games": 10,
+  "top_order": "decisive count descending, then original game_index ascending",
+  "repetition": "identical full move history before the observed ply",
+  "prediction": "d4",
+  "q_decimals": 6,
+  "q_validity": "both moves in that model's root visit list with visits > 0 and route tree",
+  "visit_share_denominator": "sum of the positive visits of that model's root list",
+  "quartiles": {
+   "probabilities": [
+    0.25,
+    0.5,
+    0.75
+   ],
+   "method": "linear interpolation at position (n - 1) p of the sorted values",
+   "cells": [
+    "x<=q25",
+    "q25<x<=q50",
+    "q50<x<=q75",
+    "x>q75"
+   ],
+   "ties": "no tie splitting or jitter; duplicate boundaries and empty cells are reported",
+   "dq_population": "valid disagreement observations of each comparison x model",
+   "dv_population": "all eligible rows of each comparison"
+  }
+ },
+ "output": {
+  "summary": "docs/h7r/r2/R2-D4-BASELINE-1/records/x1/x1_summary.json",
+  "rows": "runs/h7r/R2-D4-BASELINE-1/x1/x1_rows.jsonl"
+ },
+ "limits": [
+  "post-hoc exploratory description written after the D4 result was seen; not a confirmatory test",
+  "descriptive statistics only: no correlation, p-value, per-bin interval or new label",
+  "root Q is a search estimate in the root mover's perspective, not ground truth and not proof of a cause",
+  "Q values are recorded to 6 decimals: differences below that precision are not read",
+  "the prediction is the D4-averaged root-position network value of the H-dev cache, not a record of the leaf values the search used",
+  "shared branches make seed outcomes dependent: agreement through a shared branch is not an independent reproduction",
+  "the D4 reading (NOT_ESTABLISHED), c5 kept and V9 on hold are unchanged"
+ ]
+}

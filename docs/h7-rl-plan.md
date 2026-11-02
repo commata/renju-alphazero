@@ -2830,3 +2830,76 @@ SH
   - 분석 항목: ply·차례별 분포, 집중도, seed 간 겹침, 예측·탐색 값 변화와 결과의 관계
   - 값 비교는 모델 안 Q 비교를 주로 쓰고, 값이 없는 경우는 따로 센다.
   - 순서: 도구 구현·테스트 → 데스크톱 실행. 승인은 단계마다 따로 받는다. 새 학습이나 D4 재평가는 그 뒤에 정한다.
+
+### 9.24 D4 X1 사후 탐색: 계획 확정, 도구, 데스크톱 명령 (2026-11-02)
+
+- **성격**: D4 full 결과를 본 뒤 쓴 사후 탐색이다. 확인 실험의 사전 등록이 아니다. D4 판독(`NOT_ESTABLISHED`), c5 유지, V9 보류는 바꾸지 않는다.
+- **고정 계획**: `docs/h7r/r2/R2-D4-BASELINE-1/x1-plan.json`(입력 17개의 전체 SHA, 실행 commit `265afe3484d01bf5c30e396a7ad05284b28c4ab8`, 재사용 소스 21개의 SHA, 분석 정의). 설명: `R2-D4-BASELINE-1-X1-draft.md`
+- **도구**: `scripts/h7r_d4_x1.py`(읽기 전용, CPU). 테스트 `tests/test_h7r_d4_x1.py`
+  - 실행 commit은 identity, `git show`, 소스 바이트 비교로 따로 확인한다. X1 도구 commit은 따로 기록한다. 기존 full 검증기(HEAD = 실행 commit 요구)는 쓰지 않고 우회하지도 않는다.
+  - 입력이 하나라도 없거나 SHA가 다르면 멈춘다. 범위를 좁혀 계속하지 않는다.
+- **승인 범위**: 기존 자료를 쓰는 CPU 분석. 새 MCTS 탐색, GPU 추론, Rapfi 대국, 학습, D4 재평가는 포함하지 않는다.
+- **이 환경**: 원본(`runs/`의 journal, `seed_predictions.pt`, H-dev cache)이 없어 분석을 실행하지 않았다. 아래는 데스크톱 명령이다.
+- 실패하면 로그를 보존하고 원인을 보고한다. 설정을 바꿔 다시 돌리지 않는다.
+
+**A. 사전 확인 (읽기 전용)**
+
+```bash
+cd ~/renju-h6 && source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+git fetch origin feat/h7-c1 && git checkout feat/h7-c1 && git pull --ff-only origin feat/h7-c1
+test -z "$(git status --porcelain --untracked-files=no)" && echo "tree clean: OK"
+git log -1 --format='X1 commit %H'
+python scripts/check_track_b_frozen.py
+python scripts/h7r_d4_x1_precheck.py
+test ! -e docs/h7r/r2/R2-D4-BASELINE-1/records/x1 && test ! -e runs/h7r/R2-D4-BASELINE-1/x1 && echo "outputs absent: OK"
+```
+
+- `h7r_d4_x1_precheck.py`는 계획의 입력 17개를 하나씩 해시해 `OK` / `BAD` / `ABSENT`를 찍는다. 마지막 줄이 `PRECHECK PASS`가 아니면 멈춘다.
+- frozen 검사가 실패해도 멈춘다.
+
+**B. 분석 (CPU 전용, GPU를 숨긴다)**
+
+```bash
+mkdir -p runs/h7r/R2-D4-BASELINE-1/logs
+LOG=runs/h7r/R2-D4-BASELINE-1/logs/x1-$(date +%Y%m%d-%H%M%S).log
+ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+{ echo __START__; rc=0; CUDA_VISIBLE_DEVICES= python -u scripts/h7r_d4_x1.py \
+    --plan docs/h7r/r2/R2-D4-BASELINE-1/x1-plan.json 2>&1 || rc=$?; echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+```
+
+- 끝줄이 `__EXIT__ 0`이고 그 앞에 `[d4-x1] DONE reading NOT_ESTABLISHED (unchanged)`가 있어야 한다.
+- `STOP:`이면 출력 파일이 없다. 로그를 보존하고 원인을 보고한다.
+
+**C. 결과 확인**
+
+```bash
+python scripts/h7r_d4_x1_precheck.py --verify-output
+git status --porcelain
+```
+
+- `--verify-output`이 확인하는 것
+  - 계획 SHA, 입력 SHA(분석 뒤 다시 해시)
+  - `inputs_unchanged`, `summary_match`, 판독 `NOT_ESTABLISHED`
+  - 실행 commit `265afe3…`, X1 commit = 현재 HEAD
+  - 관측 행 파일의 SHA와 행 수
+- 마지막 줄이 `VERIFY PASS`여야 한다.
+- `git status`에는 `records/x1/` 아래의 새 파일만 보여야 한다.
+
+**D. 기록 복사와 커밋 (records only)**
+
+```bash
+X=docs/h7r/r2/R2-D4-BASELINE-1/records/x1
+python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D4-BASELINE-1/logs --pattern 'x1-*.log' \
+    --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
+python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
+git add "$X/x1_summary.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/x1-*.log
+python scripts/h7r_d4_records.py verify-staged --expect "$X/x1_summary.json" --expect "$X/log_manifest.json" \
+    --expect "$X/records_manifest.json" $(for f in "$X"/run-logs/x1-*.log; do printf -- '--expect %s ' "$f"; done)
+git commit -m "H7-R D4 X1: post-hoc exploratory description of the full records (records only)"
+git push origin feat/h7-c1
+```
+
+- `verify-staged`가 `staged set OK`가 아니면 커밋하지 않는다.
+- `x1_rows.jsonl`과 raw journal은 `runs/`에 남는다(`manifest`가 `.jsonl`과 `.pt`를 거부한다).
+- 이 뒤에 학습이나 후속 평가를 자동으로 시작하지 않는다. 결과를 읽은 뒤 따로 정한다.
