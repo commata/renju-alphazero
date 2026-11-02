@@ -407,6 +407,12 @@ R1과 달라지는 것은 미해결 분기를 다루는 방식 하나다(아래 
 - 결과는 D4 journal이나 판독에 합치지 않는다.
 - 이 점검은 프로토콜과 호출 경로 확인이다. 기력 평가나 full 성공 보장이 아니다. full 승인은 별도다.
 
+**결과**(2026-11-02, `1afd334`)
+- 최종 검증 기록 `records/rapfi-probe/check-run.json`: **PASS**
+  - continuation 27수(16 + 11), 흑 금수 교차 확인 14회, 실행 실패 0
+- 먼저 생긴 `check.json`(FAIL)은 점검 실행 전에 돌린 검증이다. Rapfi 분기는 실행되지 않았으며, 기록으로 보존한다(`check-note.json`).
+- smoke의 Rapfi 정상 continuation 경로 미확인은 이 점검으로 해소됐다. smoke 판정(`PASS_WITHOUT_RAPFI`)과 잠금·재개(`NOT_TESTED`)는 바꾸지 않는다.
+
 ## 근거
 
 - 계획: `docs/h7-rl-plan.md` §3.2, §9.17

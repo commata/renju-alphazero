@@ -2502,3 +2502,28 @@ SH
 
 - 커밋하는 것: 점검 결과, identity·summary 사본, SHA256SUMS, 로그 사본과 manifest. `branches.jsonl`(raw journal)은 `runs/`에 남는다.
 - B의 로그 하나만 복사된다(`rapfi-probe-*.log`). 이전 smoke 로그는 L에서 따로 처리한다.
+
+**§9.21 실행 결과와 절차 정정**(2026-11-02)
+
+- **smoke 로그 보완**(`5db17b2`): `records/smoke/run-logs/` 사본과 `log_manifest.json`. 사본 SHA가 원본과 같다. 기존 smoke 결과와 `SHA256SUMS`는 바꾸지 않았다.
+- **Rapfi 경로 점검**(`1afd334`): **최종 검증 기록은 `records/rapfi-probe/check-run.json`(PASS)**이다.
+
+  | 분기 | 결과 | continuation | 흑 금수 교차 확인 |
+  |---|---|---|---|
+  | black-mover | VALID | 16수 | 8회 |
+  | white-mover | VALID | 11수 | 6회 |
+
+  - 병렬 경과 0.962초, 분기 worker 시간 합 1.03초
+  - 엔진 identity는 실행 전후 모두 등록값과 같았다.
+  - 점검은 1회만 실행했다.
+- **보존된 절차상 FAIL**: `records/rapfi-probe/check.json`
+  - 점검 실행(B)보다 먼저 C를 돌려 `identity.json`을 찾지 못한 기록이다. 이때 Rapfi 분기는 한 번도 실행되지 않았다.
+  - 경위는 `check-note.json`에 있다.
+  - 결과를 인용할 때는 `check-run.json`을 최종 기록으로 명시한다.
+- **절차 정정**(위 블록 C·D를 다시 쓸 경우)
+  - C 앞에 `identity.json`과 `summary.json`이 있는지 확인하고, 없으면 멈춘다.
+  - 이미 결과 파일이 있으면 새 이름으로 쓴다.
+  - D의 기대 파일 목록에 실제로 만든 결과 파일과 설명 파일을 넣는다.
+  - 점검 도구는 계획 파일에 SHA로 고정돼 있어 바꾸지 않았다.
+- **유지되는 상태**: smoke는 `PASS_WITHOUT_RAPFI`, 잠금·재개는 `NOT_TESTED`. full 승인 파일은 없다.
+- **한계**: 원본 `branches.jsonl`은 저장소에 없다. 이 저장소 쪽 검토는 커밋된 검증 결과, 로그, 해시 연결을 대상으로 했다.
