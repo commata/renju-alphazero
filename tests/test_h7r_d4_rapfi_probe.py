@@ -177,6 +177,18 @@ class RecordsTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'nothing copied'):
                 records.copy_logs(src, 'none-*.log', tmp / 'records/x', tmp / 'records/m3.json', root=tmp)
 
+    def test_records_manifest(self):
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp) / 'records/full'
+            (folder / 'run-logs').mkdir(parents=True)
+            (folder / 'check.json').write_text('{"integrity": "PASS"}\n')
+            (folder / 'run-logs/full-1.log').write_text('1 __START__\n')
+            body = records.records_manifest(folder, folder / 'records_manifest.json')
+            self.assertEqual([f['path'] for f in body['files']], ['check.json', 'run-logs/full-1.log'])
+            self.assertEqual(body['files'][0]['sha256'], records.sha256(folder / 'check.json'))
+            with self.assertRaisesRegex(ValueError, 'exists'):
+                records.records_manifest(folder, folder / 'records_manifest.json')
+
     def test_verify_staged_exactly(self):
         with TemporaryDirectory() as tmp:
             repo = Path(tmp)

@@ -2527,3 +2527,230 @@ SH
   - 점검 도구는 계획 파일에 SHA로 고정돼 있어 바꾸지 않았다.
 - **유지되는 상태**: smoke는 `PASS_WITHOUT_RAPFI`, 잠금·재개는 `NOT_TESTED`. full 승인 파일은 없다.
 - **한계**: 원본 `branches.jsonl`은 저장소에 없다. 이 저장소 쪽 검토는 커밋된 검증 결과, 로그, 해시 연결을 대상으로 했다.
+
+### 9.22 D4 full 승인과 실행·검증 명령 (2026-11-02)
+
+**승인**: `docs/h7r/r2/R2-D4-BASELINE-1/execution-full.json`
+
+| 필드 | 값 |
+|---|---|
+| format | `h7r-d4-execution-v1` |
+| contract_sha256 | `74ab77e2…` |
+| mode | `full` |
+| approved | `true` |
+
+- 범위는 fixed 계약 그대로다: 396게임 전체, 모델 5개, 고정 eligible 15,985 국면, 기존 탐색·Rapfi·통계 설정
+- 바꾸지 않는 것: 계약, 명단, 실행기, 판정 규칙, frozen 코드, 과거 결과
+- 승인하지 않은 것: 새 학습, champion 변경, V9 진입
+
+**결과 검증 도구**(`scripts/h7r_d4_full_check.py`, 읽기 전용)
+
+검증하는 것
+- 계약, full 승인 파일, 명단, run identity, 모델 identity, commit의 SHA 연결
+- summary가 identity·journal SHA와 맞는지
+- 원본 H-dev에서 396게임 전체 재생 범위와 c5 재현(`check_replay`)
+- eligible 관측과 전체 고유 분기 집합을 재구성해, 누락·중복·추가가 없는지
+- 모든 분기의 Game 재생과 계약의 INVALID 정책. 알려진 실행 실패는 계약대로 미해결 분기로 둔다. 도구가 새 허용 기준을 더하지 않는다.
+
+재계산하는 것: 실행기와 같은 함수, 같은 게임 순서, bootstrap seed 2026103102, 20,000회로 다음을 다시 계산한다.
+- 민감도
+- 양방향 bound
+- 비교별 통계와 label
+- 종합 판독
+
+비교 규칙
+- label, 건수, key, 문자열은 정확히 일치해야 한다.
+- 부동소수점은 상대 1e-9 / 절대 1e-12 안에서 일치해야 한다. 같은 입력과 같은 코드라 사실상 동일하고, 이 허용 오차는 JSON 왕복만 흡수한다.
+
+판정
+- 무결성(PASS / FAIL)과 연구 판독은 분리한다. `NOT_ESTABLISHED`나 INCONCLUSIVE는 판독이지 기록 검증 실패가 아니다.
+
+하지 않는 것: GPU 탐색과 Rapfi 대국. 원본은 고치지 않고, journal은 자체 엄격 reader로 읽는다. 결과는 새 파일로만 쓴다.
+
+**시간**(참고값)
+- 재생: smoke 처리량으로 환산하면 workers 6에서 약 1.6시간
+- **Rapfi 작업량은 전체 재생이 끝나야 정해진다.** 분기 수는 불일치 관측에서 나온다.
+- 실행기는 약 60초마다 진행 줄을 낸다. 터미널이 닫혀도 계속되도록 tmux 안에서 실행할 것을 권한다.
+
+**실행 블록**(데스크톱 `~/renju-h6`)
+- 순서: A → B → (선택 B-R) → C → D
+- 실패하면 멈추고 다음 블록으로 가지 않는다.
+- 결과를 보고 표본, 예산, 설정을 바꾸거나 다시 실행하지 않는다. 완료된 summary를 지우거나 고치지 않는다.
+
+**A. 사전 검사**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "STOP: 추적 파일 변경 있음"; git status --short; exit 1; }
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/feat/h7-c1)" ] || { echo "STOP: 원격과 다름"; exit 1; }
+python - <<'PY'
+import json
+from pathlib import Path
+from hybrid.h7r_r2 import file_sha256
+D = Path('docs/h7r/r2/R2-D4-BASELINE-1')
+c = file_sha256('docs/h7r/r2/R2-D4-BASELINE-1.contract.json')
+assert c == '74ab77e28bceb392c72380c9e03b2de349442df8eb9cebf1de53d8850936b180', c
+assert file_sha256(D / 'eligible.json') == '93aaa113f86723bd79c2d082563d3cbac9d0137dc147138a7e057e2288aa0760'
+a = json.loads((D / 'execution-full.json').read_text())
+assert a == {'format': 'h7r-d4-execution-v1', 'contract_sha256': c, 'mode': 'full', 'approved': True}, a
+assert json.loads((D / 'records/rapfi-probe/check-run.json').read_text())['verdict'] == 'PASS'
+print('PASS contract / eligible / full approval / Rapfi probe')
+PY
+python scripts/check_track_b_frozen.py
+python -m unittest -q tests.test_h7r_d4 tests.test_h7r_d4_full_check tests.test_h7r_d4_smoke_check
+[ ! -e runs/h7r/R2-D4-BASELINE-1/full ] || { echo "STOP: full 폴더가 이미 있음 (보존하고 보고)"; exit 1; }
+mkdir -p runs/h7r/R2-D4-BASELINE-1/logs
+echo "A PASS: HEAD $(git rev-parse HEAD)"
+SH
+```
+
+**B. full 실행**(정상 완주가 기본. tmux 안에서 실행 권장)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts" PYTHONUNBUFFERED=1
+LOG=runs/h7r/R2-D4-BASELINE-1/logs/full-$(date +%Y%m%d-%H%M%S).log
+ts() { while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+{ echo __START__; rc=0
+  python -u scripts/h7r_d4.py run --mode full \
+    --approval docs/h7r/r2/R2-D4-BASELINE-1/execution-full.json \
+    --sample docs/h7r/r2/R2-D4-BASELINE-1/eligible.json \
+    --model c5=runs/h3_policy_64x4/best.pt,runs/h7c/c5/value/best.pt \
+    --model c8=runs/h3_policy_64x4/best.pt,runs/h7c/c8/value/best.pt \
+    --model seed31001=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31001/best.pt \
+    --model seed31002=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31002/best.pt \
+    --model seed31003=runs/h3_policy_64x4/best.pt,runs/h7r/R2-DIAG-1/r2_0b/seed-31003/best.pt \
+    --device cuda --workers 6 --rapfi-dir /mnt/c/engines/rapfi \
+    --out-dir runs/h7r/R2-D4-BASELINE-1/full 2>&1 || rc=$?
+  echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" \
+  || { echo "STOP: full 실행 종료 코드 0 아님 (로그 $LOG, 폴더 보존)"; exit 1; }
+echo "B PASS: $LOG"
+SH
+```
+
+**B-R. 중단·재개 시험**(선택. 하지 않으면 `NOT_TESTED`로 남는다)
+
+- B가 실행 중일 때만 하고, 완료 전에만 중단한다. HEAD, 승인 파일, 입력, 환경은 그대로 둔다.
+- 1단계: 다른 터미널에서 replay journal이 쌓이기를 기다린 뒤, 실행기에 SIGINT를 보낸다.
+- 2단계: B가 끝나면(B는 rc ≠ 0으로 STOP을 출력한다) 다음 세 가지를 확인한다.
+  - 자식 프로세스가 남지 않았다.
+  - 잠금이 풀렸다.
+  - summary가 없다.
+- 3단계: 위 확인이 모두 통과하면 B를 같은 명령으로 다시 실행한다. 새 로그가 생기며, 진행 줄이 `[d4-replay] resume k/396`이어야 한다.
+
+```bash
+# 1단계 (다른 터미널): replay 기록이 20게임 이상 쌓인 뒤 SIGINT
+cd ~/renju-h6
+until [ -s runs/h7r/R2-D4-BASELINE-1/full/replay.jsonl ] && \
+      [ "$(wc -l < runs/h7r/R2-D4-BASELINE-1/full/replay.jsonl)" -ge 20 ]; do sleep 10; done
+pkill -INT -f 'scripts/h7r_d4.py run --mode full'
+```
+
+```bash
+# 2단계: B가 끝난 뒤의 확인
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+F=runs/h7r/R2-D4-BASELINE-1/full
+if pgrep -af 'scripts/h7r_d4.py run' || pgrep -af 'multiprocessing.spawn'; then echo "STOP: 남은 프로세스 있음"; exit 1; fi
+[ ! -e "$F/summary.json" ] || { echo "중단 전에 완료됨: 재개 시험 NOT_TESTED (summary 보존, 재실행 안 함)"; exit 1; }
+python - "$F/run.lock" <<'PY'
+import sys
+from hybrid.h7r_ledger import file_lock
+with file_lock(sys.argv[1], nonblocking=True):
+    print('lock free (acquired and released by the probe)')
+PY
+echo "replay records: $(wc -l < "$F/replay.jsonl")"
+echo "재개 준비 완료: B를 같은 명령으로 다시 실행한다"
+SH
+```
+
+**C. 결과 검증**(읽기 전용. 결과 파일이 이미 있으면 새 이름을 쓴다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+F=runs/h7r/R2-D4-BASELINE-1/full; L=runs/h7r/R2-D4-BASELINE-1/logs; R=docs/h7r/r2/R2-D4-BASELINE-1/records/full
+[ -f "$F/identity.json" ] && [ -f "$F/summary.json" ] || { echo "STOP: full 실행 기록이 없음 (B 먼저)"; exit 1; }
+mkdir -p "$R"
+OUT=$R/check.json; n=2; while [ -e "$OUT" ]; do OUT=$R/check-$n.json; n=$((n+1)); done
+ARGS=(--approval docs/h7r/r2/R2-D4-BASELINE-1/execution-full.json --output "$OUT")
+for f in $(ls "$L"/full-*.log | sort); do ARGS+=(--log "$f"); done
+rc=0; python -u scripts/h7r_d4_full_check.py "${ARGS[@]}" || rc=$?
+python - "$OUT" <<'PY'
+import json
+import sys
+r = json.load(open(sys.argv[1]))
+print('file', sys.argv[1]); print('integrity', r['integrity'], 'failures', r['failures'])
+print('games', r.get('games'), 'plies', r.get('plies'), 'observations', r.get('observations'),
+      'branches', r.get('branches'), 'outcomes', r.get('branch_outcomes'), 'not resolved', r.get('not_resolved_by_reason'))
+reading = r.get('reading') or {}
+print('joint reading', reading.get('joint'))
+for name, c in (reading.get('comparisons') or {}).items():
+    print(' ', name, c)
+for s in r['timing']['sessions']:
+    print('session', s['log'], 'exit', s['exit_code'], 'resume', s['resume'], 'seconds', s['seconds'])
+print('branch worker seconds', r.get('branch_worker_seconds'), 'resume', r['resume_test'], 'lock', r['lock_test'])
+PY
+[ "$rc" -eq 0 ] || { echo "STOP: 무결성 FAIL. 기록과 폴더를 보존하고 보고한다"; exit 1; }
+echo "C PASS: $OUT"
+SH
+```
+
+**D. 결과 사본만 커밋**(C의 무결성이 PASS일 때. 판독이 무엇이든 커밋한다)
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+F=runs/h7r/R2-D4-BASELINE-1/full; R=docs/h7r/r2/R2-D4-BASELINE-1/records/full
+for f in identity.json summary.json SHA256SUMS log_manifest.json records_manifest.json; do
+  [ ! -e "$R/$f" ] || { echo "STOP: $R/$f 이미 있음"; exit 1; }; done
+( cd "$F" && find . -type f ! -name SHA256SUMS ! -name run.lock -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS )
+cp "$F/identity.json" "$F/summary.json" "$F/SHA256SUMS" "$R/"
+python - "$F" "$R" <<'PY'
+import sys
+from hybrid.h7r_r2 import file_sha256
+for name in ('identity.json', 'summary.json', 'SHA256SUMS'):
+    assert file_sha256(f'{sys.argv[1]}/{name}') == file_sha256(f'{sys.argv[2]}/{name}'), name
+print('copies match their originals')
+PY
+python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D4-BASELINE-1/logs --pattern 'full-*.log' \
+  --dest-dir "$R/run-logs" --manifest "$R/log_manifest.json"
+python scripts/h7r_d4_records.py manifest --dir "$R" --output "$R/records_manifest.json"
+mapfile -t EXPECT < <(python - "$R" <<'PY'
+import json
+import sys
+r = sys.argv[1]
+print(f'{r}/records_manifest.json')
+for f in json.load(open(f'{r}/records_manifest.json'))['files']:
+    print(f"{r}/{f['path']}")
+PY
+)
+git add -- "${EXPECT[@]}"
+ARGS=(); for f in "${EXPECT[@]}"; do ARGS+=(--expect "$f"); done
+python scripts/h7r_d4_records.py verify-staged "${ARGS[@]}"
+git commit -m "H7-R D4: full run, verified records and recomputed reading (records only)"
+git push origin HEAD:feat/h7-c1
+SH
+```
+
+- 커밋하는 것
+  - 검증 결과(실패 기록이 있으면 그것까지)
+  - identity·summary 사본, SHA256SUMS
+  - 시각 로그 사본(`run-logs/`)과 `log_manifest.json`
+  - `records_manifest.json`(검증 결과와 로그 사본을 포함한 모든 파일의 SHA)
+- raw journal(`replay.jsonl`, `branches.jsonl`), 모델, tensor는 `runs/`에 남는다.
+- 무결성이 FAIL이면 D를 실행하지 않는다. 기록을 보존하고 보고한 뒤 따로 결정한다.

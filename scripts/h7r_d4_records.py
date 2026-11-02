@@ -3,6 +3,8 @@
     copy-logs      copy the matching logs into a new records folder (never over a file, never deleting or moving an
                    original), compare every copy's SHA-256 with its original and write ``log_manifest.json``
                    (original path, copy path, bytes, SHA-256). An existing SHA256SUMS is never touched.
+    manifest       ``records_manifest.json`` of a records folder: every file below it (relative path, bytes, SHA-256),
+                   the check result and the log copies included; written once, never over an existing manifest.
     verify-staged  before a records-only commit: every expected path exists and is not ignored, no tracked file has
                    unstaged changes, and the staged set is exactly the expected set (a missing, an unexpected or an
                    ignored file stops the commit).
@@ -28,6 +30,7 @@ for p in (ROOT, ROOT / 'src'):
         sys.path.insert(0, str(p))
 
 MANIFEST_FORMAT = 'h7r-d4-log-manifest-v1'
+RECORDS_FORMAT = 'h7r-d4-records-manifest-v1'
 
 
 def sha256(path: Path) -> str:
@@ -64,6 +67,22 @@ def copy_logs(src_dir, pattern: str, dest_dir, manifest, root=ROOT) -> dict:
     return body
 
 
+def records_manifest(folder, output) -> dict:
+    from hybrid.h7r_ledger import publish_json
+
+    folder, output = Path(folder), Path(output)
+    if output.exists():
+        raise ValueError(f'{output} exists')
+    files = [p for p in sorted(folder.rglob('*')) if p.is_file() and p.resolve() != output.resolve()]
+    if not files:
+        raise ValueError(f'{folder}: no files')
+    body = {'format': RECORDS_FORMAT, 'folder': str(folder),
+            'files': [{'path': str(p.relative_to(folder)), 'bytes': p.stat().st_size, 'sha256': sha256(p)}
+                      for p in files]}
+    publish_json(output, body)
+    return body
+
+
 def _git(root, *args) -> str:
     return subprocess.run(['git', *args], cwd=root, capture_output=True, text=True, check=True).stdout
 
@@ -96,6 +115,9 @@ def main(argv=None) -> int:
     c.add_argument('--pattern', required=True)
     c.add_argument('--dest-dir', required=True)
     c.add_argument('--manifest', required=True)
+    m = sub.add_parser('manifest')
+    m.add_argument('--dir', required=True)
+    m.add_argument('--output', required=True)
     v = sub.add_parser('verify-staged')
     v.add_argument('--expect', action='append', required=True)
     args = parser.parse_args(argv)
@@ -104,6 +126,10 @@ def main(argv=None) -> int:
             body = copy_logs(args.src_dir, args.pattern, args.dest_dir, args.manifest)
             for e in body['logs']:
                 print(f"copied {e['original']} -> {e['copy']} ({e['bytes']} bytes, {e['sha256'][:12]})", flush=True)
+            return 0
+        if args.command == 'manifest':
+            body = records_manifest(args.dir, args.output)
+            print(f"records manifest: {len(body['files'])} files -> {args.output}", flush=True)
             return 0
         problems = verify_staged(args.expect)
     except (ValueError, OSError, subprocess.CalledProcessError) as exc:

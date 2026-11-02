@@ -413,6 +413,20 @@ R1과 달라지는 것은 미해결 분기를 다루는 방식 하나다(아래 
 - 먼저 생긴 `check.json`(FAIL)은 점검 실행 전에 돌린 검증이다. Rapfi 분기는 실행되지 않았으며, 기록으로 보존한다(`check-note.json`).
 - smoke의 Rapfi 정상 continuation 경로 미확인은 이 점검으로 해소됐다. smoke 판정(`PASS_WITHOUT_RAPFI`)과 잠금·재개(`NOT_TESTED`)는 바꾸지 않는다.
 
+## 17. full 승인과 결과 검증 (2026-11-02)
+
+**승인**: full을 fixed 계약 범위 그대로 승인했다(`R2-D4-BASELINE-1/execution-full.json`, 계약 `74ab77e2…`). 계약, 명단, 실행기, 판정 규칙은 바꾸지 않는다.
+
+**결과 검증**(`scripts/h7r_d4_full_check.py`, 읽기 전용)
+- 다시 검증하는 것: 출처 연결, 396게임 재생과 c5 재현, 관측·분기 집합, 모든 분기의 Game 재생과 INVALID 정책
+- 재계산하는 것: 실행기와 같은 함수와 같은 bootstrap으로 민감도, 양방향 bound, 비교별 통계와 label, 종합 판독
+- 비교 규칙: label·건수는 정확히 일치해야 하고, 부동소수점은 상대 1e-9 / 절대 1e-12 안에서 일치해야 한다.
+- 무결성과 연구 판독은 분리한다. 판독이 `NOT_ESTABLISHED`여도 무결성은 PASS일 수 있다.
+
+**결과 기록**: `records/full/`에 다음을 둔다. 검증 결과, identity·summary 사본, SHA256SUMS, `run-logs/`와 `log_manifest.json`, `records_manifest.json`. raw journal은 `runs/`에 남는다.
+
+실행 명령은 계획 문서 §9.22에 있다.
+
 ## 근거
 
 - 계획: `docs/h7-rl-plan.md` §3.2, §9.17
