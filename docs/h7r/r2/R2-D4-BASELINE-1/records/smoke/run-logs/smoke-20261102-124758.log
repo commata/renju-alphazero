@@ -1,0 +1,8 @@
+1793591278.223398863 __START__
+1793591279.104599295 [d4-preflight] checking sealed H-dev and eligible positions
+1793591290.540195291 [d4-preflight] PASS 396 games / 15985 eligible rows; five model identities
+1793591290.814182171 [d4-replay] resume 0/2, remaining 2
+1793591340.894608958 [d4-replay] 43/43 units  100.0%  0.8 min  ETA 0 min  2/2 chunks
+1793591340.895345028 [d4-rapfi] resume 0/0, remaining 0
+1793591353.997812579 {"reading": "SMOKE", "summary": "/home/tack/renju-h6/runs/h7r/R2-D4-BASELINE-1/smoke/summary.json"}
+1793591354.374171366 __EXIT__ 0
