@@ -1,0 +1,118 @@
+{
+ "format": "h7r-d4-rapfi-probe-summary-v1",
+ "identity": {
+  "format": "h7r-d4-rapfi-probe-run-v1",
+  "plan_sha256": "f48bf9f711bd380e4ab65548a4dadb7793877dc908d0630eec6b9a6ec50b0789",
+  "git": {
+   "commit": "5db17b2eaa874905eed1b9ac81958f37bd1488ea",
+   "dirty": false
+  },
+  "rapfi": {
+   "registered": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "actual": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "rule": 4,
+   "arguments": [],
+   "move_timeout": 600.0,
+   "registered_engine": true
+  },
+  "helper_sources": [
+   {
+    "path": "scripts/h7r_d4_rapfi_probe.py",
+    "sha256": "abd210c2fb46ad7a7d42767a3fa78060db53b94374b41b97f68387b4f4cbd11e"
+   },
+   {
+    "path": "scripts/h7c_adjudicate.py",
+    "sha256": "3951a0d638b403f440b48ad070b86db2cb22ff767a447c49023b3b1bba26c304"
+   },
+   {
+    "path": "src/agents/external_engine.py",
+    "sha256": "11240430ec0363ecc14e478f8b7d06bdbe6da9c9dc58cdad8c5d1b576b928ae2"
+   },
+   {
+    "path": "src/hybrid/h7r_evidence.py",
+    "sha256": "b95551a9a3927c8cb4cbd7e3163758bfd8c823953bfe30ce26006e3114bb233a"
+   },
+   {
+    "path": "scripts/h7r_d4.py",
+    "sha256": "db1cc9486122c1cc9bfdac8c9b1f03d5a940bf1af31402401ccccd22b13086e2"
+   },
+   {
+    "path": "scripts/h7r_d4_smoke_check.py",
+    "sha256": "475c01911387ff7d0cce3a9a91eacc077c075c45dc5e4a534523515ec4f6210f"
+   },
+   {
+    "path": "src/hybrid/h7r_d4.py",
+    "sha256": "2d739b4e3872807b03834bf3ea95a766f4bec27b10e267eb9cf39a212e587b2f"
+   },
+   {
+    "path": "src/hybrid/h7r_ledger.py",
+    "sha256": "660dcc30307331b8fe59cdc3001189c21f8687c7ec9165416b2763bcc57da349"
+   },
+   {
+    "path": "src/hybrid/progress.py",
+    "sha256": "6529dba76210cc68c0feafe8ca20f179daa9a28b684d2e8ed1a11b5fa9c34d02"
+   },
+   {
+    "path": "src/renju/__init__.py",
+    "sha256": "20301d67318cc67155b881ab069d7aae5d21506ace901d533fc45fb8f7f50c26"
+   },
+   {
+    "path": "src/renju/__main__.py",
+    "sha256": "4fe8165081791e5963f860e28b821afebc3aaf79986489394682fc01d3f19f13"
+   },
+   {
+    "path": "src/renju/game.py",
+    "sha256": "fc6154aef0884b6a8cbc5337b335c92e61849dc72ae9eb28072b8983e3ae032f"
+   },
+   {
+    "path": "src/renju/rules.py",
+    "sha256": "078450600f0aaceecc532a7086a4915d5d5ce29da972991e20e5b331d9b09f7e"
+   }
+  ],
+  "workers": 2,
+  "mp_context": "spawn",
+  "environment": {
+   "python": "3.12.3",
+   "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.39"
+  }
+ },
+ "identity_sha256": "621a277c5f1c21755c989668f9d38f1edcc8a14b62a04d866abde27861116ff1",
+ "files": {
+  "branches.jsonl": "cbee7f41d6dace2b9d0043e2585c6a3122941dfea34177b2a593fef90a5d095b"
+ },
+ "branches": 2,
+ "elapsed_seconds": 0.962,
+ "scope": "registered Rapfi protocol and worker-path check; no strength evaluation, no guarantee for the D4 full run; results never enter a D4 journal or statistic; the smoke lock / resume NOT_TESTED is unchanged"
+}

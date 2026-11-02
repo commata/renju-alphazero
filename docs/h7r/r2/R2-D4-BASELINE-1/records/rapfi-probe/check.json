@@ -1,0 +1,10 @@
+{
+ "format": "h7r-d4-rapfi-probe-check-v1",
+ "integrity": "FAIL",
+ "failures": [
+  "FileNotFoundError: [Errno 2] No such file or directory: 'runs/h7r/R2-D4-BASELINE-1/rapfi-probe/identity.json'"
+ ],
+ "verdict": "FAIL",
+ "branches": {},
+ "scope": "registered Rapfi protocol and worker-path check on two public-fixture branches; no strength evaluation, no guarantee for the D4 full run, no change to the smoke lock / resume NOT_TESTED"
+}

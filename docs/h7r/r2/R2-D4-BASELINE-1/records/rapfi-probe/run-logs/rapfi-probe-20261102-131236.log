@@ -1,0 +1,7 @@
+1793592756.985999857 __START__
+1793592757.200133047 [d4-rapfi-probe] 2 branches, workers 2 (spawn)
+1793592757.731136375 [d4-rapfi-probe] 155e671019c0 VALID None continuation 11 forbid_checked 6
+1793592757.835303500 [d4-rapfi-probe] 288af9bfc74a VALID None continuation 16 forbid_checked 8
+1793592757.836219619 [d4-rapfi-probe] 2/2 branches  100.0%  0.0 min  ETA 0 min  2/2 chunks
+1793592757.993464780 [d4-rapfi-probe] done: 2 branches in 0.962 s (run check next)
+1793592758.004806650 __EXIT__ 0

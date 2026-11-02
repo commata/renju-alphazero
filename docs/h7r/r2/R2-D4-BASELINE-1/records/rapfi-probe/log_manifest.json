@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "rapfi-probe-*.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D4-BASELINE-1/logs/rapfi-probe-20261102-131236.log",
+   "copy": "docs/h7r/r2/R2-D4-BASELINE-1/records/rapfi-probe/run-logs/rapfi-probe-20261102-131236.log",
+   "bytes": 495,
+   "sha256": "395fe84ec06ec192021bbce777db8d15027c92cb9c0d9be99e12969677d1fc8e"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

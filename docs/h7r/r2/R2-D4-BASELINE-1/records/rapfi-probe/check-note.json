@@ -1,0 +1,6 @@
+{
+ "format": "h7r-d4-rapfi-probe-note-v1",
+ "check.json": "procedural FAIL: the read-only check ran before the probe run existed (its failure names the missing identity.json; file time 13:11, the run log starts at 13:12:36). No Rapfi branch had been played; it is kept as a record, not replaced.",
+ "check-run.json": "the check of the single probe run (log rapfi-probe-20261102-131236.log): PASS",
+ "runs": "the probe was run once; no position was changed or repeated"
+}
