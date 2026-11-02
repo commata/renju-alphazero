@@ -1,0 +1,90 @@
+{
+ "format": "h7r-d4-smoke-check-v1",
+ "scope": "smoke operation check; no D4 reading and no approval of the full run",
+ "integrity": "PASS",
+ "failures": [],
+ "verdict": "PASS_WITHOUT_RAPFI",
+ "shas": {
+  "contract": "74ab77e28bceb392c72380c9e03b2de349442df8eb9cebf1de53d8850936b180",
+  "approval": "7e4e90aae23b65608db7b67e2ffdc3bc43dd4cea2b7300dc71f22720529994d8",
+  "eligible": "93aaa113f86723bd79c2d082563d3cbac9d0137dc147138a7e057e2288aa0760"
+ },
+ "identity_sha256": "feee969323a1112c82022c2adfc9fb8076e426721844e3477720d4e9d93af38a",
+ "games": [
+  0,
+  1
+ ],
+ "plies": {
+  "replay_plies": 43,
+  "eligible_plies": 39,
+  "warmup_plies": 4
+ },
+ "actor_check": {
+  "model_set": "c5",
+  "plies": 43,
+  "same_move": 43,
+  "same_route": 43,
+  "same_visits": 43,
+  "reproduced": true
+ },
+ "longest_game_plies": 25,
+ "observations": 0,
+ "branches_expected": 0,
+ "branch_tally": {
+  "VALID": 0,
+  "structural_draw": 0,
+  "execution_failures": {
+   "timeout": 0,
+   "engine_error": 0,
+   "engine_illegal": 0,
+   "forbid_mismatch": 0
+  },
+  "fixed_move_terminal": 0,
+  "continuation": 0
+ },
+ "unique_branches_in_smoke_games": 0,
+ "timing": {
+  "sessions": [
+   {
+    "log": "runs/h7r/R2-D4-BASELINE-1/logs/smoke-20261102-124758.log",
+    "exit_code": 0,
+    "resume": {
+     "replay": {
+      "done": 0,
+      "total": 2,
+      "remaining": 2
+     },
+     "rapfi": {
+      "done": 0,
+      "total": 0,
+      "remaining": 0
+     }
+    },
+    "seconds": {
+     "total": 76.151,
+     "preflight": 11.436,
+     "identity_and_lock": 0.274,
+     "replay": 50.08,
+     "observations": 0.001,
+     "rapfi_elapsed": 0.0,
+     "revalidation_and_summary": 13.102
+    },
+    "untimed_lines": 0
+   }
+  ],
+  "branch_worker_seconds": null,
+  "reference": {
+   "kind": "reference only: two games, per-worker model loading and CUDA start inside the replay span",
+   "replay_seconds_per_engine_ply_all_models": 2.003,
+   "full_replay_hours_at_workers": 1.56,
+   "workers": 6,
+   "full_rapfi": "branches x mean branch worker seconds / workers (branches known only after the full replay)"
+  }
+ },
+ "lock_test": {
+  "status": "NOT_TESTED"
+ },
+ "resume_test": {
+  "status": "NOT_TESTED"
+ }
+}
