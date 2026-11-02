@@ -602,6 +602,15 @@ fixed 전에 정할 핵심 선택은 다섯 가지다.
 - 개선의 위치: outcome macro는 0.745–0.747로 c5 0.768보다 낮다. proof macro는 0.104–0.106으로 c5 0.104보다 좋아지지 않았다.
 - 다음 하위 계약 초안: `docs/h7r/r2/R2-D4-BASELINE-1-draft.md`(draft, 실행 불가)
 
+## 17. D4 baseline 결과 (2026-11-02)
+
+- D4 full(`R2-D4-BASELINE-1`, 기록 `6c14e36`)의 판독은 `NOT_ESTABLISHED`다.
+  - 세 seed 모두 INCONCLUSIVE이고, mean_delta 점추정은 −0.010 – −0.025다.
+  - 사전 최소 조건은 통과했으나 구간이 0을 포함한다.
+- c8 recipe의 H-dev 예측 개선이 선택 품질로 연결된다는 것은 입증되지 않았다. 차이 없음이나 동등성으로 읽지 않으며, 다른 처방(D1–D3)에 대한 근거도 아니다.
+- 자세한 결과와 읽기: D4 설계 §18
+- 다음은 기존 D4 기록의 사후 탐색 부록(`R2-D4-BASELINE-1-X1-draft.md`)이다.
+
 ## 근거
 
 - 계획: `docs/h7-rl-plan.md` §3, §9.12
