@@ -1,0 +1,145 @@
+{
+ "format": "h7r-d4-full-check-v1",
+ "float_tolerance": {
+  "rel": 1e-09,
+  "abs": 1e-12
+ },
+ "scope": "record check of the D4 full run and its recomputed development reading; no strength, promotion, V9 or champion ruling",
+ "integrity": "PASS",
+ "failures": [],
+ "shas": {
+  "contract": "74ab77e28bceb392c72380c9e03b2de349442df8eb9cebf1de53d8850936b180",
+  "approval": "6c71c1d83f65ab830bccd97ca38c59040622d949bac6677234ad4c69bcf56846",
+  "eligible": "93aaa113f86723bd79c2d082563d3cbac9d0137dc147138a7e057e2288aa0760"
+ },
+ "identity_sha256": "cd02f777d7588f29758939746d7264174806d841d64a537a34303e86bf211563",
+ "games": 396,
+ "plies": {
+  "eligible": 15985,
+  "warmup": 792
+ },
+ "actor_check": {
+  "model_set": "c5",
+  "plies": 16777,
+  "same_move": 16777,
+  "same_route": 16777,
+  "same_visits": 16777,
+  "reproduced": true
+ },
+ "observations": 1783,
+ "branches": 1273,
+ "branch_outcomes": {
+  "resolved": 1256,
+  "structural": 17,
+  "unresolved": 0
+ },
+ "not_resolved_by_reason": {
+  "abnormal_end": 17
+ },
+ "branch_worker_seconds": 972.5,
+ "reading": {
+  "joint": "NOT_ESTABLISHED",
+  "comparisons": {
+   "seed31001:c5": {
+    "label95": "INCONCLUSIVE",
+    "label_individual": "INCONCLUSIVE",
+    "observations": 473,
+    "resolved": 473,
+    "decisive": 109,
+    "decisive_games": 84,
+    "unresolved": 0,
+    "mean_delta_bounds": [
+     -0.015856236786469344,
+     -0.015856236786469344
+    ],
+    "failures": [],
+    "upper95_descriptive": 0.024943372142783356
+   },
+   "seed31002:c5": {
+    "label95": "INCONCLUSIVE",
+    "label_individual": "INCONCLUSIVE",
+    "observations": 438,
+    "resolved": 438,
+    "decisive": 103,
+    "decisive_games": 84,
+    "unresolved": 0,
+    "mean_delta_bounds": [
+     -0.02511415525114155,
+     -0.02511415525114155
+    ],
+    "failures": [],
+    "upper95_descriptive": 0.015363665663944946
+   },
+   "seed31003:c5": {
+    "label95": "INCONCLUSIVE",
+    "label_individual": "INCONCLUSIVE",
+    "observations": 456,
+    "resolved": 456,
+    "decisive": 110,
+    "decisive_games": 85,
+    "unresolved": 0,
+    "mean_delta_bounds": [
+     -0.009868421052631578,
+     -0.009868421052631578
+    ],
+    "failures": [],
+    "upper95_descriptive": 0.03402104205991961
+   },
+   "c8:c5": {
+    "label95": null,
+    "label_individual": null,
+    "observations": 416,
+    "resolved": 416,
+    "decisive": 99,
+    "decisive_games": 78,
+    "unresolved": 0,
+    "mean_delta_bounds": [
+     -0.002403846153846154,
+     -0.002403846153846154
+    ],
+    "failures": [],
+    "upper95_descriptive": 0.04040441843585553
+   }
+  }
+ },
+ "artifacts": {
+  "identity.json": "bd2fd76786f3a5a0feebd3750509c9e09d159dadfee6abc9144a1b93779c9fe3",
+  "summary.json": "3d461b4f03492131d9d8f34d2e649c7db5b753ef7135dfb36c86873aedee2606",
+  "replay.jsonl": "890ac30e2640afe46fc8bc0be047fa05f62f0b288de876c9365a226780c3915d",
+  "branches.jsonl": "5c022e87879440ba066344ce0e700457fed82968c40d579a7aae618db3397b4f"
+ },
+ "timing": {
+  "sessions": [
+   {
+    "log": "runs/h7r/R2-D4-BASELINE-1/logs/full-20261102-154504.log",
+    "exit_code": 0,
+    "resume": {
+     "replay": {
+      "done": 0,
+      "total": 396,
+      "remaining": 396
+     },
+     "rapfi": {
+      "done": 0,
+      "total": 1273,
+      "remaining": 1273
+     }
+    },
+    "seconds": {
+     "total": 9686.375,
+     "preflight": 12.18,
+     "replay": 9487.365,
+     "rapfi_elapsed": 167.525,
+     "revalidation_and_summary": 17.027
+    },
+    "untimed_lines": 0
+   }
+  ]
+ },
+ "resume_test": {
+  "status": "NOT_TESTED"
+ },
+ "lock_test": {
+  "status": "NOT_TESTED"
+ }
+}

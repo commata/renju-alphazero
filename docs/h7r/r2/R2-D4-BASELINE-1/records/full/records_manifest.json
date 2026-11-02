@@ -1,0 +1,41 @@
+{
+ "format": "h7r-d4-records-manifest-v1",
+ "folder": "docs/h7r/r2/R2-D4-BASELINE-1/records/full",
+ "files": [
+  {
+   "path": "SHA256SUMS",
+   "bytes": 327,
+   "sha256": "40d7b9bfb9af389f34c59eeed9bb15fb2081aa12c3545423da5b10224aab83bd"
+  },
+  {
+   "path": "check-records.json",
+   "bytes": 3539,
+   "sha256": "dbd21aa3ef56cea67d6d84bb690391ed53e6870b773edf63069f1f160d5b0e3b"
+  },
+  {
+   "path": "check.json",
+   "bytes": 3539,
+   "sha256": "dbd21aa3ef56cea67d6d84bb690391ed53e6870b773edf63069f1f160d5b0e3b"
+  },
+  {
+   "path": "identity.json",
+   "bytes": 7162,
+   "sha256": "bd2fd76786f3a5a0feebd3750509c9e09d159dadfee6abc9144a1b93779c9fe3"
+  },
+  {
+   "path": "log_manifest.json",
+   "bytes": 451,
+   "sha256": "1819d81b9084cadaf3dfc9da0c2a0c768437212ec1c684650313878cca919344"
+  },
+  {
+   "path": "run-logs/full-20261102-154504.log",
+   "bytes": 13464,
+   "sha256": "717775b2855a92966894482e0e4068e034cd9cc9a407884837e1c787634c8c6c"
+  },
+  {
+   "path": "summary.json",
+   "bytes": 25296,
+   "sha256": "3d461b4f03492131d9d8f34d2e649c7db5b753ef7135dfb36c86873aedee2606"
+  }
+ ]
+}
