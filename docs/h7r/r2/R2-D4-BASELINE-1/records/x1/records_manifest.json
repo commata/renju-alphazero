@@ -1,0 +1,21 @@
+{
+ "format": "h7r-d4-records-manifest-v1",
+ "folder": "docs/h7r/r2/R2-D4-BASELINE-1/records/x1",
+ "files": [
+  {
+   "path": "log_manifest.json",
+   "bytes": 442,
+   "sha256": "9dc94c64e3ad22f0eea260e808858f14bc0bf4489df4e37af59a6d231b26fc21"
+  },
+  {
+   "path": "run-logs/x1-20261103-205046.log",
+   "bytes": 1031,
+   "sha256": "69b29438ef7416811d1acea91d6d210d509c9e47859bde2fdf37c97accf4b597"
+  },
+  {
+   "path": "x1_summary.json",
+   "bytes": 60839,
+   "sha256": "c8f6638bbfa9fdc9d2bb49cccb24bbeb8324d2fdf2e30463582571038c0aab11"
+  }
+ ]
+}

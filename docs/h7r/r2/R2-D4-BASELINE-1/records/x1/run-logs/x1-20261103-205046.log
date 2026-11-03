@@ -1,0 +1,13 @@
+1793706646.473817996 __START__
+1793706646.533267502 [d4-x1] plan ad980fdb9c5e; X1 commit 5a81c79ad03b; run commit 265afe3484d0
+1793706646.596114764 [d4-x1] provenance PASS; rebuilding the run with the runner's functions
+1793706664.349796811 [d4-x1-replay-check] 396/396 games  100.0%  0.1 min  ETA 0 min
+1793706665.985359821 [d4-x1-branch-check] 1,273/1,273 branches  100.0%  0.0 min  ETA 0 min
+1793706665.986170352 [d4-x1] recomputing the summary (bootstrap of the runner)
+1793706666.659612675 [d4-x1] reconstruction equals the summary; joining the H-dev predictions
+1793706672.576415742 [d4-x1] DONE reading NOT_ESTABLISHED (unchanged); observations 1783, branches 1273; rows 1783; 25.2 s
+1793706672.577240393   seed31001:c5   dQ valid candidate 457/473, c5 467/473
+1793706672.578193104   seed31002:c5   dQ valid candidate 425/438, c5 431/438
+1793706672.578840636   seed31003:c5   dQ valid candidate 445/456, c5 450/456
+1793706672.579494456   c8:c5          dQ valid candidate 406/416, c5 410/416
+1793706672.793971580 __EXIT__ 0

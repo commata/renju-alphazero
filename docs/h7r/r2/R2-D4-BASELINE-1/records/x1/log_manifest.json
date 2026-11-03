@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "x1-*.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D4-BASELINE-1/logs/x1-20261103-205046.log",
+   "copy": "docs/h7r/r2/R2-D4-BASELINE-1/records/x1/run-logs/x1-20261103-205046.log",
+   "bytes": 1031,
+   "sha256": "69b29438ef7416811d1acea91d6d210d509c9e47859bde2fdf37c97accf4b597"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
