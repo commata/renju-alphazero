@@ -503,7 +503,7 @@ class DesktopCheckTest(unittest.TestCase):
     def test_desktop_blocks_stop_on_failures_including_the_pipeline_and_staged_check(self):
         import re
         doc = (Path(__file__).resolve().parents[1]/'docs/h7-rl-plan.md').read_text()
-        blocks = re.findall(r'```bash\n(.*?)```', doc.split('### 9.24',1)[1], re.S)
+        blocks = re.findall(r'```bash\n(.*?)```', doc.split('### 9.24',1)[1].split('\n### ',1)[0], re.S)
         self.assertEqual(len(blocks),4)
         for index, failure in ((0, 'fetch'), (0, 'precheck'), (1, 'analysis'), (2, 'verify'),
                                (3, 'verify'), (3, 'staged')):

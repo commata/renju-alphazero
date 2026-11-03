@@ -2975,3 +2975,99 @@ SH
 - checkpoint 선택 지표·평가 주기는 baseline과 같게 두는 안을 계약 초안에서 확정한다. 자료 배정 지문·config·출처 호환성도 검사한다. outcome/proof/network와 기존 주 지표를 함께 보고하며, 기존 ε를 다른 분모의 지표에 전용하지 않는다.
 - 결과 전에 직접 control 대비 판단 기준·허용 악화·3 seed 조건과 D4 진입/중단 규칙을 고정한다. 기존 `DEVELOPMENT_SIGNAL`이나 D4 진입 규칙을 이번 결과에 맞춰 사후 완화하지 않는다. 조건 미충족 또는 불확실이면 이를 기록하고 D1 등의 다음 질문을 정한다.
 - 계약 초안 → 검토·fixed/실행 승인 → 학습 3회와 control 평가 순서다. D4는 조건을 만족한 후보가 있을 때 별도로 정한다. 이번 커밋은 문서만 변경하며, 학습·새 대국·H-conf/A-conf·승급·V9·배포는 실행하지 않는다.
+
+### 9.26 D3 최소 대조 계약 초안과 사전 구성 확인 도구 (2026-11-03)
+
+- **초안**: `docs/h7r/r2/R2-D3-NO-OUTCOME-1-draft.md`(draft, 미승인, 실행 불가)
+  - 목적: cycle outcome 행의 학습 기여를 없앴을 때 얻는 것과 잃는 것을 측정하는 진단
+  - 판정: 같은 seed의 기준 recipe(R2-0B 실행) 대비, R2 §7의 주 지표·ε·`DEVELOPMENT_SIGNAL` 규칙을 그대로 쓴다. c5 대비는 참고값이다.
+  - 손실은 기존 NMASK 형태(원래 분모 유지)를 쓰고, checkpoint 선택은 control과 같은 기존 T-val objective로 둔다. 이 조합을 위한 trainer 옵션은 확정 단계에서 구현한다.
+  - 기준을 채우지 못하면 D4로 자동 진행하지 않는다. proof만 좋아졌다는 이유로 진입 기준을 바꾸지 않는다. proof 전용 판독은 이 진단 뒤 별도 질문으로 정한다.
+- **사전 구성 확인 도구**: `scripts/h7r_d3_prep.py`(읽기 전용, CPU), `src/hybrid/h7r_d3.py`, 테스트 `tests/test_h7r_d3.py`
+  - H-dev의 ply × label 종류 × route 구성, 주 지표의 게임별 가중치 몫
+  - 기존 주 지표 차이(seed 대 c5·c8, c8 대 c5)를 게임별 원래 분모를 유지한 outcome / proof(그리고 종류 × ply) 가산 기여도로 분해한다. 부분의 합 = 전체이며, bootstrap 회차마다도 같다.
+  - 재계산한 값이 커밋된 R2-0B paired 값(c8:c5는 R2-0A)과 다르면 멈춘다. 결과는 새 파일로만 쓴다.
+- **이 환경**: 원본(H-dev cache, `seed_predictions.pt`)이 없어 실행하지 않았다. 아래는 데스크톱 명령이다. 실행은 기존 자료의 CPU 분석이며, 학습·탐색·대국은 하지 않는다.
+- X1에서 C·D 검증 출력이 보존되지 않았던 점을 고쳐, C의 `--verify` 출력도 로그로 남겨 기록에 복사한다.
+
+**A. 사전 확인**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+test -z "$(git status --porcelain --untracked-files=no)"
+git fetch origin feat/h7-c1
+git checkout feat/h7-c1
+git pull --ff-only origin feat/h7-c1
+test -z "$(git status --porcelain --untracked-files=no)"
+git log -1 --format='D3 prep commit %H'
+python scripts/check_track_b_frozen.py
+sha256sum docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json runs/h7r/R2-DIAG-1/r2_0b/seed_predictions.pt
+test ! -e docs/h7r/r2/R2-D3-NO-OUTCOME-1
+echo "PRECHECK PASS"
+SH
+```
+
+- 두 SHA가 `d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2`, `02ea051d76e38683110957b8029bbe9918f8d1f6c4ab374699df320ea9c5862b`여야 한다. 도구도 다시 확인한다.
+
+**B. 실행 (CPU 전용)**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+mkdir -p runs/h7r/R2-D3-NO-OUTCOME-1/logs
+LOG=runs/h7r/R2-D3-NO-OUTCOME-1/logs/d3-prep-run-$(date +%Y%m%d-%H%M%S).log
+ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+{ echo __START__; rc=0; CUDA_VISIBLE_DEVICES= python -u scripts/h7r_d3_prep.py --cache runs/h7r/R1-HDEV-1/cache \
+    --output docs/h7r/r2/R2-D3-NO-OUTCOME-1/prep.json 2>&1 || rc=$?; echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+SH
+```
+
+- 끝줄이 `__EXIT__ 0`이고 그 앞에 `[d3-prep] DONE`과 비교별 분해가 찍혀야 한다. `STOP:`이면 출력 파일이 없다. 로그를 보존하고 원인을 보고한다.
+
+**C. 결과 재계산 확인 (출력 보존)**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+mkdir -p runs/h7r/R2-D3-NO-OUTCOME-1/logs
+LOG=runs/h7r/R2-D3-NO-OUTCOME-1/logs/d3-prep-verify-$(date +%Y%m%d-%H%M%S).log
+ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+{ echo __START__; rc=0; CUDA_VISIBLE_DEVICES= python -u scripts/h7r_d3_prep.py --cache runs/h7r/R1-HDEV-1/cache \
+    --output docs/h7r/r2/R2-D3-NO-OUTCOME-1/prep.json --verify 2>&1 || rc=$?; echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+git status --porcelain
+SH
+```
+
+- 같은 commit에서 입력을 다시 묶고 모든 값을 다시 계산해, 쓰인 기록과 시간 외 모든 필드를 대조한다. `VERIFY PASS`와 `__EXIT__ 0`이어야 한다.
+- `git status`에는 `docs/h7r/r2/R2-D3-NO-OUTCOME-1/` 아래의 새 파일만 보여야 한다.
+
+**D. 기록 복사와 커밋 (records only)**
+
+```bash
+cd ~/renju-h6 && bash <<'SH'
+set -euo pipefail
+source .venv/bin/activate
+export PYTHONPATH="$PWD/src:$PWD/scripts"
+X=docs/h7r/r2/R2-D3-NO-OUTCOME-1
+python scripts/h7r_d3_prep.py --cache runs/h7r/R1-HDEV-1/cache --output "$X/prep.json" --verify
+python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D3-NO-OUTCOME-1/logs --pattern 'd3-prep-*.log' \
+    --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
+python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
+git add "$X/prep.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/d3-prep-*.log
+expect=(--expect "$X/prep.json" --expect "$X/log_manifest.json" --expect "$X/records_manifest.json")
+for f in "$X"/run-logs/d3-prep-*.log; do expect+=(--expect "$f"); done
+python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+git commit -m "H7-R D3 prep: H-dev composition and additive primary-metric decomposition (records only)"
+git push origin feat/h7-c1
+SH
+```
+
+- D는 복사 전에 기록을 다시 검증한다. 실패하면 복사·커밋으로 넘어가지 않는다.
+- 이 뒤에 trainer 변경, 학습, D4를 자동으로 시작하지 않는다. 결과를 초안 §4에 기록하고 검토한 뒤 계약 확정을 따로 정한다.
