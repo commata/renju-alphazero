@@ -26,6 +26,7 @@ Output: one aggregate JSON, new file only; the inputs are re-hashed after the co
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -214,13 +215,20 @@ def run(args, root=ROOT, log=print) -> dict:
 
 def verify(args, root=ROOT, log=print) -> list[str]:
     """Recompute the record from the bound inputs at the current clean HEAD and compare every field but the timing."""
-    from h7r_d4_full_check import differences
+    from h7r_d4_full_check import Failure, differences, strict_json
 
     root = Path(root)
     output = Path(args.output)
     r2.require(output.is_file(), f'{output} is absent')
-    saved = json.loads(output.read_text(encoding='utf-8'))
-    before = r2.file_sha256(output)
+    raw = output.read_bytes()
+    before = hashlib.sha256(raw).hexdigest()
+    try:
+        saved = strict_json(raw)
+    except Failure as exc:
+        raise ValueError(f'{output}: {exc}') from exc
+    r2.require(isinstance(saved, dict), f'{output}: expected a JSON object')
+    seconds = saved.get('seconds')
+    r2.require(type(seconds) in (int, float) and seconds >= 0, f'{output}: invalid elapsed time')
     actual = compute(args, root, log)
     problems = differences({k: v for k, v in saved.items() if k != 'seconds'}, json.loads(json.dumps(actual)))
     r2.require(r2.file_sha256(output) == before, 'the record changed during verification')
@@ -242,7 +250,7 @@ def main(argv=None) -> int:
             print(f"VERIFY {'FAIL' if problems else 'PASS'}", flush=True)
             return 1 if problems else 0
         body = run(args)
-    except (ValueError, KeyError, TypeError, OSError) as exc:
+    except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as exc:
         print(f'STOP: {type(exc).__name__}: {exc}', file=sys.stderr, flush=True)
         return 1
     print(f"[d3-prep] DONE {body['seconds']} s; record checks: {body['record_checks']}", flush=True)

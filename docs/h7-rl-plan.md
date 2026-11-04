@@ -3004,13 +3004,16 @@ git pull --ff-only origin feat/h7-c1
 test -z "$(git status --porcelain --untracked-files=no)"
 git log -1 --format='D3 prep commit %H'
 python scripts/check_track_b_frozen.py
-sha256sum docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json runs/h7r/R2-DIAG-1/r2_0b/seed_predictions.pt
+sha256sum --check --strict <<'SHA256'
+d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2  docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json
+02ea051d76e38683110957b8029bbe9918f8d1f6c4ab374699df320ea9c5862b  runs/h7r/R2-DIAG-1/r2_0b/seed_predictions.pt
+SHA256
 test ! -e docs/h7r/r2/R2-D3-NO-OUTCOME-1
 echo "PRECHECK PASS"
 SH
 ```
 
-- 두 SHA가 `d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2`, `02ea051d76e38683110957b8029bbe9918f8d1f6c4ab374699df320ea9c5862b`여야 한다. 도구도 다시 확인한다.
+- 두 SHA가 지정값과 일치해야 `PRECHECK PASS`가 출력된다. 실행 도구도 같은 입력의 SHA를 확인한다.
 
 **B. 실행 (CPU 전용)**
 
@@ -3027,7 +3030,7 @@ ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; don
 SH
 ```
 
-- 끝줄이 `__EXIT__ 0`이고 그 앞에 `[d3-prep] DONE`과 비교별 분해가 찍혀야 한다. `STOP:`이면 출력 파일이 없다. 로그를 보존하고 원인을 보고한다.
+- 끝줄이 `__EXIT__ 0`이고 그 앞에 `[d3-prep] DONE`과 비교별 분해가 찍혀야 한다. 실패하면 로그와 기존 파일을 보존하고 원인을 확인한다.
 
 **C. 결과 재계산 확인 (출력 보존)**
 
@@ -3056,8 +3059,18 @@ set -euo pipefail
 source .venv/bin/activate
 export PYTHONPATH="$PWD/src:$PWD/scripts"
 X=docs/h7r/r2/R2-D3-NO-OUTCOME-1
-python scripts/h7r_d3_prep.py --cache runs/h7r/R1-HDEV-1/cache --output "$X/prep.json" --verify
-python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D3-NO-OUTCOME-1/logs --pattern 'd3-prep-*.log' \
+test -f "$X/prep.json"
+extra="$(find "$X" -mindepth 1 ! -path "$X/prep.json" -print -quit)"
+if [[ -n "$extra" ]]; then
+    printf 'STOP: unexpected record path %s\n' "$extra" >&2
+    exit 1
+fi
+LOG_DIR=runs/h7r/R2-D3-NO-OUTCOME-1/logs
+mkdir -p "$LOG_DIR"
+LOG="$(mktemp "$LOG_DIR/d3-prep-final-XXXXXXXX.log")"
+CUDA_VISIBLE_DEVICES= python -u scripts/h7r_d3_prep.py --cache runs/h7r/R1-HDEV-1/cache \
+    --output "$X/prep.json" --verify 2>&1 | tee "$LOG"
+python scripts/h7r_d4_records.py copy-logs --src-dir "$LOG_DIR" --pattern 'd3-prep-*.log' \
     --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
 python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
 git add "$X/prep.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/d3-prep-*.log
@@ -3069,5 +3082,5 @@ git push origin feat/h7-c1
 SH
 ```
 
-- D는 복사 전에 기록을 다시 검증한다. 실패하면 복사·커밋으로 넘어가지 않는다.
+- D 시작 시 기록 폴더에는 `prep.json`만 있어야 한다. D의 재검증 출력은 `d3-prep-final-*.log`로 함께 보존한다. 실패하면 복사·커밋으로 넘어가지 않는다.
 - 이 뒤에 trainer 변경, 학습, D4를 자동으로 시작하지 않는다. 결과를 초안 §4에 기록하고 검토한 뒤 계약 확정을 따로 정한다.

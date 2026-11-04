@@ -210,6 +210,31 @@ class RunVerifyTest(unittest.TestCase):
             out.write_text(json.dumps(saved))
             self.assertTrue(prep.verify(args, root=tmp, log=lambda *a, **k: None))
 
+    def test_verify_rejects_ambiguous_json_and_replaced_file(self):
+        import json
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from h7r_d4_full_check import strict_json
+
+        body = {'format': prep.FORMAT}
+        with TemporaryDirectory() as tmp, patch.object(prep, 'compute', return_value=body):
+            out = Path(tmp) / 'prep.json'
+            args = SimpleNamespace(output=str(out))
+            out.write_text('{"format":"wrong","format":"h7r-d3-prep-v1","seconds":0}')
+            with self.assertRaisesRegex(ValueError, 'duplicate JSON key'):
+                prep.verify(args)
+            out.write_text(json.dumps({**body, 'seconds': 0}))
+
+            def replace_after_read(raw):
+                out.write_text(json.dumps({**body, 'seconds': 1}))
+                return strict_json(raw)
+
+            with patch('h7r_d4_full_check.strict_json', side_effect=replace_after_read):
+                with self.assertRaisesRegex(ValueError, 'record changed'):
+                    prep.verify(args)
+
 
 
 class DesktopBlockTest(unittest.TestCase):
@@ -224,10 +249,11 @@ class DesktopBlockTest(unittest.TestCase):
         from tempfile import TemporaryDirectory
         if not shutil.which('bash'):
             self.skipTest('Bash required')
-        doc = (Path(__file__).resolve().parents[1] / 'docs/h7-rl-plan.md').read_text()
+        doc = (Path(__file__).resolve().parents[1] / 'docs/h7-rl-plan.md').read_text(encoding='utf-8')
         blocks = re.findall(r'```bash\n(.*?)```', doc.split('### 9.26', 1)[1].split('\n### ', 1)[0], re.S)
         self.assertEqual(len(blocks), 4)
-        for index, failure in ((0, 'fetch'), (1, 'run'), (2, 'verify'), (3, 'verify'), (3, 'staged')):
+        for index, failure in ((0, 'fetch'), (0, 'hash'), (1, 'run'), (2, 'verify'),
+                               (3, 'extra'), (3, 'verify'), (3, 'staged')):
             with self.subTest(index=index, failure=failure), TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 bins = root / '.venv/bin'
@@ -248,11 +274,27 @@ exit 0
 ''')
                 for name in ('python', 'git'):
                     (bins / name).chmod(0o755)
+                if failure == 'hash':
+                    for path in ('docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json',
+                                 'runs/h7r/R2-DIAG-1/r2_0b/seed_predictions.pt'):
+                        file = root / path
+                        file.parent.mkdir(parents=True, exist_ok=True)
+                        file.write_text('wrong hash')
+                if index == 3:
+                    records = root / 'docs/h7r/r2/R2-D3-NO-OUTCOME-1'
+                    records.mkdir(parents=True)
+                    (records / 'prep.json').write_text('{}')
+                    if failure == 'extra':
+                        (records / 'extra.json').write_text('{}')
                 script = blocks[index].replace('cd ~/renju-h6', 'cd "$D3_SCRATCH"', 1)
                 result = subprocess.run(['bash'], input=script, text=True, capture_output=True,
                                         env={**os.environ, 'D3_SCRATCH': str(root), 'D3_FAIL': failure})
-                expected = {'fetch': 25, 'run': 22, 'verify': 23, 'staged': 24}[failure]
+                expected = {'fetch': 25, 'hash': 1, 'run': 22, 'verify': 23, 'extra': 1, 'staged': 24}[failure]
                 self.assertEqual(result.returncode, expected, result.stdout + result.stderr)
+                if failure == 'hash':
+                    self.assertNotIn('PRECHECK PASS', result.stdout)
+                if failure == 'extra':
+                    self.assertIn('unexpected record path', result.stderr)
                 self.assertFalse((root / 'commits').exists())
 
 
