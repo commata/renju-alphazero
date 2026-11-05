@@ -2,7 +2,7 @@
   "format": "h7r-d3-r0-contract-v1",
   "contract_id": "R2-D3-NO-OUTCOME-1-R0",
   "status": "fixed",
-  "approved": false,
+  "approved": true,
   "r2_contract": {
     "path": "docs/h7r/r2/R2-DIAG-1.contract.json",
     "sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d"
