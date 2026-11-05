@@ -134,6 +134,7 @@ PY
 결과 판정은 `r0/r0.json`에, A1 비교 원본과 단계별 로그는 `runs/`에 남긴다. 학습이 `NO_CANDIDATE`를 반환하거나 입력 오류가 발생하면 해당 단계의 비정상 종료 코드로 멈춘다. 결과 JSON이 생기기 전에 멈춘 경우에는 실행 기록과 로그를 보존해 원인을 확인한다.
 
 - `check`는 실행 기록(`r2_train.json`)의 `git`이 자기 실행 commit과 같고 둘 다 clean일 때만 진행한다. 다르면 A1 비교 전에 거부하므로 `reproduce.json`도 생기지 않는다. 그 commit에 커밋된 승인 계약이 `train`의 근거가 된다. 결과에는 `train_git`과 `git`을 함께 남긴다.
+- A1 비교는 기록하지 않는 모드로 실행하고, 비교가 끝난 직후 실제 HEAD와 clean 상태를 다시 확인한다. 시작 때와 같을 때만 `reproduce.json`과 `r0.json`을 쓴다. 비교 도중 HEAD가 바뀌거나 트리가 dirty가 되면 두 파일 모두 남기지 않고 멈춘다.
 
 **기록 복사와 커밋 (records only)**: `check`가 `r0.json`을 쓴 뒤, 같은 HEAD에서 실행한다. `NOT_REPRODUCED`도 같은 방식으로 보존한다.
 

@@ -16,7 +16,8 @@ seed, and reuses the R2-0B machinery as it is:
             holds; anything else is NOT_REPRODUCED (exit 1), and D3 does not start.
 
 ``train`` and ``check`` run at one clean commit: the run record names no R0 contract, so ``check`` refuses a run whose
-recorded commit is not its own (that commit holds the approved contract). Both commands need the fixed, committed
+recorded commit is not its own (that commit holds the approved contract), and writes the A1 comparison and the R0
+result only when the HEAD is still that clean commit after the comparison. Both commands need the fixed, committed
 and approved R0 contract (``h7r-d3-r0-contract-v1``): the R2 contract and
 A1 amendment it builds on, the trainer sources it was fixed for, the recorded values with the records that hold them
 (checked against those records: the pinned constants cannot be typos), the A1 tolerances (checked equal), the seed
@@ -179,9 +180,16 @@ def check(args, log=print) -> dict:
                f"the R0 run was trained at {str((train_git or {}).get('commit'))[:12]}, not at the clean commit "
                f"{check_git['commit'][:12]} that checks it: train and check run at one commit")
     log('[d3-r0] A1 reproduction check of the R0 run against the reference c8 run', flush=True)
-    rep = seed.reproduce(seed_args(c, args, cache=Path(args.cache), reference_model=args.reference_model,
-                                   run_dir=out['run_dir'], output=out['reproduction']), log=log)
-    r2.require(rep.get('git') == check_git, 'the commit changed during the check')
+    a1_args = seed_args(c, args, cache=Path(args.cache), reference_model=args.reference_model,
+                        run_dir=out['run_dir'], output=out['reproduction'])
+    # reproduce() in its no-publish mode (the R2 / A1 approval checked here, as reproduce would): the A1 comparison
+    # is written only after the commit is checked again below, so a HEAD change during it leaves no record.
+    rep = seed.reproduce(a1_args, log=log, validation_context=seed.approved(a1_args, root))
+    after = git_state(root)
+    r2.require(rep.get('git') == check_git and after == check_git,
+               f"the commit changed during the check: {check_git['commit'][:12]} at the start, "
+               f"{after['commit'][:12]}{' (dirty)' if after['dirty'] else ''} after the A1 comparison")
+    publish_json(out['reproduction'], rep)
     r2.require(rep['tolerance'] == c['tolerance'], 'the reproduction used other tolerances')
     verdict = r0_verdict(rep['verdict'], c['recorded'], rep['assignment']['rerun_sha256'],
                          rep['assignment']['reference']['sha256'], rep['best_step']['rerun'])

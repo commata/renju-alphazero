@@ -22,6 +22,7 @@ RUN = 'docs/h7r/r2/R2-DIAG-1/r2_0b/runs/seed-20261025/r2_train.json'
 C8 = 'docs/h7c/c8/value_record.json'
 QUIET = lambda *a, **k: None  # noqa: E731
 HEAD = {'commit': 'c' * 40, 'dirty': False}
+CONTEXT = ('r2 contract', 'r2 sha', 'amendment', 'amendment sha')
 
 
 def ref(path, root=ROOT):
@@ -156,15 +157,15 @@ class WiringTest(unittest.TestCase):
                 r0.train(self.args(w, cycle_cache='c', cycle_rows='r', replay_cache='p', parent='m'), log=QUIET)
 
     def fake_reproduce(self, w, rerun_fp=FP, ref_fp=FP, step=147, verdict='METRIC_ONLY', git=None):
-        def reproduce(a, log=None):
+        def reproduce(a, log=None, validation_context=None):
+            # the no-publish mode: R0 writes the comparison itself, after checking the commit again
+            assert validation_context == CONTEXT, validation_context
             body = {'git': dict(git or HEAD), 'tolerance': w.contract['tolerance'],
                     'verdict': {'version': 'h7r-r2-reproduction-v1', 'verdict': verdict, 'reasons': []},
                     'assignment': {'rerun_sha256': rerun_fp, 'reference': {'sha256': ref_fp}},
                     'best_step': {'reference': 147, 'rerun': step},
                     'checks': {'assignment': [ref_fp, rerun_fp], 'best_step': [147, step]},
                     'environment': json.loads((w.root / RUN).read_text())['environment']}
-            Path(a.output).parent.mkdir(parents=True, exist_ok=True)
-            Path(a.output).write_text(json.dumps(body))
             return body
         return reproduce
 
@@ -175,10 +176,13 @@ class WiringTest(unittest.TestCase):
             'sources': {'src/hybrid/h7c_train.py': trainer or w.contract['trainer_sources']['src/hybrid/h7c_train.py']},
             'git': HEAD if git is None else git}))
 
-    def check(self, w, fake, head=None):
+    def check(self, w, fake, head=None, heads=None):
+        """``heads``: the git states R0 sees in order (before the A1 comparison, after it)."""
+        states = mock.patch.object(r0, 'git_state', side_effect=list(heads)) if heads else \
+            mock.patch.object(r0, 'git_state', return_value=head or HEAD)
         with mock.patch('hybrid.h7c_nmask.committed', return_value=True), \
-                mock.patch('h7r_r2_seed.reproduce', side_effect=fake), \
-                mock.patch.object(r0, 'git_state', return_value=head or HEAD):
+                mock.patch('h7r_r2_seed.approved', return_value=CONTEXT), \
+                mock.patch('h7r_r2_seed.reproduce', side_effect=fake), states:
             return r0.check(self.args(w, cache='h', reference_model='m,j'), log=QUIET)
 
     def test_check_passes_and_records_the_direct_comparison(self):
@@ -233,6 +237,28 @@ class WiringTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'commit changed during the check'):
                 self.check(w, self.fake_reproduce(w, git={'commit': 'e' * 40, 'dirty': False}))
             self.assertFalse((w.root / w.contract['output']['result']).exists())
+
+
+    def test_a_head_change_after_the_a1_comparison_started_leaves_no_record(self):
+        # A1 saw the right commit when it started; the HEAD moved (or the tree got dirty) before it returned
+        for after in ({'commit': 'f' * 40, 'dirty': False}, {'commit': 'c' * 40, 'dirty': True}):
+            with self.subTest(after=after), TemporaryDirectory() as tmp:
+                w = World(tmp)
+                self.run_dir(w)
+                with self.assertRaisesRegex(ValueError, 'commit changed during the check'):
+                    self.check(w, self.fake_reproduce(w), heads=[HEAD, after])
+                self.assertFalse((w.root / w.contract['output']['reproduction']).exists())
+                self.assertFalse((w.root / w.contract['output']['result']).exists())
+
+    def test_the_comparison_is_written_by_r0_only_after_the_second_check(self):
+        with TemporaryDirectory() as tmp:
+            w = World(tmp)
+            self.run_dir(w)
+            body = self.check(w, self.fake_reproduce(w), heads=[HEAD, HEAD])
+            written = json.loads((w.root / w.contract['output']['reproduction']).read_text())
+            self.assertEqual(written['assignment'], {'rerun_sha256': FP, 'reference': {'sha256': FP}})
+            self.assertEqual(body['reproduction']['sha256'],
+                             r2.file_sha256(w.root / w.contract['output']['reproduction']))
 
 
 class ProcedureTest(unittest.TestCase):
