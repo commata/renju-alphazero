@@ -15,7 +15,9 @@ seed, and reuses the R2-0B machinery as it is:
             R0 passes only when the A1 verdict is BITWISE_REPRODUCED or METRIC_ONLY AND every direct comparison
             holds; anything else is NOT_REPRODUCED (exit 1), and D3 does not start.
 
-Both commands need the fixed, committed and approved R0 contract (``h7r-d3-r0-contract-v1``): the R2 contract and
+``train`` and ``check`` run at one clean commit: the run record names no R0 contract, so ``check`` refuses a run whose
+recorded commit is not its own (that commit holds the approved contract). Both commands need the fixed, committed
+and approved R0 contract (``h7r-d3-r0-contract-v1``): the R2 contract and
 A1 amendment it builds on, the trainer sources it was fixed for, the recorded values with the records that hold them
 (checked against those records: the pinned constants cannot be typos), the A1 tolerances (checked equal), the seed
 and the output paths. Nothing is written over; the R0 result is a new file.
@@ -32,6 +34,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -129,6 +132,14 @@ def r0_verdict(a1: dict, recorded: dict, rerun_assignment, reference_assignment,
             'a1_verdict': a1, 'reasons': reasons}
 
 
+def git_state(root: Path) -> dict:
+    import subprocess
+
+    def git(*a):
+        return subprocess.check_output(['git', *a], cwd=root, text=True).strip()
+    return {'commit': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain', '--untracked-files=no'))}
+
+
 def seed_args(c: dict, args, **extra) -> argparse.Namespace:
     root = Path(args.root)
     return argparse.Namespace(contract=root / c['r2_contract']['path'], amendment=root / c['amendment']['path'],
@@ -160,14 +171,22 @@ def check(args, log=print) -> dict:
     run = json.loads((out['run_dir'] / 'r2_train.json').read_text(encoding='utf-8'))
     r2.require(run.get('sources', {}).get('src/hybrid/h7c_train.py') == c['trainer_sources']['src/hybrid/h7c_train.py'],
                'the R0 run was not trained with the trainer R0 was fixed for')
+    # The run record names no R0 contract: the run is bound to it through the commit. ``train`` and ``check`` must
+    # run at the same clean commit, the one holding this approved R0 contract (load_r0 checked it is committed).
+    train_git, check_git = run.get('git'), git_state(root)
+    r2.require(isinstance(train_git, dict) and train_git.get('dirty') is False and check_git['dirty'] is False
+               and train_git.get('commit') == check_git['commit'],
+               f"the R0 run was trained at {str((train_git or {}).get('commit'))[:12]}, not at the clean commit "
+               f"{check_git['commit'][:12]} that checks it: train and check run at one commit")
     log('[d3-r0] A1 reproduction check of the R0 run against the reference c8 run', flush=True)
     rep = seed.reproduce(seed_args(c, args, cache=Path(args.cache), reference_model=args.reference_model,
                                    run_dir=out['run_dir'], output=out['reproduction']), log=log)
+    r2.require(rep.get('git') == check_git, 'the commit changed during the check')
     r2.require(rep['tolerance'] == c['tolerance'], 'the reproduction used other tolerances')
     verdict = r0_verdict(rep['verdict'], c['recorded'], rep['assignment']['rerun_sha256'],
                          rep['assignment']['reference']['sha256'], rep['best_step']['rerun'])
     recorded_env = _pinned(root, c['recorded']['run'], 'R2-0B reproduction run record')['environment']
-    body = {'format': RESULT_FORMAT, 'r0_contract_sha256': csha, 'git': rep['git'],
+    body = {'format': RESULT_FORMAT, 'r0_contract_sha256': csha, 'git': rep['git'], 'train_git': train_git,
             'trainer_sources': c['trainer_sources'], 'run_dir': c['output']['run_dir'],
             'run_sources': run.get('sources'),
             'reproduction': {'path': c['output']['reproduction'], 'sha256': r2.file_sha256(out['reproduction'])},
@@ -207,7 +226,7 @@ def main(argv=None) -> int:
             print(f"[d3-r0] R0 run {out['verdict']}, best step {out['best_step']}", flush=True)
             return 0 if out['verdict'] == 'CANDIDATE' else 1
         out = check(args)
-    except (ValueError, KeyError, TypeError, OSError) as exc:
+    except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as exc:
         print(f'STOP: {type(exc).__name__}: {exc}', file=sys.stderr, flush=True)
         return 1
     v = out['verdict']

@@ -133,6 +133,53 @@ PY
 
 결과 판정은 `r0/r0.json`에, A1 비교 원본과 단계별 로그는 `runs/`에 남긴다. 학습이 `NO_CANDIDATE`를 반환하거나 입력 오류가 발생하면 해당 단계의 비정상 종료 코드로 멈춘다. 결과 JSON이 생기기 전에 멈춘 경우에는 실행 기록과 로그를 보존해 원인을 확인한다.
 
+- `check`는 실행 기록(`r2_train.json`)의 `git`이 자기 실행 commit과 같고 둘 다 clean일 때만 진행한다. 다르면 A1 비교 전에 거부하므로 `reproduce.json`도 생기지 않는다. 그 commit에 커밋된 승인 계약이 `train`의 근거가 된다. 결과에는 `train_git`과 `git`을 함께 남긴다.
+
+**기록 복사와 커밋 (records only)**: `check`가 `r0.json`을 쓴 뒤, 같은 HEAD에서 실행한다. `NOT_REPRODUCED`도 같은 방식으로 보존한다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+
+  D=docs/h7r/r2/R2-D3-NO-OUTCOME-1
+  R=runs/h7r/R2-D3-NO-OUTCOME-1/r0
+  X="$D/r0"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  test -f "$X/r0.json"
+  extra="$(find "$X" -mindepth 1 ! -path "$X/r0.json" -print -quit)"
+  if [[ -n "$extra" ]]; then
+    printf 'STOP: unexpected record path %s\n' "$extra" >&2
+    exit 1
+  fi
+  python - "$X/r0.json" "$R/reproduce.json" "$(git rev-parse HEAD)" <<'PY'
+import hashlib, json, sys
+r0 = json.load(open(sys.argv[1]))
+raw = open(sys.argv[2], 'rb').read()
+assert r0['reproduction']['sha256'] == hashlib.sha256(raw).hexdigest(), 'reproduce.json is not the one r0.json names'
+assert r0['git'] == {'commit': sys.argv[3], 'dirty': False} == r0['train_git'], 'not the clean HEAD of train and check'
+print('R0', r0['verdict']['verdict'], '/ A1', r0['verdict']['a1_verdict']['verdict'], r0['verdict']['reasons'])
+PY
+  cp --no-clobber "$R/reproduce.json" "$X/reproduce.json"
+  cmp "$R/reproduce.json" "$X/reproduce.json"
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$R/logs" --pattern '*.log' \
+    --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
+  python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
+  git add "$X/r0.json" "$X/reproduce.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/*.log
+  expect=(--expect "$X/r0.json" --expect "$X/reproduce.json" --expect "$X/log_manifest.json"
+          --expect "$X/records_manifest.json")
+  for f in "$X"/run-logs/*.log; do expect+=(--expect "$f"); done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D3-R0: reproduction check of the c8 recipe with the current trainer (records only)"
+  git push origin feat/h7-c1
+)
+```
+
+- 시작할 때 기록 폴더에는 `r0.json`만 있어야 한다. `r0.json`이 가리키는 `reproduce.json`의 SHA, 같은 clean HEAD를 확인한 뒤 복사한다. 하나라도 실패하면 커밋하지 않는다.
+- 결과가 `PASS`가 아니면 D3 학습으로 넘어가지 않는다. 결과와 원인을 기록한 뒤 다음 행동을 따로 정한다.
+
 ## 3. 판정
 
 R2 설계 §7 규칙을 **그대로** 쓴다. 조건 C = D3, control K = 같은 seed의 기준 recipe(R2-0B 실행).

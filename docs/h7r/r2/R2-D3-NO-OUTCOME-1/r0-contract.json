@@ -15,7 +15,7 @@
     "src/hybrid/h7c_train.py": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488",
     "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
     "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
-    "scripts/h7r_d3_r0.py": "1b6cff433b9aaba186703bb0a5a87e2b9a4c56c2901db9e4e0aa1ca0803d6c74"
+    "scripts/h7r_d3_r0.py": "146a92613eebff226b490fd29d58e4074a65d914afe8876ab8f201849a2af513"
   },
   "recorded": {
     "reproduction": {

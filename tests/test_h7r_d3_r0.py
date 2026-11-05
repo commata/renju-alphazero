@@ -21,6 +21,7 @@ REPRO = 'docs/h7r/r2/R2-DIAG-1/r2_0b/reproduction.json'
 RUN = 'docs/h7r/r2/R2-DIAG-1/r2_0b/runs/seed-20261025/r2_train.json'
 C8 = 'docs/h7c/c8/value_record.json'
 QUIET = lambda *a, **k: None  # noqa: E731
+HEAD = {'commit': 'c' * 40, 'dirty': False}
 
 
 def ref(path, root=ROOT):
@@ -154,9 +155,9 @@ class WiringTest(unittest.TestCase):
                     self.assertRaisesRegex(ValueError, 'never overwritten'):
                 r0.train(self.args(w, cycle_cache='c', cycle_rows='r', replay_cache='p', parent='m'), log=QUIET)
 
-    def fake_reproduce(self, w, rerun_fp=FP, ref_fp=FP, step=147, verdict='METRIC_ONLY'):
+    def fake_reproduce(self, w, rerun_fp=FP, ref_fp=FP, step=147, verdict='METRIC_ONLY', git=None):
         def reproduce(a, log=None):
-            body = {'git': {'commit': 'c', 'dirty': False}, 'tolerance': w.contract['tolerance'],
+            body = {'git': dict(git or HEAD), 'tolerance': w.contract['tolerance'],
                     'verdict': {'version': 'h7r-r2-reproduction-v1', 'verdict': verdict, 'reasons': []},
                     'assignment': {'rerun_sha256': rerun_fp, 'reference': {'sha256': ref_fp}},
                     'best_step': {'reference': 147, 'rerun': step},
@@ -167,15 +168,17 @@ class WiringTest(unittest.TestCase):
             return body
         return reproduce
 
-    def run_dir(self, w, trainer=None):
+    def run_dir(self, w, trainer=None, git=None):
         d = w.root / w.contract['output']['run_dir']
         d.mkdir(parents=True)
-        (d / 'r2_train.json').write_text(json.dumps({'sources': {'src/hybrid/h7c_train.py': trainer or
-                                                                 w.contract['trainer_sources']['src/hybrid/h7c_train.py']}}))
+        (d / 'r2_train.json').write_text(json.dumps({
+            'sources': {'src/hybrid/h7c_train.py': trainer or w.contract['trainer_sources']['src/hybrid/h7c_train.py']},
+            'git': HEAD if git is None else git}))
 
-    def check(self, w, fake):
+    def check(self, w, fake, head=None):
         with mock.patch('hybrid.h7c_nmask.committed', return_value=True), \
-                mock.patch('h7r_r2_seed.reproduce', side_effect=fake):
+                mock.patch('h7r_r2_seed.reproduce', side_effect=fake), \
+                mock.patch.object(r0, 'git_state', return_value=head or HEAD):
             return r0.check(self.args(w, cache='h', reference_model='m,j'), log=QUIET)
 
     def test_check_passes_and_records_the_direct_comparison(self):
@@ -186,6 +189,7 @@ class WiringTest(unittest.TestCase):
             self.assertEqual(body['verdict']['verdict'], 'PASS')
             self.assertEqual(body['direct']['recorded_assignment_sha256'], FP)
             self.assertTrue(body['environment']['same'])
+            self.assertEqual(body['train_git'], body['git'])
             saved = json.loads((w.root / w.contract['output']['result']).read_text())
             self.assertEqual(saved['verdict'], body['verdict'])
             with self.assertRaisesRegex(ValueError, 'never overwritten'):
@@ -206,6 +210,44 @@ class WiringTest(unittest.TestCase):
             self.run_dir(w, trainer='0' * 64)
             with self.assertRaisesRegex(ValueError, 'not trained with the trainer'):
                 self.check(w, self.fake_reproduce(w))
+
+
+    def test_train_and_check_must_share_one_clean_commit(self):
+        cases = {'another commit': ({'commit': 'd' * 40, 'dirty': False}, None),
+                 'dirty train': ({'commit': 'c' * 40, 'dirty': True}, None),
+                 'dirty check': (None, {'commit': 'c' * 40, 'dirty': True}),
+                 'no git record': ('none', None)}
+        for name, (train_git, head) in cases.items():
+            with self.subTest(name), TemporaryDirectory() as tmp:
+                w = World(tmp)
+                self.run_dir(w, git={} if train_git == 'none' else train_git)
+                with self.assertRaisesRegex(ValueError, 'train and check run at one commit'):
+                    self.check(w, self.fake_reproduce(w), head=head)
+                self.assertFalse((w.root / w.contract['output']['reproduction']).exists())  # refused before A1
+                self.assertFalse((w.root / w.contract['output']['result']).exists())
+
+    def test_a_commit_change_during_the_check_is_refused(self):
+        with TemporaryDirectory() as tmp:
+            w = World(tmp)
+            self.run_dir(w)
+            with self.assertRaisesRegex(ValueError, 'commit changed during the check'):
+                self.check(w, self.fake_reproduce(w, git={'commit': 'e' * 40, 'dirty': False}))
+            self.assertFalse((w.root / w.contract['output']['result']).exists())
+
+
+class ProcedureTest(unittest.TestCase):
+    def test_the_draft_blocks_parse_and_fail_closed(self):
+        import re
+        import subprocess
+        doc = (ROOT / 'docs/h7r/r2/R2-D3-NO-OUTCOME-1-draft.md').read_text()
+        section = doc.split('### 2.5', 1)[1].split('\n## ', 1)[0]
+        blocks = re.findall(r'```bash\n(.*?)```', section, re.S)
+        self.assertEqual(len(blocks), 2)
+        for block in blocks:
+            self.assertEqual(subprocess.run(['bash', '-n'], input=block, text=True).returncode, 0)
+            self.assertIn('set -euo pipefail', block)
+        self.assertIn('verify-staged', blocks[1])
+        self.assertIn('git rev-parse HEAD', blocks[1])
 
 
 if __name__ == '__main__':
