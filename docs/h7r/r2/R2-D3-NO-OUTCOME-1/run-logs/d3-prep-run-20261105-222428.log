@@ -1,0 +1,14 @@
+1793885068.865447360 __START__
+1793885069.748617696 [d3-prep] inputs bound; checking the H-dev cache
+1793885075.898934427 [d3-prep] decomposing 7 comparisons (20000 replicates)
+1793885077.171715439 [d3-prep] DONE 8.3 s; record checks: {'seed31001:c5': 'equal to the R2-0B paired record', 'seed31001:c8': 'equal to the R2-0B paired record', 'seed31002:c5': 'equal to the R2-0B paired record', 'seed31002:c8': 'equal to the R2-0B paired record', 'seed31003:c5': 'equal to the R2-0B paired record', 'seed31003:c8': 'equal to the R2-0B paired record', 'c8:c5': 'within 1e-05 of R2-0A (+0.00e+00)'}
+1793885077.172550173   macro weight share outcome: 0.4368
+1793885077.173357858   macro weight share proof: 0.5632
+1793885077.174495510   seed31001:c5     total -0.004748 = outcome -0.006016, proof +0.001268
+1793885077.175432971   seed31001:c8     total -0.000201 = outcome -0.000856, proof +0.000656
+1793885077.176155976   seed31002:c5     total -0.005421 = outcome -0.005262, proof -0.000159
+1793885077.176904721   seed31002:c8     total -0.000874 = outcome -0.000103, proof -0.000771
+1793885077.177971927   seed31003:c5     total -0.004913 = outcome -0.006097, proof +0.001183
+1793885077.178718425   seed31003:c8     total -0.000366 = outcome -0.000937, proof +0.000571
+1793885077.179456600   c8:c5            total -0.004547 = outcome -0.005160, proof +0.000613
+1793885077.406267956 __EXIT__ 0

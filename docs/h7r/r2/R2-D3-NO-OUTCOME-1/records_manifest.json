@@ -1,0 +1,31 @@
+{
+ "format": "h7r-d4-records-manifest-v1",
+ "folder": "docs/h7r/r2/R2-D3-NO-OUTCOME-1",
+ "files": [
+  {
+   "path": "log_manifest.json",
+   "bytes": 1004,
+   "sha256": "5196e84e9bbf84b3b633be17bbabad4ef172c71ec5cec606aff4df5c4f31ed4e"
+  },
+  {
+   "path": "prep.json",
+   "bytes": 28680,
+   "sha256": "083a9cb2d7b31825699ca003a625e53bfb83f077b1a8cb8d1824ab4fb643862b"
+  },
+  {
+   "path": "run-logs/d3-prep-final-0j7Ippq9.log",
+   "bytes": 116,
+   "sha256": "4ca38e4b92e5bdf1477228ae21e5f0e186baeb74f6d42d0c3d7ae41e48683aae"
+  },
+  {
+   "path": "run-logs/d3-prep-run-20261105-222428.log",
+   "bytes": 1391,
+   "sha256": "a47a36dce7e1eb76c45de8f54f3b4283d6f49112b2cbd63e27ad4c47ec08c963"
+  },
+  {
+   "path": "run-logs/d3-prep-verify-20261105-222439.log",
+   "bytes": 242,
+   "sha256": "71cdf229630b87c5f43ef5504a0300a6323fb4da43c87dc17e8507131f1b252c"
+  }
+ ]
+}
