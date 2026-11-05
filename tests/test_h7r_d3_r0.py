@@ -266,7 +266,7 @@ class ProcedureTest(unittest.TestCase):
         import re
         import subprocess
         doc = (ROOT / 'docs/h7r/r2/R2-D3-NO-OUTCOME-1-draft.md').read_text()
-        section = doc.split('### 2.5', 1)[1].split('\n## ', 1)[0]
+        section = re.split(r'\n##+ ', doc.split('### 2.5', 1)[1], maxsplit=1)[0]  # up to the next heading
         blocks = re.findall(r'```bash\n(.*?)```', section, re.S)
         self.assertEqual(len(blocks), 2)
         for block in blocks:
