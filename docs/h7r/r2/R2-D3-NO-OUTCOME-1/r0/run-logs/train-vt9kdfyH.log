@@ -1,0 +1,13 @@
+[d3-r0] R0 contract 26dc7e15887f: the c8 recipe at seed 20261025 with the current trainer (ceaea83320ef), selection option omitted
+[h7r-r2-seed] seed 20261025: c8 recipe, 35,816 cycle / 2,683,098 replay train rows, 210 steps
+[h7c-value] step 21/210 objective 0.45249 (cycle 0.3294050097465515, H6 0.57558)
+[h7c-value] step 42/210 objective 0.45451 (cycle 0.3326377868652344, H6 0.57639)
+[h7c-value] step 63/210 objective 0.45339 (cycle 0.32973232865333557, H6 0.57704)
+[h7c-value] step 84/210 objective 0.45177 (cycle 0.3266445994377136, H6 0.57690)
+[h7c-value] step 105/210 objective 0.45230 (cycle 0.3275394141674042, H6 0.57706)
+[h7c-value] step 126/210 objective 0.45477 (cycle 0.3312426805496216, H6 0.57830)
+[h7c-value] step 147/210 objective 0.45141 (cycle 0.3259740173816681, H6 0.57686)
+[h7c-value] step 168/210 objective 0.45279 (cycle 0.3284794092178345, H6 0.57709)
+[h7c-value] step 189/210 objective 0.45179 (cycle 0.32669058442115784, H6 0.57689)
+[h7c-value] step 210/210 objective 0.45159 (cycle 0.32636043429374695, H6 0.57682)
+[d3-r0] R0 run CANDIDATE, best step 147

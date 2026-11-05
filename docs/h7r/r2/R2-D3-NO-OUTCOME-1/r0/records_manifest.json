@@ -1,0 +1,31 @@
+{
+ "format": "h7r-d4-records-manifest-v1",
+ "folder": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/r0",
+ "files": [
+  {
+   "path": "log_manifest.json",
+   "bytes": 685,
+   "sha256": "d510b29b2d29bd522728080a0daca3c0f68f89ea82f50df39cd8bf875655172b"
+  },
+  {
+   "path": "r0.json",
+   "bytes": 3002,
+   "sha256": "652619b6584c17d1b42dc2806bb14a8e14f9a4e3e2a1590d2d1f72d6b6330d41"
+  },
+  {
+   "path": "reproduce.json",
+   "bytes": 6130,
+   "sha256": "f82f05b6aa9f172520f90b0249cb6bcfa395058025e10f3e43aa10de32267fdc"
+  },
+  {
+   "path": "run-logs/check-9of7VB7H.log",
+   "bytes": 576,
+   "sha256": "34bd3658429f4096cdf4508ea6a29aa64cda42431d85588bf0ed781c1c88c72a"
+  },
+  {
+   "path": "run-logs/train-vt9kdfyH.log",
+   "bytes": 1084,
+   "sha256": "d681d910b625fdeeaa50b736042e605b932386fabfbad0f5b72390a29751873b"
+  }
+ ]
+}

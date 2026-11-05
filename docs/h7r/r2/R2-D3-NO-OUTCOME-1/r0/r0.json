@@ -1,0 +1,85 @@
+{
+ "format": "h7r-d3-r0-v1",
+ "r0_contract_sha256": "26dc7e15887f1a9c070025fe472d7ba4bfa837b8817579e892eda7e16207dcaa",
+ "git": {
+  "commit": "1d937856e0b31a747ab2e6674f115f1e3affffd7",
+  "dirty": false
+ },
+ "train_git": {
+  "commit": "1d937856e0b31a747ab2e6674f115f1e3affffd7",
+  "dirty": false
+ },
+ "trainer_sources": {
+  "src/hybrid/h7c_train.py": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488",
+  "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+  "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+  "scripts/h7r_d3_r0.py": "d2de6e716bd93c71a45ad76f7b23ee1b0e7c4fa2ae895498934f27651794ecba"
+ },
+ "run_dir": "runs/h7r/R2-D3-NO-OUTCOME-1/r0/seed-20261025",
+ "run_sources": {
+  "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+  "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+  "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+  "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+  "src/hybrid/h7c_train.py": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488"
+ },
+ "reproduction": {
+  "path": "runs/h7r/R2-D3-NO-OUTCOME-1/r0/reproduce.json",
+  "sha256": "f82f05b6aa9f172520f90b0249cb6bcfa395058025e10f3e43aa10de32267fdc"
+ },
+ "direct": {
+  "recorded_assignment_sha256": "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224",
+  "rerun_assignment_sha256": "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224",
+  "reconstructed_reference_assignment_sha256": "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224",
+  "recorded_best_step": 147,
+  "rerun_best_step": 147
+ },
+ "a1_checks": {
+  "state_sha256": [
+   "d2b95b155e29e23612148837fd2d64b45b3553538b22c0e05ae6521aec1c0222",
+   "e8316c9f3c32a0484e6acb2d7eb982538ad2fde09504a819cdbc1e8b4abda936"
+  ],
+  "assignment": [
+   "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224",
+   "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224"
+  ],
+  "best_step": [
+   147,
+   147
+  ],
+  "max_abs_prediction": 6.258487701416016e-07,
+  "abs_primary": 2.141717914128094e-10
+ },
+ "tolerance": {
+  "max_abs_prediction": 0.001,
+  "abs_primary": 0.0002
+ },
+ "environment": {
+  "now": {
+   "torch": "2.14.0+cu130",
+   "python": "3.12.3",
+   "device": "cuda",
+   "cuda": "13.0",
+   "gpu": "NVIDIA GeForce RTX 5070"
+  },
+  "recorded_r2_0b": {
+   "torch": "2.14.0+cu130",
+   "python": "3.12.3",
+   "device": "cuda",
+   "cuda": "13.0",
+   "gpu": "NVIDIA GeForce RTX 5070"
+  },
+  "same": true
+ },
+ "verdict": {
+  "version": "h7r-d3-r0-verdict-v1",
+  "verdict": "PASS",
+  "a1_verdict": {
+   "version": "h7r-r2-reproduction-v1",
+   "verdict": "METRIC_ONLY",
+   "reasons": []
+  },
+  "reasons": []
+ },
+ "scope": "the precondition of D3: one re-run that finds reproduction problems; no D3 run, no ruling"
+}

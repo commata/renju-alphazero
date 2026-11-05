@@ -1,0 +1,4 @@
+[d3-r0] A1 reproduction check of the R0 run against the reference c8 run
+[h7r-r2-seed] models: reference c8 and the reproduction run
+[h7r-r2-seed] H-dev predictions of both models
+[d3-r0] PASS (A1 METRIC_ONLY); direct {'recorded_assignment_sha256': 'e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224', 'rerun_assignment_sha256': 'e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224', 'reconstructed_reference_assignment_sha256': 'e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224', 'recorded_best_step': 147, 'rerun_best_step': 147}

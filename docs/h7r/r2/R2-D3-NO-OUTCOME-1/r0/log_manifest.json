@@ -1,0 +1,19 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "*.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/r0/logs/check-9of7VB7H.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/r0/run-logs/check-9of7VB7H.log",
+   "bytes": 576,
+   "sha256": "34bd3658429f4096cdf4508ea6a29aa64cda42431d85588bf0ed781c1c88c72a"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/r0/logs/train-vt9kdfyH.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/r0/run-logs/train-vt9kdfyH.log",
+   "bytes": 1084,
+   "sha256": "d681d910b625fdeeaa50b736042e605b932386fabfbad0f5b72390a29751873b"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
