@@ -181,6 +181,153 @@ PY
 - 시작할 때 기록 폴더에는 `r0.json`만 있어야 한다. `r0.json`이 가리키는 `reproduce.json`의 SHA, 같은 clean HEAD를 확인한 뒤 복사한다. 하나라도 실패하면 커밋하지 않는다.
 - 결과가 `PASS`가 아니면 D3 학습으로 넘어가지 않는다. 결과와 원인을 기록한 뒤 다음 행동을 따로 정한다.
 
+### 2.6 D3 마스크·학습·판독 도구와 실행 계약 초안 (2026-11-05, 미승인)
+
+- R0 `PASS`(`19cb66b`)를 전제로, D3를 세 단계로 나눈다. 단계마다 계약에서 따로 승인한다(`approved.mask` / `train` / `evaluate`). [D3 계약](R2-D3-NO-OUTCOME-1/d3-contract.json)은 `fixed`이고 세 승인은 모두 `false`다.
+- 도구: `scripts/h7r_d3.py`, 마스크 `src/hybrid/h7r_d3_mask.py`, 테스트 `tests/test_h7r_d3_run.py`
+- R0가 재현한 trainer 소스 4개(`h7c_train.py`, `h7c_train_value.py`, `h7r_r2_seed.py`, `h7r_d3_r0.py`)는 바꾸지 않는다. 계약은 그 SHA가 R0 결과의 값과 같은지도 확인한다.
+
+**마스크 (CPU)**
+- c8 cycle cache의 모든 행을 원본 label 행과 1:1로 대조한다(게임 순서, ply, 값, 가중치, kind, 돌, 합법 수). cache kind와 label 행의 `label_kind` 문자열이 다르면 멈춘다.
+- outcome 행은 `False`(제거), proof 행은 `True`(유지)다. replay 행은 마스크 대상이 아니다.
+- cache는 A1 기준 기록의 c8 cache(labels·split SHA)여야 한다.
+- 기록: split별 행 수, 제거·유지 행과 가중치, label 종류별 행·가중치, labels·cache·keep SHA. 마스크 tensor는 `runs/`에, manifest는 기록 폴더에 새 파일로만 쓴다.
+
+**학습 (GPU, seed 31001–31003)**
+- control과 같은 경로 `h7r_r2_seed.train`을 그대로 쓴다. trainer의 `train_value`에만, 그 한 번의 호출 동안 마스크와 `cycle_selection='original'`을 넘긴다. 두 번 불리거나 다른 옵션이 들어오면 멈춘다.
+- `seed.train`은 학습 seed에 대해 R0의 재현 기록(`r0/reproduce.json`)을 다시 검증한 뒤 학습한다. 이 검증은 seed마다 H-dev 추론을 한 번 더 한다.
+- 같은 seed의 control과 **커밋된 R2-0B 기록에 직접** 대조한다: 배정 지문과 배정의 모든 항목, 총 step 210, epoch당 학습 행 수, config 파일 SHA.
+- trainer 기록에 `selection.mode = original`이 있어야 하고, 매 epoch의 cycle kept weight가 마스크 manifest의 train kept weight와 같아야 한다.
+- 선택 step은 각 실행의 원래 T-val objective와 H6 guard가 정한다. R0의 147은 쓰지 않는다.
+- 대조 결과는 실패해도 `d3_train.json`으로 남기고 멈춘다.
+
+**판독 (GPU)**
+- c5, control 3개, D3 3개를 같은 H-dev 입력과 같은 실행 환경에서 함께 추론하고, 그 예측으로 짝 비교한다.
+- **control 재현 기준**: 새로 계산한 control의 주 지표와 계약에 지정한 구성 지표(R2 계약의 components: network/outcome macro, network/proof macro, network pooled)를 커밋된 R2-0B 값(epsilon 기록의 seed별 값)과 비교한다. 허용 오차 `1e-5`는 집계 지표의 재현 허용 오차이며, 행별 예측 오차가 아니다.
+  - 기준을 넘으면 판독을 `HOLD`로 두고 차이를 기록한다.
+  - SHA를 확인한 `seed_predictions.pt`는 행 정렬 확인과 행별 예측 차이 진단에만 쓴다.
+- 판정은 R2 §7 그대로다(§3).
+  - 세 seed 모두 I_s > ε이고 `D3 − control`의 paired 95% 상한 < 0이면 `DEVELOPMENT_SIGNAL`
+  - control의 seed 범위가 ε를 넘으면 `HOLD`
+  - 그 밖은 `NOT_ESTABLISHED`
+- 참고(판정 밖): D3 − c5와 그 구간, 구성 지표 차이, 종류·종류×ply 가산 분해. 같은 recipe 비교의 proof 기여 범위 −0.000771 – +0.000656은 종류별 결과 옆의 기술적 참고값이며 문턱이나 판정에 쓰지 않는다.
+- 예측 tensor는 `runs/`에, 판독 JSON은 기록 폴더에 새 파일로만 쓴다.
+
+**데스크톱 실행 절차** (각 단계는 해당 승인이 커밋된 clean HEAD에서 실행)
+
+1. 마스크와 마스크 manifest 커밋 (`approved.mask` 커밋 후)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  D=docs/h7r/r2/R2-D3-NO-OUTCOME-1
+  L=runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  test ! -e "$D/d3/mask.json"
+  mkdir -p "$L"
+  LOG="$L/mask-$(date +%Y%m%d-%H%M%S).log"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  { echo __START__; rc=0; CUDA_VISIBLE_DEVICES= python -u scripts/h7r_d3.py mask --d3-contract "$D/d3-contract.json" \
+      --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+  git add "$D/d3/mask.json"
+  python scripts/h7r_d4_records.py verify-staged --expect "$D/d3/mask.json"
+  git commit -m "H7-R D3: outcome mask manifest of the c8 cycle cache (records only)"
+  git push origin feat/h7-c1
+)
+```
+
+2. 학습 3회 (`approved.train` 커밋 후, 같은 HEAD에서 이어서)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  D=docs/h7r/r2/R2-D3-NO-OUTCOME-1
+  L=runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  head="$(git rev-parse HEAD)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  for s in 31001 31002 31003; do
+    test "$(git rev-parse HEAD)" = "$head"
+    test ! -e "runs/h7r/R2-D3-NO-OUTCOME-1/d3/seed-$s"
+    LOG="$L/train-$s-$(date +%Y%m%d-%H%M%S).log"
+    { echo __START__; rc=0; python -u scripts/h7r_d3.py train --d3-contract "$D/d3-contract.json" --seed "$s" \
+        --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+        --replay-cache data/tactical/h6/value_cache_v3 --parent runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
+      echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+  done
+)
+```
+
+3. 판독 (`approved.evaluate` 커밋 후)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  D=docs/h7r/r2/R2-D3-NO-OUTCOME-1
+  L=runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  test ! -e "$D/d3/d3_eval.json"
+  LOG="$L/evaluate-$(date +%Y%m%d-%H%M%S).log"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  { echo __START__; rc=0; python -u scripts/h7r_d3.py evaluate --d3-contract "$D/d3-contract.json" \
+      --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt,runs/h7c/c5/value/best.json \
+      --device cuda 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+)
+```
+
+4. 기록 복사와 커밋 (판독과 같은 HEAD에서; checkpoint는 복사하지 않는다)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  D=docs/h7r/r2/R2-D3-NO-OUTCOME-1
+  X="$D/d3"
+  R=runs/h7r/R2-D3-NO-OUTCOME-1/d3
+  test -z "$(git status --porcelain --untracked-files=no)"
+  test -f "$X/d3_eval.json"
+  echo __START__
+  expect=(--expect "$X/d3_eval.json")
+  for s in 31001 31002 31003; do
+    mkdir -p "$X/runs/seed-$s"
+    for f in d3_train.json r2_train.json record.json config.json; do
+      cp --no-clobber "$R/seed-$s/$f" "$X/runs/seed-$s/$f"
+      cmp "$R/seed-$s/$f" "$X/runs/seed-$s/$f"
+      expect+=(--expect "$X/runs/seed-$s/$f")
+    done
+  done
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$R/logs" --pattern '*.log' \
+    --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
+  python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
+  expect+=(--expect "$X/log_manifest.json" --expect "$X/records_manifest.json")
+  for f in "$X"/run-logs/*.log; do expect+=(--expect "$f"); done
+  git add "$X/d3_eval.json" "$X/runs" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/*.log
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D3: outcome ablation runs and H-dev reading (records only)"
+  git push origin feat/h7-c1
+  echo "__EXIT__ 0"
+)
+```
+
+- 어느 단계든 실패하면 다음 단계로 넘어가지 않는다. 로그와 이미 쓴 기록(`d3_train.json` 포함)은 지우지 않고 원인을 보고한다.
+- 판독이 `DEVELOPMENT_SIGNAL`이어도 D4는 별도 계약·승인으로 정한다. `HOLD`나 `NOT_ESTABLISHED`이면 기록한 뒤 다음 질문을 따로 정한다.
+
 ## 3. 판정
 
 R2 설계 §7 규칙을 **그대로** 쓴다. 조건 C = D3, control K = 같은 seed의 기준 recipe(R2-0B 실행).
@@ -253,10 +400,10 @@ R2 설계 §7 규칙을 **그대로** 쓴다. 조건 C = D3, control K = 같은 
 
 ## 7. 확정 전 정할 것
 
-1. R0 실행 승인 및 데스크톱 재현 판정 확인(§2.5)
-2. D3 outcome 마스크 생성·검증과 실행 도구 구현
-3. 계약 JSON: 조건, control 경로와 SHA, 출처 SHA, 실행 시간 한도, 출력 경로
-4. 실행 승인 단계: 학습 3회 → H-dev 평가와 판독. 각 단계는 따로 승인받는다.
+1. R0 실행 승인 및 데스크톱 재현 판정 확인(§2.5): 완료, `PASS`(`19cb66b`)
+2. D3 outcome 마스크 생성·검증과 실행 도구 구현: §2.6(코드·테스트, 미실행)
+3. 계약 JSON: §2.6의 [D3 계약](R2-D3-NO-OUTCOME-1/d3-contract.json) 초안. 조건, control 경로와 SHA, 출처 SHA, control 재현 기준, 판정, 출력 경로를 고정했다. 세 단계 승인은 모두 `false`다. 실행 시간은 기록만 하고 한도로 강제하지 않는다.
+4. 실행 승인 단계: 마스크 → 학습 3회 → H-dev 판독. 각 단계는 따로 승인받는다.
 
 ## 8. 예상 비용 (계획값, 측정 아님)
 

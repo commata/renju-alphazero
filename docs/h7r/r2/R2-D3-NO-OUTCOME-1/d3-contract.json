@@ -1,0 +1,144 @@
+{
+  "format": "h7r-d3-contract-v1",
+  "contract_id": "R2-D3-NO-OUTCOME-1",
+  "status": "fixed",
+  "approved": {
+    "mask": false,
+    "train": false,
+    "evaluate": false
+  },
+  "r2_contract": {
+    "path": "docs/h7r/r2/R2-DIAG-1.contract.json",
+    "sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d"
+  },
+  "amendment": {
+    "path": "docs/h7r/r2/R2-DIAG-1-A1.json",
+    "sha256": "268aedfc52478aff69bbee158e3e9445ea80e997e1747b76244a0c7ff04bc32c"
+  },
+  "epsilon": {
+    "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json",
+    "sha256": "d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2"
+  },
+  "r0": {
+    "result": {
+      "path": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/r0/r0.json",
+      "sha256": "652619b6584c17d1b42dc2806bb14a8e14f9a4e3e2a1590d2d1f72d6b6330d41"
+    },
+    "reproduction": {
+      "path": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/r0/reproduce.json",
+      "sha256": "f82f05b6aa9f172520f90b0249cb6bcfa395058025e10f3e43aa10de32267fdc"
+    }
+  },
+  "sources": {
+    "src/hybrid/h7c_train.py": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488",
+    "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+    "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+    "scripts/h7r_d3_r0.py": "d2de6e716bd93c71a45ad76f7b23ee1b0e7c4fa2ae895498934f27651794ecba",
+    "scripts/h7r_d3.py": "d0f6c2909015cd0b4320e9853e9ddf8f0d65385ef6e8be250ca95df803bc0644",
+    "src/hybrid/h7r_d3_mask.py": "ab5c55a8c49de84678c53307478a906f1e8a9402ffc7de738980e42622a9d7a2",
+    "src/hybrid/h7r_d3.py": "5acbc52d08c2261700008cac2df0422978435329643c04859c3eb2d51285f9c5",
+    "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+    "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+    "scripts/h7r_holdout.py": "e873500fc8362493fc1ff865e989cf1c35b0dd674f5877f95e7be81d53dcfa97"
+  },
+  "condition": {
+    "mask": "keep = the cycle row is a proof label (cache kind 1, label kind proof_*); outcome rows (kind 0, label kind outcome) are removed; replay rows are never masked",
+    "cycle_selection": "original",
+    "loss": "sum_i k_i w_i (v_i - t_i)^2 / sum_i w_i over the batch (original weights)"
+  },
+  "controls": {
+    "31001": {
+      "run_record": {
+        "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/runs/seed-31001/r2_train.json",
+        "sha256": "0ced9ed0a24fd6a8c8f8cc3a7537450299b8ecc44b68a35756bc9916bc952fee"
+      },
+      "run_dir": "runs/h7r/R2-DIAG-1/r2_0b/seed-31001",
+      "assignment_sha256": "53f466536e6953043fcca75a92dc858d4f3a73238c477acb2d6882a54aeca460",
+      "total_steps": 210,
+      "best_step": 126
+    },
+    "31002": {
+      "run_record": {
+        "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/runs/seed-31002/r2_train.json",
+        "sha256": "e7479f80ea93201d7a6f809905f4b7537460295f96551cbf9f395c90ce747725"
+      },
+      "run_dir": "runs/h7r/R2-DIAG-1/r2_0b/seed-31002",
+      "assignment_sha256": "a10b78de9ec36dc4dfad46993985d92a49953836364064fd6787e5a920dddb69",
+      "total_steps": 210,
+      "best_step": 84
+    },
+    "31003": {
+      "run_record": {
+        "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/runs/seed-31003/r2_train.json",
+        "sha256": "ce87259cbfd6a73b9a15bdd42cab85e415f804f13d3ab806e6ccc8d1f0e85be7"
+      },
+      "run_dir": "runs/h7r/R2-DIAG-1/r2_0b/seed-31003",
+      "assignment_sha256": "c5fa36301d9aa3bf6180f3f098bccf08132f33d895594e90125ac28ef39302bb",
+      "total_steps": 210,
+      "best_step": 84
+    }
+  },
+  "control_reproduction": {
+    "tolerance": 1e-05,
+    "metrics": [
+      {
+        "prediction": "d4",
+        "group": "network",
+        "aggregate": "macro"
+      },
+      {
+        "prediction": "d4",
+        "group": "network/outcome",
+        "aggregate": "macro"
+      },
+      {
+        "prediction": "d4",
+        "group": "network/proof",
+        "aggregate": "macro"
+      },
+      {
+        "prediction": "d4",
+        "group": "network",
+        "aggregate": "pooled"
+      }
+    ],
+    "note": "an aggregate-metric tolerance (the R2-0B replay tolerance): each recomputed control metric against the committed R2-0B value (epsilon record seeds); not a per-row tolerance. seed_predictions.pt is used for row alignment and a per-row diagnostic only. Beyond it the reading is HELD and the differences recorded"
+  },
+  "ruling": {
+    "epsilon": 0.0019461168062766864,
+    "primary": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "macro"
+    },
+    "improvement": "I_s = L(control_s) - L(D3_s), control_s the R2-0B run of the same seed",
+    "development_signal": "for all three seeds I_s > epsilon and the paired 95% upper bound of L(D3_s) - L(control_s) below 0 (R2 section 7, unchanged)",
+    "hold": [
+      "the controls are not reproduced within control_reproduction.tolerance",
+      "the control seed range (max - min of L(control_s)) exceeds epsilon"
+    ],
+    "otherwise": "NOT_ESTABLISHED",
+    "after": "no automatic D4; a DEVELOPMENT_SIGNAL makes D4 a separate contract and approval; a proof-only improvement does not change the D4 entry rule"
+  },
+  "reference": {
+    "c5": "D3 - c5 with its interval, reported and never ruled",
+    "components": "outcome / proof macro and pooled differences, reported without epsilon",
+    "decomposition": "additive kind and kind x ply contributions (hybrid.h7r_d3), descriptive",
+    "proof_contribution_same_recipe_range": [
+      -0.000771,
+      0.000656
+    ],
+    "note": "the proof contribution range of same-recipe seed pairs (prep section 4.3): a descriptive reference beside the per-kind results, never a threshold or part of the ruling"
+  },
+  "output": {
+    "mask": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/outcome_mask.pt",
+    "mask_manifest": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/mask.json",
+    "run_dirs": {
+      "31001": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/seed-31001",
+      "31002": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/seed-31002",
+      "31003": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/seed-31003"
+    },
+    "result": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/d3_eval.json",
+    "predictions": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/predictions.pt"
+  }
+}
