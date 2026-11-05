@@ -239,9 +239,12 @@ class WorldTest(unittest.TestCase):
         from scripts import h7c_nmask as cmd
         self.assertEqual(record['verdict'], 'CANDIDATE')
         best = root / 'runs/h7c/nmask/value/best.pt'
-        with self.assertRaisesRegex(ValueError, 'clean training tree'):  # this test tree is dirty
-            cmd.check_candidate(best, loaded, dsha)
         saved = best.with_name('record.json').read_text()
+        # the run record decides, not the state of the checkout running the test: a dirty training tree is refused
+        best.with_name('record.json').write_text(json.dumps({**json.loads(saved), 'git': {'commit': 'x',
+                                                                                         'dirty': True}}))
+        with self.assertRaisesRegex(ValueError, 'clean training tree'):
+            cmd.check_candidate(best, loaded, dsha)
         best.with_name('record.json').write_text(json.dumps({**json.loads(saved), 'git': {'commit': 'x',
                                                                                          'dirty': False}}))
         self.assertEqual(cmd.check_candidate(best, loaded, dsha), record['candidate'])
