@@ -1,0 +1,46 @@
+{
+  "format": "h7r-d3-r0-contract-v1",
+  "contract_id": "R2-D3-NO-OUTCOME-1-R0",
+  "status": "fixed",
+  "approved": false,
+  "r2_contract": {
+    "path": "docs/h7r/r2/R2-DIAG-1.contract.json",
+    "sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d"
+  },
+  "amendment": {
+    "path": "docs/h7r/r2/R2-DIAG-1-A1.json",
+    "sha256": "268aedfc52478aff69bbee158e3e9445ea80e997e1747b76244a0c7ff04bc32c"
+  },
+  "trainer_sources": {
+    "src/hybrid/h7c_train.py": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488",
+    "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+    "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+    "scripts/h7r_d3_r0.py": "1b6cff433b9aaba186703bb0a5a87e2b9a4c56c2901db9e4e0aa1ca0803d6c74"
+  },
+  "recorded": {
+    "reproduction": {
+      "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/reproduction.json",
+      "sha256": "a6010542756db592b73783e7ec823ca6c974133350aec5cf56481dde25e8fe4d"
+    },
+    "run": {
+      "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/runs/seed-20261025/r2_train.json",
+      "sha256": "039b51714d5f5f9b97e9f0f921aaf9c51c74ab93cf26c5fd3759c2747bf69f84"
+    },
+    "reference_record": {
+      "path": "docs/h7c/c8/value_record.json",
+      "sha256": "e47581b5263140802adf84b9c1ff6d44e2bb1e8c48d67c8a00e882c285a56389"
+    },
+    "assignment_sha256": "e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224",
+    "best_step": 147
+  },
+  "seed": 20261025,
+  "tolerance": {
+    "max_abs_prediction": 0.001,
+    "abs_primary": 0.0002
+  },
+  "output": {
+    "run_dir": "runs/h7r/R2-D3-NO-OUTCOME-1/r0/seed-20261025",
+    "reproduction": "runs/h7r/R2-D3-NO-OUTCOME-1/r0/reproduce.json",
+    "result": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/r0/r0.json"
+  }
+}

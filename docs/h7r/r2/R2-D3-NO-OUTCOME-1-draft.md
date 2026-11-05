@@ -57,9 +57,7 @@
 
 ### 2.3 구현과 호환성 (확정 전 할 일)
 
-- 현재 trainer에는 "마스킹된 손실 + 원래 선택 지표" 조합이 없다. `h7c_train.train_value`에 선택 지표 옵션을 하나 추가하는 안을 확정 단계에서 구현한다.
-  - 옵션을 쓰지 않으면 코드 경로와 모든 수가 기존 recipe와 같아야 한다.
-  - 같은 seed의 control 실행을 다시 학습하지 않으므로, **변경 후 코드로 기준 recipe를 재현하는 점검**(R2-0B 재현 seed 20261025 방식)이 필요한지 확정 단계에서 정한다.
+- trainer의 선택 지표 옵션과 기존 경로의 동치성 검증은 §2.4에 기록했다. 같은 seed의 기존 control을 사용하기 위한 기준 recipe 재현 점검은 §2.5의 D3-R0으로 수행한다.
 - control 호환성 검사
   - parent·cycle·replay labels와 cache split SHA, config(학습 seed 외 동일), 학습 행 수와 step 수
   - 자료 배정 지문이 같은 seed의 control과 같은지
@@ -77,7 +75,7 @@
 - 옵션을 생략한 경로: 일반 학습과 NMASK 모두, 변경 전 trainer(`3066dba`, SHA `529cffb8…`)와 CPU fixture에서 기록과 선택 state가 비트 단위로 같다(`tests/test_h7c_train_selection.py`).
 - trainer SHA는 바뀌었다. R2-0B 기록에 남은 `529cffb8…`은 그 실행의 출처 기록으로 그대로 둔다.
 - outcome 마스크의 생성과 전달(실행 도구)은 아직 없다. 계약 확정 뒤 별도로 구현한다.
-- 실제 자료 재현 점검의 필요 여부는 계약 확정 때 정한다(§7).
+- 실제 자료 재현 점검은 §2.5를 따른다.
 
 ### 2.5 D3-R0 재현 점검 도구 (2026-11-05, 미실행)
 
@@ -91,8 +89,49 @@
   - 재실행의 선택 step = 기록된 `147`
   - 고정값 자체는 R2-0B 재현 기록, seed 20261025 실행 기록, c8 원 기록(step)과 대조해 확인한다.
 - 판정: A1 판정이 `BITWISE_REPRODUCED` 또는 `METRIC_ONLY`이고 직접 대조가 모두 일치할 때만 `PASS`다. 하나라도 다르면 `NOT_REPRODUCED`(종료 코드 1)로 기록하고 D3는 시작하지 않는다.
-- 실행 조건: fixed·committed·approved R0 계약(`h7r-d3-r0-contract-v1`). 계약은 R2 계약과 A1, trainer 소스 SHA, 기록값과 그 출처, A1 허용 오차(같아야 함), seed, 출력 경로를 담는다. R0 계약은 아직 없으며, 계약 단계에서 만든다.
+- [R0 계약](R2-D3-NO-OUTCOME-1/r0-contract.json)에 R2 계약과 A1, trainer 소스 네 파일의 SHA, 과거 기록과 그 값, A1 허용 오차, seed, 출력 경로를 고정했다. 상태는 `fixed`이고 실행 승인 플래그는 `false`다. 도구는 승인된 계약이 커밋된 경우 실행한다.
 - 환경(torch, CUDA, GPU)은 R2-0B 기록과 비교해 함께 남긴다. 다르면 사실로 기록하되 판정 조건에는 넣지 않는다.
+
+데스크톱에서는 승인된 계약과 깨끗한 checkout에서 아래 순서로 실행한다. 입력 위치는 아래 명령에 적고, 내용은 R2·A1이 고정한 c8 기록의 입력 해시와 대조한다. `train`의 기록 형식은 R2-0B를 따르므로, 같은 HEAD에서 `check`까지 이어서 수행한다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+
+  D=docs/h7r/r2/R2-D3-NO-OUTCOME-1
+  R=runs/h7r/R2-D3-NO-OUTCOME-1/r0
+  test -z "$(git status --porcelain --untracked-files=no)"
+  r0_head="$(git rev-parse HEAD)"
+  python - "$D/r0-contract.json" <<'PY'
+import sys
+from scripts.h7r_d3_r0 import load_r0
+load_r0(sys.argv[1])
+PY
+  python scripts/check_track_b_frozen.py
+  test ! -e "$R/seed-20261025"
+  test ! -e "$R/reproduce.json"
+  test ! -e "$D/r0/r0.json"
+  mkdir -p "$R/logs"
+
+  train_log="$(mktemp "$R/logs/train-XXXXXXXX.log")"
+  python -u scripts/h7r_d3_r0.py train --r0-contract "$D/r0-contract.json" \
+    --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+    --replay-cache data/tactical/h6/value_cache_v3 --parent runs/h7c/c5/value/best.pt \
+    --device cuda 2>&1 | tee "$train_log"
+
+  test "$(git rev-parse HEAD)" = "$r0_head"
+  check_log="$(mktemp "$R/logs/check-XXXXXXXX.log")"
+  python -u scripts/h7r_d3_r0.py check --r0-contract "$D/r0-contract.json" \
+    --cache runs/h7r/R1-HDEV-1/cache \
+    --reference-model runs/h7c/c8/value/best.pt,runs/h7c/c8/value/best.json \
+    --device cuda 2>&1 | tee "$check_log"
+)
+```
+
+결과 판정은 `r0/r0.json`에, A1 비교 원본과 단계별 로그는 `runs/`에 남긴다. 학습이 `NO_CANDIDATE`를 반환하거나 입력 오류가 발생하면 해당 단계의 비정상 종료 코드로 멈춘다. 결과 JSON이 생기기 전에 멈춘 경우에는 실행 기록과 로그를 보존해 원인을 확인한다.
 
 ## 3. 판정
 
@@ -166,8 +205,8 @@ R2 설계 §7 규칙을 **그대로** 쓴다. 조건 C = D3, control K = 같은 
 
 ## 7. 확정 전 정할 것
 
-1. 4절 결과의 기록과 검토
-2. trainer 선택 지표 옵션의 구현과 동치성 점검 방식(2.3), 재현 점검 필요 여부
+1. R0 실행 승인 및 데스크톱 재현 판정 확인(§2.5)
+2. D3 outcome 마스크 생성·검증과 실행 도구 구현
 3. 계약 JSON: 조건, control 경로와 SHA, 출처 SHA, 실행 시간 한도, 출력 경로
 4. 실행 승인 단계: 학습 3회 → H-dev 평가와 판독. 각 단계는 따로 승인받는다.
 
