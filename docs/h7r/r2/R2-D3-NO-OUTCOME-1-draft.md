@@ -79,6 +79,21 @@
 - outcome 마스크의 생성과 전달(실행 도구)은 아직 없다. 계약 확정 뒤 별도로 구현한다.
 - 실제 자료 재현 점검의 필요 여부는 계약 확정 때 정한다(§7).
 
+### 2.5 D3-R0 재현 점검 도구 (2026-11-05, 미실행)
+
+- 목적: D3 실행 전에 현재 trainer와 환경이 control을 만든 R2-0B 조건을 재현하는지 확인한다. control은 다시 학습하지 않으므로 이 점검이 짝 비교의 전제다.
+- 도구 `scripts/h7r_d3_r0.py`, 테스트 `tests/test_h7r_d3_r0.py`
+  - `train`: 기존 `h7r_r2_seed.train`으로 c8 recipe를 seed 20261025에서 한 번 학습한다. 마스크와 선택 옵션은 쓰지 않는다.
+  - `check`: 기존 `h7r_r2_seed.reproduce`로 기준 c8 실행과 비교한다. A1 판정 함수 `reproduction_verdict`와 A1 허용 오차(`max_abs_prediction ≤ 0.001`, `abs_primary ≤ 0.0002`)를 그대로 쓴다.
+- **과거 기록과의 직접 대조**: 현재 코드가 양쪽을 함께 다르게 계산해 일치로 보이는 경우를 막는다.
+  - 재실행의 자료 배정 지문 = 기록된 R2-0B 지문 `e142e971a29da275a6edc908baca816a66d5472061ecf46806e9c17f649f7224`
+  - 현재 코드가 재구성한 기준 지문 = 같은 기록값
+  - 재실행의 선택 step = 기록된 `147`
+  - 고정값 자체는 R2-0B 재현 기록, seed 20261025 실행 기록, c8 원 기록(step)과 대조해 확인한다.
+- 판정: A1 판정이 `BITWISE_REPRODUCED` 또는 `METRIC_ONLY`이고 직접 대조가 모두 일치할 때만 `PASS`다. 하나라도 다르면 `NOT_REPRODUCED`(종료 코드 1)로 기록하고 D3는 시작하지 않는다.
+- 실행 조건: fixed·committed·approved R0 계약(`h7r-d3-r0-contract-v1`). 계약은 R2 계약과 A1, trainer 소스 SHA, 기록값과 그 출처, A1 허용 오차(같아야 함), seed, 출력 경로를 담는다. R0 계약은 아직 없으며, 계약 단계에서 만든다.
+- 환경(torch, CUDA, GPU)은 R2-0B 기록과 비교해 함께 남긴다. 다르면 사실로 기록하되 판정 조건에는 넣지 않는다.
+
 ## 3. 판정
 
 R2 설계 §7 규칙을 **그대로** 쓴다. 조건 C = D3, control K = 같은 seed의 기준 recipe(R2-0B 실행).
