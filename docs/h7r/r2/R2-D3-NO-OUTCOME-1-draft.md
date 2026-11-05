@@ -66,6 +66,19 @@
   - control의 기록 SHA(`r2_train.json`, `record.json`, `config.json`)는 이미 D4 계약 sources에 고정돼 있다.
 - 실행 시간 한도, 출력 경로, 실패 처리(NO_CANDIDATE 보존)를 계약 JSON에 적는다.
 
+### 2.4 trainer 선택 옵션 구현 (2026-11-05)
+
+- `h7c_train.train_value(..., cycle_keep=..., cycle_selection='original')`
+  - 학습 손실은 기존 `masked_wmse`(원래 분모)다. kept weight가 0인 batch는 cycle 항 0, replay 항 유지다.
+  - 선택 objective는 원래 cycle val WMSE와 H6 val WMSE의 평균이다. H6 guard, 평가 시점, 동률(먼저 나온 평가 유지), `NO_CANDIDATE`는 기존 trainer를 따른다.
+  - 기록: `cycle_wmse`(선택에 쓴 원래 지표)와 `cycle_wmse_masked`(진단값)를 parent와 각 평가에 나란히 남기고, `record['selection']`에 선택 규칙을 적는다. `mask` 기록은 NMASK와 같다.
+  - 옵션은 난수, 자료 순서, replay 추출, augmentation, step, optimizer에 닿지 않는다. 학습 궤적은 같은 mask의 NMASK와 같다(테스트로 확인).
+  - `cycle_keep` 없이 쓰거나 다른 값을 주면 거부한다.
+- 옵션을 생략한 경로: 일반 학습과 NMASK 모두, 변경 전 trainer(`3066dba`, SHA `529cffb8…`)와 CPU fixture에서 기록과 선택 state가 비트 단위로 같다(`tests/test_h7c_train_selection.py`).
+- trainer SHA는 바뀌었다. R2-0B 기록에 남은 `529cffb8…`은 그 실행의 출처 기록으로 그대로 둔다.
+- outcome 마스크의 생성과 전달(실행 도구)은 아직 없다. 계약 확정 뒤 별도로 구현한다.
+- 실제 자료 재현 점검의 필요 여부는 계약 확정 때 정한다(§7).
+
 ## 3. 판정
 
 R2 설계 §7 규칙을 **그대로** 쓴다. 조건 C = D3, control K = 같은 seed의 기준 recipe(R2-0B 실행).

@@ -31,6 +31,12 @@ Value (``train_value``), from the parent value checkpoint (c1: the frozen H6 v3)
                batch's original weights (a removed row's contribution is not given to the others); the cycle val
                metric the same with the effective val set's original weights; without ``cycle_keep`` the code path
                and every number are the unmasked recipe's
+    selection  (``cycle_selection='original'``, R2-D3-NO-OUTCOME-1 only; needs ``cycle_keep``) the masked loss
+               above, but the checkpoint is selected as in the unmasked recipe: objective = mean of the ORIGINAL
+               cycle val weighted MSE and the H6 val weighted MSE, the same H6 guard, evaluation steps and ties;
+               the masked cycle val WMSE is recorded beside it as a diagnostic only (``cycle_wmse_masked``).
+               The option touches no random stream, data order, step or optimizer: the training trajectory is the
+               masked one bit for bit. Omitted, every call and record is what it was
 Source (``policy_rows_source`` / ``value_rows_source``): the label rows of one cycle carry the four model SHA-256 of
 the self-play that made them (``h7c_provenance``); both trainers require them to be one model pair whose policy
 (value) is the trainer's ``--parent``, and every game id to be of this cycle.
@@ -443,10 +449,19 @@ def masked_metric(model, data: dict, device, batch_size: int = 4096) -> dict:
             'masked_wmse': num / den if den else None}
 
 
+CYCLE_SELECTIONS = ('original',)
+D3_SELECTION = {'cycle_metric': 'original cycle val weighted MSE (outcome and proof rows, their weights)',
+                'objective': 'mean of the original cycle val WMSE and the H6 val WMSE',
+                'guard': 'H6 val WMSE <= h6_guard_ratio x the parent\'s',
+                'best': 'the eligible evaluation with the lowest objective (the first one on a tie)',
+                'diagnostic': 'cycle_wmse_masked: the masked cycle val WMSE, never in the objective'}
+
+
 def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[str, dict], log=print,
-                cycle_keep: dict[str, torch.Tensor] | None = None) -> dict:
+                cycle_keep: dict[str, torch.Tensor] | None = None, cycle_selection: str | None = None) -> dict:
     """Continue the value head of ``parent`` (trunk and policy head frozen); the run record and the best state.
-    ``cycle_keep`` (split -> bool per cycle cache row): the H7C-NMASK-1 loss and cycle val metric (module docstring)."""
+    ``cycle_keep`` (split -> bool per cycle cache row): the H7C-NMASK-1 loss and cycle val metric (module docstring).
+    ``cycle_selection='original'`` (with ``cycle_keep``): the masked loss with the unmasked recipe's selection."""
     from .h3_train import d4_tables
     from .h6_value_train import (augment_planes, evaluate, freeze, frozen_state, state_sha256, value_forward,
                                  weighted_mse)
@@ -458,6 +473,9 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
     frozen = state_sha256(frozen_state(model))
     optimizer = torch.optim.AdamW(params, lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
     masked = cycle_keep is not None
+    if cycle_selection is not None and (cycle_selection not in CYCLE_SELECTIONS or not masked):
+        raise ValueError(f'cycle_selection {cycle_selection!r}: only {CYCLE_SELECTIONS} with a cycle_keep mask')
+    original_selection = cycle_selection == 'original'
     if masked:
         cycle = dict(cycle)
         for split in ('train', 'val'):
@@ -483,7 +501,9 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
 
     def val_metrics():
         a, b = evaluate(model, cycle['val'], device), evaluate(model, replay['val'], device)
-        if masked:  # the selection metric of the mask: the masked cycle val WMSE (the unmasked one kept beside it)
+        if original_selection:  # D3: the original cycle val WMSE selects; the masked one is a diagnostic
+            a = {**a, 'masked': masked_metric(model, cycle['val'], device)}
+        elif masked:  # the selection metric of the mask: the masked cycle val WMSE (the unmasked one kept beside it)
             a = {**a, 'original_weighted_mse': a['weighted_mse'], 'masked': masked_metric(model, cycle['val'], device)}
             a['weighted_mse'] = a['masked']['masked_wmse']
         parts = [x['weighted_mse'] for x in (a, b) if x['weighted_mse'] is not None]  # an empty cycle val: H6 only
@@ -498,8 +518,12 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
                                                        'cycle_val': base['cycle_val']['all'],
                                                        'replay_val': base['replay_val']['all']},
               'frozen_state_sha256': frozen, 'evaluations': []}
-    if masked:
+    if original_selection:
+        record['parent_val']['cycle_wmse_masked'] = base['cycle_val']['masked']['masked_wmse']
+        record['selection'] = {'mode': 'original', **D3_SELECTION}
+    elif masked:
         record['parent_val']['cycle_wmse_original'] = base['cycle_val']['original_weighted_mse']
+    if masked:
         record['mask'] = {'zero_cycle_weight_batches': 0, 'batches_without_cycle_rows': 0, 'epochs': [],
                           'loss': 'sum_i k_i w_i (v_i - t_i)^2 / sum_i w_i (batch; original weights)'}
     best, best_state, step, epoch = None, None, 0, 0
@@ -546,7 +570,11 @@ def train_value(cfg: ValueConfig, parent, cycle: dict[str, dict], replay: dict[s
                 entry = {'step': step, 'objective': m['objective'], 'cycle_wmse': m['cycle_val']['weighted_mse'],
                          'replay_wmse': m['replay_val']['weighted_mse'], 'eligible': eligible,
                          'cycle_val': m['cycle_val']['all'], 'replay_val': m['replay_val']['all']}
-                if masked:  # cycle_wmse is the masked metric here; the unmasked one beside it, never mixed
+                if original_selection:  # cycle_wmse is the original (selecting) metric; the masked one beside it
+                    entry['cycle_wmse_masked'] = m['cycle_val']['masked']['masked_wmse']
+                    if not math.isfinite(m['objective']):
+                        raise ValueError(f'step {step}: the objective is not finite')
+                elif masked:  # cycle_wmse is the masked metric here; the unmasked one beside it, never mixed
                     entry['cycle_wmse_original'] = m['cycle_val']['original_weighted_mse']
                     if not math.isfinite(m['objective']):
                         raise ValueError(f'step {step}: the masked objective is not finite')
