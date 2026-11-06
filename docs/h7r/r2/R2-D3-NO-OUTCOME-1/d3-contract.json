@@ -5,7 +5,7 @@
   "approved": {
     "mask": true,
     "train": true,
-    "evaluate": false
+    "evaluate": true
   },
   "r2_contract": {
     "path": "docs/h7r/r2/R2-DIAG-1.contract.json",
