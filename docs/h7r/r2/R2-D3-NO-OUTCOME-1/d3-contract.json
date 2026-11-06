@@ -3,7 +3,7 @@
   "contract_id": "R2-D3-NO-OUTCOME-1",
   "status": "fixed",
   "approved": {
-    "mask": false,
+    "mask": true,
     "train": false,
     "evaluate": false
   },

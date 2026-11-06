@@ -38,6 +38,7 @@ class Repo:
         self.git('config', 'user.email', 't@t')
         self.git('config', 'user.name', 't')
         c = json.loads((ROOT / CONTRACT).read_text())
+        c['approved'] = {s: False for s in d3.STAGES}
         a1 = json.loads((ROOT / c['amendment']['path']).read_text())['r2_0b']
         files = {CONTRACT, '.gitignore', c['r2_contract']['path'], c['amendment']['path'], c['epsilon']['path'],
                  c['r0']['result']['path'], c['r0']['reproduction']['path'], a1['reference_record']['path'],
@@ -46,6 +47,9 @@ class Repo:
         for f in files:
             (self.root / f).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / f, self.root / f)
+        unapproved = json.loads((self.root / CONTRACT).read_text())  # the flow starts before any approval
+        unapproved['approved'] = {s: False for s in d3.STAGES}
+        (self.root / CONTRACT).write_text(json.dumps(unapproved, indent=2) + '\n')
         for v in c['controls'].values():  # the controls' local run records (runs/, as on the desktop)
             (self.root / v['run_dir']).mkdir(parents=True)
             shutil.copy2(ROOT / v['run_record']['path'], self.root / v['run_dir'] / 'r2_train.json')

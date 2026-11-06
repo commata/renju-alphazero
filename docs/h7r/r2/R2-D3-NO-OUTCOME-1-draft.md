@@ -181,9 +181,9 @@ PY
 - 시작할 때 기록 폴더에는 `r0.json`만 있어야 한다. `r0.json`이 가리키는 `reproduce.json`의 SHA, 같은 clean HEAD를 확인한 뒤 복사한다. 하나라도 실패하면 커밋하지 않는다.
 - 결과가 `PASS`가 아니면 D3 학습으로 넘어가지 않는다. 결과와 원인을 기록한 뒤 다음 행동을 따로 정한다.
 
-### 2.6 D3 마스크·학습·판독 도구와 실행 계약 초안 (2026-11-05, 미승인)
+### 2.6 D3 마스크·학습·판독 도구와 실행 계약 초안 (2026-11-05; 마스크 단계만 2026-11-06 승인)
 
-- R0 `PASS`(`19cb66b`)를 전제로, D3를 세 단계로 나눈다. 단계마다 계약에서 따로 승인한다(`approved.mask` / `train` / `evaluate`). 앞 단계 승인 없이 뒤 단계를 승인할 수 없다. [D3 계약](R2-D3-NO-OUTCOME-1/d3-contract.json)은 `fixed`이고 세 승인은 모두 `false`다.
+- R0 `PASS`(`19cb66b`)를 전제로, D3를 세 단계로 나눈다. 단계마다 계약에서 따로 승인한다(`approved.mask` / `train` / `evaluate`). 앞 단계 승인 없이 뒤 단계를 승인할 수 없다. [D3 계약](R2-D3-NO-OUTCOME-1/d3-contract.json)은 `fixed`다. 2026-11-06에 `approved.mask`만 `true`가 됐다(승인 범위: 마스크 생성·검증과 `mask.json` 기록까지). `approved.train`과 `approved.evaluate`는 `false`다.
 - 단계 기록은 **실험 식별값** `experiment_sha256`(승인 플래그를 뺀 계약의 정규 JSON SHA-256)으로 잇는다. 다음 단계를 승인하면 계약 파일의 SHA는 바뀌지만 이 값은 그대로다. 마스크 manifest, `d3_train.json`, 판독 결과는 이 값이 같아야 이어지고, 각 기록은 실행 당시 계약 파일의 전체 SHA(`contract_sha256`)도 출처로 함께 남긴다. 승인 외의 내용(소스 SHA 포함)이 바뀌면 식별값이 달라져 이전 단계 기록을 받지 않는다.
 - 도구: `scripts/h7r_d3.py`, 마스크 `src/hybrid/h7r_d3_mask.py`, 테스트 `tests/test_h7r_d3_run.py`
 - R0가 재현한 trainer 소스 4개(`h7c_train.py`, `h7c_train_value.py`, `h7r_r2_seed.py`, `h7r_d3_r0.py`)는 바꾸지 않는다. 계약은 그 SHA가 R0 결과의 값과 같은지도 확인한다.
