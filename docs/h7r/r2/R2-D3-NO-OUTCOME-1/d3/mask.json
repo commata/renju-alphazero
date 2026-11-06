@@ -1,0 +1,103 @@
+{
+ "format": "h7r-d3-outcome-mask-v1",
+ "definition": "keep = the cycle row is a proof label (cache kind 1, label kind proof_*); outcome rows (kind 0, label kind outcome) are removed; replay rows are never masked",
+ "labels_sha256": "dd6dd35aa25c4bc3185cace838eb9e997fe445854373ed34e89000b5b89d60ca",
+ "cache_manifest_sha256": "c89c2aa8f71314a0867984f4189fbe71d18d94101605c27f4b45f41108016e29",
+ "splits": {
+  "train": {
+   "rows": 35816,
+   "removed_rows": 30792,
+   "kept_rows": 5024,
+   "weight": 8103.200045883656,
+   "removed_weight": 3079.2000458836555,
+   "kept_weight": 5024.0,
+   "by_label_kind": {
+    "outcome": {
+     "rows": 30792,
+     "weight": 3079.2000458836555,
+     "kept": false
+    },
+    "proof_forced_loss": {
+     "rows": 896,
+     "weight": 896.0,
+     "kept": true
+    },
+    "proof_immediate_win": {
+     "rows": 896,
+     "weight": 896.0,
+     "kept": true
+    },
+    "proof_unstoppable_four": {
+     "rows": 880,
+     "weight": 880.0,
+     "kept": true
+    },
+    "proof_vcf": {
+     "rows": 2352,
+     "weight": 2352.0,
+     "kept": true
+    }
+   },
+   "cache_sha256": "487880b9ec97b02e1eec686440a938017f3bcbfa5aba880c60f3a04180f9b3e1"
+  },
+  "val": {
+   "rows": 1853,
+   "removed_rows": 1570,
+   "kept_rows": 283,
+   "weight": 440.0000023394823,
+   "removed_weight": 157.0000023394823,
+   "kept_weight": 283.0,
+   "by_label_kind": {
+    "outcome": {
+     "rows": 1570,
+     "weight": 157.0000023394823,
+     "kept": false
+    },
+    "proof_forced_loss": {
+     "rows": 49,
+     "weight": 49.0,
+     "kept": true
+    },
+    "proof_immediate_win": {
+     "rows": 49,
+     "weight": 49.0,
+     "kept": true
+    },
+    "proof_unstoppable_four": {
+     "rows": 48,
+     "weight": 48.0,
+     "kept": true
+    },
+    "proof_vcf": {
+     "rows": 137,
+     "weight": 137.0,
+     "kept": true
+    }
+   },
+   "cache_sha256": "92a97e2b0e287483ca4693688829cbd1c34fbf1860ef887770bb9d6c03f29d3f"
+  },
+  "test": {
+   "rows": 0,
+   "removed_rows": 0,
+   "kept_rows": 0,
+   "weight": 0.0,
+   "removed_weight": 0.0,
+   "kept_weight": 0.0,
+   "by_label_kind": {},
+   "cache_sha256": "030de847ccff4234ee51918eff5ff454c4219f5531361e238277e7c54b35794c"
+  }
+ },
+ "keep_sha256": "4a2ae7136519a9012799d31c408b5ecdf31dc0d6f684fa6189a87145d8b52203",
+ "link": "each cache row = its label row (game id order, ply, value, weight, kind, stones, legal mask); cache kind checked against the label row's label_kind",
+ "experiment_sha256": "bc386b1491d5da03856c786817767bf395d832cb8316f1e9a18a9196b667f2d6",
+ "contract_sha256": "3cb92336aea2e50206658c0faabb4b001bd0704459b01f87685d15ad6e303e5a",
+ "git": {
+  "commit": "c810993a0f3e4ffd461818b45a91989a38720e7e",
+  "dirty": false
+ },
+ "mask_file": {
+  "path": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/outcome_mask.pt",
+  "sha256": "88bdd4ba69a0bd2b5a83b284795d7997d63df965a59bd8693bf92dc854f2ddfe"
+ },
+ "value_rows_sha256": "899b575eee2aaebe72598e259ac18c5afe6c9e9073746ec142ce31a9d8ad0862"
+}
