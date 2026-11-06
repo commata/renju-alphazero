@@ -1,0 +1,114 @@
+{
+  "format": "h7r-d1-contract-v1",
+  "contract_id": "R2-D1-HEAD-WIDTH-1",
+  "stage": "1k",
+  "status": "fixed",
+  "approved": {
+    "prepare": false,
+    "train": false,
+    "evaluate": false
+  },
+  "r2_contract": {
+    "path": "docs/h7r/r2/R2-DIAG-1.contract.json",
+    "sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d"
+  },
+  "amendment": {
+    "path": "docs/h7r/r2/R2-DIAG-1-A1.json",
+    "sha256": "268aedfc52478aff69bbee158e3e9445ea80e997e1747b76244a0c7ff04bc32c"
+  },
+  "epsilon": {
+    "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json",
+    "sha256": "d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2"
+  },
+  "arms": {
+    "narrow": {
+      "value_channels": 1
+    },
+    "wide": {
+      "value_channels": 4
+    }
+  },
+  "widen": {
+    "init": "conv channel 0 and BatchNorm channel 0 copied from c5; new conv channels kaiming_normal_(fan_out, relu) from a dedicated generator; new channels input columns of the first Linear exactly 0; every other value-head tensor copied",
+    "init_seeds": {
+      "31001": 2026110710,
+      "31002": 2026110711,
+      "31003": 2026110712
+    },
+    "tolerance": 1e-06
+  },
+  "subset": {
+    "source": "the c8 cycle cache train split (labels and splits of the A1 reference record)",
+    "seed": 2026110701,
+    "rows": 1000,
+    "nested_rows": 5000
+  },
+  "budget": {
+    "config": {
+      "path": "configs/h7c/c1_value.json",
+      "sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0"
+    },
+    "total_steps": 210
+  },
+  "seeds": [
+    "31001",
+    "31002",
+    "31003"
+  ],
+  "fit": {
+    "margin": 0.01,
+    "floor": "d4",
+    "measured_at": "last_step"
+  },
+  "ruling": {
+    "epsilon": 0.0019461168062766864,
+    "primary": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "macro"
+    },
+    "train_fit": "section 4: per arm and seed the last-step W <= floor_d4 + margin is a fit; the first of WIDTH_EFFECT (W_wide - W_narrow < 0 for all three seeds, each larger than the narrow seed range), BOTH_FIT (all six fit), SEED_DISAGREEMENT (signs differ or zero), NEITHER_FIT (none fits), MIXED_FIT (hybrid.h7r_d1.fit_reading); committed before any H-dev prediction",
+    "hdev": "R2 section 7 unchanged: I_s = L(narrow_s) - L(wide_s) > epsilon and the paired 95% upper bound of L(wide_s) - L(narrow_s) below 0 for all three seeds; the narrow seed range above epsilon holds",
+    "scope": "a 1,000-row diagnosis: no D4 candidate whatever the reading"
+  },
+  "reference": {
+    "c5": "wide - c5 and narrow - c5, reported and never ruled",
+    "components": "outcome / proof macro and pooled differences without epsilon",
+    "decomposition": "additive kind contributions (hybrid.h7r_d3), descriptive",
+    "note": "the H-dev reading uses the T-val selected checkpoints; the train-fit reading uses the last-step states; they are recorded apart and never mixed"
+  },
+  "sources": {
+    "src/hybrid/h7c_train.py": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488",
+    "src/hybrid/h6_value_train.py": "5d0094504abe4d7dbc0f964bd879344b8e3159951cce6b1dc8b37772d7f77770",
+    "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+    "src/hybrid/h7r_d1.py": "ba753f0ca72ef19d58a302bec93858c95071c2a7d374e992604f99d4328ab2c9",
+    "scripts/h7r_d1.py": "01600c5ef7b100fd670139bb092953efafe26baa46741bf4facc16fe7b487dca",
+    "src/hybrid/h7r_d3.py": "5acbc52d08c2261700008cac2df0422978435329643c04859c3eb2d51285f9c5",
+    "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+    "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+    "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+    "scripts/h7r_holdout.py": "e873500fc8362493fc1ff865e989cf1c35b0dd674f5877f95e7be81d53dcfa97",
+    "src/model/network.py": "fc832003f3e1e89c7afb7d7d7773477ddefcc9ea724331446048a098302f01ee",
+    "src/model/checkpoint.py": "8ee73d314ba09485659a55470eb91fea15ce636a7615d913e6d3b6699d6c70e1",
+    "src/model/config.py": "df4b35559c5958ff343d21ce933cdd845a39e57cfa58f4de483b80ba6c8cb091"
+  },
+  "output": {
+    "prepare": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k/prepare.json",
+    "parents": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/parents",
+    "run_dirs": {
+      "narrow": {
+        "31001": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/narrow-31001",
+        "31002": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/narrow-31002",
+        "31003": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/narrow-31003"
+      },
+      "wide": {
+        "31001": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/wide-31001",
+        "31002": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/wide-31002",
+        "31003": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/wide-31003"
+      }
+    },
+    "fit": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k/fit.json",
+    "result": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k/d1_eval.json",
+    "predictions": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k/predictions.pt"
+  }
+}

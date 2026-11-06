@@ -1,9 +1,10 @@
 # R2-D1-HEAD-WIDTH-1 — value head 폭 진단 계약 초안
 
-- 작성일 2026-11-06. 상태: **draft / 미승인 / 실행 불가**
+- 작성일 2026-11-06. 상태: **1,000행 계약 고정 / 단계 승인 전(prepare·train·evaluate 모두 false)**
+- 계약 JSON: `R2-D1-HEAD-WIDTH-1/d1-1k-contract.json`, 도구: `scripts/h7r_d1.py`, `src/hybrid/h7r_d1.py`
 - 상위 설계: `R2-DIAG-1-draft.md` §7(판독 규칙, ε, `DEVELOPMENT_SIGNAL`, 보류)과 §8(D1 행)
 - 직전 진단: `R2-D3-NO-OUTCOME-1-draft.md` §9(D3 `NOT_ESTABLISHED`)
-- 이 문서의 수치 중 "제안값"은 확정 전에 정할 값이다(§9).
+- §1–8의 "제안값"은 §10에서 1,000행 단계 값으로 확정했다. §9는 확정 전 목록으로 남긴다.
 
 ## 0. 성격과 바꾸지 않는 것
 
@@ -155,7 +156,7 @@
   - 이 단계의 실제 시간은 측정값으로 보고한다.
 - H-dev 판독: c5와 6개 모델을 함께 추론한다. D3 판독(7개 모델, 0.36분)과 비슷한 규모로 예상한다.
 
-## 9. 확정 전 정할 것
+## 9. 확정 전 정할 것 (§10에서 확정)
 
 1. `value_channels` 값: 제안 4. 대안 2 / 8은 후속으로 둔다.
 2. 새 채널 초기화의 고정 seed와 분포(제안: 네트워크 기본 Kaiming), 예측 보존 허용 오차(제안 1e-6)
@@ -171,3 +172,197 @@
 8. 계약 JSON(조건, 부분집합 SHA, 출처 SHA, 판정, 출력 경로)과 단계별 승인 구조(D3와 같은 실험 식별값 방식)
 
 도구 구현, GPU 학습, H-dev 평가, D4, 새 self-play는 이 초안의 범위가 아니며 각각 별도 승인을 받는다.
+
+## 10. 1,000행 단계 확정과 실행 절차
+
+### 10.1 §9 항목의 확정값
+
+모두 결과를 보기 전에 계약 JSON에 고정했다. 바꾸려면 새 계약이 필요하다.
+
+1. **폭**: `value_channels` 1(control) 대 4. 2 / 8은 후속이다.
+2. **새 채널 초기화와 허용 오차**
+   - 분포: `kaiming_normal_(fan_out, relu)`(네트워크 기본과 같음)
+   - seed별 전용 생성기 seed: 31001 → 2026110710, 31002 → 2026110711, 31003 → 2026110712
+   - 새 모델을 만들 때의 기본 초기화도 전역 난수를 소비하지 않는다(`fork_rng`). 테스트로 확인한다.
+   - 예측 보존 허용 오차 1e-6
+3. **부분집합**: 선택 seed 2026110701, 규칙은 §3 그대로("처음 1,000행 이상"에서 멈춤, 게임을 쪼개지 않음). 같은 순서의 5,000행 집합도 prepare 기록에 함께 남긴다(게임 수, 행 수, 게임 목록 SHA).
+4. **step 예산: 210, 두 군 같음.** epoch 수는 210 / ceil(2n / 1024)로 정하고, 도구가 실제 step 수가 210인지 확인한다. 더 큰 예산은 쓰지 않는다. 210 step에서 적합이 부족하면 그것도 결과로 기록한다(§4의 `NEITHER_FIT` / `MIXED_FIT`).
+5. **train 적합 문턱과 판정 순서**
+   - 적합 성공: 최종 step의 `W ≤ F_D4 + 0.01`. 바닥값은 정확 / D4 두 기준을 모두 기록하고, 문턱에는 D4 기준을 쓴다.
+   - 판정은 아래 순서에서 처음 맞는 것이다(`h7r_d1.fit_reading`).
+
+| 순서 | 분류 | 조건 | §4 표 |
+|---|---|---|---|
+| 1 | `WIDTH_EFFECT` | 세 seed 모두 `W_wide − W_narrow < 0`, 각 크기가 narrow seed 범위보다 큼 | 폭 효과 있음 |
+| 2 | `BOTH_FIT` | 6개 실행 모두 적합 성공. 방향은 판독하지 않는다 | 두 head 모두 적합 성공 |
+| 3 | `SEED_DISAGREEMENT` | 세 seed의 차이 부호가 다름(0 포함) | seed 불일치 |
+| 4 | `NEITHER_FIT` | 6개 실행 모두 적합 실패 | 두 head 모두 적합 실패 |
+| 5 | `MIXED_FIT` | 일부만 적합 성공, 방향은 같으나 폭 효과 조건 미달 | 표에 없던 경우. 다음 행동을 따로 정한다 |
+
+6. **최종 state 측정: 방법 (가)의 변형.** trainer는 고치지 않는다.
+   - trainer 자신의 평가 호출을 관찰한다(`fit_probe`). 평가는 parent와 평가 step마다 일어나고, 마지막 평가는 최종 step이다(`evaluation_steps`). 매번 같은 모델의 부분집합 `W`를 재고, 마지막 평가 때의 state를 복사한다.
+   - trainer 소스, 난수 흐름, 선택 결과는 바뀌지 않는다. 관찰이 있을 때와 없을 때 학습 결과가 비트 단위로 같은지 테스트로 확인한다.
+   - 그래서 R0가 재현한 trainer 소스를 그대로 쓴다.
+   - 기록은 둘로 나눈다.
+     - `last_step`: 최종 step(210)의 state와 `W`. train 판정에 쓴다.
+     - `selected`: T-val 선택 checkpoint의 step, objective와 `W`. H-dev 판독에 쓴다.
+   - 두 기록을 섞지 않는다. `NO_CANDIDATE`면 `selected`는 비우고 그대로 둔다. 그 경우 H-dev 판독은 멈춘다.
+7. **넓은 head checkpoint 로딩**
+   - checkpoint metadata의 `model_config`에 `value_channels`를 기록한다.
+   - 기존 평가 로더(`h7r_r2.load_value_model`, `check_model`)가 그대로 읽는다. 1채널 설정으로 4채널 state를 읽으면 실패한다. 둘 다 테스트로 확인한다.
+   - prepare는 확장 parent를 저장한 뒤 이 로더로 다시 읽어, 예측 차이가 정확히 0인지 확인한다.
+8. **계약과 승인**
+   - D3처럼 승인과 무관한 실험 식별값(`experiment_sha256`)으로 단계를 잇는다. 계약 파일 SHA는 출처로만 기록한다.
+   - 승인은 `prepare → train → evaluate` 순서다. 앞 단계가 승인되지 않으면 다음 단계는 거부된다.
+   - `fit`은 train 승인으로 돈다. `evaluate`는 커밋된 `fit.json`이 실행 기록에서 다시 계산한 판정과 같을 때만 돈다. train 판정을 H-dev 예측 전에 고정하기 위해서다.
+
+**§2 검증 항목의 구현**
+- 예측 보존은 부분집합, cycle val, H6 val에서 확인한다. H-dev는 prepare에서 쓰지 않는다(evaluate 전까지 손대지 않음).
+- T-val objective는 cycle val과 H6 val 예측의 함수다. 두 집합의 max |Δv| ≤ 1e-6이면 objective 차이도 그 범위다.
+- 첫 batch 학습 손실은 train 모드(value head BN batch 통계) 예측 차이로 확인한다. 부분집합 앞 1,024행 기준이다.
+- 두 군의 parent `W`(학습 시작 전)도 run 기록에 남는다.
+
+**prepare 출력** (`R2-D1-HEAD-WIDTH-1/1k/prepare.json`, 커밋)
+- 부분집합: 게임 수, 행 수, 게임 SHA, 5,000행 집합
+- 구성: outcome / proof 행과 가중치, ply 구간
+- 바닥값: 정확 / D4 각각 F, 묶음 수, 충돌 묶음 수
+- seed별 확장 parent: 바이트 검사, 예측 차이, train 모드 차이, 재로딩 차이, checkpoint SHA
+- `passed`가 false여도 기록은 남긴다. 그 경우 도구는 실패로 끝나고 학습은 거부된다.
+
+### 10.2 실행 절차 (데스크톱)
+
+- 각 단계는 승인 커밋을 받은 뒤 `git pull --ff-only`로 같은 HEAD에서 실행한다.
+- 실패하면 다음 단계로 넘어가지 않는다. 로그와 이미 쓴 기록은 지우지 않고 보고한다.
+- 어떤 출력도 덮어쓰지 않는다. 같은 경로가 있으면 도구가 멈춘다.
+
+1. prepare (`approved.prepare` 커밋 후; 학습 없음, GPU 추론만)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/1k"
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/1k/logs
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  test ! -e "$X/prepare.json"
+  mkdir -p "$L"
+  LOG="$L/prepare-$(date +%Y%m%d-%H%M%S).log"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  { echo __START__; rc=0; python -u scripts/h7r_d1.py prepare --d1-contract "$D/d1-1k-contract.json" \
+      --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+      --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+  git add "$X/prepare.json"
+  python scripts/h7r_d4_records.py verify-staged --expect "$X/prepare.json"
+  git commit -m "H7-R D1: 1,000-row subset, floors and widened parents (records only)"
+  git push origin feat/h7-c1
+)
+```
+
+2. 학습 6회 (`approved.train` 커밋 후; seed마다 narrow, wide 순서)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k
+  L="$R/logs"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  head="$(git rev-parse HEAD)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  for s in 31001 31002 31003; do
+    for arm in narrow wide; do
+      test "$(git rev-parse HEAD)" = "$head"
+      test ! -e "$R/$arm-$s"
+      LOG="$L/train-$arm-$s-$(date +%Y%m%d-%H%M%S).log"
+      { echo __START__; rc=0; python -u scripts/h7r_d1.py train --d1-contract "$D/d1-1k-contract.json" \
+          --arm "$arm" --seed "$s" \
+          --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+          --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
+        echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+    done
+  done
+)
+```
+
+3. train 적합 판독과 기록 커밋 (학습과 같은 HEAD에서; checkpoint는 복사하지 않는다. run 기록은 `.gitignore`의 `runs/` 규칙을 피해 `run-records/`에 둔다)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/1k"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k
+  L="$R/logs"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  test ! -e "$X/fit.json"
+  LOG="$L/fit-$(date +%Y%m%d-%H%M%S).log"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  { echo __START__; rc=0; python -u scripts/h7r_d1.py fit --d1-contract "$D/d1-1k-contract.json" 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+  expect=(--expect "$X/fit.json")
+  for s in 31001 31002 31003; do
+    for arm in narrow wide; do
+      mkdir -p "$X/run-records/$arm-$s"
+      for f in d1_train.json record.json; do
+        cp --no-clobber "$R/$arm-$s/$f" "$X/run-records/$arm-$s/$f"
+        cmp "$R/$arm-$s/$f" "$X/run-records/$arm-$s/$f"
+        expect+=(--expect "$X/run-records/$arm-$s/$f")
+      done
+    done
+  done
+  git add "$X/fit.json" "$X/run-records"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1: 1,000-row runs and the train-fit reading (records only)"
+  git push origin feat/h7-c1
+)
+```
+
+4. H-dev 판독과 기록 커밋 (`approved.evaluate` 커밋 후)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/1k"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k
+  L="$R/logs"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  test ! -e "$X/d1_eval.json"
+  LOG="$L/evaluate-$(date +%Y%m%d-%H%M%S).log"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  { echo __START__; rc=0; python -u scripts/h7r_d1.py evaluate --d1-contract "$D/d1-1k-contract.json" \
+      --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern '*.log' \
+    --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
+  python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
+  expect=(--expect "$X/d1_eval.json" --expect "$X/log_manifest.json" --expect "$X/records_manifest.json")
+  for f in "$X"/run-logs/*.log; do expect+=(--expect "$f"); done
+  git add "$X/d1_eval.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/*.log
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1: 1,000-row H-dev reading (records only)"
+  git push origin feat/h7-c1
+)
+```
+
+- 3번은 train 승인 범위다. 결과(`fit.json`)를 확인한 뒤 evaluate 승인을 따로 받는다.
+- H-dev 판독이 어떻게 나와도 이 단계의 모델은 D4 후보가 아니다. 5,000행 단계는 §7에 따라 별도 승인으로 정한다.
