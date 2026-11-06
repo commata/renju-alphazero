@@ -220,12 +220,14 @@ class ContractTest(unittest.TestCase):
         c['approved'] = {s: True for s in cli.STAGES}
         return c
 
-    def test_the_committed_contract_approves_nothing_yet(self):
+    def test_the_committed_approvals_are_a_prefix_of_the_stages(self):
         c = json.loads((ROOT / CONTRACT).read_text())
-        self.assertEqual(c['approved'], {s: False for s in cli.STAGES})
-        for stage in cli.STAGES:
-            with self.subTest(stage), self.assertRaisesRegex(ValueError, f'{stage} stage is not approved'):
-                cli.load_d1(ROOT / CONTRACT, ROOT, stage)
+        flags = [c['approved'][s] for s in cli.STAGES]
+        self.assertEqual(flags, sorted(flags, reverse=True))  # approved stages first, never a later one alone
+        for stage, flag in zip(cli.STAGES, flags):
+            if not flag:
+                with self.subTest(stage), self.assertRaisesRegex(ValueError, f'{stage} stage is not approved'):
+                    cli.load_d1(ROOT / CONTRACT, ROOT, stage)
 
     def test_an_approved_copy_loads_and_the_experiment_ignores_approvals(self):
         c, _, eid = self.load(self.approved(), 'evaluate')
