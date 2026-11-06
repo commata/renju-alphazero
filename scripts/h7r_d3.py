@@ -72,8 +72,17 @@ def git_state(root: Path) -> dict:
     return {'commit': git('rev-parse', 'HEAD'), 'dirty': bool(git('status', '--porcelain', '--untracked-files=no'))}
 
 
-def load_d3(path, root: Path, stage: str, *, check_sources: bool = True) -> tuple[dict, str]:
-    """The D3 contract, fixed, committed, ``stage`` approved, and every pinned value checked against its source."""
+def experiment_sha256(contract: dict) -> str:
+    """The identity of the experiment: the contract without its approvals (canonical JSON). Approving the next stage
+    changes the contract file but not this, so the stages' records link through it; each record also keeps the full
+    SHA-256 of the contract file it ran under, as provenance."""
+    from hybrid.h7r_d4 import digest
+    return digest({k: v for k, v in contract.items() if k != 'approved'})
+
+
+def load_d3(path, root: Path, stage: str, *, check_sources: bool = True) -> tuple[dict, str, str]:
+    """The D3 contract, fixed, committed, ``stage`` approved, and every pinned value checked against its source;
+    returns (contract, the contract file's SHA-256, the experiment SHA-256)."""
     from hybrid.h7c_nmask import committed
 
     path = Path(path)
@@ -85,6 +94,8 @@ def load_d3(path, root: Path, stage: str, *, check_sources: bool = True) -> tupl
     r2.require(isinstance(c['approved'], dict) and set(c['approved']) == set(STAGES)
                and all(type(v) is bool for v in c['approved'].values()), 'D3 approvals: one bool per stage')
     r2.require(c['approved'][stage] is True, f'the D3 {stage} stage is not approved')
+    earlier = STAGES[:STAGES.index(stage)]
+    r2.require(all(c['approved'][e] for e in earlier), f'the D3 {stage} stage needs {earlier} approved first')
     r2.require(committed(path, root), f'{path}: not committed')
     for key in ('r2_contract', 'amendment', 'epsilon'):
         r2.require(is_ref(c[key]), f'D3 {key}: a path and a full SHA-256 are required')
@@ -132,7 +143,7 @@ def load_d3(path, root: Path, stage: str, *, check_sources: bool = True) -> tupl
                and out['mask'].startswith('runs/') and out['predictions'].startswith('runs/')
                and set(out['run_dirs']) == set(SEEDS) and all(v.startswith('runs/') for v in out['run_dirs'].values()),
                'D3 outputs: the mask tensor, the predictions and the run directories under runs/')
-    return c, r2.file_sha256(path)
+    return c, r2.file_sha256(path), experiment_sha256(c)
 
 
 # --- mask ------------------------------------------------------------------------------------------------------------
@@ -142,7 +153,7 @@ def mask(args, log=print) -> dict:
     import h7r_r2_seed as seed
 
     root = Path(args.root)
-    c, csha = load_d3(args.d3_contract, root, 'mask')
+    c, csha, eid = load_d3(args.d3_contract, root, 'mask')
     out_mask, out_manifest = root / c['output']['mask'], root / c['output']['mask_manifest']
     r2.require(not out_mask.exists() and not out_manifest.exists(), 'a D3 mask output exists: never overwritten')
     state = git_state(root)
@@ -157,15 +168,15 @@ def mask(args, log=print) -> dict:
     keep, body = dm.build_outcome_mask(Path(args.cycle_rows), Path(args.cycle_cache))
     dm.save_mask(out_mask, keep, body)
     r2.require(git_state(root) == state, 'HEAD changed during the mask build')
-    record = {**body, 'contract_sha256': csha, 'git': state, 'mask_file': {'path': c['output']['mask'],
-                                                                        'sha256': r2.file_sha256(out_mask)},
+    record = {**body, 'experiment_sha256': eid, 'contract_sha256': csha, 'git': state,
+              'mask_file': {'path': c['output']['mask'], 'sha256': r2.file_sha256(out_mask)},
               'value_rows_sha256': r2.file_sha256(args.cycle_rows)}
     publish_json(out_manifest, record)
     return record
 
 
-def checked_mask(c: dict, root: Path) -> tuple[dict, dict]:
-    """The committed mask manifest of this contract and the mask tensor it names."""
+def checked_mask(c: dict, root: Path, eid: str) -> tuple[dict, dict]:
+    """The committed mask manifest of this experiment and the mask tensor it names."""
     from hybrid.h7c_nmask import committed
 
     path = root / c['output']['mask_manifest']
@@ -173,6 +184,7 @@ def checked_mask(c: dict, root: Path) -> tuple[dict, dict]:
     body = json.loads(path.read_text(encoding='utf-8'))
     r2.require(body.get('format') == dm.MASK_FORMAT and body.get('definition') == dm.DEFINITION,
                'the mask manifest is not a D3 outcome mask')
+    r2.require(body.get('experiment_sha256') == eid, 'the mask manifest belongs to another D3 experiment')
     tensor = root / c['output']['mask']
     r2.require(r2.file_sha256(tensor) == body['mask_file']['sha256'], f'{tensor}: not the mask the manifest names')
     return dm.load_mask(tensor, body), body
@@ -223,13 +235,13 @@ def train(args, log=print) -> dict:
 
     root = Path(args.root)
     started = time.monotonic()
-    c, csha = load_d3(args.d3_contract, root, 'train')
+    c, csha, eid = load_d3(args.d3_contract, root, 'train')
     r2.require(args.seed in SEEDS, f'seed {args.seed}: not a D3 seed {SEEDS}')
     run_dir = root / c['output']['run_dirs'][args.seed]
     r2.require(not run_dir.exists(), f'{run_dir} exists: never overwritten')
     state = git_state(root)
     r2.require(not state['dirty'], 'a D3 run needs a clean tracked tree')
-    keep, body = checked_mask(c, root)
+    keep, body = checked_mask(c, root, eid)
     spec = c['controls'][args.seed]
     control = pinned(root, spec['run_record'], f'control {args.seed} run record')
     log(f"[d3-train] seed {args.seed}: the c8 recipe, outcome rows masked "
@@ -246,7 +258,8 @@ def train(args, log=print) -> dict:
     r2.require(git_state(root) == state, 'HEAD changed during the D3 run')
     trainer = json.loads((run_dir / 'record.json').read_text(encoding='utf-8'))
     compared = compare_with_control(run, trainer, control, spec, body)
-    record = {'format': TRAIN_FORMAT, 'contract_sha256': csha, 'git': state, 'seed': args.seed,
+    record = {'format': TRAIN_FORMAT, 'experiment_sha256': eid, 'contract_sha256': csha, 'git': state,
+              'seed': args.seed,
               'mask': {'keep_sha256': body['keep_sha256'], 'manifest_sha256': r2.file_sha256(
                   root / c['output']['mask_manifest'])},
               'run_record_sha256': r2.file_sha256(run_dir / 'r2_train.json'),
@@ -349,7 +362,7 @@ def evaluate(args, log=print) -> dict:
 
     root = Path(args.root)
     started = time.monotonic()
-    c, csha = load_d3(args.d3_contract, root, 'evaluate')
+    c, csha, eid = load_d3(args.d3_contract, root, 'evaluate')
     out, preds_path = root / c['output']['result'], root / c['output']['predictions']
     r2.require(not out.exists() and not preds_path.exists(), 'a D3 evaluation output exists: never overwritten')
     state = git_state(root)
@@ -378,10 +391,10 @@ def evaluate(args, log=print) -> dict:
             contract['frozen_state_sha256'], args.device)
         drun = root / c['output']['run_dirs'][s]
         d3rec = json.loads((drun / 'd3_train.json').read_text(encoding='utf-8'))
-        r2.require(d3rec.get('format') == TRAIN_FORMAT and d3rec.get('contract_sha256') == csha
+        r2.require(d3rec.get('format') == TRAIN_FORMAT and d3rec.get('experiment_sha256') == eid
                    and d3rec['comparison']['passed'] and d3rec['verdict'] == 'CANDIDATE'
                    and d3rec['run_record_sha256'] == r2.file_sha256(drun / 'r2_train.json'),
-                   f'D3 run {s}: not a comparable candidate of this contract')
+                   f'D3 run {s}: not a comparable candidate of this experiment')
         rec, _ = seed.checked_training_run(drun, contract, contract_sha, amendment, amendment_sha, root, 'seed_spread',
                                            r0_sha)
         models[f'd3{s}'], _ = r2.check_model(f'd3{s}', {
@@ -408,10 +421,12 @@ def evaluate(args, log=print) -> dict:
         c['control_reproduction'], eps['seeds'], epsilon, counts, boot['level'])
     r2.require(git_state(root) == state, 'HEAD changed during the evaluation')
     preds_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({'contract_sha256': csha, 'game': stored['game'], 'ply': stored['ply'],
+    torch.save({'experiment_sha256': eid, 'contract_sha256': csha, 'game': stored['game'], 'ply': stored['ply'],
                 'models': {n: {p: torch.tensor(v, dtype=torch.float64) for p, v in pr.items()} for n, pr in pred.items()}},
                preds_path)
-    body = {'format': EVAL_FORMAT, 'contract_sha256': csha, 'git': state, 'hdev': hdev,
+    body = {'format': EVAL_FORMAT, 'experiment_sha256': eid, 'contract_sha256': csha, 'git': state, 'hdev': hdev,
+            'train_contract_sha256': {s: json.loads((root / c['output']['run_dirs'][s] / 'd3_train.json').read_text(
+                encoding='utf-8'))['contract_sha256'] for s in SEEDS},
             'control_reproduction': reproduced, 'row_diagnostic_max_abs_vs_r2_0b': diagnostic,
             'paired': paired, 'reading': result, 'references': references,
             'reference_note': c['reference'],

@@ -183,7 +183,8 @@ PY
 
 ### 2.6 D3 마스크·학습·판독 도구와 실행 계약 초안 (2026-11-05, 미승인)
 
-- R0 `PASS`(`19cb66b`)를 전제로, D3를 세 단계로 나눈다. 단계마다 계약에서 따로 승인한다(`approved.mask` / `train` / `evaluate`). [D3 계약](R2-D3-NO-OUTCOME-1/d3-contract.json)은 `fixed`이고 세 승인은 모두 `false`다.
+- R0 `PASS`(`19cb66b`)를 전제로, D3를 세 단계로 나눈다. 단계마다 계약에서 따로 승인한다(`approved.mask` / `train` / `evaluate`). 앞 단계 승인 없이 뒤 단계를 승인할 수 없다. [D3 계약](R2-D3-NO-OUTCOME-1/d3-contract.json)은 `fixed`이고 세 승인은 모두 `false`다.
+- 단계 기록은 **실험 식별값** `experiment_sha256`(승인 플래그를 뺀 계약의 정규 JSON SHA-256)으로 잇는다. 다음 단계를 승인하면 계약 파일의 SHA는 바뀌지만 이 값은 그대로다. 마스크 manifest, `d3_train.json`, 판독 결과는 이 값이 같아야 이어지고, 각 기록은 실행 당시 계약 파일의 전체 SHA(`contract_sha256`)도 출처로 함께 남긴다. 승인 외의 내용(소스 SHA 포함)이 바뀌면 식별값이 달라져 이전 단계 기록을 받지 않는다.
 - 도구: `scripts/h7r_d3.py`, 마스크 `src/hybrid/h7r_d3_mask.py`, 테스트 `tests/test_h7r_d3_run.py`
 - R0가 재현한 trainer 소스 4개(`h7c_train.py`, `h7c_train_value.py`, `h7r_r2_seed.py`, `h7r_d3_r0.py`)는 바꾸지 않는다. 계약은 그 SHA가 R0 결과의 값과 같은지도 확인한다.
 
@@ -289,7 +290,7 @@ PY
 )
 ```
 
-4. 기록 복사와 커밋 (판독과 같은 HEAD에서; checkpoint는 복사하지 않는다)
+4. 기록 복사와 커밋 (판독과 같은 HEAD에서; checkpoint는 복사하지 않는다. seed 기록은 `.gitignore`의 `runs/` 규칙을 피해 `seed-records/`에 둔다)
 
 ```bash
 (
@@ -305,11 +306,11 @@ PY
   echo __START__
   expect=(--expect "$X/d3_eval.json")
   for s in 31001 31002 31003; do
-    mkdir -p "$X/runs/seed-$s"
+    mkdir -p "$X/seed-records/seed-$s"
     for f in d3_train.json r2_train.json record.json config.json; do
-      cp --no-clobber "$R/seed-$s/$f" "$X/runs/seed-$s/$f"
-      cmp "$R/seed-$s/$f" "$X/runs/seed-$s/$f"
-      expect+=(--expect "$X/runs/seed-$s/$f")
+      cp --no-clobber "$R/seed-$s/$f" "$X/seed-records/seed-$s/$f"
+      cmp "$R/seed-$s/$f" "$X/seed-records/seed-$s/$f"
+      expect+=(--expect "$X/seed-records/seed-$s/$f")
     done
   done
   python scripts/h7r_d4_records.py copy-logs --src-dir "$R/logs" --pattern '*.log' \
@@ -317,7 +318,7 @@ PY
   python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
   expect+=(--expect "$X/log_manifest.json" --expect "$X/records_manifest.json")
   for f in "$X"/run-logs/*.log; do expect+=(--expect "$f"); done
-  git add "$X/d3_eval.json" "$X/runs" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/*.log
+  git add "$X/d3_eval.json" "$X/seed-records" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/*.log
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   git commit -m "H7-R D3: outcome ablation runs and H-dev reading (records only)"
   git push origin feat/h7-c1

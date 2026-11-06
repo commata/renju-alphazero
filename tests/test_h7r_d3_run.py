@@ -297,10 +297,20 @@ class ContractTest(unittest.TestCase):
                 d3.load_d3(ROOT / CONTRACT, ROOT, stage)
 
     def test_an_approved_copy_loads_against_the_real_records(self):
-        c, _ = self.load(self.approved(), 'train')
+        c, _, eid = self.load(self.approved(), 'train')
+        self.assertEqual(eid, d3.experiment_sha256(json.loads((ROOT / CONTRACT).read_text())))  # approvals aside
         self.assertEqual(c['controls']['31001']['total_steps'], 210)
         self.assertEqual(c['reference']['proof_contribution_same_recipe_range'], [-0.000771, 0.000656])
         self.assertEqual(c['control_reproduction']['tolerance'], 1e-5)
+
+    def test_a_stage_needs_the_earlier_stages_approved(self):
+        c = self.approved()
+        c['approved']['mask'] = False
+        with self.assertRaisesRegex(ValueError, 'train stage needs'):
+            self.load(c, 'train')
+        c['approved'].update(mask=True, train=False)
+        with self.assertRaisesRegex(ValueError, 'evaluate stage needs'):
+            self.load(c, 'evaluate')
 
     def test_wrong_pins_are_refused(self):
         cases = {
@@ -347,7 +357,7 @@ class TrainWiringTest(unittest.TestCase):
             contract = c
             args = SimpleNamespace(d3_contract='x', root=root, seed='31001', cycle_cache='cc', cycle_rows='cr',
                                    replay_cache='rc', parent='p', device='cpu')
-            with mock.patch.object(d3, 'load_d3', return_value=(contract, 's' * 64)), \
+            with mock.patch.object(d3, 'load_d3', return_value=(contract, 's' * 64, 'e' * 64)), \
                     mock.patch.object(d3, 'checked_mask', return_value=(keep, body)), \
                     mock.patch.object(d3, 'git_state', return_value={'commit': 'c' * 40, 'dirty': False}), \
                     mock.patch.object(d3, 'pinned', return_value=control), \
