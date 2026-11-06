@@ -4,7 +4,7 @@
   "status": "fixed",
   "approved": {
     "mask": true,
-    "train": false,
+    "train": true,
     "evaluate": false
   },
   "r2_contract": {

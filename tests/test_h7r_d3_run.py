@@ -289,10 +289,10 @@ class ContractTest(unittest.TestCase):
         c['approved'] = {s: True for s in d3.STAGES}
         return c
 
-    def test_the_committed_contract_approves_the_mask_stage_only(self):
+    def test_the_committed_contract_approves_mask_and_train_only(self):
         c = json.loads((ROOT / CONTRACT).read_text())
-        self.assertEqual((c['status'], c['approved']), ('fixed', {'mask': True, 'train': False, 'evaluate': False}))
-        for stage in ('train', 'evaluate'):
+        self.assertEqual((c['status'], c['approved']), ('fixed', {'mask': True, 'train': True, 'evaluate': False}))
+        for stage in ('evaluate',):
             with self.subTest(stage), self.assertRaisesRegex(ValueError, f'{stage} stage is not approved'):
                 d3.load_d3(ROOT / CONTRACT, ROOT, stage)
         unapproved = {**c, 'approved': {s: False for s in d3.STAGES}}
