@@ -1,0 +1,7 @@
+1793993594.292651569 __START__
+1793993595.478801661 [d1-prepare] subset 20 games / 1024 rows (nested 5174 rows)
+1793993601.503280484 [d1-prepare] seed 31001: widened parent FAIL (max |dv| 1.62e-06, train mode 9.54e-07, reload 0.0e+00)
+1793993603.282218762 [d1-prepare] seed 31002: widened parent FAIL (max |dv| 1.62e-06, train mode 9.54e-07, reload 0.0e+00)
+1793993605.040185861 [d1-prepare] seed 31003: widened parent FAIL (max |dv| 1.62e-06, train mode 9.54e-07, reload 0.0e+00)
+1793993605.047209822 STOP: ValueError: a widened parent failed its preservation checks: no training
+1793993605.433237676 __EXIT__ 1
