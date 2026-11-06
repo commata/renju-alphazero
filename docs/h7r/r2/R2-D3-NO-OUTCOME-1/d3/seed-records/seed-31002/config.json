@@ -1,0 +1,11 @@
+{
+ "seed": 31002,
+ "batch_size": 1024,
+ "epochs": 3.0,
+ "learning_rate": 0.0002,
+ "weight_decay": 0.0001,
+ "min_lr_ratio": 0.05,
+ "augment_d4": true,
+ "evaluations": 10,
+ "h6_guard_ratio": 1.05
+}

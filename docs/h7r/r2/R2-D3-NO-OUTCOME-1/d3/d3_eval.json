@@ -1,0 +1,689 @@
+{
+ "format": "h7r-d3-eval-v1",
+ "experiment_sha256": "bc386b1491d5da03856c786817767bf395d832cb8316f1e9a18a9196b667f2d6",
+ "contract_sha256": "07113ca8ad0ebfd2b051985e118406a33ebd5b8a8e2ff327eb0acf3f973b9f54",
+ "git": {
+  "commit": "8df3b386bfeb6c73da3e8881ae904af4bdc37be4",
+  "dirty": false
+ },
+ "hdev": {
+  "contract_sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+  "cache_binding_sha256": "9724d878eed46c9b2a803d212671bc1bebb2c024ed7ba44398468dfd243d4886",
+  "games_sha256": "93b05a037f20c60104268bc11fa572dc999496ec966bbede482394a3c4bab3f6",
+  "rows_sha256": "ed0e4be2a212d7bcce72c501e4674d4376c1c8293fd1f079c7e17b4d99897131",
+  "cache_labels_sha256": "c903d285f1e5e447a4053407edbb57bbc83ecdc61dd140657b1388e6502aa2ef",
+  "test_sha256": "c3b389dad321b82ea98670d7effb1a717d3642abc95718d53b2692dfa5e556fd"
+ },
+ "train_contract_sha256": {
+  "31001": "3ecc7670f8337655a7e361b569e178a631f180d31518a56affaab854b2478877",
+  "31002": "3ecc7670f8337655a7e361b569e178a631f180d31518a56affaab854b2478877",
+  "31003": "3ecc7670f8337655a7e361b569e178a631f180d31518a56affaab854b2478877"
+ },
+ "control_reproduction": {
+  "tolerance": 1e-05,
+  "seeds": {
+   "31001": [
+    {
+     "metric": 0,
+     "recomputed": 0.399295328136391,
+     "recorded": 0.399295328136391,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 1,
+     "recomputed": 0.7458753055253842,
+     "recorded": 0.7458753055253842,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 2,
+     "recomputed": 0.10623547485159036,
+     "recorded": 0.10623547485159036,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 3,
+     "recomputed": 0.4221562767864076,
+     "recorded": 0.4221562767864076,
+     "abs_difference": 0.0,
+     "within": true
+    }
+   ],
+   "31002": [
+    {
+     "metric": 0,
+     "recomputed": 0.39862238085730595,
+     "recorded": 0.39862238085730595,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 1,
+     "recomputed": 0.7473509079230262,
+     "recorded": 0.7473509079230262,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 2,
+     "recomputed": 0.10383725729146132,
+     "recorded": 0.10383725729146132,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 3,
+     "recomputed": 0.422146069557071,
+     "recorded": 0.422146069557071,
+     "abs_difference": 0.0,
+     "within": true
+    }
+   ],
+   "31003": [
+    {
+     "metric": 0,
+     "recomputed": 0.3991299627982585,
+     "recorded": 0.3991299627982585,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 1,
+     "recomputed": 0.7451688968666398,
+     "recorded": 0.7451688968666398,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 2,
+     "recomputed": 0.1058202937885,
+     "recorded": 0.1058202937885,
+     "abs_difference": 0.0,
+     "within": true
+    },
+    {
+     "metric": 3,
+     "recomputed": 0.42252713738400577,
+     "recorded": 0.42252713738400577,
+     "abs_difference": 0.0,
+     "within": true
+    }
+   ]
+  },
+  "reproduced": true,
+  "failures": []
+ },
+ "row_diagnostic_max_abs_vs_r2_0b": {
+  "31001": {
+   "raw": 0.0,
+   "d4": 0.0
+  },
+  "31002": {
+   "raw": 0.0,
+   "d4": 0.0
+  },
+  "31003": {
+   "raw": 0.0,
+   "d4": 0.0
+  }
+ },
+ "paired": {
+  "31001": {
+   "control": 0.399295328136391,
+   "d3": 0.3987773623412246,
+   "difference": -0.0005179657951664418,
+   "improvement": 0.0005179657951664418,
+   "ci95": [
+    -0.002850530559694363,
+    0.0018780958111353973
+   ],
+   "zero_denominator_resamples": 0
+  },
+  "31002": {
+   "control": 0.39862238085730595,
+   "d3": 0.40045202289437304,
+   "difference": 0.0018296420370670918,
+   "improvement": -0.0018296420370670918,
+   "ci95": [
+    -0.001640326590957732,
+    0.005324313425524998
+   ],
+   "zero_denominator_resamples": 0
+  },
+  "31003": {
+   "control": 0.3991299627982585,
+   "d3": 0.39867091748372635,
+   "difference": -0.00045904531453216935,
+   "improvement": 0.00045904531453216935,
+   "ci95": [
+    -0.002410468966984558,
+    0.001569268253599086
+   ],
+   "zero_denominator_resamples": 0
+  }
+ },
+ "reading": {
+  "label": "NOT_ESTABLISHED",
+  "hold": [],
+  "control_seed_range": 0.0006729472790850677,
+  "epsilon": 0.0019461168062766864,
+  "seeds": {
+   "31001": {
+    "improvement": 0.0005179657951664418,
+    "beyond_epsilon": false,
+    "upper95_below_0": false
+   },
+   "31002": {
+    "improvement": -0.0018296420370670918,
+    "beyond_epsilon": false,
+    "upper95_below_0": false
+   },
+   "31003": {
+    "improvement": 0.00045904531453216935,
+    "beyond_epsilon": false,
+    "upper95_below_0": false
+   }
+  }
+ },
+ "references": {
+  "31001": {
+   "d3_vs_c5": {
+    "difference": -0.005265875611157822,
+    "ci95": [
+     -0.009071327098026188,
+     -0.001348051225602002
+    ],
+    "zero_denominator_resamples": 0
+   },
+   "components": [
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/outcome",
+      "aggregate": "macro"
+     },
+     "difference": 0.015595259309633458
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/proof",
+      "aggregate": "macro"
+     },
+     "difference": -0.014594302438672824
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "pooled"
+     },
+     "difference": 0.00592755929692429
+    }
+   ],
+   "decomposition_kind": {
+    "outcome": {
+     "contribution": 0.00804171320711701,
+     "rows": 13805,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       0.00622714263573957,
+       0.009886608079047485
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof": {
+     "contribution": -0.008559679002283441,
+     "rows": 1474,
+     "games_with_rows": 374,
+     "ci95": {
+      "ci95": [
+       -0.009914760583832463,
+       -0.007235996994553903
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   },
+   "decomposition_kind_ply": {
+    "outcome|5-20": {
+     "contribution": 0.001339286707080866,
+     "rows": 5551,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       0.0003132685434525472,
+       0.0023695283531450398
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|20-40": {
+     "contribution": 0.0037645102036330262,
+     "rows": 3289,
+     "games_with_rows": 324,
+     "ci95": {
+      "ci95": [
+       0.0029616927699369685,
+       0.004617508107618973
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|40-80": {
+     "contribution": 0.0018060306405788071,
+     "rows": 2281,
+     "games_with_rows": 99,
+     "ci95": {
+      "ci95": [
+       0.001322595696994488,
+       0.002332933623688011
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|80+": {
+     "contribution": 0.001131885655824302,
+     "rows": 2684,
+     "games_with_rows": 39,
+     "ci95": {
+      "ci95": [
+       0.0006916710065707324,
+       0.0016333746015882284
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|5-20": {
+     "contribution": -0.0026833937509861527,
+     "rows": 256,
+     "games_with_rows": 141,
+     "ci95": {
+      "ci95": [
+       -0.0034763251531561025,
+       -0.0019445651964893446
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|20-40": {
+     "contribution": -0.004802275980989428,
+     "rows": 863,
+     "games_with_rows": 257,
+     "ci95": {
+      "ci95": [
+       -0.005928636545183576,
+       -0.0037038469137594004
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|40-80": {
+     "contribution": -0.0010872024236502772,
+     "rows": 246,
+     "games_with_rows": 70,
+     "ci95": {
+      "ci95": [
+       -0.0016688732600063073,
+       -0.0005244853152988262
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|80+": {
+     "contribution": 1.3193153342414877e-05,
+     "rows": 109,
+     "games_with_rows": 25,
+     "ci95": {
+      "ci95": [
+       -0.00017593665034069207,
+       0.0002231774826396352
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   }
+  },
+  "31002": {
+   "d3_vs_c5": {
+    "difference": -0.003591215058009356,
+    "ci95": [
+     -0.008420155018792086,
+     0.0013613889094253795
+    ],
+    "zero_denominator_resamples": 0
+   },
+   "components": [
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/outcome",
+      "aggregate": "macro"
+     },
+     "difference": 0.031161027783756734
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/proof",
+      "aggregate": "macro"
+     },
+     "difference": -0.021168460278478976
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "pooled"
+     },
+     "difference": 0.010147505842292626
+    }
+   ],
+   "decomposition_kind": {
+    "outcome": {
+     "contribution": 0.014416941824613255,
+     "rows": 13805,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       0.011997303029622548,
+       0.016911758589390622
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof": {
+     "contribution": -0.012587299787546262,
+     "rows": 1474,
+     "games_with_rows": 374,
+     "ci95": {
+      "ci95": [
+       -0.01484041592632026,
+       -0.010402839460627911
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   },
+   "decomposition_kind_ply": {
+    "outcome|5-20": {
+     "contribution": 0.00404244860224633,
+     "rows": 5551,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       0.0026947122946680406,
+       0.005430468453824766
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|20-40": {
+     "contribution": 0.006208242195836796,
+     "rows": 3289,
+     "games_with_rows": 324,
+     "ci95": {
+      "ci95": [
+       0.005051395000730353,
+       0.007438762644322608
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|40-80": {
+     "contribution": 0.0026453537207165546,
+     "rows": 2281,
+     "games_with_rows": 99,
+     "ci95": {
+      "ci95": [
+       0.001969874262972754,
+       0.003381722643767061
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|80+": {
+     "contribution": 0.0015208973058135676,
+     "rows": 2684,
+     "games_with_rows": 39,
+     "ci95": {
+      "ci95": [
+       0.0009305491400118331,
+       0.002187722499448923
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|5-20": {
+     "contribution": -0.004593502895747206,
+     "rows": 256,
+     "games_with_rows": 141,
+     "ci95": {
+      "ci95": [
+       -0.006138518983061407,
+       -0.0031755851268185364
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|20-40": {
+     "contribution": -0.006735591457321496,
+     "rows": 863,
+     "games_with_rows": 257,
+     "ci95": {
+      "ci95": [
+       -0.008455529174850963,
+       -0.00504897410343053
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|40-80": {
+     "contribution": -0.0012765439163998254,
+     "rows": 246,
+     "games_with_rows": 70,
+     "ci95": {
+      "ci95": [
+       -0.0020157433191723174,
+       -0.0005612333869017065
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|80+": {
+     "contribution": 1.8338481922265657e-05,
+     "rows": 109,
+     "games_with_rows": 25,
+     "ci95": {
+      "ci95": [
+       -0.00021852990255325527,
+       0.0002819759775001196
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   }
+  },
+  "31003": {
+   "d3_vs_c5": {
+    "difference": -0.005372320468656044,
+    "ci95": [
+     -0.00874957787261829,
+     -0.0018614650693571846
+    ],
+    "zero_denominator_resamples": 0
+   },
+   "components": [
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/outcome",
+      "aggregate": "macro"
+     },
+     "difference": 0.014982869834231027
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/proof",
+      "aggregate": "macro"
+     },
+     "difference": -0.012589706775986892
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "pooled"
+     },
+     "difference": 0.004162928294114021
+    }
+   ],
+   "decomposition_kind": {
+    "outcome": {
+     "contribution": 0.006855838662127431,
+     "rows": 13805,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       0.005380444718150425,
+       0.008387769824005001
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof": {
+     "contribution": -0.007314883976659549,
+     "rows": 1474,
+     "games_with_rows": 374,
+     "ci95": {
+      "ci95": [
+       -0.00844073088502873,
+       -0.006210023660931263
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   },
+   "decomposition_kind_ply": {
+    "outcome|5-20": {
+     "contribution": 0.0025002464380629993,
+     "rows": 5551,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       0.0016570337150435249,
+       0.003361708928638775
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|20-40": {
+     "contribution": 0.002655615372933833,
+     "rows": 3289,
+     "games_with_rows": 324,
+     "ci95": {
+      "ci95": [
+       0.0018701688386445576,
+       0.003487938296844399
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|40-80": {
+     "contribution": 0.0009566082719710814,
+     "rows": 2281,
+     "games_with_rows": 99,
+     "ci95": {
+      "ci95": [
+       0.0005554933651854424,
+       0.0013860594837472472
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "outcome|80+": {
+     "contribution": 0.0007433685791595171,
+     "rows": 2684,
+     "games_with_rows": 39,
+     "ci95": {
+      "ci95": [
+       0.00033620860451218164,
+       0.001198814379801286
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|5-20": {
+     "contribution": -0.0028403737042777943,
+     "rows": 256,
+     "games_with_rows": 141,
+     "ci95": {
+      "ci95": [
+       -0.0037234449750895332,
+       -0.002038520787516013
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|20-40": {
+     "contribution": -0.0036478432739005502,
+     "rows": 863,
+     "games_with_rows": 257,
+     "ci95": {
+      "ci95": [
+       -0.004431594210028842,
+       -0.0028912977536133416
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|40-80": {
+     "contribution": -0.0007123721814809879,
+     "rows": 246,
+     "games_with_rows": 70,
+     "ci95": {
+      "ci95": [
+       -0.001089081582128452,
+       -0.00035349067429149756
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof|80+": {
+     "contribution": -0.00011429481700021568,
+     "rows": 109,
+     "games_with_rows": 25,
+     "ci95": {
+      "ci95": [
+       -0.00023217974868768506,
+       -4.732166808012624e-06
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   }
+  }
+ },
+ "reference_note": {
+  "c5": "D3 - c5 with its interval, reported and never ruled",
+  "components": "outcome / proof macro and pooled differences, reported without epsilon",
+  "decomposition": "additive kind and kind x ply contributions (hybrid.h7r_d3), descriptive",
+  "proof_contribution_same_recipe_range": [
+   -0.000771,
+   0.000656
+  ],
+  "note": "the proof contribution range of same-recipe seed pairs (prep section 4.3): a descriptive reference beside the per-kind results, never a threshold or part of the ruling"
+ },
+ "predictions": {
+  "path": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/predictions.pt",
+  "sha256": "e88dd87aa100d99b560ba2a88f561e1e1cc1c60f4be9a0828c6bd3f715671856"
+ },
+ "minutes": 0.36,
+ "scope": "development diagnosis of R2-D3-NO-OUTCOME-1; no strength, promotion, V9 or D4 ruling"
+}

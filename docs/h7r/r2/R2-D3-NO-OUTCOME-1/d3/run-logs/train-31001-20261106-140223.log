@@ -1,0 +1,15 @@
+1793941343.270464344 __START__
+1793941344.019171582 [d3-train] seed 31001: the c8 recipe, outcome rows masked (30,792 of 35,816 cycle train rows), original selection
+1793941355.192865201 [h7r-r2-seed] seed 31001: c8 recipe, 35,816 cycle / 2,683,098 replay train rows, 210 steps
+1793941555.757196672 [h7c-value] step 21/210 objective 0.46386 (cycle 0.34523168206214905, H6 0.58249)
+1793941557.717708754 [h7c-value] step 42/210 objective 0.46630 (cycle 0.3489100933074951, H6 0.58369)
+1793941559.625249541 [h7c-value] step 63/210 objective 0.45445 (cycle 0.33332693576812744, H6 0.57558)
+1793941561.610670707 [h7c-value] step 84/210 objective 0.45987 (cycle 0.34173259139060974, H6 0.57801)
+1793941563.541278294 [h7c-value] step 105/210 objective 0.46126 (cycle 0.34393832087516785, H6 0.57858)
+1793941565.479285655 [h7c-value] step 126/210 objective 0.45763 (cycle 0.3394283652305603, H6 0.57584)
+1793941567.445351182 [h7c-value] step 147/210 objective 0.46085 (cycle 0.3441770076751709, H6 0.57752)
+1793941569.364687136 [h7c-value] step 168/210 objective 0.46241 (cycle 0.34594014286994934, H6 0.57888)
+1793941571.326551583 [h7c-value] step 189/210 objective 0.46218 (cycle 0.3455851674079895, H6 0.57877)
+1793941573.251178873 [h7c-value] step 210/210 objective 0.46108 (cycle 0.3439294695854187, H6 0.57823)
+1793941573.307939137 [d3-train] seed 31001 CANDIDATE best step 63; control comparison {'assignment_sha256': True, 'assignment': True, 'total_steps': True, 'train_rows_per_epoch': True, 'config': True, 'selection_original': True, 'mask_every_epoch': True}
+1793941573.804931442 __EXIT__ 0

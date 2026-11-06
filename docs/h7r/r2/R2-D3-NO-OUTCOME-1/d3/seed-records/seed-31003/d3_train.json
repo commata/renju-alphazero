@@ -1,0 +1,47 @@
+{
+ "format": "h7r-d3-train-v1",
+ "experiment_sha256": "bc386b1491d5da03856c786817767bf395d832cb8316f1e9a18a9196b667f2d6",
+ "contract_sha256": "3ecc7670f8337655a7e361b569e178a631f180d31518a56affaab854b2478877",
+ "git": {
+  "commit": "f0c24bf0e7ad46edb792f7ee542e6f68c60f6e4d",
+  "dirty": false
+ },
+ "seed": "31003",
+ "mask": {
+  "keep_sha256": "4a2ae7136519a9012799d31c408b5ecdf31dc0d6f684fa6189a87145d8b52203",
+  "manifest_sha256": "41697e654d5a06af5c55828feb268cb538494388f09f0774075e4e4b782e04fd"
+ },
+ "run_record_sha256": "19c447ca088774fce4bdcb10fbd6edd9e4d60798abe896336d5d673ff6796bde",
+ "trainer_record_sha256": "68c9632d2d232b2484dde8e03ab2db549787e8c4ca849799ab8440340b57737c",
+ "verdict": "CANDIDATE",
+ "best_step": 42,
+ "candidate": {
+  "checkpoint_sha256": "a56cd6993afe56d04e7065235367e4da4b9b0005d4786c430c5454b78c110a55",
+  "metadata_sha256": "a2decec7b3f12ae1699122b0e84e33c7bc87763cb53c6714ac3052b38b293489"
+ },
+ "control": {
+  "run_record_sha256": "ce87259cbfd6a73b9a15bdd42cab85e415f804f13d3ab806e6ccc8d1f0e85be7",
+  "best_step": 84
+ },
+ "comparison": {
+  "checks": {
+   "assignment_sha256": true,
+   "assignment": true,
+   "total_steps": true,
+   "train_rows_per_epoch": true,
+   "config": true,
+   "selection_original": true,
+   "mask_every_epoch": true
+  },
+  "passed": true
+ },
+ "selection": {
+  "mode": "original",
+  "cycle_metric": "original cycle val weighted MSE (outcome and proof rows, their weights)",
+  "objective": "mean of the original cycle val WMSE and the H6 val WMSE",
+  "guard": "H6 val WMSE <= h6_guard_ratio x the parent's",
+  "best": "the eligible evaluation with the lowest objective (the first one on a tie)",
+  "diagnostic": "cycle_wmse_masked: the masked cycle val WMSE, never in the objective"
+ },
+ "minutes": 3.83
+}

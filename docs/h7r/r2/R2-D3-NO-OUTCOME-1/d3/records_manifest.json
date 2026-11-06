@@ -1,0 +1,131 @@
+{
+ "format": "h7r-d4-records-manifest-v1",
+ "folder": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3",
+ "files": [
+  {
+   "path": "d3_eval.json",
+   "bytes": 15676,
+   "sha256": "6f494fef685dc6faab200fd353b0bb6a654aa186cd1b4d815a0734a2d30187e6"
+  },
+  {
+   "path": "log_manifest.json",
+   "bytes": 2941,
+   "sha256": "1ed4cf4fafc500626f8b354976c3f7240474133a881853d5595bddfea67e696d"
+  },
+  {
+   "path": "mask.json",
+   "bytes": 2928,
+   "sha256": "41697e654d5a06af5c55828feb268cb538494388f09f0774075e4e4b782e04fd"
+  },
+  {
+   "path": "run-logs/evaluate-20261106-135549.log",
+   "bytes": 140,
+   "sha256": "f67fb56973acbc1db5b975718071040e0748733323b276f58c9bce672d98d11b"
+  },
+  {
+   "path": "run-logs/evaluate-20261106-151036.log",
+   "bytes": 140,
+   "sha256": "a7be047aa9d70c11b6edd4da5758bd9a29f07d003122724e9fd55d7151ead66c"
+  },
+  {
+   "path": "run-logs/evaluate-20261106-152219.log",
+   "bytes": 582,
+   "sha256": "f802650b55ad7ccecf3c6a6208417582fa5ff8a71886b80715df0a266b53858c"
+  },
+  {
+   "path": "run-logs/mask-20261106-135043.log",
+   "bytes": 185,
+   "sha256": "1ef65b979ae2e9225858232c226ee31f2891f758ebe4f4e94017b77abca7d72e"
+  },
+  {
+   "path": "run-logs/mask-20261106-135209.log",
+   "bytes": 233,
+   "sha256": "33ad4b82bfede3d5f32403903d62292760aab62c970f9e7a12dcae7c06c19120"
+  },
+  {
+   "path": "run-logs/train-31001-20261106-135050.log",
+   "bytes": 185,
+   "sha256": "92f799e1fc1748714b32d0d21b0d07eaacba1976065bfee153e3d6a213f435e1"
+  },
+  {
+   "path": "run-logs/train-31001-20261106-135300.log",
+   "bytes": 137,
+   "sha256": "466abb82dc4da8829f9625dc3745d6142382706db25b3f45e7232905be9c09ab"
+  },
+  {
+   "path": "run-logs/train-31001-20261106-140223.log",
+   "bytes": 1596,
+   "sha256": "eb965b58bff83b3422265a91a10af425c5d92ab6ba225c48a00a369c54bdefdd"
+  },
+  {
+   "path": "run-logs/train-31002-20261106-140613.log",
+   "bytes": 1598,
+   "sha256": "fd27558948e5fad9589e99c44f72350682c5c5238cdbcce5bc736ecb9602d5ff"
+  },
+  {
+   "path": "run-logs/train-31003-20261106-141002.log",
+   "bytes": 1594,
+   "sha256": "0720e248f6cfaaae4a3604941fe8f05342cc4983d4d43f37a50e927d23a6c954"
+  },
+  {
+   "path": "seed-records/seed-31001/config.json",
+   "bytes": 196,
+   "sha256": "f7c094d9545a8e56d191f289b803c0091a766c47eff7b4491958ece12bbdcbab"
+  },
+  {
+   "path": "seed-records/seed-31001/d3_train.json",
+   "bytes": 1764,
+   "sha256": "8ec453a18eb53e2e5b376035bf78b7f20136f146bc1ae696b0c39a01c5856f46"
+  },
+  {
+   "path": "seed-records/seed-31001/r2_train.json",
+   "bytes": 3850,
+   "sha256": "3a16825f997552e1ce049ad14a527d2a18d2cc41bb68e1079bc70e35e44f8219"
+  },
+  {
+   "path": "seed-records/seed-31001/record.json",
+   "bytes": 11406,
+   "sha256": "aadd0963884eae9798bb8754b03febbc1899d13f0a65b4043ff78da23d29707c"
+  },
+  {
+   "path": "seed-records/seed-31002/config.json",
+   "bytes": 196,
+   "sha256": "a3f83248e99eee4cdde79869085eae021c91e549b6b4b67ad4fff7a3e951f156"
+  },
+  {
+   "path": "seed-records/seed-31002/d3_train.json",
+   "bytes": 1762,
+   "sha256": "0da2717737e97c74c3478a88ffd80305f748cf506ebf466f721c503e08c574f4"
+  },
+  {
+   "path": "seed-records/seed-31002/r2_train.json",
+   "bytes": 3848,
+   "sha256": "a68b9e60712c256db3273921ec35bc6226b2142d8adaadbe22e4dd17512c62ab"
+  },
+  {
+   "path": "seed-records/seed-31002/record.json",
+   "bytes": 11401,
+   "sha256": "12a7305880f1a5fe0d4ad0d411716f80f7c037518dedaed0f79623211bdb6f59"
+  },
+  {
+   "path": "seed-records/seed-31003/config.json",
+   "bytes": 196,
+   "sha256": "57870435a6a5da36d7b3b3620f2d040cf889a692133fa336fb11c6402dbc07a2"
+  },
+  {
+   "path": "seed-records/seed-31003/d3_train.json",
+   "bytes": 1763,
+   "sha256": "d1f2e415efda552ad15eaf9704a2d4fc4ba56db9fb4be53c90ccb15800df9c14"
+  },
+  {
+   "path": "seed-records/seed-31003/r2_train.json",
+   "bytes": 3846,
+   "sha256": "19c447ca088774fce4bdcb10fbd6edd9e4d60798abe896336d5d673ff6796bde"
+  },
+  {
+   "path": "seed-records/seed-31003/record.json",
+   "bytes": 11397,
+   "sha256": "68c9632d2d232b2484dde8e03ab2db549787e8c4ca849799ab8440340b57737c"
+  }
+ ]
+}

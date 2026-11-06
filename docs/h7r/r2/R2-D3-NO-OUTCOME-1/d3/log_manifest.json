@@ -1,0 +1,67 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "*.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/evaluate-20261106-135549.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/evaluate-20261106-135549.log",
+   "bytes": 140,
+   "sha256": "f67fb56973acbc1db5b975718071040e0748733323b276f58c9bce672d98d11b"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/evaluate-20261106-151036.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/evaluate-20261106-151036.log",
+   "bytes": 140,
+   "sha256": "a7be047aa9d70c11b6edd4da5758bd9a29f07d003122724e9fd55d7151ead66c"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/evaluate-20261106-152219.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/evaluate-20261106-152219.log",
+   "bytes": 582,
+   "sha256": "f802650b55ad7ccecf3c6a6208417582fa5ff8a71886b80715df0a266b53858c"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/mask-20261106-135043.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/mask-20261106-135043.log",
+   "bytes": 185,
+   "sha256": "1ef65b979ae2e9225858232c226ee31f2891f758ebe4f4e94017b77abca7d72e"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/mask-20261106-135209.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/mask-20261106-135209.log",
+   "bytes": 233,
+   "sha256": "33ad4b82bfede3d5f32403903d62292760aab62c970f9e7a12dcae7c06c19120"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/train-31001-20261106-135050.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/train-31001-20261106-135050.log",
+   "bytes": 185,
+   "sha256": "92f799e1fc1748714b32d0d21b0d07eaacba1976065bfee153e3d6a213f435e1"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/train-31001-20261106-135300.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/train-31001-20261106-135300.log",
+   "bytes": 137,
+   "sha256": "466abb82dc4da8829f9625dc3745d6142382706db25b3f45e7232905be9c09ab"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/train-31001-20261106-140223.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/train-31001-20261106-140223.log",
+   "bytes": 1596,
+   "sha256": "eb965b58bff83b3422265a91a10af425c5d92ab6ba225c48a00a369c54bdefdd"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/train-31002-20261106-140613.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/train-31002-20261106-140613.log",
+   "bytes": 1598,
+   "sha256": "fd27558948e5fad9589e99c44f72350682c5c5238cdbcce5bc736ecb9602d5ff"
+  },
+  {
+   "original": "runs/h7r/R2-D3-NO-OUTCOME-1/d3/logs/train-31003-20261106-141002.log",
+   "copy": "docs/h7r/r2/R2-D3-NO-OUTCOME-1/d3/run-logs/train-31003-20261106-141002.log",
+   "bytes": 1594,
+   "sha256": "0720e248f6cfaaae4a3604941fe8f05342cc4983d4d43f37a50e927d23a6c954"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
