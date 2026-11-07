@@ -1,0 +1,49 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "*-20261107-133923.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs/fit-20261107-133923.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/train-logs/fit-20261107-133923.log",
+   "bytes": 215,
+   "sha256": "1543329bf98ba144d548fe065e61d1ece4945067517a756cd16eda18ce6c6882"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs/train-narrow-31001-20261107-133923.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/train-logs/train-narrow-31001-20261107-133923.log",
+   "bytes": 1303,
+   "sha256": "20a07fe179d2336fe2d00832665f063f4a1abb9867e901b97d77e9147a7e8c84"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs/train-narrow-31002-20261107-133923.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/train-logs/train-narrow-31002-20261107-133923.log",
+   "bytes": 1304,
+   "sha256": "c4bea6cf3a18b59c53403a3de504639cd4b4c5642be6dfd5bf113ad6fcca32d0"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs/train-narrow-31003-20261107-133923.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/train-logs/train-narrow-31003-20261107-133923.log",
+   "bytes": 1303,
+   "sha256": "8931fb30e41c86fdb0497210b4611da5555aa1f0881c6cf86e2e7fbb24b83e2a"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs/train-wide-31001-20261107-133923.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/train-logs/train-wide-31001-20261107-133923.log",
+   "bytes": 1298,
+   "sha256": "2a0d15709c31571de1fdafd48f76ce8f1ed9d17c2a30c8cb8c9e4647ca3180e9"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs/train-wide-31002-20261107-133923.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/train-logs/train-wide-31002-20261107-133923.log",
+   "bytes": 1295,
+   "sha256": "737ba89317f586dc3759e88f9a128904d57220442685a211fd34749093165419"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs/train-wide-31003-20261107-133923.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/train-logs/train-wide-31003-20261107-133923.log",
+   "bytes": 1299,
+   "sha256": "7e7caecf0bbe81bb0c36b64b72494974cc7c48b5f68fe548d44ffd25cc7e139e"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

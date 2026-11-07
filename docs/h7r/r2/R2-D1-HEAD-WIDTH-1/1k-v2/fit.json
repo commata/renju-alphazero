@@ -1,0 +1,103 @@
+{
+ "format": "h7r-d1-fit-v1",
+ "experiment_sha256": "fc309887e4d7b24a0785f6c5237e7a488fe6e07077f060d039aad3733a06370d",
+ "contract_sha256": "085be6a9eab8ba40ad3e1ba73193cb3476f54c037ac484a672845047e59acbb3",
+ "reading": {
+  "category": "WIDTH_EFFECT",
+  "order": [
+   "WIDTH_EFFECT",
+   "BOTH_FIT",
+   "SEED_DISAGREEMENT",
+   "NEITHER_FIT",
+   "MIXED_FIT"
+  ],
+  "floor_d4": 0.001117942992822723,
+  "margin": 0.01,
+  "threshold": 0.011117942992822724,
+  "success": {
+   "narrow": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   },
+   "wide": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   }
+  },
+  "wide_minus_narrow": {
+   "31001": -0.05908164381980896,
+   "31002": -0.06284424662590027,
+   "31003": -0.06395521759986877
+  },
+  "narrow_seed_range": 0.001956045627593994
+ },
+ "parent_fit": {
+  "narrow": {
+   "31001": 0.37417787313461304,
+   "31002": 0.37417787313461304,
+   "31003": 0.37417787313461304
+  },
+  "wide": {
+   "31001": 0.37417787313461304,
+   "31002": 0.37417787313461304,
+   "31003": 0.37417787313461304
+  }
+ },
+ "selected_fit": {
+  "narrow": {
+   "31001": 0.357437402009964,
+   "31002": 0.3483973443508148,
+   "31003": 0.3487079441547394
+  },
+  "wide": {
+   "31001": 0.2882922291755676,
+   "31002": 0.3091810941696167,
+   "31003": 0.2846055328845978
+  }
+ },
+ "selected_step": {
+  "narrow": {
+   "31001": 21,
+   "31002": 105,
+   "31003": 105
+  },
+  "wide": {
+   "31001": 147,
+   "31002": 63,
+   "31003": 168
+  }
+ },
+ "cost": {
+  "narrow": {
+   "31001": {
+    "seconds": 239.91,
+    "per_step": 1.1425
+   },
+   "31002": {
+    "seconds": 238.41,
+    "per_step": 1.1353
+   },
+   "31003": {
+    "seconds": 238.43,
+    "per_step": 1.1354
+   }
+  },
+  "wide": {
+   "31001": {
+    "seconds": 237.31,
+    "per_step": 1.13
+   },
+   "31002": {
+    "seconds": 238.38,
+    "per_step": 1.1351
+   },
+   "31003": {
+    "seconds": 237.03,
+    "per_step": 1.1287
+   }
+  }
+ },
+ "note": "the reading uses the last-step state of both arms (same step); the selected checkpoints are recorded apart and are what the H-dev reading uses"
+}
