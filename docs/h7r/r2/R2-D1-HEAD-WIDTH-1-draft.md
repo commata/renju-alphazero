@@ -67,6 +67,10 @@
   - 확장 parent의 T-val objective와 c5의 T-val objective 차이 ≤ 1e-6
 - 같은 seed의 첫 batch에서 두 군의 학습 손실 차이 ≤ 1e-6
 - 기록: 확장 parent의 state 해시, 새 채널 초기화 seed, 위 검사값
+- **실제로 구현한 검사는 이 계획과 다르다**(§10.1, v2는 §11.2).
+  - 예측 검사는 검사한 행(부분집합, cycle val, H6 val 표본; H-dev는 쓰지 않음)에서의 초기 예측 보존 확인이다.
+  - T-val objective와 첫 batch 학습 손실은 직접 비교하지 않는다. 예측 차이의 상한은 제곱손실 차이의 상한과 다르고, H6 val은 표본만 본다.
+  - 첫 batch 항목은 train 모드 예측 보존 확인으로 바뀌었다: 부분집합 앞 1,024행을 한 batch로 추론한다. 실제 학습 첫 batch의 replay 혼합과 augmentation은 적용하지 않는다.
 
 ## 3. 자료 부분집합
 
@@ -218,9 +222,9 @@
    - `fit`은 train 승인으로 돈다. `evaluate`는 커밋된 `fit.json`이 실행 기록에서 다시 계산한 판정과 같을 때만 돈다. train 판정을 H-dev 예측 전에 고정하기 위해서다.
 
 **§2 검증 항목의 구현** (v2 기준, 자세한 내용은 §11.2)
-- 예측 보존은 부분집합, cycle val, H6 val 표본에서 확인한다. H-dev는 prepare에서 쓰지 않는다(evaluate 전까지 손대지 않음).
-- T-val objective는 cycle val과 H6 val 예측의 함수다. float64 차이가 1e-12 이하이면 objective도 그 범위에서 같다.
-- 첫 batch 학습 손실은 train 모드(value head BN batch 통계) 예측 차이로 확인한다. 부분집합 앞 1,024행을 한 batch로 쓴다.
+- 검사한 행에서 초기 예측 보존을 확인한다: 부분집합 전체, cycle val 전체, H6 val 고정 표본 4,096행. H-dev는 prepare에서 쓰지 않는다(evaluate 전까지 손대지 않음).
+- T-val objective의 보존은 따로 주장하지 않는다. 예측 차이의 상한은 제곱손실 차이의 상한과 다르고, H6 val은 표본만 검사한다.
+- train 모드 예측 보존을 확인한다: 부분집합 앞 1,024행을 한 batch로 value head BN batch 통계로 추론한다. 실제 학습 첫 batch(replay 혼합, augmentation)의 손실을 비교하는 검사는 아니다.
 - 두 군의 parent `W`(학습 시작 전)도 run 기록에 남는다.
 
 **prepare 출력** (`R2-D1-HEAD-WIDTH-1/1k-v2/prepare.json`, 커밋)
@@ -240,7 +244,9 @@
 - 실패하면 다음 단계로 넘어가지 않는다. 로그와 이미 쓴 기록은 지우지 않고 보고한다.
 - 어떤 출력도 덮어쓰지 않는다. 같은 경로가 있으면 도구가 멈춘다.
 
-1. prepare (`approved.prepare` 커밋 후; 학습 없음. c5와 확장 parent 3개의 CPU float64 추론과 GPU 추론만)
+1. prepare와 기록 커밋 (`approved.prepare` 커밋 후; 학습 없음. c5와 확장 parent 3개의 CPU float64 추론과 GPU 추론만)
+   - prepare가 실패해도 기록 단계까지 진행한다. 실행 결과(종료 코드)는 저장했다가 마지막에 그대로 반환한다.
+   - 이번 시도의 로그는 `1k-v2/prepare-logs/`에 시도별 manifest와 함께 복사한다. `prepare.json`은 쓰였으면(PASS든 FAIL이든) 같이 커밋한다.
 
 ```bash
 (
@@ -257,15 +263,65 @@
   test ! -e "$X/prepare.json"
   mkdir -p "$L"
   LOG="$L/prepare-$(date +%Y%m%d-%H%M%S).log"
+  B="$(basename "$LOG" .log)"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
   { echo __START__; rc=0; python -u scripts/h7r_d1.py prepare --d1-contract "$D/d1-1k-v2-contract.json" \
       --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
       --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
-    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
-  git add "$X/prepare.json"
-  python scripts/h7r_d4_records.py verify-staged --expect "$X/prepare.json"
-  git commit -m "H7-R D1 v2: 1,000-row subset, floors and widened parents (records only)"
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
+  expect=(--expect "$X/prepare-logs/$B.log" --expect "$X/prepare-logs/$B.manifest.json")
+  git add "$X/prepare-logs/$B.log" "$X/prepare-logs/$B.manifest.json"
+  if [ -f "$X/prepare.json" ]; then
+    git add "$X/prepare.json"
+    expect+=(--expect "$X/prepare.json")
+  fi
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict=PASS; else verdict="FAIL (exit $run_rc)"; fi
+  git commit -m "H7-R D1 v2: 1,000-row prepare $verdict: subset, floors and widened parents (records only)"
   git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+1-F. 실패 기록 보존 (1번 블록이 기록 커밋 전에 멈췄을 때만; 학습·추론 없음)
+   - 예: 로그 복사, `verify-staged`, commit, push가 실패했거나 터미널이 닫혔을 때
+   - 가장 최근 prepare 로그와, 있으면 아직 커밋되지 않은 `prepare.json`을 커밋한다. 이미 복사된 로그는 다시 복사하지 않는다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/1k-v2"
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs
+  echo __START__
+  test -z "$(git status --porcelain --untracked-files=no)"
+  LOG="$(ls -1t "$L"/prepare-*.log | head -n 1)"
+  B="$(basename "$LOG" .log)"
+  echo "log: $LOG"
+  tail -n 5 "$LOG"
+  expect=()
+  if [ ! -e "$X/prepare-logs/$B.manifest.json" ]; then
+    python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+      --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
+  fi
+  for f in "$X/prepare-logs/$B.log" "$X/prepare-logs/$B.manifest.json" "$X/prepare.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+      git add "$f"
+      expect+=(--expect "$f")
+    fi
+  done
+  if [ "${#expect[@]}" -eq 0 ]; then echo "nothing left to record"; echo "__EXIT__ 0"; exit 0; fi
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1 v2: 1,000-row prepare attempt record $B (records only)"
+  git push origin feat/h7-c1
+  echo "__EXIT__ 0"
 )
 ```
 
