@@ -1,0 +1,16 @@
+{
+  "format": "h7r-d1-evaluate-amendment-v1",
+  "amendment_id": "R2-D1-HEAD-WIDTH-1/1k-v2/evaluate-A1",
+  "approved": false,
+  "contract": {
+    "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json",
+    "experiment_sha256": "fc309887e4d7b24a0785f6c5237e7a488fe6e07077f060d039aad3733a06370d"
+  },
+  "tool": {
+    "path": "scripts/h7r_d1_evaluate.py",
+    "sha256": "fa864d5cf41d9f9e5d691a2dc7448914dd7a77860b7e3411eaed98a7eaef82e0"
+  },
+  "predicted_record": "runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/evaluate-predicted.json",
+  "unchanged": "the v2 contract, its experiment id, its pinned sources and every committed record; the evaluated models (c5 and the six T-val selected checkpoints), the verified H-dev, the R2 section 7 rule, the references and the result and predictions paths; the reading is computed as in scripts/h7r_d1.py evaluate (tests/test_h7r_d1_evaluate.py checks they are equal)",
+  "reason": "scripts/h7r_d1.py evaluate saves the predictions and then the result; an interruption between them leaves predictions that block a rerun and cannot be completed; the pinned file cannot change without changing the experiment id the prepare, training and fit records carry; this tool records the predictions (SHA-256, checkpoint identities, H-dev checks) before the reading and can complete it after an interruption without a new inference"
+}

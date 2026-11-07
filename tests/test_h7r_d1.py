@@ -511,7 +511,7 @@ class ProcedureTest(unittest.TestCase):
         doc = (ROOT / 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1-draft.md').read_text()
         section = re.split(r'\n## ', doc.split('\n## 10.', 1)[1], maxsplit=1)[0]
         blocks = re.findall(r'```bash\n(.*?)```', section, re.S)
-        self.assertEqual(len(blocks), 6)  # prepare, train + fit, evaluate, each with its recovery block
+        self.assertEqual(len(blocks), 7)  # prepare, train + fit, evaluate with their recovery blocks; resume
         for block in blocks:
             self.assertEqual(subprocess.run(['bash', '-n'], input=block, text=True).returncode, 0)
             self.assertIn('set -euo pipefail', block)

@@ -1,6 +1,6 @@
 # R2-D1-HEAD-WIDTH-1 — value head 폭 진단 계약 초안
 
-- 작성일 2026-11-06, 개정 2026-11-07. 상태: **v1 prepare FAIL(§11) / v2 prepare PASS, train `WIDTH_EFFECT`(§12) / evaluate 승인, H-dev 평가 대기**
+- 작성일 2026-11-06, 개정 2026-11-07. 상태: **v1 prepare FAIL(§11) / v2 prepare PASS, train `WIDTH_EFFECT`(§12) / evaluate 승인, 평가 개정 A1 승인 대기(§12.6)**
 - 계약 JSON: v2 `R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json`(유효), v1 `d1-1k-contract.json`(prepare FAIL로 종료, 기록 보존)
 - 도구: `scripts/h7r_d1.py`, `src/hybrid/h7r_d1.py`(v2 계약만 읽는다)
 - 상위 설계: `R2-DIAG-1-draft.md` §7(판독 규칙, ε, `DEVELOPMENT_SIGNAL`, 보류)과 §8(D1 행)
@@ -493,15 +493,26 @@
 )
 ```
 
-3. H-dev 판독과 기록 커밋 (`approved.evaluate` 커밋 후)
+3. H-dev 판독과 기록 커밋 (`approved.evaluate`와 평가 개정 A1의 `approved` 커밋 후)
+   - **평가 도구**: `scripts/h7r_d1_evaluate.py`(평가 개정 A1, §12.6). `scripts/h7r_d1.py evaluate`는 쓰지 않는다.
    - **평가 대상**: c5와 T-val로 선택된 checkpoint 6개(`best.pt`). 마지막 step의 state(`final.pt`)는 평가하지 않는다.
    - **판독**: R2 §7 그대로. 같은 seed의 narrow가 control이다.
    - **사전 검사**
-     - 도구가 확인: 승인 순서, 소스 SHA, 커밋된 prepare PASS 기록, 6개 실행 기록의 짝맞춤
+     - 도구가 확인: 승인 순서, v2 계약의 소스 SHA, 커밋·승인된 A1과 그것이 고정한 도구 SHA, 커밋된 prepare PASS 기록, 6개 실행 기록의 짝맞춤
      - 커밋된 `fit.json`이 실행 기록에서 다시 계산한 판정과 같은지 확인
      - 각 checkpoint와 metadata의 SHA, 동결 state
      - H-dev 검사값이 R2-0B 기록과 같은지 확인
-   - **실패해도 기록**: 종료 코드를 보존하고, 이번 시도의 로그와(쓰였으면) `d1_eval.json`을 커밋한다. 예측 파일(`predictions.pt`)은 `runs/`에 남고 커밋하지 않는다.
+     - 블록이 확인: 이전 시도의 예측·예측 기록·`.partial`이 없을 것
+   - **저장 순서**
+     1. 예측을 `predictions.pt.partial`에 쓴다.
+     2. 예측 기록 `evaluate-predicted.json`을 쓴다(예측 SHA, checkpoint 식별값, H-dev 검사값, git 상태).
+     3. `.partial`을 `predictions.pt`로 연결한다.
+     4. `d1_eval.json`을 쓴다.
+   - **실패해도 기록**
+     - 종료 코드를 보존한다.
+     - 이번 시도의 로그, (있으면) 예측 기록 사본, (쓰였으면) `d1_eval.json`을 커밋한다.
+     - 예측 파일은 `runs/`에 남고 커밋하지 않는다.
+   - **2–4 사이에서 멈춘 경우**: 다시 실행하면 거부된다. 3-R로 완성한다.
 
 ```bash
 (
@@ -517,21 +528,31 @@
   L="$R/logs"
   test -z "$(git status --porcelain --untracked-files=no)"
   python scripts/check_track_b_frozen.py
+  git ls-files --error-unmatch "$X/prepare.json" "$X/fit.json" "$D/d1-1k-v2-evaluate-a1.json" >/dev/null
   test ! -e "$X/d1_eval.json"
-  git ls-files --error-unmatch "$X/prepare.json" "$X/fit.json" >/dev/null
+  test ! -e "$R/predictions.pt"
+  test ! -e "$R/predictions.pt.partial"
+  test ! -e "$R/evaluate-predicted.json"
   for s in 31001 31002 31003; do for arm in narrow wide; do test -f "$R/$arm-$s/best.pt"; test -f "$R/$arm-$s/best.json"; done; done
   mkdir -p "$L"
   LOG="$L/evaluate-$(date +%Y%m%d-%H%M%S).log"
   B="$(basename "$LOG" .log)"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
   run_rc=0
-  { echo __START__; rc=0; python -u scripts/h7r_d1.py evaluate --d1-contract "$D/d1-1k-v2-contract.json" \
+  { echo __START__; rc=0; python -u scripts/h7r_d1_evaluate.py --d1-contract "$D/d1-1k-v2-contract.json" \
       --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
     echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
   python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
     --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
+  if [ -f "$R/evaluate-predicted.json" ]; then
+    mkdir -p "$X/evaluate-records"
+    cp --no-clobber "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+    cmp "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+  fi
   expect=(--expect "$X/evaluate-logs/$B.log" --expect "$X/evaluate-logs/$B.manifest.json")
-  if [ -f "$X/d1_eval.json" ]; then expect+=(--expect "$X/d1_eval.json"); fi
+  for f in "$X/evaluate-records/evaluate-predicted.json" "$X/d1_eval.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then expect+=(--expect "$f"); fi
+  done
   for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   if [ "$run_rc" -eq 0 ]; then verdict=reading; else verdict="FAIL (exit $run_rc)"; fi
@@ -542,8 +563,63 @@
 )
 ```
 
-3-F. 평가 기록 보존 (3번 블록이 기록 커밋 전에 멈췄을 때만; 추론 없음)
-   - 가장 최근 evaluate 로그와, 있으면 아직 커밋되지 않은 `d1_eval.json`을 커밋한다.
+3-R. 중단된 평가의 완성 (3번이 예측 기록 뒤에 멈췄을 때만; 새 추론 없음)
+   - **언제**: `evaluate-predicted.json`이 있고 `d1_eval.json`이 없을 때
+   - **검증**: 도구가 기록된 예측을 검증한다.
+     - 예측 파일 SHA, 모델 이름 7개, 행 수, 유한값
+     - H-dev 행·검사값
+     - 6개 checkpoint와 c5의 식별값(파일 SHA, 동결 state)을 다시 계산해 기록과 대조
+   - **완성**: 통과하면 저장된 예측으로 판독을 마친다. 결과에는 `resumed`(예측 기록 SHA, 예측 시점과 완성 시점의 git 상태)가 남는다.
+   - **기록 없는 `.partial`만 있는 경우**: 1–2 사이에서 멈춘 것이다. 도구가 쓰지 않고 멈춘다. 지우지 말고 기록을 보고한 뒤 다음 처리를 따로 정한다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/1k-v2"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
+  L="$R/logs"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  git ls-files --error-unmatch "$X/prepare.json" "$X/fit.json" "$D/d1-1k-v2-evaluate-a1.json" >/dev/null
+  test ! -e "$X/d1_eval.json"
+  test -f "$R/evaluate-predicted.json"
+  for s in 31001 31002 31003; do for arm in narrow wide; do test -f "$R/$arm-$s/best.pt"; test -f "$R/$arm-$s/best.json"; done; done
+  mkdir -p "$L"
+  LOG="$L/evaluate-resume-$(date +%Y%m%d-%H%M%S).log"
+  B="$(basename "$LOG" .log)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  { echo __START__; rc=0; python -u scripts/h7r_d1_evaluate.py --d1-contract "$D/d1-1k-v2-contract.json" \
+      --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt --device cuda --resume 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
+  if [ -f "$R/evaluate-predicted.json" ]; then
+    mkdir -p "$X/evaluate-records"
+    cp --no-clobber "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+    cmp "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+  fi
+  expect=(--expect "$X/evaluate-logs/$B.log" --expect "$X/evaluate-logs/$B.manifest.json")
+  for f in "$X/evaluate-records/evaluate-predicted.json" "$X/d1_eval.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then expect+=(--expect "$f"); fi
+  done
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict=reading; else verdict="FAIL (exit $run_rc)"; fi
+  git commit -m "H7-R D1 v2: 1,000-row H-dev resumed $verdict (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+3-F. 평가 기록 보존 (3번 또는 3-R 블록이 기록 커밋 전에 멈췄을 때만; 추론 없음)
+   - 가장 최근 evaluate 로그(3-R의 `evaluate-resume-*` 포함)와, 있으면 아직 커밋되지 않은 예측 기록 사본과 `d1_eval.json`을 커밋한다.
    - 이미 복사된 로그는 원본과 대조만 한다(`--resume`).
    - 중단된 commit이 남긴 staged 상태는 기록 폴더(`$X`)에 한해서만 먼저 해제한다. commit 뒤 push만 실패했으면 push를 다시 시도한다.
 
@@ -571,7 +647,13 @@
   expect=()
   python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$B.log" \
     --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
-  for f in "$X/evaluate-logs/$B.log" "$X/evaluate-logs/$B.manifest.json" "$X/d1_eval.json"; do
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
+  if [ -f "$R/evaluate-predicted.json" ]; then
+    mkdir -p "$X/evaluate-records"
+    cp --no-clobber "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+    cmp "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+  fi
+  for f in "$X/evaluate-logs/$B.log" "$X/evaluate-logs/$B.manifest.json" "$X/evaluate-records/evaluate-predicted.json" "$X/d1_eval.json"; do
     if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
       git add "$f"
       expect+=(--expect "$f")
@@ -588,7 +670,7 @@
 )
 ```
 
-- 2번(학습 6회, train 적합 판독, 기록 보존)까지가 train 승인 범위였다. 3번은 evaluate 승인(§12.5) 범위다. 결과(`fit.json`)를 확인한 뒤 evaluate 승인을 따로 받는다.
+- 2번(학습 6회, train 적합 판독, 기록 보존)까지가 train 승인 범위였다. 3번·3-R·3-F는 evaluate 승인(§12.5)과 평가 개정 A1 승인(§12.6) 범위다.
 - H-dev 판독이 어떻게 나와도 이 단계의 모델은 D4 후보가 아니다. 5,000행 단계는 §7에 따라 별도 승인으로 정한다.
 
 ## 11. v1 prepare 실패와 v2 수정 계약
@@ -738,5 +820,34 @@
 ### 12.5 다음: 1,000행 H-dev 평가
 
 - v2 계약은 `approved.evaluate`만 `true`로 바꿨다. 실험 식별값(`fc309887e4d7`)과 소스 검사는 그대로다.
-- 실행은 §10.2의 3번 블록, 기록 커밋 전에 멈추면 3-F 블록을 쓴다.
+- 실행은 §10.2의 3번 블록이다. 평가 도구는 §12.6의 개정 A1로 바뀌었다. 예측 기록 뒤에 멈추면 3-R, 기록 커밋 전에 멈추면 3-F를 쓴다.
 - 결과가 어떻게 나와도 이 단계의 모델은 D4 후보가 아니다. 기력 향상이나 강화학습 재개의 근거로 쓰지 않는다.
+
+### 12.6 평가 개정 A1: 중단 뒤 완성할 수 있는 평가 도구
+
+- **문제** (코드 검토에서 재현)
+  - `scripts/h7r_d1.py evaluate`는 `predictions.pt`를 먼저 쓰고 `d1_eval.json`을 나중에 쓴다.
+  - 그 사이에 멈추면 예측 파일만 남는다. 그러면 재실행은 "출력이 이미 있다"며 거부되고, 그 예측을 완성할 방법도 없다.
+- **이 파일을 고치지 않는 이유**
+  - 이 파일은 v2 계약이 SHA로 고정한 소스다.
+  - 고치면 계약의 소스 검사와 실험 식별값이 바뀐다. 그러면 이미 커밋된 prepare·학습·fit 기록과의 연결이 끊긴다.
+- **개정 내용** (`R2-D1-HEAD-WIDTH-1/d1-1k-v2-evaluate-a1.json`)
+  - 새 평가 도구 `scripts/h7r_d1_evaluate.py`를 SHA로 고정한다. v2 실험 식별값과 예측 기록 경로도 함께 적고, 승인 여부를 둔다.
+  - 도구는 v2 계약의 검사를 `scripts/h7r_d1.py`에서 그대로 불러 쓴다: `load_d1`의 evaluate 승인과 소스 검사, prepare PASS, 실행 기록 짝맞춤, `fit.json` 재계산
+  - 승인되지 않았거나, 고정한 도구 SHA가 checkout과 다르면 도구는 실행하지 않는다.
+- **바꾸지 않는 것**
+  - v2 계약, 실험 식별값, 고정 소스, 커밋된 기록
+  - 평가 대상(c5와 T-val 선택 checkpoint 6개), H-dev 입력과 검사, R2 §7 판독, 참고값, 결과·예측 경로
+- **바뀌는 것**
+  - 저장 순서: 예측 `.partial` → 예측 기록 → 예측 파일 연결 → 결과(§10.2의 3번)
+  - `--resume`(3-R)
+    - 기록된 예측과 checkpoint 식별값을 다시 검증한 뒤, 새 추론 없이 결과를 완성한다.
+    - 기록 없는 `.partial`은 쓰지 않는다. 임의로 지우고 다시 평가하지 않는다.
+- **검증** (`tests/test_h7r_d1_evaluate.py`, 대역 모델·대역 H-dev; 실제 GPU·H-dev는 데스크톱 실행에서만 확인된다)
+  - 새 도구의 판독(H-dev 판정, seed별 짝비교, 참고값, train 판정)이 고정된 `scripts/h7r_d1.py evaluate`와 같다. 이 테스트가 고정된 evaluate도 처음부터 끝까지 실행한다.
+  - 결과 저장 중단: 예측과 기록만 남는다. 일반 재실행은 거부되고, `--resume`은 추론 없이 완성하며 판독은 중단 없는 실행과 같다.
+  - 연결 중단(`.partial`만 있고 기록은 있음): `--resume`이 완성한다.
+  - 기록 없는 `.partial`: 일반 실행과 `--resume` 모두 거부하고, 파일은 그대로 남긴다.
+  - 예측 파일 변조, checkpoint 파일 SHA 변경, checkpoint 식별값 변경: `--resume`이 거부한다.
+  - 개정 기록: 미승인, 도구 SHA 불일치, 다른 실험, 예측 기록이 `runs/` 밖, 키 불일치, 미커밋을 모두 거부한다.
+  - 커밋된 개정이 이 도구와 v2 실험을 고정하고, v2 계약의 고정 소스는 바뀌지 않았다.
