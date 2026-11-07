@@ -276,9 +276,11 @@ class EvaluateTest(unittest.TestCase):
         st.c5k = c
         return st
 
-    def run5k(self, st, resume=False):
+    def run5k(self, st, resume=False, git_states=None):
         patches = [mock.patch.object(k5, 'load_d1_5k', return_value=(st.c5k, 't' * 64, 'f' * 64)),
                    mock.patch.object(k5, 'checked_prepare', return_value={})]
+        if git_states is not None:  # the git state seen at each call, in order
+            patches.append(mock.patch.object(cli, 'git_state', side_effect=list(git_states)))
         with st.patched(cli), stack(patches):
             return k5.evaluate(SimpleNamespace(d1_contract='x', root=st.root, cache='hdev', c5='c5.pt',
                                                device='cpu', resume=resume), log=QUIET)
@@ -340,6 +342,33 @@ class EvaluateTest(unittest.TestCase):
             torch.save(stored, preds)
             with self.assertRaisesRegex(ValueError, 'not the recorded one'):
                 self.run5k(st, resume=True)
+
+
+class HeadChangeTest(unittest.TestCase):
+    """A HEAD or tracked-tree change while the reading is computed: no result, the predictions and record kept."""
+    CLEAN = {'commit': 'c' * 40, 'dirty': False}
+    CHANGES = {'HEAD': {'commit': 'd' * 40, 'dirty': False}, 'dirty': {'commit': 'c' * 40, 'dirty': True}}
+
+    def test_a_change_during_the_reading_writes_no_result(self):
+        t = EvaluateTest()
+        for what, changed in self.CHANGES.items():
+            with self.subTest(f'run, {what}'), TemporaryDirectory() as tmp:
+                st = t.stage(tmp)
+                # calls: start, after the predictions, before the result
+                with self.assertRaisesRegex(ValueError, 'changed during the evaluation: no result'):
+                    t.run5k(st, git_states=[self.CLEAN, self.CLEAN, changed])
+                self.assertFalse(t.out(st, 'result').exists())
+                self.assertTrue(t.out(st, 'predictions').is_file() and t.out(st, 'record').is_file())
+                saved = (t.out(st, 'predictions').read_bytes(), t.out(st, 'record').read_bytes())
+                with self.subTest(f'resume, {what}'):
+                    # calls on resume: start, before the result
+                    with self.assertRaisesRegex(ValueError, 'changed during the evaluation: no result'):
+                        t.run5k(st, resume=True, git_states=[self.CLEAN, changed])
+                    self.assertFalse(t.out(st, 'result').exists())
+                    self.assertEqual((t.out(st, 'predictions').read_bytes(), t.out(st, 'record').read_bytes()), saved)
+                out = t.run5k(st, resume=True)  # a stable tree completes it
+                self.assertIsNotNone(out['resumed'])
+                self.assertTrue(t.out(st, 'result').is_file())
 
 
 class OneThousandRegressionTest(unittest.TestCase):

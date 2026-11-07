@@ -408,8 +408,13 @@ def publish_result(path: Path, body: dict) -> None:
     publish_json(path, body)
 
 
-def finish(c, csha, eid, state, p, hdev, fit_read, r2c, pred, data, info, route, started, resumed) -> dict:
+def finish(c, csha, eid, root, state, p, hdev, fit_read, r2c, pred, data, info, route, started, resumed) -> dict:
+    """The reading from the predictions, published only if HEAD and the tracked tree are still those the run started
+    with (checked after the reading, right before the result is written); otherwise nothing is written and the
+    predictions and their record stay as they are."""
     paired, references, reading = ev.analyse(c, r2c, pred, data, info, route)
+    r2.require(cli.git_state(root) == state, 'HEAD or the tracked tree changed during the evaluation: no result is '
+                                             'written (the predictions and their record are kept)')
     body = {'format': cli.EVAL_FORMAT, 'experiment_sha256': eid, 'contract_sha256': csha, 'git': state, 'hdev': hdev,
             'hdev_reading': reading, 'paired': paired, 'references': references,
             'train_fit_reading': fit_read, 'reference_note': c['reference'],
@@ -467,7 +472,7 @@ def evaluate(args, log=print) -> dict:
     os.link(p['partial'], p['predictions'])
     p['partial'].unlink()
     log(f'[d1-5k-eval] predictions recorded ({psha[:12]}); reading', flush=True)
-    return finish(c, csha, eid, state, p, hdev, fit_read, r2c, pred, data, info, route, started, None)
+    return finish(c, csha, eid, root, state, p, hdev, fit_read, r2c, pred, data, info, route, started, None)
 
 
 def resume(args, root, c, csha, eid, p, started, log) -> dict:
@@ -510,7 +515,7 @@ def resume(args, root, c, csha, eid, p, started, log) -> dict:
     log('[d1-5k-eval] resumed from the recorded predictions (no new inference)', flush=True)
     resumed = {'predicted_record_sha256': r2.file_sha256(p['record']), 'prediction_git': rec['git'],
                'resume_git': state}
-    return finish(c, csha, eid, state, p, hdev, fit_read, r2c, pred, data, info, route, started, resumed)
+    return finish(c, csha, eid, root, state, p, hdev, fit_read, r2c, pred, data, info, route, started, resumed)
 
 
 def main(argv=None) -> int:
