@@ -504,6 +504,40 @@ class TrainFitWiringTest(unittest.TestCase):
                     cli.checked_fit(c, root, 'e' * 64, prep, recs)
 
 
+class FiveThousandDraftTest(unittest.TestCase):
+    """The 5,000-row contract draft (section 13): pins the committed 1,000-row records, keeps the fixed values of the
+    1,000-row stage, names the nested subset the 1,000-row prepare recorded, and is not runnable yet."""
+    D = 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1'
+
+    def test_the_draft_links_to_the_records_and_keeps_the_fixed_values(self):
+        c = json.loads((ROOT / f'{self.D}/d1-5k-contract.draft.json').read_text())
+        v2 = json.loads((ROOT / CONTRACT).read_text())
+        prep = json.loads((ROOT / f'{self.D}/1k-v2/prepare.json').read_text())
+        self.assertEqual((c['status'], c['stage']), ('draft', '5k'))
+        self.assertEqual(c['approved'], {s: False for s in cli.STAGES})
+        pre = c['predecessor']
+        for key in ('contract', 'prepare', 'fit', 'result', 'evaluate_amendment'):
+            self.assertEqual(r2.file_sha256(ROOT / pre[key]['path']), pre[key]['sha256'], key)
+        self.assertEqual(pre['experiment_sha256'], cli.experiment_sha256(v2))
+        self.assertEqual(c['subset']['expected'], prep['subset']['nested'])
+        self.assertEqual((c['subset']['expected']['games'], c['subset']['expected']['rows']), (111, 5174))
+        self.assertEqual(c['subset']['seed'], v2['subset']['seed'])
+        self.assertEqual(c['budget'], {**v2['budget'], 'decided': c['budget']['decided']})
+        for key in ('arms', 'seeds', 'fit', 'r2_contract', 'amendment', 'epsilon'):
+            self.assertEqual(c[key], v2[key], key)
+        self.assertEqual({k: c['widen'][k] for k in ('init', 'init_seeds', 'exact', 'device_check')},
+                         {k: v2['widen'][k] for k in ('init', 'init_seeds', 'exact', 'device_check')})
+        self.assertEqual(c['ruling']['epsilon'], v2['ruling']['epsilon'])
+        self.assertTrue(all(v is None for v in c['sources'].values()))  # pinned only when the tool is fixed
+        self.assertTrue(set(cli.SOURCES) <= set(c['sources']))
+        outs = [c['output']['parents'], c['output']['predictions'],
+                *(p for v in c['output']['run_dirs'].values() for p in v.values())]
+        self.assertTrue(all(p.startswith('runs/h7r/R2-D1-HEAD-WIDTH-1/5k') for p in outs))
+        self.assertTrue(all(c['output'][k].startswith(f'{self.D}/5k/') for k in ('prepare', 'fit', 'result')))
+        with self.assertRaisesRegex(ValueError, 'keys differ'):  # no current tool takes it as a contract
+            cli.load_d1(ROOT / f'{self.D}/d1-5k-contract.draft.json', ROOT, 'prepare')
+
+
 class ProcedureTest(unittest.TestCase):
     def test_the_blocks_parse_and_fail_closed(self):
         import re
