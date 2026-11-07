@@ -290,6 +290,7 @@
 1-F. 실패 기록 보존 (1번 블록이 기록 커밋 전에 멈췄을 때만; 학습·추론 없음)
    - 예: 로그 복사, `verify-staged`, commit, push가 실패했거나 터미널이 닫혔을 때
    - 가장 최근 prepare 로그와, 있으면 아직 커밋되지 않은 `prepare.json`을 커밋한다. 이미 복사된 로그는 다시 복사하지 않는다.
+   - 중단된 commit이 남긴 staged 상태는 기록 폴더(`$X`)에 한해서만 먼저 해제한다(파일은 그대로 둔다).
 
 ```bash
 (
@@ -301,6 +302,7 @@
   X="$D/1k-v2"
   L=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs
   echo __START__
+  git reset -q -- "$X"
   test -z "$(git status --porcelain --untracked-files=no)"
   LOG="$(ls -1t "$L"/prepare-*.log | head -n 1)"
   B="$(basename "$LOG" .log)"
@@ -325,7 +327,15 @@
 )
 ```
 
-2. 학습 6회 (`approved.train` 커밋 후; seed마다 narrow, wide 순서)
+2. 학습 6회, train 적합 판독, 기록 커밋 (`approved.train` 커밋 후)
+   - **실행 순서**: 같은 승인 HEAD에서 seed마다 narrow → wide 순서로 돈다. 한 실행이 실패하면(또는 HEAD가 바뀌면) 뒤 실행은 시작하지 않는다.
+   - **fit**: 6회가 모두 성공했을 때만 돈다. 판독은 각 실행의 마지막 step(210) state로 하고, 검증 기준으로 선택된 checkpoint는 따로 기록된다(§10.1-6).
+   - **실패해도 기록 단계까지 간다**
+     - 종료 코드와 실패 위치를 커밋 메시지와 `__RECORDED__` 줄에 남긴다.
+     - 이번 시도의 로그는 모두 `train-logs/`에 manifest와 함께 복사한다.
+     - 실행 폴더가 실제로 생긴 실행(완료된 실행, 그리고 실패한 실행 중 폴더가 생긴 경우)의 JSON 파일만 `run-records/`에 복사한다. checkpoint(`.pt`)는 복사하지 않는다.
+   - **기록 검증**: 복사본은 원본과 바이트 비교(`cmp`)한다. `run-records/`의 파일 목록과 SHA는 manifest로 남긴다(`.pt`가 섞이면 거부). 커밋 직전에 staged 파일 목록이 기대 목록과 정확히 같은지 확인한다(`verify-staged`).
+   - **다시 실행하지 않는다**: 실행 폴더나 이전 기록이 있으면 도구와 블록이 멈춘다. 실패하면 실패 폴더를 지우거나 블록 전체를 다시 돌리지 않는다. 기록된 중단 위치를 보고 다음 처리를 따로 정한다.
 
 ```bash
 (
@@ -335,28 +345,81 @@
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   git pull --ff-only origin feat/h7-c1
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/1k-v2"
   R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
   L="$R/logs"
   test -z "$(git status --porcelain --untracked-files=no)"
   python scripts/check_track_b_frozen.py
+  test ! -e "$X/fit.json"
+  test ! -e "$X/run-records"
+  test ! -e "$X/train-logs"
+  for s in 31001 31002 31003; do for arm in narrow wide; do test ! -e "$R/$arm-$s"; done; done
   head="$(git rev-parse HEAD)"
+  STAMP="$(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$L"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  where=none
+  done_runs=0
   for s in 31001 31002 31003; do
     for arm in narrow wide; do
-      test "$(git rev-parse HEAD)" = "$head"
-      test ! -e "$R/$arm-$s"
-      LOG="$L/train-$arm-$s-$(date +%Y%m%d-%H%M%S).log"
+      if [ "$(git rev-parse HEAD)" != "$head" ]; then run_rc=97; where="HEAD changed before $arm-$s"; break 2; fi
+      LOG="$L/train-$arm-$s-$STAMP.log"
       { echo __START__; rc=0; python -u scripts/h7r_d1.py train --d1-contract "$D/d1-1k-v2-contract.json" \
           --arm "$arm" --seed "$s" \
           --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
           --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
-        echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
+        echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+      if [ "$run_rc" -ne 0 ]; then where="train $arm-$s"; break 2; fi
+      done_runs=$((done_runs + 1))
     done
   done
+  if [ "$run_rc" -eq 0 ]; then
+    LOG="$L/fit-$STAMP.log"
+    { echo __START__; rc=0; python -u scripts/h7r_d1.py fit --d1-contract "$D/d1-1k-v2-contract.json" 2>&1 || rc=$?
+      echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+    if [ "$run_rc" -ne 0 ]; then where=fit; fi
+  fi
+  echo "[d1-train-block] runs completed $done_runs/6, exit $run_rc, stopped at: $where"
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "*-$STAMP.log" \
+    --dest-dir "$X/train-logs" --manifest "$X/train-logs/$STAMP.manifest.json"
+  expect=(--expect "$X/train-logs/$STAMP.manifest.json")
+  for f in "$X"/train-logs/*-"$STAMP".log; do expect+=(--expect "$f"); done
+  copied=0
+  for s in 31001 31002 31003; do
+    for arm in narrow wide; do
+      [ -d "$R/$arm-$s" ] || continue
+      for src in "$R/$arm-$s"/*.json; do
+        [ -f "$src" ] || continue
+        dst="$X/run-records/$arm-$s/$(basename "$src")"
+        mkdir -p "$(dirname "$dst")"
+        cp --no-clobber "$src" "$dst"
+        cmp "$src" "$dst"
+        expect+=(--expect "$dst")
+        copied=$((copied + 1))
+      done
+    done
+  done
+  if [ "$copied" -gt 0 ]; then
+    python scripts/h7r_d4_records.py manifest --dir "$X/run-records" --output "$X/run-records/records_manifest-$STAMP.json"
+    expect+=(--expect "$X/run-records/records_manifest-$STAMP.json")
+  fi
+  if [ -f "$X/fit.json" ]; then expect+=(--expect "$X/fit.json"); fi
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict="6/6 runs and the train-fit reading"; else verdict="FAIL at $where (exit $run_rc), $done_runs/6 runs"; fi
+  git commit -m "H7-R D1 v2: 1,000-row training $verdict (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
 )
 ```
 
-3. train 적합 판독과 기록 커밋 (학습과 같은 HEAD에서; checkpoint는 복사하지 않는다. run 기록은 `.gitignore`의 `runs/` 규칙을 피해 `run-records/`에 둔다)
+2-F. 학습 기록 보존 (2번 블록이 기록 커밋 전에 멈췄을 때만; 학습·판독 없음)
+   - 예: 로그 복사, `cmp`, manifest, `verify-staged`, commit, push가 실패했거나 터미널이 닫혔을 때
+   - 가장 최근 시도의 로그, 실제로 생긴 실행 폴더의 JSON, `fit.json` 가운데 아직 커밋되지 않은 것만 커밋한다.
+   - 이미 복사된 파일은 원본과 다시 비교만 한다.
+   - 중단된 commit이 남긴 staged 상태는 기록 폴더(`$X`)에 한해서만 먼저 해제한다(파일은 그대로 둔다).
 
 ```bash
 (
@@ -368,31 +431,45 @@
   X="$D/1k-v2"
   R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
   L="$R/logs"
+  echo __START__
+  git reset -q -- "$X"
   test -z "$(git status --porcelain --untracked-files=no)"
-  test ! -e "$X/fit.json"
-  LOG="$L/fit-$(date +%Y%m%d-%H%M%S).log"
-  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
-  { echo __START__; rc=0; python -u scripts/h7r_d1.py fit --d1-contract "$D/d1-1k-v2-contract.json" 2>&1 || rc=$?
-    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
-  expect=(--expect "$X/fit.json")
+  last="$(ls -1t "$L"/train-*.log | head -n 1)"
+  STAMP="$(basename "$last" .log | grep -oE '[0-9]{8}-[0-9]{6}$')"
+  echo "attempt $STAMP"
+  for f in "$L"/*-"$STAMP".log; do echo "== $f"; tail -n 3 "$f"; done
+  if [ ! -e "$X/train-logs/$STAMP.manifest.json" ]; then
+    python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "*-$STAMP.log" \
+      --dest-dir "$X/train-logs" --manifest "$X/train-logs/$STAMP.manifest.json"
+  fi
   for s in 31001 31002 31003; do
     for arm in narrow wide; do
-      mkdir -p "$X/run-records/$arm-$s"
-      for f in d1_train.json record.json; do
-        cp --no-clobber "$R/$arm-$s/$f" "$X/run-records/$arm-$s/$f"
-        cmp "$R/$arm-$s/$f" "$X/run-records/$arm-$s/$f"
-        expect+=(--expect "$X/run-records/$arm-$s/$f")
+      [ -d "$R/$arm-$s" ] || continue
+      for src in "$R/$arm-$s"/*.json; do
+        [ -f "$src" ] || continue
+        dst="$X/run-records/$arm-$s/$(basename "$src")"
+        mkdir -p "$(dirname "$dst")"
+        cp --no-clobber "$src" "$dst"
+        cmp "$src" "$dst"
       done
     done
   done
-  git add "$X/fit.json" "$X/run-records"
+  if [ -d "$X/run-records" ] && [ ! -e "$X/run-records/records_manifest-$STAMP.json" ]; then
+    python scripts/h7r_d4_records.py manifest --dir "$X/run-records" --output "$X/run-records/records_manifest-$STAMP.json"
+  fi
+  expect=()
+  while IFS= read -r f; do
+    if ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then git add "$f"; expect+=(--expect "$f"); fi
+  done < <(find "$X/train-logs" "$X/run-records" "$X/fit.json" -type f 2>/dev/null | sort)
+  if [ "${#expect[@]}" -eq 0 ]; then echo "nothing left to record"; echo "__EXIT__ 0"; exit 0; fi
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
-  git commit -m "H7-R D1 v2: 1,000-row runs and the train-fit reading (records only)"
+  git commit -m "H7-R D1 v2: 1,000-row training attempt record $STAMP (records only)"
   git push origin feat/h7-c1
+  echo "__EXIT__ 0"
 )
 ```
 
-4. H-dev 판독과 기록 커밋 (`approved.evaluate` 커밋 후)
+3. H-dev 판독과 기록 커밋 (`approved.evaluate` 커밋 후; evaluate 승인 때 다시 검토한다)
 
 ```bash
 (
@@ -409,23 +486,27 @@
   python scripts/check_track_b_frozen.py
   test ! -e "$X/d1_eval.json"
   LOG="$L/evaluate-$(date +%Y%m%d-%H%M%S).log"
+  B="$(basename "$LOG" .log)"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
   { echo __START__; rc=0; python -u scripts/h7r_d1.py evaluate --d1-contract "$D/d1-1k-v2-contract.json" \
       --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
-    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
-  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern '*.log' \
-    --dest-dir "$X/run-logs" --manifest "$X/log_manifest.json"
-  python scripts/h7r_d4_records.py manifest --dir "$X" --output "$X/records_manifest.json"
-  expect=(--expect "$X/d1_eval.json" --expect "$X/log_manifest.json" --expect "$X/records_manifest.json")
-  for f in "$X"/run-logs/*.log; do expect+=(--expect "$f"); done
-  git add "$X/d1_eval.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/*.log
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
+  expect=(--expect "$X/evaluate-logs/$B.log" --expect "$X/evaluate-logs/$B.manifest.json")
+  if [ -f "$X/d1_eval.json" ]; then expect+=(--expect "$X/d1_eval.json"); fi
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
-  git commit -m "H7-R D1 v2: 1,000-row H-dev reading (records only)"
+  if [ "$run_rc" -eq 0 ]; then verdict=reading; else verdict="FAIL (exit $run_rc)"; fi
+  git commit -m "H7-R D1 v2: 1,000-row H-dev $verdict (records only)"
   git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
 )
 ```
 
-- 3번은 train 승인 범위다. 결과(`fit.json`)를 확인한 뒤 evaluate 승인을 따로 받는다.
+- 2번(학습 6회, train 적합 판독, 기록 보존)까지가 train 승인 범위다. 결과(`fit.json`)를 확인한 뒤 evaluate 승인을 따로 받는다.
 - H-dev 판독이 어떻게 나와도 이 단계의 모델은 D4 후보가 아니다. 5,000행 단계는 §7에 따라 별도 승인으로 정한다.
 
 ## 11. v1 prepare 실패와 v2 수정 계약
