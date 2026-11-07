@@ -1,0 +1,171 @@
+{
+  "format": "h7r-d1-contract-5k-v1",
+  "contract_id": "R2-D1-HEAD-WIDTH-1",
+  "stage": "5k",
+  "status": "fixed",
+  "approved": {
+    "prepare": false,
+    "train": false,
+    "evaluate": false
+  },
+  "predecessor": {
+    "contract": {
+      "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json",
+      "sha256": "5c534f1292f7dbacd74077003a4b467de2439efe6277d1bbccd76f25340aa254"
+    },
+    "experiment_sha256": "fc309887e4d7b24a0785f6c5237e7a488fe6e07077f060d039aad3733a06370d",
+    "prepare": {
+      "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/prepare.json",
+      "sha256": "5eb62392650ff1fc4b41293aa7e61bb2c19632098f9f5d3e58fdf60f92e55555"
+    },
+    "fit": {
+      "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/fit.json",
+      "sha256": "cd398822ef93f443e2c99803c5b439d793ca107a989828e274ef2d207a50c67d"
+    },
+    "result": {
+      "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/1k-v2/d1_eval.json",
+      "sha256": "333a87d3c41454ce15dfde7fc5b1978d7f577e6169bb44e5ff5d6b7f983009dd"
+    },
+    "evaluate_amendment": {
+      "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-1k-v2-evaluate-a1.json",
+      "sha256": "dc95853b62a3aa2b241601fa9d5bb7e46d40fd1723b7d9af697a23689ae71dfb"
+    },
+    "readings": {
+      "train_fit": "WIDTH_EFFECT",
+      "hdev": "DEVELOPMENT_SIGNAL"
+    },
+    "entry_rule": "section 7.2: the 1,000-row train reading WIDTH_EFFECT opens the 5,000-row stage; the H-dev reading does not enter that decision"
+  },
+  "r2_contract": {
+    "path": "docs/h7r/r2/R2-DIAG-1.contract.json",
+    "sha256": "b8045043dc9fe081ac11a1a4dc16ca323b0eac55e393d9f8a17390869b2bce2d"
+  },
+  "amendment": {
+    "path": "docs/h7r/r2/R2-DIAG-1-A1.json",
+    "sha256": "268aedfc52478aff69bbee158e3e9445ea80e997e1747b76244a0c7ff04bc32c"
+  },
+  "epsilon": {
+    "path": "docs/h7r/r2/R2-DIAG-1/r2_0b/epsilon.json",
+    "sha256": "d46896e99200e3ff6f3d152f1c2028cde7c5a7712e481ad1e6e486ce0cebd4a2"
+  },
+  "arms": {
+    "narrow": {
+      "value_channels": 1
+    },
+    "wide": {
+      "value_channels": 4
+    }
+  },
+  "widen": {
+    "init": "conv channel 0 and BatchNorm channel 0 copied from c5; new conv channels kaiming_normal_(fan_out, relu) from a dedicated generator; new channels input columns of the first Linear exactly 0; every other value-head tensor copied",
+    "init_seeds": {
+      "31001": 2026110710,
+      "31002": 2026110711,
+      "31003": 2026110712
+    },
+    "exact": {
+      "device": "cpu",
+      "dtype": "float64",
+      "tolerance": 1e-12,
+      "train_mode_rows": 1024,
+      "replay_val_rows": 4096,
+      "replay_val_seed": 2026110702
+    },
+    "device_check": {
+      "batch_size": 4096,
+      "gate": "finite"
+    },
+    "parents": "rebuilt with the 1,000-row construction and init seeds; each parent state SHA-256 must equal the one in the 1,000-row prepare record"
+  },
+  "subset": {
+    "source": "the c8 cycle cache train split (labels and splits of the A1 reference record)",
+    "seed": 2026110701,
+    "rows": 5000,
+    "selection": "the nested 5,000-row prefix of the 1,000-row selection (same seed and order, whole games)",
+    "expected": {
+      "games": 111,
+      "rows": 5174,
+      "games_sha256": "5a3a05ea87a978812aa0a43b9ef31936d4804c83817b968d04d9c65ee502c761"
+    }
+  },
+  "budget": {
+    "config": {
+      "path": "configs/h7c/c1_value.json",
+      "sha256": "d151bc73923549e1e68787a98b676483a21dbda6f89258f01c9768609311aaa0"
+    },
+    "total_steps": 210,
+    "decided": "after the 1,000-row train reading (71cbd60) and before its H-dev evaluation (3795e26); a same-epoch run (1,155 steps) stays a later option"
+  },
+  "seeds": [
+    "31001",
+    "31002",
+    "31003"
+  ],
+  "fit": {
+    "margin": 0.01,
+    "floor": "d4",
+    "measured_at": "last_step"
+  },
+  "ruling": {
+    "epsilon": 0.0019461168062766864,
+    "primary": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "macro"
+    },
+    "train_fit": "section 4: per arm and seed the last-step W <= floor_d4 + margin is a fit; the first of WIDTH_EFFECT (W_wide - W_narrow < 0 for all three seeds, each larger than the narrow seed range), BOTH_FIT (all six fit), SEED_DISAGREEMENT (signs differ or zero), NEITHER_FIT (none fits), MIXED_FIT (hybrid.h7r_d1.fit_reading); committed before any H-dev prediction",
+    "hdev": "R2 section 7 unchanged: I_s = L(narrow_s) - L(wide_s) > epsilon and the paired 95% upper bound of L(wide_s) - L(narrow_s) below 0 for all three seeds; the narrow seed range above epsilon holds",
+    "scope": "a 5,000-row diagnosis: no D4 candidate whatever the reading; the full scale is considered only if the width effect holds in all three seeds here (section 7.3)"
+  },
+  "reference": {
+    "c5": "wide - c5 and narrow - c5, reported and never ruled",
+    "components": "outcome / proof macro and pooled differences without epsilon",
+    "decomposition": "additive kind contributions (hybrid.h7r_d3), descriptive",
+    "note": "the H-dev reading uses the T-val selected checkpoints; the train-fit reading uses the last-step states; they are recorded apart and never mixed",
+    "scale": "the 1,000-row stage saw each subset row about 105 times, this one about 19 times: differences between the two stages are not read as the effect of the data size alone"
+  },
+  "evaluate": {
+    "write_order": "predictions .partial, predictions record, link, result (the 1,000-row amendment A1)",
+    "resume": true,
+    "predicted_record": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/evaluate-predicted.json"
+  },
+  "sources": {
+    "src/hybrid/h7c_train.py": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488",
+    "src/hybrid/h6_value_train.py": "5d0094504abe4d7dbc0f964bd879344b8e3159951cce6b1dc8b37772d7f77770",
+    "scripts/h7c_train_value.py": "00c572ef5b6c6017026a1adede5206cb701ae481f7c802db56caa68be6dbc09e",
+    "src/hybrid/h7r_d1.py": "b062c9ac7d0dc1f2b7805fe274b754a658b2e325c385a153bef96282fc5cb545",
+    "scripts/h7r_d1.py": "98dc70b05f7d2ce3746523691ad0d04e7e5f77f7ca63bd2e7a08e3dbfe28eb80",
+    "src/hybrid/h7r_d3.py": "5acbc52d08c2261700008cac2df0422978435329643c04859c3eb2d51285f9c5",
+    "src/hybrid/h7r_r2.py": "43f7291c4b25f8e85e6fd51e89cff5bb074689830d2429eb7e16064654d988f6",
+    "scripts/h7r_r2.py": "a5a581d6cf069df78b4f0706c56a34b649fe3a4f683599f0a0f229582e9086c8",
+    "scripts/h7r_r2_seed.py": "873db3d7b88bcc718ccbbc4e205ba993b6adaafa4303e04f0e40637b7fdbce8c",
+    "scripts/h7r_holdout.py": "e873500fc8362493fc1ff865e989cf1c35b0dd674f5877f95e7be81d53dcfa97",
+    "src/model/network.py": "fc832003f3e1e89c7afb7d7d7773477ddefcc9ea724331446048a098302f01ee",
+    "src/model/checkpoint.py": "8ee73d314ba09485659a55470eb91fea15ce636a7615d913e6d3b6699d6c70e1",
+    "src/model/config.py": "df4b35559c5958ff343d21ce933cdd845a39e57cfa58f4de483b80ba6c8cb091",
+    "scripts/h7r_d1_evaluate.py": "fa864d5cf41d9f9e5d691a2dc7448914dd7a77860b7e3411eaed98a7eaef82e0",
+    "scripts/h7r_d1_5k.py": "56648b3cd65faf85dc3b6a13b7ca40b99738feb972fb69a74be9bf0279d26a24",
+    "src/hybrid/h7r_ledger.py": "660dcc30307331b8fe59cdc3001189c21f8687c7ec9165416b2763bcc57da349",
+    "src/hybrid/h7r_d4.py": "2d739b4e3872807b03834bf3ea95a766f4bec27b10e267eb9cf39a212e587b2f"
+  },
+  "output": {
+    "prepare": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/prepare.json",
+    "parents": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/parents",
+    "run_dirs": {
+      "narrow": {
+        "31001": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/narrow-31001",
+        "31002": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/narrow-31002",
+        "31003": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/narrow-31003"
+      },
+      "wide": {
+        "31001": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/wide-31001",
+        "31002": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/wide-31002",
+        "31003": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/wide-31003"
+      }
+    },
+    "fit": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/fit.json",
+    "result": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/d1_eval.json",
+    "predictions": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/predictions.pt"
+  },
+  "note": "fixed from docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-5k-contract.draft.json (section 13) with the tool scripts/h7r_d1_5k.py and its sources pinned; the draft stays as the record of the design"
+}

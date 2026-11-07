@@ -552,5 +552,23 @@ class ProcedureTest(unittest.TestCase):
             self.assertIn('__EXIT__', block)
 
 
+class FiveThousandProcedureTest(unittest.TestCase):
+    def test_the_5k_blocks_parse_fail_closed_and_name_only_5k_paths(self):
+        import re
+        import subprocess
+        doc = (ROOT / 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1-draft.md').read_text()
+        section = doc.split('\n### 13.6 실행 절차', 1)[1].split('\n### 13.7', 1)[0]
+        blocks = re.findall(r'```bash\n(.*?)```', section, re.S)
+        self.assertEqual(len(blocks), 7)
+        for block in blocks:
+            self.assertEqual(subprocess.run(['bash', '-n'], input=block, text=True).returncode, 0)
+            self.assertIn('set -euo pipefail', block)
+            self.assertTrue('__EXIT__' in block or '__RECORDED__' in block)
+            for stale in ('1k', '1,000', 'h7r_d1.py', 'h7r_d1_evaluate.py'):
+                self.assertNotIn(stale, block)
+            self.assertIn('R2-D1-HEAD-WIDTH-1/5k', block)
+        self.assertTrue(all('h7r_d1_5k.py' in b for i, b in enumerate(blocks) if i in (0, 2, 4, 5)))
+
+
 if __name__ == '__main__':
     unittest.main()
