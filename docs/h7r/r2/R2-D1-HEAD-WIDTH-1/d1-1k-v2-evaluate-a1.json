@@ -1,7 +1,7 @@
 {
   "format": "h7r-d1-evaluate-amendment-v1",
   "amendment_id": "R2-D1-HEAD-WIDTH-1/1k-v2/evaluate-A1",
-  "approved": false,
+  "approved": true,
   "contract": {
     "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json",
     "experiment_sha256": "fc309887e4d7b24a0785f6c5237e7a488fe6e07077f060d039aad3733a06370d"
