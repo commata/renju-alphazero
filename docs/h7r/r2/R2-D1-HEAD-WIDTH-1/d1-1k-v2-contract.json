@@ -6,7 +6,7 @@
   "approved": {
     "prepare": true,
     "train": true,
-    "evaluate": false
+    "evaluate": true
   },
   "supersedes": {
     "contract": {
