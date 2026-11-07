@@ -1,13 +1,16 @@
 """R2-D1-HEAD-WIDTH-1, the 1,000-row first comparison: the existing value head (value_channels 1) against one widened
 to 4, on the same c8 T-train subset and training budget, seeds 31001-31003. Each stage needs its own approval in the
-fixed, committed D1 contract (``h7r-d1-contract-v1``); the stages link through the approval-independent experiment
-SHA-256 (as D3). Nothing is written over.
+fixed, committed D1 v2 contract (``h7r-d1-contract-v2``; it supersedes the v1 contract, whose prepare failed its
+float32 tolerance, and keeps its subset, budget, arms, seeds and rules); the stages link through the
+approval-independent experiment SHA-256 (as D3). Nothing is written over.
 
     prepare   the subset (whole c8 T-train games in a seeded order, until 1,000 rows; the nested 5,000-row prefix
               recorded too), its composition and target-conflict floors (exact and D4), the widened parents (one per
-              seed: c5's head widened with its prediction preserved, ``hybrid.h7r_d1``) with their byte checks and
-              prediction differences on the subset, the cycle val and the H6 val sets, each saved and loaded back
-              through the evaluators' loader (``h7r_r2.load_value_model``) to equal predictions.
+              seed: c5's head widened with its prediction preserved, ``hybrid.h7r_d1``). The gate: byte checks, CPU
+              float64 values within the exact tolerance of c5's (subset, cycle val, a seeded H6 val sample, one
+              train-mode batch), finite device outputs, and a reload to the same state with identical predictions.
+              Recorded, not gated: the device float32 differences with their worst rows, the stage-by-stage
+              diagnosis, a c5 batch-split reference and the arithmetic settings.
     train     one arm and seed: the trainer's ``train_value`` on {subset, full cycle val} and the H6 replay, the c8
               config with the step budget fixed, the narrow arm from c5 and the wide arm from its prepared parent.
               Both arms of a seed have the same data assignment. The trainer's own evaluations are observed
@@ -38,9 +41,10 @@ for p in (ROOT, ROOT / 'src', ROOT / 'scripts'):
 from hybrid import h7r_d1 as d1  # noqa: E402
 from hybrid import h7r_r2 as r2  # noqa: E402
 
-FORMAT = 'h7r-d1-contract-v1'
+FORMAT = 'h7r-d1-contract-v2'
 CONTRACT_ID = 'R2-D1-HEAD-WIDTH-1'
-PREP_FORMAT = 'h7r-d1-prepare-v1'
+PREP_FORMAT = 'h7r-d1-prepare-v2'
+V1_PREP_FORMAT = 'h7r-d1-prepare-v1'
 TRAIN_FORMAT = 'h7r-d1-train-v1'
 FIT_FORMAT = 'h7r-d1-fit-v1'
 EVAL_FORMAT = 'h7r-d1-eval-v1'
@@ -51,8 +55,9 @@ SOURCES = ('src/hybrid/h7c_train.py', 'src/hybrid/h6_value_train.py', 'scripts/h
            'src/hybrid/h7r_d1.py', 'scripts/h7r_d1.py', 'src/hybrid/h7r_d3.py', 'src/hybrid/h7r_r2.py',
            'scripts/h7r_r2.py', 'scripts/h7r_r2_seed.py', 'scripts/h7r_holdout.py', 'src/model/network.py',
            'src/model/checkpoint.py', 'src/model/config.py')
-KEYS = {'format', 'contract_id', 'stage', 'status', 'approved', 'r2_contract', 'amendment', 'epsilon', 'arms', 'widen',
-        'subset', 'budget', 'seeds', 'fit', 'ruling', 'reference', 'sources', 'output'}
+KEYS = {'format', 'contract_id', 'stage', 'status', 'approved', 'supersedes', 'r2_contract', 'amendment', 'epsilon',
+        'arms', 'widen', 'subset', 'budget', 'seeds', 'fit', 'ruling', 'reference', 'sources', 'output'}
+WIDEN_KEYS = {'init', 'init_seeds', 'exact', 'device_check'}
 
 
 def is_ref(value) -> bool:
@@ -86,7 +91,7 @@ def load_d1(path, root: Path, stage: str, *, check_sources: bool = True) -> tupl
     c = json.loads(path.read_text(encoding='utf-8'))
     r2.require(isinstance(c, dict) and set(c) == KEYS, f'{path}: the D1 contract keys differ from {sorted(KEYS)}')
     r2.require(c['format'] == FORMAT and c['contract_id'] == CONTRACT_ID and c['status'] == 'fixed'
-               and c['stage'] == '1k', f'{path}: not the fixed 1,000-row D1 contract')
+               and c['stage'] == '1k-v2', f'{path}: not the fixed 1,000-row D1 v2 contract')
     r2.require(isinstance(c['approved'], dict) and set(c['approved']) == set(STAGES)
                and all(type(v) is bool for v in c['approved'].values()), 'D1 approvals: one bool per stage')
     r2.require(c['approved'][stage] is True, f'the D1 {stage} stage is not approved')
@@ -100,9 +105,26 @@ def load_d1(path, root: Path, stage: str, *, check_sources: bool = True) -> tupl
     r2.require(c['ruling'].get('epsilon') == eps['epsilon']['value'], 'the ruling epsilon is not the R2-0B epsilon')
     r2.require(c['arms'] == {'narrow': {'value_channels': 1}, 'wide': {'value_channels': 4}}, 'D1 arms differ')
     r2.require(c['seeds'] == list(SEEDS), f'D1 seeds: exactly {SEEDS}')
+    sup = c['supersedes']
+    r2.require(isinstance(sup, dict) and set(sup) == {'contract', 'prepare', 'reason'} and is_ref(sup['contract'])
+               and is_ref(sup['prepare']), 'D1 supersedes: the v1 contract and its prepare record, pinned')
+    v1 = pinned(root, sup['contract'], 'superseded v1 contract')
+    v1_prep = pinned(root, sup['prepare'], 'superseded v1 prepare record')
+    r2.require(v1.get('format') == 'h7r-d1-contract-v1' and v1_prep.get('format') == V1_PREP_FORMAT
+               and v1_prep.get('passed') is False and v1_prep.get('experiment_sha256') == experiment_sha256(v1),
+               'D1 supersedes: not the failed v1 prepare of the v1 contract')
     w = c['widen']
-    r2.require(set(w) == {'init', 'init_seeds', 'tolerance'} and w['init_seeds'].keys() == set(SEEDS)
-               and isinstance(w['tolerance'], float), 'D1 widen: init, one init seed per seed, tolerance')
+    r2.require(set(w) == WIDEN_KEYS and w['init_seeds'] == v1['widen']['init_seeds']
+               and w['init'] == v1['widen']['init'],
+               'D1 widen: the v1 construction and init seeds, with the exact and device checks')
+    e, dv = w['exact'], w['device_check']
+    r2.require(set(e) == {'device', 'dtype', 'tolerance', 'train_mode_rows', 'replay_val_rows', 'replay_val_seed'}
+               and e['device'] == 'cpu' and e['dtype'] == 'float64' and isinstance(e['tolerance'], float)
+               and 0 < e['tolerance'] <= 1e-12 and type(e['train_mode_rows']) is int
+               and type(e['replay_val_rows']) is int and type(e['replay_val_seed']) is int,
+               'D1 exact check: CPU float64 within at most 1e-12, train-mode rows and a seeded replay val sample')
+    r2.require(set(dv) == {'batch_size', 'gate'} and type(dv['batch_size']) is int and dv['gate'] == 'finite',
+               'D1 device check: its batch size; only non-finite outputs fail it, differences are recorded')
     s = c['subset']
     r2.require(set(s) == {'source', 'seed', 'rows', 'nested_rows'} and s['rows'] == 1000 and s['nested_rows'] == 5000,
                'D1 subset: the 1,000-row first comparison with the nested 5,000 rows')
@@ -114,6 +136,9 @@ def load_d1(path, root: Path, stage: str, *, check_sources: bool = True) -> tupl
     f = c['fit']
     r2.require(set(f) == {'margin', 'floor', 'measured_at'} and f['floor'] == 'd4' and f['measured_at'] == 'last_step',
                'D1 fit: margin over the D4 floor at the last step')
+    r2.require(c['subset'] == v1['subset'] and c['budget'] == v1['budget'] and c['arms'] == v1['arms']
+               and c['seeds'] == v1['seeds'] and c['fit'] == v1['fit'],
+               'D1 v2 keeps the v1 subset, budget, arms, seeds and fit rule')
     sources = c['sources']
     r2.require(isinstance(sources, dict) and set(sources) == set(SOURCES), 'D1 sources are malformed')
     if check_sources:
@@ -202,6 +227,14 @@ def parent_paths(c: dict, root: Path, seed: str) -> tuple[Path, Path]:
 # --- prepare ---------------------------------------------------------------------------------------------------------
 
 def prepare(args, log=print) -> dict:
+    """Per seed the widened parent is PASS only if: the byte checks pass; the CPU float64 values (eval mode on the
+    subset, the cycle val and the seeded replay val sample; one train-mode batch) are within the exact tolerance of
+    c5's; every device (float32) output is finite; and the saved checkpoint loads back to the same state with
+    identical device predictions. The device differences, their worst rows, the stage-by-stage diagnosis, the c5
+    batch-split reference and the arithmetic settings are recorded, never gated."""
+    import torch
+    from hybrid.h6_value_train import state_sha256
+    from hybrid.h7r_d4 import digest
     from hybrid.h7r_ledger import publish_json
     from model.checkpoint import save_checkpoint
 
@@ -220,18 +253,36 @@ def prepare(args, log=print) -> dict:
     fl = d1.floors(subset)
     c5, c5_identity = load_c5(r2c, args.c5, args.device)
     meta_c5 = json.loads(Path(args.c5).with_name('best.json').read_text(encoding='utf-8'))
-    tol = c['widen']['tolerance']
+    ex, batch = c['widen']['exact'], c['widen']['device_check']['batch_size']
+    tol = ex['tolerance']
     sets = {'subset': subset, 'cycle_val': cycle['val'], 'replay_val': replay['val']}
-    base = {k: d1.predict_rows(c5, v, args.device) for k, v in sets.items()}
+    sample = d1.sample_index(int(replay['val']['value'].shape[0]), ex['replay_val_rows'], ex['replay_val_seed'])
+    exact_sets = {'subset': None, 'cycle_val': None, 'replay_val': sample}
+    train_rows = min(ex['train_mode_rows'], desc['rows'])
+    settings = d1.numeric_settings(args.device)
+    started = time.monotonic()
+    exact_c5 = {k: d1.exact_values(c5, sets[k], i) for k, i in exact_sets.items()}
+    exact_c5['train_mode'] = d1.exact_values(c5, subset, torch.arange(train_rows), train_mode=True)
+    log(f'[d1-prepare] c5 float64 CPU values ({time.monotonic() - started:.0f} s)', flush=True)
+    device_c5 = {k: d1.predict_rows(c5, v, args.device, batch) for k, v in sets.items()}
+    device_c5['train_mode'] = d1.train_mode_values(c5, subset, args.device, train_rows)
+    split = {k: d1.compare(device_c5[k], d1.predict_rows(c5, v, args.device, max(1, batch // 4)))
+             for k, v in sets.items()}
     widened = {}
     (root / c['output']['parents']).mkdir(parents=True)
     for s in SEEDS:
         init = c['widen']['init_seeds'][s]
-        wide = d1.widen_value_head(c5.cpu(), c['arms']['wide']['value_channels'], init).to(args.device)
+        wide = d1.widen_value_head(c5.cpu(), c['arms']['wide']['value_channels'], init)
+        checks = d1.preservation(c5, wide)  # both on the CPU
+        exact = {k: d1.compare(exact_c5[k], d1.exact_values(wide, sets[k], i), i) for k, i in exact_sets.items()}
+        exact['train_mode'] = d1.compare(exact_c5['train_mode'],
+                                         d1.exact_values(wide, subset, torch.arange(train_rows), train_mode=True))
         c5.to(args.device)
-        checks = d1.preservation(c5, wide)
-        diffs = {k: float((d1.predict_rows(wide, v, args.device) - base[k]).abs().max()) for k, v in sets.items()}
-        train_mode = d1.train_mode_difference(c5, wide, subset, args.device)
+        wide.to(args.device)
+        device = {k: d1.compare(device_c5[k], d1.predict_rows(wide, v, args.device, batch)) for k, v in sets.items()}
+        device['train_mode'] = d1.compare(device_c5['train_mode'], d1.train_mode_values(wide, subset, args.device,
+                                                                                         train_rows))
+        layers = {k: d1.layer_differences(c5, wide, v, args.device, batch) for k, v in sets.items()}
         ckpt, meta_path = parent_paths(c, root, s)
         save_checkpoint(ckpt, wide)
         meta = {**meta_c5, 'model_config': asdict(wide.config),
@@ -239,21 +290,33 @@ def prepare(args, log=print) -> dict:
                        'init_seed': init, 'value_channels': wide.config.value_channels}}
         meta_path.write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')
         loaded, _ = r2.load_value_model(ckpt, meta_path, args.device)
-        reload_diff = float((d1.predict_rows(loaded, subset, args.device) - d1.predict_rows(wide, subset, args.device))
-                            .abs().max())
-        ok = (checks['passed'] and all(v <= tol for v in diffs.values()) and train_mode <= tol and reload_diff == 0.0
-              and loaded.config.value_channels == wide.config.value_channels)
-        widened[s] = {'init_seed': init, **checks, 'max_abs_prediction_difference': diffs,
-                      'train_mode_difference': train_mode, 'reload_difference': reload_diff,
+        reload = {'state_equal': state_sha256(loaded.state_dict()) == checks['state_sha256'],
+                  'value_channels': loaded.config.value_channels,
+                  'prediction': d1.compare(d1.predict_rows(wide, subset, args.device, batch),
+                                           d1.predict_rows(loaded, subset, args.device, batch))}
+        gates = {
+            'bytes': checks['passed'],
+            'exact': all(v['finite'] and v['max'] <= tol for v in exact.values()),
+            'device_finite': all(v['finite'] for v in device.values()),
+            'reload': reload['state_equal'] and reload['value_channels'] == wide.config.value_channels
+            and reload['prediction']['finite'] and reload['prediction']['max'] == 0.0,
+        }
+        ok = all(gates.values())
+        widened[s] = {'init_seed': init, **checks, 'gates': gates, 'exact': exact, 'device': device,
+                      'layers': layers, 'reload': reload,
                       'checkpoint_sha256': r2.file_sha256(ckpt), 'metadata_sha256': r2.file_sha256(meta_path),
                       'passed': ok}
-        log(f"[d1-prepare] seed {s}: widened parent {'PASS' if ok else 'FAIL'} (max |dv| {max(diffs.values()):.2e}, "
-            f'train mode {train_mode:.2e}, reload {reload_diff:.1e})', flush=True)
+        worst = max((v['max'] for v in exact.values() if v['max'] is not None), default=None)
+        dev = max((v['max'] for v in device.values() if v['max'] is not None), default=None)
+        log(f"[d1-prepare] seed {s}: widened parent {'PASS' if ok else 'FAIL'} {gates} (float64 max |dv| {worst}, "
+            f'device float32 max |dv| {dev}; {time.monotonic() - started:.0f} s)', flush=True)
     r2.require(git_state(root) == state, 'HEAD changed during prepare')
     record = {'format': PREP_FORMAT, 'experiment_sha256': eid, 'contract_sha256': csha, 'git': state,
-              'subset': desc, 'composition': composition(subset), 'floors': fl,
-              'c5': c5_identity, 'widened': widened, 'tolerance': tol,
-              'passed': all(v['passed'] for v in widened.values())}
+              'subset': desc, 'composition': composition(subset), 'floors': fl, 'c5': c5_identity,
+              'exact': {**ex, 'replay_val_sample_sha256': digest(sample.tolist()), 'train_mode_rows_used': train_rows},
+              'device_check': {'batch_size': batch, 'settings': settings,
+                               'c5_batch_split': {'batch_size': max(1, batch // 4), 'compare': split}},
+              'widened': widened, 'passed': all(v['passed'] for v in widened.values())}
     publish_json(out, record)
     r2.require(record['passed'], 'a widened parent failed its preservation checks: no training')
     return record

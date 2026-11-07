@@ -3,6 +3,7 @@ own random generator), the wide checkpoint saved and loaded back through the eva
 real trainer (no change to the run, the parent fit equal in both arms, the last-step state kept apart from the
 selected checkpoint), the subset, the floors, the two readings, the contract on the real records, and the train and
 fit stages wired end to end on stand-in data."""
+import contextlib
 import copy
 from dataclasses import asdict
 import json
@@ -21,7 +22,7 @@ from scripts import h7r_d1 as cli
 from tests.test_h7c_train import small_model, value_split
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-1k-contract.json'
+CONTRACT = 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json'
 QUIET = lambda *a, **k: None  # noqa: E731
 
 
@@ -46,9 +47,14 @@ class WidenTest(unittest.TestCase):
         checks = d1.preservation(parent, wide)
         self.assertTrue(checks['passed'], checks)
         for data in (cycle['train'], cycle['val']):
-            diff = (d1.predict_rows(wide, data, 'cpu') - d1.predict_rows(parent, data, 'cpu')).abs().max()
-            self.assertLessEqual(float(diff), 1e-6)
-        self.assertLessEqual(d1.train_mode_difference(parent, wide, cycle['train'], 'cpu'), 1e-6)
+            exact = d1.compare(d1.exact_values(parent, data), d1.exact_values(wide, data))
+            self.assertEqual(exact['dtype'], 'float64')
+            self.assertTrue(exact['finite'])
+            self.assertLessEqual(exact['max'], 1e-12)
+        index = torch.arange(8)
+        train = d1.compare(d1.exact_values(parent, cycle['train'], index, train_mode=True),
+                           d1.exact_values(wide, cycle['train'], index, train_mode=True))
+        self.assertLessEqual(train['max'], 1e-12)
         # the new channels are not dead: nonzero conv weights, zero outgoing columns
         w = wide.state_dict()
         self.assertGreater(float(w['value_head.0.weight'][1:].abs().sum()), 0)
@@ -69,15 +75,90 @@ class WidenTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'not wider'):
             d1.widen_value_head(parent, 1, 1)
 
-    def test_a_broken_widening_fails_its_checks(self):
+    def test_a_broken_widening_fails_the_byte_and_the_float64_checks(self):
         parent = small_model()
+        cycle, _ = caches()
+        reference = d1.exact_values(parent, cycle['train'])
+
+        def bump(key, where, value):
+            def change(state):
+                state[key][where] = value
+            return change
+        cases = {  # each error, alone, is caught by its byte check and by the float64 predictions
+            'conv_channel_0': bump('value_head.0.weight', (0, 3, 0, 0), 0.25),
+            'bn_channel_0': bump('value_head.1.running_var', 0, 3.0),
+            'linear_columns_copied': lambda st: st['value_head.4.weight'][:, :225].add_(0.1),
+            'new_columns_zero': lambda st: st['value_head.4.weight'][:, 225:].fill_(0.05),
+            'rest_copied': bump('value_head.6.bias', 0, 0.3),
+        }
+        for check, change in cases.items():
+            with self.subTest(check):
+                wide = d1.widen_value_head(parent, 4, 1)
+                state = wide.state_dict()
+                change(state)
+                wide.load_state_dict(state)
+                out = d1.preservation(parent, wide)
+                self.assertFalse(out['passed'])
+                self.assertFalse(out['checks'][check])
+                self.assertGreater(d1.compare(reference, d1.exact_values(wide, cycle['train']))['max'], 1e-12)
+        # a local error the sampled rows never reach (one weight of a copied column) passes the prediction check
+        # and is caught only by the byte check: the float64 check is read with the byte checks, never alone
         wide = d1.widen_value_head(parent, 4, 1)
         state = wide.state_dict()
-        state['value_head.4.weight'][0, 300] = 0.5
+        silent = next((i, j) for i in range(64) for j in range(225)
+                      if d1.compare(reference, self.with_weight(wide, state, i, j, cycle))['max'] <= 1e-12)
+        state['value_head.4.weight'][silent] += 0.5
         wide.load_state_dict(state)
-        checks = d1.preservation(parent, wide)
-        self.assertFalse(checks['passed'])
-        self.assertFalse(checks['checks']['new_columns_zero'])
+        self.assertFalse(d1.preservation(parent, wide)['checks']['linear_columns_copied'])
+        # a different init of the new channels is not an error: their outgoing columns are zero
+        other = d1.widen_value_head(parent, 4, 99)
+        self.assertTrue(d1.preservation(parent, other)['passed'])
+        self.assertLessEqual(d1.compare(reference, d1.exact_values(other, cycle['train']))['max'], 1e-12)
+
+    @staticmethod
+    def with_weight(wide, state, i, j, cycle):
+        trial = copy.deepcopy(wide)
+        st = {k: v.clone() for k, v in state.items()}
+        st['value_head.4.weight'][i, j] += 0.5
+        trial.load_state_dict(st)
+        return d1.exact_values(trial, cycle['train'])
+
+    def test_the_exact_values_leave_the_model_alone(self):
+        parent = small_model()
+        cycle, _ = caches()
+        before = {k: v.clone() for k, v in parent.state_dict().items()}
+        values = d1.exact_values(parent, cycle['train'], torch.arange(8), train_mode=True)
+        self.assertEqual(values.dtype, torch.float64)
+        self.assertTrue(all(torch.equal(before[k], v) for k, v in parent.state_dict().items()))
+        self.assertEqual(next(parent.parameters()).dtype, torch.float32)
+        self.assertFalse(parent.value_head.training)
+        # train mode uses the batch statistics: not the eval-mode values
+        self.assertFalse(torch.equal(values, d1.exact_values(parent, cycle['train'], torch.arange(8))))
+
+    def test_compare_rows_and_nonfinite_outputs(self):
+        a = torch.tensor([0.1, 0.2, 0.3])
+        out = d1.compare(a, torch.tensor([0.1, 0.25, 0.3]), torch.tensor([7, 9, 11]))
+        self.assertEqual((out['row'], out['differing_rows'], out['finite']), (9, 1, True))
+        self.assertAlmostEqual(out['max'], 0.05, places=6)
+        bad = d1.compare(a, torch.tensor([0.1, float('nan'), float('inf')]))
+        self.assertEqual((bad['finite'], bad['nonfinite'], bad['max']), (False, 2, None))
+
+    def test_layer_diagnosis_separates_the_copied_arithmetic(self):
+        parent = small_model()
+        cycle, _ = caches()
+        wide = d1.widen_value_head(parent, 4, 1)
+        good = d1.layer_differences(parent, wide, cycle['train'], 'cpu', 16)
+        self.assertEqual(tuple(good), d1.LAYERS)
+        self.assertEqual(good['trunk']['max'], 0.0)
+        self.assertEqual(good['hidden_linear_copied_columns']['max'], 0.0)
+        state = wide.state_dict()
+        state['value_head.4.weight'][:, 225:].fill_(0.05)
+        wide.load_state_dict(state)
+        broken = d1.layer_differences(parent, wide, cycle['train'], 'cpu', 16)
+        self.assertEqual(broken['relu']['max'], 0.0)  # the copied channel itself is unchanged
+        self.assertEqual(broken['hidden_linear_copied_columns']['max'], 0.0)
+        self.assertGreater(broken['hidden_linear']['max'], 0.0)  # the difference enters at the wider product
+        self.assertGreater(broken['value']['max'], 0.0)
 
 
 class CheckpointTest(unittest.TestCase):
@@ -244,6 +325,12 @@ class ContractTest(unittest.TestCase):
             'last step': lambda c: c['fit'].update(measured_at='selected'),
             'under runs/': lambda c: c['output'].update(predictions='docs/p.pt'),
             'keys differ': lambda c: c.update(extra=1),
+            'within at most 1e-12': lambda c: c['widen']['exact'].update(tolerance=1e-6),
+            'CPU float64': lambda c: c['widen']['exact'].update(dtype='float32'),
+            'only non-finite': lambda c: c['widen']['device_check'].update(gate='1e-6'),
+            'the v1 construction': lambda c: c['widen']['init_seeds'].update({'31001': 1}),
+            'superseded v1 prepare': lambda c: c['supersedes']['prepare'].update(sha256='0' * 64),
+            'keeps the v1 subset': lambda c: c['subset'].update(seed=1),
         }
         for message, change in cases.items():
             with self.subTest(message):
@@ -257,6 +344,92 @@ class ContractTest(unittest.TestCase):
         c['approved']['prepare'] = False
         with self.assertRaisesRegex(ValueError, 'train stage needs'):
             self.load(c, 'train')
+
+
+class PrepareWiringTest(unittest.TestCase):
+    """``prepare`` on stand-in caches and a stand-in c5: the v2 gate (bytes, CPU float64, finite device outputs,
+    reload) and what is recorded beside it."""
+
+    def run_prepare(self, root, widen=None, predict=None):
+        from model.checkpoint import save_checkpoint
+        from hybrid.h6_value_train import frozen_state, state_sha256
+        c = json.loads((ROOT / CONTRACT).read_text())
+        c['widen']['exact'].update(replay_val_rows=8, train_mode_rows=12)
+        c['widen']['device_check'].update(batch_size=16)
+        cycle, replay = caches()
+        parent = small_model()
+        frozen = state_sha256(frozen_state(parent))
+        (root / 'c5').mkdir()
+        save_checkpoint(root / 'c5' / 'best.pt', parent)
+        (root / 'c5' / 'best.json').write_text(json.dumps({'frozen_state_sha256': frozen}))
+        r2c = {'frozen_state_sha256': frozen}
+        desc = {'games': 4, 'rows': int(cycle['train']['value'].shape[0]), 'games_sha256': 'g' * 64,
+                'nested': {'rows': 0}}
+        args = SimpleNamespace(d1_contract='x', root=root, cycle_cache='cc', cycle_rows='cr', replay_cache='rc',
+                               c5=str(root / 'c5' / 'best.pt'), device='cpu')
+        patches = [mock.patch.object(cli, 'load_d1', return_value=(c, 's' * 64, 'e' * 64)),
+                   mock.patch.object(cli, 'git_state', return_value={'commit': 'c' * 40, 'dirty': False}),
+                   mock.patch.object(cli, 'reference_inputs', return_value=(r2c, {}, {})),
+                   mock.patch.object(cli, 'checked_caches', return_value=(cycle, replay)),
+                   mock.patch.object(cli, 'subset_of', return_value=(cycle['train'], desc)),
+                   mock.patch.object(cli, 'load_c5', return_value=(parent, {'value_checkpoint_sha256': 'v' * 64}))]
+        if widen:
+            patches.append(mock.patch.object(d1, 'widen_value_head', widen))
+        if predict:
+            patches.append(mock.patch.object(d1, 'predict_rows', predict))
+        with contextlib.ExitStack() as stack:
+            for p in patches:
+                stack.enter_context(p)
+            try:
+                return cli.prepare(args, log=QUIET), None
+            except ValueError as exc:
+                return json.loads((root / c['output']['prepare']).read_text()), exc
+
+    def test_a_correct_widening_passes_and_the_diagnosis_is_recorded(self):
+        with TemporaryDirectory() as tmp:
+            rec, err = self.run_prepare(Path(tmp))
+        self.assertIsNone(err)
+        self.assertTrue(rec['passed'])
+        self.assertEqual(rec['format'], cli.PREP_FORMAT)
+        for s, w in rec['widened'].items():
+            self.assertEqual(w['gates'], {'bytes': True, 'exact': True, 'device_finite': True, 'reload': True})
+            self.assertEqual(set(w['exact']), {'subset', 'cycle_val', 'replay_val', 'train_mode'})
+            self.assertTrue(all(v['dtype'] == 'float64' and v['max'] <= 1e-12 for v in w['exact'].values()))
+            self.assertEqual(w['exact']['replay_val']['rows'], 8)  # the seeded sample
+            self.assertEqual(w['exact']['train_mode']['rows'], 12)
+            self.assertEqual(set(w['layers']['cycle_val']), set(d1.LAYERS))
+            self.assertTrue(w['reload']['state_equal'])
+        self.assertIn('cudnn_allow_tf32', rec['device_check']['settings'])
+        self.assertEqual(rec['device_check']['batch_size'], 16)
+
+    def test_a_broken_widening_or_nonfinite_outputs_fail_closed(self):
+        original = d1.widen_value_head
+
+        def broken(parent, channels, seed):
+            wide = original(parent, channels, seed)
+            state = wide.state_dict()
+            state['value_head.4.weight'][:, 225:].fill_(0.05)
+            wide.load_state_dict(state)
+            return wide
+        with TemporaryDirectory() as tmp:
+            rec, err = self.run_prepare(Path(tmp), widen=broken)
+        self.assertRegex(str(err), 'no training')
+        self.assertFalse(rec['passed'])
+        self.assertTrue(all(not w['gates']['bytes'] and not w['gates']['exact'] for w in rec['widened'].values()))
+
+        rows = d1.predict_rows
+
+        def nan_for_wide(model, data, device, batch_size=4096):
+            out = rows(model, data, device, batch_size)
+            return out.fill_(float('nan')) if model.config.value_channels == 4 else out
+        with TemporaryDirectory() as tmp:
+            rec, err = self.run_prepare(Path(tmp), predict=nan_for_wide)
+        self.assertIsNotNone(err)
+        self.assertFalse(rec['passed'])
+        for w in rec['widened'].values():
+            self.assertTrue(w['gates']['exact'])
+            self.assertFalse(w['gates']['device_finite'])
+            self.assertFalse(w['device']['subset']['finite'])
 
 
 class TrainFitWiringTest(unittest.TestCase):

@@ -1,7 +1,8 @@
 # R2-D1-HEAD-WIDTH-1 — value head 폭 진단 계약 초안
 
-- 작성일 2026-11-06. 상태: **1,000행 계약 고정 / 단계 승인 전(prepare·train·evaluate 모두 false)**
-- 계약 JSON: `R2-D1-HEAD-WIDTH-1/d1-1k-contract.json`, 도구: `scripts/h7r_d1.py`, `src/hybrid/h7r_d1.py`
+- 작성일 2026-11-06, 개정 2026-11-07. 상태: **v1 prepare FAIL(§11) / v2 계약 고정, 단계 승인 전(prepare·train·evaluate 모두 false)**
+- 계약 JSON: v2 `R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json`(유효), v1 `d1-1k-contract.json`(prepare FAIL로 종료, 기록 보존)
+- 도구: `scripts/h7r_d1.py`, `src/hybrid/h7r_d1.py`(v2 계약만 읽는다)
 - 상위 설계: `R2-DIAG-1-draft.md` §7(판독 규칙, ε, `DEVELOPMENT_SIGNAL`, 보류)과 §8(D1 행)
 - 직전 진단: `R2-D3-NO-OUTCOME-1-draft.md` §9(D3 `NOT_ESTABLISHED`)
 - §1–8의 "제안값"은 §10에서 1,000행 단계 값으로 확정했다. §9는 확정 전 목록으로 남긴다.
@@ -184,7 +185,7 @@
    - 분포: `kaiming_normal_(fan_out, relu)`(네트워크 기본과 같음)
    - seed별 전용 생성기 seed: 31001 → 2026110710, 31002 → 2026110711, 31003 → 2026110712
    - 새 모델을 만들 때의 기본 초기화도 전역 난수를 소비하지 않는다(`fork_rng`). 테스트로 확인한다.
-   - 예측 보존 허용 오차 1e-6
+   - 예측 보존 검사(v2, §11): 바이트 검사 + CPU float64 예측 차이 ≤ 1e-12. GPU float32 차이는 기록만 한다. v1의 float32 허용 오차 1e-6은 실패했다(§11.1).
 3. **부분집합**: 선택 seed 2026110701, 규칙은 §3 그대로("처음 1,000행 이상"에서 멈춤, 게임을 쪼개지 않음). 같은 순서의 5,000행 집합도 prepare 기록에 함께 남긴다(게임 수, 행 수, 게임 목록 SHA).
 4. **step 예산: 210, 두 군 같음.** epoch 수는 210 / ceil(2n / 1024)로 정하고, 도구가 실제 step 수가 210인지 확인한다. 더 큰 예산은 쓰지 않는다. 210 step에서 적합이 부족하면 그것도 결과로 기록한다(§4의 `NEITHER_FIT` / `MIXED_FIT`).
 5. **train 적합 문턱과 판정 순서**
@@ -216,17 +217,21 @@
    - 승인은 `prepare → train → evaluate` 순서다. 앞 단계가 승인되지 않으면 다음 단계는 거부된다.
    - `fit`은 train 승인으로 돈다. `evaluate`는 커밋된 `fit.json`이 실행 기록에서 다시 계산한 판정과 같을 때만 돈다. train 판정을 H-dev 예측 전에 고정하기 위해서다.
 
-**§2 검증 항목의 구현**
-- 예측 보존은 부분집합, cycle val, H6 val에서 확인한다. H-dev는 prepare에서 쓰지 않는다(evaluate 전까지 손대지 않음).
-- T-val objective는 cycle val과 H6 val 예측의 함수다. 두 집합의 max |Δv| ≤ 1e-6이면 objective 차이도 그 범위다.
-- 첫 batch 학습 손실은 train 모드(value head BN batch 통계) 예측 차이로 확인한다. 부분집합 앞 1,024행 기준이다.
+**§2 검증 항목의 구현** (v2 기준, 자세한 내용은 §11.2)
+- 예측 보존은 부분집합, cycle val, H6 val 표본에서 확인한다. H-dev는 prepare에서 쓰지 않는다(evaluate 전까지 손대지 않음).
+- T-val objective는 cycle val과 H6 val 예측의 함수다. float64 차이가 1e-12 이하이면 objective도 그 범위에서 같다.
+- 첫 batch 학습 손실은 train 모드(value head BN batch 통계) 예측 차이로 확인한다. 부분집합 앞 1,024행을 한 batch로 쓴다.
 - 두 군의 parent `W`(학습 시작 전)도 run 기록에 남는다.
 
-**prepare 출력** (`R2-D1-HEAD-WIDTH-1/1k/prepare.json`, 커밋)
+**prepare 출력** (`R2-D1-HEAD-WIDTH-1/1k-v2/prepare.json`, 커밋)
 - 부분집합: 게임 수, 행 수, 게임 SHA, 5,000행 집합
 - 구성: outcome / proof 행과 가중치, ply 구간
 - 바닥값: 정확 / D4 각각 F, 묶음 수, 충돌 묶음 수
-- seed별 확장 parent: 바이트 검사, 예측 차이, train 모드 차이, 재로딩 차이, checkpoint SHA
+- seed별 확장 parent
+  - 판정 4개(`gates`): 바이트, float64, 출력 유한성, 재로딩
+  - float64 / GPU 비교: 최대 차이, 그 행, 두 값, 차이 난 행 수
+  - 층별 진단, 재로딩 결과, checkpoint SHA
+- 공통: GPU 연산 설정, c5 batch 분할 비교, H6 val 표본 SHA
 - `passed`가 false여도 기록은 남긴다. 그 경우 도구는 실패로 끝나고 학습은 거부된다.
 
 ### 10.2 실행 절차 (데스크톱)
@@ -235,7 +240,7 @@
 - 실패하면 다음 단계로 넘어가지 않는다. 로그와 이미 쓴 기록은 지우지 않고 보고한다.
 - 어떤 출력도 덮어쓰지 않는다. 같은 경로가 있으면 도구가 멈춘다.
 
-1. prepare (`approved.prepare` 커밋 후; 학습 없음, GPU 추론만)
+1. prepare (`approved.prepare` 커밋 후; 학습 없음. c5와 확장 parent 3개의 CPU float64 추론과 GPU 추론만)
 
 ```bash
 (
@@ -245,21 +250,21 @@
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   git pull --ff-only origin feat/h7-c1
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
-  X="$D/1k"
-  L=runs/h7r/R2-D1-HEAD-WIDTH-1/1k/logs
+  X="$D/1k-v2"
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs
   test -z "$(git status --porcelain --untracked-files=no)"
   python scripts/check_track_b_frozen.py
   test ! -e "$X/prepare.json"
   mkdir -p "$L"
   LOG="$L/prepare-$(date +%Y%m%d-%H%M%S).log"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
-  { echo __START__; rc=0; python -u scripts/h7r_d1.py prepare --d1-contract "$D/d1-1k-contract.json" \
+  { echo __START__; rc=0; python -u scripts/h7r_d1.py prepare --d1-contract "$D/d1-1k-v2-contract.json" \
       --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
       --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
     echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
   git add "$X/prepare.json"
   python scripts/h7r_d4_records.py verify-staged --expect "$X/prepare.json"
-  git commit -m "H7-R D1: 1,000-row subset, floors and widened parents (records only)"
+  git commit -m "H7-R D1 v2: 1,000-row subset, floors and widened parents (records only)"
   git push origin feat/h7-c1
 )
 ```
@@ -274,7 +279,7 @@
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   git pull --ff-only origin feat/h7-c1
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
-  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
   L="$R/logs"
   test -z "$(git status --porcelain --untracked-files=no)"
   python scripts/check_track_b_frozen.py
@@ -285,7 +290,7 @@
       test "$(git rev-parse HEAD)" = "$head"
       test ! -e "$R/$arm-$s"
       LOG="$L/train-$arm-$s-$(date +%Y%m%d-%H%M%S).log"
-      { echo __START__; rc=0; python -u scripts/h7r_d1.py train --d1-contract "$D/d1-1k-contract.json" \
+      { echo __START__; rc=0; python -u scripts/h7r_d1.py train --d1-contract "$D/d1-1k-v2-contract.json" \
           --arm "$arm" --seed "$s" \
           --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
           --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
@@ -304,14 +309,14 @@
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
-  X="$D/1k"
-  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k
+  X="$D/1k-v2"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
   L="$R/logs"
   test -z "$(git status --porcelain --untracked-files=no)"
   test ! -e "$X/fit.json"
   LOG="$L/fit-$(date +%Y%m%d-%H%M%S).log"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
-  { echo __START__; rc=0; python -u scripts/h7r_d1.py fit --d1-contract "$D/d1-1k-contract.json" 2>&1 || rc=$?
+  { echo __START__; rc=0; python -u scripts/h7r_d1.py fit --d1-contract "$D/d1-1k-v2-contract.json" 2>&1 || rc=$?
     echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
   expect=(--expect "$X/fit.json")
   for s in 31001 31002 31003; do
@@ -326,7 +331,7 @@
   done
   git add "$X/fit.json" "$X/run-records"
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
-  git commit -m "H7-R D1: 1,000-row runs and the train-fit reading (records only)"
+  git commit -m "H7-R D1 v2: 1,000-row runs and the train-fit reading (records only)"
   git push origin feat/h7-c1
 )
 ```
@@ -341,15 +346,15 @@
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   git pull --ff-only origin feat/h7-c1
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
-  X="$D/1k"
-  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k
+  X="$D/1k-v2"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
   L="$R/logs"
   test -z "$(git status --porcelain --untracked-files=no)"
   python scripts/check_track_b_frozen.py
   test ! -e "$X/d1_eval.json"
   LOG="$L/evaluate-$(date +%Y%m%d-%H%M%S).log"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
-  { echo __START__; rc=0; python -u scripts/h7r_d1.py evaluate --d1-contract "$D/d1-1k-contract.json" \
+  { echo __START__; rc=0; python -u scripts/h7r_d1.py evaluate --d1-contract "$D/d1-1k-v2-contract.json" \
       --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
     echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG"
   python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern '*.log' \
@@ -359,10 +364,77 @@
   for f in "$X"/run-logs/*.log; do expect+=(--expect "$f"); done
   git add "$X/d1_eval.json" "$X/log_manifest.json" "$X/records_manifest.json" "$X"/run-logs/*.log
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
-  git commit -m "H7-R D1: 1,000-row H-dev reading (records only)"
+  git commit -m "H7-R D1 v2: 1,000-row H-dev reading (records only)"
   git push origin feat/h7-c1
 )
 ```
 
 - 3번은 train 승인 범위다. 결과(`fit.json`)를 확인한 뒤 evaluate 승인을 따로 받는다.
 - H-dev 판독이 어떻게 나와도 이 단계의 모델은 D4 후보가 아니다. 5,000행 단계는 §7에 따라 별도 승인으로 정한다.
+
+## 11. v1 prepare 실패와 v2 수정 계약
+
+### 11.1 v1 결과 (기록 `R2-D1-HEAD-WIDTH-1/1k/prepare.json`, 커밋 `37e8c45`)
+
+- 실행: `e66cc38`의 clean 상태, v1 계약 SHA `e28e17b8…`. 약 11초 만에 학습 시작 전에 멈췄다.
+- 판정: **prepare FAIL**. 미리 정한 float32 허용 오차 1e-6을 넘었다. 이 판정은 바꾸지 않는다. v1 계약은 여기서 끝난다.
+- 부분집합: 20게임 1,024행(5,000행 집합 111게임 5,174행). outcome 939행, proof 85행
+- 바닥값: 정확 기준 F = 0(충돌 0), D4 기준 F_D4 = 0.001118(충돌 묶음 1)
+
+| 검사 (세 seed 모두 같은 값) | 결과 | 기준 1e-6 |
+|---|---:|---|
+| 동결 state·복사 텐서·새 Linear 열 0 | 전부 통과 | 통과 |
+| 부분집합 예측 최대 차이 | 1.00583e-6 | 초과 |
+| cycle val 예측 최대 차이 | 1.62236e-6 | 초과 |
+| H6 replay val 예측 최대 차이 | 0 | 통과 |
+| train 모드 예측 차이 | 9.53674e-7 | 통과 |
+| 저장·재로딩 예측 차이 | 0 | 통과 |
+
+- **원인은 확정되지 않았다.**
+  - 텐서 복사 오류를 보여 주는 항목은 없다.
+  - GPU float32 연산 순서 차이(첫 Linear 입력이 225에서 900으로 커지면서 바뀐 커널)는 **가설**이다.
+  - 세 seed의 값이 같다는 사실로는 원인을 정할 수 없다. 새 채널에서 나가는 가중치가 0이면, conv 초기값이 seed마다 달라도 출력이 같기 때문이다.
+- **검사 설계의 한계**: 1e-6은 float32 누산 순서 차이만 허용하려던 값이었다. GPU에서 그 차이가 얼마인지 측정하지 않고 정했다.
+
+### 11.2 v2에서 바꾼 것 (`d1-1k-v2-contract.json`)
+
+- **v1에서 그대로 가져오는 것** (도구가 v1 계약과 같은지 확인)
+  - 부분집합, step 예산, 두 군, seed, 새 채널 초기화와 그 seed
+  - 적합 판정과 H-dev 판독 규칙
+- v1 계약과 v1 실패 기록은 SHA로 고정해 `supersedes`에 남긴다. 실패 기록의 `passed`가 false인지도 확인한다.
+- 새 실험 식별값을 쓴다. 출력은 `1k-v2/`와 `runs/.../1k-v2/`에 쓴다. v1 출력은 건드리지 않는다.
+
+**예측 보존 판정 (하나라도 실패하면 학습 거부)**
+1. 바이트 검사: v1과 같다.
+2. CPU float64 검사: 최대 차이 ≤ 1e-12. 1e-12는 float64 오차(약 1e-16) 기준으로 정한 값이다. 이번 v1 관측값에 맞춘 값이 아니다.
+   - 방법: c5와 확장 parent를 각각 복사해 모델과 입력을 double로 바꾼다. 출력도 float64로 유지한다(`exact_values`). 원래 모델의 상태는 바꾸지 않는다.
+   - eval 모드 대상: 부분집합 전체, cycle val 전체, H6 val의 고정 seed 표본 4,096행(seed 2026110702)
+     - H6 val 전체는 106,223행이라 CPU float64로는 오래 걸린다.
+     - 표본의 행 목록 SHA를 기록한다.
+   - train 모드: 부분집합 앞 1,024행을 한 batch로, eval 검사와 별도 복사본에서 한다.
+3. 출력 유한성: GPU 출력(eval·train 모드)에 NaN·Inf가 있으면 실패한다.
+4. 재로딩: 저장한 checkpoint를 평가 로더로 다시 읽은 state SHA가 확장 parent와 같아야 한다. GPU 예측 차이는 정확히 0이어야 한다.
+
+**기록만 하는 값 (판정에 쓰지 않음)**
+- GPU float32 차이(부분집합, cycle val, H6 val 전체, train 모드)
+  - 각 비교마다: 최대 차이, 그 행, 두 값, 차이 난 행 수
+  - batch 크기 4,096
+- 층별 진단(`layer_differences`): 같은 입력에서 기존 head와 확장 head의 단계별 출력을 비교한다.
+  - 단계: trunk, conv, BN, ReLU(복사 채널), 첫 Linear, ReLU, 둘째 Linear, tanh
+  - 첫 Linear는 두 가지로 본다. 확장 head 전체 곱과, 복사한 225열만으로 다시 계산한 값이다. 차이가 복사된 연산에서 생기는지, 넓어진 곱에서 생기는지를 구분하기 위해서다.
+- 기준 잡음: c5 자신을 batch 4,096과 1,024로 나눠 예측한 차이
+- 연산 설정
+  - torch / CUDA / cuDNN 버전, GPU 이름
+  - TF32 허용 여부(cuDNN, matmul), `float32_matmul_precision`
+  - cuDNN benchmark·deterministic, CPU thread 수
+
+**테스트로 확인한 것** (`tests/test_h7r_d1.py`)
+- 복사 오류 각각이 바이트 검사와 float64 예측 검사에서 모두 잡힌다: conv 채널 0, BN 채널 0 통계, 복사 Linear 열 전체, 새 Linear 열, 둘째 Linear
+- 표본 행이 닿지 않는 국소 오류는 float64 검사를 통과하고 바이트 검사에서만 잡힌다. 그래서 float64 표본 검사는 바이트 검사와 함께만 해석한다.
+- 새 채널 초기값만 다른 확장은 오류가 아니다(통과).
+- float64 출력의 dtype이 float64이고, 원래 모델의 state·dtype·모드가 바뀌지 않는다.
+- 비정상 값: NaN·Inf가 있으면 비교가 무효가 되고, prepare가 학습을 거부한다.
+- 층별 진단: 정상 확장에서 trunk와 복사 열 계산의 차이가 0이다. 새 열을 오염시키면 차이가 첫 Linear에서 처음 나타난다.
+- prepare 전체: 정상이면 PASS와 진단 기록, 깨진 확장이면 FAIL과 학습 거부
+
+**예상 비용**: 확장 parent당 CPU float64 약 7,900행 추론(c5는 한 번). 이 컨테이너의 4 thread 기준 약 350행/초로, 모델당 20초 남짓이다. 데스크톱 실제 시간은 로그로 보고한다.

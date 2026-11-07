@@ -5,8 +5,12 @@
                        generator (never the trainer's random streams), the new channels' input columns of the first
                        Linear exactly 0, every other value-head tensor copied. The first forward equals c5's in eval
                        and in train mode; trunk and policy head are copied unchanged.
-    preservation       the checks of that construction: copied slices byte-equal, new columns zero, the frozen state
-                       unchanged, and the largest prediction difference on given rows
+    preservation       the byte checks of that construction: copied slices equal, new columns zero, the frozen state
+                       unchanged
+    exact_values       float64 CPU values of a float64 copy (eval mode, or one train-mode batch): the prediction check
+                       of the construction, free of float32 kernel order
+    compare            the largest difference with its row and values; non-finite outputs make it unusable
+    layer_differences  the device (float32) differences stage by stage through the value head, as diagnosis
     select_subset      whole games of the c8 T-train split, in a seeded order, until a row count is first reached
                        (nested: the 1,000-row subset is a prefix of the 5,000-row one)
     floor              the weighted MSE no model can beat on a row set: rows with the same input (exact stones, or the
@@ -93,7 +97,8 @@ def preservation(parent, wide) -> dict:
 
 
 def predict_rows(model, data: dict, device, batch_size: int = 4096):
-    """Eval-mode value of every row (float32, CPU)."""
+    """Eval-mode value of every row on ``device`` in the model's dtype, returned as float32 on the CPU (the device
+    check; the prediction check of the construction is ``exact_values``)."""
     import torch
     from .h6_value_cache import planes_from_value_cache
     from .h6_value_train import value_forward
@@ -110,21 +115,140 @@ def predict_rows(model, data: dict, device, batch_size: int = 4096):
     return torch.cat(out) if out else torch.zeros(0)
 
 
-def train_mode_difference(parent, wide, data: dict, device, rows: int = 1024) -> float:
-    """Largest |v| difference of one train-mode value-head forward (batch statistics) on the first ``rows`` rows,
-    on copies (the models' BatchNorm statistics are not touched)."""
+def train_mode_values(model, data: dict, device, rows: int = 1024):
+    """Values of one train-mode value-head forward (batch statistics) of the first ``rows`` rows as one batch, on a
+    copy (the model's BatchNorm statistics are not touched)."""
     import torch
     from .h6_value_cache import planes_from_value_cache
     from .h6_value_train import value_forward
 
-    a, b = copy.deepcopy(parent).to(device), copy.deepcopy(wide).to(device)
-    for m in (a, b):
-        m.eval()
-        m.value_head.train()
+    m = copy.deepcopy(model).to(device)
+    m.eval()
+    m.value_head.train()
     index = torch.arange(min(rows, data['value'].shape[0]))
     planes, _, _ = planes_from_value_cache(data, index, device)
     with torch.no_grad():
-        return float((value_forward(a, planes) - value_forward(b, planes)).abs().max())
+        return value_forward(m, planes).cpu()
+
+
+def exact_values(model, data: dict, index=None, *, train_mode: bool = False, batch_size: int = 512):
+    """Float64 CPU values of ``index`` rows (all rows by default): a float64 copy of ``model`` (its own state is not
+    touched) on float64 planes, output kept in float64. Eval mode in batches, or ``train_mode``: one train-mode
+    value-head forward of all ``index`` rows as a single batch (on its own copy)."""
+    import torch
+    from .h6_value_cache import planes_from_value_cache
+    from .h6_value_train import value_forward
+
+    m = copy.deepcopy(model).cpu().double()
+    m.eval()
+    if train_mode:
+        m.value_head.train()
+    index = torch.arange(data['value'].shape[0]) if index is None else index
+    chunks = [index] if train_mode else list(index.split(batch_size))
+    out = []
+    with torch.no_grad():
+        for idx in chunks:
+            planes, _, _ = planes_from_value_cache(data, idx, 'cpu')
+            out.append(value_forward(m, planes.double()))
+    values = torch.cat(out) if out else torch.zeros(0, dtype=torch.float64)
+    require(values.dtype == torch.float64, 'the exact check did not run in float64')
+    return values
+
+
+def compare(reference, widened, index=None) -> dict:
+    """Largest |widened - reference| with the row it occurs on, both values there and the count of differing rows;
+    non-finite outputs are counted and make the comparison unusable (``finite`` False, no maximum)."""
+    import torch
+
+    a, b = reference.double(), widened.double()
+    require(a.shape == b.shape, 'compared outputs differ in shape')
+    bad = int((~torch.isfinite(a)).sum() + (~torch.isfinite(b)).sum())
+    out = {'rows': int(a.shape[0]), 'dtype': str(widened.dtype).replace('torch.', ''), 'finite': bad == 0,
+           'nonfinite': bad, 'max': None, 'row': None, 'reference': None, 'widened': None, 'differing_rows': None}
+    if bad or not a.shape[0]:
+        return out
+    d = (b - a).abs()
+    i = int(d.argmax())
+    out.update({'max': float(d[i]), 'row': int(index[i]) if index is not None else i, 'reference': float(a[i]),
+                'widened': float(b[i]), 'differing_rows': int((d > 0).sum())})
+    return out
+
+
+LAYERS = ('trunk', 'conv', 'batchnorm', 'relu', 'hidden_linear', 'hidden_linear_copied_columns', 'hidden_relu',
+          'output_linear', 'value')
+
+
+def layer_differences(parent, wide, data: dict, device, batch_size: int = 4096) -> dict:
+    """Eval mode, on ``device`` in the models' own dtype, batch by batch as ``predict_rows``: the largest difference
+    and the differing rows at every value-head stage, each model fed by its own previous stage (conv, BatchNorm and
+    ReLU compared on the copied channels). ``hidden_linear_copied_columns``: the widened first Linear applied to the
+    copied channels' columns only, against the parent's first Linear; it separates the copied arithmetic from the
+    wider product."""
+    import torch
+    import torch.nn.functional as F
+    from .h6_value_cache import planes_from_value_cache
+
+    old = parent.config.value_channels
+    actions = parent.config.board_size * parent.config.board_size
+    a, b = parent.to(device).eval(), wide.to(device).eval()
+    stats = {k: {'max': 0.0, 'differing_rows': 0, 'finite': True} for k in LAYERS}
+
+    def note(name, x, y):
+        x, y = x.reshape(x.shape[0], -1), y.reshape(y.shape[0], -1)
+        if not (torch.isfinite(x).all() and torch.isfinite(y).all()):
+            stats[name]['finite'] = False
+            return
+        d = (x.double() - y.double()).abs().amax(dim=1)
+        stats[name]['max'] = max(stats[name]['max'], float(d.max()))
+        stats[name]['differing_rows'] += int((d > 0).sum())
+
+    with torch.no_grad():
+        for start in range(0, data['value'].shape[0], batch_size):
+            index = torch.arange(start, min(data['value'].shape[0], start + batch_size))
+            planes, _, _ = planes_from_value_cache(data, index, device)
+            x, y = a.trunk(planes), b.trunk(planes)
+            note('trunk', x, y)
+            ha, hb = a.value_head, b.value_head
+            for k, name in ((0, 'conv'), (1, 'batchnorm'), (2, 'relu')):
+                x, y = ha[k](x), hb[k](y)
+                note(name, x, y[:, :old])
+            x, y = ha[3](x), hb[3](y)
+            copied = F.linear(y[:, :old * actions], hb[4].weight[:, :old * actions], hb[4].bias)
+            x, y = ha[4](x), hb[4](y)
+            note('hidden_linear', x, y)
+            note('hidden_linear_copied_columns', x, copied)
+            for k, name in ((5, 'hidden_relu'), (6, 'output_linear'), (7, 'value')):
+                x, y = ha[k](x), hb[k](y)
+                note(name, x, y)
+    for v in stats.values():
+        if not v['finite']:
+            v['max'] = v['differing_rows'] = None
+    return stats
+
+
+def numeric_settings(device) -> dict:
+    """The arithmetic settings a device comparison ran under."""
+    import torch
+
+    cuda = str(device).startswith('cuda') and torch.cuda.is_available()
+    return {'torch': torch.__version__, 'cuda': torch.version.cuda,
+            'cudnn': torch.backends.cudnn.version() if cuda else None,
+            'device_name': torch.cuda.get_device_name(torch.device(device)) if cuda else 'cpu',
+            'cudnn_enabled': torch.backends.cudnn.enabled, 'cudnn_benchmark': torch.backends.cudnn.benchmark,
+            'cudnn_deterministic': torch.backends.cudnn.deterministic,
+            'cudnn_allow_tf32': torch.backends.cudnn.allow_tf32,
+            'matmul_allow_tf32': torch.backends.cuda.matmul.allow_tf32,
+            'float32_matmul_precision': torch.get_float32_matmul_precision(),
+            'deterministic_algorithms': torch.are_deterministic_algorithms_enabled(),
+            'threads': torch.get_num_threads()}
+
+
+def sample_index(rows: int, k: int, seed: int):
+    """``k`` distinct rows of ``rows`` from a dedicated generator, sorted."""
+    import torch
+
+    require(0 < k <= rows, f'a sample of {k} rows from {rows}')
+    return torch.randperm(rows, generator=torch.Generator().manual_seed(seed))[:k].sort().values
 
 
 # --- the subset ------------------------------------------------------------------------------------------------------
