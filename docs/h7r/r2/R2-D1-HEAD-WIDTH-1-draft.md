@@ -1,6 +1,6 @@
 # R2-D1-HEAD-WIDTH-1 — value head 폭 진단 계약 초안
 
-- 작성일 2026-11-06, 개정 2026-11-07. 상태: **v1 prepare FAIL(§11) / v2 계약 고정, 단계 승인 전(prepare·train·evaluate 모두 false)**
+- 작성일 2026-11-06, 개정 2026-11-07. 상태: **v1 prepare FAIL(§11) / v2 prepare PASS, train `WIDTH_EFFECT`(§12) / evaluate 승인, H-dev 평가 대기**
 - 계약 JSON: v2 `R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json`(유효), v1 `d1-1k-contract.json`(prepare FAIL로 종료, 기록 보존)
 - 도구: `scripts/h7r_d1.py`, `src/hybrid/h7r_d1.py`(v2 계약만 읽는다)
 - 상위 설계: `R2-DIAG-1-draft.md` §7(판독 규칙, ε, `DEVELOPMENT_SIGNAL`, 보류)과 §8(D1 행)
@@ -493,7 +493,15 @@
 )
 ```
 
-3. H-dev 판독과 기록 커밋 (`approved.evaluate` 커밋 후; evaluate 승인 때 다시 검토한다)
+3. H-dev 판독과 기록 커밋 (`approved.evaluate` 커밋 후)
+   - **평가 대상**: c5와 T-val로 선택된 checkpoint 6개(`best.pt`). 마지막 step의 state(`final.pt`)는 평가하지 않는다.
+   - **판독**: R2 §7 그대로. 같은 seed의 narrow가 control이다.
+   - **사전 검사**
+     - 도구가 확인: 승인 순서, 소스 SHA, 커밋된 prepare PASS 기록, 6개 실행 기록의 짝맞춤
+     - 커밋된 `fit.json`이 실행 기록에서 다시 계산한 판정과 같은지 확인
+     - 각 checkpoint와 metadata의 SHA, 동결 state
+     - H-dev 검사값이 R2-0B 기록과 같은지 확인
+   - **실패해도 기록**: 종료 코드를 보존하고, 이번 시도의 로그와(쓰였으면) `d1_eval.json`을 커밋한다. 예측 파일(`predictions.pt`)은 `runs/`에 남고 커밋하지 않는다.
 
 ```bash
 (
@@ -510,6 +518,9 @@
   test -z "$(git status --porcelain --untracked-files=no)"
   python scripts/check_track_b_frozen.py
   test ! -e "$X/d1_eval.json"
+  git ls-files --error-unmatch "$X/prepare.json" "$X/fit.json" >/dev/null
+  for s in 31001 31002 31003; do for arm in narrow wide; do test -f "$R/$arm-$s/best.pt"; test -f "$R/$arm-$s/best.json"; done; done
+  mkdir -p "$L"
   LOG="$L/evaluate-$(date +%Y%m%d-%H%M%S).log"
   B="$(basename "$LOG" .log)"
   ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
@@ -531,7 +542,53 @@
 )
 ```
 
-- 2번(학습 6회, train 적합 판독, 기록 보존)까지가 train 승인 범위다. 결과(`fit.json`)를 확인한 뒤 evaluate 승인을 따로 받는다.
+3-F. 평가 기록 보존 (3번 블록이 기록 커밋 전에 멈췄을 때만; 추론 없음)
+   - 가장 최근 evaluate 로그와, 있으면 아직 커밋되지 않은 `d1_eval.json`을 커밋한다.
+   - 이미 복사된 로그는 원본과 대조만 한다(`--resume`).
+   - 중단된 commit이 남긴 staged 상태는 기록 폴더(`$X`)에 한해서만 먼저 해제한다. commit 뒤 push만 실패했으면 push를 다시 시도한다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/1k-v2"
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs
+  echo __START__
+  git reset -q -- "$X"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  shopt -s nullglob
+  logs=("$L"/evaluate-*.log)
+  [ "${#logs[@]}" -gt 0 ] || { echo "STOP: no evaluate log"; exit 1; }
+  LOG="${logs[0]}"
+  for f in "${logs[@]}"; do if [ "$f" -nt "$LOG" ]; then LOG="$f"; fi; done
+  B="$(basename "$LOG" .log)"
+  echo "log: $LOG"
+  tail -n 5 "$LOG"
+  expect=()
+  python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
+  for f in "$X/evaluate-logs/$B.log" "$X/evaluate-logs/$B.manifest.json" "$X/d1_eval.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+      git add "$f"
+      expect+=(--expect "$f")
+    fi
+  done
+  if [ "${#expect[@]}" -eq 0 ]; then
+    git push origin HEAD:feat/h7-c1
+    echo "nothing left to record; push checked"; echo "__EXIT__ 0"; exit 0
+  fi
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1 v2: 1,000-row H-dev attempt record $B (records only)"
+  git push origin feat/h7-c1
+  echo "__EXIT__ 0"
+)
+```
+
+- 2번(학습 6회, train 적합 판독, 기록 보존)까지가 train 승인 범위였다. 3번은 evaluate 승인(§12.5) 범위다. 결과(`fit.json`)를 확인한 뒤 evaluate 승인을 따로 받는다.
 - H-dev 판독이 어떻게 나와도 이 단계의 모델은 D4 후보가 아니다. 5,000행 단계는 §7에 따라 별도 승인으로 정한다.
 
 ## 11. v1 prepare 실패와 v2 수정 계약
@@ -609,3 +666,77 @@
 - 모든 블록은 `feat/h7-c1`인지 먼저 확인한다. 2번 블록은 마지막 학습 뒤에도 HEAD를 확인해, HEAD가 바뀌었으면 fit을 시작하지 않는다.
 - 2-F는 이번 시도의 로그·manifest와 원본에서 대조한 실행 JSON, fit.json만 스테이징한다. 이미 있는 manifest도 다시 검증한다.
 - 검증은 `tests.test_h7r_d1_records`에서 원자적 기록 복사 중단, 사본·manifest 변경, 모델 혼입, 실제 셸의 6회 성공·4번째 실행 실패·fit 직전 HEAD 변경, commit 후 push 실패와 복구를 재현한다. 학습·checker는 대역 도구이며 git·기록 도구·문서의 셸 블록은 실제로 실행한다.
+
+## 12. 1,000행 학습 결과 (v2, 기록 `71cbd60`)
+
+### 12.1 판독: `WIDTH_EFFECT` (1,024행 train 적합 개선에 한정)
+
+- **실행**
+  - 같은 20게임·1,024행 부분집합, seed별 같은 자료 배정, 두 군 모두 210 step
+  - seed마다 두 군의 자료 배정 지문, 부분집합, step 수, 평가 step이 같다.
+  - 6개 실행의 시작 W가 모두 0.37418이다. 확장 parent의 예측 보존이 학습 시작점에서도 유지됐다.
+- **판정**: 마지막 step(210) state의 train W(학습과 같은 가중치, augmentation 없음; 낮을수록 좋음)로 판정했다.
+
+| seed | narrow | wide | wide − narrow | 감소율 |
+|---|---:|---:|---:|---:|
+| 31001 | 0.34283 | 0.28374 | −0.05908 | 17.2% |
+| 31002 | 0.34196 | 0.27911 | −0.06284 | 18.4% |
+| 31003 | 0.34391 | 0.27996 | −0.06396 | 18.6% |
+
+- 세 seed 모두 차이가 음수이고, 각 크기가 narrow의 seed 범위 0.001956보다 크다. 그래서 사전 규칙상 `WIDTH_EFFECT`다.
+- **이 판정의 범위**
+  - 부분집합의 각 행은 105 epoch 동안 D4 변환과 함께 반복 학습된다. 따라서 이 결과는 고정된 1,024행을 얼마나 맞추는지(train 적합)를 보여 준다.
+  - 일반화나 기력의 증거가 아니다.
+  - 결론은 "같은 자료와 같은 210 step에서, 넓은 head가 이 부분집합의 train 손실을 더 낮췄다"까지다.
+
+### 12.2 절대 적합 문턱: 두 head 모두 미달
+
+- 사전 문턱 W ≤ F_D4 + 0.01 = 0.011118. 6개 실행 모두 도달하지 못했다(wide도 약 0.28).
+- 줄일 수 있는 오차(시작 W − F_D4) 가운데 줄인 비율: narrow 8.1–8.6%, wide 24.2–25.5%
+- **문턱 설계의 한계**: 이 부분집합에는 같은 국면 중복이 거의 없다(D4 충돌 묶음 1개). 그래서 이 문턱은 사실상 거의 외우기 수준이다. 동결 trunk와 210 step에서 도달 가능한지 미리 추정하지 않았다. 규칙은 바꾸지 않는다. 이 예산에서 적합 성공 여부는 정보가 적었다고 기록한다.
+- **용량 부족을 단독 원인으로 정하지 않는다.** 아래가 함께 남아 있다.
+  - 학습 목적함수가 replay와 50:50으로 섞여 있다.
+  - 최적화: 학습률 2e-4, cosine 감쇠로 끝에서 5%
+  - 210 step 예산
+
+### 12.3 성분, 학습 곡선, 비용 (측정 조건·seed별)
+
+- **성분별 손실** (마지막 step, 성분별 가중치 없는 MSE)
+  - narrow: outcome 0.574–0.578, proof 0.083–0.086
+  - wide: outcome 0.481–0.491, proof 0.054–0.058
+  - 이 부분집합에서는 두 성분이 함께 낮아졌다. 다만 proof는 85행뿐이다.
+  - D3와 자료 규모·조건이 다르므로, 이것으로 D3 절충의 원인을 정하지 않는다.
+- **학습 곡선** (부분집합 W, 평가 step 21–210)
+  - narrow 31001: step 126 이후 거의 평평하다(0.3425 → 0.3428).
+  - narrow 31002, 31003: 이후에도 내려간다(31002 0.3459 → 0.3420, 31003 0.3458 → 0.3439).
+  - wide 세 seed: 210까지 내려가지만, 마지막 21 step의 감소는 0.0001–0.0013이다(31001 0.2838 → 0.2837, 31002 0.2799 → 0.2791, 31003 0.2813 → 0.2800).
+  - 학습률이 끝으로 갈수록 줄어들기 때문에, 감소가 줄어드는 원인을 용량과 학습률 중 어느 쪽으로도 정할 수 없다.
+- **T-val 선택 checkpoint** (H-dev 평가 대상)
+  - 선택 step: narrow 21 / 105 / 105, wide 147 / 63 / 168
+  - objective: narrow 0.45179 / 0.45007 / 0.45121, wide 0.44842 / 0.44391 / 0.44867(parent 0.45122)
+  - wide가 세 seed 모두 낮다. 다만 10번의 평가 가운데 최선을 고른 값이라 낙관적으로 치우친다.
+  - `CANDIDATE`는 H6 guard를 통과한 최선 평가점이라는 뜻이고, parent보다 나아졌다는 뜻이 아니다. narrow 31001의 선택 objective는 parent보다 높다.
+  - 선택된 부분집합 W: narrow 0.3574 / 0.3484 / 0.3487, wide 0.2883 / 0.3092 / 0.2846
+- **실행 비용** (RTX 5070, batch 1024, 평가 10회 포함, torch 2.14 / CUDA 13.0)
+  - 실행당 237–240초, step당 1.13–1.14초. 6회 합계 1,429초(23분 49초)
+  - 이 장비와 이 batch·평가 조건에서 두 head의 실행 시간은 비슷했다. 다른 조건의 비용은 측정하지 않았다.
+- **평가로 확인할 질문** (추정하지 않는다)
+  - T-val objective가 c5와 비슷한 narrow가 H-dev에서도 c5와 비슷한가
+  - objective가 비슷해도 예측과 H-dev 손실은 다를 수 있으므로, c5·narrow·wide를 함께 평가해 확인한다(`narrow_vs_c5`, `wide_vs_c5` 참고값).
+
+### 12.4 5,000행 step 예산: 총 210 step (A안)
+
+- **결정 시점**: 1,000행 train 결과(`71cbd60`)를 확인한 뒤, 1,000행 H-dev 평가 전에 내렸다. H-dev 결과는 이 결정에 쓰지 않았다.
+- **내용**
+  - 이미 고정된 5,174행 부분집합(111게임, 게임 목록 SHA `5a3a05ea…`, prepare 기록에 있음)
+  - 두 군 모두 총 210 step, epoch당 ceil(2 × 5,174 / 1,024) = 11 step으로 약 19 epoch
+- **질문**: 같은 계산 예산에서 폭의 이점이 유지되는가
+- **해석의 한계**: 1,000행(행당 약 105회 노출)과 5,000행(약 19회 노출)은 행당 노출량도 다르다. 두 규모의 차이를 자료량 하나의 효과로 단정하지 않는다.
+- **후속 선택지**: 같은 epoch 수(105 epoch, 1,155 step, 약 2.2시간 예상)를 쓰는 실험은 별도 진단으로 남긴다.
+- 5,000행 단계의 계약(부분집합 prepare, 바닥값, 판정 규칙, 출력 경로)은 별도로 작성하고 승인받는다.
+
+### 12.5 다음: 1,000행 H-dev 평가
+
+- v2 계약은 `approved.evaluate`만 `true`로 바꿨다. 실험 식별값(`fc309887e4d7`)과 소스 검사는 그대로다.
+- 실행은 §10.2의 3번 블록, 기록 커밋 전에 멈추면 3-F 블록을 쓴다.
+- 결과가 어떻게 나와도 이 단계의 모델은 D4 후보가 아니다. 기력 향상이나 강화학습 재개의 근거로 쓰지 않는다.
