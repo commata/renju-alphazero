@@ -254,6 +254,7 @@
   cd ~/renju-h6
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
   git pull --ff-only origin feat/h7-c1
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
   X="$D/1k-v2"
@@ -298,28 +299,34 @@
   cd ~/renju-h6
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
   X="$D/1k-v2"
   L=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2/logs
   echo __START__
   git reset -q -- "$X"
   test -z "$(git status --porcelain --untracked-files=no)"
-  LOG="$(ls -1t "$L"/prepare-*.log | head -n 1)"
+  shopt -s nullglob
+  logs=("$L"/prepare-*.log)
+  [ "${#logs[@]}" -gt 0 ] || { echo "STOP: no prepare log"; exit 1; }
+  LOG="${logs[0]}"
+  for f in "${logs[@]}"; do if [ "$f" -nt "$LOG" ]; then LOG="$f"; fi; done
   B="$(basename "$LOG" .log)"
   echo "log: $LOG"
   tail -n 5 "$LOG"
   expect=()
-  if [ ! -e "$X/prepare-logs/$B.manifest.json" ]; then
-    python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
-      --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
-  fi
+  python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
   for f in "$X/prepare-logs/$B.log" "$X/prepare-logs/$B.manifest.json" "$X/prepare.json"; do
     if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
       git add "$f"
       expect+=(--expect "$f")
     fi
   done
-  if [ "${#expect[@]}" -eq 0 ]; then echo "nothing left to record"; echo "__EXIT__ 0"; exit 0; fi
+  if [ "${#expect[@]}" -eq 0 ]; then
+    git push origin HEAD:feat/h7-c1
+    echo "nothing left to record; push checked"; echo "__EXIT__ 0"; exit 0
+  fi
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   git commit -m "H7-R D1 v2: 1,000-row prepare attempt record $B (records only)"
   git push origin feat/h7-c1
@@ -343,6 +350,7 @@
   cd ~/renju-h6
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
   git pull --ff-only origin feat/h7-c1
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
   X="$D/1k-v2"
@@ -374,6 +382,9 @@
       done_runs=$((done_runs + 1))
     done
   done
+  if [ "$run_rc" -eq 0 ] && [ "$(git rev-parse HEAD)" != "$head" ]; then
+    run_rc=97; where="HEAD changed before fit"
+  fi
   if [ "$run_rc" -eq 0 ]; then
     LOG="$L/fit-$STAMP.log"
     { echo __START__; rc=0; python -u scripts/h7r_d1.py fit --d1-contract "$D/d1-1k-v2-contract.json" 2>&1 || rc=$?
@@ -419,6 +430,9 @@
    - 예: 로그 복사, `cmp`, manifest, `verify-staged`, commit, push가 실패했거나 터미널이 닫혔을 때
    - 가장 최근 시도의 로그, 실제로 생긴 실행 폴더의 JSON, `fit.json` 가운데 아직 커밋되지 않은 것만 커밋한다.
    - 이미 복사된 파일은 원본과 다시 비교만 한다.
+   - 로그 복사가 중간에 끊긴 경우에도 같은 SHA의 사본을 재사용하고, 기존 manifest를 다시 검증한다. 내용이 다르면 덮어쓰지 않고 멈춘다.
+   - commit은 성공하고 push만 실패한 경우에는 새 커밋 없이 push를 재시도한다. 원격이 앞서 있으면 강제로 반영하지 않고 git 오류를 보고한다.
+   - 기록 대상은 이번 시도의 로그·manifest와 원본에서 대조한 실행 JSON, 있으면 fit.json이다. 다른 파일을 폴더 전체 검색으로 추가하지 않는다.
    - 중단된 commit이 남긴 staged 상태는 기록 폴더(`$X`)에 한해서만 먼저 해제한다(파일은 그대로 둔다).
 
 ```bash
@@ -427,6 +441,7 @@
   cd ~/renju-h6
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
   X="$D/1k-v2"
   R=runs/h7r/R2-D1-HEAD-WIDTH-1/1k-v2
@@ -434,14 +449,17 @@
   echo __START__
   git reset -q -- "$X"
   test -z "$(git status --porcelain --untracked-files=no)"
-  last="$(ls -1t "$L"/train-*.log | head -n 1)"
+  shopt -s nullglob
+  logs=("$L"/train-*.log)
+  [ "${#logs[@]}" -gt 0 ] || { echo "STOP: no train log"; exit 1; }
+  last="${logs[0]}"
+  for f in "${logs[@]}"; do if [ "$f" -nt "$last" ]; then last="$f"; fi; done
   STAMP="$(basename "$last" .log | grep -oE '[0-9]{8}-[0-9]{6}$')"
   echo "attempt $STAMP"
   for f in "$L"/*-"$STAMP".log; do echo "== $f"; tail -n 3 "$f"; done
-  if [ ! -e "$X/train-logs/$STAMP.manifest.json" ]; then
-    python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "*-$STAMP.log" \
-      --dest-dir "$X/train-logs" --manifest "$X/train-logs/$STAMP.manifest.json"
-  fi
+  python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "*-$STAMP.log" \
+    --dest-dir "$X/train-logs" --manifest "$X/train-logs/$STAMP.manifest.json"
+  candidates=("$X/train-logs/$STAMP.manifest.json" "$X"/train-logs/*-"$STAMP".log)
   for s in 31001 31002 31003; do
     for arm in narrow wide; do
       [ -d "$R/$arm-$s" ] || continue
@@ -451,17 +469,23 @@
         mkdir -p "$(dirname "$dst")"
         cp --no-clobber "$src" "$dst"
         cmp "$src" "$dst"
+        candidates+=("$dst")
       done
     done
   done
-  if [ -d "$X/run-records" ] && [ ! -e "$X/run-records/records_manifest-$STAMP.json" ]; then
-    python scripts/h7r_d4_records.py manifest --dir "$X/run-records" --output "$X/run-records/records_manifest-$STAMP.json"
+  if [ -d "$X/run-records" ]; then
+    python scripts/h7r_d4_records.py manifest --resume --dir "$X/run-records" --output "$X/run-records/records_manifest-$STAMP.json"
+    candidates+=("$X/run-records/records_manifest-$STAMP.json")
   fi
+  if [ -f "$X/fit.json" ]; then candidates+=("$X/fit.json"); fi
   expect=()
-  while IFS= read -r f; do
+  for f in "${candidates[@]}"; do
     if ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then git add "$f"; expect+=(--expect "$f"); fi
-  done < <(find "$X/train-logs" "$X/run-records" "$X/fit.json" -type f 2>/dev/null | sort)
-  if [ "${#expect[@]}" -eq 0 ]; then echo "nothing left to record"; echo "__EXIT__ 0"; exit 0; fi
+  done
+  if [ "${#expect[@]}" -eq 0 ]; then
+    git push origin HEAD:feat/h7-c1
+    echo "nothing left to record; push checked"; echo "__EXIT__ 0"; exit 0
+  fi
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   git commit -m "H7-R D1 v2: 1,000-row training attempt record $STAMP (records only)"
   git push origin feat/h7-c1
@@ -477,6 +501,7 @@
   cd ~/renju-h6
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
   git pull --ff-only origin feat/h7-c1
   D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
   X="$D/1k-v2"
@@ -575,3 +600,12 @@
 - prepare 전체: 정상이면 PASS와 진단 기록, 깨진 확장이면 FAIL과 학습 거부
 
 **예상 비용**: 확장 parent당 CPU float64 약 7,900행 추론(c5는 한 번). 이 컨테이너의 4 thread 기준 약 350행/초로, 모델당 20초 남짓이다. 데스크톱 실제 시간은 로그로 보고한다.
+
+### 11.3 train 기록 복구 보완 (2026-11-07)
+
+- 로그 복사가 중간에 끊기면 일부 사본만 남고 manifest는 없을 수 있다. 기록 도구의 `copy-logs --resume`은 원본과 SHA가 같은 사본을 재사용하고 빠진 사본을 복사한다. 기존 manifest가 있으면 현재 원본·사본과 다시 대조한다.
+- `manifest --resume`은 기존 실행 기록 manifest를 현재 파일 목록·크기·SHA와 대조한다. 기존 manifest와 다른 내용이나 모델·tensor 파일이 있으면 거부한다. 기존 명령의 기본 동작은 출력이 있으면 거부하는 방식이다.
+- 1-F와 2-F는 commit 뒤 push만 실패한 경우에도 push를 재시도한다. 부분 복사·staging·commit 단계에서 끊긴 경우는 기존 파일을 대조한 뒤 남은 기록을 커밋한다.
+- 모든 블록은 `feat/h7-c1`인지 먼저 확인한다. 2번 블록은 마지막 학습 뒤에도 HEAD를 확인해, HEAD가 바뀌었으면 fit을 시작하지 않는다.
+- 2-F는 이번 시도의 로그·manifest와 원본에서 대조한 실행 JSON, fit.json만 스테이징한다. 이미 있는 manifest도 다시 검증한다.
+- 검증은 `tests.test_h7r_d1_records`에서 원자적 기록 복사 중단, 사본·manifest 변경, 모델 혼입, 실제 셸의 6회 성공·4번째 실행 실패·fit 직전 HEAD 변경, commit 후 push 실패와 복구를 재현한다. 학습·checker는 대역 도구이며 git·기록 도구·문서의 셸 블록은 실제로 실행한다.

@@ -9,6 +9,9 @@
                    unstaged changes, and the staged set is exactly the expected set (a missing, an unexpected or an
                    ignored file stops the commit).
 
+    With --resume, copy-logs reuses matching copies after an interruption; manifest verifies an existing manifest.
+    Both commands refuse changed contents and preserve every existing file.
+
     python scripts/h7r_d4_records.py copy-logs --src-dir runs/h7r/R2-D4-BASELINE-1/logs --pattern 'smoke-*.log' \\
         --dest-dir docs/h7r/r2/R2-D4-BASELINE-1/records/smoke/run-logs \\
         --manifest docs/h7r/r2/R2-D4-BASELINE-1/records/smoke/log_manifest.json
@@ -37,24 +40,28 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def copy_logs(src_dir, pattern: str, dest_dir, manifest, root=ROOT) -> dict:
+def copy_logs(src_dir, pattern: str, dest_dir, manifest, root=ROOT, *, resume: bool = False) -> dict:
     from hybrid.h7r_ledger import publish_json
 
     root, src_dir, dest_dir, manifest = Path(root), Path(src_dir), Path(dest_dir), Path(manifest)
     sources = sorted(p for p in src_dir.glob(pattern) if p.is_file())
     if not sources:
         raise ValueError(f'no {pattern} in {src_dir}: nothing copied')
-    if manifest.exists():
+    if manifest.exists() and not resume:
         raise ValueError(f'{manifest} exists')
     targets = [dest_dir / p.name for p in sources]
     clash = [str(t) for t in targets if t.exists()]
-    if clash:
+    if clash and not resume:
         raise ValueError(f'copies exist already (never overwritten): {clash}')
+    for source, target in zip(sources, targets):
+        if target.exists() and sha256(source) != sha256(target):
+            raise ValueError(f'{target}: existing copy SHA-256 differs from {source}')
     dest_dir.mkdir(parents=True, exist_ok=True)
     entries = []
     for source, target in zip(sources, targets):
         before = sha256(source)
-        shutil.copy2(source, target)
+        if not target.exists():
+            shutil.copy2(source, target)
         after, copied = sha256(source), sha256(target)
         if not before == after == copied:
             raise ValueError(f'{target}: copy SHA-256 differs from {source}')
@@ -63,15 +70,19 @@ def copy_logs(src_dir, pattern: str, dest_dir, manifest, root=ROOT) -> dict:
                         'sha256': copied})
     body = {'format': MANIFEST_FORMAT, 'pattern': pattern, 'logs': entries,
             'note': 'copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed'}
-    publish_json(manifest, body)
+    if manifest.exists():
+        if json.loads(manifest.read_text(encoding='utf-8')) != body:
+            raise ValueError(f'{manifest}: existing manifest differs from the checked log copies')
+    else:
+        publish_json(manifest, body)
     return body
 
 
-def records_manifest(folder, output) -> dict:
+def records_manifest(folder, output, *, resume: bool = False) -> dict:
     from hybrid.h7r_ledger import publish_json
 
     folder, output = Path(folder), Path(output)
-    if output.exists():
+    if output.exists() and not resume:
         raise ValueError(f'{output} exists')
     files = [p for p in sorted(folder.rglob('*')) if p.is_file() and p.resolve() != output.resolve()]
     if not files:
@@ -83,7 +94,11 @@ def records_manifest(folder, output) -> dict:
     body = {'format': RECORDS_FORMAT, 'folder': str(folder),
             'files': [{'path': str(p.relative_to(folder)), 'bytes': p.stat().st_size, 'sha256': sha256(p)}
                       for p in files]}
-    publish_json(output, body)
+    if output.exists():
+        if json.loads(output.read_text(encoding='utf-8')) != body:
+            raise ValueError(f'{output}: existing manifest differs from the current records')
+    else:
+        publish_json(output, body)
     return body
 
 
@@ -119,20 +134,22 @@ def main(argv=None) -> int:
     c.add_argument('--pattern', required=True)
     c.add_argument('--dest-dir', required=True)
     c.add_argument('--manifest', required=True)
+    c.add_argument('--resume', action='store_true', help='reuse byte-identical copies and verify an existing manifest')
     m = sub.add_parser('manifest')
     m.add_argument('--dir', required=True)
     m.add_argument('--output', required=True)
+    m.add_argument('--resume', action='store_true', help='verify an existing manifest without rewriting it')
     v = sub.add_parser('verify-staged')
     v.add_argument('--expect', action='append', required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == 'copy-logs':
-            body = copy_logs(args.src_dir, args.pattern, args.dest_dir, args.manifest)
+            body = copy_logs(args.src_dir, args.pattern, args.dest_dir, args.manifest, resume=args.resume)
             for e in body['logs']:
                 print(f"copied {e['original']} -> {e['copy']} ({e['bytes']} bytes, {e['sha256'][:12]})", flush=True)
             return 0
         if args.command == 'manifest':
-            body = records_manifest(args.dir, args.output)
+            body = records_manifest(args.dir, args.output, resume=args.resume)
             print(f"records manifest: {len(body['files'])} files -> {args.output}", flush=True)
             return 0
         problems = verify_staged(args.expect)
