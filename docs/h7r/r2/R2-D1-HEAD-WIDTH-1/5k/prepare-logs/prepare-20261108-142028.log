@@ -1,0 +1,8 @@
+1794115228.141006263 __START__
+1794115229.531931453 [d1-5k-prepare] subset 111 games / 5174 rows = the 1,000-row nested set
+1794115251.195133960 [d1-5k-prepare] c5 float64 CPU values (20 s)
+1794115279.492541309 [d1-5k-prepare] seed 31001: widened parent PASS {'bytes': True, 'same_parent_as_1k': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 6.106226635438361e-16, device float32 max |dv| 1.6223639249801636e-06; 49 s)
+1794115303.805088407 [d1-5k-prepare] seed 31002: widened parent PASS {'bytes': True, 'same_parent_as_1k': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 6.106226635438361e-16, device float32 max |dv| 1.6223639249801636e-06; 73 s)
+1794115327.909754838 [d1-5k-prepare] seed 31003: widened parent PASS {'bytes': True, 'same_parent_as_1k': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 6.106226635438361e-16, device float32 max |dv| 1.6223639249801636e-06; 97 s)
+1794115327.923285710 [d1-5k-prepare] DONE PASS; subset 5174 rows; floor d4 0.005085
+1794115328.233887116 __EXIT__ 0

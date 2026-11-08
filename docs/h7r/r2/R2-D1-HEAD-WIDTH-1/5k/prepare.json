@@ -1,0 +1,951 @@
+{
+ "format": "h7r-d1-prepare-5k-v1",
+ "experiment_sha256": "84ed0100d79259b8a4a9a0aaf08361c4f3bca235250e084f8ca47eab64f15e66",
+ "contract_sha256": "bfa1ca6ef3a3438e0e539aecfbc5cb8dee1d7e171c932669bd652ba8d3967263",
+ "git": {
+  "commit": "e432194b088565e8883ff90f3efdc100c5c3ffd0",
+  "dirty": false
+ },
+ "subset": {
+  "games": 111,
+  "rows": 5174,
+  "games_sha256": "5a3a05ea87a978812aa0a43b9ef31936d4804c83817b968d04d9c65ee502c761"
+ },
+ "subset_matches_1k_nested": true,
+ "composition": {
+  "outcome": {
+   "rows": 4598,
+   "weight": 459.8000068515539
+  },
+  "proof": {
+   "rows": 576,
+   "weight": 576.0
+  },
+  "ply": {
+   "0-20": 1638,
+   "20-40": 1275,
+   "40-80": 868,
+   "80-10000": 1393
+  }
+ },
+ "floors": {
+  "exact": {
+   "floor": 4.827186755582232e-05,
+   "groups": 4951,
+   "rows": 5174,
+   "conflicting_groups": 1
+  },
+  "d4": {
+   "floor": 0.005084636715879951,
+   "groups": 4889,
+   "rows": 5174,
+   "conflicting_groups": 31
+  }
+ },
+ "c5": {
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1",
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "policy_loaded": false,
+  "frozen_state_sha256": {
+   "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+  },
+  "value_head_sha256": "2da4e30601c6e0e4f38c8e96491c1939aa0b09603e824321361b1c2f88424bef"
+ },
+ "exact": {
+  "device": "cpu",
+  "dtype": "float64",
+  "tolerance": 1e-12,
+  "train_mode_rows": 1024,
+  "replay_val_rows": 4096,
+  "replay_val_seed": 2026110702,
+  "replay_val_sample_sha256": "95d0407391e2e2065ecdd4e2a33649d986f7483103b4d28c91bc91f4f9041002",
+  "train_mode_rows_used": 1024
+ },
+ "device_check": {
+  "batch_size": 4096,
+  "settings": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8
+  },
+  "c5_batch_split": {
+   "batch_size": 1024,
+   "compare": {
+    "subset": {
+     "rows": 5174,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.1902302503585815e-06,
+     "row": 2413,
+     "reference": 0.030158698558807373,
+     "widened": 0.030157508328557014,
+     "differing_rows": 3695
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 2.086162567138672e-07,
+     "row": 1583,
+     "reference": 0.10653891414403915,
+     "widened": 0.10653870552778244,
+     "differing_rows": 822
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.430511474609375e-06,
+     "row": 45813,
+     "reference": 0.2725341022014618,
+     "widened": 0.2725355327129364,
+     "differing_rows": 85818
+    }
+   }
+  }
+ },
+ "widened": {
+  "31001": {
+   "init_seed": 2026110710,
+   "checks": {
+    "frozen_state": true,
+    "conv_channel_0": true,
+    "bn_channel_0": true,
+    "bn_batches": true,
+    "linear_columns_copied": true,
+    "new_columns_zero": true,
+    "rest_copied": true
+   },
+   "passed": true,
+   "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "state_sha256": "654370e39118cca6ace28a966be12556f9c274b48f6c2a0d346b796a5363c2f4",
+   "parent_state_sha256_1k": "654370e39118cca6ace28a966be12556f9c274b48f6c2a0d346b796a5363c2f4",
+   "gates": {
+    "bytes": true,
+    "same_parent_as_1k": true,
+    "exact": true,
+    "device_finite": true,
+    "reload": true
+   },
+   "exact": {
+    "subset": {
+     "rows": 5174,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 6.106226635438361e-16,
+     "row": 5131,
+     "reference": 0.4387603362723135,
+     "widened": 0.43876033627231287,
+     "differing_rows": 3122
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 528,
+     "reference": -0.5131243508676417,
+     "widened": -0.5131243508676412,
+     "differing_rows": 1124
+    },
+    "replay_val": {
+     "rows": 4096,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 11842,
+     "reference": 0.2070226799564107,
+     "widened": 0.20702267995641124,
+     "differing_rows": 2516
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 4.718447854656915e-16,
+     "row": 476,
+     "reference": -0.14594305022733833,
+     "widened": -0.1459430502273388,
+     "differing_rows": 611
+    }
+   },
+   "device": {
+    "subset": {
+     "rows": 5174,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.1548399925231934e-06,
+     "row": 4338,
+     "reference": -0.0633096694946289,
+     "widened": -0.06331082433462143,
+     "differing_rows": 834
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.6223639249801636e-06,
+     "row": 1581,
+     "reference": 0.028331518173217773,
+     "widened": 0.028329895809292793,
+     "differing_rows": 1419
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.5295577645301819,
+     "widened": 0.5295577645301819,
+     "differing_rows": 0
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.1324882507324219e-06,
+     "row": 271,
+     "reference": 0.3326830565929413,
+     "widened": 0.332684189081192,
+     "differing_rows": 819
+    }
+   },
+   "layers": {
+    "subset": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 5.7220458984375e-06,
+      "differing_rows": 1078,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.384185791015625e-06,
+      "differing_rows": 1078,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.1622905731201172e-06,
+      "differing_rows": 915,
+      "finite": true
+     },
+     "value": {
+      "max": 1.1548399925231934e-06,
+      "differing_rows": 834,
+      "finite": true
+     }
+    },
+    "cycle_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 8.106231689453125e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.6242265701293945e-06,
+      "differing_rows": 1580,
+      "finite": true
+     },
+     "value": {
+      "max": 1.6223639249801636e-06,
+      "differing_rows": 1419,
+      "finite": true
+     }
+    },
+    "replay_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "value": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     }
+    }
+   },
+   "reload": {
+    "state_equal": true,
+    "value_channels": 4,
+    "prediction": {
+     "rows": 5174,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.33859381079673767,
+     "widened": 0.33859381079673767,
+     "differing_rows": 0
+    }
+   },
+   "checkpoint_sha256": "516011dce48bcb165bfe70674a480ca5ee8d0e7fbae7ffbc46d337e528e73e43",
+   "metadata_sha256": "b1ff9626ec63037b9538a14fb24f2be1f3cc0c320d8d16163b79f0daf033d21d"
+  },
+  "31002": {
+   "init_seed": 2026110711,
+   "checks": {
+    "frozen_state": true,
+    "conv_channel_0": true,
+    "bn_channel_0": true,
+    "bn_batches": true,
+    "linear_columns_copied": true,
+    "new_columns_zero": true,
+    "rest_copied": true
+   },
+   "passed": true,
+   "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "state_sha256": "5b3fb4ea623c79ba37adc4c5f0621652ff10e354c1f9de560f7bd68bde88c2ea",
+   "parent_state_sha256_1k": "5b3fb4ea623c79ba37adc4c5f0621652ff10e354c1f9de560f7bd68bde88c2ea",
+   "gates": {
+    "bytes": true,
+    "same_parent_as_1k": true,
+    "exact": true,
+    "device_finite": true,
+    "reload": true
+   },
+   "exact": {
+    "subset": {
+     "rows": 5174,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 6.106226635438361e-16,
+     "row": 5131,
+     "reference": 0.4387603362723135,
+     "widened": 0.43876033627231287,
+     "differing_rows": 3122
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 528,
+     "reference": -0.5131243508676417,
+     "widened": -0.5131243508676412,
+     "differing_rows": 1124
+    },
+    "replay_val": {
+     "rows": 4096,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 11842,
+     "reference": 0.2070226799564107,
+     "widened": 0.20702267995641124,
+     "differing_rows": 2516
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 4.718447854656915e-16,
+     "row": 476,
+     "reference": -0.14594305022733833,
+     "widened": -0.1459430502273388,
+     "differing_rows": 611
+    }
+   },
+   "device": {
+    "subset": {
+     "rows": 5174,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.1548399925231934e-06,
+     "row": 4338,
+     "reference": -0.0633096694946289,
+     "widened": -0.06331082433462143,
+     "differing_rows": 834
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.6223639249801636e-06,
+     "row": 1581,
+     "reference": 0.028331518173217773,
+     "widened": 0.028329895809292793,
+     "differing_rows": 1419
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.5295577645301819,
+     "widened": 0.5295577645301819,
+     "differing_rows": 0
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.1324882507324219e-06,
+     "row": 271,
+     "reference": 0.3326830565929413,
+     "widened": 0.332684189081192,
+     "differing_rows": 819
+    }
+   },
+   "layers": {
+    "subset": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 5.7220458984375e-06,
+      "differing_rows": 1078,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.384185791015625e-06,
+      "differing_rows": 1078,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.1622905731201172e-06,
+      "differing_rows": 915,
+      "finite": true
+     },
+     "value": {
+      "max": 1.1548399925231934e-06,
+      "differing_rows": 834,
+      "finite": true
+     }
+    },
+    "cycle_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 8.106231689453125e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.6242265701293945e-06,
+      "differing_rows": 1580,
+      "finite": true
+     },
+     "value": {
+      "max": 1.6223639249801636e-06,
+      "differing_rows": 1419,
+      "finite": true
+     }
+    },
+    "replay_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "value": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     }
+    }
+   },
+   "reload": {
+    "state_equal": true,
+    "value_channels": 4,
+    "prediction": {
+     "rows": 5174,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.33859381079673767,
+     "widened": 0.33859381079673767,
+     "differing_rows": 0
+    }
+   },
+   "checkpoint_sha256": "4b811afdadcba3884ef730594553876ee61788e1773ad8626739accc9ec558ee",
+   "metadata_sha256": "10a94f1e6b7aabdd1039890a80b84703bdf627d42b3e143ee707b8c521dee868"
+  },
+  "31003": {
+   "init_seed": 2026110712,
+   "checks": {
+    "frozen_state": true,
+    "conv_channel_0": true,
+    "bn_channel_0": true,
+    "bn_batches": true,
+    "linear_columns_copied": true,
+    "new_columns_zero": true,
+    "rest_copied": true
+   },
+   "passed": true,
+   "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "state_sha256": "131388e49d569c08ec8a60debbad78abcac666fa03a8b9f6e27581bff00c11fe",
+   "parent_state_sha256_1k": "131388e49d569c08ec8a60debbad78abcac666fa03a8b9f6e27581bff00c11fe",
+   "gates": {
+    "bytes": true,
+    "same_parent_as_1k": true,
+    "exact": true,
+    "device_finite": true,
+    "reload": true
+   },
+   "exact": {
+    "subset": {
+     "rows": 5174,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 6.106226635438361e-16,
+     "row": 5131,
+     "reference": 0.4387603362723135,
+     "widened": 0.43876033627231287,
+     "differing_rows": 3122
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 528,
+     "reference": -0.5131243508676417,
+     "widened": -0.5131243508676412,
+     "differing_rows": 1124
+    },
+    "replay_val": {
+     "rows": 4096,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 11842,
+     "reference": 0.2070226799564107,
+     "widened": 0.20702267995641124,
+     "differing_rows": 2516
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 4.718447854656915e-16,
+     "row": 476,
+     "reference": -0.14594305022733833,
+     "widened": -0.1459430502273388,
+     "differing_rows": 611
+    }
+   },
+   "device": {
+    "subset": {
+     "rows": 5174,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.1548399925231934e-06,
+     "row": 4338,
+     "reference": -0.0633096694946289,
+     "widened": -0.06331082433462143,
+     "differing_rows": 834
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.6223639249801636e-06,
+     "row": 1581,
+     "reference": 0.028331518173217773,
+     "widened": 0.028329895809292793,
+     "differing_rows": 1419
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.5295577645301819,
+     "widened": 0.5295577645301819,
+     "differing_rows": 0
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.1324882507324219e-06,
+     "row": 271,
+     "reference": 0.3326830565929413,
+     "widened": 0.332684189081192,
+     "differing_rows": 819
+    }
+   },
+   "layers": {
+    "subset": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 5.7220458984375e-06,
+      "differing_rows": 1078,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.384185791015625e-06,
+      "differing_rows": 1078,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.1622905731201172e-06,
+      "differing_rows": 915,
+      "finite": true
+     },
+     "value": {
+      "max": 1.1548399925231934e-06,
+      "differing_rows": 834,
+      "finite": true
+     }
+    },
+    "cycle_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 8.106231689453125e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.6242265701293945e-06,
+      "differing_rows": 1580,
+      "finite": true
+     },
+     "value": {
+      "max": 1.6223639249801636e-06,
+      "differing_rows": 1419,
+      "finite": true
+     }
+    },
+    "replay_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "value": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     }
+    }
+   },
+   "reload": {
+    "state_equal": true,
+    "value_channels": 4,
+    "prediction": {
+     "rows": 5174,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.33859381079673767,
+     "widened": 0.33859381079673767,
+     "differing_rows": 0
+    }
+   },
+   "checkpoint_sha256": "09a1f5a42cd003649cb40ada146059d1c0ba0c97ccbf3a7cc6a4b7c33d6fab94",
+   "metadata_sha256": "22cbc995ef7e0dd55f6ee61a8b6f0e991f0178c62fe5b0360a0574359fff424d"
+  }
+ },
+ "passed": true
+}
