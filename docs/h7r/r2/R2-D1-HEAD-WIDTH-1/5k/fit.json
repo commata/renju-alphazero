@@ -1,0 +1,103 @@
+{
+ "format": "h7r-d1-fit-v1",
+ "experiment_sha256": "84ed0100d79259b8a4a9a0aaf08361c4f3bca235250e084f8ca47eab64f15e66",
+ "contract_sha256": "43adca9dc90548abc2a610e66d4aa1d9b74b3db12a04d6f6cc847eac0d9ede5f",
+ "reading": {
+  "category": "WIDTH_EFFECT",
+  "order": [
+   "WIDTH_EFFECT",
+   "BOTH_FIT",
+   "SEED_DISAGREEMENT",
+   "NEITHER_FIT",
+   "MIXED_FIT"
+  ],
+  "floor_d4": 0.005084636715879951,
+  "margin": 0.01,
+  "threshold": 0.015084636715879951,
+  "success": {
+   "narrow": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   },
+   "wide": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   }
+  },
+  "wide_minus_narrow": {
+   "31001": -0.032184749841690063,
+   "31002": -0.03835722804069519,
+   "31003": -0.032085150480270386
+  },
+  "narrow_seed_range": 0.0015802979469299316
+ },
+ "parent_fit": {
+  "narrow": {
+   "31001": 0.3365698754787445,
+   "31002": 0.3365698754787445,
+   "31003": 0.3365698754787445
+  },
+  "wide": {
+   "31001": 0.3365698754787445,
+   "31002": 0.3365698754787445,
+   "31003": 0.3365698754787445
+  }
+ },
+ "selected_fit": {
+  "narrow": {
+   "31001": 0.3330141007900238,
+   "31002": 0.32575979828834534,
+   "31003": 0.32436898350715637
+  },
+  "wide": {
+   "31001": 0.2931896150112152,
+   "31002": 0.28906136751174927,
+   "31003": 0.2925105094909668
+  }
+ },
+ "selected_step": {
+  "narrow": {
+   "31001": 21,
+   "31002": 126,
+   "31003": 105
+  },
+  "wide": {
+   "31001": 189,
+   "31002": 126,
+   "31003": 189
+  }
+ },
+ "cost": {
+  "narrow": {
+   "31001": {
+    "seconds": 229.21,
+    "per_step": 1.0915
+   },
+   "31002": {
+    "seconds": 297.52,
+    "per_step": 1.4168
+   },
+   "31003": {
+    "seconds": 283.64,
+    "per_step": 1.3507
+   }
+  },
+  "wide": {
+   "31001": {
+    "seconds": 297.18,
+    "per_step": 1.4151
+   },
+   "31002": {
+    "seconds": 295.46,
+    "per_step": 1.407
+   },
+   "31003": {
+    "seconds": 249.97,
+    "per_step": 1.1903
+   }
+  }
+ },
+ "note": "the reading uses the last-step state of both arms (same step); the selected checkpoints are recorded apart and are what the H-dev reading uses"
+}

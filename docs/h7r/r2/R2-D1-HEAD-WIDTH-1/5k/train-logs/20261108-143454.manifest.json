@@ -1,0 +1,49 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "*-20261108-143454.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/logs/fit-20261108-143454.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/train-logs/fit-20261108-143454.log",
+   "bytes": 220,
+   "sha256": "08ef8ad478f1fe42ea6ebad5cfc9dc8d627685a2d3163e4832e8441e78d3f449"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/logs/train-narrow-31001-20261108-143454.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/train-logs/train-narrow-31001-20261108-143454.log",
+   "bytes": 1323,
+   "sha256": "2c38d322fc30672a8f7cbbbb39345bee06e5daf947f9b999f084f10e84cf0eba"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/logs/train-narrow-31002-20261108-143454.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/train-logs/train-narrow-31002-20261108-143454.log",
+   "bytes": 1323,
+   "sha256": "bdf50c7229e682fcaa7182fca98dac7668a19c50979327a2e72c68e08b203b7f"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/logs/train-narrow-31003-20261108-143454.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/train-logs/train-narrow-31003-20261108-143454.log",
+   "bytes": 1322,
+   "sha256": "53bddf0c31bd978e6d0cb24bd754195d8c94f15e62f4873b3466c3d568c03aa6"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/logs/train-wide-31001-20261108-143454.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/train-logs/train-wide-31001-20261108-143454.log",
+   "bytes": 1319,
+   "sha256": "4580569b45d043d2742b2bad3d81cd80425ba2b30ff5c205e854e210acf2b4e8"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/logs/train-wide-31002-20261108-143454.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/train-logs/train-wide-31002-20261108-143454.log",
+   "bytes": 1319,
+   "sha256": "e4721e9597d5a46f95e5cca62ffc9117860c073440bf3baf5da0ddddb4469071"
+  },
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/5k/logs/train-wide-31003-20261108-143454.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/5k/train-logs/train-wide-31003-20261108-143454.log",
+   "bytes": 1319,
+   "sha256": "11789ae9e67a964fc91ef3c7c78cf606d361f30fcfea08fea2fc588453c7ae4c"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
