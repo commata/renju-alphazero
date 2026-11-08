@@ -552,6 +552,58 @@ class ProcedureTest(unittest.TestCase):
             self.assertIn('__EXIT__', block)
 
 
+class FullScaleDraftTest(unittest.TestCase):
+    """The full-scale contract draft (section 14): pins the committed 5,000-row records, keeps the fixed values of
+    the earlier stages, names the whole c8 T-train split, trains both arms anew with R2-0B as a pinned reference
+    only, and is not runnable yet."""
+    D = 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1'
+
+    def test_the_draft_links_to_the_records_and_keeps_the_fixed_values(self):
+        import math
+        from scripts import h7r_d1_5k as k5
+        c = json.loads((ROOT / f'{self.D}/d1-full-contract.draft.json').read_text())
+        c5k = json.loads((ROOT / f'{self.D}/d1-5k-contract.json').read_text())
+        self.assertEqual((c['status'], c['stage']), ('draft', 'full'))
+        self.assertEqual(c['approved'], {s: False for s in cli.STAGES})
+        pre = c['predecessor']
+        for key in ('contract', 'prepare', 'fit', 'result'):
+            self.assertEqual(r2.file_sha256(ROOT / pre[key]['path']), pre[key]['sha256'], key)
+        self.assertEqual(pre['experiment_sha256'], cli.experiment_sha256(c5k))
+        fit5 = json.loads((ROOT / f'{self.D}/5k/fit.json').read_text())
+        res5 = json.loads((ROOT / f'{self.D}/5k/d1_eval.json').read_text())
+        self.assertEqual(pre['readings'], {'train_fit': fit5['reading']['category'],
+                                           'hdev': res5['hdev_reading']['label']})
+        for key in ('arms', 'seeds', 'fit', 'r2_contract', 'amendment', 'epsilon'):
+            self.assertEqual(c[key], c5k[key], key)
+        for key in ('init', 'init_seeds', 'exact', 'device_check'):
+            self.assertEqual(c['widen'][key], c5k['widen'][key], key)
+        self.assertEqual({k: v for k, v in c['ruling'].items() if k != 'scope'},
+                         {k: v for k, v in c5k['ruling'].items() if k != 'scope'})
+        self.assertEqual((c['budget']['config'], c['budget']['total_steps']), (c5k['budget']['config'], 210))
+        r0 = json.loads((ROOT / 'docs/h7r/r2/R2-DIAG-1/r2_0b/runs/seed-31001/record.json').read_text())
+        self.assertEqual(c['data']['split_sha256'], r0['inputs']['cycle_cache_splits']['train'])
+        self.assertEqual(c['data']['labels_sha256'], r0['inputs']['cycle_labels_sha256'])
+        self.assertEqual(c['data']['rows'] * 2, r0['train_rows_per_epoch'])
+        self.assertEqual(math.ceil(2 * c['data']['rows'] / 1024), r0['steps_per_epoch'])  # 70: 3.0 epochs
+        self.assertEqual(r0['total_steps'], c['budget']['total_steps'])
+        ref = c['control']['r2_0b_reference']
+        self.assertEqual(c['control']['kind'], 'trained anew')
+        for s in cli.SEEDS:
+            for key in ('record', 'r2_train'):
+                self.assertEqual(r2.file_sha256(ROOT / ref[s][key]['path']), ref[s][key]['sha256'])
+        self.assertEqual(r2.file_sha256(ROOT / ref['epsilon_record']['path']), ref['epsilon_record']['sha256'])
+        self.assertTrue(all(v is None for v in c['sources'].values()))
+        self.assertTrue(set(k5.SOURCES) <= set(c['sources']))
+        outs = [c['output']['parents'], c['output']['predictions'], c['evaluate']['predicted_record'],
+                *(p for v in c['output']['run_dirs'].values() for p in v.values())]
+        self.assertTrue(all(p.startswith('runs/h7r/R2-D1-HEAD-WIDTH-1/full') for p in outs))
+        self.assertTrue(all(c['output'][k].startswith(f'{self.D}/full/') for k in ('prepare', 'fit', 'result')))
+        with self.assertRaisesRegex(ValueError, 'keys differ'):  # no current tool takes it as a contract
+            k5.load_d1_5k(ROOT / f'{self.D}/d1-full-contract.draft.json', ROOT, 'prepare')
+        with self.assertRaisesRegex(ValueError, 'keys differ'):
+            cli.load_d1(ROOT / f'{self.D}/d1-full-contract.draft.json', ROOT, 'prepare')
+
+
 class FiveThousandProcedureTest(unittest.TestCase):
     def test_the_5k_blocks_parse_fail_closed_and_name_only_5k_paths(self):
         import re
