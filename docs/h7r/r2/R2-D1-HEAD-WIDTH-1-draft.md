@@ -1,6 +1,6 @@
 # R2-D1-HEAD-WIDTH-1 — value head 폭 진단 계약 초안
 
-- 작성일 2026-11-06, 개정 2026-11-08. 상태: **1,000행 v2 완료: train `WIDTH_EFFECT`, H-dev `DEVELOPMENT_SIGNAL`(§12) / 5,000행 계약 고정·도구 구현, 단계 승인 전(§13)**
+- 작성일 2026-11-06, 개정 2026-11-08. 상태: **1,000행 v2 완료: train `WIDTH_EFFECT`, H-dev `DEVELOPMENT_SIGNAL`(§12) / 5,000행 prepare PASS, train 승인(§13.8)**
 - 계약 JSON: v2 `R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json`(유효), v1 `d1-1k-contract.json`(prepare FAIL로 종료, 기록 보존)
 - 도구: `scripts/h7r_d1.py`, `src/hybrid/h7r_d1.py`(v2 계약만 읽는다)
 - 상위 설계: `R2-DIAG-1-draft.md` §7(판독 규칙, ε, `DEVELOPMENT_SIGNAL`, 보류)과 §8(D1 행)
@@ -1422,3 +1422,28 @@
   3. train 승인 → 5k-2: 6회 학습과 fit. 예상 약 24분(추정)
   4. evaluate 승인 → 5k-3: H-dev 판독(예상 1분 안팎)
 - 5,000행 결과는 위 판정 규칙으로만 읽는다. 결과를 보고 문턱이나 규칙을 바꾸지 않는다.
+
+### 13.8 5,000행 prepare 결과: PASS (기록 `837ddab`)
+
+- **실행과 기록의 일치**
+  - 승인 커밋 `e432194`에서 깨끗한 상태로 실행했다. 약 100초 걸렸다.
+  - 계약 SHA `bfa1ca6e…`, 실험 식별값 `84ed0100d792`, 로그 SHA는 manifest와 같다.
+- **1,000행 기록과의 연결**
+  - 부분집합: 111게임 · 5,174행 · 게임 목록 SHA `5a3a05ea…`. 1,000행 prepare의 `subset.nested`와 같다.
+  - 1,000행 prepare와 같은 값: c5 식별값, H6 val 표본 SHA, GPU 연산 설정
+  - 확장 parent: 세 seed 모두 state SHA가 1,000행과 같다(`same_parent_as_1k`).
+  - checkpoint **파일** SHA는 1,000행과 다르다.
+    - 저장 함수(`model.checkpoint.save_checkpoint`)가 저장 시점의 `git_commit`을 파일에 넣기 때문이다. 다른 커밋에서 저장하면 state가 같아도 파일 바이트가 달라진다.
+    - 단계 간 초기 모델 비교에는 state SHA를 쓴다. 이 단계 안의 무결성은 이번 prepare가 기록한 파일 SHA로 검사한다(train 진입 검사).
+- **보존 gate**: 세 seed 모두 5개 통과(바이트, 1,000행 parent와 동일, CPU float64 최대 6.1e-16, 출력 유한성, 재로드)
+- **새 부분집합의 구성값** (학습 성능 변화로 해석하지 않는다)
+  - outcome 4,598행(가중치 459.8), proof 576행
+  - proof 행 비중: 1,000행 약 8.3% → 5,000행 약 11.1%
+  - 바닥값
+    - 정확 기준 F = 0.0000483(충돌 묶음 1)
+    - D4 기준 F_D4 = 0.0050846367(충돌 묶음 31)
+  - 적합 문턱: F_D4 + 0.01 = **0.0150846367**(규칙은 계약 그대로; 1,000행 문턱 0.0111179)
+- **GPU float32 차이** (기록만)
+  - 부분집합 1.15e-6, cycle val 1.62e-6, H6 val 0
+  - 층별 진단은 1,000행과 같다: 차이는 넓어진 첫 Linear의 곱에서 처음 생긴다.
+- **다음**: train 승인(`approved.train`). 6회 학습과 fit은 §13.6의 5k-2, 기록 커밋 전에 멈추면 5k-2-F
