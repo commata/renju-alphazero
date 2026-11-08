@@ -1,6 +1,6 @@
 # R2-D1-HEAD-WIDTH-1 — value head 폭 진단 계약 초안
 
-- 작성일 2026-11-06, 개정 2026-11-09. 상태: **1,000행·5,000행 완료: 두 단계 모두 train `WIDTH_EFFECT`, H-dev `DEVELOPMENT_SIGNAL`(§12, §13) / 전체 규모 계약 초안(§14, 승인 전, 도구 미구현)**
+- 작성일 2026-11-06, 개정 2026-11-09. 상태: **1,000행·5,000행 완료: 두 단계 모두 train `WIDTH_EFFECT`, H-dev `DEVELOPMENT_SIGNAL`(§12, §13) / 전체 규모 계약 고정·도구 구현, 단계 승인 전(§14)**
 - 계약 JSON: v2 `R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json`(유효), v1 `d1-1k-contract.json`(prepare FAIL로 종료, 기록 보존)
 - 도구: `scripts/h7r_d1.py`, `src/hybrid/h7r_d1.py`(v2 계약만 읽는다)
 - 상위 설계: `R2-DIAG-1-draft.md` §7(판독 규칙, ε, `DEVELOPMENT_SIGNAL`, 보류)과 §8(D1 행)
@@ -1536,7 +1536,7 @@
   - 선택 checkpoint는 T-val로 골랐고, 그 선택에 H-dev는 쓰이지 않았다.
 - **다음**: §7.3의 조건(5,000행에서도 세 seed 모두 train 폭 효과 유지)을 충족했다. 전체 규모 계약 초안은 §14에 있다.
 
-## 14. 전체 규모 단계 계약 초안 (`R2-D1-HEAD-WIDTH-1/d1-full-contract.draft.json`, 승인 전, 도구 미구현)
+## 14. 전체 규모 단계 계약 (`R2-D1-HEAD-WIDTH-1/d1-full-contract.json`, 승인 전; 초안 `d1-full-contract.draft.json`)
 
 ### 14.1 질문과 고정값
 
@@ -1570,7 +1570,13 @@
   - 자료 배정 지문(`data_assignment`: cycle 행 순서, replay 비복원 추출, D4 augmentation)
   - 평가 step(`evaluation_steps`)
 - 6회는 같은 승인 HEAD와 같은 고정 소스에서 실행한다. 블록이 실행마다 HEAD를 확인하고, 바뀌면 뒤 실행을 시작하지 않는다.
-- **실행 환경 기록**: 실행마다 torch / CUDA / cuDNN 버전, GPU 이름, TF32·결정성 설정, thread 수를 기록한다(`numeric_settings`). fit이 6회의 기록이 같은지 대조한다.
+- **실행 환경 기록**: 실행마다 `hybrid.h7r_d1.numeric_settings`의 12개 필드를 기록한다.
+  - 필드: torch, cuda, cudnn, device_name, cudnn_enabled, cudnn_benchmark, cudnn_deterministic, cudnn_allow_tf32, matmul_allow_tf32, float32_matmul_precision, deterministic_algorithms, threads
+  - 동일성 기준(계약 `environment`): 각 필드가 6회 실행 사이와 prepare 기록에서 정확히 같아야 한다.
+- **비교가능성 검사** (fit이 판독 전에 한다)
+  - 기준: 환경 동일성, seed마다 두 군의 자료·자료 배정·step 수·평가 step 동일, 6회 모두 하나의 깨끗한 commit
+  - 하나라도 어긋나면 비교가능성이 없다. fit은 판독(`reading`) 없이 `comparable: false`와 사유를 `fit.json`에 기록하고 실패로 끝난다(블록이 그 기록을 커밋한다).
+  - evaluate는 커밋된 fit 기록이 `comparable: true`이고 같은 검사를 다시 통과해야만 실행된다.
 - **parent**: 확장 parent의 state SHA가 1,000행·5,000행 prepare 기록의 값과 같아야 한다.
 
 ### 14.4 단계와 판정
@@ -1584,7 +1590,7 @@
   - 결과 저장 직전에 HEAD와 tracked tree를 다시 검사한다.
 - **D4**
   - 전체 규모 H-dev가 `DEVELOPMENT_SIGNAL`일 때만 별도 D4 계약(착수 선택 품질)을 검토한다.
-  - 이전 D4·X1에서 예측 오차 개선이 착수 선택 개선으로 이어지지 않았다. 그래서 D4는 별도로 확인해야 하는 관문이다.
+  - 이전 D4·X1 평가는 예측 오차 개선이 착수 선택 개선으로 이어진다는 연결을 입증하지 못했다(`NOT_ESTABLISHED`). 연결이 없다고 판정한 것은 아니다. 그래서 D4는 별도로 확인해야 하는 관문이다.
   - 이 계약 자체는 D4 후보, c5 변경, V9를 정하지 않는다.
 
 ### 14.5 도구 변경 범위
@@ -1625,7 +1631,7 @@
    - parent state가 이전 기록과 다르면 FAIL이고 학습을 거부한다.
 4. **train·fit**
    - 같은 입력·예산에서 5,000행 train과 실행 기록이 같다.
-   - 실행 환경이 기록된다. 6회의 환경이 다르면 fit이 그 사실을 기록한다.
+   - 실행 환경이 기록된다. 계약이 정한 필드가 6회 사이 또는 prepare 기록과 하나라도 다르면, fit이 판독 없이 사유를 기록하고 중단한다. evaluate도 거부한다.
    - R2-0B 참고 비교가 판정과 분리돼 기록된다.
 5. **evaluate**
    - 5,000행 도구와 판독이 같다.
@@ -1639,7 +1645,7 @@
    - 5,000행 블록에서 기계적으로 바꾼 전체 규모 블록에 `5k`·`5,000`·이전 도구 이름이 남지 않는다.
    - 기록 단계를 임시 저장소에서 실제 git과 기록 도구로 실행한다.
 
-### 14.7 남은 항목과 승인 단계
+### 14.7 남은 항목과 승인 단계 (초안 시점; 구현 뒤 상태는 §14.9)
 
 - **구현** (이 초안의 범위 밖, 별도 진행)
   1. `scripts/h7r_d1_full.py`와 그 테스트
@@ -1651,3 +1657,430 @@
   3. train 승인(6회 + fit)
   4. evaluate 승인
 - 결과는 위 판정 규칙으로만 읽는다. 결과를 보고 문턱이나 규칙을 바꾸지 않는다. 자동으로 다음 단계를 시작하지 않는다.
+
+### 14.8 실행 절차 (데스크톱)
+- 블록은 §13.6의 5,000행 블록과 같다. 계약·도구·경로·커밋 문구만 기계적으로 바꿨다.
+  - 바꾼 결과에 이전 단계의 이름이 남지 않았는지 테스트로 확인한다.
+  - 기록 단계는 임시 저장소에서 실제 git과 기록 도구로, 도구는 대역으로 실행해 확인했다.
+- 각 단계는 승인 커밋을 받은 뒤 `git pull --ff-only`로 같은 HEAD에서 실행한다.
+- 실패하면 다음 단계로 넘어가지 않는다. 실패 폴더를 지우거나 블록을 다시 돌리지 않는다. 중단 위치를 보고 따로 정한다.
+
+full-1. prepare와 기록 커밋 (`approved.prepare` 커밋 후; 학습 없음)
+   - 단계별 경과 시간을 출력하고 `prepare.json`의 `timings_seconds`에 기록한다. 자료, 바닥값, c5 float64, seed별 검사가 각각 한 단계다.
+   - 도구가 확인하는 것: 전체 split의 행 수·split·labels SHA·구성, 확장 parent의 state SHA(5,000행·1,000행 기록과 같아야 함), 보존 gate
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/full"
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/full/logs
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  test ! -e "$X/prepare.json"
+  mkdir -p "$L"
+  LOG="$L/prepare-$(date +%Y%m%d-%H%M%S).log"
+  B="$(basename "$LOG" .log)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  { echo __START__; rc=0; python -u scripts/h7r_d1_full.py prepare --d1-contract "$D/d1-full-contract.json" \
+      --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+      --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
+  expect=(--expect "$X/prepare-logs/$B.log" --expect "$X/prepare-logs/$B.manifest.json")
+  git add "$X/prepare-logs/$B.log" "$X/prepare-logs/$B.manifest.json"
+  if [ -f "$X/prepare.json" ]; then
+    git add "$X/prepare.json"
+    expect+=(--expect "$X/prepare.json")
+  fi
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict=PASS; else verdict="FAIL (exit $run_rc)"; fi
+  git commit -m "H7-R D1 full: full-scale prepare $verdict: subset, floors and widened parents (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+full-1-F. prepare 기록 보존 (full-1이 기록 커밋 전에 멈췄을 때만)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/full"
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/full/logs
+  echo __START__
+  git reset -q -- "$X"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  shopt -s nullglob
+  logs=("$L"/prepare-*.log)
+  [ "${#logs[@]}" -gt 0 ] || { echo "STOP: no prepare log"; exit 1; }
+  LOG="${logs[0]}"
+  for f in "${logs[@]}"; do if [ "$f" -nt "$LOG" ]; then LOG="$f"; fi; done
+  B="$(basename "$LOG" .log)"
+  echo "log: $LOG"
+  tail -n 5 "$LOG"
+  expect=()
+  python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
+  for f in "$X/prepare-logs/$B.log" "$X/prepare-logs/$B.manifest.json" "$X/prepare.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+      git add "$f"
+      expect+=(--expect "$f")
+    fi
+  done
+  if [ "${#expect[@]}" -eq 0 ]; then
+    git push origin HEAD:feat/h7-c1
+    echo "nothing left to record; push checked"; echo "__EXIT__ 0"; exit 0
+  fi
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1 full: full-scale prepare attempt record $B (records only)"
+  git push origin feat/h7-c1
+  echo "__EXIT__ 0"
+)
+```
+
+full-2. 학습 6회, train 적합 판독, 기록 커밋 (`approved.train` 커밋 후)
+   - seed마다 narrow → wide 순서로 돌린다. 각 실행은 210 step(epoch당 70 step, 3.0 epoch)이고 실행 환경을 기록한다.
+   - fit은 6회가 모두 끝났을 때만 돈다. 비교가능성 검사에 실패하면 사유를 기록하고 판독 없이 실패로 끝난다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/full"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/full
+  L="$R/logs"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  test ! -e "$X/fit.json"
+  test ! -e "$X/run-records"
+  test ! -e "$X/train-logs"
+  for s in 31001 31002 31003; do for arm in narrow wide; do test ! -e "$R/$arm-$s"; done; done
+  head="$(git rev-parse HEAD)"
+  STAMP="$(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$L"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  where=none
+  done_runs=0
+  for s in 31001 31002 31003; do
+    for arm in narrow wide; do
+      if [ "$(git rev-parse HEAD)" != "$head" ]; then run_rc=97; where="HEAD changed before $arm-$s"; break 2; fi
+      LOG="$L/train-$arm-$s-$STAMP.log"
+      { echo __START__; rc=0; python -u scripts/h7r_d1_full.py train --d1-contract "$D/d1-full-contract.json" \
+          --arm "$arm" --seed "$s" \
+          --cycle-cache runs/h7c/c8/value_cache --cycle-rows runs/h7c/c8/value_rows.jsonl.gz \
+          --replay-cache data/tactical/h6/value_cache_v3 --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
+        echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+      if [ "$run_rc" -ne 0 ]; then where="train $arm-$s"; break 2; fi
+      done_runs=$((done_runs + 1))
+    done
+  done
+  if [ "$run_rc" -eq 0 ] && [ "$(git rev-parse HEAD)" != "$head" ]; then
+    run_rc=97; where="HEAD changed before fit"
+  fi
+  if [ "$run_rc" -eq 0 ]; then
+    LOG="$L/fit-$STAMP.log"
+    { echo __START__; rc=0; python -u scripts/h7r_d1_full.py fit --d1-contract "$D/d1-full-contract.json" 2>&1 || rc=$?
+      echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+    if [ "$run_rc" -ne 0 ]; then where=fit; fi
+  fi
+  echo "[d1-train-block] runs completed $done_runs/6, exit $run_rc, stopped at: $where"
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "*-$STAMP.log" \
+    --dest-dir "$X/train-logs" --manifest "$X/train-logs/$STAMP.manifest.json"
+  expect=(--expect "$X/train-logs/$STAMP.manifest.json")
+  for f in "$X"/train-logs/*-"$STAMP".log; do expect+=(--expect "$f"); done
+  copied=0
+  for s in 31001 31002 31003; do
+    for arm in narrow wide; do
+      [ -d "$R/$arm-$s" ] || continue
+      for src in "$R/$arm-$s"/*.json; do
+        [ -f "$src" ] || continue
+        dst="$X/run-records/$arm-$s/$(basename "$src")"
+        mkdir -p "$(dirname "$dst")"
+        cp --no-clobber "$src" "$dst"
+        cmp "$src" "$dst"
+        expect+=(--expect "$dst")
+        copied=$((copied + 1))
+      done
+    done
+  done
+  if [ "$copied" -gt 0 ]; then
+    python scripts/h7r_d4_records.py manifest --dir "$X/run-records" --output "$X/run-records/records_manifest-$STAMP.json"
+    expect+=(--expect "$X/run-records/records_manifest-$STAMP.json")
+  fi
+  if [ -f "$X/fit.json" ]; then expect+=(--expect "$X/fit.json"); fi
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict="6/6 runs and the train-fit reading"; else verdict="FAIL at $where (exit $run_rc), $done_runs/6 runs"; fi
+  git commit -m "H7-R D1 full: full-scale training $verdict (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+full-2-F. 학습 기록 보존 (full-2가 기록 커밋 전에 멈췄을 때만)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/full"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/full
+  L="$R/logs"
+  echo __START__
+  git reset -q -- "$X"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  shopt -s nullglob
+  logs=("$L"/train-*.log)
+  [ "${#logs[@]}" -gt 0 ] || { echo "STOP: no train log"; exit 1; }
+  last="${logs[0]}"
+  for f in "${logs[@]}"; do if [ "$f" -nt "$last" ]; then last="$f"; fi; done
+  STAMP="$(basename "$last" .log | grep -oE '[0-9]{8}-[0-9]{6}$')"
+  echo "attempt $STAMP"
+  for f in "$L"/*-"$STAMP".log; do echo "== $f"; tail -n 3 "$f"; done
+  python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "*-$STAMP.log" \
+    --dest-dir "$X/train-logs" --manifest "$X/train-logs/$STAMP.manifest.json"
+  candidates=("$X/train-logs/$STAMP.manifest.json" "$X"/train-logs/*-"$STAMP".log)
+  for s in 31001 31002 31003; do
+    for arm in narrow wide; do
+      [ -d "$R/$arm-$s" ] || continue
+      for src in "$R/$arm-$s"/*.json; do
+        [ -f "$src" ] || continue
+        dst="$X/run-records/$arm-$s/$(basename "$src")"
+        mkdir -p "$(dirname "$dst")"
+        cp --no-clobber "$src" "$dst"
+        cmp "$src" "$dst"
+        candidates+=("$dst")
+      done
+    done
+  done
+  if [ -d "$X/run-records" ]; then
+    python scripts/h7r_d4_records.py manifest --resume --dir "$X/run-records" --output "$X/run-records/records_manifest-$STAMP.json"
+    candidates+=("$X/run-records/records_manifest-$STAMP.json")
+  fi
+  if [ -f "$X/fit.json" ]; then candidates+=("$X/fit.json"); fi
+  expect=()
+  for f in "${candidates[@]}"; do
+    if ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then git add "$f"; expect+=(--expect "$f"); fi
+  done
+  if [ "${#expect[@]}" -eq 0 ]; then
+    git push origin HEAD:feat/h7-c1
+    echo "nothing left to record; push checked"; echo "__EXIT__ 0"; exit 0
+  fi
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1 full: full-scale training attempt record $STAMP (records only)"
+  git push origin feat/h7-c1
+  echo "__EXIT__ 0"
+)
+```
+
+full-3. H-dev 판독과 기록 커밋 (`approved.evaluate` 커밋 후)
+   - 평가 대상은 c5와 T-val 선택 checkpoint 6개, 판독은 R2 §7이다. R2-0B의 H-dev 주 지표는 참고값으로만 함께 기록된다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/full"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/full
+  L="$R/logs"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  git ls-files --error-unmatch "$X/prepare.json" "$X/fit.json" "$D/d1-full-contract.json" >/dev/null
+  test ! -e "$X/d1_eval.json"
+  test ! -e "$R/predictions.pt"
+  test ! -e "$R/predictions.pt.partial"
+  test ! -e "$R/evaluate-predicted.json"
+  for s in 31001 31002 31003; do for arm in narrow wide; do test -f "$R/$arm-$s/best.pt"; test -f "$R/$arm-$s/best.json"; done; done
+  mkdir -p "$L"
+  LOG="$L/evaluate-$(date +%Y%m%d-%H%M%S).log"
+  B="$(basename "$LOG" .log)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  { echo __START__; rc=0; python -u scripts/h7r_d1_full.py evaluate --d1-contract "$D/d1-full-contract.json" \
+      --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt --device cuda 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
+  if [ -f "$R/evaluate-predicted.json" ]; then
+    mkdir -p "$X/evaluate-records"
+    cp --no-clobber "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+    cmp "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+  fi
+  expect=(--expect "$X/evaluate-logs/$B.log" --expect "$X/evaluate-logs/$B.manifest.json")
+  for f in "$X/evaluate-records/evaluate-predicted.json" "$X/d1_eval.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then expect+=(--expect "$f"); fi
+  done
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict=reading; else verdict="FAIL (exit $run_rc)"; fi
+  git commit -m "H7-R D1 full: full-scale H-dev $verdict (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+full-3-R. 중단된 평가의 완성 (예측 기록이 있고 결과가 없을 때만; 새 추론 없음)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/full"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/full
+  L="$R/logs"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  git ls-files --error-unmatch "$X/prepare.json" "$X/fit.json" "$D/d1-full-contract.json" >/dev/null
+  test ! -e "$X/d1_eval.json"
+  test -f "$R/evaluate-predicted.json"
+  for s in 31001 31002 31003; do for arm in narrow wide; do test -f "$R/$arm-$s/best.pt"; test -f "$R/$arm-$s/best.json"; done; done
+  mkdir -p "$L"
+  LOG="$L/evaluate-resume-$(date +%Y%m%d-%H%M%S).log"
+  B="$(basename "$LOG" .log)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  { echo __START__; rc=0; python -u scripts/h7r_d1_full.py evaluate --d1-contract "$D/d1-full-contract.json" \
+      --cache runs/h7r/R1-HDEV-1/cache --c5 runs/h7c/c5/value/best.pt --device cuda --resume 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
+  if [ -f "$R/evaluate-predicted.json" ]; then
+    mkdir -p "$X/evaluate-records"
+    cp --no-clobber "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+    cmp "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+  fi
+  expect=(--expect "$X/evaluate-logs/$B.log" --expect "$X/evaluate-logs/$B.manifest.json")
+  for f in "$X/evaluate-records/evaluate-predicted.json" "$X/d1_eval.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then expect+=(--expect "$f"); fi
+  done
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict=reading; else verdict="FAIL (exit $run_rc)"; fi
+  git commit -m "H7-R D1 full: full-scale H-dev resumed $verdict (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+full-3-F. 평가 기록 보존 (full-3 또는 full-3-R이 기록 커밋 전에 멈췄을 때만)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/full"
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/full/logs
+  echo __START__
+  git reset -q -- "$X"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  shopt -s nullglob
+  logs=("$L"/evaluate-*.log)
+  [ "${#logs[@]}" -gt 0 ] || { echo "STOP: no evaluate log"; exit 1; }
+  LOG="${logs[0]}"
+  for f in "${logs[@]}"; do if [ "$f" -nt "$LOG" ]; then LOG="$f"; fi; done
+  B="$(basename "$LOG" .log)"
+  echo "log: $LOG"
+  tail -n 5 "$LOG"
+  expect=()
+  python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/evaluate-logs" --manifest "$X/evaluate-logs/$B.manifest.json"
+  R=runs/h7r/R2-D1-HEAD-WIDTH-1/full
+  if [ -f "$R/evaluate-predicted.json" ]; then
+    mkdir -p "$X/evaluate-records"
+    cp --no-clobber "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+    cmp "$R/evaluate-predicted.json" "$X/evaluate-records/evaluate-predicted.json"
+  fi
+  for f in "$X/evaluate-logs/$B.log" "$X/evaluate-logs/$B.manifest.json" "$X/evaluate-records/evaluate-predicted.json" "$X/d1_eval.json"; do
+    if [ -f "$f" ] && ! git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+      git add "$f"
+      expect+=(--expect "$f")
+    fi
+  done
+  if [ "${#expect[@]}" -eq 0 ]; then
+    git push origin HEAD:feat/h7-c1
+    echo "nothing left to record; push checked"; echo "__EXIT__ 0"; exit 0
+  fi
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1 full: full-scale H-dev attempt record $B (records only)"
+  git push origin feat/h7-c1
+  echo "__EXIT__ 0"
+)
+```
+
+### 14.9 진행 상태
+
+- **구현 완료** (이 커밋)
+  - `scripts/h7r_d1_full.py`와 `tests/test_h7r_d1_full.py`
+  - 계약 `d1-full-contract.json`
+    - 초안 값에 검토 보완 세 가지를 더했다: 환경 필드와 동일성 기준, 짝맞춤 기준, D4 문구
+    - 소스 18개의 SHA를 채워 `status: fixed`로 고정했다.
+    - 실험 식별값 `25c49e408aff`, 모든 `approved` false
+    - 초안은 설계 기록으로 남긴다. 테스트가 고정 계약과 초안이 위 항목 말고는 같은지 확인한다.
+  - §14.8의 실행 블록 7개
+- **테스트로 확인한 것** (대역 입력; 실제 c8·H-dev·GPU는 데스크톱 실행에서만 확인된다)
+  - 로더: 커밋된 계약은 세 단계 모두 미승인으로 거부한다. 승인한 사본은 세 단계 모두 읽힌다. 고정값, predecessor, 자료, 예산, control, 환경, 출력, 이전 도구 SHA가 틀리면 거부한다.
+  - 자료: split 전체를 선택 없이 쓴다. 행 수, 구성, split·labels SHA가 다르면 거부한다.
+  - prepare: 같은 입력에서 5,000행 prepare와 기록이 같다. parent state가 이전 기록과 다르면 FAIL이고 학습을 거부한다. 단계별 경과 시간을 기록한다.
+  - train·fit
+    - 같은 입력·예산에서 5,000행 train과 실행 기록이 같다. 실행 환경이 기록된다.
+    - fit은 R2-0B 참고 비교를 함께 기록한다.
+    - 환경 필드 하나 또는 짝맞춤(평가 step, 자료 배정, commit, 자료)이 다르면 판독 없이 사유를 기록하고 멈춘다. evaluate 진입 검사도 거부한다.
+  - evaluate
+    - 5,000행 도구와 판독이 같고, R2-0B H-dev 참고값을 기록한다.
+    - 결과 저장 중단은 `--resume`이 추론 없이 완성한다.
+    - 재개 중 HEAD가 바뀌거나 정상 실행 중 dirty가 되면 결과를 쓰지 않는다. 예측과 기록은 보존된다.
+    - 변조된 예측과 기록 없는 `.partial`은 거부한다.
+  - 회귀: 1,000행 v2와 5,000행 계약의 세 단계, 그리고 그 기록이 그대로 읽힌다.
+- **실제 데이터에서 남은 확인 항목** (prepare 이후)
+  - c8 cycle cache의 train split이 35,816행이고, 구성이 outcome 30,792 / proof 5,024인지
+  - 게임 수와 게임 목록 SHA. 처음 기록된다.
+  - 전체 split의 바닥값과 적합 문턱
+  - 확장 parent가 실제 GPU에서도 이전 기록과 같은 state인지
+  - float64 검사의 실제 소요 시간. 단계별 경과 시간으로 예상 시간을 갱신한다.
+  - 학습 6회의 실제 시간과 환경 동일성
+  - 새 narrow와 R2-0B의 같은 seed 실행이 얼마나 비슷한지(참고값)
+- **승인과 실행**
+  1. 구현 검토
+  2. prepare 승인 → full-1
+  3. train 승인 → full-2
+  4. evaluate 승인 → full-3
