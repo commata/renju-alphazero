@@ -1,0 +1,4 @@
+1794235889.585295628 __START__
+1794235890.478100556 [d1-d4-preflight] sealed H-dev and eligible positions
+1794235901.427696469 STOP: the committed eligible manifest differs from the sealed H-dev
+1794235901.642123735 __EXIT__ 1

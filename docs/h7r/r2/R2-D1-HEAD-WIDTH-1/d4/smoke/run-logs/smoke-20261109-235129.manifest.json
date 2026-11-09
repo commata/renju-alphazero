@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "smoke-20261109-235129.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D1-D4-1/logs/smoke-20261109-235129.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/smoke/run-logs/smoke-20261109-235129.log",
+   "bytes": 227,
+   "sha256": "47d7a4051ef97146c46e527757681097b9e9d3b6821a526f088ee87e24b82a39"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
