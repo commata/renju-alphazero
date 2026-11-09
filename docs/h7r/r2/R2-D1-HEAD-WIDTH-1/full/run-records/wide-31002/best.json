@@ -1,0 +1,62 @@
+{
+ "stage": "H6-2a",
+ "h7c_stage": "H7-c-value",
+ "track": "B",
+ "experiment": "R2-D1-HEAD-WIDTH-1",
+ "arm": "wide",
+ "seed": 31002,
+ "which": "best",
+ "model_config": {
+  "board_size": 15,
+  "input_planes": 6,
+  "channels": 64,
+  "blocks": 4,
+  "policy_channels": 2,
+  "value_channels": 4,
+  "value_hidden": 64
+ },
+ "config": {
+  "seed": 31002,
+  "batch_size": 1024,
+  "epochs": 3.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "augment_d4": true,
+  "evaluations": 10,
+  "h6_guard_ratio": 1.05,
+  "device": "cuda"
+ },
+ "best": {
+  "step": 147,
+  "objective": 0.435780793428421,
+  "cycle_wmse": 0.2986676096916199,
+  "replay_wmse": 0.5728939771652222,
+  "eligible": true,
+  "cycle_val": {
+   "states": 1744,
+   "mse": 0.619837760925293,
+   "sign_acc": 0.7119280099868774,
+   "mean_value": 0.16868093609809875,
+   "mean_target": 0.01777523010969162,
+   "saturated": 0.0957568809390068
+  },
+  "replay_val": {
+   "states": 106223,
+   "mse": 0.8634918332099915,
+   "sign_acc": 0.6631332039833069,
+   "mean_value": 0.13420039415359497,
+   "mean_target": 0.033523812890052795,
+   "saturated": 0.04524444043636322
+  }
+ },
+ "git": {
+  "commit": "771b8f31c6b82f80e71e103d5f027863190c0c3f",
+  "dirty": false
+ },
+ "value_trained": true,
+ "trunk_frozen": true,
+ "policy_head_frozen": true,
+ "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+ "parent_value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024"
+}

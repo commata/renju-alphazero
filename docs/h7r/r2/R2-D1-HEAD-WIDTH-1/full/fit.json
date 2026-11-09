@@ -1,0 +1,183 @@
+{
+ "format": "h7r-d1-fit-v1",
+ "experiment_sha256": "25c49e408aff5621984a8e8b6461703f8e49289e8960f03366ea1baa4673cdc9",
+ "contract_sha256": "d684c0038bb505c022adc5fa5d6badbd86e0312fe3ff2d8ddf9038e370c95017",
+ "comparable": true,
+ "comparability_reasons": [],
+ "environment_fields": [
+  "torch",
+  "cuda",
+  "cudnn",
+  "device_name",
+  "cudnn_enabled",
+  "cudnn_benchmark",
+  "cudnn_deterministic",
+  "cudnn_allow_tf32",
+  "matmul_allow_tf32",
+  "float32_matmul_precision",
+  "deterministic_algorithms",
+  "threads"
+ ],
+ "environment": {
+  "torch": "2.14.0+cu130",
+  "cuda": "13.0",
+  "cudnn": 92400,
+  "device_name": "NVIDIA GeForce RTX 5070",
+  "cudnn_enabled": true,
+  "cudnn_benchmark": false,
+  "cudnn_deterministic": false,
+  "cudnn_allow_tf32": true,
+  "matmul_allow_tf32": false,
+  "float32_matmul_precision": "highest",
+  "deterministic_algorithms": false,
+  "threads": 8
+ },
+ "reading": {
+  "category": "WIDTH_EFFECT",
+  "order": [
+   "WIDTH_EFFECT",
+   "BOTH_FIT",
+   "SEED_DISAGREEMENT",
+   "NEITHER_FIT",
+   "MIXED_FIT"
+  ],
+  "floor_d4": 0.015343601754516399,
+  "margin": 0.01,
+  "threshold": 0.0253436017545164,
+  "success": {
+   "narrow": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   },
+   "wide": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   }
+  },
+  "wide_minus_narrow": {
+   "31001": -0.023079633712768555,
+   "31002": -0.02782389521598816,
+   "31003": -0.02100163698196411
+  },
+  "narrow_seed_range": 0.0009586513042449951
+ },
+ "parent_fit": {
+  "narrow": {
+   "31001": 0.37547314167022705,
+   "31002": 0.37547314167022705,
+   "31003": 0.37547314167022705
+  },
+  "wide": {
+   "31001": 0.37547314167022705,
+   "31002": 0.37547314167022705,
+   "31003": 0.37547314167022705
+  }
+ },
+ "selected_fit": {
+  "narrow": {
+   "31001": 0.37008386850357056,
+   "31002": 0.37097832560539246,
+   "31003": 0.3704834282398224
+  },
+  "wide": {
+   "31001": 0.34646809101104736,
+   "31002": 0.3436666429042816,
+   "31003": 0.34914928674697876
+  }
+ },
+ "selected_step": {
+  "narrow": {
+   "31001": 126,
+   "31002": 84,
+   "31003": 84
+  },
+  "wide": {
+   "31001": 168,
+   "31002": 147,
+   "31003": 168
+  }
+ },
+ "cost": {
+  "narrow": {
+   "31001": {
+    "seconds": 231.7,
+    "per_step": 1.1033
+   },
+   "31002": {
+    "seconds": 230.98,
+    "per_step": 1.0999
+   },
+   "31003": {
+    "seconds": 231.77,
+    "per_step": 1.1037
+   }
+  },
+  "wide": {
+   "31001": {
+    "seconds": 231.05,
+    "per_step": 1.1002
+   },
+   "31002": {
+    "seconds": 232.5,
+    "per_step": 1.1071
+   },
+   "31003": {
+    "seconds": 229.6,
+    "per_step": 1.0933
+   }
+  }
+ },
+ "r2_0b_reference": {
+  "31001": {
+   "r2_0b": {
+    "selected_step": 126,
+    "objective": 0.45081235468387604,
+    "verdict": "CANDIDATE"
+   },
+   "narrow": {
+    "selected_step": 126,
+    "objective": 0.45081235468387604,
+    "verdict": "CANDIDATE"
+   },
+   "same_selected_step": true,
+   "objective_difference": 0.0,
+   "curve_steps_compared": 10,
+   "curve_max_abs_difference": 5.960464477539063e-08
+  },
+  "31002": {
+   "r2_0b": {
+    "selected_step": 84,
+    "objective": 0.45031237602233887,
+    "verdict": "CANDIDATE"
+   },
+   "narrow": {
+    "selected_step": 84,
+    "objective": 0.45031237602233887,
+    "verdict": "CANDIDATE"
+   },
+   "same_selected_step": true,
+   "objective_difference": 0.0,
+   "curve_steps_compared": 10,
+   "curve_max_abs_difference": 4.470348358154297e-08
+  },
+  "31003": {
+   "r2_0b": {
+    "selected_step": 84,
+    "objective": 0.44930514693260193,
+    "verdict": "CANDIDATE"
+   },
+   "narrow": {
+    "selected_step": 84,
+    "objective": 0.44930514693260193,
+    "verdict": "CANDIDATE"
+   },
+   "same_selected_step": true,
+   "objective_difference": 0.0,
+   "curve_steps_compared": 10,
+   "curve_max_abs_difference": 1.4901161193847656e-08
+  }
+ },
+ "note": "the reading uses the last-step state of both arms (same step); the selected checkpoints are recorded apart and are what the H-dev reading uses; the R2-0B reference is not ruled on"
+}

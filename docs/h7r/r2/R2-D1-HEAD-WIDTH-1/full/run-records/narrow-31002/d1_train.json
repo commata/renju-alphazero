@@ -1,0 +1,193 @@
+{
+ "format": "h7r-d1-train-v1",
+ "experiment_sha256": "25c49e408aff5621984a8e8b6461703f8e49289e8960f03366ea1baa4673cdc9",
+ "contract_sha256": "d684c0038bb505c022adc5fa5d6badbd86e0312fe3ff2d8ddf9038e370c95017",
+ "git": {
+  "commit": "771b8f31c6b82f80e71e103d5f027863190c0c3f",
+  "dirty": false
+ },
+ "arm": "narrow",
+ "seed": "31002",
+ "value_channels": 1,
+ "subset": {
+  "games": 932,
+  "rows": 35816,
+  "games_sha256": "7b0da77c82e65e0654f725cf3ad8d6e6bbb36297b4838dc052ade57b68046be0"
+ },
+ "assignment": {
+  "version": "h7r-r2-assignment-v1",
+  "n_cycle": 35816,
+  "n_replay": 2683098,
+  "seed": 31002,
+  "batch_size": 1024,
+  "total_steps": 210,
+  "epochs": [
+   {
+    "replay_pick_sha256": "5321360020663bd82a3d3139e18d9ac681a36f68f6f064f68d3ee7a6b9fdfead",
+    "order_sha256": "52da4063c58dd6c5600d2f3cac035ad0e397a8fa78fe75711605e3455b9b310c"
+   },
+   {
+    "replay_pick_sha256": "905691ae0cca80504ad887b191cf8573a8bce06660b5aaaa86b7e3b6c028edc5",
+    "order_sha256": "acdf95e0a0cf7e87a4244fd8c0d735669990b12c6ebe3a89c2e91eb8d5432861"
+   },
+   {
+    "replay_pick_sha256": "15156cfa6fc893216dff087eff0d57e51a3dcffa4458f1f9832055b2c80d6a94",
+    "order_sha256": "71a204ee8dea26c4619691fe6fcf68fce8dcf3dbf79be60fc5799133d1fce226"
+   }
+  ],
+  "augmentation_sha256": "38959c945949ef52b7ab427c72cb93ede80f13bc8629db257841baf31bc5ca46",
+  "sha256": "a10b78de9ec36dc4dfad46993985d92a49953836364064fd6787e5a920dddb69"
+ },
+ "total_steps": 210,
+ "evaluation_steps": [
+  21,
+  42,
+  63,
+  84,
+  105,
+  126,
+  147,
+  168,
+  189,
+  210
+ ],
+ "fits": [
+  {
+   "at": "parent",
+   "weighted_mse": 0.37547314167022705,
+   "by_kind": {
+    "outcome": 0.7447441220283508,
+    "proof": 0.14914759993553162
+   }
+  },
+  {
+   "at": 21,
+   "weighted_mse": 0.37309733033180237,
+   "by_kind": {
+    "outcome": 0.7516732215881348,
+    "proof": 0.14106881618499756
+   }
+  },
+  {
+   "at": 42,
+   "weighted_mse": 0.37175890803337097,
+   "by_kind": {
+    "outcome": 0.7454127669334412,
+    "proof": 0.14274710416793823
+   }
+  },
+  {
+   "at": 63,
+   "weighted_mse": 0.3714713752269745,
+   "by_kind": {
+    "outcome": 0.7380510568618774,
+    "proof": 0.14679530262947083
+   }
+  },
+  {
+   "at": 84,
+   "weighted_mse": 0.37097832560539246,
+   "by_kind": {
+    "outcome": 0.738656759262085,
+    "proof": 0.1456289142370224
+   }
+  },
+  {
+   "at": 105,
+   "weighted_mse": 0.3704787492752075,
+   "by_kind": {
+    "outcome": 0.7408465147018433,
+    "proof": 0.14348097145557404
+   }
+  },
+  {
+   "at": 126,
+   "weighted_mse": 0.3703344762325287,
+   "by_kind": {
+    "outcome": 0.7436636686325073,
+    "proof": 0.14152175188064575
+   }
+  },
+  {
+   "at": 147,
+   "weighted_mse": 0.3702181875705719,
+   "by_kind": {
+    "outcome": 0.739583432674408,
+    "proof": 0.14383484423160553
+   }
+  },
+  {
+   "at": 168,
+   "weighted_mse": 0.3698301315307617,
+   "by_kind": {
+    "outcome": 0.7458961009979248,
+    "proof": 0.13933990895748138
+   }
+  },
+  {
+   "at": 189,
+   "weighted_mse": 0.3696896731853485,
+   "by_kind": {
+    "outcome": 0.744801938533783,
+    "proof": 0.1397840827703476
+   }
+  },
+  {
+   "at": 210,
+   "weighted_mse": 0.36955419182777405,
+   "by_kind": {
+    "outcome": 0.7431885600090027,
+    "proof": 0.14055436849594116
+   }
+  }
+ ],
+ "last_step": {
+  "step": 210,
+  "fit": {
+   "at": 210,
+   "weighted_mse": 0.36955419182777405,
+   "by_kind": {
+    "outcome": 0.7431885600090027,
+    "proof": 0.14055436849594116
+   }
+  },
+  "state": {
+   "checkpoint_sha256": "8f951994dd8167ee9ee4eae541e4a82b7fe14fa5d1afd364b4635b7f27ff7612",
+   "metadata_sha256": "b5a53cc4b45f30476bb1ce83228165a5bbc61a98be314612e303f70477b5ec74"
+  }
+ },
+ "selected": {
+  "step": 84,
+  "objective": 0.45031237602233887,
+  "fit": {
+   "at": 84,
+   "weighted_mse": 0.37097832560539246,
+   "by_kind": {
+    "outcome": 0.738656759262085,
+    "proof": 0.1456289142370224
+   }
+  },
+  "state": {
+   "checkpoint_sha256": "21442761372c320619f2b8b33d543f1460b10d8efda5413e30ff8d87bd1be9ff",
+   "metadata_sha256": "3d0075fcdfec0761abfc4e87f45f0b8e8403849801250df433866b4a3ea6a000"
+  }
+ },
+ "verdict": "CANDIDATE",
+ "trainer_record_sha256": "b6a8fdb72297d12fdeb687de8290258ad582f9edea846f54926aa76d4b609c0b",
+ "environment": {
+  "torch": "2.14.0+cu130",
+  "cuda": "13.0",
+  "cudnn": 92400,
+  "device_name": "NVIDIA GeForce RTX 5070",
+  "cudnn_enabled": true,
+  "cudnn_benchmark": false,
+  "cudnn_deterministic": false,
+  "cudnn_allow_tf32": true,
+  "matmul_allow_tf32": false,
+  "float32_matmul_precision": "highest",
+  "deterministic_algorithms": false,
+  "threads": 8
+ },
+ "seconds": 230.98,
+ "seconds_per_step": 1.0999
+}
