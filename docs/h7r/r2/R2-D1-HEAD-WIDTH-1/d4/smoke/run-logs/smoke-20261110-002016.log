@@ -1,0 +1,8 @@
+1794237616.417560882 __START__
+1794237617.228345916 [d1-d4-preflight] sealed H-dev and eligible positions
+1794237628.857022156 [d1-d4-preflight] PASS 396 games / 15985 rows; seven models; entry {'fit_category': 'WIDTH_EFFECT', 'hdev_label': 'DEVELOPMENT_SIGNAL', 'timing': {'positions': 144, 'mean_a': 0.6162940978333104, 'mean_b': 0.6179198317710567, 'p95_a': 0.7577813580064685, 'p95_b': 0.7606454359993222, 'mean_ratio': 1.0026379190445955, 'p95_ratio': 1.0037795572068287, 'thresholds': {'mean_ratio': 1.1, 'p95_ratio': 1.2}, 'passed': True, 'same_move_share': 0.9652777777777778}}
+1794237628.873675545 [d1-d4-replay] resume 0/2, remaining 2
+1794237696.547902505 [d1-d4-replay] 43/43 units  100.0%  1.1 min  ETA 0 min  2/2 chunks
+1794237696.548841805 [d1-d4-rapfi] resume 0/0, remaining 0
+1794237708.585722303 {"reading": "SMOKE", "summary": "/home/tack/renju-h6/runs/h7r/R2-D1-D4-1/smoke/summary.json"}
+1794237708.854649380 __EXIT__ 0
