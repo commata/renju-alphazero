@@ -98,7 +98,7 @@ class DecideTest(unittest.TestCase):
         s.timing()
         self.assertEqual(s.decide()['block'], 'd1-d4-1.sh')
         s.launch('eligible', text='__RECORDED__ 0\nBLOCK EXIT 0\n')
-        put(s.root, ap.DONE['eligible'], {'games': []})
+        put(s.root, s.c['output']['sample'], {'games': []})
         self.assertEqual(s.decide(), {'action': 'approve', 'step': 'smoke', 'mode': 'smoke'})
         s.approve('smoke')
         self.assertEqual(s.decide(), {'action': 'run', 'step': 'smoke', 'block': 'd1-d4-run.sh', 'args': ['smoke']})
@@ -124,7 +124,7 @@ class DecideTest(unittest.TestCase):
         s.timing(passed=False)
         self.assertIn('time gate FAIL', s.decide()['reason'])
         s.timing(pair=('narrow31002', 'wide31001'))
-        put(s.root, ap.DONE['eligible'], {'games': []})
+        put(s.root, s.c['output']['sample'], {'games': []})
         out = s.decide()
         self.assertEqual(out['action'], 'stop')
         self.assertIn('not measured on the linked pair', out['reason'])
@@ -143,7 +143,7 @@ class DecideTest(unittest.TestCase):
         s = self.sim
         s.hdev()
         s.timing()
-        put(s.root, ap.DONE['eligible'], {'games': []})
+        put(s.root, s.c['output']['sample'], {'games': []})
         s.approve('smoke')
         started = time.time() - 5
         s.launch('smoke', text='__NOT_RECORDED__ 1: kept\nBLOCK EXIT 1\n', started=started)
@@ -194,6 +194,36 @@ class DecideTest(unittest.TestCase):
         put(s.root, ap.RETRIES, {**body, 'retries': [{**body['retries'][0], 'step': 'full'}]})
         with self.assertRaisesRegex(ValueError, 'not an authorizable retry'):
             s.decide()
+
+    def test_amendment_a2_reruns_eligible_and_reapproves_smoke(self):
+        """The real ledger after the first smoke attempt: eligible done under the old sample path (launch 4), smoke
+        refused at preflight (launch 5) and preserved (launch 6); A2 resets the approvals and moves the sample."""
+        s = self.sim
+        s.hdev()
+        s.timing()
+        for step, text in (('hdev', '__RECORDED__ 0\nBLOCK EXIT 0\n'), ('timing', 'BLOCK EXIT 1\n'),
+                           ('timing', '__RECORDED__ 0\nBLOCK EXIT 0\n'), ('eligible', '__RECORDED__ 0\nBLOCK EXIT 0\n'),
+                           ('smoke', 'STOP: x\n__NOT_RECORDED__ 1\nBLOCK EXIT 1\n')):
+            s.launch(step, text=text)
+        s.launch('smoke', kind='recover', text='__EXIT__ 0\nBLOCK EXIT 0\n')
+        put(s.root, f'{ap.D}/d4/eligible.json', {'games': []})  # the superseded sample: not the contract's
+        self.assertEqual(s.decide()['action'], 'stop')
+        put(s.root, ap.RETRIES, {'format': 'h7r-autopilot-retries-v1', 'retries': [
+            {'step': 'timing', 'failed_launch': 2, 'cause': 'a', 'fix': 'b'},
+            {'step': 'eligible', 'failed_launch': 4, 'cause': 'superseded sample', 'fix': 'A2'},
+            {'step': 'smoke', 'failed_launch': 5, 'cause': 'manifest binding', 'fix': 'A2'}]})
+        out = s.decide()
+        self.assertEqual((out['action'], out['block'], out['retry']), ('run', 'd1-d4-1.sh', True))
+        s.launch('eligible', text='__RECORDED__ 0\nBLOCK EXIT 0\n')
+        put(s.root, s.c['output']['sample'], {'games': [1]})
+        self.assertIn('other games / rows', s.decide()['reason'])  # A2 may change only the binding
+        put(s.root, s.c['output']['sample'], {'games': [], 'contract_sha256': 'new'})
+        self.assertEqual(s.decide(), {'action': 'approve', 'step': 'smoke', 'mode': 'smoke'})
+        s.approve('smoke')
+        out = s.decide()
+        self.assertEqual((out['action'], out['args'], out['retry']), ('run', ['smoke'], True))
+        s.launch('smoke', text='__NOT_RECORDED__ 1\nBLOCK EXIT 1\n')
+        self.assertEqual(s.decide()['action'], 'recover')  # the authorization named launch 5 only
 
     def test_the_deadline(self):
         out = self.sim.decide(now=ap.DEADLINE)

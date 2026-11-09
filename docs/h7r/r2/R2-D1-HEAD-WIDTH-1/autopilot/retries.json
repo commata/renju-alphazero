@@ -6,6 +6,18 @@
       "failed_launch": 2,
       "cause": "the time gate tool built its reference through factory v1, which refuses every D1 checkpoint (no metadata H3 parent); its failure-record path factory-v2/logs is ignored by .gitignore; stopped before any measurement, independent of any reading",
       "fix": "amendment R2-D1-D4-1-A1 (d4/amendment-a1.json): reference through factory v2's 1-channel path (timing tool SHA 6fa6e99f2e01), v2-1 block records under factory-v2/timing-logs including the failed attempt's log"
+    },
+    {
+      "step": "eligible",
+      "failed_launch": 4,
+      "cause": "superseded, not failed: its manifest binds the A1 contract; amendment A2 moves the sample to d4/eligible-a2.json under the A2 contract",
+      "fix": "amendment R2-D1-D4-1-A2 (d4/amendment-a2.json)"
+    },
+    {
+      "step": "smoke",
+      "failed_launch": 5,
+      "cause": "the smoke preflight refused the eligible manifest because the approval commit changed the contract file SHA it binds; stopped before any replay (no run folder), independent of any reading",
+      "fix": "amendment R2-D1-D4-1-A2 (d4/amendment-a2.json): the manifest binds the unapproved contract form"
     }
   ]
 }

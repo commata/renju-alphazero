@@ -2146,7 +2146,7 @@ full-3-F. 평가 기록 보존 (full-3 또는 full-3-R이 기록 커밋 전에 �
 - **질문**: 전체 규모에서 넓힌 head의 H-dev 예측 이득이 수 선택으로 이어지는가. 직접 대조군(같은 seed의 narrow)과 비교한다.
 - **방법은 baseline D4(R2-D4-BASELINE-1)와 같다.** 계약 로더가 baseline 계약과 하나씩 대조한다.
   - 같은 것: sealed H-dev, frozen state, runtime 정체성, Rapfi 프로그램·정체성, 위치 선택, 예산, device, 통계(`d4.STATS`), INVALID 정책
-  - 표본: baseline과 같은 eligible manifest 규칙(c5가 actor). prepare가 `d4/eligible.json`으로 고정한다.
+  - 표본: baseline과 같은 eligible manifest 규칙(c5가 actor). prepare가 계약의 `output.sample`로 고정한다(개정 A2부터 `d4/eligible-a2.json`).
 - **비교**
   - 주 비교: `wide31001:narrow31001`, `wide31002:narrow31002`, `wide31003:narrow31003`
   - 참고: 각 wide와 c5. 구간만 기록하고 판독 label은 지운다.
@@ -2277,7 +2277,8 @@ d4-1. D4 eligible manifest와 기록 커밋 (P3 계약 커밋 뒤; 승인 불필
   test -z "$(git status --porcelain --untracked-files=no)"
   python scripts/check_track_b_frozen.py
   git ls-files --error-unmatch "$X/d1-d4-contract.json" >/dev/null
-  test ! -e "$X/eligible.json"
+  SAMPLE="$(python -c "import json, sys; print(json.load(open(sys.argv[1]))['output']['sample'])" "$X/d1-d4-contract.json")"
+  test ! -e "$SAMPLE"
   mkdir -p "$L"
   LOG="$L/prepare-$(date +%Y%m%d-%H%M%S).log"
   [ ! -e "$LOG" ] || { echo "STOP: $LOG exists"; exit 1; }
@@ -2289,7 +2290,7 @@ d4-1. D4 eligible manifest와 기록 커밋 (P3 계약 커밋 뒤; 승인 불필
   python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
     --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
   expect=(--expect "$X/prepare-logs/$B.log" --expect "$X/prepare-logs/$B.manifest.json")
-  if [ -f "$X/eligible.json" ]; then expect+=(--expect "$X/eligible.json"); fi
+  if [ -f "$SAMPLE" ]; then expect+=(--expect "$SAMPLE"); fi
   for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   if [ "$run_rc" -eq 0 ]; then verdict=PASS; else verdict="FAIL (exit $run_rc)"; fi
@@ -2480,3 +2481,33 @@ d4-F. D4 실패 기록 보존 (`bash ~/d1-d4-F.sh smoke` 또는 `full`; 재개�
 - **재시도**
   - 위임 재시도 규칙에 따른다: 판독과 무관한 오류, 원인 확인 뒤, 1회.
   - `autopilot/retries.json`이 실패한 launch 2를 지정한다. 자동 진행 도구는 이 기록이 있을 때만 그 단계를 한 번 더 돈다.
+
+### 16.7 개정 A2: eligible manifest가 묶는 계약 SHA (`d4/amendment-a2.json`, 2026-11-10)
+
+- **발생**: 첫 D4 smoke(launch 5)가 preflight에서 멈췄다. replay도 branch도 시작하지 않았다.
+  - 오류: `STOP: the committed eligible manifest differs from the sealed H-dev`
+- **원인: 도구 설계 결함**
+  - eligible manifest는 prepare 당시 계약 파일의 SHA를 기록한다(`5be35de05548`, 승인 없음).
+  - 승인 플래그는 같은 파일 안에 있다. 그래서 `approved.smoke` 커밋(`2897a44`)이 파일 SHA를 바꿨다.
+  - 승인된 실행은 바뀐 SHA로 manifest를 다시 만들어 비교하므로, 승인된 계약에서는 항상 불일치가 났다.
+  - baseline D4는 승인을 별도 파일에 두었기 때문에 이 문제가 없었다.
+  - 테스트도 블록 시뮬레이션도 "prepare → 승인 → run" 순서를 실제 도구로 거치지 않아서 놓쳤다.
+- **수정**
+  - 도구: prepare와 run이 `contract_base_sha256`을 쓴다. 승인을 모두 false로 둔 계약의 SHA다.
+    - 아무것도 승인되지 않았을 때는 파일 SHA와 같다.
+    - 그 뒤의 승인으로는 바뀌지 않는다.
+  - 새 테스트: 실제 `prepare`, 승인, `run`을 차례로 돌린다. 수정 전 코드로는 데스크톱과 같은 오류로 실패하고, 수정 뒤에는 통과한다.
+- **D4 계약**
+  - 도구 SHA 고정값이 바뀌었다. 실험 식별값은 `032ede7b88af`에서 `ee06faf80d9b`로 바뀌었다.
+  - 승인은 둘 다 false로 되돌렸다. 앞의 smoke 승인은 A1 실험에 대한 것이었다.
+  - 표본 경로는 `d4/eligible-a2.json`이다. A1의 `d4/eligible.json`은 그대로 둔다.
+- **그대로인 것**: 방법, 표본 규칙, 예산, 통계, 비교, 모델 연결, 진입 조건, 판독
+  - 새 manifest는 A1 manifest와 `contract_sha256` 말고는 같아야 한다.
+  - 자동 진행 도구가 이것을 확인하고, 다르면 멈춘다.
+- **판독과의 독립성**
+  - H-dev(`DEVELOPMENT_SIGNAL`)와 시간 gate(PASS)는 열려 있었다.
+  - 이 수정은 그 결과와 무관하게 같다. D4 값은 하나도 없었다.
+- **재시도**: `autopilot/retries.json`이 두 launch를 지정한다.
+  - eligible(launch 4): 실패가 아니라 A1 계약에 묶인 manifest라서 다시 만든다.
+  - smoke(launch 5): preflight에서 멈췄고 실행 폴더가 생기지 않았다.
+  - smoke는 승인이 되돌려졌으므로, 자동 진행 도구가 gate를 확인해 다시 승인한 뒤 재시도한다.

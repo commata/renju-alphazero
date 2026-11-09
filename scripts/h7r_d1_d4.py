@@ -62,6 +62,15 @@ def experiment_sha256(c: dict) -> str:
     return d4.digest({k: v for k, v in c.items() if k != 'approved'})
 
 
+def contract_base_sha256(c: dict) -> str:
+    """SHA-256 of the contract file as fixed, before any approval (approvals all false, the generator's
+    serialization). The eligible manifest binds this one: a ``approved`` flag committed after prepare changes the
+    file SHA but not this (amendment A2: binding the file SHA made every approved run refuse the manifest)."""
+    import hashlib
+    body = {**c, 'approved': {m: False for m in MODES}}
+    return hashlib.sha256((json.dumps(body, indent=2, ensure_ascii=False) + '\n').encode('utf-8')).hexdigest()
+
+
 def load_contract(path, root=ROOT, mode=None, *, check_sources=True) -> tuple[dict, str, str]:
     path = Path(path)
     c = json.loads(path.read_text(encoding='utf-8'))
@@ -207,7 +216,7 @@ def prepare(args):
     c, sha, eid = load_contract(args.contract)
     out = ROOT / c['output']['sample']
     d4.require(not out.exists(), f'{out} exists: never overwritten')
-    manifest, _, _ = inputs(c, sha, args.cache)
+    manifest, _, _ = inputs(c, contract_base_sha256(c), args.cache)
     publish_json(out, manifest)
     print(f"D1 D4 PREPARED {len(manifest['games'])} games / {manifest['rows']} rows; warm-up "
           f"{manifest['warmup_plies']}; SHA {d4.file_sha256(out)}", flush=True)
@@ -236,7 +245,8 @@ def run(args):
                    and smoke['actor_check']['reproduced'] is True,
                    'the committed smoke record is not a reproduced smoke of this experiment')
     print('[d1-d4-preflight] sealed H-dev and eligible positions', flush=True)
-    manifest, games, checks = inputs(c, sha, args.cache)
+    base_sha = contract_base_sha256(c)
+    manifest, games, checks = inputs(c, base_sha, args.cache)
     full_manifest = manifest
     sample = committed_json(ROOT, c['output']['sample'], 'eligible manifest')
     d4.require(sample == manifest, 'the committed eligible manifest differs from the sealed H-dev')
@@ -296,7 +306,7 @@ def run(args):
                                 done, 'key', 'd1-d4-rapfi', lambda _: 1)
         d4.require(base.git_state() == state, 'HEAD changed during D4')
         load_contract(args.contract, mode=args.mode)
-        d4.require(inputs(c, sha, args.cache)[0] == full_manifest, 'H-dev changed during D4')
+        d4.require(inputs(c, base_sha, args.cache)[0] == full_manifest, 'H-dev changed during D4')
         checked_models(c, args.model, args.device)
         d4.require(ad.engine_spec(ROOT / c['rapfi_program'], args.rapfi_dir)['identity'] == spec['identity'],
                    'Rapfi files changed during D4')

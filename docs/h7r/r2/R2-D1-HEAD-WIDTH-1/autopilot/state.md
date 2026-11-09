@@ -29,3 +29,5 @@
 - 2026-11-09 22:56: P4 H-dev `DEVELOPMENT_SIGNAL`(`9a419af`; 개선폭 31001 0.00884, 31002 0.00777, 31003 0.01073, ε 0.00195, HOLD 없음).
 - 2026-11-09 22:57: 시간 gate 첫 시도(launch 2)가 측정 전에 멈춤: factory v1이 D1 checkpoint를 거부(도구 결함), 실패 기록 경로가 `.gitignore`에 걸림. 개정 A1(D1 초안 §16.6)로 고치고, `retries.json`으로 1회 재시도를 지정.
 - 2026-11-09 23:51 KST: D4 `approved.smoke` (autopilot driver; 근거: D4 entry checks pass on the committed records (fit comparable, H-dev DEVELOPMENT_SIGNAL, factory v2 time gate passed on the linked seed-31001 pair); eligible manifest committed).
+- 2026-11-09 23:50: 시간 gate 재시도 PASS(`b939f2c`, 144위치), eligible PASS(`0513df3`), smoke 승인(`2897a44`).
+- 2026-11-09 23:51: smoke(launch 5)가 preflight에서 멈춤: 승인 커밋이 eligible manifest가 묶은 계약 파일 SHA를 바꿈(도구 설계 결함). 실패 기록 보존(`e517117`). 개정 A2(D1 초안 §16.7): manifest를 승인 전 계약 SHA에 묶고, 계약 재고정(승인 초기화, 표본 `d4/eligible-a2.json`), `retries.json`으로 eligible·smoke 1회 재시도 지정.

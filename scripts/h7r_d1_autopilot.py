@@ -32,7 +32,9 @@ d1-d4-F.sh), then the run stops. Past the delegation's 24 hours nothing is launc
 
 Authorized retry: after the cloud session has identified the cause of a failure that is independent of any reading
 and committed the fix, ``autopilot/retries.json`` names that failed launch (step and ledger number) with the cause and
-the fix; that launch's step is then run once more. Only for steps without resume state (``AUTH_STEPS``).
+the fix; that launch's step is then run once more. Only for ``AUTH_STEPS`` (smoke only when its failed run left no resume state; the tool refuses otherwise). A retried
+D4 stage whose approval is not committed (an amendment reset it) is approved first, through its gate.
+The eligible manifest's path is the contract's ``output.sample``.
 """
 from __future__ import annotations
 
@@ -69,8 +71,9 @@ BLOCKS = {'hdev': ('d1-full-3.sh', []), 'timing': ('d1-v2-1.sh', []), 'eligible'
           'smoke': ('d1-d4-run.sh', ['smoke']), 'full': ('d1-d4-run.sh', ['full'])}
 RECOVER = {'hdev': ('d1-full-3F.sh', []), 'smoke': ('d1-d4-F.sh', ['smoke']), 'full': ('d1-d4-F.sh', ['full'])}
 RETRIES = f'{D}/autopilot/retries.json'
-AUTH_STEPS = ('timing', 'eligible')
-DONE = {'hdev': f'{D}/full/d1_eval.json', 'timing': f'{D}/factory-v2/timing.json', 'eligible': f'{D}/d4/eligible.json',
+AUTH_STEPS = ('timing', 'eligible', 'smoke')
+A1_SAMPLE = f'{D}/d4/eligible.json'  # the manifest of the A1 contract (amendment A2)
+DONE = {'hdev': f'{D}/full/d1_eval.json', 'timing': f'{D}/factory-v2/timing.json',  # eligible: output.sample
         'smoke': f'{D}/d4/smoke/summary.json', 'full': f'{D}/d4/full/summary.json'}
 
 
@@ -170,6 +173,12 @@ def gate(root, step: str, rec: dict, c: dict):
         r = rec['result']
         return act('stop', final=True, reason=f"factory v2 time gate FAIL (mean x{r['mean_ratio']:.3f}, p95 "
                                               f"x{r['p95_ratio']:.3f}): no D4; the delegation ends")
+    if step == 'eligible' and c['output']['sample'] != A1_SAMPLE:
+        a1 = committed_json(root, A1_SAMPLE)
+        strip = lambda m: {k: v for k, v in m.items() if k != 'contract_sha256'}  # noqa: E731
+        if a1 is not None and strip(a1) != strip(rec):
+            return act('stop', final=False, reason=f"{c['output']['sample']} lists other games / rows than the A1 "
+                                                   f'manifest {A1_SAMPLE} (amendment A2 changes only the binding)')
     if step == 'smoke':
         import h7r_d1_d4 as dd
         if not (rec['identity']['experiment_sha256'] == dd.experiment_sha256(c) and rec['reading'] == 'SMOKE'
@@ -191,13 +200,17 @@ def approval_gate(root, mode: str, c: dict, now: datetime):
             dd.entry_checks(c, root)
         except (ValueError, KeyError) as exc:
             return f'D4 entry checks: {exc}'
-        if committed_json(root, DONE['eligible']) is None:
+        if committed_json(root, done_path('eligible', c)) is None:
             return 'the eligible manifest is not committed'
         return None
     left = (DEADLINE - now).total_seconds() / 3600
     if left < MIN_HOURS_FOR_FULL:
         return f'{left:.1f} h left of the delegation: below {MIN_HOURS_FOR_FULL} h for the D4 full run'
     return None
+
+
+def done_path(step: str, c: dict) -> str:
+    return c['output']['sample'] if step == 'eligible' else DONE[step]
 
 
 def decide(root=ROOT, now: datetime | None = None, alive=None) -> dict:
@@ -211,7 +224,7 @@ def decide(root=ROOT, now: datetime | None = None, alive=None) -> dict:
                                                '(tmux session gone); inspect and report')
     c = json.loads((Path(root) / CONTRACT).read_text(encoding='utf-8'))
     for step in STEPS:
-        rec = committed_json(root, DONE[step])
+        rec = committed_json(root, done_path(step, c))
         if rec is not None:
             stop = gate(root, step, rec, c)
             if stop:
@@ -222,14 +235,16 @@ def decide(root=ROOT, now: datetime | None = None, alive=None) -> dict:
                                                   f'before {step}')
         mine = [e for e in launches if e['step'] == step and e['kind'] == 'run']
         recovered = [e for e in launches if e['step'] == step and e['kind'] == 'recover']
-        if not mine:
+        def approved_or_approve():
             if step in ('smoke', 'full') and c['approved'][step] is not True:
                 why = approval_gate(root, step, c, now)
                 if why:
                     return act('stop', final=True, reason=f'approved.{step} cannot be given: {why}')
                 return act('approve', step=step, mode=step)
+            return None
+        if not mine:
             block, args = BLOCKS[step]
-            return act('run', step=step, block=block, args=args)
+            return approved_or_approve() or act('run', step=step, block=block, args=args)
         last = mine[-1]
         preserved = [e for e in recovered if e['n'] > last['n']]
         if last['exit'] == 0 and not last['recorded']:
@@ -245,8 +260,8 @@ def decide(root=ROOT, now: datetime | None = None, alive=None) -> dict:
         why = authorized(root).get((step, last['n']))
         if why:
             block, args = BLOCKS[step]
-            return act('run', step=step, block=block, args=args, retry=True,
-                       reason=f'authorized retry of launch {last["n"]} ({RETRIES}): {why}')
+            return approved_or_approve() or act('run', step=step, block=block, args=args, retry=True,
+                                                reason=f'authorized retry of launch {last["n"]} ({RETRIES}): {why}')
         if preserved:
             return act('stop', final=False, reason=f'{step} failed (exit {last["exit"]}, {last["out"]}); its '
                                                    f'records were preserved ({preserved[-1]["out"]}); report')

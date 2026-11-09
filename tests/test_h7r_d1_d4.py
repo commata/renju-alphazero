@@ -39,6 +39,61 @@ class ContractTest(unittest.TestCase):
         _, _, eid = self.load(c)
         self.assertEqual(eid, dd.experiment_sha256(c))
 
+    def test_the_eligible_binding_survives_approvals(self):
+        """Amendment A2: the eligible manifest binds the contract as fixed (approvals false), which equals the
+        committed file's SHA while nothing is approved and does not change when an approval is committed."""
+        c = contract()
+        self.assertEqual(c['approved'], {'smoke': False, 'full': False})
+        self.assertEqual(dd.contract_base_sha256(c), dd.d4.file_sha256(ROOT / CONTRACT))
+        for approved in ({'smoke': True, 'full': False}, {'smoke': True, 'full': True}):
+            self.assertEqual(dd.contract_base_sha256({**c, 'approved': approved}), dd.contract_base_sha256(c))
+        self.assertNotEqual(dd.contract_base_sha256({**c, 'smoke': {'games': 3, 'branches': 8}}),
+                            dd.contract_base_sha256(c))
+        seen = []
+        with mock.patch.object(dd.base, 'inputs', side_effect=lambda cc, sha, cache: seen.append(sha) or ({}, {}, {})):
+            dd.inputs({**c, 'approved': {'smoke': True, 'full': False}}, dd.contract_base_sha256(
+                {**c, 'approved': {'smoke': True, 'full': False}}), 'cache')
+        self.assertEqual(seen, [dd.d4.file_sha256(ROOT / CONTRACT)])
+        self.assertTrue(c['output']['sample'].endswith('/d4/eligible-a2.json'))
+
+    def test_prepare_then_approve_then_run_accepts_the_manifest(self):
+        """The order the desktop runs: prepare (nothing approved), commit approved.smoke, run smoke. The run's
+        preflight must accept the committed manifest (the first attempt refused it: amendment A2)."""
+        import argparse
+
+        class Passed(Exception):
+            pass
+        c = contract()
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / CONTRACT
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(c, indent=2, ensure_ascii=False) + '\n')
+            fake_inputs = lambda cc, sha, cache: ({'contract_sha256': sha, 'games': [1], 'rows': 1, 'warmup_plies': 0},  # noqa: E731
+                                                  {}, {})
+            common = [mock.patch.object(dd, 'ROOT', root), mock.patch.object(dd, 'committed', return_value=True),
+                      mock.patch.object(dd.base, 'git_state', return_value={'commit': 'h', 'dirty': False}),
+                      mock.patch.object(dd.base, 'inputs', side_effect=fake_inputs),
+                      mock.patch.object(dd, 'load_contract', side_effect=lambda p, root=None, mode=None: (
+                          json.loads(Path(p).read_text()), dd.d4.file_sha256(p),
+                          dd.experiment_sha256(json.loads(Path(p).read_text()))))]
+            for m in common:
+                m.start()
+            try:
+                dd.prepare(argparse.Namespace(contract=path, cache='cache'))
+                text = path.read_text()
+                path.write_text(text.replace('"smoke": false', '"smoke": true', 1))
+                self.assertNotEqual(dd.d4.file_sha256(path), json.loads((root / c['output']['sample']).read_text())[
+                    'contract_sha256'])  # the file SHA moved with the approval
+                with mock.patch.object(dd, 'entry_checks', return_value={}), \
+                        mock.patch.object(dd, 'checked_models', side_effect=Passed):
+                    with self.assertRaises(Passed):  # past the manifest comparison
+                        dd.run(argparse.Namespace(contract=path, mode='smoke', cache='cache', device='cuda',
+                                                  workers=6, model=[], rapfi_dir='r', out_dir='o'))
+            finally:
+                for m in common:
+                    m.stop()
+
     def test_wrong_pins_are_refused(self):
         cases = {
             'comparisons': lambda c: c['comparisons']['primary'].reverse(),

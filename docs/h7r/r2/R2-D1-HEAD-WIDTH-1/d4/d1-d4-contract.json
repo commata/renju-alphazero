@@ -3,7 +3,7 @@
   "contract_id": "R2-D1-D4-1",
   "status": "fixed",
   "approved": {
-    "smoke": true,
+    "smoke": false,
     "full": false
   },
   "purpose": "D1 D4: whether the full-scale widened head's H-dev prediction gain carries over to move selection, against its direct control (R2-DIAG-1 section 8, D4 row); fixed before the full-scale H-dev result",
@@ -149,7 +149,7 @@
   "sources": [
     {
       "path": "scripts/h7r_d1_d4.py",
-      "sha256": "1eef5fcabbdb6f59d731ba5b7d6562d7470e30951cdb4f484aa64dc8ecfa541c"
+      "sha256": "82ca6dd542be7b20b2df086a8bf22116a72d084e484998ea6e635e82a892a738"
     },
     {
       "path": "scripts/h7r_d4.py",
@@ -225,7 +225,7 @@
     }
   ],
   "output": {
-    "sample": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/eligible.json",
+    "sample": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/eligible-a2.json",
     "raw": "runs/h7r/R2-D1-D4-1/{mode}",
     "records": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/{mode}"
   },
