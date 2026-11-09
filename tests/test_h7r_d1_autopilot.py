@@ -177,6 +177,24 @@ class DecideTest(unittest.TestCase):
         s.launch('timing', text='__RECORDED__ 1\nBLOCK EXIT 1\n')  # no timing record: STOP of the tool
         self.assertEqual(s.decide()['action'], 'stop')
 
+    def test_an_authorized_retry_runs_once(self):
+        s = self.sim
+        s.hdev()
+        s.launch('hdev', text='__RECORDED__ 0\nBLOCK EXIT 0\n')
+        s.launch('timing', text='STOP: ValueError: x\nBLOCK EXIT 1\n')
+        self.assertEqual(s.decide()['action'], 'stop')
+        body = {'format': 'h7r-autopilot-retries-v1',
+                'retries': [{'step': 'timing', 'failed_launch': 2, 'cause': 'tool defect', 'fix': 'abc1234'}]}
+        put(s.root, ap.RETRIES, body)
+        out = s.decide()
+        self.assertEqual((out['action'], out['block'], out['retry']), ('run', 'd1-v2-1.sh', True))
+        self.assertIn('tool defect', out['reason'])
+        s.launch('timing', text='STOP: again\nBLOCK EXIT 1\n')
+        self.assertEqual(s.decide()['action'], 'stop')  # the authorization names launch 2 only
+        put(s.root, ap.RETRIES, {**body, 'retries': [{**body['retries'][0], 'step': 'full'}]})
+        with self.assertRaisesRegex(ValueError, 'not an authorizable retry'):
+            s.decide()
+
     def test_the_deadline(self):
         out = self.sim.decide(now=ap.DEADLINE)
         self.assertEqual((out['action'], out['final']), ('stop', True))

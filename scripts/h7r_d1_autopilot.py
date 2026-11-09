@@ -29,6 +29,10 @@ Failures: a step that failed stops the run. The one retry is the delegation's: a
 log shows no ``STOP:`` refusal (a crash or kill, not a check) is resumed once with the same command and HEAD. A step
 whose block did not reach its records commit gets its record-preserving block once (hdev: d1-full-3F.sh; D4:
 d1-d4-F.sh), then the run stops. Past the delegation's 24 hours nothing is launched or approved.
+
+Authorized retry: after the cloud session has identified the cause of a failure that is independent of any reading
+and committed the fix, ``autopilot/retries.json`` names that failed launch (step and ledger number) with the cause and
+the fix; that launch's step is then run once more. Only for steps without resume state (``AUTH_STEPS``).
 """
 from __future__ import annotations
 
@@ -64,6 +68,8 @@ STEPS = ('hdev', 'timing', 'eligible', 'smoke', 'full')
 BLOCKS = {'hdev': ('d1-full-3.sh', []), 'timing': ('d1-v2-1.sh', []), 'eligible': ('d1-d4-1.sh', []),
           'smoke': ('d1-d4-run.sh', ['smoke']), 'full': ('d1-d4-run.sh', ['full'])}
 RECOVER = {'hdev': ('d1-full-3F.sh', []), 'smoke': ('d1-d4-F.sh', ['smoke']), 'full': ('d1-d4-F.sh', ['full'])}
+RETRIES = f'{D}/autopilot/retries.json'
+AUTH_STEPS = ('timing', 'eligible')
 DONE = {'hdev': f'{D}/full/d1_eval.json', 'timing': f'{D}/factory-v2/timing.json', 'eligible': f'{D}/d4/eligible.json',
         'smoke': f'{D}/d4/smoke/summary.json', 'full': f'{D}/d4/full/summary.json'}
 
@@ -130,6 +136,21 @@ def retryable(root, step: str, launch: dict) -> bool:
         return False
     logs = d4_tool_logs(root, step, launch['started'])
     return bool(logs) and not any('STOP:' in p.read_text(encoding='utf-8', errors='replace') for p in logs)
+
+
+def authorized(root) -> dict:
+    """(step, failed launch number) -> cause, from the committed retry record."""
+    rec = committed_json(root, RETRIES)
+    if rec is None:
+        return {}
+    if rec.get('format') != 'h7r-autopilot-retries-v1':
+        raise ValueError(f'{RETRIES}: unknown format')
+    out = {}
+    for r in rec['retries']:
+        if r['step'] not in AUTH_STEPS or not r.get('cause') or not r.get('fix'):
+            raise ValueError(f'{RETRIES}: not an authorizable retry: {r}')
+        out[(r['step'], int(r['failed_launch']))] = f"{r['cause']} (fix: {r['fix']})"
+    return out
 
 
 # --- decision --------------------------------------------------------------------------------------------------------
@@ -210,19 +231,25 @@ def decide(root=ROOT, now: datetime | None = None, alive=None) -> dict:
             block, args = BLOCKS[step]
             return act('run', step=step, block=block, args=args)
         last = mine[-1]
-        if recovered:
-            return act('stop', final=False, reason=f'{step} failed (exit {last["exit"]}, {last["out"]}); its '
-                                                   f'records were preserved ({recovered[-1]["out"]}); report')
+        preserved = [e for e in recovered if e['n'] > last['n']]
         if last['exit'] == 0 and not last['recorded']:
             return act('stop', final=False, reason=f'{step}: exit 0 without a records commit ({last["out"]})')
-        if len(mine) == 1 and retryable(root, step, last):
+        if len(mine) == 1 and not preserved and retryable(root, step, last):
             block, args = BLOCKS[step]
             return act('run', step=step, block=block, args=args, retry=True,
                        reason='the D4 run died without a tool refusal: one resume (delegation retry rule)')
-        if step in RECOVER and not last['recorded']:
+        if step in RECOVER and not last['recorded'] and not preserved:
             block, args = RECOVER[step]
             return act('recover', step=step, block=block, args=args,
                        reason=f'{step} failed (exit {last["exit"]}) before its records commit')
+        why = authorized(root).get((step, last['n']))
+        if why:
+            block, args = BLOCKS[step]
+            return act('run', step=step, block=block, args=args, retry=True,
+                       reason=f'authorized retry of launch {last["n"]} ({RETRIES}): {why}')
+        if preserved:
+            return act('stop', final=False, reason=f'{step} failed (exit {last["exit"]}, {last["out"]}); its '
+                                                   f'records were preserved ({preserved[-1]["out"]}); report')
         return act('stop', final=False, reason=f'{step} failed (exit {last["exit"]}); records '
                                                f"{'committed' if last['recorded'] else 'not committed'} "
                                                f'({last["out"]}); report')

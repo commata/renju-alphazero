@@ -1,8 +1,14 @@
 """Candidate factory v2, time gate (R2-D1-AUTOPILOT-1): the widened value head through factory v2 against the
 1-channel build (factory v1), on the same positions and under the same conditions.
 
-    reference (A)  factory v1 (``tb_v3_net``) with the 1-channel value checkpoint
+    reference (A)  the 1-channel value checkpoint through factory v2's 1-channel path, which is factory v1's build
+                   (``tb_v3_net._build``, same moves and diagnostics: tests/test_tb_v3_net_v2.py)
     candidate (B)  factory v2 (``tb_v3_net_v2``) with the widened value checkpoint
+
+Amendment A1 (before any measurement): the first attempt built A through factory v1 itself, which refuses every
+D1 checkpoint (v1 needs a metadata ``parent_h3_checkpoint_sha256`` the D1 trainer does not write), so the gate stopped
+before its first position. A now goes through v2's 1-channel path; the suite, counts, seeds, order, warm-up and
+thresholds are unchanged, so A and B differ only in the value head width.
     positions      the first ``OPENINGS`` openings of the committed O2 suite; from each, ``PLIES`` positions that
                    follow A's own moves, so A and B search exactly the same positions (each on a copy)
     order          A first on even (opening + ply), B first otherwise; one warm-up move per agent, not counted
@@ -39,6 +45,8 @@ PLIES = 6
 SEED_BASE = 20261109
 MEAN_RATIO = 1.10
 P95_RATIO = 1.20
+AMENDMENT = ('A1: the reference is built through factory v2\'s 1-channel path (factory v1 refuses the D1 '
+             'checkpoints: no metadata H3 parent); protocol and thresholds unchanged')
 
 
 def p95(values: list[float]) -> float:
@@ -114,15 +122,17 @@ def run(args, log=print) -> dict:
     b_side = {'policy': args.policy, 'value': args.wide_value}
     ar.install_runtime()
     started = time.monotonic()
-    rows = measure(lambda seed: ar.make_side(a_side, seed, args.device),
+    rows = measure(lambda seed: v2.make_side(a_side, seed, args.device),
                    lambda seed: v2.make_side(b_side, seed, args.device), openings, PLIES, SEED_BASE, log=log)
     result = gate(rows)
     if git('rev-parse', 'HEAD') != state['commit']:
         raise ValueError('HEAD changed during the time gate')
     record = {'format': FORMAT, 'git': state, 'settings': d1.numeric_settings(args.device),
               'protocol': {'suite': SUITE, 'suite_sha256': _sha(ROOT / SUITE), 'openings': OPENINGS, 'plies': PLIES,
-                           'seed_base': SEED_BASE, 'order': 'alternating per position', 'warm_up': 'one move each'},
-              'reference': {'factory': 'tb-v3-net (v1)', 'models': tb_v3_net.model_identity(*a_side.values())},
+                           'seed_base': SEED_BASE, 'order': 'alternating per position', 'warm_up': 'one move each',
+                           'amendment': AMENDMENT},
+              'reference': {'factory': f'{v2.FACTORY_VERSION} (1-channel path = the tb-v3-net v1 build)',
+                            'models': tb_v3_net.model_identity(*a_side.values())},
               'candidate': {'factory': v2.FACTORY_VERSION, 'models': tb_v3_net.model_identity(*b_side.values())},
               'result': result, 'rows': rows, 'minutes': round((time.monotonic() - started) / 60, 2)}
     publish_json(out, record)

@@ -81,6 +81,18 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(identity, tb_v3_net.model_identity(policy_path, value_path))
             self.assertEqual(v2.VALUE_ARCHITECTURES[1], {**tb_v3_net.ARCHITECTURE, 'value_channels': 4})
 
+    def test_a_d1_one_channel_checkpoint_needs_v2(self):
+        """The D1 trainer writes no metadata H3 parent: v1 refuses such a 1-channel checkpoint, v2 accepts it (the
+        time gate reference, amendment A1)."""
+        with TemporaryDirectory() as tmp:
+            policy_path, value_path, frozen = write_pair(tmp, parent=False)
+            policy, leaf = v2.load(policy_path, value_path)
+            with self.assertRaisesRegex(ValueError, 'not a value head trained on the frozen H3 trunk'):
+                tb_v3_net.check_models(policy, leaf, policy_path, value_path)
+            with mock.patch.object(v2, 'FROZEN_STATE_SHA256', frozen):
+                self.assertEqual(v2.check_models(policy, leaf, policy_path, value_path),
+                                 tb_v3_net.model_identity(policy_path, value_path))
+
     def test_refusals(self):
         cases = {
             'not an architecture of tb-v3-net-v2': dict(value_channels=8),
@@ -177,6 +189,35 @@ class TimingGateTest(unittest.TestCase):
         self.assertFalse(tg.gate(spiky)['passed'])  # p95 x2 although the mean is +8 %
         self.assertEqual((tg.MEAN_RATIO, tg.P95_RATIO, tg.OPENINGS, tg.PLIES), (1.10, 1.20, 24, 6))
 
+
+    def test_run_builds_both_sides_through_v2(self):
+        import argparse
+        from scripts import h7r_factory_v2_timing as tg
+        import h7c_arena as ar
+        from hybrid import h7r_d1 as d1
+        built = []
+
+        def fake_measure(make_a, make_b, *a, **k):
+            make_a(1)
+            make_b(1)
+            return [{'a_seconds': 1.0, 'b_seconds': 1.0, 'a_move': [7, 7], 'b_move': [7, 7]}]
+        with TemporaryDirectory() as tmp:
+            args = argparse.Namespace(policy='p.pt', narrow_value='n.pt', wide_value='w.pt', device='cuda',
+                                      output=str(Path(tmp) / 'timing.json'))
+            with mock.patch.object(tg.subprocess, 'check_output',
+                              side_effect=lambda cmd, **k: '' if 'status' in cmd else 'abc'), \
+                    mock.patch.object(ar, 'install_runtime'), mock.patch.object(ar, 'make_side') as v1_side, \
+                    mock.patch.object(v2, 'make_side', side_effect=lambda side, seed, dev: built.append(side['value'])), \
+                    mock.patch.object(tg, 'measure', side_effect=fake_measure), \
+                    mock.patch.object(d1, 'numeric_settings', return_value={}), \
+                    mock.patch.object(tb_v3_net, 'model_identity', side_effect=lambda p, v: {'value': v}), \
+                    mock.patch('hybrid.h7r_ledger.publish_json'):
+                record = tg.run(args, log=lambda *a, **k: None)
+        self.assertEqual(built, ['n.pt', 'w.pt'])
+        v1_side.assert_not_called()
+        self.assertTrue(record['reference']['factory'].startswith(v2.FACTORY_VERSION))
+        self.assertEqual(record['protocol']['amendment'], tg.AMENDMENT)
+        self.assertTrue(record['result']['passed'])
 
 @unittest.skipUnless(fast5.available(), 'python -m rt30.vcfcore.build first')
 class AgentTest(unittest.TestCase):

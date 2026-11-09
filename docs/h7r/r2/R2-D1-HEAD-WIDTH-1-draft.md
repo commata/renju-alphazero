@@ -2133,7 +2133,7 @@ full-3-F. 평가 기록 보존 (full-3 또는 full-3-R이 기록 커밋 전에 �
   - 넓힌 head는 v2만 받고, v2로 실제로 둔다.
   - 거부하는 경우: 다른 architecture(`value_channels` 8), 바뀐 trunk, 다른 H3 parent, 틀린 frozen state 선언, H6-2a가 아닌 value, 넓힌 policy 네트워크, 경로·형식 오류
 - **시간 gate** (`scripts/h7r_factory_v2_timing.py`, 기록 형식 `h7r-factory-v2-timing-v1`)
-  - A: factory v1과 narrow seed 31001
+  - A: narrow seed 31001. factory v2의 1채널 경로로 만든다. 이 경로는 factory v1의 build와 같다(개정 A1, §16.6).
   - B: factory v2와 wide seed 31001
   - 위치: 고정 O2 suite의 처음 24개 opening에서 A의 수를 따라간 6수씩. A와 B는 같은 위치를 각자 사본으로 탐색한다.
   - 순서는 위치마다 번갈아 바꾼다. agent마다 warm-up 1수는 세지 않는다.
@@ -2241,9 +2241,15 @@ PY
       --narrow-value "$F/narrow-31001/best.pt" --wide-value "$F/wide-31001/best.pt" --device cuda \
       --output "$X/timing.json" 2>&1 || rc=$?
     echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
-  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
-    --dest-dir "$X/logs" --manifest "$X/logs/$B.manifest.json"
-  expect=(--expect "$X/logs/$B.log" --expect "$X/logs/$B.manifest.json")
+  expect=()
+  shopt -s nullglob
+  for f in "$L"/timing-*.log; do
+    b="$(basename "$f" .log)"
+    if git ls-files --error-unmatch "$X/timing-logs/$b.log" >/dev/null 2>&1; then continue; fi
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$b.log" \
+      --dest-dir "$X/timing-logs" --manifest "$X/timing-logs/$b.manifest.json"
+    expect+=(--expect "$X/timing-logs/$b.log" --expect "$X/timing-logs/$b.manifest.json")
+  done
   if [ -f "$X/timing.json" ]; then expect+=(--expect "$X/timing.json"); fi
   for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
@@ -2445,3 +2451,32 @@ d4-F. D4 실패 기록 보존 (`bash ~/d1-d4-F.sh smoke` 또는 `full`; 재개�
   - 실제 저장소 사본(임시 origin)에서 `approve smoke` 커밋·push, 중복 승인 거부, tmux `launch`·`wait`를 실행했다.
   - 같은 사본에서, frozen 검사 실패로 도구를 실행하기 전에 멈춘 블록은 재개하지 않고 d4-F로 가는 것을 확인했다.
 - 자동 진행 중에는 클라우드 세션이 push하지 않는다. D4 재개는 같은 HEAD가 필요하기 때문이다.
+
+### 16.6 개정 A1: 시간 gate 기준 A의 factory (`d4/amendment-a1.json`, 2026-11-09)
+
+- **발생**: 자동 진행의 두 번째 launch(시간 gate)가 첫 위치를 재기 전에 멈췄다.
+  - 오류: `narrow-31001/best.pt: not a value head trained on the frozen H3 trunk`
+  - 측정값은 없다. `timing.json`도, 측정 행도 없다.
+- **원인 1: 도구 결함**
+  - 기준 A를 factory v1(`tb_v3_net`)로 만들었다.
+  - v1은 value metadata에 `parent_h3_checkpoint_sha256`가 있어야 받는다. D1 학습기는 이 필드를 쓰지 않는다.
+  - 커밋된 `best.json` 6개로 확인했다: v1은 6개 모두 거부하고, v2의 metadata 검사는 6개 모두 통과한다.
+  - 테스트는 parent 필드가 있는 대역 metadata만 썼기 때문에 이 결함을 놓쳤다.
+- **원인 2: 기록 경로**
+  - 실패 기록 경로 `factory-v2/logs/`가 `.gitignore`의 `logs/` 규칙에 걸려 커밋되지 않았다.
+  - 블록 시뮬레이션 저장소의 `.gitignore`가 실제와 달라서 놓쳤다.
+  - 다른 기록 경로는 실제 저장소에서 `git check-ignore`로 모두 확인했다.
+- **수정**
+  - 시간 gate 도구: A를 factory v2의 1채널 경로로 만든다. 이 경로는 v1의 `_build`이고, 같은 수와 진단 기록을 낸다(`tests/test_tb_v3_net_v2.py`).
+  - 그대로인 것: suite, 위치 수, seed, 순서, warm-up, 문턱(평균 ×1.10, p95 ×1.20). A와 B는 value head 폭만 다르다.
+  - v2-1 블록: 기록을 `factory-v2/timing-logs`에 둔다. 아직 커밋되지 않은 시간 gate 로그를 모두 함께 커밋하므로, 첫 시도의 실패 로그도 다음 실행에서 보존된다.
+  - 첫 시도의 로그 사본은 `factory-v2/logs`(무시됨)에 커밋되지 않은 채 남는다. 지우지 않는다.
+- **D4 계약**
+  - 바뀐 것은 시간 gate 도구의 SHA 고정값 하나다. 실험 식별값이 `b6369b8e0fc9`에서 `032ede7b88af`로 바뀌었다.
+  - 방법, 표본, 예산, 통계, 비교, 모델 연결, 진입 조건, 판독은 그대로다. 개정 기록이 전후 SHA를 남긴다.
+- **판독과의 독립성**
+  - 발견 시점에 전체 규모 H-dev 판독(`DEVELOPMENT_SIGNAL`, `9a419af`)이 열려 있었다.
+  - 그러나 이 수정은 H-dev 판독이 무엇이든 같다. D4 값과 시간 gate 값은 아직 하나도 없었다.
+- **재시도**
+  - 위임 재시도 규칙에 따른다: 판독과 무관한 오류, 원인 확인 뒤, 1회.
+  - `autopilot/retries.json`이 실패한 launch 2를 지정한다. 자동 진행 도구는 이 기록이 있을 때만 그 단계를 한 번 더 돈다.

@@ -1,0 +1,32 @@
+{
+  "format": "h7r-contract-amendment-v1",
+  "id": "R2-D1-D4-1-A1",
+  "contract": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/d1-d4-contract.json",
+  "date": "2026-11-09",
+  "trigger": {
+    "what": "the first factory v2 time gate attempt (autopilot launch 2) stopped before its first position",
+    "error": "STOP: ValueError: runs/h7r/R2-D1-HEAD-WIDTH-1/full/narrow-31001/best.pt: not a value head trained on the frozen H3 trunk",
+    "cause": "the gate built its reference A through factory v1 (analysis.tb_v3_net), which requires a metadata parent_h3_checkpoint_sha256; the D1 trainer writes none, so v1 refuses all six D1 checkpoints (checked on the committed best.json records). Factory v2 accepts them: its parent check applies only when a parent is named, and the frozen trunk is proven by the recomputed frozen state.",
+    "measured": "nothing: no timing row, no timing.json"
+  },
+  "change": {
+    "scripts/h7r_factory_v2_timing.py": "the reference A is built through factory v2's 1-channel path, which is factory v1's build (tb_v3_net._build); suite, counts, seeds, order, warm-up and thresholds unchanged",
+    "contract": "only the SHA-256 pin of scripts/h7r_factory_v2_timing.py",
+    "source_pin": {
+      "before": "f2cec73a3327ad84f67866edd7dd27b76e7cca4b509b286e3054cc800cf8bc4b",
+      "after": "6fa6e99f2e01e0ca4cd3ce3dc3897cd0b41bd1d4f7446831b705cd9836cbf05e"
+    }
+  },
+  "unchanged": "the D4 method, sample, budget, statistics, comparisons, model link, entry rule and reading; the time gate thresholds (mean x1.10, p95 x1.20) and protocol",
+  "experiment_sha256": {
+    "before": "b6369b8e0fc931f05a6ed6a35f66f3fbafa295e5899e6e7f21036f9a8ca0cb06",
+    "after": "032ede7b88afd1addacd625fdf2f45c41493edb192c81586d6cad4392a03a8cf"
+  },
+  "contract_sha256": {
+    "before": "39bdc9cb2f641abd91b70fbf8e944f15f368545013088388af7cc950366a52b3",
+    "after": "5be35de0554889fa0dd50914d2a31e46c3013daabc8bd98b4af846f157ab7c21"
+  },
+  "reading_independence": "the full-scale H-dev reading (DEVELOPMENT_SIGNAL, 9a419af) was open when this was found; the change does not depend on it: it is the same fix whatever the H-dev reading, and no D4 or time gate value existed",
+  "records": "the failed attempt's log is committed with the next time gate run (factory-v2/timing-logs); its first copy sits uncommitted in factory-v2/logs, which .gitignore (logs/) excludes",
+  "delegation": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/autopilot/delegation-1.json (retry: infrastructure error independent of any reading, once, after its cause is identified)"
+}

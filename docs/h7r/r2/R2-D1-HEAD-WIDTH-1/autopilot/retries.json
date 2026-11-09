@@ -1,0 +1,11 @@
+{
+  "format": "h7r-autopilot-retries-v1",
+  "retries": [
+    {
+      "step": "timing",
+      "failed_launch": 2,
+      "cause": "the time gate tool built its reference through factory v1, which refuses every D1 checkpoint (no metadata H3 parent); its failure-record path factory-v2/logs is ignored by .gitignore; stopped before any measurement, independent of any reading",
+      "fix": "amendment R2-D1-D4-1-A1 (d4/amendment-a1.json): reference through factory v2's 1-channel path (timing tool SHA 6fa6e99f2e01), v2-1 block records under factory-v2/timing-logs including the failed attempt's log"
+    }
+  ]
+}
