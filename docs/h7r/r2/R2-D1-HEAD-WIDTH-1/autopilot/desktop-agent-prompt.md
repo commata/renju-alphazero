@@ -17,6 +17,7 @@
 ## 반복 절차
 
 작업 폴더는 `~/renju-h6`이다. 명령은 모두 저장소 루트에서 `.venv/bin/python`으로 실행한다.
+명령 앞에 `cd`, `source`, 환경변수를 붙이거나 `&&`로 잇지 않는다. 허용 규칙이 명령의 시작 부분으로 맞춰지기 때문이다. 도구가 경로를 스스로 잡는다.
 
 1. `.venv/bin/python scripts/h7r_d1_autopilot.py next`를 실행하고, 출력 JSON의 `action`을 본다.
 2. `action`에 따라 하나만 한다.
