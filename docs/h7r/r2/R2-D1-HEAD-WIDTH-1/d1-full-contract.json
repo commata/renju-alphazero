@@ -5,7 +5,7 @@
   "status": "fixed",
   "approved": {
     "prepare": true,
-    "train": false,
+    "train": true,
     "evaluate": false
   },
   "predecessor": {
