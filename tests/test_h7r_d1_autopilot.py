@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 from tempfile import TemporaryDirectory
 import time
 import unittest
@@ -90,7 +91,8 @@ class DecideTest(unittest.TestCase):
         self.assertEqual(s.decide(), {'action': 'run', 'step': 'hdev', 'block': 'd1-full-3.sh', 'args': []})
         out = s.launch('hdev', text='working\n')
         self.assertEqual(s.decide(alive=True), {'action': 'wait', 'step': 'hdev', 'out': out})
-        self.assertEqual(s.decide(alive=False)['action'], 'stop')  # the session died without BLOCK EXIT
+        out2 = s.decide(alive=False)  # the session died without BLOCK EXIT: a failure, its records preserved
+        self.assertEqual((out2['action'], out2['block']), ('recover', 'd1-full-3F.sh'))
         put(s.root, out, 'x\n__RECORDED__ 0\nBLOCK EXIT 0\n')
         s.hdev()
         self.assertEqual(s.decide()['block'], 'd1-v2-1.sh')
@@ -231,6 +233,56 @@ class DecideTest(unittest.TestCase):
         self.assertEqual(ap.DEADLINE.isoformat(), '2026-11-10T15:24:27+09:00')
 
 
+    def test_the_limit_applies_to_every_launch_and_to_a_running_block(self):
+        s = self.sim
+        s.hdev()
+        s.timing()
+        put(s.root, s.c['output']['sample'], {'games': []})
+        s.approve('smoke')
+        s.summary('smoke', 'SMOKE')
+        s.approve('full')  # approved early: the time check still applies at launch
+        out = s.decide(now=ap.DEADLINE - timedelta(minutes=1))
+        self.assertEqual((out['action'], out['final']), ('stop', True))
+        self.assertIn('full needs 6.0 h', out['reason'])
+        self.assertEqual(s.decide(now=ap.DEADLINE - timedelta(hours=7))['action'], 'run')
+        run = s.launch('full', text='[d1-d4-replay] 10/396\n')
+        self.assertEqual(s.decide(now=ap.DEADLINE - timedelta(hours=1), alive=True)['action'], 'wait')
+        self.assertEqual(s.decide(now=ap.DEADLINE, alive=True)['action'], 'interrupt')
+        with open(s.root / ap.LEDGER_DIR / 'launches.jsonl', 'a') as f:
+            f.write(json.dumps({'n': 1, 'mark': 'interrupted'}) + '\n')
+        self.assertEqual(s.decide(now=ap.DEADLINE, alive=True)['action'], 'wait')  # interrupted once, not twice
+        put(s.root, f'{ap.D4_LOGS}/full-1.log', 'KeyboardInterrupt\n')  # no tool refusal, yet never resumed
+        out = s.decide(now=ap.DEADLINE + timedelta(minutes=1), alive=False)  # ended without BLOCK EXIT
+        self.assertEqual((out['action'], out['block'], out['args']), ('recover', 'd1-d4-F.sh', ['full']))
+        s.launch('full', kind='recover', text='__EXIT__ 0\nBLOCK EXIT 0\n')
+        out = s.decide(now=ap.DEADLINE + timedelta(minutes=2))
+        self.assertEqual((out['action'], out['final']), ('stop', True))
+        self.assertIn('limit', out['reason'])
+        self.assertTrue(run)
+
+    def test_a_failed_preservation_is_not_reported_as_preserved(self):
+        s = self.sim
+        s.launch('hdev', text='Killed\nBLOCK EXIT 137\n')
+        self.assertEqual(s.decide()['block'], 'd1-full-3F.sh')
+        s.launch('hdev', kind='recover', text='STOP: a runner is still alive\nBLOCK EXIT 1\n')
+        out = s.decide()
+        self.assertEqual(out['action'], 'stop')
+        self.assertIn('record preservation failed', out['reason'])
+
+    def test_a_resume_needs_time_too(self):
+        s = self.sim
+        s.hdev()
+        s.timing()
+        put(s.root, s.c['output']['sample'], {'games': []})
+        s.approve('smoke')
+        started = time.time() - 5
+        s.launch('smoke', text='__NOT_RECORDED__ 1\nBLOCK EXIT 1\n', started=started)
+        put(s.root, f'{ap.D4_LOGS}/smoke-1.log', 'RuntimeError: CUDA\n')
+        self.assertTrue(s.decide()['retry'])
+        out = s.decide(now=ap.DEADLINE - timedelta(minutes=10))  # no time for a resume: preserve the records
+        self.assertEqual(out['action'], 'recover')
+
+
 class BlocksTest(unittest.TestCase):
     def test_blocks_come_from_the_draft(self):
         blocks = ap.extract_blocks(ROOT)
@@ -246,3 +298,117 @@ class BlocksTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+def git(root, *args):
+    return subprocess.check_output(['git', *args], cwd=root, text=True).strip()
+
+
+@unittest.skipUnless(shutil.which('tmux') and shutil.which('git'), 'tmux and git needed')
+class GitTmuxIntegrationTest(unittest.TestCase):
+    """The driver's commands against a real temporary git remote and a real tmux session (blocks replaced by short
+    scripts); the clock is pinned before the limit."""
+
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        base = Path(self.tmp.name)
+        self.origin, self.work, self.other = base / 'origin.git', base / 'work', base / 'other'
+        subprocess.run(['git', 'init', '-q', '--bare', str(self.origin)], check=True)
+        subprocess.run(['git', 'init', '-q', '-b', 'feat/h7-c1', str(self.work)], check=True)
+        for k, v in (('user.email', 't@t'), ('user.name', 't')):
+            git(self.work, 'config', k, v)
+        sim = Sim(self.work)
+        put(self.work, '.gitignore', 'runs/\n')
+        git(self.work, 'add', '-A')
+        git(self.work, 'commit', '-qm', 'init')
+        git(self.work, 'remote', 'add', 'origin', str(self.origin))
+        git(self.work, 'push', '-q', 'origin', 'feat/h7-c1')
+        subprocess.run(['git', 'clone', '-q', '-b', 'feat/h7-c1', str(self.origin), str(self.other)], check=True,
+                       capture_output=True)
+        for k, v in (('user.email', 't@t'), ('user.name', 't')):
+            git(self.other, 'config', k, v)
+        self.c = sim.c
+        self.home = base / 'home'
+        self.home.mkdir()
+        self.session = f'd1test{os.getpid()}'
+        for p in (mock.patch.object(ap, 'TMUX', self.session), mock.patch.object(ap, 'now_kst', return_value=NOW)):
+            p.start()
+            self.addCleanup(p.stop)
+        self.addCleanup(lambda: subprocess.run(['tmux', 'kill-session', '-t', self.session], capture_output=True))
+
+    def args(self, **kw):
+        import argparse
+        return argparse.Namespace(root=str(self.work), home=str(self.home), minutes=0.5, **kw)
+
+    def remote_commit(self, name='x.txt'):
+        put(self.other, name, 'new')
+        git(self.other, 'add', name)
+        git(self.other, 'commit', '-qm', 'remote change')
+        git(self.other, 'push', '-q', 'origin', 'feat/h7-c1')
+
+    def blocks(self, hdev_script):
+        names = ('d1-full-3.sh', 'd1-full-3R.sh', 'd1-full-3F.sh', 'd1-v2-1.sh', 'd1-d4-1.sh', 'd1-d4-run.sh',
+                 'd1-d4-F.sh')
+        return mock.patch.object(ap, 'extract_blocks', return_value={n: hdev_script if n == 'd1-full-3.sh' else
+                                                                     'exit 9\n' for n in names})
+
+    def test_no_pull_while_a_block_runs_and_a_real_launch(self):
+        head = git(self.work, 'rev-parse', 'HEAD')
+        with self.blocks('touch "$PWD/started"; sleep 4; echo __RECORDED__ 0\n'):
+            launched = ap.cmd_launch(self.args())
+        self.assertEqual((launched['step'], launched['action']), ('hdev', 'launched'))
+        self.remote_commit()
+        for _ in range(50):
+            if (self.work / 'started').exists():
+                break
+            time.sleep(0.1)
+        out = ap.cmd_next(self.args())
+        self.assertEqual((out['action'], out['pulled']), ('wait', False))
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), head)  # the running block's HEAD did not move
+        self.assertEqual(ap.cmd_wait(self.args()), 0)
+        self.assertEqual(ap.ledger(self.work)[-1]['exit'], 0)
+        out = ap.cmd_next(self.args())  # finished: now it pulls
+        self.assertTrue(out['pulled'])
+        self.assertNotEqual(git(self.work, 'rev-parse', 'HEAD'), head)
+
+    def test_staged_records_allow_only_recovery(self):
+        ap.append_ledger(self.work, {'n': 1, 'step': 'hdev', 'kind': 'run', 'block': 'd1-full-3.sh', 'args': [],
+                                     'out': f'{ap.LEDGER_DIR}/01-hdev-run.out', 'started': time.time()})
+        put(self.work, f'{ap.LEDGER_DIR}/01-hdev-run.out', 'copy-logs\nBLOCK EXIT 1\n')
+        put(self.work, f'{ap.D}/full/evaluate-logs/evaluate-1.log', 'log')
+        git(self.work, 'add', f'{ap.D}/full/evaluate-logs/evaluate-1.log')
+        self.remote_commit()
+        head = git(self.work, 'rev-parse', 'HEAD')
+        out = ap.cmd_next(self.args())
+        self.assertEqual((out['action'], out['block'], out['tree'], out['pulled']),
+                         ('recover', 'd1-full-3F.sh', 'records', False))
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), head)
+        put(self.work, 'scripts_x.py', 'x')
+        git(self.work, 'add', 'scripts_x.py')
+        with self.assertRaisesRegex(ValueError, 'not staged records'):
+            ap.cmd_next(self.args())
+        git(self.work, 'reset', '-q', '--', 'scripts_x.py')
+        put(self.work, ap.CONTRACT, self.c | {'purpose': 'edited'})  # a modified tracked file is never allowed
+        with self.assertRaisesRegex(ValueError, 'not staged records'):
+            ap.cmd_next(self.args())
+
+    def test_a_tmux_start_failure_is_not_an_attempt(self):
+        real = subprocess.run
+
+        def fail_tmux(cmd, *a, **k):
+            if cmd[:2] == ['tmux', 'new-session']:
+                raise subprocess.CalledProcessError(1, cmd, stderr='no server')
+            return real(cmd, *a, **k)
+        with self.blocks('echo __RECORDED__ 0\n'), mock.patch.object(ap.subprocess, 'run', side_effect=fail_tmux):
+            with self.assertRaisesRegex(ValueError, 'start_failed'):
+                ap.cmd_launch(self.args())
+        self.assertEqual(ap.ledger(self.work), [])
+        self.assertEqual([e['started_ok'] for e in ap.ledger(self.work, all_entries=True)], [False])
+        out = ap.cmd_next(self.args())
+        self.assertEqual((out['action'], out['step']), ('run', 'hdev'))  # not stuck on the failed start
+        with self.blocks('echo __RECORDED__ 0\n'):
+            launched = ap.cmd_launch(self.args())
+        self.assertEqual(launched['n'], 2)
+        ap.cmd_wait(self.args())
+        self.assertEqual([e['exit'] for e in ap.ledger(self.work)], [0])

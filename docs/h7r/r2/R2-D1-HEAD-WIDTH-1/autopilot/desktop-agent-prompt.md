@@ -20,7 +20,9 @@
 명령 앞에 `cd`, `source`, 환경변수를 붙이거나 `&&`로 잇지 않는다. 허용 규칙이 명령의 시작 부분으로 맞춰지기 때문이다. 도구가 경로를 스스로 잡는다.
 
 1. `.venv/bin/python scripts/h7r_d1_autopilot.py next`를 실행하고, 출력 JSON의 `action`을 본다.
-   - `next`는 매번 스스로 `git pull`을 한다. 클라우드 세션이 올린 수정은 이 pull로 들어온다. 에이전트가 직접 pull하지 않는 것은 이 때문이다.
+   - `next`는 블록이 돌고 있지 않고 작업 트리가 깨끗할 때 스스로 `git pull`을 한다. 클라우드 세션이 올린 수정은 이 pull로 들어온다. 에이전트가 직접 pull하지 않는 것은 이 때문이다.
+   - 블록이 도는 동안에는 pull하지 않는다(`pulled: false`). 블록의 HEAD가 움직이면 안 되기 때문이다.
+   - 중단된 블록이 기록 파일을 staged 상태로 남겼으면 `tree: records`가 나온다. 이때는 `recover`나 `stop`만 나온다. staged 파일을 직접 정리하지 않는다.
    - 출력의 `head`가 현재 커밋이다. 보고할 때 함께 적는다.
 2. `action`에 따라 하나만 한다.
    - `run` 또는 `recover`
@@ -34,6 +36,9 @@
      - 종료 코드 0이면 블록이 끝났다. 1로 돌아간다.
    - `approve`
      - `.venv/bin/python scripts/h7r_d1_autopilot.py approve <mode>`를 실행한다. `<mode>`는 출력의 `mode` 값이다.
+   - `interrupt`(위임 상한이 지났는데 블록이 도는 중)
+     - `.venv/bin/python scripts/h7r_d1_autopilot.py interrupt`를 실행한 뒤 `wait`로 돌아간다.
+     - 블록이 끝나면 `next`가 기록 보존(`recover`)을 내고, 그 뒤 `stop`을 낸다.
    - `stop`
      - `.venv/bin/python scripts/h7r_d1_autopilot.py report`를 실행한다.
      - 아래 "최종 보고"를 쓰고 끝낸다.
