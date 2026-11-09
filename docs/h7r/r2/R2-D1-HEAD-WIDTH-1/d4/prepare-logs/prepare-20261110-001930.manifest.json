@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "prepare-20261110-001930.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D1-D4-1/logs/prepare-20261110-001930.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/prepare-logs/prepare-20261110-001930.log",
+   "bytes": 205,
+   "sha256": "d1594391fcccf3e0fd60810245f0a30f5c0dd405a0576e965d77c9af48aea7a6"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
