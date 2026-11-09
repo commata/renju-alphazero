@@ -33,3 +33,4 @@
 - 2026-11-09 23:51: smoke(launch 5)가 preflight에서 멈춤: 승인 커밋이 eligible manifest가 묶은 계약 파일 SHA를 바꿈(도구 설계 결함). 실패 기록 보존(`e517117`). 개정 A2(D1 초안 §16.7): manifest를 승인 전 계약 SHA에 묶고, 계약 재고정(승인 초기화, 표본 `d4/eligible-a2.json`), `retries.json`으로 eligible·smoke 1회 재시도 지정.
 - 2026-11-10: 검토 지적 4건(실행 중 pull, staged 기록과 복구, 상한, tmux 시작 실패)을 자동 진행 도구에서 고침(D1 초안 §16.8). 계약·기록 변경 없음.
 - 2026-11-10 00:20 KST: D4 `approved.smoke` (autopilot driver; 근거: D4 entry checks pass on the committed records (fit comparable, H-dev DEVELOPMENT_SIGNAL, factory v2 time gate passed on the linked seed-31001 pair); eligible manifest committed).
+- 2026-11-10 00:22 KST: D4 `approved.full` (autopilot driver; 근거: the committed D4 smoke is a reproduced SMOKE of this experiment; 15.0 h left of the delegation).

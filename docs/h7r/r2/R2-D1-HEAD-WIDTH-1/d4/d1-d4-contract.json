@@ -4,7 +4,7 @@
   "status": "fixed",
   "approved": {
     "smoke": true,
-    "full": false
+    "full": true
   },
   "purpose": "D1 D4: whether the full-scale widened head's H-dev prediction gain carries over to move selection, against its direct control (R2-DIAG-1 section 8, D4 row); fixed before the full-scale H-dev result",
   "delegation": {
