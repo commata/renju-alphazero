@@ -28,3 +28,4 @@
 - 2026-11-09: 데스크톱 자동 진행 도구와 지시문 추가(D1 초안 §16.5). P4부터 D4 full까지 데스크톱 에이전트가 이 도구로 진행한다.
 - 2026-11-09 22:56: P4 H-dev `DEVELOPMENT_SIGNAL`(`9a419af`; 개선폭 31001 0.00884, 31002 0.00777, 31003 0.01073, ε 0.00195, HOLD 없음).
 - 2026-11-09 22:57: 시간 gate 첫 시도(launch 2)가 측정 전에 멈춤: factory v1이 D1 checkpoint를 거부(도구 결함), 실패 기록 경로가 `.gitignore`에 걸림. 개정 A1(D1 초안 §16.6)로 고치고, `retries.json`으로 1회 재시도를 지정.
+- 2026-11-09 23:51 KST: D4 `approved.smoke` (autopilot driver; 근거: D4 entry checks pass on the committed records (fit comparable, H-dev DEVELOPMENT_SIGNAL, factory v2 time gate passed on the linked seed-31001 pair); eligible manifest committed).
