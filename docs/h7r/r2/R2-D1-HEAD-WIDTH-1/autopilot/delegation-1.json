@@ -1,0 +1,92 @@
+{
+  "format": "h7r-delegation-v1",
+  "delegation_id": "R2-D1-AUTOPILOT-1",
+  "granted": "2026-11-09, by the user in the session conversation (the approval text is quoted in D1 draft section 15)",
+  "start_commit": "2142f8657cc06467365a19fdf67cd8c932a53630",
+  "priority": "the user's explicit delegation applies first; within its scope CLAUDE.md is followed (frozen files, no RenjuNet-derived data committed, progress output, frozen-check before benchmark work)",
+  "scope": [
+    {
+      "phase": "P1",
+      "what": "full-scale D1: verify the prepare PASS record, approve train, six runs and fit",
+      "gate_to_next": "run records intact, fit comparable: true"
+    },
+    {
+      "phase": "P2",
+      "what": "new candidate factory for the widened head (tb_v3_net untouched), tests, compatibility and time gate",
+      "gate_to_next": "equivalence and compatibility tests pass; time gate"
+    },
+    {
+      "phase": "P3",
+      "what": "D4 for D1: contract, tool, tests, smoke, one main evaluation",
+      "gate_to_next": "D4 label ALL_THREE_BETTER"
+    },
+    {
+      "phase": "P4",
+      "what": "full-scale H-dev evaluate (approved only after P2 and the P3 contract are fixed)",
+      "gate_to_next": "DEVELOPMENT_SIGNAL (required before the D4 main evaluation is read for P5)"
+    },
+    {
+      "phase": "P5",
+      "what": "one confirmation set: a new H-conf (prediction for all three wide seeds, selection quality) and a new A-conf (Arena, anchor, tactical) for the fixed candidate",
+      "gate_to_next": "the three R3 links and promotion rule v3"
+    },
+    {
+      "phase": "P6",
+      "what": "R4 program and run commands prepared and committed; the loop is not started",
+      "gate_to_next": "final user approval"
+    },
+    {
+      "phase": "all",
+      "what": "analysis, documentation, needed fixes and tests, records, commits and pushes"
+    }
+  ],
+  "decisions": {
+    "d4_primary": "wide_s : narrow_s for the three seeds (the D1 direct control); wide_s : c5 as a reference only",
+    "d4_proceed": "only ALL_THREE_BETTER opens P5; any other label is kept, reported and ends the delegation",
+    "arena_candidate": "wide seed 31001, fixed before any result and independent of the results",
+    "hconf_prediction": "all three wide seeds against their narrow control",
+    "confirmation": "included: one new H-conf and one new A-conf set",
+    "time_gate": "same measurement conditions: mean move time within +10 % and p95 within +20 % of the 1-channel build",
+    "pre_registration": "the factory method and the D4 method, sample, budget and reading rule are fixed and committed before the full-scale H-dev evaluate approval; model SHAs are linked after training and before the D4 or confirmation results are opened; values still open in the confirmation design are fixed with their grounds before the confirmation data are opened",
+    "rules_followed": "R3 and promotion rule v3 for selection quality, Arena, anchor, tactical and time gates"
+  },
+  "limits": {
+    "wall_clock_hours": 24,
+    "wall_clock_start": "the start of the first desktop run under this delegation (recorded in the state file)",
+    "d4_main_evaluations": 1,
+    "confirmation_sets": 1,
+    "note": "the 24 hours are the delegation limit, not a duration estimate"
+  },
+  "retry": "only for an infrastructure error independent of any reading, after its cause is identified, once; the failure record is kept",
+  "stop": [
+    "a contract criterion not met (the result is kept and the delegation ends)",
+    "HOLD, NOT_ESTABLISHED or any label that does not open the next phase",
+    "SHA, model-link or comparability error (reported, no retry)",
+    "an integrity or reproduction failure",
+    "the wall-clock or run limits reached",
+    "a decision outside this scope"
+  ],
+  "never": [
+    "relax a criterion after seeing a result",
+    "repeat a run for a better result",
+    "edit a frozen file or an earlier record",
+    "start the R4 loop",
+    "change the champion, canonical, the web SER5 or V9"
+  ],
+  "reserved_for_final_approval": [
+    "starting the R4 loop",
+    "champion / canonical / web deployment changes"
+  ],
+  "execution": {
+    "cloud_session": "code, contracts, tests, approval commits, record analysis",
+    "desktop": "GPU and Rapfi runs (~/renju-h6), long jobs under tmux, HEAD fixed during a run, commits only between steps"
+  },
+  "state_file": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/autopilot/state.md",
+  "contracts": {
+    "d1_full": {
+      "path": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-full-contract.json",
+      "experiment_sha256_prefix": "25c49e408aff"
+    }
+  },
+  "report": "short notes on each completion, failure or important finding; at the end, in Korean: results, grounds, commit SHAs, remaining uncertainty, the R4 resumption proposal or the reason for stopping"
+}
