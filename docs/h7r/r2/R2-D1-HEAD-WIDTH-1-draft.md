@@ -2114,3 +2114,306 @@ full-3-F. 평가 기록 보존 (full-3 또는 full-3-R이 기록 커밋 전에 �
   - 클라우드 세션: 코드, 계약, 테스트, 승인 커밋, 기록 분석
   - 데스크톱: GPU·Rapfi 실행. 긴 작업은 tmux, 실행 중 HEAD 고정
 - **사용자 승인문**(요약 인용): "현재 단계부터 R4 재개 준비까지의 자율 진행을 승인합니다. … 루프 시작과 실제 champion·canonical·웹 배포 변경은 최종 승인 대상으로 남깁니다."
+
+## 16. P2 후보 factory v2와 P3 D4 계약 (전체 규모 H-dev evaluate 승인 전에 고정)
+
+### 16.1 P2: 후보 factory v2 (`src/analysis/tb_v3_net_v2.py`)
+
+- **왜 필요한가**: `analysis.tb_v3_net`(factory v1)은 frozen architecture(`value_channels` 1)만 받는다. 넓힌 head(`value_channels` 4)는 v1이 거부하므로, D4와 그 뒤의 Arena에 쓸 새 factory가 필요하다. v1은 그대로 둔다.
+- **바뀌는 것은 허용 value architecture 목록 하나다** (`VALUE_ARCHITECTURES`: frozen 구조, 그리고 `value_channels` 4)
+  - engine·runtime 검사, fast5 소스·binding 검사, 탐색 설정(v1의 `_build`)은 v1과 같다.
+  - 모델 정체성(SHA 네 개)과 agent 이름도 v1의 함수를 쓴다.
+- **trunk·policy head 고정 증명**
+  - 불러온 value 모델에서 `frozen_state`를 다시 계산해 `FROZEN_STATE_SHA256`(`c2fbaac3…`)과 같아야 한다.
+  - 이 값은 R2-DIAG-1과 R2-D4-BASELINE-1 계약이 고정하고 다시 계산한 값이다. 테스트가 두 계약과 같은지 확인한다.
+  - metadata가 H3 parent를 적었다면 frozen H3 checkpoint여야 하고, 선언한 frozen state는 다시 계산한 값과 같아야 한다.
+- **범위**: 연구 도구 전용이다. `CANONICAL = False`이고, `analysis.canonical`의 어떤 factory도 v2가 아니다. 테스트가 `scripts/h7[cr]_*` 밖에서 v2를 쓰지 않는지 확인한다.
+- **테스트** (`tests/test_tb_v3_net_v2.py`)
+  - 1채널 모델 쌍은 v1과 같은 정체성을 가지고, v2로 두어도 v1과 같은 수·진단 기록을 낸다.
+  - 넓힌 head는 v2만 받고, v2로 실제로 둔다.
+  - 거부하는 경우: 다른 architecture(`value_channels` 8), 바뀐 trunk, 다른 H3 parent, 틀린 frozen state 선언, H6-2a가 아닌 value, 넓힌 policy 네트워크, 경로·형식 오류
+- **시간 gate** (`scripts/h7r_factory_v2_timing.py`, 기록 형식 `h7r-factory-v2-timing-v1`)
+  - A: factory v1과 narrow seed 31001
+  - B: factory v2와 wide seed 31001
+  - 위치: 고정 O2 suite의 처음 24개 opening에서 A의 수를 따라간 6수씩. A와 B는 같은 위치를 각자 사본으로 탐색한다.
+  - 순서는 위치마다 번갈아 바꾼다. agent마다 warm-up 1수는 세지 않는다.
+  - 통과 조건: mean(B) ≤ 1.10 × mean(A), p95(B) ≤ 1.20 × p95(A). 위임 결정값 그대로다.
+  - 기록은 한 번만 쓴다. 실행 설정, 모델 정체성, 모든 측정값이 들어간다.
+  - 같은 수 비율도 기록하지만 판정에는 쓰지 않는다.
+
+### 16.2 P3: D1 D4 계약 (`R2-D1-HEAD-WIDTH-1/d4/d1-d4-contract.json`, 도구 `scripts/h7r_d1_d4.py`)
+
+- **질문**: 전체 규모에서 넓힌 head의 H-dev 예측 이득이 수 선택으로 이어지는가. 직접 대조군(같은 seed의 narrow)과 비교한다.
+- **방법은 baseline D4(R2-D4-BASELINE-1)와 같다.** 계약 로더가 baseline 계약과 하나씩 대조한다.
+  - 같은 것: sealed H-dev, frozen state, runtime 정체성, Rapfi 프로그램·정체성, 위치 선택, 예산, device, 통계(`d4.STATS`), INVALID 정책
+  - 표본: baseline과 같은 eligible manifest 규칙(c5가 actor). prepare가 `d4/eligible.json`으로 고정한다.
+- **비교**
+  - 주 비교: `wide31001:narrow31001`, `wide31002:narrow31002`, `wide31003:narrow31003`
+  - 참고: 각 wide와 c5. 구간만 기록하고 판독 label은 지운다.
+- **모델 연결**
+  - 실행할 때 커밋된 전체 규모 실행 기록(`full/run-records/{arm}-{seed}/d1_train.json`)에서 읽는다.
+  - 조건: 실험 `25c49e408aff`, verdict `CANDIDATE`, T-val로 고른 checkpoint(`selected.state`)
+  - D4나 H-dev 결과로 모델을 고르지 않는다.
+  - 실행 시 각 파일의 SHA·metadata·frozen state를 다시 확인한다(baseline의 `checked_models`). 넓힌 checkpoint가 이 검사를 통과하는지 테스트로 확인했다.
+- **진입 조건** (실행할 때 도구가 커밋된 기록으로 확인)
+  - 전체 규모 fit이 비교가능(`comparable`)하다.
+  - 전체 규모 H-dev 판독이 `DEVELOPMENT_SIGNAL`이다.
+  - 시간 gate가 통과했고, 연결된 seed 31001 쌍에서 잰 것이다.
+  - full은 추가로 커밋된 smoke 기록이 필요하다. 같은 실험이고, c5가 actor의 수를 모두 재현했어야 한다.
+- **재생**
+  - 일곱 모델 모두 factory v2로 만든다. c5도 v2로 만들어 actor의 수를 재현해야 하므로, 이 재생이 v2의 1채널 경로를 실제 자료로 다시 검사한다.
+- **판독** (주 비교 3쌍만)
+  - 쌍마다 baseline label을 쓴다: `label95`(95%), `label_individual`(98.333%)
+  - `ALL_THREE_BETTER`: 세 쌍 모두 `label95`가 `BETTER`
+  - `ALL_THREE_WORSE`: 세 쌍 모두 `label95`가 `WORSE`
+  - `MIXED_DIRECTION`: 개별 label에 `BETTER`와 `WORSE`가 함께 있다.
+  - `PARTIAL_SIGNAL`: `BETTER`가 있고 `WORSE`는 없다.
+  - `NOT_ESTABLISHED`: 그 밖
+  - 참고 비교는 판독에 들어가지 않는다.
+- **진행**: `ALL_THREE_BETTER`일 때만 확인 평가(P5)로 간다. 그 밖의 label은 보존·보고하고 위임을 끝낸다.
+- **정밀도 주의**
+  - baseline D4의 95% 반폭은 평균 continuation delta로 약 0.04였다.
+  - 같은 표본·예산이면 `NOT_ESTABLISHED`가 나올 가능성이 크다. 이것을 "차이 없음"으로 읽지 않는다.
+  - 결과를 본 뒤 표본이나 예산을 늘리지 않는다.
+- **승인 단계**: `approved.smoke` → smoke 실행 → `approved.full` → full 실행 1회(위임 상한)
+- **테스트** (`tests/test_h7r_d1_d4.py`)
+  - 계약: baseline 방법과 같다. 틀린 고정값(비교, 통계, factory, smoke 크기, H-dev, 승인 순서, 실험 고정, 소스, 키)은 거부한다.
+  - 모델 연결: 커밋된 실행 기록에서 읽는다. 다른 실험·`NO_CANDIDATE`·미커밋 기록은 거부한다.
+  - 진입 조건: 비교불가, `NOT_ESTABLISHED`, `HOLD`, 시간 gate 실패, 다른 쌍에서 잰 시간 gate는 거부한다.
+  - 판독 규칙, factory v2 재생, sensitivity가 모든 비교를 덮는지 확인한다.
+- **예상 시간**
+  - baseline full은 모델 5개, 비교 4개로 158분이었다.
+  - 이번에는 모델 7개, 비교 6개라 약 3.5–5시간으로 추정한다.
+  - smoke는 baseline에서 1.2분이었다.
+
+### 16.3 실행 절차 (데스크톱)
+
+- 실행 순서
+  1. 클라우드: P2·P3 고정 커밋, 그 뒤 evaluate 승인 커밋
+  2. 데스크톱: full-3(H-dev) → v2-1(시간 gate) → d4-1(eligible manifest). 한 tmux에서 순서대로 돈다.
+  3. 클라우드: 진입 조건 확인, 승인 커밋
+  4. 데스크톱: d4-run smoke, 그 뒤 d4-run full
+- d4-run은 실패하면 기록을 커밋하지 않는다.
+  - 이유: 도구가 실행 정체성에 commit을 넣는다. 기록 커밋으로 HEAD가 바뀌면 같은 폴더에서 재개할 수 없다.
+  - 실패 기록은 `runs/`에 보존된다.
+  - 다음 중 하나를 정한다: 인프라 오류면 같은 블록으로 1회 재개(위임 재시도 규칙), 아니면 d4-F로 기록하고 멈춤.
+  - 성공하면 그때까지의 모든 시도 로그를 함께 커밋한다.
+- v2-1과 d4-1은 결과와 무관하게 기록을 커밋한다. 재개가 필요 없는 짧은 단계다.
+
+v2-1. factory v2 시간 gate와 기록 커밋 (전체 규모 학습 기록 커밋 뒤)
+   - 먼저 두 checkpoint가 커밋된 실행 기록의 선택 checkpoint인지 SHA로 확인한다.
+   - 도구의 종료 코드: 0 PASS, 2 FAIL(기록됨), 그 밖 STOP
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/factory-v2"
+  F=runs/h7r/R2-D1-HEAD-WIDTH-1/full
+  L=runs/h7r/R2-D1-HEAD-WIDTH-1/factory-v2/logs
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  test ! -e "$X/timing.json"
+  for arm in narrow wide; do
+    rec="$D/full/run-records/$arm-31001/d1_train.json"
+    git ls-files --error-unmatch "$rec" >/dev/null
+    python - "$rec" "$F/$arm-31001/best.pt" <<'PY'
+import hashlib, json, sys
+rec, pt = sys.argv[1:]
+want = json.load(open(rec))['selected']['state']['checkpoint_sha256']
+got = hashlib.sha256(open(pt, 'rb').read()).hexdigest()
+assert got == want, f'STOP: {pt} {got[:12]} is not the selected checkpoint {want[:12]}'
+print('linked', pt, got[:12])
+PY
+  done
+  mkdir -p "$L"
+  LOG="$L/timing-$(date +%Y%m%d-%H%M%S).log"
+  [ ! -e "$LOG" ] || { echo "STOP: $LOG exists"; exit 1; }
+  B="$(basename "$LOG" .log)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  { echo __START__; rc=0; python -u scripts/h7r_factory_v2_timing.py --policy runs/h3_policy_64x4/best.pt \
+      --narrow-value "$F/narrow-31001/best.pt" --wide-value "$F/wide-31001/best.pt" --device cuda \
+      --output "$X/timing.json" 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/logs" --manifest "$X/logs/$B.manifest.json"
+  expect=(--expect "$X/logs/$B.log" --expect "$X/logs/$B.manifest.json")
+  if [ -f "$X/timing.json" ]; then expect+=(--expect "$X/timing.json"); fi
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  case "$run_rc" in 0) verdict=PASS ;; 2) verdict=FAIL ;; *) verdict="STOP (exit $run_rc)" ;; esac
+  git commit -m "H7-R P2: factory v2 time gate $verdict on the linked seed-31001 pair (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+d4-1. D4 eligible manifest와 기록 커밋 (P3 계약 커밋 뒤; 승인 불필요, 결과를 열지 않음)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/d4"
+  L=runs/h7r/R2-D1-D4-1/logs
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  git ls-files --error-unmatch "$X/d1-d4-contract.json" >/dev/null
+  test ! -e "$X/eligible.json"
+  mkdir -p "$L"
+  LOG="$L/prepare-$(date +%Y%m%d-%H%M%S).log"
+  [ ! -e "$LOG" ] || { echo "STOP: $LOG exists"; exit 1; }
+  B="$(basename "$LOG" .log)"
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  { echo __START__; rc=0; python -u scripts/h7r_d1_d4.py prepare --cache runs/h7r/R1-HDEV-1/cache 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$B.log" \
+    --dest-dir "$X/prepare-logs" --manifest "$X/prepare-logs/$B.manifest.json"
+  expect=(--expect "$X/prepare-logs/$B.log" --expect "$X/prepare-logs/$B.manifest.json")
+  if [ -f "$X/eligible.json" ]; then expect+=(--expect "$X/eligible.json"); fi
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  if [ "$run_rc" -eq 0 ]; then verdict=PASS; else verdict="FAIL (exit $run_rc)"; fi
+  git commit -m "H7-R D1 D4: eligible manifest $verdict (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $run_rc"
+  exit "$run_rc"
+)
+```
+
+d4-run. D4 실행과 기록 커밋 (`bash ~/d1-d4-run.sh smoke` 또는 `full`; 해당 `approved` 커밋 뒤)
+   - 같은 명령을 다시 실행하면 같은 HEAD에서 이어서 한다(재개). 실패했을 때는 커밋하지 않는다.
+   - 성공하면 `identity.json`, `summary.json`, 아직 커밋되지 않은 그 단계의 모든 로그를 커밋한다.
+
+```bash
+(
+  set -euo pipefail
+  MODE="${1:-}"
+  case "$MODE" in smoke|full) ;; *) echo "STOP: mode must be smoke or full"; exit 1 ;; esac
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/d4/$MODE"
+  R="runs/h7r/R2-D1-D4-1/$MODE"
+  L=runs/h7r/R2-D1-D4-1/logs
+  F=runs/h7r/R2-D1-HEAD-WIDTH-1/full
+  P=runs/h3_policy_64x4/best.pt
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  python - "$D/d4/d1-d4-contract.json" "$MODE" <<'PY'
+import json, sys
+c = json.load(open(sys.argv[1]))
+assert c['approved'][sys.argv[2]] is True, f'STOP: {sys.argv[2]} is not approved'
+print('approved:', sys.argv[2])
+PY
+  test ! -e "$X/summary.json"
+  test ! -e "$R/summary.json"
+  models=(--model "c5=$P,runs/h7c/c5/value/best.pt")
+  for s in 31001 31002 31003; do for arm in narrow wide; do models+=(--model "$arm$s=$P,$F/$arm-$s/best.pt"); done; done
+  mkdir -p "$L"
+  LOG="$L/$MODE-$(date +%Y%m%d-%H%M%S).log"
+  [ ! -e "$LOG" ] || { echo "STOP: $LOG exists"; exit 1; }
+  ts(){ while IFS= read -r line; do printf '%s %s\n' "$(date +%s.%N)" "$line"; done; }
+  run_rc=0
+  { echo __START__; rc=0; python -u scripts/h7r_d1_d4.py run --mode "$MODE" --cache runs/h7r/R1-HDEV-1/cache \
+      "${models[@]}" --device cuda --workers 6 --rapfi-dir /mnt/c/engines/rapfi --out-dir "$R" 2>&1 || rc=$?
+    echo "__EXIT__ $rc"; exit "$rc"; } | ts | tee "$LOG" || run_rc=$?
+  if [ "$run_rc" -ne 0 ] || [ ! -f "$R/summary.json" ]; then
+    echo "__NOT_RECORDED__ $run_rc: $R and $LOG are kept; resume with the same command or record with d4-F"
+    exit 1
+  fi
+  expect=()
+  mkdir -p "$X"
+  shopt -s nullglob
+  for f in "$L/$MODE"-*.log; do
+    b="$(basename "$f" .log)"
+    if git ls-files --error-unmatch "$X/run-logs/$b.log" >/dev/null 2>&1; then continue; fi
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$b.log" \
+      --dest-dir "$X/run-logs" --manifest "$X/run-logs/$b.manifest.json"
+    expect+=(--expect "$X/run-logs/$b.log" --expect "$X/run-logs/$b.manifest.json")
+  done
+  for n in identity.json summary.json; do
+    if git ls-files --error-unmatch "$X/$n" >/dev/null 2>&1; then cmp "$R/$n" "$X/$n"; continue; fi
+    cp --no-clobber "$R/$n" "$X/$n"
+    cmp "$R/$n" "$X/$n"
+    expect+=(--expect "$X/$n")
+  done
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  reading="$(python -c "import json,sys; print(json.load(open(sys.argv[1]))['reading'])" "$X/summary.json")"
+  git commit -m "H7-R D1 D4: $MODE $reading (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $MODE $reading"
+)
+```
+
+d4-F. D4 실패 기록 보존 (`bash ~/d1-d4-F.sh smoke` 또는 `full`; 재개하지 않기로 정했을 때만)
+
+```bash
+(
+  set -euo pipefail
+  MODE="${1:-}"
+  case "$MODE" in smoke|full) ;; *) echo "STOP: mode must be smoke or full"; exit 1 ;; esac
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-D1-HEAD-WIDTH-1
+  X="$D/d4/$MODE"
+  R="runs/h7r/R2-D1-D4-1/$MODE"
+  L=runs/h7r/R2-D1-D4-1/logs
+  echo __START__
+  if pgrep -af 'scripts/h7r_d1_d4.py run'; then echo "STOP: a D4 runner is still alive"; exit 1; fi
+  git reset -q -- "$D/d4"
+  test -z "$(git status --porcelain --untracked-files=no)"
+  expect=()
+  shopt -s nullglob
+  for f in "$L/$MODE"-*.log; do
+    b="$(basename "$f" .log)"
+    echo "== $f"; tail -n 3 "$f"
+    if git ls-files --error-unmatch "$X/run-logs/$b.log" >/dev/null 2>&1; then continue; fi
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$b.log" \
+      --dest-dir "$X/run-logs" --manifest "$X/run-logs/$b.manifest.json"
+    expect+=(--expect "$X/run-logs/$b.log" --expect "$X/run-logs/$b.manifest.json")
+  done
+  for n in identity.json summary.json; do
+    [ -f "$R/$n" ] || continue
+    if git ls-files --error-unmatch "$X/$n" >/dev/null 2>&1; then cmp "$R/$n" "$X/$n"; continue; fi
+    mkdir -p "$X"
+    cp --no-clobber "$R/$n" "$X/$n"
+    cmp "$R/$n" "$X/$n"
+    expect+=(--expect "$X/$n")
+  done
+  if [ "${#expect[@]}" -eq 0 ]; then
+    git push origin HEAD:feat/h7-c1
+    echo "nothing left to record; push checked"; echo "__EXIT__ 0"; exit 0
+  fi
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R D1 D4: $MODE attempt records, not completed (records only)"
+  git push origin feat/h7-c1
+  echo "__EXIT__ 0"
+)
+```
+
+### 16.4 진행 상태
+
+- P2: factory v2, 시간 gate 도구, 테스트 구현
+- P3: D4 도구, 계약(`approved` 모두 false), 테스트, §16.3 실행 블록 4개
+- 모두 전체 규모 H-dev evaluate 승인 전에 커밋한다. 모델 SHA는 학습 기록 커밋 뒤 실행할 때 연결한다.
