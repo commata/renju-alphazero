@@ -2417,3 +2417,31 @@ d4-F. D4 실패 기록 보존 (`bash ~/d1-d4-F.sh smoke` 또는 `full`; 재개�
 - P2: factory v2, 시간 gate 도구, 테스트 구현
 - P3: D4 도구, 계약(`approved` 모두 false), 테스트, §16.3 실행 블록 4개
 - 모두 전체 규모 H-dev evaluate 승인 전에 커밋한다. 모델 SHA는 학습 기록 커밋 뒤 실행할 때 연결한다.
+
+### 16.5 데스크톱 자동 진행 (`scripts/h7r_d1_autopilot.py`, 지시문 `autopilot/desktop-agent-prompt.md`)
+
+- §16.3의 진행 순서와 위임의 진행·중단·재시도 규칙을 코드로 고정했다. 데스크톱 에이전트는 이 도구가 말한 것만 한다.
+- `next`: 커밋된 기록과 launch 기록으로 다음 action을 정한다.
+  - action 종류: `wait` / `run` / `recover` / `approve` / `stop`
+- 단계 순서: H-dev(full-3) → 시간 gate(v2-1) → eligible(d4-1) → smoke 승인 → smoke → full 승인 → full
+- 멈추는 경우
+  - H-dev가 `DEVELOPMENT_SIGNAL`이 아님
+  - 시간 gate FAIL
+  - D4 진입 조건 불충족
+  - smoke가 재현되지 않음
+  - full 승인 시점에 위임 상한까지 6시간 미만
+  - 상한(2026-11-10 15:24:27 KST) 경과
+  - full 결과가 나옴. `ALL_THREE_BETTER`면 P5 준비가 다음 단계다.
+- 실패 처리
+  - 재개: D4 실행이 도구의 `STOP:` 거부 없이 죽은 경우(충돌·강제 종료)만, 같은 명령·같은 HEAD로 1회
+  - 기록 보존: 기록 커밋 전에 멈춘 단계는 보존 블록을 1회 돌린 뒤 멈춘다(H-dev는 full-3-F, D4는 d4-F).
+  - 그 밖의 실패는 바로 멈춘다.
+- `approve`: `next`가 그 승인을 가리킬 때만 한다.
+  - 플래그 하나만 바꾸고, 실험 식별값이 그대로인지 확인한다.
+  - 커밋한 계약을 로더가 다시 읽는다. 거부되면 push 전에 그 커밋을 되돌린다.
+  - 상태 기록에 근거를 한 줄 남기고 push한다.
+- 확인
+  - `tests/test_h7r_d1_autopilot.py`: 단계 순서, 중단, 재개, 보존, 상한
+  - 실제 저장소 사본(임시 origin)에서 `approve smoke` 커밋·push, 중복 승인 거부, tmux `launch`·`wait`를 실행했다.
+  - 같은 사본에서, frozen 검사 실패로 도구를 실행하기 전에 멈춘 블록은 재개하지 않고 d4-F로 가는 것을 확인했다.
+- 자동 진행 중에는 클라우드 세션이 push하지 않는다. D4 재개는 같은 HEAD가 필요하기 때문이다.

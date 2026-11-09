@@ -25,3 +25,4 @@
 - 2026-11-09: P2 factory v2와 시간 gate 도구, P3 D4 도구·계약을 고정했다(D1 초안 §16). 전체 규모 H-dev evaluate 승인 전이다.
 - 2026-11-09: P1 완료(`d8c0d10`, 15:47). 6회 모두 `CANDIDATE`, 환경 필드 12개 동일(비교가능), train-fit `WIDTH_EFFECT`(wide − narrow: 31001 −0.0231, 31002 −0.0278, 31003 −0.0210). `checked_fit` 재계산이 기록과 같다. D4 모델 연결도 확인했다: 선택 checkpoint의 metadata가 `best.json`과 같고, frozen state가 `c2fbaac3…`, wide는 `value_channels` 4.
 - 2026-11-09: P4 evaluate 승인(근거: 위 확인, P2·P3 고정 커밋이 이 승인보다 앞선다).
+- 2026-11-09: 데스크톱 자동 진행 도구와 지시문 추가(D1 초안 §16.5). P4부터 D4 full까지 데스크톱 에이전트가 이 도구로 진행한다.
