@@ -20,6 +20,8 @@
 명령 앞에 `cd`, `source`, 환경변수를 붙이거나 `&&`로 잇지 않는다. 허용 규칙이 명령의 시작 부분으로 맞춰지기 때문이다. 도구가 경로를 스스로 잡는다.
 
 1. `.venv/bin/python scripts/h7r_d1_autopilot.py next`를 실행하고, 출력 JSON의 `action`을 본다.
+   - `next`는 매번 스스로 `git pull`을 한다. 클라우드 세션이 올린 수정은 이 pull로 들어온다. 에이전트가 직접 pull하지 않는 것은 이 때문이다.
+   - 출력의 `head`가 현재 커밋이다. 보고할 때 함께 적는다.
 2. `action`에 따라 하나만 한다.
    - `run` 또는 `recover`
      - `.venv/bin/python scripts/h7r_d1_autopilot.py launch`를 실행한다.

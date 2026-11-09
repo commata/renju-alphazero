@@ -2,7 +2,7 @@
 
 The agent never decides what comes next; it asks this tool, does exactly that, and reports when the tool says stop.
 
-    next       pull, then the next action from the committed records and the launch ledger (JSON on stdout):
+    next       pull (always; the agent itself never runs git pull), then the next action from the committed records and the launch ledger (JSON on stdout):
                  wait     a launched block has not finished (``wait``)
                  run      launch a block (``launch``)
                  recover  launch the record-preserving block of a failed step (``launch``), then stop
@@ -268,9 +268,8 @@ def require_clean(root):
 def cmd_next(args) -> dict:
     root = Path(args.root)
     require_clean(root)
-    if not args.no_pull:
-        _git(root, 'pull', '--ff-only', '-q', 'origin', 'feat/h7-c1')
-    return decide(root)
+    _git(root, 'pull', '--ff-only', '-q', 'origin', 'feat/h7-c1')  # always: the cloud session's fixes arrive here
+    return {**decide(root), 'head': _git(root, 'rev-parse', '--short', 'HEAD')}
 
 
 def cmd_launch(args) -> dict:
@@ -319,7 +318,7 @@ def cmd_wait(args) -> int:
 def cmd_approve(args) -> dict:
     import h7r_d1_d4 as dd
     root = Path(args.root)
-    action = cmd_next(args)
+    action = {k: v for k, v in cmd_next(args).items() if k != 'head'}
     if action != {'action': 'approve', 'step': args.mode, 'mode': args.mode}:
         raise ValueError(f'next is not approve {args.mode}: {action}')
     path = root / CONTRACT
@@ -392,7 +391,6 @@ def parser():
     sub = p.add_subparsers(dest='command', required=True)
     for name in ('next', 'launch', 'approve'):
         s = sub.add_parser(name)
-        s.add_argument('--no-pull', action='store_true')
         if name == 'launch':
             s.add_argument('--home', default='~')
         if name == 'approve':
