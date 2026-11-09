@@ -88,8 +88,10 @@ class ModelIdentityTest(unittest.TestCase):
         for path in sorted((ROOT / 'src').rglob('*.py')) + sorted((ROOT / 'scripts').rglob('*.py')):
             if path.name != 'tb_v3_net.py' and re.search(r'\btb_v3_net\b', path.read_text(encoding='utf-8')):
                 users.append(path.relative_to(ROOT).as_posix())
-        # Only the H7-c tools may build candidate models; the canonical, web and benchmark code never does.
-        self.assertTrue(all(re.match(r'scripts/h7c_', p) for p in users), users)
+        # Only the H7-c and H7-R research tools and factory v2 may build candidate models; the canonical, web and
+        # benchmark code never does. (The H7-R D4 tools have used it since R2-D4-BASELINE-1.)
+        self.assertTrue(all(re.match(r'scripts/h7[cr]_', p) or p == 'src/analysis/tb_v3_net_v2.py' for p in users),
+                        users)
 
 
 @unittest.skipUnless(fast5.available(), 'python -m rt30.vcfcore.build first')
