@@ -4,7 +4,7 @@
   "stage": "full",
   "status": "fixed",
   "approved": {
-    "prepare": false,
+    "prepare": true,
     "train": false,
     "evaluate": false
   },
