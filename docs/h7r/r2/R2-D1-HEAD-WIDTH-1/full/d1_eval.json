@@ -1,0 +1,344 @@
+{
+ "format": "h7r-d1-eval-v1",
+ "experiment_sha256": "25c49e408aff5621984a8e8b6461703f8e49289e8960f03366ea1baa4673cdc9",
+ "contract_sha256": "531c0d6fb9e37b1af64c894b1eb4058fd82c939211b6019a9902b4954d771fca",
+ "git": {
+  "commit": "2a4a8425c605ea4668487620fbc4bc61dee2b238",
+  "dirty": false
+ },
+ "hdev": {
+  "contract_sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+  "cache_binding_sha256": "9724d878eed46c9b2a803d212671bc1bebb2c024ed7ba44398468dfd243d4886",
+  "games_sha256": "93b05a037f20c60104268bc11fa572dc999496ec966bbede482394a3c4bab3f6",
+  "rows_sha256": "ed0e4be2a212d7bcce72c501e4674d4376c1c8293fd1f079c7e17b4d99897131",
+  "cache_labels_sha256": "c903d285f1e5e447a4053407edbb57bbc83ecdc61dd140657b1388e6502aa2ef",
+  "test_sha256": "c3b389dad321b82ea98670d7effb1a717d3642abc95718d53b2692dfa5e556fd"
+ },
+ "hdev_reading": {
+  "label": "DEVELOPMENT_SIGNAL",
+  "hold": [],
+  "control_seed_range": 0.0006729480997926807,
+  "epsilon": 0.0019461168062766864,
+  "seeds": {
+   "31001": {
+    "improvement": 0.008837801873157025,
+    "beyond_epsilon": true,
+    "upper95_below_0": true
+   },
+   "31002": {
+    "improvement": 0.007765342899807126,
+    "beyond_epsilon": true,
+    "upper95_below_0": true
+   },
+   "31003": {
+    "improvement": 0.010729556047005928,
+    "beyond_epsilon": true,
+    "upper95_below_0": true
+   }
+  }
+ },
+ "paired": {
+  "31001": {
+   "control": 0.39929532879027513,
+   "wide": 0.3904575269171181,
+   "difference": -0.008837801873157025,
+   "improvement": 0.008837801873157025,
+   "ci95": [
+    -0.011845589333677933,
+    -0.005873633545708765
+   ],
+   "zero_denominator_resamples": 0
+  },
+  "31002": {
+   "control": 0.39862238069048245,
+   "wide": 0.3908570377906753,
+   "difference": -0.007765342899807126,
+   "improvement": 0.007765342899807126,
+   "ci95": [
+    -0.010099902740527869,
+    -0.005428327641417131
+   ],
+   "zero_denominator_resamples": 0
+  },
+  "31003": {
+   "control": 0.3991299631277384,
+   "wide": 0.3884004070807325,
+   "difference": -0.010729556047005928,
+   "improvement": 0.010729556047005928,
+   "ci95": [
+    -0.012938324211033797,
+    -0.00850059849787872
+   ],
+   "zero_denominator_resamples": 0
+  }
+ },
+ "references": {
+  "31001": {
+   "wide_vs_c5": {
+    "difference": -0.013585711035264292,
+    "ci95": [
+     -0.017894354719820035,
+     -0.009250752363120208
+    ],
+    "zero_denominator_resamples": 0
+   },
+   "narrow_vs_c5": {
+    "difference": -0.004747909162107267
+   },
+   "components": [
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/outcome",
+      "aggregate": "macro"
+     },
+     "difference": -0.007311427774948531
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/proof",
+      "aggregate": "macro"
+     },
+     "difference": -0.011871535220721402
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "pooled"
+     },
+     "difference": -0.00773317081523528
+    }
+   ],
+   "decomposition_kind": {
+    "outcome": {
+     "contribution": -0.001088044338960735,
+     "rows": 13805,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       -0.0031351024793455865,
+       0.0009805091867499558
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof": {
+     "contribution": -0.007749757534196262,
+     "rows": 1474,
+     "games_with_rows": 374,
+     "ci95": {
+      "ci95": [
+       -0.009424920866320104,
+       -0.0061269904518860725
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   }
+  },
+  "31002": {
+   "wide_vs_c5": {
+    "difference": -0.013186200161707073,
+    "ci95": [
+     -0.01657450277876073,
+     -0.009720675825171254
+    ],
+    "zero_denominator_resamples": 0
+   },
+   "narrow_vs_c5": {
+    "difference": -0.005420857261899947
+   },
+   "components": [
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/outcome",
+      "aggregate": "macro"
+     },
+     "difference": -0.0031878314287385745
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/proof",
+      "aggregate": "macro"
+     },
+     "difference": -0.01063537761761768
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "pooled"
+     },
+     "difference": -0.008784631530338982
+    }
+   ],
+   "decomposition_kind": {
+    "outcome": {
+     "contribution": -0.0009617635849877405,
+     "rows": 13805,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       -0.002550423458788927,
+       0.0006390254327502205
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof": {
+     "contribution": -0.006803579314819387,
+     "rows": 1474,
+     "games_with_rows": 374,
+     "ci95": {
+      "ci95": [
+       -0.008575301606674348,
+       -0.005075301229466705
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   }
+  },
+  "31003": {
+   "wide_vs_c5": {
+    "difference": -0.015642830871649915,
+    "ci95": [
+     -0.01955077082587059,
+     -0.011629875897507707
+    ],
+    "zero_denominator_resamples": 0
+   },
+   "narrow_vs_c5": {
+    "difference": -0.004913274824643987
+   },
+   "components": [
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/outcome",
+      "aggregate": "macro"
+     },
+     "difference": -0.01629669249491439
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network/proof",
+      "aggregate": "macro"
+     },
+     "difference": -0.008213996580118954
+    },
+    {
+     "metric": {
+      "prediction": "d4",
+      "group": "network",
+      "aggregate": "pooled"
+     },
+     "difference": -0.010223296271630045
+    }
+   ],
+   "decomposition_kind": {
+    "outcome": {
+     "contribution": -0.005072787427078259,
+     "rows": 13805,
+     "games_with_rows": 396,
+     "ci95": {
+      "ci95": [
+       -0.006843292115506836,
+       -0.0032868787405878038
+      ],
+      "zero_denominator_resamples": 0
+     }
+    },
+    "proof": {
+     "contribution": -0.005656768619927673,
+     "rows": 1474,
+     "games_with_rows": 374,
+     "ci95": {
+      "ci95": [
+       -0.007061477975069079,
+       -0.004299237157382735
+      ],
+      "zero_denominator_resamples": 0
+     }
+    }
+   }
+  }
+ },
+ "r2_0b_reference": {
+  "31001": {
+   "narrow_primary": 0.39929532879027513,
+   "r2_0b_primary": 0.399295328136391,
+   "difference": 6.53884113521741e-10
+  },
+  "31002": {
+   "narrow_primary": 0.39862238069048245,
+   "r2_0b_primary": 0.39862238085730595,
+   "difference": -1.668234994589568e-10
+  },
+  "31003": {
+   "narrow_primary": 0.3991299631277384,
+   "r2_0b_primary": 0.3991299627982585,
+   "difference": 3.2947988781728554e-10
+  }
+ },
+ "train_fit_reading": {
+  "category": "WIDTH_EFFECT",
+  "order": [
+   "WIDTH_EFFECT",
+   "BOTH_FIT",
+   "SEED_DISAGREEMENT",
+   "NEITHER_FIT",
+   "MIXED_FIT"
+  ],
+  "floor_d4": 0.015343601754516399,
+  "margin": 0.01,
+  "threshold": 0.0253436017545164,
+  "success": {
+   "narrow": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   },
+   "wide": {
+    "31001": false,
+    "31002": false,
+    "31003": false
+   }
+  },
+  "wide_minus_narrow": {
+   "31001": -0.023079633712768555,
+   "31002": -0.02782389521598816,
+   "31003": -0.02100163698196411
+  },
+  "narrow_seed_range": 0.0009586513042449951
+ },
+ "reference_note": {
+  "c5": "wide - c5 and narrow - c5, reported and never ruled",
+  "components": "outcome / proof macro and pooled differences without epsilon",
+  "decomposition": "additive kind contributions (hybrid.h7r_d3), descriptive",
+  "note": "the H-dev reading uses the T-val selected checkpoints; the train-fit reading uses the last-step states; they are recorded apart and never mixed",
+  "scale": "each training row is seen about 3 times here, about 19 at 5,000 rows and about 105 at 1,000 rows: differences between the stages are not read as the effect of the data size alone"
+ },
+ "predictions": {
+  "path": "runs/h7r/R2-D1-HEAD-WIDTH-1/full/predictions.pt",
+  "sha256": "8487071b6a12516073c02ccea6cced972df79bdb1da6dc6dc40c548bed0844b1"
+ },
+ "evaluate_tool": {
+  "tool": {
+   "path": "scripts/h7r_d1_full.py",
+   "sha256": "df3aac9aab77b3d770853f50fc010c33531dd9f9e5c23bb9667d664837398f05"
+  },
+  "predicted_record": {
+   "path": "runs/h7r/R2-D1-HEAD-WIDTH-1/full/evaluate-predicted.json",
+   "sha256": "71803e1dce4e46f39b1beb799adafeffe8ca65d03414938751c51d26f5c759a6"
+  }
+ },
+ "resumed": null,
+ "minutes": 0.34,
+ "scope": "the full-scale D1 diagnosis: no D4 candidate, strength, promotion or V9 ruling by itself; a DEVELOPMENT_SIGNAL only opens a separate D4 contract"
+}

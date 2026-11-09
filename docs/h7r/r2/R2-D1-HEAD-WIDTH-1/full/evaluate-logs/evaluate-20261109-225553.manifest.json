@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "evaluate-20261109-225553.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/full/logs/evaluate-20261109-225553.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/full/evaluate-logs/evaluate-20261109-225553.log",
+   "bytes": 440,
+   "sha256": "3b43f2c9b21aab371db2afb5cc085288ccf19577a35daae7698428db0c0b7a46"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
