@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "timing-20261109-234658.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-D1-HEAD-WIDTH-1/factory-v2/logs/timing-20261109-234658.log",
+   "copy": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/factory-v2/timing-logs/timing-20261109-234658.log",
+   "bytes": 1836,
+   "sha256": "ea9339d300977c4bef5bfaa5465c24b48306c39c3cea4032fceaf9ade50ea85a"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

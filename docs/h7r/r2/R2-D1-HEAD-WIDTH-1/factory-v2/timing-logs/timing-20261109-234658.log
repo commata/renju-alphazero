@@ -1,0 +1,27 @@
+1794235618.383300221 __START__
+1794235628.230051340 [factory-v2-timing] opening 1/24: 6 positions
+1794235635.120621807 [factory-v2-timing] opening 2/24: 12 positions
+1794235642.135119254 [factory-v2-timing] opening 3/24: 18 positions
+1794235650.293068453 [factory-v2-timing] opening 4/24: 24 positions
+1794235657.209252511 [factory-v2-timing] opening 5/24: 30 positions
+1794235664.221246816 [factory-v2-timing] opening 6/24: 36 positions
+1794235671.117628901 [factory-v2-timing] opening 7/24: 42 positions
+1794235678.049179432 [factory-v2-timing] opening 8/24: 48 positions
+1794235686.726986914 [factory-v2-timing] opening 9/24: 54 positions
+1794235694.338077797 [factory-v2-timing] opening 10/24: 60 positions
+1794235701.586786302 [factory-v2-timing] opening 11/24: 66 positions
+1794235710.678079217 [factory-v2-timing] opening 12/24: 72 positions
+1794235719.737086929 [factory-v2-timing] opening 13/24: 78 positions
+1794235727.735358432 [factory-v2-timing] opening 14/24: 84 positions
+1794235735.599555836 [factory-v2-timing] opening 15/24: 90 positions
+1794235743.035743671 [factory-v2-timing] opening 16/24: 96 positions
+1794235751.990611323 [factory-v2-timing] opening 17/24: 102 positions
+1794235759.781317626 [factory-v2-timing] opening 18/24: 108 positions
+1794235767.764221923 [factory-v2-timing] opening 19/24: 114 positions
+1794235775.734419702 [factory-v2-timing] opening 20/24: 120 positions
+1794235784.092742843 [factory-v2-timing] opening 21/24: 126 positions
+1794235791.132084334 [factory-v2-timing] opening 22/24: 132 positions
+1794235798.684517551 [factory-v2-timing] opening 23/24: 138 positions
+1794235806.431891711 [factory-v2-timing] opening 24/24: 144 positions
+1794235806.441417087 [factory-v2-timing] PASS: mean x1.003 (<= 1.1), p95 x1.004 (<= 1.2); 144 positions; same move 97%
+1794235806.767456544 __EXIT__ 0

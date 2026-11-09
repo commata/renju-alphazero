@@ -1,0 +1,3 @@
+1794232594.678547685 __START__
+1794232595.683957850 STOP: ValueError: runs/h7r/R2-D1-HEAD-WIDTH-1/full/narrow-31001/best.pt: not a value head trained on the frozen H3 trunk
+1794232595.894698035 __EXIT__ 1
