@@ -1,0 +1,837 @@
+{
+ "format": "h7r-d1-d4-summary-v1",
+ "identity": {
+  "format": "h7r-d1-d4-run-v1",
+  "experiment_sha256": "ee06faf80d9b0eda0c11eced10aaf352dda7d869373e5a473e502ab077d2ec74",
+  "contract_sha256": "c4c6979fc65ac7de2aab36c9f0484569c507e8f857667d69b7545dea21fef643",
+  "git": {
+   "commit": "19b360bf1e350da6bf072ba92c44460c1bb7d9c8",
+   "dirty": false
+  },
+  "hdev": {
+   "contract_sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+   "cache_binding_sha256": "9724d878eed46c9b2a803d212671bc1bebb2c024ed7ba44398468dfd243d4886",
+   "games_sha256": "93b05a037f20c60104268bc11fa572dc999496ec966bbede482394a3c4bab3f6",
+   "rows_sha256": "ed0e4be2a212d7bcce72c501e4674d4376c1c8293fd1f079c7e17b4d99897131",
+   "cache_labels_sha256": "c903d285f1e5e447a4053407edbb57bbc83ecdc61dd140657b1388e6502aa2ef",
+   "test_sha256": "c3b389dad321b82ea98670d7effb1a717d3642abc95718d53b2692dfa5e556fd"
+  },
+  "sample_sha256": "4af997890b6996e007712b4294ef1df3d92e3c75d05ebde6aba43b3d32d0abb9",
+  "models": {
+   "c5": {
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "2da4e30601c6e0e4f38c8e96491c1939aa0b09603e824321361b1c2f88424bef"
+   },
+   "narrow31001": {
+    "value_checkpoint_sha256": "15f92d63ac29db4ec532af6758fe9230b1c2d110694c2de2af0935f204470dab",
+    "value_metadata_sha256": "e98270f5b856de28c186a2d33533666a593d71c4cd7fcff5e326ea640a1b743f",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "2ecc95c4d2967b6845d8481a52f38a720fe1e5cf105e0f7eca7e2c21b9e3ee8d"
+   },
+   "wide31001": {
+    "value_checkpoint_sha256": "2aa5e030d1f9ee3dcc8e57b065626afca5bc2164bcb1c1c17080acc17ddc7916",
+    "value_metadata_sha256": "a5f08c37e2a129290f5b625d9134824db653b4fd7a263cf717a46da8c7682556",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "0426a6c24d6d1835255234e1da0435fef56001274f585ce5ac3b13dccbc70891"
+   },
+   "narrow31002": {
+    "value_checkpoint_sha256": "21442761372c320619f2b8b33d543f1460b10d8efda5413e30ff8d87bd1be9ff",
+    "value_metadata_sha256": "3d0075fcdfec0761abfc4e87f45f0b8e8403849801250df433866b4a3ea6a000",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "670b6705da4d1d81b6f40214072809fa3871a61a5152249be41aa99b8f80d5a1"
+   },
+   "wide31002": {
+    "value_checkpoint_sha256": "4f101358a2b9f959e1c1981b127fd27bcdb6e3ad150c327939bb56baa07a0fcc",
+    "value_metadata_sha256": "4b2834165e311f980f6dcfb873aa04f09213fc80073521af299283f9794266f7",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "8d7651bc19be2c2e0768a226034148dde95eed62ba638edc0b494a2f2d1b4aac"
+   },
+   "narrow31003": {
+    "value_checkpoint_sha256": "29d2daa50081fd47c40a89990924e4bb1ac748d8534acd221d1be1c2cbaac99d",
+    "value_metadata_sha256": "b90ff729d35b09ae49f12f0044e160f44279a745c855272e11bbf2aee1562462",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "a84ba346555d231620459cdd8f837325c6b6089f748605a326d30ae867c8893c"
+   },
+   "wide31003": {
+    "value_checkpoint_sha256": "45888b4b02946ff913729112bedc48c7616c333713a7581669f6d7c6ad093ec4",
+    "value_metadata_sha256": "a2aa1187cded30b7a3b10713b2c50f6d97e2a19470306e01c928ae160f63e787",
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "policy_loaded": false,
+    "frozen_state_sha256": {
+     "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+     "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+    },
+    "value_head_sha256": "e87a957a5eff0763b634c8fb019cc9b79feeb701c9e58811afd4e9a60f0d78c6"
+   }
+  },
+  "factory": {
+   "module": "analysis.tb_v3_net_v2",
+   "version": "tb-v3-net-v2"
+  },
+  "runtime": {
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e"
+  },
+  "rapfi": {
+   "registered": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "actual": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "rule": 4,
+   "arguments": [],
+   "move_timeout": 600.0,
+   "registered_engine": true
+  },
+  "mode": "full",
+  "device": "cuda",
+  "entry": {
+   "fit_category": "WIDTH_EFFECT",
+   "hdev_label": "DEVELOPMENT_SIGNAL",
+   "timing": {
+    "positions": 144,
+    "mean_a": 0.6162940978333104,
+    "mean_b": 0.6179198317710567,
+    "p95_a": 0.7577813580064685,
+    "p95_b": 0.7606454359993222,
+    "mean_ratio": 1.0026379190445955,
+    "p95_ratio": 1.0037795572068287,
+    "thresholds": {
+     "mean_ratio": 1.1,
+     "p95_ratio": 1.2
+    },
+    "passed": true,
+    "same_move_share": 0.9652777777777778
+   }
+  },
+  "environment": {
+   "python": "3.12.3",
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "gpu": "NVIDIA GeForce RTX 5070"
+  }
+ },
+ "identity_sha256": "4bcd57e4a33d81bb9543397f8cba2cab38fe3f4dcece6634cbe431d6874a0ad6",
+ "actor_check": {
+  "model_set": "c5",
+  "plies": 16777,
+  "same_move": 16777,
+  "same_route": 16777,
+  "same_visits": 16777,
+  "reproduced": true
+ },
+ "eligible_plies": 15985,
+ "warmup_plies": 792,
+ "branches": 1988,
+ "observations": 2964,
+ "files": {
+  "replay.jsonl": "f50c8d7d69384025ec239b926cc77bc9a9fbf7b3b15753f911593f54d207d092",
+  "branches.jsonl": "c201aeab093b753bbdb311866b528af4f49f150ff480d770db3812a8d022502e"
+ },
+ "seconds": 16786.948728482,
+ "scope": "development only; no strength, promotion, champion or V9 ruling",
+ "branch_outcomes": {
+  "resolved": 1965,
+  "structural": 23,
+  "unresolved": 0
+ },
+ "sensitivity": {
+  "wide31001:narrow31001": {
+   "different": 379,
+   "plies": 15985,
+   "share": 0.02370972786987801,
+   "ci95": {
+    "level": 0.95,
+    "ci": [
+     0.02003595886256285,
+     0.027322186388732236
+    ],
+    "undefined": 0
+   },
+   "tree_plies": 7252,
+   "tree_different": 379,
+   "games_with_difference": 154,
+   "first_difference_ply_median": 12.0,
+   "route_differences": 0
+  },
+  "wide31002:narrow31002": {
+   "different": 520,
+   "plies": 15985,
+   "share": 0.03253049734125743,
+   "ci95": {
+    "level": 0.95,
+    "ci": [
+     0.02716814266065008,
+     0.037672982215245406
+    ],
+    "undefined": 0
+   },
+   "tree_plies": 7252,
+   "tree_different": 520,
+   "games_with_difference": 163,
+   "first_difference_ply_median": 14,
+   "route_differences": 0
+  },
+  "wide31003:narrow31003": {
+   "different": 459,
+   "plies": 15985,
+   "share": 0.028714419768533,
+   "ci95": {
+    "level": 0.95,
+    "ci": [
+     0.02320088156745379,
+     0.03417904989578303
+    ],
+    "undefined": 0
+   },
+   "tree_plies": 7252,
+   "tree_different": 459,
+   "games_with_difference": 153,
+   "first_difference_ply_median": 12,
+   "route_differences": 0
+  },
+  "wide31001:c5": {
+   "different": 530,
+   "plies": 15985,
+   "share": 0.033156083828589304,
+   "ci95": {
+    "level": 0.95,
+    "ci": [
+     0.028624668232565504,
+     0.037555421805357696
+    ],
+    "undefined": 0
+   },
+   "tree_plies": 7252,
+   "tree_different": 530,
+   "games_with_difference": 190,
+   "first_difference_ply_median": 10.0,
+   "route_differences": 0
+  },
+  "wide31002:c5": {
+   "different": 528,
+   "plies": 15985,
+   "share": 0.033030966531122925,
+   "ci95": {
+    "level": 0.95,
+    "ci": [
+     0.02790694524078053,
+     0.03806465245305621
+    ],
+    "undefined": 0
+   },
+   "tree_plies": 7252,
+   "tree_different": 528,
+   "games_with_difference": 178,
+   "first_difference_ply_median": 11.5,
+   "route_differences": 0
+  },
+  "wide31003:c5": {
+   "different": 548,
+   "plies": 15985,
+   "share": 0.03428213950578667,
+   "ci95": {
+    "level": 0.95,
+    "ci": [
+     0.02928605946877384,
+     0.03929736385594121
+    ],
+    "undefined": 0
+   },
+   "tree_plies": 7252,
+   "tree_different": 548,
+   "games_with_difference": 193,
+   "first_difference_ply_median": 10,
+   "route_differences": 0
+  }
+ },
+ "comparisons": {
+  "wide31001:narrow31001": {
+   "observations": 379,
+   "resolved": 379,
+   "resolved_games": 154,
+   "decisive": 111,
+   "decisive_games": 85,
+   "unresolved": 0,
+   "structural_observations": 8,
+   "failures": [],
+   "mean_delta_bounds": [
+    -0.002638522427440633,
+    -0.002638522427440633
+   ],
+   "resolved_mean_delta": -0.002638522427440633,
+   "resolved_game_macro": -0.030294197568834696,
+   "game_macro_bounds": [
+    -0.030294197568834696,
+    -0.030294197568834696
+   ],
+   "better": 55,
+   "worse": 56,
+   "equal": 268,
+   "both": {
+    "win": 67,
+    "draw": 118,
+    "loss": 83
+   },
+   "better_share": 0.4954954954954955,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.3978494623655914,
+     0.59375
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.11497677349011419,
+     0.05524618011172861
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.05521495284314623,
+       0.0474543047312891
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.05521495284314623,
+       0.0474543047312891
+      ],
+      "undefined": 0
+     }
+    },
+    "0.9833333333333333": {
+     "lower": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.06800929705215418,
+       0.059117168802317745
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.06800929705215418,
+       0.059117168802317745
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "label95": "INCONCLUSIVE",
+   "label_individual": "INCONCLUSIVE",
+   "upper95_descriptive": 0.0474543047312891
+  },
+  "wide31002:narrow31002": {
+   "observations": 520,
+   "resolved": 520,
+   "resolved_games": 163,
+   "decisive": 142,
+   "decisive_games": 93,
+   "unresolved": 0,
+   "structural_observations": 10,
+   "failures": [],
+   "mean_delta_bounds": [
+    0.006730769230769231,
+    0.006730769230769231
+   ],
+   "resolved_mean_delta": 0.006730769230769231,
+   "resolved_game_macro": 0.0033833608820271932,
+   "game_macro_bounds": [
+    0.0033833608820271932,
+    0.0033833608820271932
+   ],
+   "better": 72,
+   "worse": 70,
+   "equal": 378,
+   "both": {
+    "win": 93,
+    "draw": 188,
+    "loss": 97
+   },
+   "better_share": 0.5070422535211268,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.4296875,
+     0.5855263157894737
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.06947235619616299,
+     0.07621161809379515
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.03214411468812875,
+       0.04440538621317319
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.03214411468812875,
+       0.04440538621317319
+      ],
+      "undefined": 0
+     }
+    },
+    "0.9833333333333333": {
+     "lower": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.041307495087202155,
+       0.052878877308443546
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.041307495087202155,
+       0.052878877308443546
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "label95": "INCONCLUSIVE",
+   "label_individual": "INCONCLUSIVE",
+   "upper95_descriptive": 0.04440538621317319
+  },
+  "wide31003:narrow31003": {
+   "observations": 459,
+   "resolved": 459,
+   "resolved_games": 153,
+   "decisive": 109,
+   "decisive_games": 83,
+   "unresolved": 0,
+   "structural_observations": 11,
+   "failures": [],
+   "mean_delta_bounds": [
+    -0.006535947712418301,
+    -0.006535947712418301
+   ],
+   "resolved_mean_delta": -0.006535947712418301,
+   "resolved_game_macro": -0.021659831818550038,
+   "game_macro_bounds": [
+    -0.021659831818550038,
+    -0.021659831818550038
+   ],
+   "better": 53,
+   "worse": 56,
+   "equal": 350,
+   "both": {
+    "win": 74,
+    "draw": 196,
+    "loss": 80
+   },
+   "better_share": 0.48623853211009177,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.39215686274509803,
+     0.5789473684210527
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.10299042666364837,
+     0.05751103409602894
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.04847033962838865,
+       0.03404779801910142
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.04847033962838865,
+       0.03404779801910142
+      ],
+      "undefined": 0
+     }
+    },
+    "0.9833333333333333": {
+     "lower": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.058119746555019655,
+       0.043468108865167734
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.058119746555019655,
+       0.043468108865167734
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "label95": "INCONCLUSIVE",
+   "label_individual": "INCONCLUSIVE",
+   "upper95_descriptive": 0.03404779801910142
+  },
+  "wide31001:c5": {
+   "observations": 530,
+   "resolved": 530,
+   "resolved_games": 190,
+   "decisive": 156,
+   "decisive_games": 106,
+   "unresolved": 0,
+   "structural_observations": 10,
+   "failures": [],
+   "mean_delta_bounds": [
+    -0.016037735849056604,
+    -0.016037735849056604
+   ],
+   "resolved_mean_delta": -0.016037735849056604,
+   "resolved_game_macro": -0.07483605268231307,
+   "game_macro_bounds": [
+    -0.07483605268231307,
+    -0.07483605268231307
+   ],
+   "better": 76,
+   "worse": 80,
+   "equal": 374,
+   "both": {
+    "win": 102,
+    "draw": 167,
+    "loss": 105
+   },
+   "better_share": 0.48717948717948717,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.4027754474272931,
+     0.5688622754491018
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.14718864120381323,
+     -0.004750119591667273
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.05983845904750767,
+       0.024958046471600593
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.05983845904750767,
+       0.024958046471600593
+      ],
+      "undefined": 0
+     }
+    },
+    "0.9833333333333333": {
+     "lower": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.07010981525784152,
+       0.03352867915269799
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.07010981525784152,
+       0.03352867915269799
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "upper95_descriptive": 0.024958046471600593
+  },
+  "wide31002:c5": {
+   "observations": 528,
+   "resolved": 528,
+   "resolved_games": 178,
+   "decisive": 153,
+   "decisive_games": 106,
+   "unresolved": 0,
+   "structural_observations": 11,
+   "failures": [],
+   "mean_delta_bounds": [
+    -0.014204545454545454,
+    -0.014204545454545454
+   ],
+   "resolved_mean_delta": -0.014204545454545454,
+   "resolved_game_macro": -0.03848648229089577,
+   "game_macro_bounds": [
+    -0.03848648229089577,
+    -0.03848648229089577
+   ],
+   "better": 73,
+   "worse": 80,
+   "equal": 375,
+   "both": {
+    "win": 95,
+    "draw": 181,
+    "loss": 99
+   },
+   "better_share": 0.477124183006536,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.4,
+     0.5548780487804879
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.11925896427719988,
+     0.04276495091954594
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.057109619905956116,
+       0.025602766854895834
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.057109619905956116,
+       0.025602766854895834
+      ],
+      "undefined": 0
+     }
+    },
+    "0.9833333333333333": {
+     "lower": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.06785084926896927,
+       0.035074654018152476
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.06785084926896927,
+       0.035074654018152476
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "upper95_descriptive": 0.025602766854895834
+  },
+  "wide31003:c5": {
+   "observations": 548,
+   "resolved": 548,
+   "resolved_games": 193,
+   "decisive": 149,
+   "decisive_games": 107,
+   "unresolved": 0,
+   "structural_observations": 11,
+   "failures": [],
+   "mean_delta_bounds": [
+    -0.013686131386861315,
+    -0.013686131386861315
+   ],
+   "resolved_mean_delta": -0.013686131386861315,
+   "resolved_game_macro": -0.057994383575380226,
+   "game_macro_bounds": [
+    -0.057994383575380226,
+    -0.057994383575380226
+   ],
+   "better": 72,
+   "worse": 77,
+   "equal": 399,
+   "both": {
+    "win": 106,
+    "draw": 190,
+    "loss": 103
+   },
+   "better_share": 0.48322147651006714,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.40336134453781514,
+     0.561293152235427
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.1319184856771789,
+     0.01469467220872605
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.05277791106845809,
+       0.024572700063011967
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.05277791106845809,
+       0.024572700063011967
+      ],
+      "undefined": 0
+     }
+    },
+    "0.9833333333333333": {
+     "lower": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.06271475023484667,
+       0.03346189447701328
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.9833333333333333,
+      "ci": [
+       -0.06271475023484667,
+       0.03346189447701328
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "upper95_descriptive": 0.024572700063011967
+  }
+ },
+ "reading": "NOT_ESTABLISHED",
+ "next": "stop: record and report (delegation P3)"
+}

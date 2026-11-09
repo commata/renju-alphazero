@@ -1,0 +1,224 @@
+1794237754.395521781 __START__
+1794237755.222521477 [d1-d4-preflight] sealed H-dev and eligible positions
+1794237766.395989123 [d1-d4-preflight] PASS 396 games / 15985 rows; seven models; entry {'fit_category': 'WIDTH_EFFECT', 'hdev_label': 'DEVELOPMENT_SIGNAL', 'timing': {'positions': 144, 'mean_a': 0.6162940978333104, 'mean_b': 0.6179198317710567, 'p95_a': 0.7577813580064685, 'p95_b': 0.7606454359993222, 'mean_ratio': 1.0026379190445955, 'p95_ratio': 1.0037795572068287, 'thresholds': {'mean_ratio': 1.1, 'p95_ratio': 1.2}, 'passed': True, 'same_move_share': 0.9652777777777778}}
+1794237766.399564055 [d1-d4-replay] resume 0/396, remaining 396
+1794237842.905643342 [d1-d4-replay] 43/16,777 units  0.3%  1.2 min  ETA 480 min  2/396 chunks
+1794237954.478115778 [d1-d4-replay] 140/16,777 units  0.8%  3.0 min  ETA 357 min  6/396 chunks
+1794238044.939853017 [d1-d4-replay] 270/16,777 units  1.6%  4.5 min  ETA 273 min  10/396 chunks, 386 pending
+1794238114.085195866 [d1-d4-replay] 392/16,777 units  2.3%  5.6 min  ETA 233 min  14/396 chunks
+1794238220.580708161 [d1-d4-replay] 527/16,777 units  3.1%  7.3 min  ETA 225 min  18/396 chunks, 378 pending
+1794238310.950539930 [d1-d4-replay] 554/16,777 units  3.3%  8.7 min  ETA 256 min  19/396 chunks, 377 pending
+1794238406.696701955 [d1-d4-replay] 752/16,777 units  4.5%  10.3 min  ETA 218 min  23/396 chunks
+1794238474.079061381 [d1-d4-replay] 891/16,777 units  5.3%  11.3 min  ETA 202 min  28/396 chunks
+1794238554.992354402 [d1-d4-replay] 949/16,777 units  5.7%  12.6 min  ETA 211 min  30/396 chunks
+1794238640.495355614 [d1-d4-replay] 1,058/16,777 units  6.3%  14.0 min  ETA 208 min  34/396 chunks
+1794238747.214355387 [d1-d4-replay] 1,195/16,777 units  7.1%  15.7 min  ETA 205 min  37/396 chunks
+1794238809.698540433 [d1-d4-replay] 1,220/16,777 units  7.3%  16.7 min  ETA 213 min  38/396 chunks, 358 pending
+1794238888.916877551 [d1-d4-replay] 1,306/16,777 units  7.8%  18.0 min  ETA 213 min  41/396 chunks
+1794238956.546112098 [d1-d4-replay] 1,434/16,777 units  8.5%  19.1 min  ETA 204 min  44/396 chunks
+1794239026.014638360 [d1-d4-replay] 1,594/16,777 units  9.5%  20.2 min  ETA 192 min  47/396 chunks
+1794239088.523394052 [d1-d4-replay] 1,594/16,777 units  9.5%  21.2 min  ETA 202 min  47/396 chunks, 349 pending
+1794239165.169104114 [d1-d4-replay] 1,655/16,777 units  9.9%  22.4 min  ETA 205 min  49/396 chunks, 347 pending
+1794239278.916929106 [d1-d4-replay] 1,773/16,777 units  10.6%  24.3 min  ETA 205 min  52/396 chunks, 344 pending
+1794239358.157969744 [d1-d4-replay] 1,925/16,777 units  11.5%  25.5 min  ETA 197 min  56/396 chunks
+1794239432.609973702 [d1-d4-replay] 2,083/16,777 units  12.4%  26.7 min  ETA 188 min  60/396 chunks
+1794239505.274209763 [d1-d4-replay] 2,176/16,777 units  13.0%  27.9 min  ETA 187 min  64/396 chunks
+1794239569.180929343 [d1-d4-replay] 2,267/16,777 units  13.5%  28.9 min  ETA 185 min  68/396 chunks
+1794239639.436404962 [d1-d4-replay] 2,400/16,777 units  14.3%  30.0 min  ETA 180 min  72/396 chunks
+1794239715.929209187 [d1-d4-replay] 2,474/16,777 units  14.7%  31.3 min  ETA 181 min  74/396 chunks
+1794239778.640717844 [d1-d4-replay] 2,474/16,777 units  14.7%  32.3 min  ETA 187 min  74/396 chunks, 322 pending
+1794239874.980043064 [d1-d4-replay] 2,519/16,777 units  15.0%  33.8 min  ETA 191 min  75/396 chunks, 321 pending
+1794239946.876250806 [d1-d4-replay] 2,620/16,777 units  15.6%  35.0 min  ETA 189 min  77/396 chunks
+1794240031.341769647 [d1-d4-replay] 2,665/16,777 units  15.9%  36.4 min  ETA 193 min  80/396 chunks
+1794240095.973576116 [d1-d4-replay] 2,783/16,777 units  16.6%  37.4 min  ETA 188 min  84/396 chunks
+1794240202.609380790 [d1-d4-replay] 2,933/16,777 units  17.5%  39.1 min  ETA 185 min  88/396 chunks
+1794240292.941825746 [d1-d4-replay] 3,316/16,777 units  19.8%  40.6 min  ETA 165 min  92/396 chunks
+1794240359.580652259 [d1-d4-replay] 3,526/16,777 units  21.0%  41.7 min  ETA 157 min  99/396 chunks
+1794240433.511289894 [d1-d4-replay] 3,602/16,777 units  21.5%  42.9 min  ETA 157 min  102/396 chunks
+1794240545.870045296 [d1-d4-replay] 3,649/16,777 units  21.8%  44.7 min  ETA 161 min  104/396 chunks
+1794240619.599110009 [d1-d4-replay] 3,811/16,777 units  22.7%  45.9 min  ETA 156 min  108/396 chunks
+1794240730.431356335 [d1-d4-replay] 3,937/16,777 units  23.5%  47.7 min  ETA 155 min  112/396 chunks
+1794240792.990896563 [d1-d4-replay] 3,937/16,777 units  23.5%  48.7 min  ETA 159 min  112/396 chunks, 284 pending
+1794240867.373700316 [d1-d4-replay] 4,047/16,777 units  24.1%  49.9 min  ETA 157 min  115/396 chunks
+1794240970.963560356 [d1-d4-replay] 4,103/16,777 units  24.5%  51.5 min  ETA 159 min  118/396 chunks
+1794241033.406578302 [d1-d4-replay] 4,103/16,777 units  24.5%  52.5 min  ETA 162 min  118/396 chunks, 278 pending
+1794241095.816924207 [d1-d4-replay] 4,103/16,777 units  24.5%  53.5 min  ETA 165 min  118/396 chunks, 278 pending
+1794241158.266762112 [d1-d4-replay] 4,103/16,777 units  24.5%  54.5 min  ETA 168 min  118/396 chunks, 278 pending
+1794241255.506322025 [d1-d4-replay] 4,208/16,777 units  25.1%  56.1 min  ETA 167 min  119/396 chunks, 277 pending
+1794241333.009460912 [d1-d4-replay] 4,319/16,777 units  25.7%  57.3 min  ETA 165 min  120/396 chunks, 276 pending
+1794241408.248609022 [d1-d4-replay] 4,497/16,777 units  26.8%  58.5 min  ETA 160 min  122/396 chunks
+1794241488.945875843 [d1-d4-replay] 4,512/16,777 units  26.9%  59.8 min  ETA 163 min  123/396 chunks, 273 pending
+1794241551.417468492 [d1-d4-replay] 4,512/16,777 units  26.9%  60.8 min  ETA 165 min  123/396 chunks, 273 pending
+1794241674.230494722 [d1-d4-replay] 4,580/16,777 units  27.3%  62.8 min  ETA 167 min  125/396 chunks, 271 pending
+1794241738.532318497 [d1-d4-replay] 4,627/16,777 units  27.6%  63.8 min  ETA 168 min  127/396 chunks
+1794241801.160344970 [d1-d4-replay] 4,627/16,777 units  27.6%  64.8 min  ETA 170 min  127/396 chunks, 269 pending
+1794241898.075551617 [d1-d4-replay] 4,653/16,777 units  27.7%  66.4 min  ETA 173 min  128/396 chunks, 268 pending
+1794241978.582274504 [d1-d4-replay] 4,780/16,777 units  28.5%  67.7 min  ETA 170 min  129/396 chunks, 267 pending
+1794242052.974119023 [d1-d4-replay] 5,050/16,777 units  30.1%  68.9 min  ETA 160 min  132/396 chunks
+1794242122.511173708 [d1-d4-replay] 5,106/16,777 units  30.4%  70.0 min  ETA 160 min  134/396 chunks
+1794242205.931678930 [d1-d4-replay] 5,128/16,777 units  30.6%  71.4 min  ETA 162 min  135/396 chunks, 261 pending
+1794242288.064893107 [d1-d4-replay] 5,154/16,777 units  30.7%  72.7 min  ETA 164 min  136/396 chunks, 260 pending
+1794242349.958325770 [d1-d4-replay] 5,154/16,777 units  30.7%  73.7 min  ETA 166 min  136/396 chunks, 260 pending
+1794242428.522499007 [d1-d4-replay] 5,244/16,777 units  31.3%  75.0 min  ETA 165 min  138/396 chunks
+1794242490.045540544 [d1-d4-replay] 5,244/16,777 units  31.3%  76.0 min  ETA 167 min  138/396 chunks, 258 pending
+1794242614.067710652 [d1-d4-replay] 5,348/16,777 units  31.9%  78.0 min  ETA 167 min  141/396 chunks, 255 pending
+1794242720.268476750 [d1-d4-replay] 5,398/16,777 units  32.2%  79.7 min  ETA 168 min  143/396 chunks, 253 pending
+1794242784.107707113 [d1-d4-replay] 5,671/16,777 units  33.8%  80.7 min  ETA 158 min  146/396 chunks
+1794242879.204881715 [d1-d4-replay] 5,814/16,777 units  34.7%  82.2 min  ETA 155 min  148/396 chunks, 248 pending
+1794242974.750051505 [d1-d4-replay] 5,860/16,777 units  34.9%  83.8 min  ETA 156 min  150/396 chunks, 246 pending
+1794243043.333868146 [d1-d4-replay] 5,893/16,777 units  35.1%  84.9 min  ETA 157 min  151/396 chunks, 245 pending
+1794243152.874340216 [d1-d4-replay] 5,925/16,777 units  35.3%  86.6 min  ETA 159 min  152/396 chunks, 244 pending
+1794243215.189197654 [d1-d4-replay] 5,925/16,777 units  35.3%  87.6 min  ETA 160 min  152/396 chunks, 244 pending
+1794243277.054444629 [d1-d4-replay] 5,958/16,777 units  35.5%  88.6 min  ETA 161 min  153/396 chunks, 243 pending
+1794243339.766644002 [d1-d4-replay] 5,958/16,777 units  35.5%  89.6 min  ETA 163 min  153/396 chunks, 243 pending
+1794243420.692125467 [d1-d4-replay] 6,080/16,777 units  36.2%  90.9 min  ETA 160 min  155/396 chunks
+1794243509.648981975 [d1-d4-replay] 6,143/16,777 units  36.6%  92.4 min  ETA 160 min  157/396 chunks
+1794243572.329908400 [d1-d4-replay] 6,143/16,777 units  36.6%  93.4 min  ETA 162 min  157/396 chunks, 239 pending
+1794243638.981580603 [d1-d4-replay] 6,195/16,777 units  36.9%  94.4 min  ETA 161 min  159/396 chunks
+1794243702.868503778 [d1-d4-replay] 6,216/16,777 units  37.1%  95.5 min  ETA 162 min  160/396 chunks, 236 pending
+1794243802.629925822 [d1-d4-replay] 6,233/16,777 units  37.2%  97.0 min  ETA 164 min  161/396 chunks, 235 pending
+1794243925.533316382 [d1-d4-replay] 6,325/16,777 units  37.7%  99.0 min  ETA 164 min  164/396 chunks, 232 pending
+1794244017.671131691 [d1-d4-replay] 6,412/16,777 units  38.2%  100.5 min  ETA 162 min  168/396 chunks
+1794244079.588476163 [d1-d4-replay] 6,562/16,777 units  39.1%  101.5 min  ETA 158 min  170/396 chunks
+1794244163.547633706 [d1-d4-replay] 6,603/16,777 units  39.4%  102.9 min  ETA 159 min  172/396 chunks
+1794244272.015900248 [d1-d4-replay] 6,681/16,777 units  39.8%  104.6 min  ETA 158 min  175/396 chunks
+1794244357.210565796 [d1-d4-replay] 6,826/16,777 units  40.7%  106.0 min  ETA 155 min  177/396 chunks
+1794244424.541057370 [d1-d4-replay] 7,065/16,777 units  42.1%  107.1 min  ETA 147 min  179/396 chunks
+1794244486.647068228 [d1-d4-replay] 7,065/16,777 units  42.1%  108.1 min  ETA 149 min  179/396 chunks, 217 pending
+1794244574.724729254 [d1-d4-replay] 7,136/16,777 units  42.5%  109.5 min  ETA 148 min  181/396 chunks, 215 pending
+1794244649.863416981 [d1-d4-replay] 7,204/16,777 units  42.9%  110.7 min  ETA 147 min  183/396 chunks
+1794244711.357359516 [d1-d4-replay] 7,204/16,777 units  42.9%  111.7 min  ETA 148 min  183/396 chunks, 213 pending
+1794244790.520824998 [d1-d4-replay] 7,224/16,777 units  43.1%  113.0 min  ETA 149 min  184/396 chunks, 212 pending
+1794244868.819625680 [d1-d4-replay] 7,335/16,777 units  43.7%  114.3 min  ETA 147 min  186/396 chunks, 210 pending
+1794244955.181668814 [d1-d4-replay] 7,482/16,777 units  44.6%  115.7 min  ETA 144 min  190/396 chunks
+1794245067.159786283 [d1-d4-replay] 7,561/16,777 units  45.1%  117.4 min  ETA 143 min  194/396 chunks, 202 pending
+1794245188.769940867 [d1-d4-replay] 7,714/16,777 units  46.0%  119.4 min  ETA 140 min  197/396 chunks, 199 pending
+1794245254.860322172 [d1-d4-replay] 7,777/16,777 units  46.4%  120.5 min  ETA 139 min  199/396 chunks
+1794245317.620739920 [d1-d4-replay] 7,777/16,777 units  46.4%  121.5 min  ETA 141 min  199/396 chunks, 197 pending
+1794245421.430584561 [d1-d4-replay] 7,799/16,777 units  46.5%  123.1 min  ETA 142 min  200/396 chunks, 196 pending
+1794245483.808381769 [d1-d4-replay] 7,799/16,777 units  46.5%  124.1 min  ETA 143 min  200/396 chunks, 196 pending
+1794245546.360045950 [d1-d4-replay] 7,799/16,777 units  46.5%  125.1 min  ETA 144 min  200/396 chunks, 196 pending
+1794245624.290629403 [d1-d4-replay] 7,955/16,777 units  47.4%  126.4 min  ETA 140 min  202/396 chunks
+1794245686.856981215 [d1-d4-replay] 7,955/16,777 units  47.4%  127.4 min  ETA 141 min  202/396 chunks, 194 pending
+1794245751.758223545 [d1-d4-replay] 8,033/16,777 units  47.9%  128.4 min  ETA 140 min  204/396 chunks
+1794245814.287789539 [d1-d4-replay] 8,033/16,777 units  47.9%  129.4 min  ETA 141 min  204/396 chunks, 192 pending
+1794245881.294764024 [d1-d4-replay] 8,063/16,777 units  48.1%  130.5 min  ETA 141 min  205/396 chunks, 191 pending
+1794245968.419279295 [d1-d4-replay] 8,110/16,777 units  48.3%  131.9 min  ETA 141 min  207/396 chunks, 189 pending
+1794246052.485452297 [d1-d4-replay] 8,125/16,777 units  48.4%  133.2 min  ETA 142 min  208/396 chunks, 188 pending
+1794246120.377524055 [d1-d4-replay] 8,197/16,777 units  48.9%  134.3 min  ETA 141 min  211/396 chunks
+1794246227.724495358 [d1-d4-replay] 8,222/16,777 units  49.0%  136.0 min  ETA 142 min  212/396 chunks, 184 pending
+1794246325.784489404 [d1-d4-replay] 8,388/16,777 units  50.0%  137.6 min  ETA 138 min  216/396 chunks
+1794246407.253096671 [d1-d4-replay] 8,433/16,777 units  50.3%  138.9 min  ETA 137 min  218/396 chunks
+1794246496.139645306 [d1-d4-replay] 8,606/16,777 units  51.3%  140.3 min  ETA 133 min  220/396 chunks
+1794246594.124086427 [d1-d4-replay] 8,628/16,777 units  51.4%  141.9 min  ETA 134 min  221/396 chunks, 175 pending
+1794246668.333288571 [d1-d4-replay] 8,752/16,777 units  52.2%  143.0 min  ETA 131 min  224/396 chunks
+1794246758.238629967 [d1-d4-replay] 8,801/16,777 units  52.5%  144.5 min  ETA 131 min  225/396 chunks, 171 pending
+1794246847.951245861 [d1-d4-replay] 9,148/16,777 units  54.5%  145.9 min  ETA 122 min  231/396 chunks
+1794246924.970830684 [d1-d4-replay] 9,276/16,777 units  55.3%  147.1 min  ETA 119 min  235/396 chunks
+1794246991.377609569 [d1-d4-replay] 9,365/16,777 units  55.8%  148.2 min  ETA 117 min  239/396 chunks
+1794247055.222372829 [d1-d4-replay] 9,408/16,777 units  56.1%  149.2 min  ETA 117 min  241/396 chunks
+1794247123.783075483 [d1-d4-replay] 9,496/16,777 units  56.6%  150.3 min  ETA 115 min  244/396 chunks
+1794247215.594171579 [d1-d4-replay] 9,557/16,777 units  57.0%  151.8 min  ETA 115 min  246/396 chunks, 150 pending
+1794247309.508102579 [d1-d4-replay] 9,619/16,777 units  57.3%  153.3 min  ETA 114 min  248/396 chunks
+1794247396.491708266 [d1-d4-replay] 9,684/16,777 units  57.7%  154.6 min  ETA 113 min  250/396 chunks, 146 pending
+1794247476.038584659 [d1-d4-replay] 9,799/16,777 units  58.4%  155.9 min  ETA 111 min  253/396 chunks, 143 pending
+1794247553.468474011 [d1-d4-replay] 9,871/16,777 units  58.8%  157.1 min  ETA 110 min  256/396 chunks, 140 pending
+1794247632.501066458 [d1-d4-replay] 10,002/16,777 units  59.6%  158.4 min  ETA 107 min  259/396 chunks
+1794247694.073504928 [d1-d4-replay] 10,002/16,777 units  59.6%  159.4 min  ETA 108 min  259/396 chunks, 137 pending
+1794247765.999621504 [d1-d4-replay] 10,081/16,777 units  60.1%  160.5 min  ETA 107 min  261/396 chunks
+1794247827.780631599 [d1-d4-replay] 10,111/16,777 units  60.3%  161.5 min  ETA 106 min  262/396 chunks, 134 pending
+1794247901.832367511 [d1-d4-replay] 10,249/16,777 units  61.1%  162.6 min  ETA 104 min  266/396 chunks
+1794248003.838136304 [d1-d4-replay] 10,314/16,777 units  61.5%  164.3 min  ETA 103 min  269/396 chunks
+1794248115.266833436 [d1-d4-replay] 10,340/16,777 units  61.6%  166.0 min  ETA 103 min  270/396 chunks, 126 pending
+1794248224.035876851 [d1-d4-replay] 10,514/16,777 units  62.7%  167.8 min  ETA 100 min  273/396 chunks
+1794248303.427073430 [d1-d4-replay] 10,544/16,777 units  62.8%  169.0 min  ETA 100 min  274/396 chunks, 122 pending
+1794248419.947955912 [d1-d4-replay] 10,663/16,777 units  63.6%  170.9 min  ETA 98 min  278/396 chunks
+1794248534.501946805 [d1-d4-replay] 10,702/16,777 units  63.8%  172.7 min  ETA 98 min  280/396 chunks
+1794248605.883818520 [d1-d4-replay] 10,977/16,777 units  65.4%  173.8 min  ETA 92 min  282/396 chunks
+1794248673.134966854 [d1-d4-replay] 11,094/16,777 units  66.1%  174.9 min  ETA 90 min  284/396 chunks
+1794248792.127307131 [d1-d4-replay] 11,133/16,777 units  66.4%  176.8 min  ETA 90 min  286/396 chunks, 110 pending
+1794248875.563113003 [d1-d4-replay] 11,205/16,777 units  66.8%  178.1 min  ETA 89 min  288/396 chunks
+1794248938.961028751 [d1-d4-replay] 11,205/16,777 units  66.8%  179.1 min  ETA 89 min  288/396 chunks, 108 pending
+1794249007.306974743 [d1-d4-replay] 11,321/16,777 units  67.5%  180.2 min  ETA 87 min  290/396 chunks
+1794249117.044289836 [d1-d4-replay] 11,379/16,777 units  67.8%  181.9 min  ETA 86 min  293/396 chunks
+1794249237.993439344 [d1-d4-replay] 11,449/16,777 units  68.2%  183.8 min  ETA 86 min  295/396 chunks, 101 pending
+1794249302.035584131 [d1-d4-replay] 11,475/16,777 units  68.4%  184.8 min  ETA 85 min  296/396 chunks, 100 pending
+1794249382.822111366 [d1-d4-replay] 11,493/16,777 units  68.5%  186.1 min  ETA 86 min  297/396 chunks, 99 pending
+1794249494.365356056 [d1-d4-replay] 11,525/16,777 units  68.7%  187.9 min  ETA 86 min  298/396 chunks, 98 pending
+1794249608.661085298 [d1-d4-replay] 11,560/16,777 units  68.9%  189.7 min  ETA 86 min  299/396 chunks, 97 pending
+1794249672.140201736 [d1-d4-replay] 11,560/16,777 units  68.9%  190.7 min  ETA 86 min  299/396 chunks, 97 pending
+1794249792.443886466 [d1-d4-replay] 11,713/16,777 units  69.8%  192.7 min  ETA 83 min  301/396 chunks, 95 pending
+1794249891.165411321 [d1-d4-replay] 11,758/16,777 units  70.1%  194.3 min  ETA 83 min  303/396 chunks, 93 pending
+1794249998.059768775 [d1-d4-replay] 11,785/16,777 units  70.2%  196.0 min  ETA 83 min  304/396 chunks, 92 pending
+1794250084.274550616 [d1-d4-replay] 11,823/16,777 units  70.5%  197.4 min  ETA 83 min  305/396 chunks, 91 pending
+1794250180.478166749 [d1-d4-replay] 12,078/16,777 units  72.0%  198.9 min  ETA 77 min  307/396 chunks, 89 pending
+1794250248.510950596 [d1-d4-replay] 12,096/16,777 units  72.1%  200.0 min  ETA 77 min  308/396 chunks, 88 pending
+1794250316.512909457 [d1-d4-replay] 12,376/16,777 units  73.8%  201.1 min  ETA 72 min  311/396 chunks
+1794250379.184283268 [d1-d4-replay] 12,376/16,777 units  73.8%  202.1 min  ETA 72 min  311/396 chunks, 85 pending
+1794250444.991536462 [d1-d4-replay] 12,404/16,777 units  73.9%  203.1 min  ETA 72 min  312/396 chunks, 84 pending
+1794250536.614349406 [d1-d4-replay] 12,446/16,777 units  74.2%  204.6 min  ETA 71 min  313/396 chunks, 83 pending
+1794250599.719744498 [d1-d4-replay] 12,446/16,777 units  74.2%  205.6 min  ETA 72 min  313/396 chunks, 83 pending
+1794250686.814470607 [d1-d4-replay] 12,554/16,777 units  74.8%  207.0 min  ETA 70 min  316/396 chunks
+1794250749.689582760 [d1-d4-replay] 12,554/16,777 units  74.8%  208.0 min  ETA 70 min  316/396 chunks, 80 pending
+1794250823.449574162 [d1-d4-replay] 12,587/16,777 units  75.0%  209.2 min  ETA 70 min  317/396 chunks, 79 pending
+1794250886.400609071 [d1-d4-replay] 12,587/16,777 units  75.0%  210.2 min  ETA 70 min  317/396 chunks, 79 pending
+1794250999.882242227 [d1-d4-replay] 13,129/16,777 units  78.3%  212.0 min  ETA 59 min  322/396 chunks
+1794251071.739282584 [d1-d4-replay] 13,259/16,777 units  79.0%  213.2 min  ETA 57 min  324/396 chunks
+1794251134.474980794 [d1-d4-replay] 13,259/16,777 units  79.0%  214.2 min  ETA 57 min  324/396 chunks, 72 pending
+1794251256.328114426 [d1-d4-replay] 13,380/16,777 units  79.8%  216.1 min  ETA 55 min  328/396 chunks, 68 pending
+1794251380.566921482 [d1-d4-replay] 13,454/16,777 units  80.2%  218.1 min  ETA 54 min  331/396 chunks, 65 pending
+1794251456.248793320 [d1-d4-replay] 13,547/16,777 units  80.7%  219.2 min  ETA 52 min  333/396 chunks
+1794251517.942476723 [d1-d4-replay] 13,547/16,777 units  80.7%  220.2 min  ETA 53 min  333/396 chunks, 63 pending
+1794251594.532987015 [d1-d4-replay] 13,659/16,777 units  81.4%  221.4 min  ETA 51 min  335/396 chunks, 61 pending
+1794251686.999736280 [d1-d4-replay] 13,758/16,777 units  82.0%  222.9 min  ETA 49 min  339/396 chunks
+1794251787.372655260 [d1-d4-replay] 13,780/16,777 units  82.1%  224.5 min  ETA 49 min  340/396 chunks, 56 pending
+1794251881.961756249 [d1-d4-replay] 13,846/16,777 units  82.5%  226.0 min  ETA 48 min  341/396 chunks, 55 pending
+1794251962.791813743 [d1-d4-replay] 13,876/16,777 units  82.7%  227.3 min  ETA 48 min  342/396 chunks, 54 pending
+1794252074.170470006 [d1-d4-replay] 13,896/16,777 units  82.8%  229.1 min  ETA 47 min  343/396 chunks, 53 pending
+1794252183.148240562 [d1-d4-replay] 13,937/16,777 units  83.1%  230.8 min  ETA 47 min  344/396 chunks, 52 pending
+1794252263.190706525 [d1-d4-replay] 13,993/16,777 units  83.4%  232.1 min  ETA 46 min  346/396 chunks
+1794252326.557925519 [d1-d4-replay] 13,993/16,777 units  83.4%  233.1 min  ETA 46 min  346/396 chunks, 50 pending
+1794252392.759641684 [d1-d4-replay] 14,015/16,777 units  83.5%  234.1 min  ETA 46 min  347/396 chunks, 49 pending
+1794252456.321048021 [d1-d4-replay] 14,015/16,777 units  83.5%  235.1 min  ETA 46 min  347/396 chunks, 49 pending
+1794252544.942073719 [d1-d4-replay] 14,051/16,777 units  83.8%  236.5 min  ETA 46 min  348/396 chunks, 48 pending
+1794252618.904905680 [d1-d4-replay] 14,070/16,777 units  83.9%  237.7 min  ETA 46 min  349/396 chunks, 47 pending
+1794252680.702519224 [d1-d4-replay] 14,070/16,777 units  83.9%  238.7 min  ETA 46 min  349/396 chunks, 47 pending
+1794252743.073901508 [d1-d4-replay] 14,434/16,777 units  86.0%  239.7 min  ETA 39 min  352/396 chunks
+1794252806.072484221 [d1-d4-replay] 14,713/16,777 units  87.7%  240.7 min  ETA 34 min  355/396 chunks
+1794252882.163153747 [d1-d4-replay] 14,788/16,777 units  88.1%  242.0 min  ETA 33 min  357/396 chunks
+1794253001.023174629 [d1-d4-replay] 14,925/16,777 units  89.0%  243.9 min  ETA 30 min  362/396 chunks
+1794253067.225540967 [d1-d4-replay] 15,076/16,777 units  89.9%  244.9 min  ETA 28 min  367/396 chunks
+1794253158.615543771 [d1-d4-replay] 15,381/16,777 units  91.7%  246.4 min  ETA 22 min  372/396 chunks
+1794253279.012306450 [d1-d4-replay] 15,424/16,777 units  91.9%  248.3 min  ETA 22 min  373/396 chunks, 23 pending
+1794253350.952608567 [d1-d4-replay] 15,446/16,777 units  92.1%  249.5 min  ETA 21 min  374/396 chunks, 22 pending
+1794253426.270450688 [d1-d4-replay] 15,680/16,777 units  93.5%  250.7 min  ETA 18 min  379/396 chunks
+1794253493.873868324 [d1-d4-replay] 15,740/16,777 units  93.8%  251.8 min  ETA 17 min  382/396 chunks
+1794253563.140265127 [d1-d4-replay] 15,812/16,777 units  94.2%  252.9 min  ETA 15 min  385/396 chunks
+1794253626.583471751 [d1-d4-replay] 15,870/16,777 units  94.6%  253.9 min  ETA 15 min  387/396 chunks
+1794253703.250784720 [d1-d4-replay] 15,951/16,777 units  95.1%  255.1 min  ETA 13 min  390/396 chunks
+1794253788.361225330 [d1-d4-replay] 16,004/16,777 units  95.4%  256.5 min  ETA 12 min  392/396 chunks, 4 pending
+1794253909.988731569 [d1-d4-replay] 16,111/16,777 units  96.0%  258.4 min  ETA 11 min  393/396 chunks, 3 pending
+1794253972.642832623 [d1-d4-replay] 16,111/16,777 units  96.0%  259.4 min  ETA 11 min  393/396 chunks, 3 pending
+1794254035.531035720 [d1-d4-replay] 16,111/16,777 units  96.0%  260.4 min  ETA 11 min  393/396 chunks, 3 pending
+1794254098.443526710 [d1-d4-replay] 16,111/16,777 units  96.0%  261.4 min  ETA 11 min  393/396 chunks, 3 pending
+1794254191.873090939 [d1-d4-replay] 16,333/16,777 units  97.4%  262.9 min  ETA 7 min  394/396 chunks, 2 pending
+1794254254.827444815 [d1-d4-replay] 16,333/16,777 units  97.4%  263.9 min  ETA 7 min  394/396 chunks, 2 pending
+1794254326.965038594 [d1-d4-replay] 16,555/16,777 units  98.7%  265.1 min  ETA 4 min  395/396 chunks, 1 pending
+1794254389.874503627 [d1-d4-replay] 16,555/16,777 units  98.7%  266.1 min  ETA 4 min  395/396 chunks, 1 pending
+1794254453.097387039 [d1-d4-replay] 16,555/16,777 units  98.7%  267.1 min  ETA 4 min  395/396 chunks, 1 pending
+1794254514.714605073 [d1-d4-replay] 16,555/16,777 units  98.7%  268.1 min  ETA 4 min  395/396 chunks, 1 pending
+1794254577.843279115 [d1-d4-replay] 16,555/16,777 units  98.7%  269.1 min  ETA 4 min  395/396 chunks, 1 pending
+1794254623.586663683 [d1-d4-replay] 16,777/16,777 units  100.0%  269.8 min  ETA 0 min  396/396 chunks
+1794254625.142090569 [d1-d4-rapfi] resume 0/1988, remaining 1988
+1794254686.987339741 [d1-d4-rapfi] 197/1,988 units  9.9%  1.0 min  ETA 9 min  197/1,988 chunks
+1794254751.213679652 [d1-d4-rapfi] 410/1,988 units  20.6%  2.0 min  ETA 8 min  410/1,988 chunks
+1794254814.918591262 [d1-d4-rapfi] 629/1,988 units  31.6%  3.0 min  ETA 7 min  629/1,988 chunks
+1794254878.414777301 [d1-d4-rapfi] 849/1,988 units  42.7%  4.0 min  ETA 5 min  849/1,988 chunks
+1794254941.838589692 [d1-d4-rapfi] 1,050/1,988 units  52.8%  5.0 min  ETA 4 min  1,050/1,988 chunks
+1794255005.449717932 [d1-d4-rapfi] 1,250/1,988 units  62.9%  6.0 min  ETA 4 min  1,250/1,988 chunks
+1794255069.124417352 [d1-d4-rapfi] 1,476/1,988 units  74.2%  7.0 min  ETA 2 min  1,476/1,988 chunks
+1794255133.585007200 [d1-d4-rapfi] 1,682/1,988 units  84.6%  8.0 min  ETA 1 min  1,682/1,988 chunks
+1794255195.379091032 [d1-d4-rapfi] 1,900/1,988 units  95.6%  9.1 min  ETA 0 min  1,900/1,988 chunks
+1794255225.480091731 [d1-d4-rapfi] 1,988/1,988 units  100.0%  9.5 min  ETA 0 min  1,988/1,988 chunks
+1794255246.141335717 {"reading": "NOT_ESTABLISHED", "summary": "/home/tack/renju-h6/runs/h7r/R2-D1-D4-1/full/summary.json"}
+1794255246.890383523 __EXIT__ 0
