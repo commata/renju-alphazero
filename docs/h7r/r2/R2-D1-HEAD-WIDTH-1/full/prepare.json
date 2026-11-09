@@ -1,0 +1,962 @@
+{
+ "format": "h7r-d1-prepare-full-v1",
+ "experiment_sha256": "25c49e408aff5621984a8e8b6461703f8e49289e8960f03366ea1baa4673cdc9",
+ "contract_sha256": "b94c44b043628150f16485048d6ec08996c1163bab078f1bf48117f31a1a9ae1",
+ "git": {
+  "commit": "992c923ff8dd0541e232bf7005bf67b9eb22e9fd",
+  "dirty": false
+ },
+ "data": {
+  "games": 932,
+  "rows": 35816,
+  "games_sha256": "7b0da77c82e65e0654f725cf3ad8d6e6bbb36297b4838dc052ade57b68046be0"
+ },
+ "composition": {
+  "outcome": {
+   "rows": 30792,
+   "weight": 3079.2000458836555
+  },
+  "proof": {
+   "rows": 5024,
+   "weight": 5024.0
+  },
+  "ply": {
+   "0-20": 13821,
+   "20-40": 10345,
+   "40-80": 5399,
+   "80-10000": 6251
+  }
+ },
+ "floors": {
+  "exact": {
+   "floor": 0.0017297693252249897,
+   "groups": 33202,
+   "rows": 35816,
+   "conflicting_groups": 77
+  },
+  "d4": {
+   "floor": 0.015343601754516399,
+   "groups": 31079,
+   "rows": 35816,
+   "conflicting_groups": 495
+  }
+ },
+ "c5": {
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1",
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "policy_loaded": false,
+  "frozen_state_sha256": {
+   "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+  },
+  "value_head_sha256": "2da4e30601c6e0e4f38c8e96491c1939aa0b09603e824321361b1c2f88424bef"
+ },
+ "exact": {
+  "device": "cpu",
+  "dtype": "float64",
+  "tolerance": 1e-12,
+  "train_mode_rows": 1024,
+  "replay_val_rows": 4096,
+  "replay_val_seed": 2026110702,
+  "replay_val_sample_sha256": "95d0407391e2e2065ecdd4e2a33649d986f7483103b4d28c91bc91f4f9041002",
+  "train_mode_rows_used": 1024
+ },
+ "device_check": {
+  "batch_size": 4096,
+  "settings": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8
+  },
+  "c5_batch_split": {
+   "batch_size": 1024,
+   "compare": {
+    "subset": {
+     "rows": 35816,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.430511474609375e-06,
+     "row": 18683,
+     "reference": -0.30032631754875183,
+     "widened": -0.3003248870372772,
+     "differing_rows": 27902
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 2.086162567138672e-07,
+     "row": 1583,
+     "reference": 0.10653891414403915,
+     "widened": 0.10653870552778244,
+     "differing_rows": 822
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.430511474609375e-06,
+     "row": 45813,
+     "reference": 0.2725341022014618,
+     "widened": 0.2725355327129364,
+     "differing_rows": 85818
+    }
+   }
+  }
+ },
+ "widened": {
+  "31001": {
+   "init_seed": 2026110710,
+   "checks": {
+    "frozen_state": true,
+    "conv_channel_0": true,
+    "bn_channel_0": true,
+    "bn_batches": true,
+    "linear_columns_copied": true,
+    "new_columns_zero": true,
+    "rest_copied": true
+   },
+   "passed": true,
+   "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "state_sha256": "654370e39118cca6ace28a966be12556f9c274b48f6c2a0d346b796a5363c2f4",
+   "parent_state_sha256_earlier": "654370e39118cca6ace28a966be12556f9c274b48f6c2a0d346b796a5363c2f4",
+   "gates": {
+    "bytes": true,
+    "same_parent_as_earlier": true,
+    "exact": true,
+    "device_finite": true,
+    "reload": true
+   },
+   "exact": {
+    "subset": {
+     "rows": 35816,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.828670879282072e-16,
+     "row": 13022,
+     "reference": -0.13062738658919634,
+     "widened": -0.13062738658919693,
+     "differing_rows": 21365
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 528,
+     "reference": -0.5131243508676417,
+     "widened": -0.5131243508676412,
+     "differing_rows": 1124
+    },
+    "replay_val": {
+     "rows": 4096,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 11842,
+     "reference": 0.2070226799564107,
+     "widened": 0.20702267995641124,
+     "differing_rows": 2516
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 4.163336342344337e-16,
+     "row": 547,
+     "reference": -0.16420636038511882,
+     "widened": -0.1642063603851184,
+     "differing_rows": 609
+    }
+   },
+   "device": {
+    "subset": {
+     "rows": 35816,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 9.685754776000977e-07,
+     "row": 35472,
+     "reference": -0.13646811246871948,
+     "widened": -0.13646908104419708,
+     "differing_rows": 2396
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.6223639249801636e-06,
+     "row": 1581,
+     "reference": 0.028331518173217773,
+     "widened": 0.028329895809292793,
+     "differing_rows": 1419
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.5295577645301819,
+     "widened": 0.5295577645301819,
+     "differing_rows": 0
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 7.748603820800781e-07,
+     "row": 686,
+     "reference": 0.020092405378818512,
+     "widened": 0.020093180239200592,
+     "differing_rows": 782
+    }
+   },
+   "layers": {
+    "subset": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 6.4373016357421875e-06,
+      "differing_rows": 3048,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 3048,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.430511474609375e-06,
+      "differing_rows": 2648,
+      "finite": true
+     },
+     "value": {
+      "max": 9.685754776000977e-07,
+      "differing_rows": 2396,
+      "finite": true
+     }
+    },
+    "cycle_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 8.106231689453125e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.6242265701293945e-06,
+      "differing_rows": 1580,
+      "finite": true
+     },
+     "value": {
+      "max": 1.6223639249801636e-06,
+      "differing_rows": 1419,
+      "finite": true
+     }
+    },
+    "replay_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "value": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     }
+    }
+   },
+   "reload": {
+    "state_equal": true,
+    "value_channels": 4,
+    "prediction": {
+     "rows": 35816,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": -0.04656195640563965,
+     "widened": -0.04656195640563965,
+     "differing_rows": 0
+    }
+   },
+   "checkpoint_sha256": "297a05af71e9c8f2b5de8ed5e493288f7fd969435f1d5da596167cbf0c1b66d1",
+   "metadata_sha256": "ebd57b4318292ac98f32837d5e63796c2248a0e367d87187a0d36412eb52b5af"
+  },
+  "31002": {
+   "init_seed": 2026110711,
+   "checks": {
+    "frozen_state": true,
+    "conv_channel_0": true,
+    "bn_channel_0": true,
+    "bn_batches": true,
+    "linear_columns_copied": true,
+    "new_columns_zero": true,
+    "rest_copied": true
+   },
+   "passed": true,
+   "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "state_sha256": "5b3fb4ea623c79ba37adc4c5f0621652ff10e354c1f9de560f7bd68bde88c2ea",
+   "parent_state_sha256_earlier": "5b3fb4ea623c79ba37adc4c5f0621652ff10e354c1f9de560f7bd68bde88c2ea",
+   "gates": {
+    "bytes": true,
+    "same_parent_as_earlier": true,
+    "exact": true,
+    "device_finite": true,
+    "reload": true
+   },
+   "exact": {
+    "subset": {
+     "rows": 35816,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.828670879282072e-16,
+     "row": 13022,
+     "reference": -0.13062738658919634,
+     "widened": -0.13062738658919693,
+     "differing_rows": 21365
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 528,
+     "reference": -0.5131243508676417,
+     "widened": -0.5131243508676412,
+     "differing_rows": 1124
+    },
+    "replay_val": {
+     "rows": 4096,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 11842,
+     "reference": 0.2070226799564107,
+     "widened": 0.20702267995641124,
+     "differing_rows": 2516
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 4.163336342344337e-16,
+     "row": 547,
+     "reference": -0.16420636038511882,
+     "widened": -0.1642063603851184,
+     "differing_rows": 609
+    }
+   },
+   "device": {
+    "subset": {
+     "rows": 35816,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 9.685754776000977e-07,
+     "row": 35472,
+     "reference": -0.13646811246871948,
+     "widened": -0.13646908104419708,
+     "differing_rows": 2396
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.6223639249801636e-06,
+     "row": 1581,
+     "reference": 0.028331518173217773,
+     "widened": 0.028329895809292793,
+     "differing_rows": 1419
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.5295577645301819,
+     "widened": 0.5295577645301819,
+     "differing_rows": 0
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 7.748603820800781e-07,
+     "row": 686,
+     "reference": 0.020092405378818512,
+     "widened": 0.020093180239200592,
+     "differing_rows": 782
+    }
+   },
+   "layers": {
+    "subset": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 6.4373016357421875e-06,
+      "differing_rows": 3048,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 3048,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.430511474609375e-06,
+      "differing_rows": 2648,
+      "finite": true
+     },
+     "value": {
+      "max": 9.685754776000977e-07,
+      "differing_rows": 2396,
+      "finite": true
+     }
+    },
+    "cycle_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 8.106231689453125e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.6242265701293945e-06,
+      "differing_rows": 1580,
+      "finite": true
+     },
+     "value": {
+      "max": 1.6223639249801636e-06,
+      "differing_rows": 1419,
+      "finite": true
+     }
+    },
+    "replay_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "value": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     }
+    }
+   },
+   "reload": {
+    "state_equal": true,
+    "value_channels": 4,
+    "prediction": {
+     "rows": 35816,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": -0.04656195640563965,
+     "widened": -0.04656195640563965,
+     "differing_rows": 0
+    }
+   },
+   "checkpoint_sha256": "a10152cb9bd3db03dedd66e950139469f25b20213f3d7bfb41e661125bc37f7c",
+   "metadata_sha256": "767e44d4f7633953e0be25de2500a71dd0b1f5cdea1c7db1c843284527040fc7"
+  },
+  "31003": {
+   "init_seed": 2026110712,
+   "checks": {
+    "frozen_state": true,
+    "conv_channel_0": true,
+    "bn_channel_0": true,
+    "bn_batches": true,
+    "linear_columns_copied": true,
+    "new_columns_zero": true,
+    "rest_copied": true
+   },
+   "passed": true,
+   "frozen_state_sha256": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+   "state_sha256": "131388e49d569c08ec8a60debbad78abcac666fa03a8b9f6e27581bff00c11fe",
+   "parent_state_sha256_earlier": "131388e49d569c08ec8a60debbad78abcac666fa03a8b9f6e27581bff00c11fe",
+   "gates": {
+    "bytes": true,
+    "same_parent_as_earlier": true,
+    "exact": true,
+    "device_finite": true,
+    "reload": true
+   },
+   "exact": {
+    "subset": {
+     "rows": 35816,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.828670879282072e-16,
+     "row": 13022,
+     "reference": -0.13062738658919634,
+     "widened": -0.13062738658919693,
+     "differing_rows": 21365
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 528,
+     "reference": -0.5131243508676417,
+     "widened": -0.5131243508676412,
+     "differing_rows": 1124
+    },
+    "replay_val": {
+     "rows": 4096,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 5.551115123125783e-16,
+     "row": 11842,
+     "reference": 0.2070226799564107,
+     "widened": 0.20702267995641124,
+     "differing_rows": 2516
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float64",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 4.163336342344337e-16,
+     "row": 547,
+     "reference": -0.16420636038511882,
+     "widened": -0.1642063603851184,
+     "differing_rows": 609
+    }
+   },
+   "device": {
+    "subset": {
+     "rows": 35816,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 9.685754776000977e-07,
+     "row": 35472,
+     "reference": -0.13646811246871948,
+     "widened": -0.13646908104419708,
+     "differing_rows": 2396
+    },
+    "cycle_val": {
+     "rows": 1853,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 1.6223639249801636e-06,
+     "row": 1581,
+     "reference": 0.028331518173217773,
+     "widened": 0.028329895809292793,
+     "differing_rows": 1419
+    },
+    "replay_val": {
+     "rows": 106274,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": 0.5295577645301819,
+     "widened": 0.5295577645301819,
+     "differing_rows": 0
+    },
+    "train_mode": {
+     "rows": 1024,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 7.748603820800781e-07,
+     "row": 686,
+     "reference": 0.020092405378818512,
+     "widened": 0.020093180239200592,
+     "differing_rows": 782
+    }
+   },
+   "layers": {
+    "subset": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 6.4373016357421875e-06,
+      "differing_rows": 3048,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 3048,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.430511474609375e-06,
+      "differing_rows": 2648,
+      "finite": true
+     },
+     "value": {
+      "max": 9.685754776000977e-07,
+      "differing_rows": 2396,
+      "finite": true
+     }
+    },
+    "cycle_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 8.106231689453125e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 2.86102294921875e-06,
+      "differing_rows": 1853,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 1.6242265701293945e-06,
+      "differing_rows": 1580,
+      "finite": true
+     },
+     "value": {
+      "max": 1.6223639249801636e-06,
+      "differing_rows": 1419,
+      "finite": true
+     }
+    },
+    "replay_val": {
+     "trunk": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "conv": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "batchnorm": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_linear_copied_columns": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "hidden_relu": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "output_linear": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     },
+     "value": {
+      "max": 0.0,
+      "differing_rows": 0,
+      "finite": true
+     }
+    }
+   },
+   "reload": {
+    "state_equal": true,
+    "value_channels": 4,
+    "prediction": {
+     "rows": 35816,
+     "dtype": "float32",
+     "finite": true,
+     "nonfinite": 0,
+     "max": 0.0,
+     "row": 0,
+     "reference": -0.04656195640563965,
+     "widened": -0.04656195640563965,
+     "differing_rows": 0
+    }
+   },
+   "checkpoint_sha256": "ebafaff645fa16bc58e1e2cae29668ffe0e1bcadd512a5a7394b0d89bb12c19b",
+   "metadata_sha256": "8a81e988620e63de873a1896aba8b4c1317e709f84d55d7f5c5f2da66cf9a58b"
+  }
+ },
+ "timings_seconds": {
+  "data: the whole train split, 932 games / 35816 rows": 0.4,
+  "floors (exact and D4)": 4.9,
+  "c5 float64 CPU values": 75.5,
+  "c5 device values and the batch-split reference": 81.6,
+  "seed 31001: float64 CPU values": 156.0,
+  "seed 31001: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06)": 165.9,
+  "seed 31002: float64 CPU values": 237.1,
+  "seed 31002: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06)": 246.7,
+  "seed 31003: float64 CPU values": 318.1,
+  "seed 31003: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06)": 327.7
+ },
+ "passed": true
+}

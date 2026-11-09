@@ -1,0 +1,13 @@
+1794199418.742193099 __START__
+1794199419.969578669 [d1-full-prepare] data: the whole train split, 932 games / 35816 rows (0 s)
+1794199424.493802917 [d1-full-prepare] floors (exact and D4) (5 s)
+1794199495.093576407 [d1-full-prepare] c5 float64 CPU values (76 s)
+1794199501.106917973 [d1-full-prepare] c5 device values and the batch-split reference (82 s)
+1794199575.577817036 [d1-full-prepare] seed 31001: float64 CPU values (156 s)
+1794199585.457848946 [d1-full-prepare] seed 31001: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06) (166 s)
+1794199656.631446103 [d1-full-prepare] seed 31002: float64 CPU values (237 s)
+1794199666.222245581 [d1-full-prepare] seed 31002: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06) (247 s)
+1794199737.606371018 [d1-full-prepare] seed 31003: float64 CPU values (318 s)
+1794199747.271074012 [d1-full-prepare] seed 31003: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06) (328 s)
+1794199747.283337311 [d1-full-prepare] DONE PASS; 932 games / 35816 rows; floor d4 0.015344; {'data: the whole train split, 932 games / 35816 rows': 0.4, 'floors (exact and D4)': 4.9, 'c5 float64 CPU values': 75.5, 'c5 device values and the batch-split reference': 81.6, 'seed 31001: float64 CPU values': 156.0, "seed 31001: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06)": 165.9, 'seed 31002: float64 CPU values': 237.1, "seed 31002: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06)": 246.7, 'seed 31003: float64 CPU values': 318.1, "seed 31003: widened parent PASS {'bytes': True, 'same_parent_as_earlier': True, 'exact': True, 'device_finite': True, 'reload': True} (float64 max |dv| 5.828670879282072e-16, device float32 max |dv| 1.6223639249801636e-06)": 327.7}
+1794199747.739374698 __EXIT__ 0
