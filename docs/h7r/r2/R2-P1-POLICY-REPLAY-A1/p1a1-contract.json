@@ -6,7 +6,7 @@
   "prepare": true,
   "gate": true,
   "train": true,
-  "arena": false
+  "arena": true
  },
  "goal": "Track B strongest play: a policy candidate stronger than the research champion (H3 policy + c5 value) at the same S50 budget",
  "question": "does a KL(H3 || student) replay term on RenjuNet train positions, added to the c2 policy fine-tune, make the candidate stronger than the champion and better than the unchanged c2 method",
