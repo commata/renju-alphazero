@@ -29,6 +29,10 @@
     "docs/h7c/e2/sb_c5_saturation.json": {
       "path": "docs/h7c/e2/sb_c5_saturation.json",
       "sha256": "952751bf83afefb423521d668bd927e43a7dbad397fb49a958bc3a8516edbae9"
+    },
+    "docs/mcts-v8-results/h3_cache_report.json": {
+      "path": "docs/mcts-v8-results/h3_cache_report.json",
+      "sha256": "b27dd17ed40c7d00f032bed594caf989047610fbccc010e5ce2b4b16bf15ec7d"
     }
   },
   "inputs": {
@@ -50,9 +54,27 @@
       "path": "data/external/renjunet/h3_cache",
       "replay_split": "train",
       "guard_split": "val",
-      "split_sha256": "unset: recorded by prepare",
-      "rule": "train and val game_id sets disjoint; manifest code identity current"
-    }
+      "expected": {
+        "source": "docs/mcts-v8-results/h3_cache_report.json",
+        "format": "h3-cache-v1",
+        "h2_output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+        "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+        "encoder_version": "renju-relative-6p-v1",
+        "action_index_version": "row-major-15x15-v1",
+        "train": {
+          "tensor_sha256": "b48a8735bc6d1c87d7efaca52e7c8bf2838c3090b7639f5e1db2682a89430277",
+          "states": 3178091,
+          "games": 97098
+        },
+        "val": {
+          "tensor_sha256": "96f598810e46e9996317b11e13ff72d1e85a47f46666983cab719eca316bd3e7",
+          "states": 127316,
+          "games": 5354
+        }
+      },
+      "rule": "prepare compares the actual cache with these committed values (never adopts new ones); train and val game_id sets disjoint"
+    },
+    "models_metadata": "each best.json SHA and content (stage, config) checked with its checkpoint"
   },
   "arms": {
     "C": {
@@ -63,12 +85,17 @@
       "cycle": "identical to C (rows, batches, order, generator, steps, coefficients)",
       "replay": {
         "positions": "RenjuNet train split",
-        "loss": "KL(H3 || student), temperature 1",
-        "weight_mu": 0.5,
         "batch": 512,
         "sampling": "uniform with replacement",
-        "generator_seed": "training seed + 1000003",
+        "generator_seed": "training seed + 1000003; draws the indices and the D4 symmetries; the cycle generator is untouched",
         "augment_d4": true,
+        "input": "the same D4-transformed planes and legal mask for H3 and the student",
+        "distribution": "logits masked to -inf off the legal moves, then log_softmax (renormalised over legal moves)",
+        "loss": "per position sum over legal a of p_H3(a) (log p_H3(a) - log p_student(a)); mean over the 512 positions",
+        "temperature": 1,
+        "teacher": "H3, eval mode, no gradient",
+        "weight_mu": 0.5,
+        "total": "L = L_cycle (unchanged definition and batch mean) + mu * KL_replay",
         "added_to": "the unchanged cycle loss (no cycle row is replaced)",
         "human_move_ce": "not used (a later variable)"
       }
@@ -87,7 +114,12 @@
     "guard_drop": 0.02,
     "batchnorm": "eval (parent statistics)",
     "device": "cuda",
-    "selection": "the c2 rule for both arms: guard (RenjuNet val top-1) within guard_drop of H3, lowest cycle val objective; the replay term is not in the selection metric"
+    "selection": "the c2 rule for both arms: guard (RenjuNet val top-1) within guard_drop of H3, lowest cycle val objective; the replay term is not in the selection metric",
+    "warmup_steps": 5,
+    "records": {
+      "cycle_kl": "the existing val metric (policy_objective kl)",
+      "replay_kl": "step mean during training and, at every evaluation, on the whole RenjuNet val split; both arms; no_grad and eval, outside the training path and its generators; never a selection metric"
+    }
   },
   "seeds": {
     "training": [
@@ -96,12 +128,32 @@
       20261112
     ],
     "arena_candidate_training_seed": 20261024,
-    "arena_games": 20261121,
+    "arena_games": {
+      "O0": 8788,
+      "O1": 8789,
+      "O2_aux": 8790
+    },
+    "arena_seed_rule": "H7-R reserved block 8781-8799 (h7r_eval.SEED_BLOCK); unused by committed contracts: 8788-8794; 8795-8796 test fixtures; 8791-8794 left for the confirmation stage",
     "bootstrap": 20261131
   },
   "stages": {
-    "prepare": "full SHA of the cycle rows file and content, H3 and c5 checkpoints and best.json; cache manifest, train / val tensor hashes, counts, disjoint game ids (first recorded); c2 record SHAs",
-    "reproduce": "new trainer, replay off, seed 20261024: the c2 policy_record evaluations (val objective, guard top-1) within 1e-6; checkpoint SHA recorded, not required; a miss stops before any Arena",
+    "prepare": "compare with the committed values: cycle rows file SHA and row counts, H3 and c5 checkpoints and best.json, the H3 cache manifest identity and train / val tensor hashes, states and games; train / val game ids disjoint; the c2 record SHAs",
+    "reproduce": {
+      "run": "new trainer, replay off, seed 20261024, the c2 inputs and settings",
+      "exact": [
+        "input SHAs, settings, parent and teacher identity",
+        "total_steps 96, steps_per_epoch 48, warmup 5",
+        "evaluation steps [10, 19, 29, 38, 48, 58, 67, 77, 86, 96]",
+        "eligibility [true, true, false, false, true, true, false, true, false, false]",
+        "selected step 77"
+      ],
+      "within_1e-6": [
+        "val objective, ce, kl and guard top-1 at every evaluation"
+      ],
+      "recorded_only": "the checkpoint SHA",
+      "miss": "stop before any Arena; the tolerance is never widened afterwards",
+      "premise": "h7c_train.py changed after c7e4123 only on the value side (f0b0022, 0ced742, 76e8a49)"
+    },
     "train": "3 seeds x 2 arms; the arena candidate seed failing stops",
     "link": "T and C of seed 20261024 both CANDIDATE, else stop (no other seed substituted)",
     "arena": "section arena; one run, no resizing, no rerun",
@@ -114,19 +166,54 @@
       "C(20261024) + c5 value, S50"
     ],
     "factory": "analysis.tb_v3_net (v1)",
+    "tool": "scripts/h7r_eval.py play (one suite per arm)",
+    "arms": [
+      {
+        "name": "O0_T_vs_champion",
+        "suite": "docs/h7r/suites/O0.json",
+        "pairs": 300,
+        "pairing": "O0",
+        "seed": 8788
+      },
+      {
+        "name": "O0_C_vs_champion",
+        "suite": "docs/h7r/suites/O0.json",
+        "pairs": 300,
+        "pairing": "O0",
+        "seed": 8788
+      },
+      {
+        "name": "O1_T_vs_champion",
+        "suite": "docs/h7r/suites/O1.json",
+        "pairs": 300,
+        "pairing": "O1",
+        "seed": 8789
+      },
+      {
+        "name": "O1_C_vs_champion",
+        "suite": "docs/h7r/suites/O1.json",
+        "pairs": 300,
+        "pairing": "O1",
+        "seed": 8789
+      }
+    ],
     "suites": [
       {
         "path": "docs/h7r/suites/O0.json",
-        "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+        "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9",
+        "openings": 300,
+        "classes": 75
       },
       {
         "path": "docs/h7r/suites/O1.json",
-        "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
+        "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9",
+        "openings": 300,
+        "classes": 298
       }
     ],
-    "openings": 600,
-    "pairs_per_arm": 600,
-    "pairing": "T and C on the same openings and game seeds",
+    "pairs_per_condition": 600,
+    "pairing": "within a suite T and C share openings, game seeds and pairing",
+    "sample_note": "O0 has 75 symmetry classes: 600 pairs are not 600 independent samples",
     "not_used": [
       "docs/h7r/suites/O1-confirm-main.json",
       "docs/h7r/suites/O1-confirm-anchor.json"
@@ -154,17 +241,53 @@
           12.2
         ]
       },
-      "estimate_hours": {
-        "per_arm": [
-          1.4,
-          1.6
+      "estimate_minutes_per_arm": {
+        "O0": [
+          55,
+          61
         ],
-        "both": 3.0
+        "O1": [
+          29,
+          37
+        ]
       },
+      "estimate_hours_four_arms": [
+        2.8,
+        3.3
+      ],
       "smoke": "first 10 pairs of each arm re-estimate the cost; the estimate never changes the size"
     },
     "auxiliary": {
-      "arms": "seeds 20261111 and 20261112, T and C vs the champion, 25 pairs each (first 25 of O2)",
+      "arms": [
+        {
+          "name": "O2aux_T20261111_vs_champion",
+          "suite": "docs/h7r/suites/O2.json",
+          "pairs": 25,
+          "pairing": "O2_aux",
+          "seed": 8790
+        },
+        {
+          "name": "O2aux_C20261111_vs_champion",
+          "suite": "docs/h7r/suites/O2.json",
+          "pairs": 25,
+          "pairing": "O2_aux",
+          "seed": 8790
+        },
+        {
+          "name": "O2aux_T20261112_vs_champion",
+          "suite": "docs/h7r/suites/O2.json",
+          "pairs": 25,
+          "pairing": "O2_aux",
+          "seed": 8790
+        },
+        {
+          "name": "O2aux_C20261112_vs_champion",
+          "suite": "docs/h7r/suites/O2.json",
+          "pairs": 25,
+          "pairing": "O2_aux",
+          "seed": 8790
+        }
+      ],
       "use": "descriptive only: never a reading, a stability verdict or a promotion ground"
     }
   },
@@ -176,16 +299,20 @@
         "seed": 20261131,
         "method": "percentile",
         "unit": "opening pair"
-      }
+      },
+      "stratified": "resample openings within each suite (300 and 300 fixed); the T and C results of a drawn opening move together",
+      "combined": "0.5 x O0 mean + 0.5 x O1 mean (fixed weights)",
+      "per_suite": "h7r_eval.arm_summary reported too",
+      "sensitivity": "class-level stratified bootstrap (classes resampled within a suite, all their openings together, the same 50:50 weights); reported, not read"
     },
     "P": {
-      "what": "T vs champion (h7r_eval.arm_summary)",
+      "what": "T vs champion: combined score - 0.5 (stratified, 50:50)",
       "STRONGER": "one-sided lower bound of score - 0.5 > 0",
       "WEAKER": "one-sided upper bound < 0",
       "else": "NOT_ESTABLISHED"
     },
     "D": {
-      "what": "T - C on the same opening pairs (h7r_eval.anchor_difference)",
+      "what": "T - C pair-score differences on the same openings (stratified, 50:50)",
       "BETTER_THAN_CONTROL": "one-sided lower bound > 0",
       "WORSE_THAN_CONTROL": "one-sided upper bound < 0",
       "else": "NOT_ESTABLISHED",
@@ -201,7 +328,7 @@
     "end": "P not STRONGER ends the contract; another weight or the human-move CE is a new contract"
   },
   "separate_stages": [
-    "independent confirmation (confirmation suites, new seeds, H-conf selection quality)",
+    "independent confirmation (confirmation suites, seeds 8791-8794, H-conf selection quality)",
     "anchor non-inferiority (original H3 / H6), tactical v2, per-move time gate",
     "champion, canonical and web changes",
     "search-budget engine candidates (e.g. S400)",
@@ -221,7 +348,14 @@
       "src/hybrid/h7r_p1_train.py",
       "scripts/h7r_p1.py",
       "tests/test_h7r_p1.py"
-    ]
+    ],
+    "judge": "scripts/h7r_p1.py judge: reads the verified h7r_eval arm records; the stratified 50:50 paired bootstrap and the class sensitivity",
+    "arena_contract": "scripts/h7r_p1.py arena-contract: the h7r_eval-format contract (eight arms, seeds 8788-8790) from the link record and the experiment_sha256, after training and before any result"
   },
-  "data_rule": "RenjuNet-derived data, caches and models stay under data/ or runs/; only hashes and numbers are committed"
+  "data_rule": "RenjuNet-derived data, caches and models stay under data/ or runs/; only hashes and numbers are committed",
+  "identity": {
+    "experiment_sha256": "sha256 of the canonical JSON of this contract without \"approved\"; links prepare, train, link and Arena records",
+    "contract_file_sha256": "recorded separately by every run (changes with approval commits)"
+  },
+  "fixing": "implement and test first, then fill the final source SHAs and set status fixed"
 }
