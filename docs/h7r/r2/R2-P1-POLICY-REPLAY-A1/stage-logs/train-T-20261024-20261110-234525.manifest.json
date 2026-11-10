@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "train-T-20261024-20261110-234525.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-P1-POLICY-REPLAY-A1/logs/train-T-20261024-20261110-234525.log",
+   "copy": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/stage-logs/train-T-20261024-20261110-234525.log",
+   "bytes": 1154,
+   "sha256": "ae4fc81da15119afcec74b121817215aee855bdce4c00c631e8bb9ea6b21e483"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
