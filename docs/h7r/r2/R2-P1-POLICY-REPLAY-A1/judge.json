@@ -1,0 +1,311 @@
+{
+ "format": "h7r-p1a1-judge-v1",
+ "contract_id": "R2-P1-POLICY-REPLAY-A1",
+ "experiment_sha256": "faeb72b0f625baba213cc88504388dcd1d5eed03a16307de8da2217583c02648",
+ "contract_file_sha256": "164bc0f51b0c2b66dbe7da92dcd0acd661102f98f36b1ebd1acc788b6e9bc254",
+ "git": {
+  "commit": "2a179b7bf1bccc42f010b088169ab783a6aa3b58",
+  "dirty": false
+ },
+ "arena_contract_sha256": "94b9603d12f378d65f0b3ff858e4735a4cb4be528ef475319dfa4828d69091e6",
+ "arm_records_sha256": {
+  "O0_T_vs_champion": "30e20048b3809c3f3169a3c31b5b9c659e4b23e0122aff4aebd47283ca460eec",
+  "O0_C_vs_champion": "e71c3e0033ca55014d08d26a52759ac11c341c43da909a3251a8b901e4c234f9",
+  "O1_T_vs_champion": "6eea8f689f98dd1b061a5f97b7b3624cdc9120ae0e1870249f82d4f39d3e70fd",
+  "O1_C_vs_champion": "90e31592a000a0db9db1276dc34ef37463c1ac0ff6d9263ff3632bf434edb419",
+  "O2aux_T20261111_vs_champion": "692d6b1f96e6076dd488f329ef6c632479bbd9d889cb22034d27c54a79a4980b",
+  "O2aux_C20261111_vs_champion": "91b47e6f0ef9aa38bab0942ce4f2d2031899705586e9ac36456259983ee043f9",
+  "O2aux_T20261112_vs_champion": "707e0a56dd556196b706f395b05742fb6e89f17f80bfec6223c8afc9c404b407",
+  "O2aux_C20261112_vs_champion": "5235911b0df14919f4d058e67402dbc132a133f7104380c057e0e51174af8fe5"
+ },
+ "readings": {
+  "P": "NOT_ESTABLISHED",
+  "D": "BETTER_THAN_CONTROL"
+ },
+ "interpretation": "the policy-preserving term helped over the old method, consistent with the knowledge-loss hypothesis; not stronger than the champion (regression mitigated only)",
+ "bounds": {
+  "P": {
+   "estimate": -0.012917,
+   "lower_one_sided": -0.03458,
+   "upper_one_sided": 0.00875
+  },
+  "D": {
+   "estimate": 0.031667,
+   "lower_one_sided": 0.01083,
+   "upper_one_sided": 0.0525
+  },
+  "unit": "opening",
+  "units": {
+   "O0": 300,
+   "O1": 300
+  }
+ },
+ "sensitivity_class_level": {
+  "bounds": {
+   "P": {
+    "estimate": -0.012917,
+    "lower_one_sided": -0.034,
+    "upper_one_sided": 0.00858
+   },
+   "D": {
+    "estimate": 0.031667,
+    "lower_one_sided": 0.00887,
+    "upper_one_sided": 0.05489
+   },
+   "unit": "class",
+   "units": {
+    "O0": 75,
+    "O1": 298
+   }
+  },
+  "readings": {
+   "P": "NOT_ESTABLISHED",
+   "D": "BETTER_THAN_CONTROL"
+  },
+  "same_as_main": true
+ },
+ "per_arm": {
+  "O0_T_vs_champion": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 244,
+   "score_split": 116,
+   "score_split_positive": 45,
+   "score_split_negative": 71,
+   "distinct_classes": 75,
+   "score": 0.46917,
+   "improvement": -0.03083,
+   "ci95": [
+    -0.0625,
+    0.00083
+   ],
+   "lower_one_sided": -0.0625,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.283,
+   "score_by_tested_colour": {
+    "black": 0.57667,
+    "white": 0.36167
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O0_C_vs_champion": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 258,
+   "score_split": 139,
+   "score_split_positive": 46,
+   "score_split_negative": 93,
+   "distinct_classes": 75,
+   "score": 0.43167,
+   "improvement": -0.06833,
+   "ci95": [
+    -0.1025,
+    -0.03417
+   ],
+   "lower_one_sided": -0.1025,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.30193,
+   "score_by_tested_colour": {
+    "black": 0.51667,
+    "white": 0.34667
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O1_T_vs_champion": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 201,
+   "score_split": 89,
+   "score_split_positive": 46,
+   "score_split_negative": 43,
+   "distinct_classes": 298,
+   "score": 0.505,
+   "improvement": 0.005,
+   "ci95": [
+    -0.02417,
+    0.03417
+   ],
+   "lower_one_sided": -0.02417,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.25572,
+   "score_by_tested_colour": {
+    "black": 0.545,
+    "white": 0.465
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O1_C_vs_champion": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 223,
+   "score_split": 94,
+   "score_split_positive": 41,
+   "score_split_negative": 53,
+   "distinct_classes": 298,
+   "score": 0.47917,
+   "improvement": -0.02083,
+   "ci95": [
+    -0.05,
+    0.00917
+   ],
+   "lower_one_sided": -0.05,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.26415,
+   "score_by_tested_colour": {
+    "black": 0.525,
+    "white": 0.43333
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O2aux_T20261111_vs_champion": {
+   "pairs": 25,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 19,
+   "score_split": 9,
+   "score_split_positive": 4,
+   "score_split_negative": 5,
+   "distinct_classes": 16,
+   "score": 0.47,
+   "improvement": -0.03,
+   "ci95": [
+    -0.14,
+    0.08
+   ],
+   "lower_one_sided": -0.14,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.28566,
+   "score_by_tested_colour": {
+    "black": 0.52,
+    "white": 0.42
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O2aux_C20261111_vs_champion": {
+   "pairs": 25,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 21,
+   "score_split": 9,
+   "score_split_positive": 5,
+   "score_split_negative": 4,
+   "distinct_classes": 16,
+   "score": 0.5,
+   "improvement": 0.0,
+   "ci95": [
+    -0.1,
+    0.1
+   ],
+   "lower_one_sided": -0.1,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.24495,
+   "score_by_tested_colour": {
+    "black": 0.46,
+    "white": 0.54
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O2aux_T20261112_vs_champion": {
+   "pairs": 25,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 18,
+   "score_split": 9,
+   "score_split_positive": 5,
+   "score_split_negative": 4,
+   "distinct_classes": 16,
+   "score": 0.52,
+   "improvement": 0.02,
+   "ci95": [
+    -0.09,
+    0.13
+   ],
+   "lower_one_sided": -0.09,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.27313,
+   "score_by_tested_colour": {
+    "black": 0.54,
+    "white": 0.5
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O2aux_C20261112_vs_champion": {
+   "pairs": 25,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 21,
+   "score_split": 14,
+   "score_split_positive": 6,
+   "score_split_negative": 8,
+   "distinct_classes": 16,
+   "score": 0.44,
+   "improvement": -0.06,
+   "ci95": [
+    -0.2,
+    0.08
+   ],
+   "lower_one_sided": -0.2,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.34843,
+   "score_by_tested_colour": {
+    "black": 0.46,
+    "white": 0.42
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  }
+ },
+ "auxiliary_note": "auxiliary arms (O2aux_*) are descriptive only",
+ "end": "P is not STRONGER: the contract ends"
+}

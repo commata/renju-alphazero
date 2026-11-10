@@ -1,0 +1,76 @@
+[h7r-play] R2-P1-A1-ARENA-1 O0_C_vs_champion: 600 games (0 done), workers 6, signature 6ecdc3e24e07
+[h7r-play] 16/600 games  2.7%  1.1 min  ETA 40 min  16/600 games
+[h7r-play] 39/600 games  6.5%  2.1 min  ETA 31 min  39/600 games
+[h7r-play] 53/600 games  8.8%  3.1 min  ETA 32 min  53/600 games
+[h7r-play] 71/600 games  11.8%  4.2 min  ETA 31 min  71/600 games
+[h7r-play] 87/600 games  14.5%  5.2 min  ETA 31 min  87/600 games
+[h7r-play] 94/600 games  15.7%  6.5 min  ETA 35 min  94/600 games
+[h7r-play] 104/600 games  17.3%  7.6 min  ETA 36 min  104/600 games
+[h7r-play] 117/600 games  19.5%  8.6 min  ETA 35 min  117/600 games
+[h7r-play] 136/600 games  22.7%  9.6 min  ETA 33 min  136/600 games
+[h7r-play] 148/600 games  24.7%  10.9 min  ETA 33 min  148/600 games
+[h7r-play] 163/600 games  27.2%  12.0 min  ETA 32 min  163/600 games
+[h7r-play] 175/600 games  29.2%  13.1 min  ETA 32 min  175/600 games
+[h7r-play] 181/600 games  30.2%  14.4 min  ETA 33 min  181/600 games
+[h7r-play] 198/600 games  33.0%  15.4 min  ETA 31 min  198/600 games
+[h7r-play] 215/600 games  35.8%  16.5 min  ETA 29 min  215/600 games
+[h7r-play] 230/600 games  38.3%  17.5 min  ETA 28 min  230/600 games
+[h7r-play] 240/600 games  40.0%  18.7 min  ETA 28 min  240/600 games
+[h7r-play] 257/600 games  42.8%  19.8 min  ETA 26 min  257/600 games
+[h7r-play] 266/600 games  44.3%  21.0 min  ETA 26 min  266/600 games
+[h7r-play] 282/600 games  47.0%  22.1 min  ETA 25 min  282/600 games
+[h7r-play] 297/600 games  49.5%  23.2 min  ETA 24 min  297/600 games
+[h7r-play] 306/600 games  51.0%  24.2 min  ETA 23 min  306/600 games
+[h7r-play] 319/600 games  53.2%  25.3 min  ETA 22 min  319/600 games
+[h7r-play] 333/600 games  55.5%  26.5 min  ETA 21 min  333/600 games
+[h7r-play] 347/600 games  57.8%  27.5 min  ETA 20 min  347/600 games
+[h7r-play] 369/600 games  61.5%  28.5 min  ETA 18 min  369/600 games
+[h7r-play] 385/600 games  64.2%  29.6 min  ETA 17 min  385/600 games
+[h7r-play] 405/600 games  67.5%  30.6 min  ETA 15 min  405/600 games
+[h7r-play] 420/600 games  70.0%  31.6 min  ETA 14 min  420/600 games
+[h7r-play] 430/600 games  71.7%  32.6 min  ETA 13 min  430/600 games
+[h7r-play] 444/600 games  74.0%  33.7 min  ETA 12 min  444/600 games
+[h7r-play] 459/600 games  76.5%  34.7 min  ETA 11 min  459/600 games
+[h7r-play] 478/600 games  79.7%  35.7 min  ETA 9 min  478/600 games
+[h7r-play] 511/600 games  85.2%  36.8 min  ETA 6 min  511/600 games
+[h7r-play] 520/600 games  86.7%  38.0 min  ETA 6 min  520/600 games
+[h7r-play] 527/600 games  87.8%  39.1 min  ETA 5 min  527/600 games
+[h7r-play] 538/600 games  89.7%  40.1 min  ETA 5 min  538/600 games
+[h7r-play] 549/600 games  91.5%  41.2 min  ETA 4 min  549/600 games
+[h7r-play] 563/600 games  93.8%  42.2 min  ETA 3 min  563/600 games
+[h7r-play] 573/600 games  95.5%  43.2 min  ETA 2 min  573/600 games
+[h7r-play] 584/600 games  97.3%  44.3 min  ETA 1 min  584/600 games
+[h7r-play] 598/600 games  99.7%  45.3 min  ETA 0 min  598/600 games
+[h7r-play] 599/600 games  99.8%  46.5 min  ETA 0 min  599/600 games, 1 pending
+[h7r-play] 600/600 games  100.0%  46.8 min  ETA 0 min  600/600 games
+{
+ "pairs": 300,
+ "valid": true,
+ "opponent_illegal_pairs": [],
+ "tested_illegal": 0,
+ "move_split": 258,
+ "score_split": 139,
+ "score_split_positive": 46,
+ "score_split_negative": 93,
+ "distinct_classes": 75,
+ "score": 0.43167,
+ "improvement": -0.06833,
+ "ci95": [
+  -0.1025,
+  -0.03417
+ ],
+ "lower_one_sided": -0.1025,
+ "alpha_one_sided": 0.025,
+ "pair_sd": 0.30193,
+ "score_by_tested_colour": {
+  "black": 0.51667,
+  "white": 0.34667
+ },
+ "bootstrap": {
+  "samples": 20000,
+  "seed": 20261131,
+  "method": "percentile",
+  "unit": "opening pair"
+ }
+}
+__EXIT__ 0

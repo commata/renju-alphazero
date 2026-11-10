@@ -1,0 +1,8 @@
+{
+ "readings": {
+  "P": "NOT_ESTABLISHED",
+  "D": "BETTER_THAN_CONTROL"
+ },
+ "interpretation": "the policy-preserving term helped over the old method, consistent with the knowledge-loss hypothesis; not stronger than the champion (regression mitigated only)"
+}
+__EXIT__ 0

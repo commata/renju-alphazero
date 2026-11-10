@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "play-O2aux_C20261111_vs_champion-20261111-004427.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-P1-POLICY-REPLAY-A1/logs/play-O2aux_C20261111_vs_champion-20261111-004427.log",
+   "copy": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/stage-logs/play-O2aux_C20261111_vs_champion-20261111-004427.log",
+   "bytes": 958,
+   "sha256": "af5da12f8014b0276dc155e22b5e2143bcfca46aa3975cb29c4045434757194e"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

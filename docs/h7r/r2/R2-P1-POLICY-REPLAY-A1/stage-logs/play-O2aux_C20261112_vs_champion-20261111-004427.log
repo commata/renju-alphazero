@@ -1,0 +1,36 @@
+[h7r-play] R2-P1-A1-ARENA-1 O2aux_C20261112_vs_champion: 50 games (0 done), workers 6, signature 0e8b26435163
+[h7r-play] 15/50 games  30.0%  1.1 min  ETA 3 min  15/50 games
+[h7r-play] 28/50 games  56.0%  2.2 min  ETA 2 min  28/50 games
+[h7r-play] 40/50 games  80.0%  3.3 min  ETA 1 min  40/50 games
+[h7r-play] 50/50 games  100.0%  4.4 min  ETA 0 min  50/50 games
+{
+ "pairs": 25,
+ "valid": true,
+ "opponent_illegal_pairs": [],
+ "tested_illegal": 0,
+ "move_split": 21,
+ "score_split": 14,
+ "score_split_positive": 6,
+ "score_split_negative": 8,
+ "distinct_classes": 16,
+ "score": 0.44,
+ "improvement": -0.06,
+ "ci95": [
+  -0.2,
+  0.08
+ ],
+ "lower_one_sided": -0.2,
+ "alpha_one_sided": 0.025,
+ "pair_sd": 0.34843,
+ "score_by_tested_colour": {
+  "black": 0.46,
+  "white": 0.42
+ },
+ "bootstrap": {
+  "samples": 20000,
+  "seed": 20261131,
+  "method": "percentile",
+  "unit": "opening pair"
+ }
+}
+__EXIT__ 0

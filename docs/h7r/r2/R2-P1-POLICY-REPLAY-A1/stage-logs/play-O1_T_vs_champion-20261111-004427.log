@@ -1,0 +1,60 @@
+[h7r-play] R2-P1-A1-ARENA-1 O1_T_vs_champion: 600 games (0 done), workers 6, signature 3b9fa56ee486
+[h7r-play] 24/600 games  4.0%  1.0 min  ETA 25 min  24/600 games
+[h7r-play] 44/600 games  7.3%  2.2 min  ETA 27 min  44/600 games
+[h7r-play] 64/600 games  10.7%  3.2 min  ETA 27 min  64/600 games
+[h7r-play] 84/600 games  14.0%  4.2 min  ETA 26 min  84/600 games
+[h7r-play] 97/600 games  16.2%  5.2 min  ETA 27 min  97/600 games
+[h7r-play] 117/600 games  19.5%  6.2 min  ETA 26 min  117/600 games
+[h7r-play] 142/600 games  23.7%  7.2 min  ETA 23 min  142/600 games
+[h7r-play] 165/600 games  27.5%  8.3 min  ETA 22 min  165/600 games
+[h7r-play] 191/600 games  31.8%  9.3 min  ETA 20 min  191/600 games
+[h7r-play] 217/600 games  36.2%  10.3 min  ETA 18 min  217/600 games
+[h7r-play] 242/600 games  40.3%  11.3 min  ETA 17 min  242/600 games
+[h7r-play] 262/600 games  43.7%  12.4 min  ETA 16 min  262/600 games
+[h7r-play] 277/600 games  46.2%  13.4 min  ETA 16 min  277/600 games
+[h7r-play] 296/600 games  49.3%  14.4 min  ETA 15 min  296/600 games
+[h7r-play] 325/600 games  54.2%  15.5 min  ETA 13 min  325/600 games
+[h7r-play] 347/600 games  57.8%  16.8 min  ETA 12 min  347/600 games
+[h7r-play] 368/600 games  61.3%  17.9 min  ETA 11 min  368/600 games
+[h7r-play] 384/600 games  64.0%  19.0 min  ETA 11 min  384/600 games
+[h7r-play] 396/600 games  66.0%  20.0 min  ETA 10 min  396/600 games
+[h7r-play] 417/600 games  69.5%  21.0 min  ETA 9 min  417/600 games
+[h7r-play] 447/600 games  74.5%  22.1 min  ETA 8 min  447/600 games
+[h7r-play] 478/600 games  79.7%  23.1 min  ETA 6 min  478/600 games
+[h7r-play] 490/600 games  81.7%  24.2 min  ETA 5 min  490/600 games
+[h7r-play] 510/600 games  85.0%  25.2 min  ETA 4 min  510/600 games
+[h7r-play] 541/600 games  90.2%  26.2 min  ETA 3 min  541/600 games
+[h7r-play] 564/600 games  94.0%  27.2 min  ETA 2 min  564/600 games
+[h7r-play] 588/600 games  98.0%  28.2 min  ETA 1 min  588/600 games
+[h7r-play] 600/600 games  100.0%  29.2 min  ETA 0 min  600/600 games
+{
+ "pairs": 300,
+ "valid": true,
+ "opponent_illegal_pairs": [],
+ "tested_illegal": 0,
+ "move_split": 201,
+ "score_split": 89,
+ "score_split_positive": 46,
+ "score_split_negative": 43,
+ "distinct_classes": 298,
+ "score": 0.505,
+ "improvement": 0.005,
+ "ci95": [
+  -0.02417,
+  0.03417
+ ],
+ "lower_one_sided": -0.02417,
+ "alpha_one_sided": 0.025,
+ "pair_sd": 0.25572,
+ "score_by_tested_colour": {
+  "black": 0.545,
+  "white": 0.465
+ },
+ "bootstrap": {
+  "samples": 20000,
+  "seed": 20261131,
+  "method": "percentile",
+  "unit": "opening pair"
+ }
+}
+__EXIT__ 0
