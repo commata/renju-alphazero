@@ -1,0 +1,58 @@
+{
+ "format": "h7r-p1a1-prepare-v1",
+ "contract_id": "R2-P1-POLICY-REPLAY-A1",
+ "experiment_sha256": "faeb72b0f625baba213cc88504388dcd1d5eed03a16307de8da2217583c02648",
+ "contract_file_sha256": "f6875a15707c9fbbc02d6fcdc00a7bdde6e0d3198ffdab9fb4fe147d1e59e0cb",
+ "git": {
+  "commit": "35f93340f27e6fd44671ad2ed32a48a1d86a2254",
+  "dirty": false
+ },
+ "passed": true,
+ "checks": {
+  "cycle_rows": {
+   "sha256": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71",
+   "train": 24077,
+   "val": 1423
+  },
+  "h3": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+  },
+  "c5_value": {
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "cache": {
+   "train": {
+    "states": 3178091,
+    "tensor_sha256": "b48a8735bc6d1c87d7efaca52e7c8bf2838c3090b7639f5e1db2682a89430277"
+   },
+   "val": {
+    "states": 127316,
+    "tensor_sha256": "96f598810e46e9996317b11e13ff72d1e85a47f46666983cab719eca316bd3e7"
+   }
+  },
+  "cache_games_disjoint": true,
+  "evidence": [
+   "docs/h7c/c1/arena_verdict.json",
+   "docs/h7c/c2/arena_verdict.json",
+   "docs/h7c/c2/policy_best.json",
+   "docs/h7c/c2/policy_record.json",
+   "docs/h7c/e2/sb_c5_saturation.json",
+   "docs/h7r/r2/R2-P1-DIAG-1/diagnosis.json",
+   "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/p1-contract.json",
+   "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/reproduce.json",
+   "docs/mcts-v8-results/h3_cache_report.json"
+  ],
+  "input_files_sha256": {
+   "data/external/renjunet/h3_cache/manifest.json": "22a9a3e3cd2445a366a3fe746732b7ce68f3c8e826e41ea21c99269024d2cee9",
+   "data/external/renjunet/h3_cache/train.pt": "79aee8ea28b6006b58c682831c56608c487fa55a5314afa2ed8ef656f20c8425",
+   "data/external/renjunet/h3_cache/val.pt": "ec05e5f4f56187e6f515ee2c6d8bce0fa7f41b22cd40139dd61553e887c6f059",
+   "runs/h3_policy_64x4/best.json": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "runs/h3_policy_64x4/best.pt": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "runs/h7c/c2/policy_rows.jsonl.gz": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71",
+   "runs/h7c/c5/value/best.json": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1",
+   "runs/h7c/c5/value/best.pt": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024"
+  }
+ }
+}
