@@ -1,6 +1,6 @@
 # R2-P1-POLICY-REPLAY-A1: 결정론 동등성 gate를 둔 policy replay 대조 실험
 
-- 상태: prepare PASS(`03d3ec5`), gate 승인(`a0f2987`)·PASS(`b3eb145`). train·arena는 미승인
+- 상태: prepare PASS(`03d3ec5`), gate PASS(`b3eb145`), train 승인(`672188f`)·본학습 6회 완료(`35c2068`–`007f907`). link·arena는 아직
 - 사용자 결정(2026-11-10): A1을 채택한다.
   - 과거 c2의 수치, eligibility, 선택 step은 참고 기록으로 둔다.
   - 입력, 모델 신원, 학습 설정과 step 구조는 계속 엄격히 검사한다.
@@ -536,5 +536,28 @@ a1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
 - **범위**: 이 결과는 이번 입력, seed 20261024, 이 기계(RTX 5070)와 결정론 설정에서 비교한 기록과 출력 해시가 같았다는 뜻이다. 모든 입력·seed·환경에서 두 trainer가 같다는 증명은 아니다. 비교는 커밋된 기록(손실, 평가값, state·log-확률 해시)으로 했고, `runs/`의 state·log-확률 원본 파일을 따로 다시 해시하지는 않았다.
 - c2 참고 기록(판정 아님): E1–E3은 평가 10부터 c2와 다르고(val objective 최대 1.05e-4), eligibility와 선택 step 77은 c2와 같다. E4·E5는 replay가 켜져 있으므로 c2와 다른 것이 당연하다.
 - E4·E5의 결과는 replay 경로가 결정론 설정에서 돌고 반복된다는 확인일 뿐이다. 학습 효과로 읽지 않고, 그 state도 쓰지 않는다.
-- 다음 단계는 train 승인 뒤의 a1-2(본학습 6회)다.
+
+### 8.3 본학습 6회: 모두 완료 (`35c2068`–`007f907`, 2026-11-10)
+
+- 6회 모두 exit 0이다. 실행마다 기록과 로그를 따로 커밋했고, 로그 6개는 manifest의 SHA와 같으며 `__EXIT__ 0`으로 끝난다.
+- 기록 6개에서 확인한 것(위반 없음)
+  - 실험 `faeb72b0f625`, 계약 파일 SHA `b523423e7a7f`(train 승인 커밋), clean
+  - arm·seed, 학습 설정(seed 외에는 c2와 같음), device cuda
+  - 수치 설정이 gate와 같음. gate 기록 SHA가 기록에 남아 있음
+  - step 구조(96 / 48 / warmup 5 / 평가 step 10개), 행 수, 입력 SHA, 초기 state
+  - C는 replay 없음, T는 μ 0.5·batch 512·생성기 seed(학습 seed + 1000003). 6회 모두 진단 on
+  - verdict와 후보 checkpoint가 짝이 맞음. 선택된 평가는 모두 eligible
+- seed 20261024의 C와 T는 각각 gate의 E2, E4와 학습 기록·지문·state 해시·고정 국면 log-확률 해시가 같다. gate와 본학습이 같은 진입점·설정으로 같은 계산을 했다(이 입력·seed·기계에서).
+
+| 실행 | verdict | 선택 step | eligibility | val objective | guard top-1 (H3 0.5241) | 후보 checkpoint |
+|---|---|---:|---|---:|---:|---|
+| C-20261024 | CANDIDATE | 77 | TTFFTTFTFF | 1.9761 | 0.5047 | `725735add22c` |
+| T-20261024 | CANDIDATE | 96 | 10회 모두 T | 1.9812 | 0.5178 | `ae4e6d9319c2` |
+| C-20261111 | CANDIDATE | 58 | TTTFFTFFFF | 1.9833 | 0.5052 | `2482d2a64061` |
+| T-20261111 | CANDIDATE | 96 | 10회 모두 T | 1.9827 | 0.5174 | `2334ece22671` |
+| C-20261112 | CANDIDATE | 77 | TTTTFFTTFF | 1.9788 | 0.5047 | `bab73aa5619b` |
+| T-20261112 | CANDIDATE | 96 | 10회 모두 T | 1.9841 | 0.5178 | `1c4e53115c04` |
+
+- 위 값은 학습 기록의 서술이다. 기력 판단은 계약대로 Arena(P, D)에서만 한다.
+- 6회 모두 후보가 있으므로 link의 조건(후보 seed 20261024의 T·C 모두 CANDIDATE)은 충족된다. 아직 link 기록은 만들지 않았다(클라우드에서 계산만 확인).
 
