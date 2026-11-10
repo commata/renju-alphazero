@@ -51,12 +51,14 @@ def digest(value) -> str:
 
 
 def state_sha256(state: dict) -> str:
+    from hybrid.h3_cache import tensor_bytes  # no NumPy: the desktop venv has none
+
     h = hashlib.sha256()
     for k in sorted(state):
         t = state[k].detach().cpu().contiguous()
         h.update(k.encode())
         h.update(str(t.dtype).encode())
-        h.update(t.numpy().tobytes())
+        h.update(tensor_bytes(t))
     return h.hexdigest()
 
 
@@ -199,8 +201,9 @@ def run_one(c: dict, checked: dict, trainer: str, diag: bool, deterministic: boo
         torch.save({k: v.detach().cpu() for k, v in result['state'].items()}, out / 'state.pt')
         logits = fixed_logits(parent, checked, device)
         torch.save(logits, out / 'logits.pt')
-        record['fixed_logits'] = {'positions': int(logits.shape[0]), 'sha256': hashlib.sha256(
-            logits.numpy().tobytes()).hexdigest()}
+        from hybrid.h3_cache import tensor_bytes
+        record['fixed_logits'] = {'positions': int(logits.shape[0]),
+                                  'sha256': hashlib.sha256(tensor_bytes(logits)).hexdigest()}
     (out / 'record.json').write_text(json.dumps(record, indent=1) + '\n', encoding='utf-8')
     return record
 

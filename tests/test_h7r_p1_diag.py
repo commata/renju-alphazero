@@ -73,6 +73,23 @@ class DiagTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'never overwritten'):
             self.run_it('old-1', 'old')
 
+    def test_a_run_and_compare_need_no_numpy(self):  # the desktop venv has no NumPy
+        from unittest import mock
+        with mock.patch.object(torch.Tensor, 'numpy', side_effect=RuntimeError('Numpy is not available')):
+            with self.assertRaisesRegex(RuntimeError, 'Numpy'):
+                torch.zeros(1).numpy()
+            a = self.run_it('old-1', 'old')
+            b = self.run_it('new-diag-1', 'new', diag=True)
+            (self.root / 'c2.json').write_text(json.dumps({'evaluations': a['evaluations'],
+                                                           'best': {'step': a['selected_step']},
+                                                           'teacher_guard': {'top1': a['teacher_guard_top1']},
+                                                           'parent_val': a['parent_val']}))
+            out = dg.compare(self.root / 'runs', 'c2.json', self.root)
+        self.assertEqual(a['selected_state_sha256'], b['selected_state_sha256'])
+        self.assertEqual(len(a['selected_state_sha256']), 64)
+        self.assertEqual(a['fixed_logits'], b['fixed_logits'])
+        self.assertEqual(len(out['against_c2']), 2)
+
     def test_compare_finds_where_runs_part(self):
         a = self.run_it('old-1', 'old')
         b_dir = self.root / 'runs' / 'old-2'
