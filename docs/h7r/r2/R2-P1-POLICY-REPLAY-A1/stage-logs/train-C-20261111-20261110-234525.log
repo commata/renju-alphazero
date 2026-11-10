@@ -1,0 +1,18 @@
+/home/tack/renju-h6/.venv/lib/python3.12/site-packages/torch/_subclasses/functional_tensor.py:368: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:84.)
+  cpu = _conversion_method_template(device=torch.device("cpu"))
+[h7r-p1-policy] step 10/96 val 2.0146 guard top-1 0.5134 (H3 0.5241)
+[h7r-p1-policy] step 19/96 val 1.9948 guard top-1 0.5079 (H3 0.5241)
+[h7r-p1-policy] step 29/96 val 1.9939 guard top-1 0.5049 (H3 0.5241)
+[h7r-p1-policy] step 38/96 val 1.9884 guard top-1 0.5023 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 48/96 val 1.9825 guard top-1 0.5030 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 58/96 val 1.9833 guard top-1 0.5052 (H3 0.5241)
+[h7r-p1-policy] step 67/96 val 1.9798 guard top-1 0.5033 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 77/96 val 1.9784 guard top-1 0.5027 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 86/96 val 1.9774 guard top-1 0.5034 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 96/96 val 1.9773 guard top-1 0.5026 (H3 0.5241) NOT eligible
+{
+ "verdict": "CANDIDATE",
+ "selected_state_sha256": "b515d8c1416accf6e34b967f7cd91244da93bff780dc4a9c81c2c202fd30b3ea",
+ "seconds": 88.7
+}
+__EXIT__ 0
