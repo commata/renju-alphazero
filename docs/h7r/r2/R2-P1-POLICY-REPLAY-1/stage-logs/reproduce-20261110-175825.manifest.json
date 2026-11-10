@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "reproduce-20261110-175825.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-P1-POLICY-REPLAY-1/logs/reproduce-20261110-175825.log",
+   "copy": "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/stage-logs/reproduce-20261110-175825.log",
+   "bytes": 1127,
+   "sha256": "6180a384351ab0d64caa9ced2c1170fb809ef0e2b111d6104b309700b30ee13a"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
