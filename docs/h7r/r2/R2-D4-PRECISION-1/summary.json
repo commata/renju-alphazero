@@ -1,0 +1,254 @@
+{
+ "format": "h7r-d4-precision-v1",
+ "mode": "summary",
+ "fixed": {
+  "effects": [
+   0.02,
+   0.03,
+   0.05
+  ],
+  "primary_effect": 0.03,
+  "power": 0.8,
+  "alpha_one_sided": 0.025,
+  "budget_hours": 24.0,
+  "primary_pairs": 3
+ },
+ "studies": {
+  "D1": {
+   "summary": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/full/summary.json",
+   "reading": "NOT_ESTABLISHED",
+   "comparisons": {
+    "wide31001:narrow31001": {
+     "observations": 379,
+     "observations_per_game": 0.957,
+     "decisive": 111,
+     "decisive_games": 85,
+     "resolved_games": 154,
+     "bootstrap_se": 0.02619,
+     "arena_3pp_as_d4_delta": 0.0313
+    },
+    "wide31002:narrow31002": {
+     "observations": 520,
+     "observations_per_game": 1.313,
+     "decisive": 142,
+     "decisive_games": 93,
+     "resolved_games": 163,
+     "bootstrap_se": 0.01953,
+     "arena_3pp_as_d4_delta": 0.0228
+    },
+    "wide31003:narrow31003": {
+     "observations": 459,
+     "observations_per_game": 1.159,
+     "decisive": 109,
+     "decisive_games": 83,
+     "resolved_games": 153,
+     "bootstrap_se": 0.02105,
+     "arena_3pp_as_d4_delta": 0.0259
+    },
+    "wide31001:c5": {
+     "observations": 530,
+     "observations_per_game": 1.338,
+     "decisive": 156,
+     "decisive_games": 106,
+     "resolved_games": 190,
+     "bootstrap_se": 0.02163,
+     "arena_3pp_as_d4_delta": 0.0224
+    },
+    "wide31002:c5": {
+     "observations": 528,
+     "observations_per_game": 1.333,
+     "decisive": 153,
+     "decisive_games": 106,
+     "resolved_games": 178,
+     "bootstrap_se": 0.0211,
+     "arena_3pp_as_d4_delta": 0.0225
+    },
+    "wide31003:c5": {
+     "observations": 548,
+     "observations_per_game": 1.384,
+     "decisive": 149,
+     "decisive_games": 107,
+     "resolved_games": 193,
+     "bootstrap_se": 0.01973,
+     "arena_3pp_as_d4_delta": 0.0217
+    }
+   },
+   "cost": {
+    "log": "docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/full/run-logs/full-20261110-002234.log",
+    "replay_minutes": 280.95,
+    "rapfi_minutes": 10.01,
+    "selfplay_minutes": 39.3,
+    "models": 7,
+    "hours_per_396_games": 5.5,
+    "not_included": "H-dev labels and cache building for new games (not measured), sealing and records; the cost is a lower bound"
+   },
+   "projection": {
+    "0.02": {
+     "per_pair_games": {
+      "wide31001:narrow31001": 5330,
+      "wide31002:narrow31002": 2964,
+      "wide31003:narrow31003": 3444
+     },
+     "all_three_games": {
+      "dependent_bound": 5330,
+      "independent_bound": 7959
+     },
+     "all_three_hours": {
+      "dependent_bound": 74.0,
+      "independent_bound": 110.5
+     }
+    },
+    "0.03": {
+     "per_pair_games": {
+      "wide31001:narrow31001": 2369,
+      "wide31002:narrow31002": 1318,
+      "wide31003:narrow31003": 1531
+     },
+     "all_three_games": {
+      "dependent_bound": 2369,
+      "independent_bound": 3537
+     },
+     "all_three_hours": {
+      "dependent_bound": 32.9,
+      "independent_bound": 49.1
+     }
+    },
+    "0.05": {
+     "per_pair_games": {
+      "wide31001:narrow31001": 853,
+      "wide31002:narrow31002": 475,
+      "wide31003:narrow31003": 551
+     },
+     "all_three_games": {
+      "dependent_bound": 853,
+      "independent_bound": 1274
+     },
+     "all_three_hours": {
+      "dependent_bound": 11.8,
+      "independent_bound": 17.7
+     }
+    },
+    "mde": {
+     "at_396_games": 0.0897,
+     "at_budget_1727_games": 0.0429,
+     "basis": "all three pairs, independent bound, the largest primary SE"
+    }
+   },
+   "proposal": {
+    "evaluation_expansion": "DO_NOT_PROPOSE",
+    "hours": 49.1,
+    "reason": "detecting 0.03 on all three pairs needs about 49.1 h (> 24.0 h), a lower bound",
+    "next_d4_mde_at_396_games": 0.0897,
+    "note": "the choice between D2 / D5 and Track A is the user's; this tool gives the cost and the MDE only"
+   }
+  },
+  "BASELINE": {
+   "summary": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/summary.json",
+   "reading": "NOT_ESTABLISHED",
+   "comparisons": {
+    "seed31001:c5": {
+     "observations": 473,
+     "observations_per_game": 1.194,
+     "decisive": 109,
+     "decisive_games": 84,
+     "resolved_games": 169,
+     "bootstrap_se": 0.02103,
+     "arena_3pp_as_d4_delta": 0.0251
+    },
+    "seed31002:c5": {
+     "observations": 438,
+     "observations_per_game": 1.106,
+     "decisive": 103,
+     "decisive_games": 84,
+     "resolved_games": 168,
+     "bootstrap_se": 0.02157,
+     "arena_3pp_as_d4_delta": 0.0271
+    },
+    "seed31003:c5": {
+     "observations": 456,
+     "observations_per_game": 1.152,
+     "decisive": 110,
+     "decisive_games": 85,
+     "resolved_games": 165,
+     "bootstrap_se": 0.02243,
+     "arena_3pp_as_d4_delta": 0.0261
+    },
+    "c8:c5": {
+     "observations": 416,
+     "observations_per_game": 1.051,
+     "decisive": 99,
+     "decisive_games": 78,
+     "resolved_games": 160,
+     "bootstrap_se": 0.02209,
+     "arena_3pp_as_d4_delta": 0.0286
+    }
+   },
+   "cost": {
+    "log": "docs/h7r/r2/R2-D4-BASELINE-1/records/full/run-logs/full-20261102-154504.log",
+    "replay_minutes": 158.12,
+    "rapfi_minutes": 2.79,
+    "selfplay_minutes": 39.3,
+    "models": 5,
+    "hours_per_396_games": 3.34,
+    "not_included": "H-dev labels and cache building for new games (not measured), sealing and records; the cost is a lower bound"
+   },
+   "projection": {
+    "0.02": {
+     "per_pair_games": {
+      "seed31001:c5": 3437,
+      "seed31002:c5": 3616,
+      "seed31003:c5": 3910
+     },
+     "all_three_games": {
+      "dependent_bound": 3910,
+      "independent_bound": 5838
+     },
+     "all_three_hours": {
+      "dependent_bound": 33.0,
+      "independent_bound": 49.2
+     }
+    },
+    "0.03": {
+     "per_pair_games": {
+      "seed31001:c5": 1528,
+      "seed31002:c5": 1607,
+      "seed31003:c5": 1738
+     },
+     "all_three_games": {
+      "dependent_bound": 1738,
+      "independent_bound": 2595
+     },
+     "all_three_hours": {
+      "dependent_bound": 14.7,
+      "independent_bound": 21.9
+     }
+    },
+    "0.05": {
+     "per_pair_games": {
+      "seed31001:c5": 550,
+      "seed31002:c5": 579,
+      "seed31003:c5": 626
+     },
+     "all_three_games": {
+      "dependent_bound": 626,
+      "independent_bound": 934
+     },
+     "all_three_hours": {
+      "dependent_bound": 5.3,
+      "independent_bound": 7.9
+     }
+    },
+    "mde": {
+     "at_396_games": 0.0768,
+     "at_budget_2845_games": 0.0286,
+     "basis": "all three pairs, independent bound, the largest primary SE"
+    }
+   },
+   "proposal": {
+    "evaluation_expansion": "PROPOSE",
+    "hours": 21.9,
+    "reason": "detecting 0.03 on all three pairs fits 24.0 h"
+   }
+  }
+ }
+}
