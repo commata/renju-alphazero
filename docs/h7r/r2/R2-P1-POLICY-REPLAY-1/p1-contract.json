@@ -3,7 +3,7 @@
   "contract_id": "R2-P1-POLICY-REPLAY-1",
   "status": "fixed",
   "approved": {
-    "prepare": false,
+    "prepare": true,
     "train": false,
     "arena": false
   },
