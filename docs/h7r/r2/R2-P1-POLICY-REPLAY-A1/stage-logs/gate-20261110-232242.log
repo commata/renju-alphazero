@@ -1,0 +1,30 @@
+{
+ "passed": true,
+ "strict": {
+  "E1": [],
+  "E2": [],
+  "E3": [],
+  "E4": [],
+  "E5": []
+ },
+ "same_across_runs": {
+  "settings": true,
+  "sources": true,
+  "initial_state": true
+ },
+ "G1_determinism": {
+  "E2=E3": [],
+  "E4=E5": []
+ },
+ "G2_equivalence": {
+  "E1=E2": []
+ },
+ "seconds": {
+  "E1": 51.3,
+  "E2": 97.9,
+  "E3": 99.2,
+  "E4": 101.3,
+  "E5": 91.8
+ }
+}
+__EXIT__ 0

@@ -1,0 +1,150 @@
+{
+ "format": "h7r-p1a1-gate-v1",
+ "contract_id": "R2-P1-POLICY-REPLAY-A1",
+ "experiment_sha256": "faeb72b0f625baba213cc88504388dcd1d5eed03a16307de8da2217583c02648",
+ "contract_file_sha256": "49763cfe3e25bc90ff471045767ebc323fcd15a1b3d257edc0881ee496995316",
+ "git": {
+  "commit": "41a7f84188a08ea29337707c14741c66c809fdd9",
+  "dirty": false
+ },
+ "passed": true,
+ "strict": {
+  "E1": [],
+  "E2": [],
+  "E3": [],
+  "E4": [],
+  "E5": []
+ },
+ "same_across_runs": {
+  "settings": true,
+  "sources": true,
+  "initial_state": true
+ },
+ "G1_determinism": {
+  "E2=E3": [],
+  "E4=E5": []
+ },
+ "G2_equivalence": {
+  "E1=E2": []
+ },
+ "settings": {
+  "torch": "2.14.0+cu130",
+  "cuda": "13.0",
+  "cudnn": 92400,
+  "device_name": "NVIDIA GeForce RTX 5070",
+  "cudnn_enabled": true,
+  "cudnn_benchmark": false,
+  "cudnn_deterministic": true,
+  "cudnn_allow_tf32": true,
+  "matmul_allow_tf32": false,
+  "float32_matmul_precision": "highest",
+  "deterministic_algorithms": true,
+  "threads": 8,
+  "environment": {
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8"
+  }
+ },
+ "gate_records_sha256": {
+  "E1": "e4f6c2bc7d178643446dfad26a5bfd3810ef5ce6f323f6a44d2e0acc62ee331f",
+  "E2": "330eed39ef1eeda2324459b2c1d2578a8c9ba0de27d3ceae016e80df6c3a0fb2",
+  "E3": "e1c92dfd3380d154009f8d38d5c5ee0689f1cca304dda062bb265c5e54bf3636",
+  "E4": "df6e8be14e52eddde530ae122c960909f05e923fa36a070a84378b589b44da53",
+  "E5": "f5851f0da4e389c13f667de7d7e3ac6e47c4f2f6192c486c8477d60ddd8d87f1"
+ },
+ "c2_record_sha256": "927f63a137207db28b5752ac40b319831c3ac1f80462c639142cb6dea38bcd80",
+ "c2_reference": {
+  "E1": {
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00013416582484171435,
+    "kl": 0.0002883924163375323,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step": 77,
+   "c2_selected_step": 77,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true,
+   "verdict": "CANDIDATE",
+   "c2_verdict": "CANDIDATE"
+  },
+  "E2": {
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00013416582484171435,
+    "kl": 0.0002883924163375323,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step": 77,
+   "c2_selected_step": 77,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true,
+   "verdict": "CANDIDATE",
+   "c2_verdict": "CANDIDATE"
+  },
+  "E3": {
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00013416582484171435,
+    "kl": 0.0002883924163375323,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step": 77,
+   "c2_selected_step": 77,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true,
+   "verdict": "CANDIDATE",
+   "c2_verdict": "CANDIDATE"
+  },
+  "E4": {
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00804497403153559,
+    "ce": 0.02757845440969775,
+    "kl": 0.04855660716251467,
+    "guard_top1": 0.015221967388230895,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": false,
+   "selected_step": 96,
+   "c2_selected_step": 77,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true,
+   "verdict": "CANDIDATE",
+   "c2_verdict": "CANDIDATE"
+  },
+  "E5": {
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00804497403153559,
+    "ce": 0.02757845440969775,
+    "kl": 0.04855660716251467,
+    "guard_top1": 0.015221967388230895,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": false,
+   "selected_step": 96,
+   "c2_selected_step": 77,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true,
+   "verdict": "CANDIDATE",
+   "c2_verdict": "CANDIDATE"
+  }
+ },
+ "c2_reference_note": "recorded only: the past c2 values, eligibility and selected step are not judged",
+ "seconds": {
+  "E1": 51.3,
+  "E2": 97.9,
+  "E3": 99.2,
+  "E4": 101.3,
+  "E5": 91.8
+ }
+}
