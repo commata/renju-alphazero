@@ -1,0 +1,227 @@
+{
+  "format": "h7r-p1-contract-v1",
+  "contract_id": "R2-P1-POLICY-REPLAY-1",
+  "status": "draft",
+  "approved": {
+    "prepare": false,
+    "train": false,
+    "arena": false
+  },
+  "goal": "Track B strongest play: a policy candidate stronger than the research champion (H3 policy + c5 value) at the same S50 budget",
+  "question": "does a KL(H3 || student) replay term on RenjuNet train positions, added to the c2 policy fine-tune, make the candidate stronger than the champion and better than the unchanged c2 method",
+  "evidence": {
+    "docs/h7c/c1/arena_verdict.json": {
+      "path": "docs/h7c/c1/arena_verdict.json",
+      "sha256": "091302ca15da658afb9ba587aaaddbacc266df360b1481a1b2e90f0e81e705da"
+    },
+    "docs/h7c/c2/arena_verdict.json": {
+      "path": "docs/h7c/c2/arena_verdict.json",
+      "sha256": "9dad79599058203be92337103dcb18b239cd9b6889cbf642292df36a6b326a26"
+    },
+    "docs/h7c/c2/policy_record.json": {
+      "path": "docs/h7c/c2/policy_record.json",
+      "sha256": "927f63a137207db28b5752ac40b319831c3ac1f80462c639142cb6dea38bcd80"
+    },
+    "docs/h7c/c2/policy_best.json": {
+      "path": "docs/h7c/c2/policy_best.json",
+      "sha256": "1bcd4351480c82ec338e96781aac2dafa388f8bcb031304cdbc59426456ef334"
+    },
+    "docs/h7c/e2/sb_c5_saturation.json": {
+      "path": "docs/h7c/e2/sb_c5_saturation.json",
+      "sha256": "952751bf83afefb423521d668bd927e43a7dbad397fb49a958bc3a8516edbae9"
+    }
+  },
+  "inputs": {
+    "cycle_rows": {
+      "path": "runs/h7c/c2/policy_rows.jsonl.gz",
+      "sha256": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71",
+      "train_rows": 24077,
+      "val_rows": 1423
+    },
+    "parent_and_teacher": {
+      "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+      "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+    },
+    "value_c5": {
+      "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+      "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+    },
+    "renjunet_cache": {
+      "path": "data/external/renjunet/h3_cache",
+      "replay_split": "train",
+      "guard_split": "val",
+      "split_sha256": "unset: recorded by prepare",
+      "rule": "train and val game_id sets disjoint; manifest code identity current"
+    }
+  },
+  "arms": {
+    "C": {
+      "cycle": "the c2 policy method unchanged",
+      "replay": null
+    },
+    "T": {
+      "cycle": "identical to C (rows, batches, order, generator, steps, coefficients)",
+      "replay": {
+        "positions": "RenjuNet train split",
+        "loss": "KL(H3 || student), temperature 1",
+        "weight_mu": 0.5,
+        "batch": 512,
+        "sampling": "uniform with replacement",
+        "generator_seed": "training seed + 1000003",
+        "augment_d4": true,
+        "added_to": "the unchanged cycle loss (no cycle row is replaced)",
+        "human_move_ce": "not used (a later variable)"
+      }
+    }
+  },
+  "training": {
+    "seed": "per run",
+    "batch_size": 512,
+    "epochs": 2.0,
+    "learning_rate": 0.0002,
+    "weight_decay": 0.0001,
+    "min_lr_ratio": 0.05,
+    "kl_lambda": 0.5,
+    "augment_d4": true,
+    "evaluations": 10,
+    "guard_drop": 0.02,
+    "batchnorm": "eval (parent statistics)",
+    "device": "cuda",
+    "selection": "the c2 rule for both arms: guard (RenjuNet val top-1) within guard_drop of H3, lowest cycle val objective; the replay term is not in the selection metric"
+  },
+  "seeds": {
+    "training": [
+      20261024,
+      20261111,
+      20261112
+    ],
+    "arena_candidate_training_seed": 20261024,
+    "arena_games": 20261121,
+    "bootstrap": 20261131
+  },
+  "stages": {
+    "prepare": "full SHA of the cycle rows file and content, H3 and c5 checkpoints and best.json; cache manifest, train / val tensor hashes, counts, disjoint game ids (first recorded); c2 record SHAs",
+    "reproduce": "new trainer, replay off, seed 20261024: the c2 policy_record evaluations (val objective, guard top-1) within 1e-6; checkpoint SHA recorded, not required; a miss stops before any Arena",
+    "train": "3 seeds x 2 arms; the arena candidate seed failing stops",
+    "link": "T and C of seed 20261024 both CANDIDATE, else stop (no other seed substituted)",
+    "arena": "section arena; one run, no resizing, no rerun",
+    "judge": "section reading"
+  },
+  "arena": {
+    "champion": "H3 policy + c5 value, S50",
+    "tested": [
+      "T(20261024) + c5 value, S50",
+      "C(20261024) + c5 value, S50"
+    ],
+    "factory": "analysis.tb_v3_net (v1)",
+    "suites": [
+      {
+        "path": "docs/h7r/suites/O0.json",
+        "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9"
+      },
+      {
+        "path": "docs/h7r/suites/O1.json",
+        "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9"
+      }
+    ],
+    "openings": 600,
+    "pairs_per_arm": 600,
+    "pairing": "T and C on the same openings and game seeds",
+    "not_used": [
+      "docs/h7r/suites/O1-confirm-main.json",
+      "docs/h7r/suites/O1-confirm-anchor.json"
+    ],
+    "overlap_note": "some sequences overlap the R1 pilot and earlier arenas; allowed for a development reading",
+    "planning": {
+      "pair_sd_upper_measured": [
+        0.246,
+        0.252
+      ],
+      "pairs_for_3pp_power_0_8": [
+        527,
+        553
+      ],
+      "note": "a planning value, not a guarantee; the SD of T - C depends on the arms' covariance"
+    },
+    "cost": {
+      "measured_seconds_per_pair_6_workers": {
+        "O1": [
+          5.7,
+          7.3
+        ],
+        "O0": [
+          11.0,
+          12.2
+        ]
+      },
+      "estimate_hours": {
+        "per_arm": [
+          1.4,
+          1.6
+        ],
+        "both": 3.0
+      },
+      "smoke": "first 10 pairs of each arm re-estimate the cost; the estimate never changes the size"
+    },
+    "auxiliary": {
+      "arms": "seeds 20261111 and 20261112, T and C vs the champion, 25 pairs each (first 25 of O2)",
+      "use": "descriptive only: never a reading, a stability verdict or a promotion ground"
+    }
+  },
+  "reading": {
+    "statistics": {
+      "alpha_one_sided": 0.025,
+      "bootstrap": {
+        "samples": 20000,
+        "seed": 20261131,
+        "method": "percentile",
+        "unit": "opening pair"
+      }
+    },
+    "P": {
+      "what": "T vs champion (h7r_eval.arm_summary)",
+      "STRONGER": "one-sided lower bound of score - 0.5 > 0",
+      "WEAKER": "one-sided upper bound < 0",
+      "else": "NOT_ESTABLISHED"
+    },
+    "D": {
+      "what": "T - C on the same opening pairs (h7r_eval.anchor_difference)",
+      "BETTER_THAN_CONTROL": "one-sided lower bound > 0",
+      "WORSE_THAN_CONTROL": "one-sided upper bound < 0",
+      "else": "NOT_ESTABLISHED",
+      "rule": "the arms differ only by D, never by one arm being significant against the champion and the other not"
+    },
+    "interpretation": {
+      "P STRONGER": "a development candidate for the separate confirmation stage; no champion change",
+      "P not STRONGER, D BETTER_THAN_CONTROL": "the policy-preserving term helped over the old method, consistent with the knowledge-loss hypothesis; not stronger than the champion (regression mitigated only)",
+      "P not STRONGER, D NOT_ESTABLISHED": "the effect of this treatment is not established; the hypothesis is not ruled out (weight, sample or precision may miss it)",
+      "P not STRONGER, D WORSE_THAN_CONTROL": "this treatment did worse than the old method; not a ruling on the hypothesis"
+    },
+    "not_used": "the value epsilon, the R2 H-dev reading and the D4 reading are neither changed nor applied",
+    "end": "P not STRONGER ends the contract; another weight or the human-move CE is a new contract"
+  },
+  "separate_stages": [
+    "independent confirmation (confirmation suites, new seeds, H-conf selection quality)",
+    "anchor non-inferiority (original H3 / H6), tactical v2, per-move time gate",
+    "champion, canonical and web changes",
+    "search-budget engine candidates (e.g. S400)",
+    "reinforcement-learning loop"
+  ],
+  "implementation_scope": {
+    "unchanged": [
+      "src/hybrid/h7c_train.py",
+      "scripts/h7c_*",
+      "src/hybrid/h7r_eval.py",
+      "scripts/h7r_eval.py",
+      "frozen engine and runtime files",
+      "src/analysis/tb_v3_net.py",
+      "existing records"
+    ],
+    "new": [
+      "src/hybrid/h7r_p1_train.py",
+      "scripts/h7r_p1.py",
+      "tests/test_h7r_p1.py"
+    ]
+  },
+  "data_rule": "RenjuNet-derived data, caches and models stay under data/ or runs/; only hashes and numbers are committed"
+}
