@@ -152,7 +152,37 @@
       ],
       "recorded_only": "the checkpoint SHA",
       "miss": "stop before any Arena; the tolerance is never widened afterwards",
-      "premise": "h7c_train.py changed after c7e4123 only on the value side (f0b0022, 0ced742, 76e8a49)"
+      "premise": "h7c_train.py changed after c7e4123 only on the value side (f0b0022, 0ced742, 76e8a49)",
+      "expected": {
+        "total_steps": 96,
+        "steps_per_epoch": 48,
+        "warmup_steps": 5,
+        "evaluation_steps": [
+          10,
+          19,
+          29,
+          38,
+          48,
+          58,
+          67,
+          77,
+          86,
+          96
+        ],
+        "eligibility": [
+          true,
+          true,
+          false,
+          false,
+          true,
+          true,
+          false,
+          true,
+          false,
+          false
+        ],
+        "selected_step": 77
+      }
     },
     "train": "3 seeds x 2 arms; the arena candidate seed failing stops",
     "link": "T and C of seed 20261024 both CANDIDATE, else stop (no other seed substituted)",
@@ -255,7 +285,7 @@
         2.8,
         3.3
       ],
-      "smoke": "first 10 pairs of each arm re-estimate the cost; the estimate never changes the size"
+      "measured": "each arm record keeps its wall time (h7r_eval play); the measured cost is reported and never changes the size (h7r_eval play has no partial-arm smoke)"
     },
     "auxiliary": {
       "arms": [
@@ -350,7 +380,8 @@
       "tests/test_h7r_p1.py"
     ],
     "judge": "scripts/h7r_p1.py judge: reads the verified h7r_eval arm records; the stratified 50:50 paired bootstrap and the class sensitivity",
-    "arena_contract": "scripts/h7r_p1.py arena-contract: the h7r_eval-format contract (eight arms, seeds 8788-8790) from the link record and the experiment_sha256, after training and before any result"
+    "arena_contract": "scripts/h7r_p1.py arena-contract: the h7r_eval-format contract (eight arms, seeds 8788-8790) from the link record and the experiment_sha256, after training and before any result",
+    "play": "scripts/h7r_eval.py play --output <arms dir>/<arm>.json (unchanged)"
   },
   "data_rule": "RenjuNet-derived data, caches and models stay under data/ or runs/; only hashes and numbers are committed",
   "identity": {

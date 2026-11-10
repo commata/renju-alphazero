@@ -1,11 +1,10 @@
-# R2-P1-POLICY-REPLAY-1: 정책 학습에 H3 정책 보존 replay를 더하는 대조 실험 (초안)
+# R2-P1-POLICY-REPLAY-1: 정책 학습에 H3 정책 보존 replay를 더하는 대조 실험
 
-- 상태: **draft** (2차, 검토 보완 6건 반영)
-- 계약 초안: `R2-P1-POLICY-REPLAY-1/p1-contract.draft.json`. 승인 플래그는 모두 false다.
-- 이번 범위는 문서와 계약 초안까지다. 구현, 학습, Arena는 실행하지 않았다.
+- 상태: **fixed** (`R2-P1-POLICY-REPLAY-1/p1-contract.json`, 승인 플래그 모두 false)
+  - 설계 기록: 이 문서와 `p1-contract.draft.json`(2차 검토 반영본)
+  - 고정 계약은 초안에 `status`, `approved`, 소스 SHA 15개, 초안 SHA만 더한 것이다(테스트가 확인).
+- 구현과 테스트는 끝났다(§9). 학습과 Arena는 실행하지 않았다.
 - 목표: Track B 최강 기력 (사용자 결정, 2026-11-10)
-- 확정 순서: 구현과 테스트를 마친 뒤 최종 소스 SHA를 채우고 `status: fixed`로 확정한다.
-
 ## 1. 질문과 근거
 
 - **질문**
@@ -159,7 +158,8 @@ prepare는 값을 새로 받아들이는 단계가 아니다. 커밋된 기대�
 - **비용**
   - R1 pilot 실측(S50 작은 차이 arm, 6 worker, 쌍당): O1 5.7–7.3초, O0 11.0–12.2초
   - 그대로 쓰면 O0 arm 하나에 55–61분, O1 arm 하나에 29–37분, 네 arm에 약 2.8–3.3시간이다.
-  - 새 정책 후보의 비용은 smoke(각 arm 처음 10쌍)로 다시 추정해 기록한다. 추정 결과로 규모를 바꾸지 않는다.
+  - 실제 비용은 각 arm 기록의 wall time으로 남긴다. 기존 `play`에는 arm 일부만 두는 smoke가 없어서, 초안의 "처음 10쌍 smoke"는 뺐다.
+  - 측정한 비용으로 규모를 바꾸지 않는다.
 - **보조 arm** (판독·안정성 확정·승급 근거로 쓰지 않는다)
   - seed 20261111과 20261112의 T와 C를 각각 champion과, O2 앞 25개 opening에서 둔다.
   - pairing `O2_aux`, seed 8790. arm 4개, 각 25쌍이다.
@@ -208,32 +208,45 @@ prepare는 값을 새로 받아들이는 단계가 아니다. 커밋된 기대�
 - S400 등 탐색 예산을 늘리는 엔진 후보. 학습 처방과 분리해 따로 검토한다.
 - 강화학습 루프 연결: 이 처방이 위 단계를 통과한 뒤에만
 
-## 9. 구현 범위 (승인 뒤, 기존 trainer·기록 보존)
+## 9. 구현 범위 (구현 완료, 기존 trainer·기록 보존)
 
-- **고치지 않는 것**
+- **고치지 않은 것**
   - `src/hybrid/h7c_train.py`, `scripts/h7c_*`
   - `src/hybrid/h7r_eval.py`, `scripts/h7r_eval.py`
   - frozen engine·runtime 파일, `analysis.tb_v3_net`
   - 기존 기록
-- **새로 만드는 것**
-  - `src/hybrid/h7r_p1_train.py`
-    - `h7c_train`의 함수(`planes_from_states`, `_policy_terms`, `policy_objective`, 일정·평가 step)를 그대로 가져다 쓴다.
-    - 학습 loop만 replay 항(§2 수식)과 별도 KL 기록을 더한 판으로 둔다.
-    - replay off일 때 `h7c_train.train_policy`와 기록·state가 같음을 테스트로 보인다.
-  - `scripts/h7r_p1.py`
-    - `prepare`(§4), `reproduce`(§5 재현 조건), `train --arm C|T --seed`, `link`
-    - `arena-contract`: h7r_eval 형식 Arena 계약(arm 8개, seed 8788–8790)을 link 기록의 모델 SHA와 `experiment_sha256`으로 만든다. 학습 뒤, 결과 전에 만든다.
-    - `judge`(§7): h7r_eval의 검증된 arm 기록을 읽고, suite 층화·50:50 가중·T/C 짝 bootstrap과 동치류 민감도를 계산한다.
-    - 대국은 기존 `scripts/h7r_eval.py play`로 둔다.
-    - 모든 기록은 `experiment_sha256`(승인 제외)으로 묶고, 실행 때의 계약 파일 SHA를 따로 남긴다.
-  - `tests/test_h7r_p1.py`
-    - replay off 동등성, replay 생성기 분리(cycle 순서 불변), KL 수식(합법 수 재정규화, 행동 합 뒤 평균, 같은 D4 입력), μ 고정
-    - cache 기대 해시·split 비중첩 검사, 입력 SHA 거부
-    - 재현 조건(step·eligibility·선택 step 불일치 거부), `NO_CANDIDATE` 처리
-    - Arena 계약의 seed가 도구 검사를 통과하는지(예약 블록), suite별 arm 구조
-    - 층화·가중 bootstrap과 짝 유지, 동치류 민감도, 판독표
-    - 승인 플래그를 바꿔도 `experiment_sha256`과 앞 단계 기록 연결이 유지되는지
-- 데스크톱 블록은 이전 방식대로 단계마다 승인 뒤 실행한다(자동 실행기 없음).
+- **새로 만든 것**
+  - `src/hybrid/h7r_p1_train.py`: `h7c_train`의 함수를 그대로 쓰고, 학습 loop만 replay 항(§2 수식)과 별도 KL 기록을 더한 판으로 둔다.
+  - `scripts/h7r_p1.py`: `prepare`, `reproduce`, `train`, `link`, `arena-contract`, `judge`
+    - 재현 기대값(step, 평가 step, eligibility, 선택 step)은 코드 상수가 아니라 계약(`stages.reproduce.expected`)에서 읽는다. c2 기록도 같은 값을 보여야 한다.
+    - 대국은 기존 `scripts/h7r_eval.py play`로 둔다. judge는 그 arm 기록을 기존 `load_arm`으로 다시 검증해서 읽는다.
+  - `tests/test_h7r_p1.py` (13개)
+- **테스트로 확인한 것**
+  - trainer
+    - replay off의 기록과 state가 `h7c_train.train_policy`와 같다. RenjuNet val KL 진단을 켜도 같다.
+    - 처방군도 cycle batch의 index와 순서가 대조군과 같다.
+    - replay KL은 합법 수 위의 softmax로 직접 계산한 값과 같고, H3에는 gradient가 가지 않는다.
+  - 계약
+    - 승인 플래그를 바꿔도 `experiment_sha256`이 그대로다. 승인 순서, `fixed`, 소스 SHA, 커밋 여부를 검사한다.
+    - c2 설정이 계약 값과 정확히 같다. cache 기대값이 H3 cache 보고와 같다.
+  - cache 검사: 해시, 국면 수, H2 identity가 다르거나 train과 val의 게임이 겹치면 거부한다.
+  - 재현 규칙: eligibility, 선택 step, 평가 step, step 수, 1e-5 차이는 거부하고 1e-9 차이는 통과시킨다.
+  - Arena 계약
+    - 기존 `h7r_eval.check_contract`와 `load_contract`(seed 중복 검사 포함)가 받는다.
+    - arm 8개, seed 8788 / 8789 / 8790이다.
+    - 후보가 없는 보조 실행은 arm에서 빠진다.
+  - judge
+    - suite 50:50 가중이 쌍 수와 무관하다.
+    - 동치류 단위 재표집을 한다.
+    - T와 C의 opening이 다르면 거부한다.
+    - STRONGER, WEAKER, BETTER, WORSE, NOT_ESTABLISHED 판독과 해석 문장을 확인했다.
+  - **통합 테스트** (임시 저장소, 대역 입력)
+    - prepare → reproduce → train 6회 → link → arena-contract를 실제 코드 경로로 잇는다.
+    - 기존 trainer로 만든 c2 대역 기록을 새 trainer가 재현한다.
+    - 승인 커밋으로 계약 파일이 바뀌어도 단계가 이어진다.
+    - 재현이 실패하면 train을 거부한다.
+- **실제 자료에서만 확인되는 것** (데스크톱)
+  - c2 재현(CUDA), cache 해시 재계산, 학습 시간, Arena 비용
 
 ## 10. 승인 단계
 
@@ -241,3 +254,110 @@ prepare는 값을 새로 받아들이는 단계가 아니다. 커밋된 기대�
 2. 구현과 테스트, 최종 소스 SHA를 채운 계약 확정(`status: fixed`) → `approved.prepare`
 3. `approved.train` (재현 gate 포함)
 4. `approved.arena` (모델 연결과 Arena 계약 생성 뒤)
+
+## 11. 실행 절차 (데스크톱)
+
+- 단계마다 승인 커밋을 받은 뒤 실행한다(자동 실행기 없음). 실패하면 다음 단계로 가지 않고 보고한다.
+- 예상 시간
+  - prepare: 수 분(cache 해시 재계산 포함)
+  - 재현과 학습: 7회 × 수 분(c2 학습은 96 step)
+  - Arena: arm 4개 약 3시간과 보조 arm
+
+p1-1. prepare (`approved.prepare` 뒤)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  git pull --ff-only origin feat/h7-c1
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  D=docs/h7r/r2/R2-P1-POLICY-REPLAY-1
+  test ! -e "$D/prepare.json"
+  python -u scripts/h7r_p1.py prepare
+  git add "$D/prepare.json"
+  git commit -m "H7-R P1: prepare PASS (records only)"
+  git push origin feat/h7-c1
+)
+```
+
+p1-2. 재현 gate와 학습 6회 (`approved.train` 뒤)
+   - 재현 결과는 PASS든 FAIL이든 커밋한다. FAIL이면 학습하지 않고 멈춘다.
+   - 학습 기록은 `runs/`에서 문서 폴더로 복사해 커밋한다. checkpoint는 커밋하지 않는다.
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  git pull --ff-only origin feat/h7-c1
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  D=docs/h7r/r2/R2-P1-POLICY-REPLAY-1
+  R=runs/h7r/R2-P1-POLICY-REPLAY-1
+  mkdir -p "$R/logs"
+  test ! -e "$D/reproduce.json"
+  rc=0
+  python -u scripts/h7r_p1.py reproduce --device cuda 2>&1 | tee "$R/logs/reproduce.log" || rc=$?
+  test -f "$D/reproduce.json"
+  git add "$D/reproduce.json"
+  if [ "$rc" -ne 0 ]; then
+    git commit -m "H7-R P1: reproduction gate FAIL (records only)"
+    git push origin feat/h7-c1
+    echo "STOP: the reproduction gate did not pass"; exit 1
+  fi
+  git commit -m "H7-R P1: reproduction gate PASS (records only)"
+  git push origin feat/h7-c1
+  for s in 20261024 20261111 20261112; do
+    for arm in C T; do
+      python -u scripts/h7r_p1.py train --arm "$arm" --seed "$s" --device cuda 2>&1 | tee "$R/logs/train-$arm-$s.log"
+      mkdir -p "$D/runs/$arm-$s"
+      cp --no-clobber "$R/$arm-$s/record.json" "$D/runs/$arm-$s/record.json"
+      cmp "$R/$arm-$s/record.json" "$D/runs/$arm-$s/record.json"
+    done
+  done
+  git add "$D/runs"
+  git commit -m "H7-R P1: six training runs (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__"
+)
+```
+
+p1-3. link와 Arena 계약 (클라우드 세션)
+   - `link`는 커밋된 학습 기록만 읽으므로 클라우드에서 실행한다.
+   - `approved.arena` 커밋 뒤 `arena-contract`로 `docs/h7r/contracts/R2-P1-ARENA-1.json`을 만들어 커밋한다.
+
+p1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  git pull --ff-only origin feat/h7-c1
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  D=docs/h7r/r2/R2-P1-POLICY-REPLAY-1
+  A=docs/h7r/contracts/R2-P1-ARENA-1.json
+  R=runs/h7r/R2-P1-POLICY-REPLAY-1/arena
+  mkdir -p "$R/logs"
+  test ! -e "$D/judge.json"
+  for arm in $(python -c "import json; print(' '.join(a['name'] for a in json.load(open('$A'))['arms']))"); do
+    test -e "$R/$arm.json" && continue
+    python -u scripts/h7r_eval.py play --contract "$A" --arm "$arm" --device cuda --workers 6 \
+      --jsonl "$R/$arm.jsonl" --output "$R/$arm.json" 2>&1 | tee "$R/logs/$arm.log"
+  done
+  python -u scripts/h7r_p1.py judge --arms-dir "$R" 2>&1 | tee "$R/logs/judge.log"
+  git add "$D/judge.json"
+  git commit -m "H7-R P1: Arena judge (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__"
+)
+```
+
+- arm이 중간에 멈추면 같은 블록을 다시 실행한다. 끝난 arm은 건너뛰고, 멈춘 arm은 `play`가 journal에서 이어서 둔다.
+- judge 결과를 보고 표본을 보충하거나 다시 두지 않는다.
