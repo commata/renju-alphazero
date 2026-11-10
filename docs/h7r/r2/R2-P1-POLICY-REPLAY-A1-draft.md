@@ -1,6 +1,6 @@
 # R2-P1-POLICY-REPLAY-A1: 결정론 동등성 gate를 둔 policy replay 대조 실험
 
-- 상태: prepare PASS(`03d3ec5`), gate PASS(`b3eb145`), train 승인(`672188f`)·본학습 6회 완료(`35c2068`–`007f907`). link·arena는 아직
+- 상태: prepare PASS(`03d3ec5`), gate PASS(`b3eb145`), train 승인(`672188f`)·본학습 6회 완료(`35c2068`–`007f907`), link(`406c118`). arena는 미승인
 - 사용자 결정(2026-11-10): A1을 채택한다.
   - 과거 c2의 수치, eligibility, 선택 step은 참고 기록으로 둔다.
   - 입력, 모델 신원, 학습 설정과 step 구조는 계속 엄격히 검사한다.
@@ -559,5 +559,27 @@ a1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
 | T-20261112 | CANDIDATE | 96 | 10회 모두 T | 1.9841 | 0.5178 | `1c4e53115c04` |
 
 - 위 값은 학습 기록의 서술이다. 기력 판단은 계약대로 Arena(P, D)에서만 한다.
-- 6회 모두 후보가 있으므로 link의 조건(후보 seed 20261024의 T·C 모두 CANDIDATE)은 충족된다. 아직 link 기록은 만들지 않았다(클라우드에서 계산만 확인).
+- 6회 모두 후보가 있으므로 link의 조건(후보 seed 20261024의 T·C 모두 CANDIDATE)이 충족된다.
+
+**정책 보존 지표 (서술. 기력 판정이 아니다)**
+
+| 지표 | C (3 seed) | T (3 seed) |
+|---|---:|---:|
+| 선택 checkpoint의 guard 하락(H3 0.5241 대비) | 1.89–1.94%p | 0.63–0.67%p |
+| step 96의 RenjuNet val KL(H3 ‖ student) | 0.115–0.118 | 0.041 전후(0.0405–0.0412) |
+
+- 같은 seed의 C와 T는 batch 순서·D4 대칭·학습률 지문이 같다. 차이는 replay 항에서만 온다.
+- T는 H3의 판단에서 덜 멀어졌고, 사람 기보 val의 top-1(guard)도 덜 떨어졌다. 정책 보존 항이 의도한 방향으로 작동했다는 근거다.
+- 해석의 한계
+  - cycle val objective는 T가 일관되게 낫지 않다(선택 checkpoint 기준 T 1.9812–1.9841, C 1.9761–1.9833).
+  - C와 T는 선택 step이 다르다(C 77 / 58 / 77, T 모두 96). Arena는 replay가 학습과 checkpoint 선택에 준 효과를 함께 평가한다.
+  - H3에 가까워졌다는 사실만으로 더 강해졌다고 판단할 수 없다.
+
+### 8.4 link (`406c118`, 클라우드)
+
+- 커밋된 학습 기록 6개만 읽어 만들었다. HEAD `e0a22a1`(clean), 실험 `faeb72b0f625`, 계약 파일 SHA `b523423e7a7f`
+- 후보 seed는 계약대로 20261024다(대체하지 않음). 6개 모델의 policy checkpoint·metadata SHA와 c5 value 신원을 담는다.
+- 다시 검증(`verified_link`): link 기록이 학습 기록에서 다시 계산한 값과 같다.
+- checkpoint 원본은 데스크톱 `runs/`에만 있다. Arena 실행(`h7r_eval.py play`)이 대국 전에 실제 파일 SHA를 계약의 신원과 다시 대조한다.
+- 다음 단계는 `approved.arena` 뒤 Arena 계약 생성(클라우드)과 a1-4(데스크톱)다.
 
