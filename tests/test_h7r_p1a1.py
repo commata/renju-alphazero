@@ -78,7 +78,7 @@ class ContractTest(unittest.TestCase):
         fixed = json.loads((ROOT / a1.CONTRACT).read_text())
         draft = json.loads(DRAFT.read_text())
         self.assertEqual(fixed['approved'], {'prepare': False, 'gate': False, 'train': False, 'arena': False})
-        self.assertEqual(fixed['draft'], {'path': str(DRAFT.relative_to(ROOT)), 'sha256': p1.file_sha256(DRAFT)})
+        self.assertEqual(fixed['draft'], {'path': DRAFT.relative_to(ROOT).as_posix(), 'sha256': p1.file_sha256(DRAFT)})
         same = {k: v for k, v in fixed.items() if k not in ('status', 'sources', 'draft')}
         self.assertEqual(same, {k: v for k, v in draft.items() if k not in ('status', 'sources')})
         paths = {s['path'] for s in fixed['sources']}
