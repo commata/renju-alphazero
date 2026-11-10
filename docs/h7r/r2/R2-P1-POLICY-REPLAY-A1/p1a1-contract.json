@@ -5,7 +5,7 @@
  "approved": {
   "prepare": true,
   "gate": true,
-  "train": false,
+  "train": true,
   "arena": false
  },
  "goal": "Track B strongest play: a policy candidate stronger than the research champion (H3 policy + c5 value) at the same S50 budget",
