@@ -523,6 +523,18 @@ class RealGitTest(unittest.TestCase):
             'dirty': lambda: (self.root / self.SOURCE).write_text('# edited\n'),
             'input': lambda: (self.root / p1.c5_meta_path()).write_text((self.root / p1.c5_meta_path()).read_text() + ' '),
         }
+        import model.checkpoint as mc
+        real_save = mc.save_checkpoint
+
+        def save_then_move(*a, **k):
+            real_save(*a, **k)
+            git(self.root, 'commit', '-q', '--allow-empty', '-m', 'moved while saving')
+        with mock.patch.object(mc, 'save_checkpoint', side_effect=save_then_move):
+            with self.assertRaisesRegex(ValueError, 'changed during the run'):
+                p1.train(self.ns(arm='C', seed=20261112), self.root, log=QUIET)
+        out = self.root / p1.RUNS / 'C-20261112'
+        self.assertEqual(sorted(x.name for x in out.iterdir()), [])  # no checkpoint, metadata, record or temporary
+        shutil.rmtree(out)
         for what, change in changes.items():
             with self.subTest(what):
                 def during(*a, **k):
@@ -592,12 +604,21 @@ if cmd in fail:
     sys.exit(1)
 out(f'{D}/{cmd}.json', {'stage': cmd}); print('ok', cmd)
 """
-STUB_EVAL = """import json, sys
+STUB_EVAL = """import json, os, subprocess, sys
 from pathlib import Path
-out = Path(sys.argv[sys.argv.index('--output') + 1])
-out.parent.mkdir(parents=True, exist_ok=True)
-out.write_text(json.dumps({'arm': sys.argv[sys.argv.index('--arm') + 1]}))
-print('played')
+arg = lambda k: sys.argv[sys.argv.index(k) + 1]
+arm, jl, out = arg('--arm'), Path(arg('--jsonl')), Path(arg('--output'))
+head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+if jl.exists():  # like the real arm signature: a journal resumes only at the HEAD it was started at
+    if json.loads(jl.read_text().splitlines()[0])['head'] != head:
+        print('STOP: the journal is of another signature (HEAD)'); sys.exit(3)
+jl.parent.mkdir(parents=True, exist_ok=True)
+with jl.open('a') as f:
+    f.write(json.dumps({'head': head}) + chr(10))
+if arm in os.environ.get('EVAL_FAIL', '').split(','):
+    print('interrupted'); sys.exit(1)
+out.write_text(json.dumps({'arm': arm, 'head': head}))
+print('played', arm)
 """
 
 
@@ -729,6 +750,35 @@ class BlockTest(unittest.TestCase):
         self.assertIn('reproduction gate did not pass', out)
         self.assertTrue(self.tracked(f'{self.D}/reproduce.json'))
         self.assertEqual(git(self.work, 'ls-files', f'{self.D}/seed-records'), '')
+
+    def test_arena_failure_keeps_head_and_resumes(self):
+        import time
+        head = git(self.work, 'rev-parse', 'HEAD')
+        rc, out = self.bash('p1-4', EVAL_FAIL='O0_C_vs_champion')
+        self.assertEqual(rc, 1, out)
+        self.assertIn('nothing committed, HEAD kept', out)
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), head)  # no commit while an arm is unfinished
+        rc, out = self.bash('p1-F')
+        self.assertEqual(rc, 1, out)
+        self.assertIn('the Arena is unfinished', out)
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), head)
+        time.sleep(1.1)
+        rc, out = self.bash('p1-4')
+        self.assertEqual(rc, 0, out)
+        self.assertIn('resuming at', out)
+        self.assertTrue(self.tracked(f'{self.D}/judge.json'))
+        logs = [l for l in git(self.work, 'ls-files', f'{self.D}/stage-logs').splitlines() if l.endswith('.log')]
+        self.assertEqual(len([l for l in logs if 'play-O0_C' in l]), 2)  # the failed attempt's log too
+        self.assertEqual(len(logs), 4)
+
+    def test_arena_refuses_a_moved_head(self):
+        rc, out = self.bash('p1-4', EVAL_FAIL='O0_T_vs_champion')
+        self.assertEqual(rc, 1, out)
+        git(self.work, 'commit', '-q', '--allow-empty', '-m', 'moved')
+        rc, out = self.bash('p1-4')
+        self.assertEqual(rc, 1, out)
+        self.assertIn('HEAD moved since the Arena started', out)
+        self.assertFalse(self.tracked(f'{self.D}/judge.json'))
 
     def test_arena_block(self):
         rc, out = self.bash('p1-4')

@@ -220,7 +220,7 @@ prepare는 값을 새로 받아들이는 단계가 아니다. 커밋된 기대�
   - `scripts/h7r_p1.py`: `prepare`, `reproduce`, `train`, `link`, `arena-contract`, `judge`
     - 재현 기대값(step, 평가 step, eligibility, 선택 step)은 코드 상수가 아니라 계약(`stages.reproduce.expected`)에서 읽는다. c2 기록도 같은 값을 보여야 한다.
     - 대국은 기존 `scripts/h7r_eval.py play`로 둔다. judge는 그 arm 기록을 기존 `load_arm`으로 다시 검증해서 읽는다.
-  - `tests/test_h7r_p1.py` (22개, §9.1)
+  - `tests/test_h7r_p1.py` (24개, §9.1)
 - **테스트로 확인한 것**
   - trainer
     - replay off의 기록과 state가 `h7c_train.train_policy`와 같다. RenjuNet val KL 진단을 켜도 같다.
@@ -261,9 +261,19 @@ prepare는 값을 새로 받아들이는 단계가 아니다. 커밋된 기대�
 | 학습 gate가 reproduce의 `passed`만 믿었다 | 저장된 재현 내용(run, settings, inputs)에 규칙을 다시 적용한다. seed와 c2 기록 SHA도 확인한다 | `passed: true`인 채 내용이 바뀐 기록, 다른 seed, 다른 c2 기록, 다른 설정을 거부 |
 | 실행 블록이 실패 로그를 커밋하지 않고 고정 로그명을 덮어썼다 | 시각이 붙은 고유 로그, `__EXIT__` 코드, 성공·실패 모두 커밋, 실행마다 따로 커밋. 기록 보존 블록 p1-F를 추가했다. 블록 재실행은 커밋된 단계를 건너뛰고, 끝난 실행은 다시 학습하지 않고 복사만 한다 | 블록을 bash로 실제 임시 저장소(bare origin, 실제 `.gitignore`)에서 실행: prepare 실패→기록, 성공, 재실행 거부; 중단 뒤 p1-F; 실행 중 p1-F 거부; 학습 실패 뒤 재개; 재현 실패 시 학습 없음; Arena 블록 |
 
+- **2차 검토 보완** (`16e9934` 검토)
+  - Arena 재개: arm signature에 실행 HEAD가 들어간다. 그런데 실패 로그를 커밋한 뒤 재개하라는 안내가 HEAD를 바꿔 재개를 막았다.
+    - p1-4는 대국 중 HEAD를 고정한다. 시작 HEAD를 기록하고, 끝나지 않은 arm이 있으면 pull하지 않고 같은 HEAD에서만 진행한다.
+    - 실패하면 커밋하지 않는다. 모든 arm이 끝난 뒤에 모든 시도의 로그를 한 번에 커밋한다.
+    - Arena가 끝나지 않은 동안 p1-F는 거부한다.
+    - 테스트: 실패 → HEAD 그대로 → p1-F 거부 → 같은 HEAD에서 재개 → 두 시도의 로그 모두 커밋. HEAD가 바뀌면 재개를 거부한다.
+  - checkpoint 저장 구간: 불변성 검사를 임시 checkpoint·metadata를 다 쓴 뒤, 최종 이름으로 바꾸기 직전으로 옮겼다.
+    - 실패하면 이 실행이 만든 임시 파일만 지운다.
+    - 테스트: 저장 중 HEAD 이동 → checkpoint·metadata·기록·임시 파일이 하나도 남지 않는다.
+  - 도구 SHA가 바뀌어 실험 식별값이 새로 정해졌다. 승인은 처음부터 다시 받는다.
 - 통합 테스트는 이제 git을 mock하지 않는다. 실제 임시 저장소에서 승인 커밋 → 기록 생성 → seed-records 복사 → staging → 커밋을 모든 단계에 걸쳐 확인한다.
 - 블록 시험에서 하나를 더 찾아 고쳤다. p1-F의 실행 중 프로세스 검사(`pgrep`)가 블록을 실행하는 셸 자신의 명령줄과도 맞았다. 그래서 자기 자신을 제외하는 패턴으로 바꿨다.
-- 테스트는 22개다. 연속 3회, 그리고 동시 2회 실행에서 모두 통과했다. 기존 trainer 동등성 테스트도 그대로 통과한다.
+- 테스트는 24개다. 연속 3회, 그리고 동시 2회 실행에서 모두 통과했다. 기존 trainer 동등성 테스트도 그대로 통과한다.
 
 ## 10. 승인 단계
 
@@ -283,7 +293,7 @@ prepare는 값을 새로 받아들이는 단계가 아니다. 커밋된 기대�
   - 학습 기록 사본은 `docs/.../seed-records/`에 둔다. `runs/`는 `.gitignore` 대상이라 커밋되지 않는다.
   - checkpoint는 커밋하지 않는다.
 - **중단 뒤 복구**
-  - 블록이 기록 커밋 전에 멈추면 **p1-F**를 실행한다.
+  - 블록이 기록 커밋 전에 멈추면 **p1-F**를 실행한다. 단, Arena(p1-4)가 끝나지 않은 동안에는 쓰지 않는다. 그때는 p1-4를 다시 실행해 같은 HEAD에서 재개한다.
   - p1-F는 아직 커밋되지 않은 로그 사본과, 끝난 기록(prepare / reproduce / link / judge, 학습 기록 사본)만 커밋한다. 아무것도 다시 실행하지 않는다.
   - 학습 블록은 다시 실행하면 커밋된 단계는 건너뛴다. 기록까지 끝났지만 커밋 전에 멈춘 실행은 다시 학습하지 않고 복사만 한다.
   - 중간에 끊긴 실행(파일은 있고 기록이 없음)은 도구가 거부한다. 지우지 않고 보고한다.
@@ -341,8 +351,34 @@ p1-F. 기록 보존 (어느 블록이든 기록 커밋 전에 멈췄을 때만. 
   R=runs/h7r/R2-P1-POLICY-REPLAY-1
   L="$R/logs"
   echo __START__
-  # [1] / [l]: the patterns match the P1 commands but not this block's own command line
-  if pgrep -af 'scripts/h7r_p[1][.]py|scripts/h7r_eva[l][.]py play'; then echo "STOP: a P1 command is still running"; exit 1; fi
+  # a P1 command still running in this checkout: a python process here whose script is a P1 tool
+  if python - "$PWD" <<'PY'
+import sys
+from pathlib import Path
+root = Path(sys.argv[1]).resolve()
+for proc in Path('/proc').iterdir():
+    try:
+        if not proc.name.isdigit() or (proc / 'cwd').resolve() != root:
+            continue
+        args = [a.decode() for a in (proc / 'cmdline').read_bytes().split(b'\0') if a]
+    except (OSError, UnicodeError):
+        continue
+    if args and Path(args[0]).name.startswith('python') and \
+            {'scripts/h7r_p1.py', 'scripts/h7r_eval.py'} & set(args[1:3]):
+        print('running:', proc.name, ' '.join(args))
+        sys.exit(0)
+sys.exit(1)
+PY
+  then echo "STOP: a P1 command is still running"; exit 1; fi
+  A=docs/h7r/contracts/R2-P1-ARENA-1.json
+  if [ -f "$R/arena/HEAD" ] && [ -f "$A" ]; then
+    for arm in $(python -c "import json, sys; print(' '.join(a['name'] for a in json.load(open(sys.argv[1]))['arms']))" "$A"); do
+      if [ ! -e "$R/arena/$arm.json" ]; then
+        echo "STOP: the Arena is unfinished ($arm): resume p1-4 first (a commit now would move HEAD and break the resume)"
+        exit 1
+      fi
+    done
+  fi
   git reset -q -- "$D"
   test -z "$(git status --porcelain --untracked-files=no)"
   tracked(){ git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
@@ -460,7 +496,12 @@ p1-3. link와 Arena 계약 (클라우드 세션)
    - `approved.arena` 커밋 뒤 `arena-contract`로 `docs/h7r/contracts/R2-P1-ARENA-1.json`을 만들어 커밋한다.
 
 p1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
-   - arm이 중간에 멈추면 같은 블록을 다시 실행한다. 끝난 arm은 건너뛰고, 멈춘 arm은 `play`가 journal에서 이어서 둔다.
+   - **대국 중에는 HEAD를 고정한다.** arm 기록의 signature에 실행 HEAD가 들어가므로, 중간에 커밋하면 남은 journal로 재개할 수 없다.
+     - 처음 시작할 때 HEAD를 `runs/.../arena/HEAD`에 적는다.
+     - 끝나지 않은 arm이 있으면 pull하지 않고, HEAD가 그 값과 같아야 진행한다.
+     - arm이 실패하면 아무것도 커밋하지 않고 멈춘다. 로그는 `runs/`에 남는다. 같은 블록을 다시 실행하면 같은 HEAD에서 `play`가 journal로 이어서 둔다.
+   - 모든 arm이 끝난 뒤에야 모든 시도의 대국 로그, judge 로그, `judge.json`을 커밋한다. judge가 실패해도 로그를 커밋한다(이때는 arm이 모두 끝났으므로 HEAD가 바뀌어도 된다).
+   - Arena가 끝나지 않은 동안에는 p1-F를 쓰지 않는다(p1-F가 거부한다).
    - judge 결과를 보고 표본을 보충하거나 다시 두지 않는다.
 
 ```bash
@@ -470,52 +511,60 @@ p1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
-  git pull --ff-only origin feat/h7-c1
-  test -z "$(git status --porcelain --untracked-files=no)"
-  python scripts/check_track_b_frozen.py
   D=docs/h7r/r2/R2-P1-POLICY-REPLAY-1
   A=docs/h7r/contracts/R2-P1-ARENA-1.json
   R=runs/h7r/R2-P1-POLICY-REPLAY-1
   L="$R/logs"
   mkdir -p "$L" "$R/arena"
-  STAMP="$(date +%Y%m%d-%H%M%S)"
-  if git ls-files --error-unmatch "$D/judge.json" >/dev/null 2>&1; then echo "STOP: the judge is already recorded"; exit 1; fi
+  tracked(){ git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+  if tracked "$D/judge.json"; then echo "STOP: the judge is already recorded"; exit 1; fi
   if [ -e "$D/judge.json" ]; then echo "STOP: an uncommitted judge.json exists: run p1-F"; exit 1; fi
-  commit_logs(){  # message, then log bases
-    local msg="$1"; shift
-    local expect=()
-    for b in "$@"; do
-      python scripts/h7r_d4_records.py copy-logs --src-dir "$L" --pattern "$b.log" \
-        --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$b.manifest.json"
-      expect+=(--expect "$D/stage-logs/$b.log" --expect "$D/stage-logs/$b.manifest.json")
-    done
-    if [ "${#expect[@]}" -eq 0 ]; then return 0; fi
-    if [ -f "$D/judge.json" ]; then expect+=(--expect "$D/judge.json"); fi
-    for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
-    python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
-    git commit -m "$msg"
-    git push origin feat/h7-c1
-  }
-  played=()
-  for arm in $(python -c "import json, sys; print(' '.join(a['name'] for a in json.load(open(sys.argv[1]))['arms']))" "$A"); do
-    if [ -e "$R/arena/$arm.json" ]; then echo "done: $arm"; continue; fi
+  test -z "$(git status --porcelain --untracked-files=no)"
+  arms(){ python -c "import json, sys; print(' '.join(a['name'] for a in json.load(open(sys.argv[1]))['arms']))" "$A"; }
+  left=()
+  if [ -f "$A" ]; then for arm in $(arms); do [ -e "$R/arena/$arm.json" ] || left+=("$arm"); done; fi
+  if [ -f "$R/arena/HEAD" ] && [ "${#left[@]}" -gt 0 ]; then
+    if [ "$(git rev-parse HEAD)" != "$(cat "$R/arena/HEAD")" ]; then
+      echo "STOP: HEAD moved since the Arena started ($(cat "$R/arena/HEAD")); restore that commit or report"; exit 1
+    fi
+    echo "resuming at $(cat "$R/arena/HEAD") (no pull while arms are unfinished)"
+  else
+    git pull --ff-only origin feat/h7-c1
+    left=()
+    for arm in $(arms); do [ -e "$R/arena/$arm.json" ] || left+=("$arm"); done
+    if [ "${#left[@]}" -gt 0 ]; then git rev-parse HEAD > "$R/arena/HEAD"; fi
+  fi
+  python scripts/check_track_b_frozen.py
+  STAMP="$(date +%Y%m%d-%H%M%S)"
+  for arm in ${left[@]+"${left[@]}"}; do
     b="play-$arm-$STAMP"
     if [ -e "$L/$b.log" ]; then echo "STOP: $L/$b.log exists"; exit 1; fi
     rc=0
     python -u scripts/h7r_eval.py play --contract "$A" --arm "$arm" --device cuda --workers 6 \
       --jsonl "$R/arena/$arm.jsonl" --output "$R/arena/$arm.json" 2>&1 | tee "$L/$b.log" || rc=$?
     echo "__EXIT__ $rc" >> "$L/$b.log"
-    played+=("$b")
     if [ "$rc" -ne 0 ]; then
-      commit_logs "H7-R P1: Arena arm $arm exit $rc (logs only)" "${played[@]}"
-      echo "STOP: arm $arm failed (exit $rc); rerun this block to resume"; exit 1
+      echo "STOP: arm $arm failed (exit $rc); nothing committed, HEAD kept: rerun this block to resume"; exit 1
     fi
   done
   b="judge-$STAMP"
   rc=0
   python -u scripts/h7r_p1.py judge --arms-dir "$R/arena" 2>&1 | tee "$L/$b.log" || rc=$?
   echo "__EXIT__ $rc" >> "$L/$b.log"
-  commit_logs "H7-R P1: Arena and judge exit $rc (records only)" ${played[@]+"${played[@]}"} "$b"
+  expect=()
+  shopt -s nullglob
+  for f in "$L"/play-*.log "$L/$b.log"; do
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    expect+=(--expect "$D/stage-logs/$n.log" --expect "$D/stage-logs/$n.manifest.json")
+  done
+  if [ -f "$D/judge.json" ]; then expect+=(--expect "$D/judge.json"); fi
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R P1: Arena and judge exit $rc (records only)"
+  git push origin feat/h7-c1
   echo "__RECORDED__ $rc"
   exit "$rc"
 )

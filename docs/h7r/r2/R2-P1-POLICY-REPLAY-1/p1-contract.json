@@ -3,7 +3,7 @@
   "contract_id": "R2-P1-POLICY-REPLAY-1",
   "status": "fixed",
   "approved": {
-    "prepare": true,
+    "prepare": false,
     "train": false,
     "arena": false
   },
@@ -402,7 +402,7 @@
   "sources": [
     {
       "path": "scripts/h7r_p1.py",
-      "sha256": "b9027a06c15671b7a64e5ca7aca7f3830e4ec829765a06e617621c9bf6f9d0e6"
+      "sha256": "4796f49f7d12a402a447554abe5b5f5fbfb568569a56892a78ea71debfcd4f12"
     },
     {
       "path": "src/hybrid/h7r_p1_train.py",

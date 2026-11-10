@@ -407,26 +407,37 @@ def train(args, root=ROOT, log=print) -> dict:
                   [*input_files(), C2_RECORD, f'{D}/prepare.json', f'{D}/reproduce.json'])
     checked = check_inputs(c, root)
     result, inputs, cfg, parent = run_training(c, args.arm, args.seed, args.device, checked, root, log)
-    git = guard.check()  # before the checkpoint and the record
+    git = guard.start['git']  # the HEAD the run started from; guard.check() below proves it is still that
     record = {'format': 'h7r-p1-train-v1', **stamp(sha, eid, git), 'arm': args.arm, 'seed': args.seed,
               'config': tr.config_dict(cfg), 'inputs': inputs, **result['record'], 'p1': result['p1']}
     out.mkdir(parents=True, exist_ok=True)
+    temporary = [out / 'best.pt.tmp', out / 'best.json.tmp']
+    try:
+        if result['state'] is not None:
+            parent_meta = json.loads((Path(root) / h3_meta_path()).read_text(encoding='utf-8'))
+            parent.load_state_dict(result['state'])
+            save_checkpoint(temporary[0], parent)
+            meta = {'stage': tr.POLICY_STAGE, 'track': 'B', 'cycle': 2, 'policy_trained': True,
+                    'value_trained': False,
+                    'config': {'channels': parent_meta['config']['channels'],
+                               'blocks': parent_meta['config']['blocks'], **tr.config_dict(cfg)},
+                    'parent_checkpoint_sha256': inputs['parent_checkpoint_sha256'],
+                    'teacher_checkpoint_sha256': inputs['teacher_checkpoint_sha256'],
+                    'policy_rows_sha256': inputs['policy_rows_sha256'], 'source_models': inputs['source']['models'],
+                    'best': result['record']['best'],
+                    'teacher_guard_top1': result['record']['teacher_guard']['top1'],
+                    'p1': {'experiment_sha256': eid, 'arm': args.arm, 'seed': args.seed,
+                           'replay': result['p1']['replay']},
+                    'git': git}
+            temporary[1].write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')
+        guard.check()  # after every temporary file is written, right before anything takes its final name
+    except BaseException:
+        for f in temporary:  # this run's own unpublished files; nothing published is touched
+            f.unlink(missing_ok=True)
+        raise
     if result['state'] is not None:
-        parent_meta = json.loads((Path(root) / h3_meta_path()).read_text(encoding='utf-8'))
-        parent.load_state_dict(result['state'])
-        save_checkpoint(out / 'best.pt.tmp', parent)
-        meta = {'stage': tr.POLICY_STAGE, 'track': 'B', 'cycle': 2, 'policy_trained': True, 'value_trained': False,
-                'config': {'channels': parent_meta['config']['channels'], 'blocks': parent_meta['config']['blocks'],
-                           **tr.config_dict(cfg)},
-                'parent_checkpoint_sha256': inputs['parent_checkpoint_sha256'],
-                'teacher_checkpoint_sha256': inputs['teacher_checkpoint_sha256'],
-                'policy_rows_sha256': inputs['policy_rows_sha256'], 'source_models': inputs['source']['models'],
-                'best': result['record']['best'], 'teacher_guard_top1': result['record']['teacher_guard']['top1'],
-                'p1': {'experiment_sha256': eid, 'arm': args.arm, 'seed': args.seed, 'replay': result['p1']['replay']},
-                'git': git}
-        (out / 'best.json.tmp').write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')
-        (out / 'best.pt.tmp').replace(out / 'best.pt')
-        (out / 'best.json.tmp').replace(out / 'best.json')
+        temporary[0].replace(out / 'best.pt')
+        temporary[1].replace(out / 'best.json')
         record['candidate'] = {'checkpoint_sha256': file_sha256(out / 'best.pt'),
                                'metadata_sha256': file_sha256(out / 'best.json')}
     publish(out / 'record.json', record)
