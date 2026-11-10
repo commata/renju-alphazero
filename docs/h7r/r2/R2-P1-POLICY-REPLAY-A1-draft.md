@@ -1,6 +1,6 @@
 # R2-P1-POLICY-REPLAY-A1: 결정론 동등성 gate를 둔 policy replay 대조 실험
 
-- 상태: prepare 승인(`35f9334`)·PASS(`03d3ec5`). gate·train·arena는 미승인
+- 상태: prepare PASS(`03d3ec5`), gate 승인(`a0f2987`)·PASS(`b3eb145`). train·arena는 미승인
 - 사용자 결정(2026-11-10): A1을 채택한다.
   - 과거 c2의 수치, eligibility, 선택 step은 참고 기록으로 둔다.
   - 입력, 모델 신원, 학습 설정과 step 구조는 계속 엄격히 검사한다.
@@ -507,5 +507,33 @@ a1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
   - RenjuNet cache: train 3,178,091국면, val 127,316국면, 텐서 해시, train·val 대국 겹침 없음
   - 근거 기록 9개(기존 P1 계약·재현 FAIL 기록·진단 결과 포함)
 - 입력 파일 8개의 SHA는 기존 실험의 prepare(`78e8d38`)와 같다. 입력은 그때와 바뀌지 않았다.
-- 다음 단계는 gate 승인 뒤의 a1-G(실제 CUDA에서 E1–E5)다.
+
+### 8.2 동등성 gate: PASS (`b3eb145`, 2026-11-10)
+
+- gate 실행 5회 모두 exit 0(`b488ea7`–`41a7f84`, 실행마다 커밋), 판정 exit 0. 실험 `faeb72b0f625`, 계약 파일 SHA `49763cfe3e25`(gate 승인 커밋)
+- 검증: 커밋된 gate 기록 5개로 판정을 다시 계산했고 `gate.json`과 같았다. train 단계가 쓰는 재판정(`verified_gate`)도 통과한다.
+- 수치 설정(5회 동일): torch 2.14.0+cu130, CUDA 13.0, cuDNN 9.24, RTX 5070, deterministic algorithms·cuDNN deterministic on, benchmark off, cuDNN TF32 on, matmul TF32 off, precision `highest`, 스레드 8, `CUBLAS_WORKSPACE_CONFIG=:4096:8`
+- 엄격 검사: 5회 모두 위반 없음. 수치 설정·source·초기 state도 5회 모두 같았다.
+- 정확 일치(허용 오차 0)
+
+| 판정 | 결과 |
+|---|---|
+| G1 E2 = E3 | 차이 없음 |
+| G1 E4 = E5 | 차이 없음 |
+| G2 E1 = E2 | 차이 없음 |
+
+| 실행 | 종류 | 선택 step | eligibility | 선택 state | 시간(초) |
+|---|---|---:|---|---|---:|
+| E1 | 기존 trainer | 77 | TTFFTTFTFF | `4e7939153b37` | 51 |
+| E2 | C (replay off, 진단 on) | 77 | TTFFTTFTFF | `4e7939153b37` | 98 |
+| E3 | C | 77 | TTFFTTFTFF | `4e7939153b37` | 99 |
+| E4 | T (replay on, 진단 on) | 96 | 10회 모두 T | `58429752f6d9` | 101 |
+| E5 | T | 96 | 10회 모두 T | `58429752f6d9` | 92 |
+
+- E1의 손실·평가 곡선·선택 state·고정 국면 log-확률은 진단 실행 `old-det-1`(`0fe5aa1`)과도 비트 단위로 같다. 같은 환경에서 다른 날 다른 프로세스로 돌려도 같은 계산이다.
+- E2–E5의 학습 시작 시 진단 KL은 0이다(시작 시 student = H3).
+- 진단 연산을 켜도(E2) 기존 trainer(E1)와 비트 단위로 같았다. 진단에서 분리하지 못했던 추가 진단 연산의 영향이 결정론 설정에서는 없음을 직접 확인했다.
+- c2 참고 기록(판정 아님): E1–E3은 평가 10부터 c2와 다르고(val objective 최대 1.05e-4), eligibility와 선택 step 77은 c2와 같다. E4·E5는 replay가 켜져 있으므로 c2와 다른 것이 당연하다.
+- E4·E5의 결과는 replay 경로가 결정론 설정에서 돌고 반복된다는 확인일 뿐이다. 학습 효과로 읽지 않고, 그 state도 쓰지 않는다.
+- 다음 단계는 train 승인 뒤의 a1-2(본학습 6회)다.
 
