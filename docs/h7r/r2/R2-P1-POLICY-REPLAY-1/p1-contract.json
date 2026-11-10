@@ -74,7 +74,8 @@
       },
       "rule": "prepare compares the actual cache with these committed values (never adopts new ones); train and val game_id sets disjoint"
     },
-    "models_metadata": "each best.json SHA and content (stage, config) checked with its checkpoint"
+    "models_metadata": "each best.json SHA and content (stage, config) checked with its checkpoint",
+    "consumed": "reproduce and train check every input they consume against these expectations (never only the cache manifest) and train on exactly the checked objects"
   },
   "arms": {
     "C": {
@@ -184,10 +185,10 @@
         "selected_step": 77
       }
     },
-    "train": "3 seeds x 2 arms; the arena candidate seed failing stops",
+    "train": "3 seeds x 2 arms; the committed reproduction is re-judged from its content (seed, c2 record SHA, the rules applied again) before any run; the arena candidate seed failing stops",
     "link": "T and C of seed 20261024 both CANDIDATE, else stop (no other seed substituted)",
     "arena": "section arena; one run, no resizing, no rerun",
-    "judge": "section reading"
+    "judge": "the Arena contract must equal the one rebuilt from this contract and the verified link (models, link SHA, every arm, suites, pairs, seeds, pairings, budgets, statistics); every arm record complete; then section reading"
   },
   "arena": {
     "champion": "H3 policy + c5 value, S50",
@@ -388,14 +389,20 @@
     "experiment_sha256": "sha256 of the canonical JSON of this contract without \"approved\"; links prepare, train, link and Arena records",
     "contract_file_sha256": "recorded separately by every run (changes with approval commits)"
   },
+  "records": {
+    "seed_records": "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/seed-records/{arm}-{seed}/record.json",
+    "stage_logs": "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/stage-logs",
+    "note": "runs/ is git-ignored: the committed copies of run records live in seed-records"
+  },
+  "invariance": "every command records HEAD (clean), the contract file, the sources and the files it reads at its start and checks them again right before it publishes; a change publishes nothing",
   "draft": {
     "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/p1-contract.draft.json",
-    "sha256": "a5a46e1a4a631a5a84e4536c5782d32d09755976279aad55cc3d84966217aa53"
+    "sha256": "cba46a7e91c96fe4f0ef0bfe76d9fc94762307c09a28afb68ff0ba6468eedb46"
   },
   "sources": [
     {
       "path": "scripts/h7r_p1.py",
-      "sha256": "3429806c74340f434bfa57ea9b9e28e3699824378020cd0fafb2e28306128993"
+      "sha256": "b9027a06c15671b7a64e5ca7aca7f3830e4ec829765a06e617621c9bf6f9d0e6"
     },
     {
       "path": "src/hybrid/h7r_p1_train.py",
