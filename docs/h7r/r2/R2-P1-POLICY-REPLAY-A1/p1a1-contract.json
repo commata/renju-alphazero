@@ -4,7 +4,7 @@
  "status": "fixed",
  "approved": {
   "prepare": true,
-  "gate": false,
+  "gate": true,
   "train": false,
   "arena": false
  },
