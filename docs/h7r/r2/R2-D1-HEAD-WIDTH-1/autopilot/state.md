@@ -36,3 +36,4 @@
 - 2026-11-10 00:22 KST: D4 `approved.full` (autopilot driver; 근거: the committed D4 smoke is a reproduced SMOKE of this experiment; 15.0 h left of the delegation).
 - 2026-11-10 00:19–05:14: eligible 재실행 PASS(`b147633`), smoke 승인·`SMOKE`(`f0dc0ea`, `1b4a274`), full 승인(`19b360b`), D4 full `NOT_ESTABLISHED`(`c859f35`, 279.8분). 세 주 비교 모두 INCONCLUSIVE.
 - 2026-11-10: **위임 종료.** 진행 조건 `ALL_THREE_BETTER` 미충족으로 P5·P6은 진행하지 않음. D1은 "예측-선택 연결 미입증"으로 기록(D1 초안 §17, R2-DIAG-1 §19). champion·canonical·웹 변경 없음. 다음 진단은 사용자가 정한다.
+- 2026-11-10: 사용자 지시로 에이전트 자동 진행을 끝내고 이전 방식으로 돌아간다. 클라우드 세션이 코드·계약·명령을 준비하고, 단계마다 사용자가 승인하고, 데스크톱 실행은 사용자가 하고, 클라우드 세션이 기록을 확인한다. `scripts/h7r_d1_autopilot.py`와 `desktop-agent-prompt.md`는 이 위임의 기록으로만 남기고 다시 쓰지 않는다.
