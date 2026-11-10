@@ -1,6 +1,7 @@
-# R2-P1-POLICY-REPLAY-1 개정 A1 (초안, 승인 전)
+# R2-P1-POLICY-REPLAY-1 개정 A1 (제안)
 
-- 상태: **초안**. 계약·코드·기록은 바꾸지 않았고, 아무것도 승인되지 않았다.
+- 상태: **채택**(2026-11-10). 구현과 계약은 `R2-P1-POLICY-REPLAY-A1-draft.md`에 있다. 아래는 채택 전 제안 원문이다.
+  - 사용자 결정: eligibility·선택 step은 참고 기록(A의 권장안), 본학습도 결정론 설정(C의 권장안). B의 E2/E3는 replay off + 진단 on, E4/E5는 replay on + 진단 on.
 - 근거: `R2-P1-DIAG-1-draft.md` §6.2–6.3 (`0fe5aa1`)
 - 보존하는 것
   - 실험 `e41841eaafa8`과 그 재현 gate FAIL 기록(`a1cd152`)은 그대로 둔다.

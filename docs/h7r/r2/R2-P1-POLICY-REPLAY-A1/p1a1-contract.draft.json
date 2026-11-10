@@ -1,0 +1,477 @@
+{
+ "format": "h7r-p1a1-contract-v1",
+ "contract_id": "R2-P1-POLICY-REPLAY-A1",
+ "status": "draft",
+ "approved": {
+  "prepare": false,
+  "gate": false,
+  "train": false,
+  "arena": false
+ },
+ "goal": "Track B strongest play: a policy candidate stronger than the research champion (H3 policy + c5 value) at the same S50 budget",
+ "question": "does a KL(H3 || student) replay term on RenjuNet train positions, added to the c2 policy fine-tune, make the candidate stronger than the champion and better than the unchanged c2 method",
+ "amendment": {
+  "name": "A1",
+  "of": {
+   "contract_id": "R2-P1-POLICY-REPLAY-1",
+   "experiment_sha256": "e41841eaafa8c06ef4ab56bcd763fa414659cf73a344c183e1a53af897a6ec6f",
+   "contract": "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/p1-contract.json"
+  },
+  "kept": "the amended contract and every record of experiment e41841eaafa8, its reproduction gate FAIL (a1cd152) included, stay as they are; nothing of it is reused as a pass",
+  "diagnosis": "docs/h7r/r2/R2-P1-DIAG-1-draft.md (records 0fe5aa1): under the default GPU settings repeats of either trainer part from step 21 / evaluation 29 by about 1e-4, as the reproduction gate did; under deterministic settings repeats are bit-exact and the c2 and P1 trainers (replay and diagnostic off) are bit-exact",
+  "changes": [
+   "the past c2 values, eligibility and selected step are a reference record (recorded, never judged)",
+   "the inputs, model identities, training settings and step structure stay strict",
+   "a current-environment equivalence gate (E1-E5) under the deterministic settings decides, by exact equality",
+   "the gate and the six main runs use the same deterministic settings and the same entry point (execute)",
+   "new contract, experiment id and output paths"
+  ],
+  "unchanged": [
+   "inputs",
+   "arms (mu 0.5, replay batch 512, generator seed + 1000003)",
+   "training amount and selection",
+   "seeds",
+   "Arena arms, sizes, seeds and suites",
+   "reading and interpretation",
+   "data rule"
+  ],
+  "no_tolerance": "no tolerance is derived from the observed differences; exact equality is the definition of the same computation under deterministic algorithms, not a fitted value"
+ },
+ "evidence": {
+  "docs/h7c/c1/arena_verdict.json": {
+   "path": "docs/h7c/c1/arena_verdict.json",
+   "sha256": "091302ca15da658afb9ba587aaaddbacc266df360b1481a1b2e90f0e81e705da"
+  },
+  "docs/h7c/c2/arena_verdict.json": {
+   "path": "docs/h7c/c2/arena_verdict.json",
+   "sha256": "9dad79599058203be92337103dcb18b239cd9b6889cbf642292df36a6b326a26"
+  },
+  "docs/h7c/c2/policy_record.json": {
+   "path": "docs/h7c/c2/policy_record.json",
+   "sha256": "927f63a137207db28b5752ac40b319831c3ac1f80462c639142cb6dea38bcd80"
+  },
+  "docs/h7c/c2/policy_best.json": {
+   "path": "docs/h7c/c2/policy_best.json",
+   "sha256": "1bcd4351480c82ec338e96781aac2dafa388f8bcb031304cdbc59426456ef334"
+  },
+  "docs/h7c/e2/sb_c5_saturation.json": {
+   "path": "docs/h7c/e2/sb_c5_saturation.json",
+   "sha256": "952751bf83afefb423521d668bd927e43a7dbad397fb49a958bc3a8516edbae9"
+  },
+  "docs/mcts-v8-results/h3_cache_report.json": {
+   "path": "docs/mcts-v8-results/h3_cache_report.json",
+   "sha256": "b27dd17ed40c7d00f032bed594caf989047610fbccc010e5ce2b4b16bf15ec7d"
+  },
+  "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/p1-contract.json": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/p1-contract.json",
+   "sha256": "727ce6e0535be86d158154b22caccc96063506fb72d5379cc2014a6eaec4a0f0"
+  },
+  "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/reproduce.json": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-1/reproduce.json",
+   "sha256": "587533a7c1922cdb43cb835cfb517f61a14fcb941cffb55239a772675805c666"
+  },
+  "docs/h7r/r2/R2-P1-DIAG-1/diagnosis.json": {
+   "path": "docs/h7r/r2/R2-P1-DIAG-1/diagnosis.json",
+   "sha256": "a36f0367b7b9b6ebc93be9aa085a8afa6bc1dd549be0ca1680b634bcd30eebcd"
+  }
+ },
+ "inputs": {
+  "cycle_rows": {
+   "path": "runs/h7c/c2/policy_rows.jsonl.gz",
+   "sha256": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71",
+   "train_rows": 24077,
+   "val_rows": 1423
+  },
+  "parent_and_teacher": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+  },
+  "value_c5": {
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "renjunet_cache": {
+   "path": "data/external/renjunet/h3_cache",
+   "replay_split": "train",
+   "guard_split": "val",
+   "expected": {
+    "source": "docs/mcts-v8-results/h3_cache_report.json",
+    "format": "h3-cache-v1",
+    "h2_output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+    "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+    "encoder_version": "renju-relative-6p-v1",
+    "action_index_version": "row-major-15x15-v1",
+    "train": {
+     "tensor_sha256": "b48a8735bc6d1c87d7efaca52e7c8bf2838c3090b7639f5e1db2682a89430277",
+     "states": 3178091,
+     "games": 97098
+    },
+    "val": {
+     "tensor_sha256": "96f598810e46e9996317b11e13ff72d1e85a47f46666983cab719eca316bd3e7",
+     "states": 127316,
+     "games": 5354
+    }
+   },
+   "rule": "prepare compares the actual cache with these committed values (never adopts new ones); train and val game_id sets disjoint"
+  },
+  "models_metadata": "each best.json SHA and content (stage, config) checked with its checkpoint",
+  "consumed": "reproduce and train check every input they consume against these expectations (never only the cache manifest) and train on exactly the checked objects"
+ },
+ "arms": {
+  "C": {
+   "cycle": "the c2 policy method unchanged",
+   "replay": null
+  },
+  "T": {
+   "cycle": "identical to C (rows, batches, order, generator, steps, coefficients)",
+   "replay": {
+    "positions": "RenjuNet train split",
+    "batch": 512,
+    "sampling": "uniform with replacement",
+    "generator_seed": "training seed + 1000003; draws the indices and the D4 symmetries; the cycle generator is untouched",
+    "augment_d4": true,
+    "input": "the same D4-transformed planes and legal mask for H3 and the student",
+    "distribution": "logits masked to -inf off the legal moves, then log_softmax (renormalised over legal moves)",
+    "loss": "per position sum over legal a of p_H3(a) (log p_H3(a) - log p_student(a)); mean over the 512 positions",
+    "temperature": 1,
+    "teacher": "H3, eval mode, no gradient",
+    "weight_mu": 0.5,
+    "total": "L = L_cycle (unchanged definition and batch mean) + mu * KL_replay",
+    "added_to": "the unchanged cycle loss (no cycle row is replaced)",
+    "human_move_ce": "not used (a later variable)"
+   }
+  }
+ },
+ "training": {
+  "seed": "per run",
+  "batch_size": 512,
+  "epochs": 2.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "kl_lambda": 0.5,
+  "augment_d4": true,
+  "evaluations": 10,
+  "guard_drop": 0.02,
+  "batchnorm": "eval (parent statistics)",
+  "device": "cuda",
+  "selection": "the c2 rule for both arms: guard (RenjuNet val top-1) within guard_drop of H3, lowest cycle val objective; the replay term is not in the selection metric",
+  "warmup_steps": 5,
+  "records": {
+   "cycle_kl": "the existing val metric (policy_objective kl)",
+   "replay_kl": "step mean during training and, at every evaluation, on the whole RenjuNet val split; both arms; no_grad and eval, outside the training path and its generators; never a selection metric"
+  },
+  "numeric": "section determinism, for the gate and every main run"
+ },
+ "determinism": {
+  "settings": {
+   "deterministic_algorithms": true,
+   "cudnn_deterministic": true,
+   "cudnn_benchmark": false,
+   "cudnn_enabled": true,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest"
+  },
+  "environment": {
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8"
+  },
+  "set_by_the_tool": "torch.use_deterministic_algorithms(True), cudnn.deterministic = True, cudnn.benchmark = False for the run, then restored",
+  "environment_rule": "set before the process starts (cuBLAS reads it once); the tool refuses to start otherwise",
+  "checked": "every value above at the start and unchanged at the end of each run; the other numeric settings (torch, CUDA, cuDNN, GPU, threads) recorded; every gate run and every main run must have the same full numeric settings",
+  "tf32": "the cuDNN / matmul TF32 values are the PyTorch defaults the c2 run and the diagnosis ran with; checked, never changed",
+  "failure": "an operation without a deterministic implementation stops the run (recorded as a failure); there is no fallback to non-deterministic settings"
+ },
+ "seeds": {
+  "training": [
+   20261024,
+   20261111,
+   20261112
+  ],
+  "arena_candidate_training_seed": 20261024,
+  "arena_games": {
+   "O0": 8788,
+   "O1": 8789,
+   "O2_aux": 8790
+  },
+  "arena_seed_rule": "H7-R reserved block 8781-8799 (h7r_eval.SEED_BLOCK); unused by committed contracts: 8788-8794; 8795-8796 test fixtures; 8791-8794 left for the confirmation stage",
+  "bootstrap": 20261131
+ },
+ "stages": {
+  "prepare": "compare with the committed values: cycle rows file SHA and row counts, H3 and c5 checkpoints and best.json, the H3 cache manifest identity and train / val tensor hashes, states and games; train / val game ids disjoint; the c2 record SHAs",
+  "gate": {
+   "seed": 20261024,
+   "runs": {
+    "E1": "old",
+    "E2": "C",
+    "E3": "C",
+    "E4": "T",
+    "E5": "T"
+   },
+   "run_meaning": {
+    "old": "h7c_train.train_policy (the c2 trainer), no replay, no diagnostic",
+    "C": "h7r_p1_train.train_policy as arm C: replay off, the RenjuNet val diagnostic on",
+    "T": "h7r_p1_train.train_policy as arm T: replay on (mu 0.5, batch 512), the diagnostic on"
+   },
+   "entry_point": "scripts/h7r_p1a1.py execute, the same function the main runs (train) use",
+   "process": "one gate-run command per run, each in its own process",
+   "strict": [
+    "the run is the one named (format, run, kind, seed)",
+    "inputs: cycle rows SHA, H3 parent / teacher identity, RenjuNet cache tensor hashes; the c2 record's input SHAs",
+    "training settings equal to the c2 record's (device aside) and the contract device",
+    "numeric settings: section determinism; the same full numeric settings, sources and initial states in all five runs",
+    "step structure: total_steps, steps_per_epoch, warmup, evaluation steps, train / val rows, fingerprinted steps",
+    "arm C runs have no replay, arm T runs the contract replay; the diagnostic is on in E2-E5"
+   ],
+   "exact": {
+    "G1_determinism": [
+     "E2 = E3",
+     "E4 = E5"
+    ],
+    "G2_equivalence": [
+     "E1 = E2"
+    ]
+   },
+   "compared": "per-step fingerprints (cycle batch, D4 symmetries, learning rate, training loss), the whole trainer record (every evaluation's values, eligibility, selection, guards, verdict), the initial and selected state hashes, the fixed-position log-probability hash, and for G1 the P1 records (replay and diagnostic); G2 leaves out the P1 records E1 does not have",
+   "tolerance": 0,
+   "expected": {
+    "total_steps": 96,
+    "steps_per_epoch": 48,
+    "warmup_steps": 5,
+    "evaluation_steps": [
+     10,
+     19,
+     29,
+     38,
+     48,
+     58,
+     67,
+     77,
+     86,
+     96
+    ]
+   },
+   "reference": "the past c2 record against every gate run: evaluation differences, eligibility, selected step, guards, verdict; recorded in gate.json, never judged",
+   "records": "runs/h7r/R2-P1-POLICY-REPLAY-A1/gate/E{n}/ (record, state and log-probabilities; only the record is copied to gate-records)",
+   "miss": "stop before any main run; no criterion is relaxed, no run is repeated to pass, no diagnostic is switched off and no setting changed; a new diagnosis needs its own approval"
+  },
+  "train": "3 seeds x 2 arms through execute with the gate's numeric settings (refused otherwise); the committed gate is judged again from the committed gate records before any run; the step structure is checked; the arena candidate seed failing stops",
+  "link": "T and C of seed 20261024 both CANDIDATE, else stop (no other seed substituted)",
+  "arena": "section arena; one run, no resizing, no rerun",
+  "judge": "the Arena contract must equal the one rebuilt from this contract and the verified link (models, link SHA, every arm, suites, pairs, seeds, pairings, budgets, statistics); every arm record complete; then section reading"
+ },
+ "arena": {
+  "champion": "H3 policy + c5 value, S50",
+  "tested": [
+   "T(20261024) + c5 value, S50",
+   "C(20261024) + c5 value, S50"
+  ],
+  "factory": "analysis.tb_v3_net (v1)",
+  "tool": "scripts/h7r_eval.py play (one suite per arm)",
+  "arms": [
+   {
+    "name": "O0_T_vs_champion",
+    "suite": "docs/h7r/suites/O0.json",
+    "pairs": 300,
+    "pairing": "O0",
+    "seed": 8788
+   },
+   {
+    "name": "O0_C_vs_champion",
+    "suite": "docs/h7r/suites/O0.json",
+    "pairs": 300,
+    "pairing": "O0",
+    "seed": 8788
+   },
+   {
+    "name": "O1_T_vs_champion",
+    "suite": "docs/h7r/suites/O1.json",
+    "pairs": 300,
+    "pairing": "O1",
+    "seed": 8789
+   },
+   {
+    "name": "O1_C_vs_champion",
+    "suite": "docs/h7r/suites/O1.json",
+    "pairs": 300,
+    "pairing": "O1",
+    "seed": 8789
+   }
+  ],
+  "suites": [
+   {
+    "path": "docs/h7r/suites/O0.json",
+    "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9",
+    "openings": 300,
+    "classes": 75
+   },
+   {
+    "path": "docs/h7r/suites/O1.json",
+    "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9",
+    "openings": 300,
+    "classes": 298
+   }
+  ],
+  "pairs_per_condition": 600,
+  "pairing": "within a suite T and C share openings, game seeds and pairing",
+  "sample_note": "O0 has 75 symmetry classes: 600 pairs are not 600 independent samples",
+  "not_used": [
+   "docs/h7r/suites/O1-confirm-main.json",
+   "docs/h7r/suites/O1-confirm-anchor.json"
+  ],
+  "overlap_note": "some sequences overlap the R1 pilot and earlier arenas; allowed for a development reading",
+  "planning": {
+   "pair_sd_upper_measured": [
+    0.246,
+    0.252
+   ],
+   "pairs_for_3pp_power_0_8": [
+    527,
+    553
+   ],
+   "note": "a planning value, not a guarantee; the SD of T - C depends on the arms' covariance"
+  },
+  "cost": {
+   "measured_seconds_per_pair_6_workers": {
+    "O1": [
+     5.7,
+     7.3
+    ],
+    "O0": [
+     11.0,
+     12.2
+    ]
+   },
+   "estimate_minutes_per_arm": {
+    "O0": [
+     55,
+     61
+    ],
+    "O1": [
+     29,
+     37
+    ]
+   },
+   "estimate_hours_four_arms": [
+    2.8,
+    3.3
+   ],
+   "measured": "each arm record keeps its wall time (h7r_eval play); the measured cost is reported and never changes the size (h7r_eval play has no partial-arm smoke)"
+  },
+  "auxiliary": {
+   "arms": [
+    {
+     "name": "O2aux_T20261111_vs_champion",
+     "suite": "docs/h7r/suites/O2.json",
+     "pairs": 25,
+     "pairing": "O2_aux",
+     "seed": 8790
+    },
+    {
+     "name": "O2aux_C20261111_vs_champion",
+     "suite": "docs/h7r/suites/O2.json",
+     "pairs": 25,
+     "pairing": "O2_aux",
+     "seed": 8790
+    },
+    {
+     "name": "O2aux_T20261112_vs_champion",
+     "suite": "docs/h7r/suites/O2.json",
+     "pairs": 25,
+     "pairing": "O2_aux",
+     "seed": 8790
+    },
+    {
+     "name": "O2aux_C20261112_vs_champion",
+     "suite": "docs/h7r/suites/O2.json",
+     "pairs": 25,
+     "pairing": "O2_aux",
+     "seed": 8790
+    }
+   ],
+   "use": "descriptive only: never a reading, a stability verdict or a promotion ground"
+  }
+ },
+ "reading": {
+  "statistics": {
+   "alpha_one_sided": 0.025,
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261131,
+    "method": "percentile",
+    "unit": "opening pair"
+   },
+   "stratified": "resample openings within each suite (300 and 300 fixed); the T and C results of a drawn opening move together",
+   "combined": "0.5 x O0 mean + 0.5 x O1 mean (fixed weights)",
+   "per_suite": "h7r_eval.arm_summary reported too",
+   "sensitivity": "class-level stratified bootstrap (classes resampled within a suite, all their openings together, the same 50:50 weights); reported, not read"
+  },
+  "P": {
+   "what": "T vs champion: combined score - 0.5 (stratified, 50:50)",
+   "STRONGER": "one-sided lower bound of score - 0.5 > 0",
+   "WEAKER": "one-sided upper bound < 0",
+   "else": "NOT_ESTABLISHED"
+  },
+  "D": {
+   "what": "T - C pair-score differences on the same openings (stratified, 50:50)",
+   "BETTER_THAN_CONTROL": "one-sided lower bound > 0",
+   "WORSE_THAN_CONTROL": "one-sided upper bound < 0",
+   "else": "NOT_ESTABLISHED",
+   "rule": "the arms differ only by D, never by one arm being significant against the champion and the other not"
+  },
+  "interpretation": {
+   "P STRONGER": "a development candidate for the separate confirmation stage; no champion change",
+   "P not STRONGER, D BETTER_THAN_CONTROL": "the policy-preserving term helped over the old method, consistent with the knowledge-loss hypothesis; not stronger than the champion (regression mitigated only)",
+   "P not STRONGER, D NOT_ESTABLISHED": "the effect of this treatment is not established; the hypothesis is not ruled out (weight, sample or precision may miss it)",
+   "P not STRONGER, D WORSE_THAN_CONTROL": "this treatment did worse than the old method; not a ruling on the hypothesis"
+  },
+  "not_used": "the value epsilon, the R2 H-dev reading and the D4 reading are neither changed nor applied",
+  "end": "P not STRONGER ends the contract; another weight or the human-move CE is a new contract"
+ },
+ "separate_stages": [
+  "independent confirmation (confirmation suites, seeds 8791-8794, H-conf selection quality)",
+  "anchor non-inferiority (original H3 / H6), tactical v2, per-move time gate",
+  "champion, canonical and web changes",
+  "search-budget engine candidates (e.g. S400)",
+  "reinforcement-learning loop"
+ ],
+ "implementation_scope": {
+  "unchanged": [
+   "src/hybrid/h7c_train.py",
+   "src/hybrid/h7r_p1_train.py",
+   "scripts/h7r_p1.py",
+   "scripts/h7r_p1_diag.py",
+   "scripts/h7c_*",
+   "src/hybrid/h7r_eval.py",
+   "scripts/h7r_eval.py",
+   "frozen engine and runtime files",
+   "src/analysis/tb_v3_net.py",
+   "the R2-P1-POLICY-REPLAY-1 contract and records",
+   "existing records"
+  ],
+  "new": [
+   "scripts/h7r_p1a1.py",
+   "tests/test_h7r_p1a1.py"
+  ],
+  "reused": "h7r_p1 (inputs, Guard, publication, statistics, readings) and h7r_p1_diag (fingerprints, state hash, fixed positions) as they are",
+  "judge": "scripts/h7r_p1a1.py judge: the R2-P1-POLICY-REPLAY-1 judge rules unchanged",
+  "arena_contract": "scripts/h7r_p1a1.py arena-contract: docs/h7r/contracts/R2-P1-A1-ARENA-1.json (eight arms, seeds 8788-8790) from the link record and the experiment_sha256, after training",
+  "play": "scripts/h7r_eval.py play --output <arms dir>/<arm>.json (unchanged)"
+ },
+ "data_rule": "RenjuNet-derived data, caches and models stay under data/ or runs/; only hashes and numbers are committed",
+ "identity": {
+  "experiment_sha256": "sha256 of the canonical JSON of this contract without \"approved\"; links prepare, train, link and Arena records",
+  "contract_file_sha256": "recorded separately by every run (changes with approval commits)"
+ },
+ "records": {
+  "prepare": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/prepare.json",
+  "gate_records": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/gate-records/E{n}/record.json",
+  "gate": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/gate.json",
+  "seed_records": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/seed-records/{arm}-{seed}/record.json",
+  "stage_logs": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/stage-logs",
+  "runs": "runs/h7r/R2-P1-POLICY-REPLAY-A1 (git-ignored)",
+  "note": "runs/ is git-ignored: the committed copies of run records live in gate-records and seed-records"
+ },
+ "invariance": "every command records HEAD (clean), the contract file, the sources and the files it reads at its start and checks them again right before it publishes; a change publishes nothing",
+ "sources": []
+}
