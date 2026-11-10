@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "compare-20261110-193015.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-P1-DIAG-1/logs/compare-20261110-193015.log",
+   "copy": "docs/h7r/r2/R2-P1-DIAG-1/stage-logs/compare-20261110-193015.log",
+   "bytes": 1086,
+   "sha256": "e03f687fde049e9ae98c5c08dd684fc676e4482326854ff135740b6c80139cde"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

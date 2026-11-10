@@ -1,0 +1,10 @@
+{"kind": "repeat new", "loss_first_differing_step": 21, "selected_state_equal": false, "selected_step_equal": true}
+{"kind": "repeat new-det", "loss_first_differing_step": null, "selected_state_equal": true, "selected_step_equal": true}
+{"kind": "repeat new-diag", "loss_first_differing_step": 60, "selected_state_equal": false, "selected_step_equal": true}
+{"kind": "repeat old", "loss_first_differing_step": 21, "selected_state_equal": false, "selected_step_equal": true}
+{"kind": "repeat old-det", "loss_first_differing_step": null, "selected_state_equal": true, "selected_step_equal": true}
+{"kind": "old vs new", "loss_first_differing_step": 53, "selected_state_equal": false, "selected_step_equal": true}
+{"kind": "new vs new-diag", "loss_first_differing_step": 7, "selected_state_equal": false, "selected_step_equal": true}
+{"kind": "old-det vs new-det", "loss_first_differing_step": null, "selected_state_equal": true, "selected_step_equal": true}
+{"kind": "old vs old-det", "loss_first_differing_step": 3, "selected_state_equal": false, "selected_step_equal": true}
+__EXIT__ 0

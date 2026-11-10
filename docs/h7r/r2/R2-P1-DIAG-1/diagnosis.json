@@ -1,0 +1,923 @@
+{
+ "format": "h7r-p1-diag-v1-compare",
+ "runs": [
+  {
+   "dir": "new-1",
+   "name": "new",
+   "trainer": "new",
+   "diag": false,
+   "deterministic": false,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "new-2",
+   "name": "new",
+   "trainer": "new",
+   "diag": false,
+   "deterministic": false,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "new-det-1",
+   "name": "new-det",
+   "trainer": "new",
+   "diag": false,
+   "deterministic": true,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "new-det-2",
+   "name": "new-det",
+   "trainer": "new",
+   "diag": false,
+   "deterministic": true,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "new-diag-1",
+   "name": "new-diag",
+   "trainer": "new",
+   "diag": true,
+   "deterministic": false,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "new-diag-2",
+   "name": "new-diag",
+   "trainer": "new",
+   "diag": true,
+   "deterministic": false,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "old-1",
+   "name": "old",
+   "trainer": "old",
+   "diag": false,
+   "deterministic": false,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "old-2",
+   "name": "old",
+   "trainer": "old",
+   "diag": false,
+   "deterministic": false,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "old-det-1",
+   "name": "old-det",
+   "trainer": "old",
+   "diag": false,
+   "deterministic": true,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  },
+  {
+   "dir": "old-det-2",
+   "name": "old-det",
+   "trainer": "old",
+   "diag": false,
+   "deterministic": true,
+   "selected_step": 77,
+   "verdict": "CANDIDATE"
+  }
+ ],
+ "settings": {
+  "new-1": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": null,
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "new-2": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": null,
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "new-det-1": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": true,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "new-det-2": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": true,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "new-diag-1": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": null,
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "new-diag-2": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": null,
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "old-1": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": null,
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "old-2": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": false,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": false,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": null,
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "old-det-1": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": true,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  },
+  "old-det-2": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": true,
+   "threads": 8,
+   "cuda_available": true,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8",
+    "NVIDIA_TF32_OVERRIDE": null,
+    "CUDA_LAUNCH_BLOCKING": null,
+    "OMP_NUM_THREADS": null,
+    "MKL_NUM_THREADS": null,
+    "PYTHONHASHSEED": null
+   }
+  }
+ },
+ "pairs": [
+  {
+   "kind": "repeat new",
+   "runs": [
+    "new",
+    "new"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": 21,
+   "loss_max_abs_diff": 0.00025725364685058594,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010208269281464233,
+    "ce": 0.00021548884399158474,
+    "kl": 0.0003399934451056852,
+    "guard_top1": 0.0001413805020578085,
+    "first_differing_evaluation": 29
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": false,
+   "fixed_logits_equal": false,
+   "selected_state_max_abs_diff": 0.0007419288158416748,
+   "fixed_logits_max_abs_diff": 0.029321670532226562,
+   "fixed_argmax_agreement": 0.9990940093994141
+  },
+  {
+   "kind": "repeat new-det",
+   "runs": [
+    "new-det",
+    "new-det"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": null,
+   "loss_max_abs_diff": 0.0,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.0,
+    "ce": 0.0,
+    "kl": 0.0,
+    "guard_top1": 0.0,
+    "first_differing_evaluation": null
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": true,
+   "fixed_logits_equal": true,
+   "selected_state_max_abs_diff": 0.0,
+   "fixed_logits_max_abs_diff": 0.0,
+   "fixed_argmax_agreement": 1.0
+  },
+  {
+   "kind": "repeat new-diag",
+   "runs": [
+    "new-diag",
+    "new-diag"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": 60,
+   "loss_max_abs_diff": 5.507469177246094e-05,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 3.414194263862136e-05,
+    "ce": 2.8480213457582337e-05,
+    "kl": 5.945845814875339e-05,
+    "guard_top1": 7.069025102890425e-05,
+    "first_differing_evaluation": 58
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": false,
+   "fixed_logits_equal": false,
+   "selected_state_max_abs_diff": 3.2670795917510986e-05,
+   "fixed_logits_max_abs_diff": 0.01558685302734375,
+   "fixed_argmax_agreement": 0.9996376037597656
+  },
+  {
+   "kind": "repeat old",
+   "runs": [
+    "old",
+    "old"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": 21,
+   "loss_max_abs_diff": 0.00021159648895263672,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010208269281464233,
+    "ce": 0.00011254831342233373,
+    "kl": 0.0002509490940735687,
+    "guard_top1": 9.425366803850199e-05,
+    "first_differing_evaluation": 29
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": false,
+   "fixed_logits_equal": false,
+   "selected_state_max_abs_diff": 0.0007531642913818359,
+   "fixed_logits_max_abs_diff": 0.026122093200683594,
+   "fixed_argmax_agreement": 0.9987316727638245
+  },
+  {
+   "kind": "repeat old-det",
+   "runs": [
+    "old-det",
+    "old-det"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": null,
+   "loss_max_abs_diff": 0.0,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.0,
+    "ce": 0.0,
+    "kl": 0.0,
+    "guard_top1": 0.0,
+    "first_differing_evaluation": null
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": true,
+   "fixed_logits_equal": true,
+   "selected_state_max_abs_diff": 0.0,
+   "fixed_logits_max_abs_diff": 0.0,
+   "fixed_argmax_agreement": 1.0
+  },
+  {
+   "kind": "old vs new",
+   "runs": [
+    "old",
+    "new"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": 53,
+   "loss_max_abs_diff": 0.00010275840759277344,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 2.7793943253806574e-05,
+    "ce": 4.649480630702918e-05,
+    "kl": 6.585646449348836e-05,
+    "guard_top1": 0.0001021081403751456,
+    "first_differing_evaluation": 58
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": false,
+   "fixed_logits_equal": false,
+   "selected_state_max_abs_diff": 4.6193599700927734e-05,
+   "fixed_logits_max_abs_diff": 0.012899398803710938,
+   "fixed_argmax_agreement": 0.9994564056396484
+  },
+  {
+   "kind": "new vs new-diag",
+   "runs": [
+    "new",
+    "new-diag"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": 7,
+   "loss_max_abs_diff": 0.00033974647521972656,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00011357771872799738,
+    "ce": 0.00019438603522492492,
+    "kl": 0.000496907482586989,
+    "guard_top1": 0.00011781708504821076,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": false,
+   "fixed_logits_equal": false,
+   "selected_state_max_abs_diff": 0.0005682408809661865,
+   "fixed_logits_max_abs_diff": 0.036896705627441406,
+   "fixed_argmax_agreement": 0.9981880784034729
+  },
+  {
+   "kind": "old-det vs new-det",
+   "runs": [
+    "old-det",
+    "new-det"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": true,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": true,
+    "threads": true,
+    "cuda_available": true,
+    "environment": true
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": null,
+   "loss_max_abs_diff": 0.0,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.0,
+    "ce": 0.0,
+    "kl": 0.0,
+    "guard_top1": 0.0,
+    "first_differing_evaluation": null
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": true,
+   "fixed_logits_equal": true,
+   "selected_state_max_abs_diff": 0.0,
+   "fixed_logits_max_abs_diff": 0.0,
+   "fixed_argmax_agreement": 1.0
+  },
+  {
+   "kind": "old vs old-det",
+   "runs": [
+    "old",
+    "old-det"
+   ],
+   "settings_equal": {
+    "torch": true,
+    "cuda": true,
+    "cudnn": true,
+    "device_name": true,
+    "cudnn_enabled": true,
+    "cudnn_benchmark": true,
+    "cudnn_deterministic": false,
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": true,
+    "float32_matmul_precision": true,
+    "deterministic_algorithms": false,
+    "threads": true,
+    "cuda_available": true,
+    "environment": false
+   },
+   "inputs_equal": true,
+   "config_equal": true,
+   "initial_state_equal": true,
+   "fingerprints_equal": {
+    "steps": true,
+    "batch_sha256": true,
+    "sym_sha256": true,
+    "lr_sha256": true
+   },
+   "loss_first_differing_step": 3,
+   "loss_max_abs_diff": 0.0005064010620117188,
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00015475393095565337,
+    "kl": 0.0003816521544419832,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "selected_state_equal": false,
+   "fixed_logits_equal": false,
+   "selected_state_max_abs_diff": 0.0007792413234710693,
+   "fixed_logits_max_abs_diff": 0.03178119659423828,
+   "fixed_argmax_agreement": 0.9992752075195312
+  }
+ ],
+ "against_c2": [
+  {
+   "run": "new",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 4.992615732613004e-05,
+    "ce": 7.823480323265741e-05,
+    "kl": 0.0002660319705379971,
+    "guard_top1": 0.00014923497439434108,
+    "first_differing_evaluation": 38
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "new",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010208269281464233,
+    "ce": 0.0002033075478742319,
+    "kl": 0.00035110851519135067,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 29
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "new-det",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00013416582484171435,
+    "kl": 0.0002883924163375323,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "new-det",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00013416582484171435,
+    "kl": 0.0002883924163375323,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "new-diag",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 9.573469342916141e-05,
+    "ce": 0.00018220473910757207,
+    "kl": 0.000360555673236021,
+    "guard_top1": 0.00011781708504821076,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "new-diag",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 8.870042384057086e-05,
+    "ce": 0.00018220473910757207,
+    "kl": 0.0003605817343616674,
+    "guard_top1": 0.00011781708504821076,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "old",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 3.602918569911573e-05,
+    "ce": 8.338182976097563e-05,
+    "kl": 0.00022021651166204137,
+    "guard_top1": 0.00011781708504821076,
+    "first_differing_evaluation": 38
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "old",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010208269281464233,
+    "ce": 0.00011254831342233373,
+    "kl": 0.0003036251442743859,
+    "guard_top1": 5.498130635583909e-05,
+    "first_differing_evaluation": 29
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "old-det",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00013416582484171435,
+    "kl": 0.0002883924163375323,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  },
+  {
+   "run": "old-det",
+   "evaluations": {
+    "steps_equal": true,
+    "objective": 0.00010465620607891246,
+    "ce": 0.00013416582484171435,
+    "kl": 0.0002883924163375323,
+    "guard_top1": 0.00012567155738474334,
+    "first_differing_evaluation": 10
+   },
+   "eligibility_equal": true,
+   "selected_step_equal": true,
+   "teacher_guard_equal": true,
+   "parent_val_equal": true
+  }
+ ],
+ "note": "a description of the differences; no tolerance or gate is derived from it here"
+}

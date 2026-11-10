@@ -1,0 +1,12 @@
+[h7r-p1-policy] step 10/96 val 2.0148 guard top-1 0.5146 (H3 0.5241)
+[h7r-p1-policy] step 19/96 val 1.9953 guard top-1 0.5077 (H3 0.5241)
+[h7r-p1-policy] step 29/96 val 1.9931 guard top-1 0.5037 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 38/96 val 1.9916 guard top-1 0.5027 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 48/96 val 1.9825 guard top-1 0.5062 (H3 0.5241)
+[h7r-p1-policy] step 58/96 val 1.9783 guard top-1 0.5056 (H3 0.5241)
+[h7r-p1-policy] step 67/96 val 1.9792 guard top-1 0.5018 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 77/96 val 1.9761 guard top-1 0.5046 (H3 0.5241)
+[h7r-p1-policy] step 86/96 val 1.9757 guard top-1 0.5036 (H3 0.5241) NOT eligible
+[h7r-p1-policy] step 96/96 val 1.9758 guard top-1 0.5029 (H3 0.5241) NOT eligible
+{"name": "new", "selected_step": 77, "eligibility": [true, true, false, false, true, true, false, true, false, false], "selected_state_sha256": "d3b6124601bb37fb424764aad0a5bb94ed26fb4b1017cf99feb0c76b103ec7de"}
+__EXIT__ 0

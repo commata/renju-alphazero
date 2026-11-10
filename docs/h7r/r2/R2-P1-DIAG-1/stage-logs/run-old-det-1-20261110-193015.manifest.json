@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "run-old-det-1-20261110-193015.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-P1-DIAG-1/logs/run-old-det-1-20261110-193015.log",
+   "copy": "docs/h7r/r2/R2-P1-DIAG-1/stage-logs/run-old-det-1-20261110-193015.log",
+   "bytes": 952,
+   "sha256": "c012023410846df57ae010e7d15a8418e268244c85cb62674234c0f825b99705"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
