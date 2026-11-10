@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "gate-run-E4-20261110-232242.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-P1-POLICY-REPLAY-A1/logs/gate-run-E4-20261110-232242.log",
+   "copy": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/stage-logs/gate-run-E4-20261110-232242.log",
+   "bytes": 1144,
+   "sha256": "26b9656083fbff5eaef2460494e09e3d8450c30975386eb51838c0c94932a85c"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
