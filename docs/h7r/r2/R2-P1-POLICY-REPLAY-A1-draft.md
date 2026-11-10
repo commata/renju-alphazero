@@ -1,6 +1,6 @@
 # R2-P1-POLICY-REPLAY-A1: 결정론 동등성 gate를 둔 policy replay 대조 실험
 
-- 상태: 구현·테스트·계약 준비 완료. **모든 단계 미승인**(`approved` 4개 모두 false)
+- 상태: prepare 승인(`35f9334`)·PASS(`03d3ec5`). gate·train·arena는 미승인
 - 사용자 결정(2026-11-10): A1을 채택한다.
   - 과거 c2의 수치, eligibility, 선택 step은 참고 기록으로 둔다.
   - 입력, 모델 신원, 학습 설정과 step 구조는 계속 엄격히 검사한다.
@@ -495,3 +495,17 @@ a1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
   exit "$rc"
 )
 ```
+
+## 8. 진행 기록
+
+### 8.1 prepare: PASS (`03d3ec5`, 2026-11-10)
+
+- 실행 HEAD `35f9334`(clean, prepare 승인 커밋), 실험 `faeb72b0f625`, 계약 파일 SHA `f6875a15707c`
+- 계약의 기대값과 모두 같았다.
+  - cycle 행: SHA, train 24,077행·val 1,423행
+  - H3 checkpoint·metadata, c5 value checkpoint·metadata
+  - RenjuNet cache: train 3,178,091국면, val 127,316국면, 텐서 해시, train·val 대국 겹침 없음
+  - 근거 기록 9개(기존 P1 계약·재현 FAIL 기록·진단 결과 포함)
+- 입력 파일 8개의 SHA는 기존 실험의 prepare(`78e8d38`)와 같다. 입력은 그때와 바뀌지 않았다.
+- 다음 단계는 gate 승인 뒤의 a1-G(실제 CUDA에서 E1–E5)다.
+
