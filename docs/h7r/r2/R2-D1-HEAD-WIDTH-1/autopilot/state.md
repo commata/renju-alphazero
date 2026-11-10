@@ -11,12 +11,12 @@
 |---|---|---|---|---|
 | P0 위임 기록 | 완료 | 시작 `2142f86` | 이 커밋 | — |
 | P1 전체 규모 학습 6회 + fit | 완료: 6/6 `CANDIDATE`, 비교가능, `WIDTH_EFFECT` | 계약 `d1-full-contract.json`(실험 `25c49e408aff`), prepare `2142f86` | `d8c0d10` | — |
-| P2 factory v2 | 구현 완료, 시간 gate 실행 대기 | `analysis.tb_v3_net_v2`, `scripts/h7r_factory_v2_timing.py` | — | D1 초안 §16.3 v2-1 (학습 기록 커밋 뒤) |
-| P3 D4 계약·도구 | 고정(`approved` 모두 false) | `d4/d1-d4-contract.json`, `scripts/h7r_d1_d4.py` | — | §16.3 d4-1 (eligible manifest) |
-| P4 전체 규모 H-dev | 승인됨, 실행 대기 | 학습 기록 `d8c0d10`, P2·P3 고정 커밋 뒤 | — | §14.8 full-3 (full-3-R / full-3-F) → §16.3 v2-1 → d4-1 |
-| P3' D4 smoke·본 평가 | P4 `DEVELOPMENT_SIGNAL`·시간 gate PASS일 때 | — | — | §16.3 d4-run smoke → full (실패 시 재개 1회 또는 d4-F) |
-| P5 확인 평가 1세트 | D4 `ALL_THREE_BETTER`일 때 | — | — | — |
-| P6 R4 프로그램 준비 | 세 고리 통과 시 | — | — | 최종 승인 |
+| P2 factory v2 | 완료: 시간 gate PASS(평균 ×1.0026, p95 ×1.0038) | `analysis.tb_v3_net_v2`, 개정 A1 | `b939f2c` | — |
+| P3 D4 계약·도구 | 고정(개정 A1, A2), eligible PASS | `d4/d1-d4-contract.json`(실험 `ee06faf80d9b`) | `b147633` | — |
+| P4 전체 규모 H-dev | 완료: `DEVELOPMENT_SIGNAL` | 학습 기록 `d8c0d10` | `9a419af` | — |
+| P3' D4 smoke·본 평가 | 완료: smoke `SMOKE`, full **`NOT_ESTABLISHED`** | 실험 `ee06faf80d9b` | `1b4a274`, `c859f35` | — |
+| P5 확인 평가 1세트 | 진행 안 함(진입 조건 `ALL_THREE_BETTER` 미충족) | — | — | — |
+| P6 R4 프로그램 준비 | 진행 안 함 | — | — | — |
 
 ## 기록
 
@@ -34,3 +34,5 @@
 - 2026-11-10: 검토 지적 4건(실행 중 pull, staged 기록과 복구, 상한, tmux 시작 실패)을 자동 진행 도구에서 고침(D1 초안 §16.8). 계약·기록 변경 없음.
 - 2026-11-10 00:20 KST: D4 `approved.smoke` (autopilot driver; 근거: D4 entry checks pass on the committed records (fit comparable, H-dev DEVELOPMENT_SIGNAL, factory v2 time gate passed on the linked seed-31001 pair); eligible manifest committed).
 - 2026-11-10 00:22 KST: D4 `approved.full` (autopilot driver; 근거: the committed D4 smoke is a reproduced SMOKE of this experiment; 15.0 h left of the delegation).
+- 2026-11-10 00:19–05:14: eligible 재실행 PASS(`b147633`), smoke 승인·`SMOKE`(`f0dc0ea`, `1b4a274`), full 승인(`19b360b`), D4 full `NOT_ESTABLISHED`(`c859f35`, 279.8분). 세 주 비교 모두 INCONCLUSIVE.
+- 2026-11-10: **위임 종료.** 진행 조건 `ALL_THREE_BETTER` 미충족으로 P5·P6은 진행하지 않음. D1은 "예측-선택 연결 미입증"으로 기록(D1 초안 §17, R2-DIAG-1 §19). champion·canonical·웹 변경 없음. 다음 진단은 사용자가 정한다.

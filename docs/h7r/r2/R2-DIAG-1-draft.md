@@ -620,6 +620,19 @@ fixed 전에 정할 핵심 선택은 다섯 가지다.
 - 이 후보는 D4 진입 조건을 충족하지 못했다. c5 유지, V9 보류
 - 자세한 결과: D3 설계 §9. 다음 진단은 D1 head 폭 초안(`R2-D1-HEAD-WIDTH-1-draft.md`, draft)이다.
 
+## 19. D1 결과 (2026-11-10)
+
+- D1 head 폭(`R2-D1-HEAD-WIDTH-1`, 전체 규모 35,816행, `value_channels` 1 대 4)
+  - 학습·fit: `WIDTH_EFFECT`
+  - H-dev: `DEVELOPMENT_SIGNAL`(`9a419af`). 세 seed의 개선폭 0.0078–0.0107이 모두 ε 0.00195를 넘었다.
+- D4(`R2-D1-D4-1`, wide : 같은 seed narrow, 기록 `c859f35`)의 판독은 `NOT_ESTABLISHED`다.
+  - 세 쌍 모두 INCONCLUSIVE이고, 평균 delta는 −0.0065 – +0.0067이다.
+  - 수가 달라진 위치는 eligible ply의 2.4–3.3%였고, 그 안에서 better와 worse는 거의 같았다.
+- §8 D4 행에 따라 **"예측-선택 연결 미입증"**으로 기록한다. 차이 없음이나 동등성으로 읽지 않는다.
+- c5 유지, V9 보류. 넓힌 head는 R4 후보가 아니다. factory v2(`analysis.tb_v3_net_v2`)는 연구 도구로 남는다.
+- 자세한 결과: D1 초안 §17
+- baseline D4에 이어 두 번째로, H-dev 신호가 수 선택 신호로 이어지지 않았다. 남은 진단은 D2(자료량·다양성)와 D5(replay)다. 다음 진단은 아직 정하지 않았다.
+
 ## 근거
 
 - 계획: `docs/h7-rl-plan.md` §3, §9.12
