@@ -287,6 +287,24 @@ prepare는 값을 새로 받아들이는 단계가 아니다. 커밋된 기대�
 - 근거 기록 6개의 SHA가 계약값과 같다.
 - 입력 파일 8개의 파일 SHA를 기록했다. 실행 로그(`stage-logs/prepare-20261110-171757.log`)는 `__EXIT__ 0`이다.
 
+## 9.3 재현 gate 결과: FAIL (`a1cd152`, 2026-11-10)
+
+- 실행 HEAD `624a2ed`(clean), 실험 `e41841eaafa8`. 계약대로 본학습은 하지 않았다.
+- **정확히 같아야 하는 항목은 모두 같았다**
+  - 입력 SHA, 설정, 총 96 step
+  - 평가 step 10개
+  - eligibility [T, T, F, F, T, T, F, T, F, F]
+  - 선택 step 77
+- **수치는 step 19까지 c2와 비트 단위로 같았다.** 평가 29부터 1e-6을 넘었다.
+  - val objective 차이: 최대 1.0e-4
+  - guard top-1 차이: RenjuNet val 127,316국면 중 1–17국면(최대 1.3e-4)
+  - 차이의 부호는 섞여 있다.
+- **해석** (판정이 아니라 원인 추정)
+  - c2 정책 학습(`h7c_train`)과 P1 trainer 모두 GPU 결정론 설정(`torch.use_deterministic_algorithms`, cuDNN deterministic)을 켜지 않는다.
+  - 처음 19 step이 비트 단위로 같고 그 뒤 작은 오차가 쌓이는 모양은, 코드 차이보다 GPU 비결정성에 가깝다.
+  - 다만 같은 환경에서 기존 trainer를 두 번 돌려 서로 다른지 확인하기 전에는 확정할 수 없다.
+- 계약상 이 gate는 실패이고, 허용 오차를 사후에 넓히지 않는다. 다음 단계는 사용자가 정한다.
+
 ## 10. 승인 단계
 
 1. 이 초안 검토
