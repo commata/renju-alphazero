@@ -1,0 +1,2 @@
+STOP: RuntimeError: Numpy is not available
+__EXIT__ 1
