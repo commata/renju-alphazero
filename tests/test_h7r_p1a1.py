@@ -77,10 +77,12 @@ class ContractTest(unittest.TestCase):
     def test_the_fixed_contract_matches_its_draft(self):
         fixed = json.loads((ROOT / a1.CONTRACT).read_text())
         draft = json.loads(DRAFT.read_text())
-        self.assertEqual(fixed['approved'], {'prepare': False, 'gate': False, 'train': False, 'arena': False})
+        self.assertEqual(set(fixed['approved']), set(a1.STAGES))  # approvals change over time, never the id
+        self.assertEqual(a1.experiment_sha256(fixed),
+                         'faeb72b0f625baba213cc88504388dcd1d5eed03a16307de8da2217583c02648')
         self.assertEqual(fixed['draft'], {'path': DRAFT.relative_to(ROOT).as_posix(), 'sha256': p1.file_sha256(DRAFT)})
-        same = {k: v for k, v in fixed.items() if k not in ('status', 'sources', 'draft')}
-        self.assertEqual(same, {k: v for k, v in draft.items() if k not in ('status', 'sources')})
+        same = {k: v for k, v in fixed.items() if k not in ('status', 'sources', 'draft', 'approved')}
+        self.assertEqual(same, {k: v for k, v in draft.items() if k not in ('status', 'sources', 'approved')})
         paths = {s['path'] for s in fixed['sources']}
         for rel in ('scripts/h7r_p1a1.py', 'scripts/h7r_p1.py', 'scripts/h7r_p1_diag.py', 'src/hybrid/h7r_p1_train.py',
                     'src/hybrid/h7c_train.py', 'src/hybrid/h7r_d1.py'):
