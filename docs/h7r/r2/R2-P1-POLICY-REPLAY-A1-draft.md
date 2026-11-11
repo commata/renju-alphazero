@@ -1,6 +1,6 @@
 # R2-P1-POLICY-REPLAY-A1: 결정론 동등성 gate를 둔 policy replay 대조 실험
 
-- 상태: prepare PASS(`03d3ec5`), gate PASS(`b3eb145`), train 승인(`672188f`)·본학습 6회 완료(`35c2068`–`007f907`), link(`406c118`). arena는 미승인
+- 상태: prepare PASS(`03d3ec5`), gate PASS(`b3eb145`), train 승인(`672188f`)·본학습 6회 완료(`35c2068`–`007f907`), link(`406c118`), Arena 계약(`2a179b7`)·Arena·judge(`389d09a`): **P NOT_ESTABLISHED, D BETTER_THAN_CONTROL. 계약 종료**
 - 사용자 결정(2026-11-10): A1을 채택한다.
   - 과거 c2의 수치, eligibility, 선택 step은 참고 기록으로 둔다.
   - 입력, 모델 신원, 학습 설정과 step 구조는 계속 엄격히 검사한다.
@@ -581,5 +581,34 @@ a1-4. Arena와 judge (Arena 계약 커밋 뒤, tmux 권장)
 - 후보 seed는 계약대로 20261024다(대체하지 않음). 6개 모델의 policy checkpoint·metadata SHA와 c5 value 신원을 담는다.
 - 다시 검증(`verified_link`): link 기록이 학습 기록에서 다시 계산한 값과 같다.
 - checkpoint 원본은 데스크톱 `runs/`에만 있다. Arena 실행(`h7r_eval.py play`)이 대국 전에 실제 파일 SHA를 계약의 신원과 다시 대조한다.
-- 다음 단계는 `approved.arena` 뒤 Arena 계약 생성(클라우드)과 a1-4(데스크톱)다.
+
+### 8.5 Arena와 judge (`389d09a`, 2026-11-11)
+
+- 실행 HEAD `2a179b7`(clean, 대국 중 고정), 실험 `faeb72b0f625`, 계약 파일 SHA `164bc0f51b0c`(arena 승인), Arena 계약 SHA `94b9603d12f3`
+- arm 8개 모두 끝까지 두었다(본 arm 600판씩, 보조 arm 50판씩). 불법 수 0, 모든 쌍 valid. 로그 9개는 manifest SHA와 같고 `__EXIT__ 0`으로 끝난다.
+- 각 대국 로그의 요약은 `judge.json`의 arm별 요약과 같다. P·D 점추정은 arm 점수에서 다시 계산한 값과 같다.
+
+| arm | 점수 | 개선(−0.5) | 95% 구간 |
+|---|---:|---:|---|
+| O0 T 대 champion | 0.4692 | −3.08%p | [−6.25, +0.08] |
+| O0 C 대 champion | 0.4317 | −6.83%p | [−10.25, −3.42] |
+| O1 T 대 champion | 0.5050 | +0.50%p | [−2.42, +3.42] |
+| O1 C 대 champion | 0.4792 | −2.08%p | [−5.00, +0.92] |
+
+| 판독 (suite 층화, 50:50, 쌍 대응, 단측 α 0.025) | 추정 | 단측 하한 | 단측 상한 | 판독 |
+|---|---:|---:|---:|---|
+| P: T 대 champion (점수 − 0.5) | −1.29%p | −3.46%p | +0.88%p | NOT_ESTABLISHED |
+| D: T − C | +3.17%p | +1.08%p | +5.25%p | BETTER_THAN_CONTROL |
+| 민감도(class 단위) P | −1.29%p | −3.40%p | +0.86%p | NOT_ESTABLISHED |
+| 민감도(class 단위) D | +3.17%p | +0.89%p | +5.49%p | BETTER_THAN_CONTROL |
+
+- suite별 T − C: O0 +3.75%p, O1 +2.58%p. 두 suite 모두 같은 방향이다.
+- **계약의 해석**(고정 문구): 정책 보존 항이 기존 방법보다 도움이 되었고, 지식 손실 가설과 일치한다. 그러나 champion보다 강하지는 않다(퇴보를 줄였을 뿐).
+- **계약 종료**: P가 STRONGER가 아니므로 이 계약은 끝난다. 다른 μ나 사람 기보 CE는 새 계약이다. champion·canonical·웹은 바뀌지 않는다.
+- 보조 arm(다른 seed의 T·C, 각 25쌍)은 서술용이며 판독에 쓰지 않는다: T20261111 0.47, C20261111 0.50, T20261112 0.52, C20261112 0.44.
+- 해석의 한계
+  - D는 후보 seed 20261024의 T·C 한 쌍에서 나온 결과다. 학습 seed 간 변동은 이 판독에 들어 있지 않다.
+  - P의 상한 +0.88%p는 T가 champion보다 크게 강할 가능성이 낮다는 뜻이지만, 작은 차이가 없다는 증명은 아니다.
+  - O0에서 T는 흑 0.577 / 백 0.362로 색 차이가 크다(C도 0.517 / 0.347). 판독은 쌍 단위라 색 효과는 상쇄된다.
+- 검증 범위: 쌍 단위 arm 기록(`runs/.../arena/*.json`)은 커밋되지 않으므로, bootstrap 구간은 클라우드에서 다시 계산하지 않았다. arm 요약·점추정·기록 연결(SHA, HEAD, 계약)은 대조했다.
 
