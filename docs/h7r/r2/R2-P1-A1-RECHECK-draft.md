@@ -10,12 +10,13 @@
 
 1. **신원**
    - A1 계약: arena 단계, 고정된 source와 근거 기록의 SHA를 함께 확인한다.
-   - 커밋된 `judge.json`: 같은 실험의 것이어야 한다.
+  - 커밋된 `judge.json`: 같은 실험과 A1 계약의 것이어야 한다.
    - 커밋된 Arena 계약: SHA가 judge 기록에 적힌 값과 같아야 한다.
 2. **원본 arm 8개**
    - 파일 SHA를 `judge.json`의 `arm_records_sha256`과 **먼저** 대조한다. 하나라도 다르면 아무것도 재계산하지 않고 멈춘다.
    - 그다음 `h7r_eval.load_arm`으로 읽는다. 이 단계에서 대국, opening, 신원, 요약을 다시 검사한다.
    - arm별 요약이 judge의 요약과 같아야 한다.
+   - 입력 SHA는 시작 시점에 기록하고, 기술 분석까지 끝난 뒤 결과 저장 직전에 HEAD와 입력을 다시 확인한다.
 3. **bootstrap 재계산**
    - judge가 쓴 함수(`h7r_p1.stratified_bounds`)와 계약의 설정(20,000회, seed 20261131, 단측 α 0.025)을 그대로 쓴다.
    - opening 단위와 동치류 단위의 P·D 구간, 그리고 판독을 judge와 대조한다.
@@ -35,11 +36,12 @@
 
 ## 3. 데스크톱 실행 (a1-R)
 
-- Arena가 끝났으므로 HEAD 고정은 더 필요 없다. 블록은 pull한 뒤 실행한다.
+- 블록은 작업 트리를 확인하고, staging 복구 중이 아니면 pull한 뒤 실행한다.
 - 결과 파일과 로그를 커밋한다. 쌍 단위 원본(`runs/.../arena/*.json`)은 커밋하지 않는다.
 - 다시 실행했을 때
   - 결과가 이미 커밋되어 있으면 멈춘다.
-  - 결과 파일이 있지만 커밋 전이면, 다시 계산하지 않고 남은 로그와 함께 커밋한다.
+  - 결과 파일이 있지만 커밋 전이면, 결과가 가리키는 로그를 확인해 같은 종료 코드로 기록한다. 출력 직후에 중단돼 로그에 종료 코드가 없다면 결과에서 복구한 값임을 표시한다.
+  - 커밋은 됐고 push가 실패했다면 `git push origin feat/h7-c1`로 다시 보낸다.
 - 예상 시간: 1분 안팎(bootstrap 재계산 약 12초 + arm 8개 재검사)
 
 ```bash
@@ -49,35 +51,75 @@
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
-  git pull --ff-only origin feat/h7-c1
-  test -z "$(git status --porcelain --untracked-files=no)"
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
   D=docs/h7r/r2/R2-P1-POLICY-REPLAY-A1
   R=runs/h7r/R2-P1-POLICY-REPLAY-A1
   L="$R/logs"
   O="$D/arena-recheck.json"
-  tracked(){ git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
   if tracked "$O"; then echo "STOP: the recheck is already recorded"; exit 1; fi
   mkdir -p "$L"
   rc=0
-  if [ -e "$O" ]; then
-    echo "an uncommitted $O exists: recording it (no new recheck)"
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before starting a new recheck"; exit 1; }
+    log="$(mktemp "$L/arena-recheck-XXXXXXXX.log")"
+    set +e
+    python -u scripts/h7r_p1a1_recheck.py --arms-dir "$R/arena" --output "$O" \
+      --log-name "$(basename "$log")" 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
   else
-    B="arena-recheck-$(date +%Y%m%d-%H%M%S)"
-    if [ -e "$L/$B.log" ]; then echo "STOP: $L/$B.log exists"; exit 1; fi
-    python -u scripts/h7r_p1a1_recheck.py --arms-dir "$R/arena" --output "$O" 2>&1 | tee "$L/$B.log" || rc=$?
-    echo "__EXIT__ $rc" >> "$L/$B.log"
+    echo "an uncommitted $O exists: recording it (no new recheck)"
+  fi
+  if [ -f "$O" ]; then
+    result="$(python - "$O" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+equal = r.get('recomputed_equal_judge')
+if (r.get('format') != 'h7r-p1a1-arena-recheck-v1' or not isinstance(equal, bool)
+        or not re.fullmatch(r'arena-recheck-[A-Za-z0-9]+\.log', name)):
+    sys.exit('STOP: invalid recheck result or missing attempt log name')
+print(name, 0 if equal else 2)
+PY
+)"
+    read -r name rc <<< "$result"
+    log="$L/$name"
+    [ -f "$log" ] || { echo "STOP: result log is missing: $log"; exit 1; }
+    last="$(tail -n 1 "$log")"
+    case "$last" in
+      "__EXIT__ $rc") ;;
+      __EXIT__*) echo "STOP: result and log exit codes differ"; exit 1 ;;
+      *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
+    esac
+  elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+    echo "STOP: recheck did not produce a result"; exit 1
   fi
   expect=()
+  paths=()
   shopt -s nullglob
   for f in "$L"/arena-recheck-*.log; do
+    [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
     n="$(basename "$f" .log)"
     tracked "$D/stage-logs/$n.log" && continue
     python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
       --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
-    expect+=(--expect "$D/stage-logs/$n.log" --expect "$D/stage-logs/$n.manifest.json")
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
   done
-  if [ -f "$O" ]; then expect+=(--expect "$O"); fi
-  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: no records to commit"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   git commit -m "H7-R P1-A1: Arena recheck exit $rc (records only)"
   git push origin feat/h7-c1

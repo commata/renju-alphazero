@@ -87,6 +87,7 @@ class RecheckTest(unittest.TestCase):
         main = p1.stratified_bounds(strata, b['samples'], b['seed'], st['alpha_one_sided'])
         sens = p1.stratified_bounds(strata, b['samples'], b['seed'], st['alpha_one_sided'], unit='class')
         self.judge = {'format': 'h7r-p1a1-judge-v1', 'contract_id': a1.CONTRACT_ID, 'experiment_sha256': self.eid,
+                      'contract_file_sha256': p1.file_sha256(root / a1.CONTRACT),
                       'arena_contract_sha256': p1.file_sha256(root / a1.ARENA_CONTRACT),
                       'arm_records_sha256': {n: p1.file_sha256(self.arms_dir / f'{n}.json') for n in self.tables},
                       'readings': p1.labels(main), 'bounds': main,
@@ -155,6 +156,32 @@ class RecheckTest(unittest.TestCase):
         self.assertTrue(body['checks']['class_bounds'])
         self.assertFalse(body['checks']['arm_summaries']['O0_T_vs_champion'])
 
+    def test_arm_swapped_before_snapshot_or_during_class_analysis_is_rejected(self):
+        out = self.root / 'recheck.json'
+        arm = self.arms_dir / 'O1_C_vs_champion.json'
+        original = arm.read_bytes()
+        real_guard, real_analysis = p1.Guard, rc.class_analysis
+
+        def swap_before_snapshot(*args):
+            arm.write_text('{}')
+            return real_guard(*args)
+
+        with mock.patch.object(p1, 'Guard', side_effect=swap_before_snapshot):
+            self.assertEqual(self.run_main(out), 1)
+        self.assertFalse(out.exists())
+        arm.write_bytes(original)
+
+        def swap_during_class_analysis(*args):
+            arm.write_text('{}')
+            return real_analysis(*args)
+
+        # This test exercises the publication boundary; the numerical tests cover real bootstrap.
+        with mock.patch.object(rc, 'class_analysis', side_effect=swap_during_class_analysis), \
+                mock.patch.object(p1, 'stratified_bounds', side_effect=[
+                    self.judge['bounds'], self.judge['sensitivity_class_level']['bounds']]):
+            self.assertEqual(self.run_main(out), 1)
+        self.assertFalse(out.exists())
+
 
 STUB = """import json, os, sys
 from pathlib import Path
@@ -164,7 +191,9 @@ if os.environ.get('RECHECK_FAIL'):
 if os.environ.get('RECHECK_FORBID'):
     print('STOP: must not run again'); sys.exit(9)
 out.parent.mkdir(parents=True, exist_ok=True)
-out.write_text(json.dumps({'recomputed_equal_judge': True}))
+name = sys.argv[sys.argv.index('--log-name') + 1]
+out.write_text(json.dumps({'format': 'h7r-p1a1-arena-recheck-v1', 'log_name': name,
+                           'recomputed_equal_judge': True}))
 print('ok')
 """
 
@@ -175,6 +204,7 @@ class BlockTest(unittest.TestCase):
 
     def setUp(self):
         import re
+        from shlex import quote
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         base = Path(self.tmp.name)
@@ -199,7 +229,7 @@ class BlockTest(unittest.TestCase):
         doc = (ROOT / 'docs/h7r/r2/R2-P1-A1-RECHECK-draft.md').read_text()
         blocks = re.findall(r'```bash\n(.*?)```', doc, re.S)
         self.assertEqual(len(blocks), 1)
-        self.block = blocks[0].replace('~/renju-h6', str(w))
+        self.block = blocks[0].replace('~/renju-h6', quote(w.as_posix()))
         self.O = 'docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/arena-recheck.json'
 
     def bash(self, **env):
@@ -221,8 +251,7 @@ class BlockTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn('already recorded', out)
 
-    def test_a_stop_is_logged_and_an_uncommitted_result_is_recorded_without_a_rerun(self):
-        import time
+    def test_a_stop_is_logged(self):
         code, out = self.bash(RECHECK_FAIL='1')
         self.assertEqual(code, 1, out)
         self.assertFalse(self.files(self.O))
@@ -230,12 +259,22 @@ class BlockTest(unittest.TestCase):
         self.assertEqual(len(logs), 1)
         self.assertIn('__EXIT__ 1', (self.work / logs[0]).read_text())
         self.assertIn('Arena recheck exit 1', git(self.work, 'log', '-1', '--format=%s'))
-        time.sleep(1.1)
-        (self.work / self.O).write_text('{"recomputed_equal_judge": true}')  # finished, not committed
+
+    def test_staged_mismatch_recovers_its_own_log_and_preserves_exit_code(self):
+        log = self.work / a1.RUNS / 'logs' / 'arena-recheck-recovery.log'
+        log.parent.mkdir(parents=True)
+        log.write_text('recheck finished before the shell could record the exit\n')
+        (self.work / self.O).parent.mkdir(parents=True)
+        (self.work / self.O).write_text(json.dumps({'format': rc.FORMAT, 'log_name': log.name,
+                                                   'recomputed_equal_judge': False}))
+        git(self.work, 'add', self.O)
         code, out = self.bash(RECHECK_FORBID='1')
-        self.assertEqual(code, 0, out)
+        self.assertEqual(code, 2, out)
         self.assertIn('no new recheck', out)
+        self.assertIn('__RECORDED__ 2', out)
         self.assertTrue(self.files(self.O))
+        self.assertIn('__EXIT__ 2', log.read_text())
+        self.assertIn('Arena recheck exit 2', git(self.work, 'log', '-1', '--format=%s'))
 
 
 if __name__ == '__main__':

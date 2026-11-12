@@ -30,7 +30,7 @@ for p in (ROOT / 'src', ROOT / 'scripts'):
 
 import h7r_p1 as p1  # noqa: E402
 import h7r_p1a1 as a1  # noqa: E402
-from h7r_p1 import file_sha256, require  # noqa: E402
+from h7r_p1 import require  # noqa: E402
 
 FORMAT = 'h7r-p1a1-arena-recheck-v1'
 OUTPUT = f'{a1.D}/arena-recheck.json'
@@ -41,21 +41,24 @@ def class_analysis(rows: list, other_t_mean: float, other_d_mean: float) -> dict
     """``rows``: (T pair score, C pair score, class id) of one suite's openings (paired). ``other_*``: the other
     suite's T mean and T - C mean, held fixed, so the combined P and D of a leave-one-class-out are the 50:50 ones."""
     n = len(rows)
-    t_mean = sum(r[0] for r in rows) / n
-    d_mean = sum(r[0] - r[1] for r in rows) / n
+    require(n > 0, 'O0 has no pairs')
+    t_total = sum(r[0] for r in rows)
+    d_total = sum(r[0] - r[1] for r in rows)
+    t_mean, d_mean = t_total / n, d_total / n
     p_all = (t_mean + other_t_mean) / 2 - 0.5
     d_all = (d_mean + other_d_mean) / 2
     by = {}
     for t, c, k in rows:
         by.setdefault(k, []).append((t, c))
     classes = []
+    require(len(by) > 1, 'O0 needs at least two classes for leave-one-class-out')
     for k in sorted(by):
         g = by[k]
         m = len(g)
         t_sum, c_sum = sum(t - 0.5 for t, _ in g), sum(c - 0.5 for _, c in g)
         rest = n - m
-        t_wo = (sum(r[0] for r in rows) - sum(t for t, _ in g)) / rest
-        d_wo = (sum(r[0] - r[1] for r in rows) - sum(t - c for t, c in g)) / rest
+        t_wo = (t_total - sum(t for t, _ in g)) / rest
+        d_wo = (d_total - (t_sum - c_sum)) / rest
         classes.append({'class_id': k, 'pairs': m, 'T_minus_half_sum': round(t_sum, 6),
                         'T_minus_half_mean': round(t_sum / m, 6), 'C_minus_half_mean': round(c_sum / m, 6),
                         'T_minus_C_mean': round((t_sum - c_sum) / m, 6),
@@ -90,29 +93,36 @@ def class_analysis(rows: list, other_t_mean: float, other_d_mean: float) -> dict
         'note': 'post-hoc description: no reading, threshold or verdict is derived from it'}
 
 
-def recheck(arms_dir, root=ROOT) -> dict:
+def recheck(arms_dir, root=ROOT, *, output=None, log_name=None) -> dict:
     from hybrid import h7r_eval as ev
     import h7r_eval as cli
 
     root = Path(root)
+    start_git = p1.git_state(root)
     c, sha, eid = a1.load_contract(None, root, 'arena')
-    judge = a1.committed_record(root, f'{a1.D}/judge.json', 'judge record', eid)
+    judge_path = f'{a1.D}/judge.json'
+    tool = str(Path(__file__).resolve())
     apath = root / a1.ARENA_CONTRACT
     require(p1.committed(apath, root), 'the Arena contract is not committed')
     arena, asha = ev.load_contract(apath, root, check_files=False)
-    require(asha == judge['arena_contract_sha256'], 'the judge record names another Arena contract')
-    arms_dir = Path(arms_dir)
+    arms_dir = Path(arms_dir).resolve()
     files = {a['name']: arms_dir / f"{a['name']}.json" for a in arena['arms']}
-    require(set(files) == set(judge['arm_records_sha256']), 'the judge read other arms than the Arena contract has')
-    sha_now = {}
-    for name, path in files.items():
+    for path in files.values():
         require(path.is_file(), f'{path}: the arm record is missing')
-        sha_now[name] = file_sha256(path)
+    guard = p1.Guard(root, a1.contract_path(None, root), c,
+                     [judge_path, a1.ARENA_CONTRACT, tool, *(str(p) for p in files.values())])
+    require(guard.start['git'] == start_git and guard.start['contract_file_sha256'] == sha
+            and guard.start['files'][a1.ARENA_CONTRACT] == asha
+            and guard.start['sources'] == {ref['path']: ref['sha256'] for ref in c['sources']},
+            'checkout or contract changed before the recheck')
+    judge = a1.committed_record(root, judge_path, 'judge record', eid)
+    require(judge.get('format') == 'h7r-p1a1-judge-v1' and judge.get('contract_id') == a1.CONTRACT_ID
+            and judge.get('contract_file_sha256') == sha, 'the judge record names another A1 contract')
+    require(asha == judge['arena_contract_sha256'], 'the judge record names another Arena contract')
+    require(set(files) == set(judge['arm_records_sha256']), 'the judge read other arms than the Arena contract has')
+    sha_now = {name: guard.start['files'][str(path)] for name, path in files.items()}
     differ = sorted(n for n in files if sha_now[n] != judge['arm_records_sha256'][n])
     require(not differ, f'arm records differ from the ones the judge read: {differ}; nothing is rechecked')
-    guard = p1.Guard(root, a1.contract_path(None, root), c,
-                     [f'{a1.D}/judge.json', a1.ARENA_CONTRACT,
-                      *(str(p.resolve().relative_to(root.resolve())) for p in files.values())])
     tables, summaries = {}, {}
     for a in arena['arms']:
         loaded = cli.load_arm(files[a['name']], arena, asha, root)
@@ -134,28 +144,33 @@ def recheck(arms_dir, root=ROOT) -> dict:
     o1 = strata['O1']
     o1_t = sum(r[0] for r in o1) / len(o1)
     o1_d = sum(r[0] - r[1] for r in o1) / len(o1)
-    git = guard.check()
-    tool = Path(__file__).resolve()
-    return {'format': FORMAT, 'contract_id': a1.CONTRACT_ID, 'experiment_sha256': eid, 'contract_file_sha256': sha,
-            'git': git, 'tool_sha256': file_sha256(tool), 'judge_sha256': file_sha256(root / a1.D / 'judge.json'),
+    o0 = class_analysis(strata['O0'], o1_t, o1_d)
+    body = {'format': FORMAT, 'contract_id': a1.CONTRACT_ID, 'experiment_sha256': eid, 'contract_file_sha256': sha,
+            'git': guard.start['git'], 'tool_sha256': guard.start['files'][tool],
+            'judge_sha256': guard.start['files'][judge_path],
             'arena_contract_sha256': asha, 'arm_records_sha256': sha_now, 'arm_records_match_judge': True,
             'recomputed_equal_judge': equal, 'checks': checks,
             'recomputed': {'bounds': main, 'readings': p1.labels(main), 'class_bounds': sens,
                            'class_readings': p1.labels(sens)},
-            'o0_classes': class_analysis(strata['O0'], o1_t, o1_d)}
+            'o0_classes': o0}
+    if log_name is not None:
+        body['log_name'] = log_name
+    guard.check()
+    if output is not None:
+        p1.publish(output, body)
+    return body
 
 
 def main(argv=None, root=ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--arms-dir', default=ARMS_DIR)
     parser.add_argument('--output', default=OUTPUT)
+    parser.add_argument('--log-name', help='the desktop attempt log basename, for records recovery')
     args = parser.parse_args(argv)
     try:
         out = Path(args.output)
         require(not out.exists(), f'{out} exists: never overwritten')
-        body = recheck(args.arms_dir, root)
-        from hybrid.h7r_ledger import publish_json
-        publish_json(out, body)
+        body = recheck(args.arms_dir, root, output=out, log_name=args.log_name)
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as exc:
         print(f'STOP: {type(exc).__name__}: {exc}', flush=True)
         return 1
