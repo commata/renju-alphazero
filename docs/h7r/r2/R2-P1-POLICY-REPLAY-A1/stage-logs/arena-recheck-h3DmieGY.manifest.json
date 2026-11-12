@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "arena-recheck-h3DmieGY.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-P1-POLICY-REPLAY-A1/logs/arena-recheck-h3DmieGY.log",
+   "copy": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/stage-logs/arena-recheck-h3DmieGY.log",
+   "bytes": 2845,
+   "sha256": "9544ebe7d64963dd0ac018486f88391eb54eadddceebe809349f9f85c54be170"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

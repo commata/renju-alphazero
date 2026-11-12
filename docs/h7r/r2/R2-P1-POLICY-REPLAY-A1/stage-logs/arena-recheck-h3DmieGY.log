@@ -1,0 +1,102 @@
+{
+ "recomputed_equal_judge": true,
+ "checks": {
+  "arm_summaries": {
+   "O0_T_vs_champion": true,
+   "O0_C_vs_champion": true,
+   "O1_T_vs_champion": true,
+   "O1_C_vs_champion": true,
+   "O2aux_T20261111_vs_champion": true,
+   "O2aux_C20261111_vs_champion": true,
+   "O2aux_T20261112_vs_champion": true,
+   "O2aux_C20261112_vs_champion": true
+  },
+  "opening_bounds": true,
+  "class_bounds": true,
+  "readings": true,
+  "class_readings": true
+ },
+ "readings": {
+  "P": "NOT_ESTABLISHED",
+  "D": "BETTER_THAN_CONTROL"
+ },
+ "o0": {
+  "pairs": 300,
+  "classes": 75,
+  "T_score": 0.469167,
+  "class_signs": {
+   "negative": 32,
+   "zero": 26,
+   "positive": 17
+  },
+  "deficit_concentration": {
+   "negative_sum": -20.5,
+   "share_of_negative_sum": {
+    "worst_1": 0.0488,
+    "worst_3": 0.1463,
+    "worst_5": 0.2439,
+    "worst_10": 0.4634
+   },
+   "worst_classes": [
+    "1a2b1d3f260876edd3f63b1c0a26e115255da43104669cb4ff95088f28f413b6",
+    "3c9b82168ad106776b11f9a47716d460b4b39b02604be1d884fe04de6bb1b804",
+    "6758ea39a6946ed10b1a1984e2a70a07cc9b704792361ba727c70bcd5710f909",
+    "9773769978bbcaacf0f9a6635095771fcad86574ce671d8c5acd9ebd6dfa8d1a",
+    "ab733fc1e9a8540c1b8142810e08d9511a1d7773bc2c90337d2204ec44874436",
+    "b0811aaa3e29f846078ef454d5204091ddade2659755e1f9d3e2d1e440f3e798",
+    "dfd0f685a4557d30f6fa0c5e88f11bd2c27a90a84c37b4cfa2a13539726a5392",
+    "e888704b13365b40d659ad099934ca05ba074593c37238e70c6ddde800541051",
+    "4e0142024478aa448c378f76273366d06dfae12e7a195f913a62b2696bd73b00",
+    "68a1e7c40360ad85a7d1f9631ed542036af662b77c3c289f3e73d9106fb8c0e9"
+   ]
+  },
+  "leave_one_class_out": {
+   "P_change_range": [
+    -0.002866,
+    0.001574
+   ],
+   "D_change_range": [
+    -0.003496,
+    0.002436
+   ],
+   "largest_P_moves": [
+    {
+     "class_id": "e696986f411c13b24d439f6e20b8445135c918c9dd67a977c0bdb61d8d15c032",
+     "T_score": 0.463435,
+     "T_score_change": -0.005731,
+     "P_change": -0.002866,
+     "D_change": -0.000468
+    },
+    {
+     "class_id": "0cc86c2bbb27dbefbc9783ab803b3419b7c2eec72c8e9a5d5e5be4d63caeeb94",
+     "T_score": 0.463559,
+     "T_score_change": -0.005607,
+     "P_change": -0.002804,
+     "D_change": 0.000318
+    },
+    {
+     "class_id": "d2edca8f2cdb26a1251bf9b83c69077f9be380c55023d609e317f5967ba97f27",
+     "T_score": 0.464286,
+     "T_score_change": -0.004881,
+     "P_change": -0.00244,
+     "D_change": -0.001318
+    },
+    {
+     "class_id": "de4d968760453db0a9fe3fe8ab3f7d76b3ebdfeb01e4bc086a98d3270158531a",
+     "T_score": 0.465372,
+     "T_score_change": -0.003795,
+     "P_change": -0.001898,
+     "D_change": 0.000676
+    },
+    {
+     "class_id": "e888704b13365b40d659ad099934ca05ba074593c37238e70c6ddde800541051",
+     "T_score": 0.472315,
+     "T_score_change": 0.003149,
+     "P_change": 0.001574,
+     "D_change": 0.000965
+    }
+   ]
+  }
+ }
+}
+__EXIT__ 0
