@@ -1,0 +1,277 @@
+{
+ "format": "h7r-s400-pre-contract-v1",
+ "contract_id": "R2-S400-PRE",
+ "status": "fixed",
+ "approved": {
+  "prepare": false,
+  "measure": false
+ },
+ "question": "on a fixed sample of the c2 train-split games: how much does an S400 re-search change the raw visit distributions and the policy targets of the c2 rule against S200 (beside S50 -> S200), and what does a full re-search cost",
+ "scope": "a measurement only: no training, no Arena, no reading or pass rule; the decision on a full re-search and a training contract is the user's",
+ "evidence": {
+  "docs/h7c/c2/retarget_s200.json": {
+   "path": "docs/h7c/c2/retarget_s200.json",
+   "sha256": "4a8735b2f15dc760fdd4f275740c445957f4388767b23fdbf226f9a3314aba14"
+  },
+  "docs/h7c/c2/labels_c2_report.json": {
+   "path": "docs/h7c/c2/labels_c2_report.json",
+   "sha256": "35d39edc7273314a94cf5e8755cc09f9e6b6c6805d9107a57bbd95b5b9b8b625"
+  },
+  "docs/h7c/c2/policy_record.json": {
+   "path": "docs/h7c/c2/policy_record.json",
+   "sha256": "927f63a137207db28b5752ac40b319831c3ac1f80462c639142cb6dea38bcd80"
+  },
+  "docs/h7c/e2/sb_c5_saturation.json": {
+   "path": "docs/h7c/e2/sb_c5_saturation.json",
+   "sha256": "952751bf83afefb423521d668bd927e43a7dbad397fb49a958bc3a8516edbae9"
+  },
+  "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/judge.json": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/judge.json",
+   "sha256": "3326458a29edea3bf6b086342cd051ed3a314aeea596742852e79b190b1dac91"
+  },
+  "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/arena-recheck.json": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/arena-recheck.json",
+   "sha256": "f115f67587cc89d241a80e91a697f2f52025a1bc3faf796b553d159d1e777695"
+  }
+ },
+ "inputs": {
+  "selfplay": {
+   "path": "runs/h7c/c2/selfplay_8802.jsonl",
+   "sha256": "48b65dd7ed30eb17a7b45d37caa46228b3852277cf5ee2d9e9ae82baaf98585d"
+  },
+  "retarget_s200": {
+   "path": "runs/h7c/c2/retarget_s200.jsonl",
+   "sha256": "14747ea3dfbede9f565d201ee5a1c5d5d6689ae42c46b65368d163f3e9cb7ad4"
+  },
+  "policy_rows": {
+   "path": "runs/h7c/c2/policy_rows.jsonl.gz",
+   "sha256": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71"
+  },
+  "policy_checkpoint": {
+   "path": "runs/h3_policy_64x4/best.pt",
+   "sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61"
+  },
+  "policy_metadata": {
+   "path": "runs/h3_policy_64x4/best.json",
+   "sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+  },
+  "value_checkpoint": {
+   "path": "runs/h6_value_head_v3/best.pt",
+   "sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca"
+  },
+  "value_metadata": {
+   "path": "runs/h6_value_head_v3/best.json",
+   "sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  }
+ },
+ "selfplay_identity": {
+  "cycle": 2,
+  "run_seed": 8802,
+  "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+  "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+  "value_device": "cuda",
+  "models": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+   "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  },
+  "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+  "generator_git": {
+   "commit": "9dccf1f44253f6d7090f6076a43d464dcb203c19",
+   "dirty": false
+  }
+ },
+ "models_note": "the parent pair that played the c2 self-play (h7c_retarget.check_engine refuses any other); not c5",
+ "mode": "restored",
+ "workers": 6,
+ "device": "cuda",
+ "budgets": {
+  "s200": {
+   "factor": 4,
+   "budget": {
+    "simulations": 200,
+    "tactical_simulations": 400
+   }
+  },
+  "s400": {
+   "factor": 8,
+   "budget": {
+    "simulations": 400,
+    "tactical_simulations": 800
+   }
+  }
+ },
+ "budget_rule": "fixed here; never read from a cycle decision (h7c_retarget run reads the cycle-1 decision, which gives S200)",
+ "sample": {
+  "source": "the c2 policy rows: game ids of rows with split train (games the label step kept after the probe drops; split_for salt h7c-v1, val 5%)",
+  "salt": "r2-s400-pre-v1",
+  "games": 100,
+  "early_check_games": 5,
+  "order": "sha256(\"<salt>:<game id>\") ascending, then the id; the first `games`; the first `early_check_games` of that order are the early S200 check",
+  "positions": "every eligible ply (actor target kind visits) of the sampled games; the count comes from the coverage list fixed by prepare (about 2,090 is a planning value)"
+ },
+ "reproduction": {
+  "what": "the sample re-searched at S200 against the c2 S200 records",
+  "exact": [
+   "ply",
+   "color",
+   "seed",
+   "canonical_hash",
+   "route",
+   "engine_move",
+   "visit counts",
+   "proven_loss",
+   "e4",
+   "tree_budget",
+   "cooldown_restored"
+  ],
+  "mean_value_tolerance": 1e-05,
+  "rule_source": "the G0 rule of h7c_retarget (mean values are stored rounded to 6 decimals)",
+  "order": [
+   "S200 on the first 5 sample games, checked",
+   "S200 on the other 95, the whole sample checked",
+   "S400 on the whole sample, only after both checks"
+  ],
+  "miss": "stop and record (measure.json status S200_EARLY_NOT_REPRODUCED / S200_NOT_REPRODUCED); no S400; nothing is relaxed"
+ },
+ "metrics": {
+  "raw": "root visit counts normalised over every visited move (nothing removed): top-1 change, total variation, Jensen-Shannon (base 2), entropy (bits), top share, visited children; proven-loss set relation (same / first only / second only / both unique)",
+  "target": "the c2 rule (h7c_retarget.retarget_target: visits without the union of the actor's and the search's proven losses): top-1 change, total variation, Jensen-Shannon, entropy, KL(target || H3) with the training encoding and legal mask",
+  "pairs": [
+   "S50 -> S200 (reference: what c2 trained on)",
+   "S200 -> S400 (measured)"
+  ],
+  "populations": {
+   "raw": "every sampled eligible ply",
+   "target_pair": "unmasked c2 rows where both budgets of the pair leave a target",
+   "target_common": "unmasked c2 rows where S50, S200 and S400 all leave a target (the same positions for both pairs)"
+  },
+  "denominators": "masked rows, positions without a c2 row, target none per budget, S200-only and S400-only targets, pair and common counts are reported beside the tables",
+  "move_buckets": [
+   [
+    1,
+    10
+   ],
+   [
+    11,
+    20
+   ],
+   [
+    21,
+    40
+   ],
+   [
+    41,
+    null
+   ]
+  ],
+  "top1_ties": "the first move in row-major order",
+  "aggregate": "position-weighted mean, median, 90th percentile; per move bucket",
+  "bootstrap": {
+   "unit": "game",
+   "samples": 10000,
+   "seed": 20261113,
+   "statistic": "position-weighted mean of the drawn games' positions",
+   "interval": "95% percentile"
+  }
+ },
+ "time_reference": {
+  "c2_s200_wall_seconds": 8857.0,
+  "eligible": 20910,
+  "workers": 6,
+  "source": "docs/h7c/c2/retarget_s200.json (the whole c2 re-search)"
+ },
+ "time_scopes": {
+  "full_re_search": "every eligible ply of the c2 games: what h7c_retarget run searches and h7c_labels --retarget requires",
+  "training_data": "the eligible plies of the train-split games the label step kept"
+ },
+ "time_estimates": [
+  "ratio: c2 S200 wall x (sample S400 / S200 search seconds) x (scope / eligible)",
+  "extrapolation: sample S400 wall x scope / sample positions (only when no search phase resumed)",
+  "search only: sample S400 search seconds per position x scope / workers",
+  "check: the sample S200 wall extrapolated to all eligible plies against the actual c2 wall"
+ ],
+ "planning_values": "about 40 minutes for the sample and 4.2 hours for a full S400 re-search are plan values, replaced by the measurement",
+ "reading": "none",
+ "records": {
+  "prepare": "docs/h7r/r2/R2-S400-PRE/prepare.json",
+  "measure": "docs/h7r/r2/R2-S400-PRE/measure.json",
+  "runs": "runs/h7r/R2-S400-PRE (s200.jsonl, s400.jsonl, positions.jsonl.gz; git-ignored)",
+  "stage_logs": "docs/h7r/r2/R2-S400-PRE/stage-logs"
+ },
+ "identity": {
+  "experiment_sha256": "sha256 of the canonical JSON of this contract without \"approved\""
+ },
+ "invariance": "HEAD (clean), the contract file, the sources and the inputs at the start, checked again right before publishing",
+ "sources": [
+  {
+   "path": "scripts/h7r_s400_pre.py",
+   "sha256": "922792cd44de0ec3aa1d1b0b02ddc559c87b97e23d3c267c2fce6496e96163e9"
+  },
+  {
+   "path": "scripts/h7r_p1.py",
+   "sha256": "4796f49f7d12a402a447554abe5b5f5fbfb568569a56892a78ea71debfcd4f12"
+  },
+  {
+   "path": "scripts/h7c_retarget.py",
+   "sha256": "64c962ac43764f92d41560b834d82d786bdeef788389a4025ae3a7687a8879b5"
+  },
+  {
+   "path": "src/hybrid/h7c_retarget.py",
+   "sha256": "75d9824c5bf83a46c6385081ceebfedf8e09fcd4b4e3de019d059072f74dfa02"
+  },
+  {
+   "path": "src/hybrid/h7c_targets.py",
+   "sha256": "509a2ae8c25b0678044f92035670cf8a88292b9c75fc9b008009d75adc576e78"
+  },
+  {
+   "path": "scripts/h7c_labels.py",
+   "sha256": "f90a3eb364c53e97eb61563359df6cd516e079046df1d5165d778217b979c996"
+  },
+  {
+   "path": "scripts/h7c_selfplay.py",
+   "sha256": "eeca66c1edcbdedefaeaa3c7800163475b368cc9b1356f3d558a1b8136257f6a"
+  },
+  {
+   "path": "src/hybrid/h6_labels.py",
+   "sha256": "971e89cf422410ffb632802d4496b49cbf140a9fa878e5a9232520938c775d63"
+  },
+  {
+   "path": "src/hybrid/h7c_train.py",
+   "sha256": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488"
+  },
+  {
+   "path": "scripts/h7c_train_policy.py",
+   "sha256": "ae76b4ed3119b775413688a6f0e371d1496b28acc49dd1942a8cd7ed7dbd4b89"
+  },
+  {
+   "path": "src/hybrid/h3_train.py",
+   "sha256": "0110271d4191d1722c9d091b97d7c5a8f331cee9af7b38e9e3a0b9c0fa4e1a79"
+  },
+  {
+   "path": "src/hybrid/h7r_eval.py",
+   "sha256": "6b7b197babdff170a27948d697c60728693681429627127d258f5d002ff27d1e"
+  },
+  {
+   "path": "src/hybrid/h7r_ledger.py",
+   "sha256": "660dcc30307331b8fe59cdc3001189c21f8687c7ec9165416b2763bcc57da349"
+  },
+  {
+   "path": "src/hybrid/h7c_nmask.py",
+   "sha256": "9a960a9aae4495ee73e00d3edc1ba75409117e4b7c53cd54ea0b302e1238afaf"
+  },
+  {
+   "path": "src/hybrid/progress.py",
+   "sha256": "6529dba76210cc68c0feafe8ca20f179daa9a28b684d2e8ed1a11b5fa9c34d02"
+  },
+  {
+   "path": "src/analysis/tb_v3_net.py",
+   "sha256": "f973597c1f4858a4f161702369dc3788cdf9a4cd4f0d84de4779354c64a5f52b"
+  }
+ ],
+ "draft": {
+  "path": "docs/h7r/r2/R2-S400-PRE/s400-pre-contract.draft.json",
+  "sha256": "767f34d4443df526f81d90c64ef3e6678128db16015e825e02552db24a86b3e3"
+ }
+}

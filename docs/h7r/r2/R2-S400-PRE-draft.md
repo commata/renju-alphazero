@@ -1,6 +1,7 @@
 # R2-S400-PRE: S400 정책 목표 사전 측정 계획 (초안, 승인 전)
 
-- 상태: **계획서만**. 도구, 계약, 실행은 없다. 실행 여부는 이 계획서를 검토한 뒤 결정한다.
+- 상태: 도구·테스트·계약(**미승인**, `approved` 모두 false) 준비 완료. 측정은 실행하지 않았다. 실행 여부는 이 계획서를 검토한 뒤 결정한다.
+- 도구 `scripts/h7r_s400_pre.py`, 테스트 `tests/test_h7r_s400_pre.py`, 계약 `docs/h7r/r2/R2-S400-PRE/s400-pre-contract.json`(초안 `s400-pre-contract.draft.json`), 실험 SHA `3e1a863799f8…`
 - 이번 측정에서 하지 않는 것: 학습, Arena, champion 변경, 기존 기록 수정
 - 배경
   - R2-P1-POLICY-REPLAY-A1(`faeb72b0f625`)은 P NOT_ESTABLISHED, D BETTER_THAN_CONTROL로 끝났다.
@@ -46,10 +47,12 @@
 ## 3. 실행 내용 (승인 뒤)
 
 1. **입력 대조**: self-play jsonl, 모델, 엔진·runtime, c2 S200 기록의 SHA를 대조한다. 표본 게임 목록이 계약과 같은지도 확인한다.
-2. **S200 재실행 = 재현 검사**: 표본 국면을 S200으로 다시 탐색한다.
-   - c2 기록과 route, 엔진 수, 방문 수, 증명된 패배수, E4-v2 단계가 정확히 같아야 한다(허용 오차 0).
-   - 다르면 S400을 돌리지 않고 멈춘다. 같은 국면에서 지금 환경이 c2 재탐색을 재현하지 못한다는 뜻이기 때문이다.
-3. **S400 실행**: 같은 국면을 같은 모델·복원 방식에서 S400으로 탐색한다.
+2. **S200 재현 검사 (두 단계)**
+   - 먼저 고정된 100게임 가운데 표본 순서상 처음 5게임을 S200으로 다시 탐색해 c2 기록과 대조한다. 하나라도 다르면 나머지를 돌리지 않고 멈춘다(`S200_EARLY_NOT_REPRODUCED`).
+   - 통과하면 같은 표본의 나머지 95게임을 이어서 탐색하고, 표본 전체를 다시 대조한다. 다르면 S400을 돌리지 않고 멈춘다(`S200_NOT_REPRODUCED`).
+   - 대조 규칙은 기존 G0 규칙이다: ply, 색, seed, 국면 해시, route, 엔진 수, 방문 수, 증명된 패배수, E4-v2 단계, tree budget, cooldown 복원은 정확히 같아야 한다. 평균값(mean value)만 `h7c_retarget.Q_TOLERANCE`(1e-5) 이내를 요구한다. 기록이 평균값을 소수 6자리로 반올림해 저장하기 때문이며, 새로 정한 허용 오차가 아니다.
+   - 멈춰도 결과 기록(`measure.json`)과 로그는 남긴다. 같은 국면에서 지금 환경이 c2 재탐색을 재현하지 못한다는 뜻이므로, 기준을 낮추지 않는다.
+3. **S400 실행**: S200 전체 재현을 통과한 뒤에만, 같은 표본을 같은 모델·복원 방식에서 S400으로 탐색한다.
    - route와 E4-v2 단계는 예산과 무관하므로 S200과 같아야 한다. 다르면 오류로 기록한다(`h7c_retarget`의 규칙과 같음).
 4. **참고 기준**: 같은 국면의 actor(S50) 방문 분포를 self-play 기록에서 읽는다. 이를 이용해 S50 → S200 변화량도 같은 지표로 낸다. c2가 실제로 학습한 변화의 크기와 비교하기 위해서다.
 
@@ -68,6 +71,13 @@
 - H3 정책과의 거리: KL(목표 ‖ H3). 학습과 같은 입력 인코딩·합법수 마스크를 써서 목표가 H3 정책과 얼마나 떨어져 있는지 잰다.
 - 원시 방문 분포와 목표를 따로 내는 이유: 증명된 패배수를 빼면 두 분포의 차이가 커지거나 작아질 수 있다. 학습에 들어가는 것은 목표다.
 
+**분모와 공통 국면**
+- 표는 두 가지로 낸다.
+  - 짝별 표: 각 짝(S50 → S200, S200 → S400)의 두 예산 모두에서 목표가 남는 마스크되지 않은 행
+  - **공통 국면 표**: S50, S200, S400 세 예산 모두에서 목표가 남는 마스크되지 않은 행. 두 짝을 같은 국면에서 읽을 수 있으므로, 분모 차이와 분포 변화의 크기를 구분할 수 있다.
+- 함께 적는 건수: 표본 국면 수, 마스크된 행, c2 행이 없는 국면(S200 목표가 없어 c2가 행을 만들지 않음. 마스크 여부를 알 수 없음), 예산별 목표 없음, S200에서만 목표가 남은 국면, S400에서만 목표가 남은 국면, 짝별·공통 국면 수
+- 원시 방문 분포 표는 표본의 모든 적격 국면에서 낸다.
+
 **집계**
 - 국면을 같은 비중으로 센 평균, 중앙값, 90번째 백분위. top-1이 동률이면 행·열 사전순에서 첫 수를 쓴다.
 - 수순 구간별(1–10, 11–20, 21–40, 41수 이후)
@@ -81,11 +91,17 @@
 ## 5. 시간 추정 방법
 
 - 국면마다 worker의 탐색 초(예산별)를 기록하고, 게임마다 wall time을 기록한다. 표본 전체의 wall time과 worker 수도 남긴다.
-- 전체 재탐색 시간은 두 방법으로 추정하고 둘 다 보고한다.
-  1. **비율법**: c2 실제 S200 전체 시간 8,857초 × (표본의 S400 탐색 초 합 / 표본의 S200 탐색 초 합)
-  2. **외삽법**: 표본 S400 wall time × (전체 적격 국면 20,910 / 표본 국면 수). 같은 worker 수(6)를 가정한다.
-- 검증: 표본의 S200 wall time을 같은 방식으로 외삽한 값을 실제 8,857초와 비교해, 외삽의 오차를 함께 적는다.
-- 사전 예상(계획용, 측정이 아님)
+- **대상 범위를 둘로 나눠 각각 추정한다.**
+  - 전체 재탐색: c2 게임 1,000개의 적격 국면 20,910개. 지금의 `h7c_retarget run`이 탐색하고 `h7c_labels --retarget`이 요구하는 범위다. 8,857초도 이 범위의 실측이다.
+  - 실제 학습 자료: label 단계가 남긴 train split 게임의 적격 국면. prepare가 c2 policy 행에서 센다.
+  - 표본은 probe로 제외된 게임을 뺀 train 게임에서 뽑았으므로, 두 범위 모두 그 표본의 국면당 비용으로 추정한다.
+- 추정 방법 (모두 보고한다)
+  1. **비율법**: 8,857초 × (표본의 S400 탐색 초 합 / 표본의 S200 탐색 초 합) × (범위 국면 수 / 20,910)
+  2. **외삽법**: 표본 S400 wall time × (범위 국면 수 / 표본 국면 수). 같은 worker 수(6)를 가정한다. 탐색 단계가 앞선 실행에서 이어받은 게임이 있으면 wall time이 불완전하므로 내지 않는다.
+  3. **탐색 시간만**: 표본 S400의 국면당 탐색 초 × 범위 국면 수 ÷ worker 수
+- 검증: 표본의 S200 wall time을 20,910국면으로 외삽한 값을 실제 8,857초와 비교해 외삽의 오차를 적는다. 표본 S200은 두 번(5게임, 95게임)에 나눠 돌리므로 worker 기동 비용이 한 번 더 들어간다.
+- prepare는 전체 적격 국면 수가 20,910과 같은지 확인한다(다르면 멈춘다).
+- 사전 예상(계획용, 측정이 아님. 측정 결과로 바꾼다)
   - 표본 실행: 약 2,090국면 × (2.5 + 4.2초) ÷ 6 workers ≈ 40분 안팎
   - 전체 S400 재탐색: 8,857초 × 1.69 ≈ 4.2시간 안팎
 
@@ -124,14 +140,128 @@
   - `h7r_eval.py`는 이전 계약들(A1 포함)이 SHA로 고정한 source다. 그래서 별도의 버전 단계로 결정해야 한다.
   - S400 측정에는 대국이 없으므로 이 결정 전에도 측정은 할 수 있다.
 
-## 8. 구현 범위 (계획 승인 뒤)
+## 8. 구현 (완료, 미승인)
 
-- 새 도구 `scripts/h7r_s400_pre.py`
-  - 입력 대조, 표본 선택, S200 재현 검사, S400 실행, 지표 계산
-  - 장시간 작업 규칙(진행률 stdout, 완료 순 수집, heartbeat)을 따른다.
-- 측정 계약 초안(`approved.measure` 하나). 표본 규칙, 예산, 지표, bootstrap seed, source SHA를 고정한다.
-- 테스트: 작은 self-play stand-in으로 표본 규칙, 재현 검사(불일치 시 멈춤), 지표 계산을 확인한다.
+- 도구 `scripts/h7r_s400_pre.py`
+  - `prepare`(`approved.prepare`): 입력 7개의 SHA, self-play 신원, 엔진·runtime·장치, c2 S200 기록의 신원과 coverage를 대조한다. 표본(게임 id 목록, coverage key SHA)과 두 시간 범위의 국면 수를 `prepare.json`에 남긴다.
+  - `measure`(`approved.measure`): 커밋된 표본을 다시 계산해 대조한 뒤 §3의 순서로 탐색한다. 탐색은 `h7c_retarget._execute`를 그대로 쓴다(같은 agent, 예산 규칙, 행 검사, 재개, 진행률 출력). 결과는 `measure.json` 하나이고, 재현 검사에서 멈출 때도 남긴다.
+  - 탐색 기록의 신원은 purpose `r2-s400-pre`다. `h7c_labels --retarget`은 purpose가 `retarget`이 아닌 파일을 거부하므로, 이 기록은 학습 자료로 쓰일 수 없다.
+  - 기존 `h7c_retarget.py`, `hybrid/h7c_retarget.py`, `hybrid/h7c_targets.py`, `h7c_labels.py`는 바꾸지 않았다. 계약이 이 파일들의 SHA를 고정한다.
+- 계약: 표본 규칙, 예산(S200 = factor 4, S400 = factor 8), 재현 규칙, 지표, bootstrap(10,000회, seed 20261113), 시간 기준, 입력·근거·source SHA를 고정한다. 단계는 prepare → measure이고 둘 다 미승인이다.
+- 테스트
+  - 지표, 표본 순서, bootstrap을 손으로 계산한 값과 대조
+  - 임시 저장소에서 stand-in 게임·policy 행·c2 기록으로 prepare → measure 전체: 초기 5게임 불일치 시 즉시 멈춤, 나중 게임 불일치 시 S400 전에 멈춤, G0 허용 범위 안의 평균값 차이는 통과, 커밋된 표본 재대조, 입력 변경 거부, 덮어쓰기 거부
+  - 실제 TB-V3 agent(CPU, stand-in 네트워크): `h7c_retarget`의 실제 S200 실행을 c2 기록으로 삼아, 도구의 S200이 그것을 정확히 재현하고 S400이 행 검사를 통과하며 재개가 동작하는지 확인
 - 결과 처리
-  - 원시 방문 기록은 `runs/`에 둔다.
-  - 국면별 지표는 수치만 담은 파일로 남긴다(self-play 국면이며 RenjuNet 파생이 아니다). 커밋 범위는 계약에서 정한다.
-  - 집계 요약은 커밋한다.
+  - 탐색 기록(`s200.jsonl`, `s400.jsonl`)과 국면별 지표(`positions.jsonl.gz`)는 `runs/h7r/R2-S400-PRE/`에 둔다.
+  - 커밋하는 것은 `prepare.json`, `measure.json`(집계, 분모, 시간, 해시)과 로그다.
+
+## 9. 데스크톱 실행 (승인 뒤에만)
+
+- s4-1은 `approved.prepare` 뒤, s4-2는 `approved.measure` 뒤에 실행한다.
+- 다시 실행했을 때
+  - 결과가 이미 커밋되어 있으면 멈춘다.
+  - 결과 파일이 있지만 커밋 전이면, 다시 돌리지 않고 남은 로그와 함께 커밋한다.
+  - measure가 결과를 쓰기 전에 끊겼으면 블록을 다시 실행한다. 끝난 게임은 탐색 기록에서 이어받는다.
+- measure는 표본만으로 약 40분 안팎으로 예상한다(계획값). tmux를 권한다.
+
+s4-1. prepare
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  N=prepare
+  D=docs/h7r/r2/R2-S400-PRE
+  L=runs/h7r/R2-S400-PRE/logs
+  O="$D/$N.json"
+  tracked(){ git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  mkdir -p "$L"
+  rc=0
+  if [ -e "$O" ]; then
+    echo "an uncommitted $O exists: recording it (no new run)"
+  else
+    B="$N-$(date +%Y%m%d-%H%M%S)"
+    if [ -e "$L/$B.log" ]; then echo "STOP: $L/$B.log exists"; exit 1; fi
+    python -u scripts/h7r_s400_pre.py "$N" --device cuda 2>&1 | tee "$L/$B.log" || rc=$?
+    echo "__EXIT__ $rc" >> "$L/$B.log"
+  fi
+  expect=()
+  shopt -s nullglob
+  for f in "$L/$N"-*.log; do
+    [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    expect+=(--expect "$D/stage-logs/$n.log" --expect "$D/stage-logs/$n.manifest.json")
+  done
+  if [ -f "$O" ]; then expect+=(--expect "$O"); fi
+  [ "${#expect[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-PRE: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
+
+s4-2. measure (tmux 권장)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git pull --ff-only origin feat/h7-c1
+  test -z "$(git status --porcelain --untracked-files=no)"
+  python scripts/check_track_b_frozen.py
+  N=measure
+  D=docs/h7r/r2/R2-S400-PRE
+  L=runs/h7r/R2-S400-PRE/logs
+  O="$D/$N.json"
+  tracked(){ git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  tracked "$D/prepare.json" || { echo "STOP: prepare is not recorded (run s4-1 first)"; exit 1; }
+  mkdir -p "$L"
+  rc=0
+  if [ -e "$O" ]; then
+    echo "an uncommitted $O exists: recording it (no new run)"
+    status="$(python -c "import json, sys; print(json.load(open(sys.argv[1]))['status'])" "$O")"
+    [ "$status" = MEASURED ] || rc=2
+  else
+    B="$N-$(date +%Y%m%d-%H%M%S)"
+    if [ -e "$L/$B.log" ]; then echo "STOP: $L/$B.log exists"; exit 1; fi
+    python -u scripts/h7r_s400_pre.py "$N" --device cuda 2>&1 | tee "$L/$B.log" || rc=$?
+    echo "__EXIT__ $rc" >> "$L/$B.log"
+  fi
+  expect=()
+  shopt -s nullglob
+  for f in "$L/$N"-*.log; do
+    [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    expect+=(--expect "$D/stage-logs/$n.log" --expect "$D/stage-logs/$n.manifest.json")
+  done
+  if [ -f "$O" ]; then expect+=(--expect "$O"); fi
+  [ "${#expect[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-PRE: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
