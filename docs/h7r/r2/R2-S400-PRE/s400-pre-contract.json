@@ -3,7 +3,7 @@
  "contract_id": "R2-S400-PRE",
  "status": "fixed",
  "approved": {
-  "prepare": false,
+  "prepare": true,
   "measure": false
  },
  "question": "on a fixed sample of the c2 train-split games: how much does an S400 re-search change the raw visit distributions and the policy targets of the c2 rule against S200 (beside S50 -> S200), and what does a full re-search cost",
