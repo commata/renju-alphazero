@@ -482,7 +482,7 @@ class BlockTest(unittest.TestCase):
         doc = (ROOT / 'docs/h7r/r2/R2-S400-PRE-draft.md').read_text()
         blocks = re.findall(r'```bash\n(.*?)```', doc, re.S)
         self.assertEqual(len(blocks), 2)
-        self.blocks = dict(zip(('s4-1', 's4-2'), (b.replace('~/renju-h6', str(w)) for b in blocks)))
+        self.blocks = dict(zip(('s4-1', 's4-2'), (b.replace('~/renju-h6', w.as_posix()) for b in blocks)))
         self.D = 'docs/h7r/r2/R2-S400-PRE'
 
     def bash(self, name, **env):
