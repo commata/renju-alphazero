@@ -17,6 +17,7 @@ from hybrid.h6_labels import RESERVED_SEEDS
 
 ROOT = Path(__file__).resolve().parents[1]
 V1_BLOCK = range(8781, 8800)
+V2_USERS = ('docs/h7r/r2/R2-S400-TRAIN/', 'docs/h7r/contracts-v2/')  # the only places a v2 seed may appear
 
 
 class RegistryTest(unittest.TestCase):
@@ -31,7 +32,8 @@ class RegistryTest(unittest.TestCase):
     def test_no_committed_record_uses_a_v2_seed(self):
         used = set()
         for path in ROOT.joinpath('docs').rglob('*.json'):
-            if path.name.startswith('O1-dev-'):  # the suites generated with the v2 suite seeds
+            rel = path.relative_to(ROOT).as_posix()
+            if path.name.startswith('O1-dev-') or rel.startswith(V2_USERS):  # the registered v2 users
                 continue
             used |= {int(x) for x in re.findall(r'"(?:seed|run_seed|base_seed)": (\d+)', path.read_text(errors='ignore'))}
         self.assertFalse(used & set(seeds.ARENA_SEEDS), sorted(used & set(seeds.ARENA_SEEDS)))
