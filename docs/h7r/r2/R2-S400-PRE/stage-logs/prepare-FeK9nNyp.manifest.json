@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "prepare-FeK9nNyp.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRE/logs/prepare-FeK9nNyp.log",
+   "copy": "docs/h7r/r2/R2-S400-PRE/stage-logs/prepare-FeK9nNyp.log",
+   "bytes": 3457,
+   "sha256": "e03158c66cd41585ddb900e1137512ad553042fad352f1979983dcf093a9069e"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
