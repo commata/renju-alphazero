@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import gzip
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -156,7 +157,8 @@ def prepare(args, root=ROOT) -> dict:
     inp = pre.load_inputs(search_view(c), root, args.device)
     control = check_control(c, root)
     train_ids = {r['game_id'] for r in read_rows(Path(root) / p1.PATHS['cycle_rows']) if r['split'] == 'train'}
-    record = {'format': 'h7r-s400-train-prepare-v1', **stamp(sha, eid, guard.check()), 'passed': True,
+    record = {'format': 'h7r-s400-train-prepare-v1', **pre.log_field(args), **stamp(sha, eid, guard.check()),
+              'passed': True,
               'cycle_rows': {'sha256': c['inputs']['cycle_rows']['sha256'], 'train': len(checked['rows']['train']),
                              'val': len(checked['rows'].get('val', []))},
               'search_scope': {'train_games': len(train_ids), 'eligible': inp['scopes']['training_eligible']},
@@ -201,7 +203,8 @@ def gate(args, root=ROOT, log=print) -> dict:
     mine = {**run['summary'], **result['record'], 'p1': result['p1'], 'config': tr.config_dict(run['cfg']),
             'settings': run['settings']}
     diffs = a1.differences(gate_view(mine), gate_view(a1_rec))
-    record = {'format': 'h7r-s400-train-gate-v1', **stamp(sha, eid, guard.check()), 'seed': GATE_SEED,
+    record = {'format': 'h7r-s400-train-gate-v1', **pre.log_field(args), **stamp(sha, eid, guard.check()),
+              'seed': GATE_SEED,
               'passed': not diffs, 'differences': diffs, 'a1_seed_record_sha256':
                   c['control']['models'][str(GATE_SEED)]['seed_record_sha256'], 'settings': run['settings'],
               'run': gate_view(mine), 'seconds': run['seconds']}
@@ -285,16 +288,44 @@ def read_rows(path) -> list[dict]:
         return [json.loads(line) for line in handle if line.strip()]
 
 
+def read_rows_hashed(path) -> tuple[list[dict], str]:
+    """The rows and the SHA-256 of the very bytes they were read from (one read: no window between the two)."""
+    data = Path(path).read_bytes()
+    text = gzip.decompress(data).decode('utf-8')
+    return [json.loads(line) for line in text.splitlines() if line.strip()], hashlib.sha256(data).hexdigest()
+
+
+def rows_by_split(rows: list[dict]) -> dict[str, list[dict]]:
+    """What ``h7c_train.load_policy_rows`` gives for a file of these rows: the unmasked rows by split, one format."""
+    from hybrid import h7c_train as tr
+
+    out, formats = {'train': [], 'val': []}, set()
+    for row in rows:
+        formats.add(row.get('format'))
+        require(row.get('format') in tr.POLICY_ROW_FORMATS and len(formats) == 1,
+                f"policy row format {row.get('format')!r} (one of {tr.POLICY_ROW_FORMATS} per file)")
+        if not row['mask']:
+            out.setdefault(row['split'], []).append(row)
+    return out
+
+
 def s400_records(path, games: list[dict], identity_sha: str) -> dict:
-    """The S400 rows by (game index, ply), every game of the scope present and checked (``h7r_s400_pre.check_rows``)."""
+    """The S400 rows by (game index, ply): every game of the scope exactly once, no other game, each game's rows
+    exactly its eligible plies and checked (``h7r_s400_pre.check_rows``)."""
+    scope = {g['game_index'] for g in games}
     by = {}
     for line in Path(path).read_text(encoding='utf-8').splitlines():
         if line.strip():
             rec = json.loads(line)
             require(digest(rec['identity']) == identity_sha, 'an S400 record of another search identity')
-            by[rec['game_index']] = rec['rows']
+            gi = rec['game_index']
+            require(gi in scope, f'S400 record of game {gi}: not a game of the train scope')
+            require(gi not in by, f'S400 record of game {gi}: twice in the file')
+            by[gi] = rec['rows']
+    missing = sorted(scope - set(by))
+    require(not missing, f'S400 records missing for {len(missing)} games (first {missing[:3]})')
     for g in games:
-        pre.check_rows(g, by.get(g['game_index']))
+        pre.check_rows(g, by[g['game_index']])
     return {(gi, r['ply']): r for gi, rows in by.items() for r in rows}
 
 
@@ -411,14 +442,17 @@ def verified_rows(c: dict, eid: str, root) -> tuple[dict, list[dict]]:
 
     root = Path(root)
     rec = committed_record(root, f'{D}/rows.json', 'rows record', eid)
-    cand_path = root / RUNS / 'policy_rows_s400.jsonl.gz'
-    require(file_sha256(cand_path) == rec['candidate_rows_sha256'], 'the candidate rows file is not the recorded one')
-    require(file_sha256(root / RUNS / 's400.jsonl') == rec['s400_records_sha256'], 'the S400 records changed')
     srec = committed_record(root, f'{D}/search.json', 'search record', eid)
+    cand, cand_sha = read_rows_hashed(root / RUNS / 'policy_rows_s400.jsonl.gz')
+    require(cand_sha == rec['candidate_rows_sha256'], 'the candidate rows file is not the recorded one')
+    s400_sha = file_sha256(root / RUNS / 's400.jsonl')
+    require(s400_sha == rec['s400_records_sha256'] == srec['s400']['records_sha256'],
+            'the S400 records are not the ones the search and the rows record name')
+    require(rec['c2_rows_sha256'] == c['inputs']['cycle_rows']['sha256'], 'the rows record names other c2 rows')
     inp = pre.load_inputs(search_view(c), root, 'cpu', engine=False)
     games = train_scope(inp, root)
     s400 = s400_records(root / RUNS / 's400.jsonl', games, srec['s400']['identity_sha256'])
-    c2_rows, cand = read_rows(root / p1.PATHS['cycle_rows']), read_rows(cand_path)
+    c2_rows = read_rows(root / p1.PATHS['cycle_rows'])
     bad = check_candidate(c2_rows, cand, {lab.game_id(g): g for g in inp['games']}, s400)
     require(not bad, f'the candidate rows fail their check: {bad}')
     return rec, cand
@@ -439,16 +473,19 @@ def train(args, root=ROOT, log=print) -> dict:
     c, sha, eid = load_contract(args.contract, root, 'train')
     require(args.seed in c['seeds']['training'], 'seed not in the contract')
     committed_record(root, f'{D}/prepare.json', 'prepare record', eid)
-    g = verified_gate(c, eid, root)
-    rows_rec, _ = verified_rows(c, eid, root)
     out = root / RUNS / f'S-{args.seed}'
     fresh_dir(out)
     cand_rel = f'{RUNS}/policy_rows_s400.jsonl.gz'
+    # the watch starts first: a file replaced after the checks below is caught before anything is published
     guard = Guard(root, contract_path(args.contract, root), c,
-                  [*input_files(c), f'{D}/prepare.json', f'{D}/gate.json', f'{D}/rows.json', cand_rel,
-                   f'{RUNS}/s400.jsonl'])
+                  [*input_files(c), f'{D}/prepare.json', f'{D}/gate.json', f'{D}/search.json', f'{D}/rows.json',
+                   cand_rel, f'{RUNS}/s400.jsonl'])
+    g = verified_gate(c, eid, root)
+    rows_rec, cand = verified_rows(c, eid, root)
+    require(guard.start['files'][cand_rel] == rows_rec['candidate_rows_sha256'],
+            'the candidate rows changed between the start of the run and their check')
     checked = p1.check_inputs(c, root)
-    checked['rows'] = tr.load_policy_rows(root / cand_rel)  # the candidate rows (checked just above)
+    checked['rows'] = rows_by_split(cand)  # exactly the rows verified_rows checked (no second read)
     run = a1.execute(c, 'T', args.seed, args.device, checked, root, log, expect_settings=g['settings'])
     result, cfg, parent = run['result'], run['cfg'], run['parent']
     r = result['record']
@@ -535,9 +572,9 @@ def arena_contract(args, root=ROOT) -> dict:
     body = arena_contract_body(c, eid, root)
     path = root / ARENA_CONTRACT
     ev2.check_contract(body, path, root, check_files=False)
+    ev2.check_unique(body, path, root)  # seeds and id unique across v1 and v2, before anything is written
     guard.check()
     p1.publish(path, body)
-    ev2.load_contract(path, root, check_files=False)  # seeds and id unique across v1 and v2
     return body
 
 
@@ -548,6 +585,7 @@ def main(argv=None) -> int:
     for name in ('prepare', 'gate', 'search', 'rows'):
         s = sub.add_parser(name)
         s.add_argument('--device', default='cuda')
+        s.add_argument('--log-name', help='the desktop attempt log basename, kept in the record for a recovery')
     t = sub.add_parser('train')
     t.add_argument('--seed', required=True, type=int)
     t.add_argument('--device', default='cuda')

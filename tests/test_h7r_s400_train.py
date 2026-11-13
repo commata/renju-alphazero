@@ -69,7 +69,7 @@ class FixedContractTest(unittest.TestCase):
         d = json.loads(DRAFT.read_text())
         self.assertEqual(set(fixed['approved']), set(st.STAGES))  # approvals change over time, never the id
         self.assertEqual(p1.experiment_sha256(fixed),
-                         '6c579b5ba682c1fe780aec5c1e0d47f921e420c72096da37ef95a81fbcda60d5')
+                         '67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731')
         self.assertEqual(fixed['draft'], {'path': DRAFT.relative_to(ROOT).as_posix(), 'sha256': p1.file_sha256(DRAFT)})
         self.assertEqual({k: v for k, v in fixed.items() if k not in ('status', 'sources', 'draft', 'approved')},
                          {k: v for k, v in d.items() if k not in ('status', 'sources', 'approved')})
@@ -341,28 +341,35 @@ class FlowTest(RepoBase):
         self.assertEqual(calls, [(4, [0, 1, 2, 3, 4])])  # the S400 search never started
         self.assertTrue((self.root / st.D / 'search.json').is_file())
 
-    def test_a_candidate_run_records_its_rows(self):
+    CAND_ROWS = [{'format': 'h7c-policy-row-v2', 'split': 'train', 'mask': False, 'id': 1},
+                 {'format': 'h7c-policy-row-v2', 'split': 'train', 'mask': True, 'id': 2},
+                 {'format': 'h7c-policy-row-v2', 'split': 'val', 'mask': False, 'id': 3}]
+
+    def candidate_setup(self):
         self.through_prepare()
         self.approve('search', 'train')
         cand = self.root / st.RUNS / 'policy_rows_s400.jsonl.gz'
-        cand.parent.mkdir(parents=True, exist_ok=True)
-        with gzip.open(cand, 'wt') as f:
-            f.write('{}\n')
-        (self.root / st.RUNS / 's400.jsonl').write_text('{}\n')
+        st.write_rows(cand, self.CAND_ROWS)
+        (self.root / st.RUNS / 's400.jsonl').write_text('{}' + chr(10))
         rows_rec = {'c2_rows_sha256': 'c' * 64, 'candidate_rows_sha256': p1.file_sha256(cand),
                     's400_records_sha256': p1.file_sha256(self.root / st.RUNS / 's400.jsonl')}
-        self.commit_record(f'{st.D}/gate.json', {'experiment_sha256': self.eid(), 'settings': self.a1_rec['settings']})
-        self.commit_record(f'{st.D}/rows.json', {'experiment_sha256': self.eid(), **rows_rec})
-        loaded = {'train': ['candidate rows'], 'val': []}
+        for name in ('gate', 'search', 'rows'):
+            self.commit_record(f'{st.D}/{name}.json', {'experiment_sha256': self.eid(), **rows_rec})
+        return cand, rows_rec
+
+    def train_with(self, rows_rec, execute):
         with mock.patch.object(st, 'input_files', return_value=[]), \
                 mock.patch.object(st, 'verified_gate', return_value={'settings': self.a1_rec['settings']}), \
-                mock.patch.object(st, 'verified_rows', return_value=(rows_rec, [])), \
+                mock.patch.object(st, 'verified_rows', return_value=(rows_rec, copy.deepcopy(self.CAND_ROWS))), \
                 mock.patch.object(p1, 'check_inputs', return_value={'rows': 'c2 rows'}), \
-                mock.patch('hybrid.h7c_train.load_policy_rows', return_value=loaded) as load, \
-                mock.patch('h7r_p1a1.execute', return_value=self.fake_run()) as ex:
-            out = st.train(self.ns(seed=20261111), self.root, log=QUIET)
-        self.assertEqual(load.call_args.args[0], self.root / st.RUNS / 'policy_rows_s400.jsonl.gz')
-        self.assertIs(ex.call_args.args[4]['rows'], loaded)  # trained on the candidate rows
+                mock.patch('hybrid.h7c_train.load_policy_rows', side_effect=AssertionError('read again')), \
+                mock.patch('h7r_p1a1.execute', side_effect=execute) as ex:
+            return st.train(self.ns(seed=20261111), self.root, log=QUIET), ex
+
+    def test_a_candidate_run_trains_on_the_verified_rows_and_records_them(self):
+        cand, rows_rec = self.candidate_setup()
+        out, ex = self.train_with(rows_rec, lambda *a, **k: self.fake_run())
+        self.assertEqual(ex.call_args.args[4]['rows'], {'train': [self.CAND_ROWS[0]], 'val': [self.CAND_ROWS[2]]})
         self.assertEqual(ex.call_args.args[1:3], ('T', 20261111))
         self.assertEqual(ex.call_args.kwargs['expect_settings'], self.a1_rec['settings'])
         self.assertEqual(out['inputs']['policy_rows_sha256'], rows_rec['candidate_rows_sha256'])
@@ -370,6 +377,22 @@ class FlowTest(RepoBase):
         self.assertEqual(out['inputs']['s400_records_sha256'], rows_rec['s400_records_sha256'])
         self.assertEqual(out['inputs']['policy_rows'], f'{st.RUNS}/policy_rows_s400.jsonl.gz')
         self.assertEqual((out['arm'], out['seed']), ('S', 20261111))
+
+    def test_a_candidate_file_replaced_during_the_run_publishes_nothing(self):
+        cand, rows_rec = self.candidate_setup()
+
+        def replace_then_run(*a, **k):
+            st.write_rows(cand, [{**self.CAND_ROWS[0], 'id': 99}])
+            return self.fake_run()
+        with self.assertRaisesRegex(ValueError, 'changed during the run'):
+            self.train_with(rows_rec, replace_then_run)
+        self.assertFalse((self.root / st.RUNS / 'S-20261111' / 'record.json').exists())
+
+    def test_a_candidate_file_other_than_the_verified_one_is_refused(self):
+        cand, rows_rec = self.candidate_setup()
+        st.write_rows(cand, [{**self.CAND_ROWS[0], 'id': 98}])  # replaced before the run (the check reads the record)
+        with self.assertRaisesRegex(ValueError, 'changed between the start of the run and their check'):
+            self.train_with(rows_rec, lambda *a, **k: self.fake_run())
 
     def test_the_arena_contract_is_a_v2_contract(self):
         from hybrid import h7r_eval_v2 as ev2
@@ -388,6 +411,21 @@ class FlowTest(RepoBase):
                          self.c['control']['models']['20261024']['checkpoint_sha256'])
         import h7r_dev_suites as ds
         self.assertTrue(ds.check(None, self.root, log=QUIET)['passed'])  # the suites still check beside it
+
+    def test_an_arena_seed_conflict_writes_nothing(self):
+        self.approve('prepare', 'gate', 'search', 'train', 'arena')
+        rec = {'experiment_sha256': self.eid(), 'verdict': 'CANDIDATE', 'arm': 'S', 'seed': 20261024,
+               'candidate': {'checkpoint_sha256': 'a' * 64, 'metadata_sha256': 'b' * 64}}
+        self.commit_record(st.run_record_path(20261024), rec)
+        other = {'format': 'h7r-eval-contract-v2', 'contract_id': 'OTHER', 'arms': [{'seed': 9101}]}
+        self.commit_record('docs/h7r/contracts-v2/OTHER.json', other)
+        with self.assertRaisesRegex(ValueError, r'seeds \[9101\] are already used by OTHER.json'):
+            st.arena_contract(self.ns(), self.root)
+        self.assertFalse((self.root / st.ARENA_CONTRACT).exists())
+        git(self.root, 'rm', '-q', 'docs/h7r/contracts-v2/OTHER.json')
+        git(self.root, 'commit', '-qm', 'conflict removed')
+        st.arena_contract(self.ns(), self.root)  # the next attempt is not blocked by a leftover file
+        self.assertTrue((self.root / st.ARENA_CONTRACT).exists())
 
 
 class RowsFlowTest(RepoBase):
@@ -458,6 +496,129 @@ class RowsFlowTest(RepoBase):
         empty.write_text(chr(10).join([json.dumps(first), *lines[1:]]) + chr(10))
         with self.assertRaises(ValueError):  # an empty S400 record: refused before any candidate row is used
             st.s400_records(empty, scope, digest(ident400))
+        good = [json.dumps({'identity': ident400, 'game_index': g['game_index'], 'rows': [
+            s400[(g['game_index'], p['ply'])] for p in hr.eligible_plies(g)]}) for g in scope]
+        outside = next(g for g in games if g not in scope) if len(scope) < len(games) else None
+        cases = {'twice in the file': good + [good[0]], 'missing for 1 games': good[1:]}
+        if outside is not None:
+            cases['not a game of the train scope'] = good + [json.dumps({'identity': ident400, 'game_index':
+                outside['game_index'], 'rows': []})]
+        for message, lines in cases.items():
+            with self.subTest(message):
+                empty.write_text(chr(10).join(lines) + chr(10))
+                with self.assertRaisesRegex(ValueError, message):
+                    st.s400_records(empty, scope, digest(ident400))
+
+
+STUB = """import json, os, sys
+from pathlib import Path
+D = 'docs/h7r/r2/R2-S400-TRAIN'
+cmd = sys.argv[1]
+log = sys.argv[sys.argv.index('--log-name') + 1]
+if os.environ.get('S5_FORBID'):
+    print('STOP: must not run again'); sys.exit(9)
+if cmd == 'gate' and os.environ.get('CUBLAS_WORKSPACE_CONFIG') != ':4096:8':
+    print('STOP: CUBLAS_WORKSPACE_CONFIG'); sys.exit(7)
+if os.environ.get('S5_FAIL') == cmd:
+    print('STOP: ValueError: stand-in failure'); sys.exit(1)
+Path(D).mkdir(parents=True, exist_ok=True)
+passed = not (cmd == 'gate' and os.environ.get('S5_GATE_FAIL'))
+Path(D, cmd + '.json').write_text(json.dumps({'format': 'h7r-s400-train-' + cmd + '-v1', 'passed': passed,
+                                               'log_name': log}))
+print(cmd, passed)
+sys.exit(0 if passed else 2)
+"""
+
+
+class BlockTest(unittest.TestCase):
+    """The desktop blocks of the draft (section 9) run by bash on a real temporary repository with a bare origin, the
+    real .gitignore and record tool; the training tool is a stand-in."""
+
+    def setUp(self):
+        import re
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        base = Path(self.tmp.name)
+        self.origin, self.work = base / 'origin.git', base / 'work'
+        git(base, 'init', '-q', '--bare', str(self.origin))
+        git(base, 'init', '-q', '-b', 'feat/h7-c1', str(self.work))
+        w = self.work
+        for k, v in (('user.email', 't@t'), ('user.name', 't')):
+            git(w, 'config', k, v)
+        shutil.copy(ROOT / '.gitignore', w / '.gitignore')
+        for rel in ('scripts/h7r_d4_records.py', 'src/hybrid/h7r_ledger.py'):
+            (w / rel).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(ROOT / rel, w / rel)
+        (w / 'src/hybrid/__init__.py').write_text('')
+        (w / 'scripts/check_track_b_frozen.py').write_text('print("frozen PASS")' + chr(10))
+        (w / 'scripts/h7r_s400_train.py').write_text(STUB)
+        (w / '.venv/bin').mkdir(parents=True)
+        (w / '.venv/bin/activate').write_text('')
+        git(w, 'add', '-A')
+        git(w, 'commit', '-qm', 'init')
+        git(w, 'remote', 'add', 'origin', str(self.origin))
+        git(w, 'push', '-q', 'origin', 'feat/h7-c1')
+        doc = (ROOT / 'docs/h7r/r2/R2-S400-TRAIN-draft.md').read_text()
+        blocks = re.findall(r'```bash' + chr(10) + r'(.*?)```', doc, re.S)
+        self.assertEqual(len(blocks), 2)
+        self.blocks = dict(zip(('s5-1', 's5-G'), (b.replace('~/renju-h6', w.as_posix()) for b in blocks)))
+        self.D = 'docs/h7r/r2/R2-S400-TRAIN'
+
+    def bash(self, name, **env):
+        import os
+        import subprocess
+        e = {k: v for k, v in os.environ.items() if k != 'CUBLAS_WORKSPACE_CONFIG'}
+        e = {**e, 'PYTHONDONTWRITEBYTECODE': '1', **env}
+        r = subprocess.run(['bash', '-c', self.blocks[name]], cwd=self.work, capture_output=True, text=True, env=e)
+        return r.returncode, r.stdout + r.stderr
+
+    def files(self, rel):
+        return git(self.work, 'ls-files', rel).splitlines()
+
+    def test_prepare_then_gate(self):
+        code, out = self.bash('s5-G')
+        self.assertEqual(code, 1)
+        self.assertIn('prepare is not recorded', out)
+        code, out = self.bash('s5-1')
+        self.assertEqual(code, 0, out)
+        code, out = self.bash('s5-G')
+        self.assertEqual(code, 0, out)
+        self.assertTrue(self.files(f'{self.D}/gate.json'))
+        self.assertEqual(len([f for f in self.files(f'{self.D}/stage-logs') if f.endswith('.log')]), 2)
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), git(self.origin, 'rev-parse', 'feat/h7-c1'))
+        code, out = self.bash('s5-G')
+        self.assertEqual(code, 1)
+        self.assertIn('already recorded', out)
+
+    def test_a_failed_gate_is_recorded_and_stops(self):
+        self.assertEqual(self.bash('s5-1')[0], 0)
+        code, out = self.bash('s5-G', S5_GATE_FAIL='1')
+        self.assertEqual(code, 2, out)
+        self.assertTrue(self.files(f'{self.D}/gate.json'))
+        self.assertIn('gate exit 2', git(self.work, 'log', '-1', '--format=%s'))
+
+    def test_an_interrupted_gate_is_recorded_from_its_result_and_log(self):
+        self.assertEqual(self.bash('s5-1')[0], 0)
+        L = self.work / 'runs/h7r/R2-S400-TRAIN/logs'
+        name = 'gate-AbC123xy.log'
+        (L / name).write_text('gate True' + chr(10) + '__EXIT__ 0' + chr(10))
+        (self.work / self.D / 'gate.json').write_text(json.dumps(
+            {'format': 'h7r-s400-train-gate-v1', 'passed': True, 'log_name': name}))
+        git(self.work, 'add', f'{self.D}/gate.json')  # interrupted right after staging
+        code, out = self.bash('s5-G', S5_FORBID='1')
+        self.assertEqual(code, 0, out)
+        self.assertTrue(self.files(f'{self.D}/stage-logs/{name}'))
+
+    def test_a_result_whose_log_disagrees_stops(self):
+        self.assertEqual(self.bash('s5-1')[0], 0)
+        L = self.work / 'runs/h7r/R2-S400-TRAIN/logs'
+        name = 'gate-AbC123xz.log'
+        (L / name).write_text('__EXIT__ 0' + chr(10))
+        (self.work / self.D / 'gate.json').write_text(json.dumps(
+            {'format': 'h7r-s400-train-gate-v1', 'passed': False, 'log_name': name}))
+        code, out = self.bash('s5-G', S5_FORBID='1')
+        self.assertEqual(code, 1, out)
+        self.assertIn('disagree on the exit code', out)
 
 
 if __name__ == '__main__':

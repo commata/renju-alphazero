@@ -1,6 +1,6 @@
 # R2-S400-TRAIN: S400 목표 후보의 학습·평가 계약 설계 (초안, 결정 전)
 
-- 상태: seed 예약 v2·새 개발 suite 준비(§8.1), 학습 도구·테스트·계약 준비(§8.2). **모든 단계 미승인**. 데스크톱 블록과 v2 Arena 실행·판독은 아직 없다.
+- 상태: seed 예약 v2·새 개발 suite 준비(§8.1), 학습 도구·테스트·계약 준비(§8.2). **모든 단계 미승인**. prepare·gate 데스크톱 블록 준비(§9). search·train·Arena 블록과 v2 Arena 실행·판독은 아직 없다.
 - 채택된 결정(검토 2026-11-13): 재탐색 방식 B, 행 집합 고정, 새 개발 opening으로 평가, 보조 arm 생략, T 재현 gate를 재탐색 앞으로. 근거와 세부는 §2–§6.
 - 근거
   - R2-P1-POLICY-REPLAY-A1(`faeb72b0f625`): T(정책 보존, S200 목표)는 champion 대비 NOT_ESTABLISHED, C 대비 BETTER_THAN_CONTROL
@@ -158,7 +158,7 @@
 ### 8.2 학습 도구·테스트·계약 (미승인)
 
 - 도구 `scripts/h7r_s400_train.py`, 테스트 `tests/test_h7r_s400_train.py`
-- 계약 `docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json`(초안 `s400-train-contract.draft.json`), 실험 SHA `6c579b5ba682…`. 단계 prepare → gate → search → train → arena, 모두 false
+- 계약 `docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json`(초안 `s400-train-contract.draft.json`), 실험 SHA `67c6ba3c8081…`(검토 반영 뒤 다시 고정. 이전 고정본 `6c579b5ba682…`, `831d74d33cc6…`은 실행되지 않았다). 단계 prepare → gate → search → train → arena, 모두 false
 - 그대로 가져온 것(테스트가 A1 계약과 같음을 확인): 입력, arm T 정의와 replay, 학습량, 결정론 설정, step 구조, 학습 seed 3개. 대조군 T는 A1 seed 기록이 이름 붙인 checkpoint를 SHA로 쓴다.
 
 | 명령 | 단계 | 하는 일 |
@@ -171,6 +171,10 @@
 | `arena-contract` | arena | v2 Arena 계약(O1-dev-a·b, 300쌍, seed 9101·9102, suite마다 S와 T 한 pairing) |
 
 - 후보 행 파일은 gzip mtime을 0으로 고정해, 같은 행이면 같은 SHA가 나온다.
+- 검토 반영(2026-11-13)
+  - `train`은 변경 감시를 먼저 시작하고, `verified_rows`가 SHA를 확인한 바로 그 바이트에서 읽은 행 객체를 그대로 학습에 넘긴다(다시 읽지 않는다). 감시 시작 시점의 후보 파일 SHA가 rows 기록과 다르면 멈추고, 실행 중에 바뀌면 아무것도 쓰지 않는다.
+  - `arena-contract`는 seed·계약 id 중복 검사까지 마친 뒤에 파일을 쓴다(`h7r_eval_v2.check_unique`). 충돌하면 파일이 남지 않는다.
+  - S400 기록 로더는 범위의 모든 게임이 정확히 한 번씩 있고 범위 밖 게임이 없어야 받는다. `verified_rows`는 S400 기록 SHA를 rows 기록과 search 기록 양쪽에 대조한다.
 - 테스트(11개)
   - 행 규칙: train 방문 목표만 바뀜, S400 질량이 없으면 S200 유지, 행 추가 없음, 다른 변경은 모두 거부(행 수·순서·마스크·val·증명 행·목표 값·fallback 표시)
   - 실제 파일로 rows → 학습 전 재검사 → 후보 파일 변조 거부, 빈 S400 기록 거부
@@ -183,4 +187,184 @@
 **남은 준비** (해당 단계 승인 전에)
 - 단계별 데스크톱 블록(prepare, gate, search+rows, train, Arena)
 - v2 Arena 실행 진입점과 판독(D′, P′): v2 검사를 거친 계약으로 기존 대국·arm 검증 함수를 재사용
+
+## 9. 데스크톱 실행 (승인 뒤에만)
+
+- s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤에 실행한다. search, train, Arena 블록은 해당 단계 승인 전에 추가한다.
+- 블록은 R2-S400-PRE의 블록과 같은 방식이다.
+  - 결과(`prepare.json`, `gate.json`)에 실행 로그 이름(`log_name`)을 남긴다.
+  - 다시 실행할 때: 결과가 HEAD에 커밋되어 있으면 멈춘다. 결과가 커밋 전이면(스테이징만 된 경우 포함) 다시 돌리지 않고, 결과가 뜻하는 종료 코드와 로그의 `__EXIT__`이 같은지 확인한 뒤 함께 커밋한다. 로그가 없거나 두 종료 코드가 다르면 멈춘다.
+  - 이 블록이 기록할 파일이 아닌 것이 스테이징되어 있으면 멈춘다.
+- s5-G는 프로세스 시작 전에 `CUBLAS_WORKSPACE_CONFIG=:4096:8`을 설정한다. gate가 FAIL(종료 코드 2)이면 결과와 로그를 커밋하고 멈춘다. 재탐색으로 넘어가지 않는다.
+- gate 예상 시간: A1 gate의 T 실행(약 100초)과 같은 규모다.
+
+s5-1. prepare
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  N=prepare
+  D=docs/h7r/r2/R2-S400-TRAIN
+  L=runs/h7r/R2-S400-TRAIN/logs
+  O="$D/$N.json"
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  mkdir -p "$L"
+  rc=0
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    set +e
+    python -u scripts/h7r_s400_train.py "$N" --device cuda --log-name "$(basename "$log")" 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+  else
+    echo "an uncommitted $O exists: recording it (no new run)"
+  fi
+  if [ -f "$O" ]; then
+    result="$(python - "$O" "$N" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+if r.get('format') != 'h7r-s400-train-prepare-v1' or not re.fullmatch(sys.argv[2] + r'-[A-Za-z0-9]+\.log', name):
+    sys.exit('STOP: invalid result or missing attempt log name')
+print(name, 0 if r.get('passed') is True else 1)
+PY
+)"
+    read -r name rc <<< "$result"
+    log="$L/$name"
+    [ -f "$log" ] || { echo "STOP: the result's log is missing: $log"; exit 1; }
+    last="$(tail -n 1 "$log")"
+    case "$last" in
+      "__EXIT__ $rc") ;;
+      __EXIT__*) echo "STOP: the result and its log disagree on the exit code"; exit 1 ;;
+      *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
+    esac
+  elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+    echo "STOP: $N did not produce a result"; exit 1
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L/$N"-*.log; do
+    [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-TRAIN: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
+
+s5-G. T 재현 gate
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  export CUBLAS_WORKSPACE_CONFIG=:4096:8
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  N=gate
+  D=docs/h7r/r2/R2-S400-TRAIN
+  L=runs/h7r/R2-S400-TRAIN/logs
+  O="$D/$N.json"
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  tracked "$D/prepare.json" || { echo "STOP: prepare is not recorded (run s5-1 first)"; exit 1; }
+  mkdir -p "$L"
+  rc=0
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    set +e
+    python -u scripts/h7r_s400_train.py "$N" --device cuda --log-name "$(basename "$log")" 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+  else
+    echo "an uncommitted $O exists: recording it (no new run)"
+  fi
+  if [ -f "$O" ]; then
+    result="$(python - "$O" "$N" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+if r.get('format') != 'h7r-s400-train-gate-v1' or not re.fullmatch(sys.argv[2] + r'-[A-Za-z0-9]+\.log', name):
+    sys.exit('STOP: invalid result or missing attempt log name')
+print(name, 0 if r.get('passed') is True else 2)
+PY
+)"
+    read -r name rc <<< "$result"
+    log="$L/$name"
+    [ -f "$log" ] || { echo "STOP: the result's log is missing: $log"; exit 1; }
+    last="$(tail -n 1 "$log")"
+    case "$last" in
+      "__EXIT__ $rc") ;;
+      __EXIT__*) echo "STOP: the result and its log disagree on the exit code"; exit 1 ;;
+      *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
+    esac
+  elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+    echo "STOP: $N did not produce a result"; exit 1
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L/$N"-*.log; do
+    [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-TRAIN: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
 

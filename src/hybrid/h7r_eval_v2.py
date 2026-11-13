@@ -79,17 +79,24 @@ def _contracts(root) -> list[Path]:
                   for p in folder.glob('*.json'))
 
 
-def load_contract(path, root, check_files: bool = True) -> tuple[dict, str]:
-    """A valid v2 contract and its SHA-256; its seeds used by no other contract (v1 or v2) and its id unique."""
-    path = Path(path)
-    contract = json.loads(path.read_text(encoding='utf-8'))
-    check_contract(contract, path, root, check_files)
+def check_unique(contract: dict, path, root) -> None:
+    """The contract's seeds are used by no other contract (v1 or v2) and its id by none; ``path`` (which need not
+    exist yet) is the contract's own file, left out of the comparison."""
     mine = ev.contract_seeds(contract)
+    own = Path(path).resolve()
     for other in _contracts(root):
-        if other == path.resolve():
+        if other == own:
             continue
         theirs = json.loads(other.read_text(encoding='utf-8'))
         require(theirs.get('contract_id') != contract['contract_id'], f'{other}: the same contract id')
         shared = mine & ev.contract_seeds(theirs)
         require(not shared, f'{path}: seeds {sorted(shared)} are already used by {other.name}')
+
+
+def load_contract(path, root, check_files: bool = True) -> tuple[dict, str]:
+    """A valid v2 contract and its SHA-256; its seeds used by no other contract (v1 or v2) and its id unique."""
+    path = Path(path)
+    contract = json.loads(path.read_text(encoding='utf-8'))
+    check_contract(contract, path, root, check_files)
+    check_unique(contract, path, root)
     return contract, ev.file_sha256(path)
