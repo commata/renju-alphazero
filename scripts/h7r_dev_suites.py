@@ -6,8 +6,10 @@ evaluation sample and from each other, one opening per symmetry class (docs/h7r/
            (seed 202611132, also excluding suite a's classes) with ``hybrid.h7r_openings.build_suite``
            (``exclude_classes``, ``distinct_classes``); the overlap of each suite with every source (history, position,
            class) and the prefix overlap with 3-move openings; writes the two suites and the record (never over a file)
-    check  everything recomputed from the committed files: the sources' SHA-256, the exclusion, both suites rebuilt
-           from their seeds and equal to the files, no class shared with any source or between the suites
+    check  everything recomputed from the committed files: the build's sources read again from their recorded paths
+           and SHA-256 (contracts added later, such as the Arena that plays these suites, are not build sources), the
+           exclusion, both suites rebuilt from their seeds and equal to the files, no class shared with any source or
+           between the suites
 
 The generation seeds are the v2 suite seeds (``hybrid.h7r_seeds.SUITE_SEEDS``), never Arena game seeds.
 """
@@ -51,31 +53,47 @@ def git_state(root) -> dict:
     return {'commit': run('rev-parse', 'HEAD'), 'dirty': bool(run('status', '--porcelain', '--untracked-files=no'))}
 
 
-def sources(root) -> list[dict]:
-    """Every earlier suite and evaluation sample: path, SHA-256, kind and its openings (move lists)."""
+def source(root, rel: str) -> dict:
+    """One exclusion source read from its file: path, SHA-256, kind and its openings (move lists). A suite gives its
+    openings; a contract the arm samples it draws (``pick``); a contract without arms (holdout) none."""
     root = Path(root)
-    out = []
-    for name in SOURCE_SUITES:
-        path = root / SUITE_DIR / f'{name}.json'
-        body = json.loads(path.read_text(encoding='utf-8'))
+    path = root / rel
+    body = json.loads(path.read_text(encoding='utf-8'))
+    entry = {'path': rel, 'sha256': op._file_sha(path)}
+    if rel.startswith(f'{SUITE_DIR}/'):
         op.check_suite(body)
-        out.append({'path': f'{SUITE_DIR}/{name}.json', 'sha256': op._file_sha(path), 'kind': 'suite',
-                    'moves': [o['moves'] for o in body['openings']]})
+        return {**entry, 'kind': 'suite', 'moves': [o['moves'] for o in body['openings']]}
+    if not body.get('arms'):  # e.g. a holdout contract: self-play games, no opening sample
+        return {**entry, 'kind': 'contract without arm samples', 'moves': []}
+    moves = []
+    for arm in body['arms']:
+        spath = root / arm['suite']['path']
+        require(op._file_sha(spath) == arm['suite']['sha256'], f"{rel}: arm {arm['name']} suite SHA-256")
+        suite = json.loads(spath.read_text(encoding='utf-8'))
+        moves += [o['moves'] for o in op.pick(suite, arm['pairs'], arm['seed'])]
+    return {**entry, 'kind': 'contract arm samples', 'moves': moves}
+
+
+def sources(root) -> list[dict]:
+    """Every earlier suite and evaluation sample, discovered at build time (``SOURCE_SUITES`` and every contract of
+    ``CONTRACT_DIRS``)."""
+    root = Path(root)
+    rels = [f'{SUITE_DIR}/{name}.json' for name in SOURCE_SUITES]
     for folder in CONTRACT_DIRS:
-        for path in sorted((root / folder).glob('*.json')) if (root / folder).exists() else []:
-            body = json.loads(path.read_text(encoding='utf-8'))
-            rel = path.relative_to(root).as_posix()
-            if not body.get('arms'):  # e.g. a holdout contract: self-play games, no opening sample
-                out.append({'path': rel, 'sha256': op._file_sha(path), 'kind': 'contract without arm samples',
-                            'moves': []})
-                continue
-            moves = []
-            for arm in body['arms']:
-                spath = root / arm['suite']['path']
-                require(op._file_sha(spath) == arm['suite']['sha256'], f"{rel}: arm {arm['name']} suite SHA-256")
-                suite = json.loads(spath.read_text(encoding='utf-8'))
-                moves += [o['moves'] for o in op.pick(suite, arm['pairs'], arm['seed'])]
-            out.append({'path': rel, 'sha256': op._file_sha(path), 'kind': 'contract arm samples', 'moves': moves})
+        rels += [p.relative_to(root).as_posix() for p in sorted((root / folder).glob('*.json'))
+                 if (root / folder).exists()]
+    return [source(root, rel) for rel in rels]
+
+
+def recorded_sources(root, record: dict) -> list[dict]:
+    """The build's own exclusion sources, read again from the recorded paths; each must still be its recorded
+    SHA-256. Contracts added after the build (e.g. the Arena that plays these suites) are not sources of this build."""
+    out = []
+    for ref in record['sources']:
+        entry = source(root, ref['path'])
+        require(entry['sha256'] == ref['sha256'] and entry['kind'] == ref['kind'],
+                f"source {ref['path']} changed since the build (SHA-256 or kind)")
+        out.append(entry)
     return out
 
 
@@ -168,10 +186,7 @@ def check(args, root=ROOT, log=print) -> dict:
     """Recompute everything from the committed files and compare (module docstring)."""
     root = Path(root)
     record = json.loads((root / RECORD).read_text(encoding='utf-8'))
-    srcs = sources(root)
-    require([{k: s[k] for k in ('path', 'sha256')} for s in srcs] ==
-            [{k: s[k] for k in ('path', 'sha256')} for s in record['sources']],
-            'the sources are not the record\'s (a suite or contract changed, appeared or disappeared)')
+    srcs = recorded_sources(root, record)
     built = build_suites(srcs)
     for label, _ in SUITES:
         body = json.loads((root / suite_path(label)).read_text(encoding='utf-8'))

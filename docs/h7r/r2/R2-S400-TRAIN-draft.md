@@ -135,6 +135,7 @@
 - 모델 신원, arm(이름·모델·budget·쌍 수·suite SHA), 공유 seed의 pairing 규칙, 통계 블록은 v1과 같은 기준으로 검사하고, seed만 v2 블록으로 검사한다.
 - v1 검사기는 v2 계약을, v2 검사기는 v1 계약을 거부한다. v2 검사 뒤에도 v1의 `SEED_BLOCK`은 그대로다(테스트).
 - seed와 계약 id는 v1(`docs/h7r/contracts`)과 v2(`docs/h7r/contracts-v2`) 계약 전체에서 겹치지 않아야 한다.
+- 같은 pairing의 arm은 하나의 표본을 뽑아야 한다: seed, 쌍 수, suite 경로와 SHA가 모두 같아야 한다(D′가 opening마다 짝지어진다). 쌍 수는 suite의 opening 수 이내여야 한다(검토 반영, 회귀 테스트).
 - v2 대국 실행 진입점은 Arena 단계에서 만든다. 기존 `scripts/h7r_eval.py play`는 내부에서 v1 계약 검사기를 부르고, A1 계약이 그 파일을 SHA로 고정했기 때문이다. v2 진입점은 v2 검사를 거친 계약으로 기존 대국·arm 검증 함수(`build_tasks`, `arm_identity`, `check_games`, `load_arm`의 검사)를 재사용한다.
 
 **학습 유입 차단** (seed 범위와는 별개의 검사)
@@ -150,5 +151,7 @@
 - 겹침: 두 묶음 모두 모든 출처와 공유하는 동치류가 0이고, 두 묶음 사이에도 동치류·수순 겹침이 0이다.
 - prefix 겹침(처음 3수가 이전에 쓴 3수 opening과 같은 경우): 묶음 a 201개, b 207개. O0 규칙의 3수 수순이 최대 552가지라 생기는 일이며, 5수 opening의 동치류는 겹치지 않는다. 계획대로 건수만 기록한다.
 - `build_suite`의 새 인자는 기본값이 꺼져 있다. 기존 O0·O1·O2를 같은 seed로 다시 만들면 생성 함수의 출력이 커밋된 파일과 같다(테스트. 파일에만 있는 `git`, `overlap_with_earlier` 필드 제외).
-- `scripts/h7r_dev_suites.py check`가 커밋된 파일에서 출처 SHA, 제외 목록, 두 suite의 재생성 결과, 겹침을 모두 다시 계산해 기록과 대조한다.
+- `scripts/h7r_dev_suites.py check`가 커밋된 파일에서 제외 목록, 두 suite의 재생성 결과, 겹침을 모두 다시 계산해 기록과 대조한다.
+  - 출처는 생성 당시 기록된 경로와 SHA로 다시 읽는다. 생성 뒤에 추가된 계약(이 suite를 쓰는 Arena 계약 등)은 생성 출처가 아니다. 기록된 출처 파일이 바뀌면 멈춘다(검토 반영).
+  - 새 suite를 쓰는 v2 Arena 계약이 함께 있는 상태에서도 suite 검사와 계약 검사가 함께 통과함을 테스트로 확인했다.
 

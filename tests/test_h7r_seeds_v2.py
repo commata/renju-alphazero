@@ -99,12 +99,33 @@ class V2ContractTest(unittest.TestCase):
             a.pop('pairing')
         with self.assertRaisesRegex(ValueError, 'a seed used twice outside a pairing'):
             ev2.check_contract(unpaired, 'c', ROOT, check_files=False)
+        self.assertEqual(ev.SEED_BLOCK, V1_BLOCK)
         with self.assertRaisesRegex(ValueError, 'not an h7r-eval-contract-v1 contract'):
             ev.check_contract(v2_contract(), 'c', ROOT, check_files=False)  # the v1 checker refuses v2
         v1 = json.loads((ROOT / 'docs/h7r/contracts/R2-P1-A1-ARENA-1.json').read_text())
         with self.assertRaisesRegex(ValueError, 'not an h7r-eval-contract-v2 contract'):
             ev2.check_contract(v1, 'c', ROOT, check_files=False)
         self.assertEqual(ev.SEED_BLOCK, V1_BLOCK)  # nothing of the v1 checker was rebound
+
+    def test_one_pairing_draws_one_sample_within_the_suite(self):
+        def changed(change):
+            c = v2_contract()
+            change(c['arms'][1])
+            return c
+        other = 'docs/h7r/suites/O1-dev-a.json'
+        cases = {
+            r"pairings \['P'\] draw different samples": changed(lambda a: a.update(pairs=299)),
+            r"pairings \['P'\] draw different samples ": changed(lambda a: a.update(
+                suite={'path': other, 'sha256': ev.file_sha256(ROOT / other)})),
+            r"pairings \['P'\] draw different samples  ": changed(lambda a: a.update(seed=9102)),
+            'asks 301 pairs of a suite of 300 openings': v2_contract(),
+        }
+        for a in cases['asks 301 pairs of a suite of 300 openings']['arms']:
+            a['pairs'] = 301
+        for message, bad in cases.items():
+            with self.subTest(message):
+                with self.assertRaisesRegex(ValueError, message.strip()):
+                    ev2.check_contract(bad, 'c', ROOT, check_files=False)
 
     def test_seeds_and_ids_are_unique_across_v1_and_v2(self):
         import shutil
@@ -196,6 +217,33 @@ class DevSuitesTest(unittest.TestCase):
         self.assertEqual(record['overlaps']['between_a_and_b'], {'class_id': 0, 'history_id': 0})
         self.assertTrue(all(c['class_id'] == 0 for label in ('a', 'b')
                             for c in record['overlaps'][label]['by_source'].values()))
+
+    def test_an_arena_contract_on_the_new_suites_keeps_both_checks_passing(self):
+        """A later v2 contract that plays O1-dev-a / O1-dev-b is not a build source: the suite check reads the build's
+        recorded sources, and the contract check passes beside it; a recorded source that changes is refused."""
+        import shutil
+        import h7r_dev_suites as ds
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for folder in ('docs/h7r/suites', 'docs/h7r/contracts'):
+                shutil.copytree(ROOT / folder, root / folder)
+            d = root / ev2.CONTRACTS_DIR
+            d.mkdir(parents=True)
+            c = v2_contract(seed=9101, contract_id='R2-S400-TRAIN-ARENA-TEST')
+            arms = []
+            for label, seed in (('a', 9101), ('b', 9102)):
+                path = ds.suite_path(label)
+                for tested in ('X', 'T'):
+                    arms.append({**c['arms'][0], 'name': f'{label}_{tested}_vs_champion', 'tested': {'model': tested,
+                                 'budget': 1}, 'seed': seed, 'pairing': label,
+                                 'suite': {'path': path, 'sha256': ev.file_sha256(root / path)}})
+            (d / 'arena.json').write_text(json.dumps({**c, 'arms': arms}))
+            ev2.load_contract(d / 'arena.json', root, check_files=False)
+            self.assertTrue(ds.check(None, root, log=lambda *a, **k: None)['passed'])
+            smoke = root / 'docs/h7r/contracts/R1-SMOKE-1.json'
+            smoke.write_text(smoke.read_text() + ' ')
+            with self.assertRaisesRegex(ValueError, 'R1-SMOKE-1.json changed since the build'):
+                ds.check(None, root, log=lambda *a, **k: None)
 
     def test_checks_catch_shared_classes(self):
         import h7r_dev_suites as ds
