@@ -1,0 +1,505 @@
+{
+ "format": "h7r-s400-train-contract-v1",
+ "contract_id": "R2-S400-TRAIN",
+ "status": "fixed",
+ "approved": {
+  "prepare": false,
+  "gate": false,
+  "search": false,
+  "train": false,
+  "arena": false
+ },
+ "goal": "Track B strongest play: a policy candidate stronger than the research champion (H3 policy + c5 value) at the same S50 budget",
+ "question": "with every other condition of A1 T kept, do train visit targets re-searched at S400 make the S50 policy stronger (than A1 T, and than the champion)",
+ "evidence": {
+  "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/p1a1-contract.json": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/p1a1-contract.json",
+   "sha256": "164bc0f51b0c2b66dbe7da92dcd0acd661102f98f36b1ebd1acc788b6e9bc254"
+  },
+  "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/judge.json": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/judge.json",
+   "sha256": "3326458a29edea3bf6b086342cd051ed3a314aeea596742852e79b190b1dac91"
+  },
+  "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/gate.json": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/gate.json",
+   "sha256": "496d12b2ae2fd9c98e8b64e2b3bbadb315125d173f54fe47f022352bd1836e94"
+  },
+  "docs/h7r/r2/R2-S400-PRE/prepare.json": {
+   "path": "docs/h7r/r2/R2-S400-PRE/prepare.json",
+   "sha256": "2e783216928c196a791cec10e0882e8fb34a8a791eeb3dde6cb177c9dba3039e"
+  },
+  "docs/h7r/r2/R2-S400-PRE/measure.json": {
+   "path": "docs/h7r/r2/R2-S400-PRE/measure.json",
+   "sha256": "96aa0aa9a09fa9fe64bb830d9d8bccdebdac9064626914487ea6f30f4b6b689f"
+  },
+  "docs/h7r/suites/O1-dev-record.json": {
+   "path": "docs/h7r/suites/O1-dev-record.json",
+   "sha256": "f42ad8e118b9ba3819619199b2f50c8bd0cec00abdf7eb1a7eef731fedd50f6a"
+  }
+ },
+ "inputs": {
+  "cycle_rows": {
+   "path": "runs/h7c/c2/policy_rows.jsonl.gz",
+   "sha256": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71",
+   "train_rows": 24077,
+   "val_rows": 1423
+  },
+  "parent_and_teacher": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+  },
+  "value_c5": {
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "renjunet_cache": {
+   "path": "data/external/renjunet/h3_cache",
+   "replay_split": "train",
+   "guard_split": "val",
+   "expected": {
+    "source": "docs/mcts-v8-results/h3_cache_report.json",
+    "format": "h3-cache-v1",
+    "h2_output_sha256": "228f14b27a159109156d3780226fa4a4bdb5c1d78a311c3513b96f4378b07e74",
+    "rules_sha256": "8b5ed710aeaa986aa213a482a2ad8c5e52637aaea8ecc875657a0d9689dab910",
+    "encoder_version": "renju-relative-6p-v1",
+    "action_index_version": "row-major-15x15-v1",
+    "train": {
+     "tensor_sha256": "b48a8735bc6d1c87d7efaca52e7c8bf2838c3090b7639f5e1db2682a89430277",
+     "states": 3178091,
+     "games": 97098
+    },
+    "val": {
+     "tensor_sha256": "96f598810e46e9996317b11e13ff72d1e85a47f46666983cab719eca316bd3e7",
+     "states": 127316,
+     "games": 5354
+    }
+   },
+   "rule": "prepare compares the actual cache with these committed values (never adopts new ones); train and val game_id sets disjoint"
+  },
+  "models_metadata": "each best.json SHA and content (stage, config) checked with its checkpoint",
+  "consumed": "reproduce and train check every input they consume against these expectations (never only the cache manifest) and train on exactly the checked objects"
+ },
+ "arms": {
+  "C": {
+   "cycle": "the c2 policy method unchanged",
+   "replay": null
+  },
+  "T": {
+   "cycle": "identical to C (rows, batches, order, generator, steps, coefficients)",
+   "replay": {
+    "positions": "RenjuNet train split",
+    "batch": 512,
+    "sampling": "uniform with replacement",
+    "generator_seed": "training seed + 1000003; draws the indices and the D4 symmetries; the cycle generator is untouched",
+    "augment_d4": true,
+    "input": "the same D4-transformed planes and legal mask for H3 and the student",
+    "distribution": "logits masked to -inf off the legal moves, then log_softmax (renormalised over legal moves)",
+    "loss": "per position sum over legal a of p_H3(a) (log p_H3(a) - log p_student(a)); mean over the 512 positions",
+    "temperature": 1,
+    "teacher": "H3, eval mode, no gradient",
+    "weight_mu": 0.5,
+    "total": "L = L_cycle (unchanged definition and batch mean) + mu * KL_replay",
+    "added_to": "the unchanged cycle loss (no cycle row is replaced)",
+    "human_move_ce": "not used (a later variable)"
+   }
+  },
+  "S": {
+   "cycle": "arm T of A1 (the same rows, batches, order, generator, steps, replay, mu 0.5) with the train visit rows' targets re-searched at S400",
+   "replay": {
+    "positions": "RenjuNet train split",
+    "batch": 512,
+    "sampling": "uniform with replacement",
+    "generator_seed": "training seed + 1000003; draws the indices and the D4 symmetries; the cycle generator is untouched",
+    "augment_d4": true,
+    "input": "the same D4-transformed planes and legal mask for H3 and the student",
+    "distribution": "logits masked to -inf off the legal moves, then log_softmax (renormalised over legal moves)",
+    "loss": "per position sum over legal a of p_H3(a) (log p_H3(a) - log p_student(a)); mean over the 512 positions",
+    "temperature": 1,
+    "teacher": "H3, eval mode, no gradient",
+    "weight_mu": 0.5,
+    "total": "L = L_cycle (unchanged definition and batch mean) + mu * KL_replay",
+    "added_to": "the unchanged cycle loss (no cycle row is replaced)",
+    "human_move_ce": "not used (a later variable)"
+   }
+  }
+ },
+ "training": {
+  "seed": "per run",
+  "batch_size": 512,
+  "epochs": 2.0,
+  "learning_rate": 0.0002,
+  "weight_decay": 0.0001,
+  "min_lr_ratio": 0.05,
+  "kl_lambda": 0.5,
+  "augment_d4": true,
+  "evaluations": 10,
+  "guard_drop": 0.02,
+  "batchnorm": "eval (parent statistics)",
+  "device": "cuda",
+  "selection": "the c2 rule for both arms: guard (RenjuNet val top-1) within guard_drop of H3, lowest cycle val objective; the replay term is not in the selection metric",
+  "warmup_steps": 5,
+  "records": {
+   "cycle_kl": "the existing val metric (policy_objective kl)",
+   "replay_kl": "step mean during training and, at every evaluation, on the whole RenjuNet val split; both arms; no_grad and eval, outside the training path and its generators; never a selection metric"
+  },
+  "numeric": "section determinism, for the gate and every main run"
+ },
+ "determinism": {
+  "settings": {
+   "deterministic_algorithms": true,
+   "cudnn_deterministic": true,
+   "cudnn_benchmark": false,
+   "cudnn_enabled": true,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest"
+  },
+  "environment": {
+   "CUBLAS_WORKSPACE_CONFIG": ":4096:8"
+  },
+  "set_by_the_tool": "torch.use_deterministic_algorithms(True), cudnn.deterministic = True, cudnn.benchmark = False for the run, then restored",
+  "environment_rule": "set before the process starts (cuBLAS reads it once); the tool refuses to start otherwise",
+  "checked": "every value above at the start and unchanged at the end of each run; the other numeric settings (torch, CUDA, cuDNN, GPU, threads) recorded; every gate run and every main run must have the same full numeric settings",
+  "tf32": "the cuDNN / matmul TF32 values are the PyTorch defaults the c2 run and the diagnosis ran with; checked, never changed",
+  "failure": "an operation without a deterministic implementation stops the run (recorded as a failure); there is no fallback to non-deterministic settings"
+ },
+ "training_structure": {
+  "total_steps": 96,
+  "steps_per_epoch": 48,
+  "warmup_steps": 5,
+  "evaluation_steps": [
+   10,
+   19,
+   29,
+   38,
+   48,
+   58,
+   67,
+   77,
+   86,
+   96
+  ]
+ },
+ "seeds": {
+  "training": [
+   20261024,
+   20261111,
+   20261112
+  ],
+  "arena_candidate_training_seed": 20261024,
+  "arena_games": {
+   "O1-dev-a": 9101,
+   "O1-dev-b": 9102
+  },
+  "bootstrap": 20261141,
+  "seed_policy": "h7r-seeds-v2 (hybrid/h7r_seeds.py): Arena game seeds 9101-9140"
+ },
+ "control": {
+  "what": "the A1 T checkpoints of the committed A1 seed records, unchanged (not trained again here, apart from the gate)",
+  "models": {
+   "20261024": {
+    "seed_record": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/seed-records/T-20261024/record.json",
+    "seed_record_sha256": "da0ae3e9bed2c8ae15323613fad6639cfe156e08e80a2dbad1df3ce50411a523",
+    "checkpoint": "runs/h7r/R2-P1-POLICY-REPLAY-A1/T-20261024/best.pt",
+    "metadata": "runs/h7r/R2-P1-POLICY-REPLAY-A1/T-20261024/best.json",
+    "checkpoint_sha256": "ae4e6d9319c280ca25dc58820a0672191eee0253b8e8b9e5a268ef03c29de95d",
+    "metadata_sha256": "89d1dc7b3e13898c104110addaba22b4ab024517d264cb417bc69bf41ff35332"
+   },
+   "20261111": {
+    "seed_record": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/seed-records/T-20261111/record.json",
+    "seed_record_sha256": "4bb1abcb700f4269e1f0193b653594c5bfa53049cc42ac54705d722040b5abe5",
+    "checkpoint": "runs/h7r/R2-P1-POLICY-REPLAY-A1/T-20261111/best.pt",
+    "metadata": "runs/h7r/R2-P1-POLICY-REPLAY-A1/T-20261111/best.json",
+    "checkpoint_sha256": "2334ece226711daf1be26f6f292d2d332f3cfa8e1775cfda4cd503e4f7209ebd",
+    "metadata_sha256": "2cbc44823988fd9019617c3d30f95ef47a0b23caff58055f6fbb027330e0e427"
+   },
+   "20261112": {
+    "seed_record": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/seed-records/T-20261112/record.json",
+    "seed_record_sha256": "84bfdfb216ac93faf907978ce7f04fc9fd8ea826c14296bb8699fcbd1dd7305a",
+    "checkpoint": "runs/h7r/R2-P1-POLICY-REPLAY-A1/T-20261112/best.pt",
+    "metadata": "runs/h7r/R2-P1-POLICY-REPLAY-A1/T-20261112/best.json",
+    "checkpoint_sha256": "1c4e53115c04119f0ae4ab9986e95204e2c8fe624cc177ae99987247de6c288d",
+    "metadata_sha256": "1e0a6ff55be8a9b7caf2f62e0432e06f5ceb72035ffd390c74116f20ce536ccb"
+   }
+  }
+ },
+ "gate": {
+  "seed": 20261024,
+  "a1_gate": {
+   "path": "docs/h7r/r2/R2-P1-POLICY-REPLAY-A1/gate.json",
+   "sha256": "496d12b2ae2fd9c98e8b64e2b3bbadb315125d173f54fe47f022352bd1836e94"
+  },
+  "run": "T(20261024) through h7r_p1a1.execute with the A1 gate's numeric settings, on the c2 rows",
+  "exact": "fingerprints, the whole trainer record, P1 records, config, numeric settings, initial and selected state hashes, fixed-position log-probabilities: equal to the committed A1 T(20261024) seed record",
+  "order": "before any S400 search",
+  "miss": "stop; no search; nothing relaxed"
+ },
+ "search": {
+  "inputs": {
+   "selfplay": {
+    "path": "runs/h7c/c2/selfplay_8802.jsonl",
+    "sha256": "48b65dd7ed30eb17a7b45d37caa46228b3852277cf5ee2d9e9ae82baaf98585d"
+   },
+   "retarget_s200": {
+    "path": "runs/h7c/c2/retarget_s200.jsonl",
+    "sha256": "14747ea3dfbede9f565d201ee5a1c5d5d6689ae42c46b65368d163f3e9cb7ad4"
+   },
+   "policy_checkpoint": {
+    "path": "runs/h3_policy_64x4/best.pt",
+    "sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61"
+   },
+   "policy_metadata": {
+    "path": "runs/h3_policy_64x4/best.json",
+    "sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+   },
+   "value_checkpoint": {
+    "path": "runs/h6_value_head_v3/best.pt",
+    "sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca"
+   },
+   "value_metadata": {
+    "path": "runs/h6_value_head_v3/best.json",
+    "sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+   }
+  },
+  "selfplay_identity": {
+   "cycle": 2,
+   "run_seed": 8802,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "value_device": "cuda",
+   "models": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+    "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+   },
+   "model_hash": "e0d88f7544c37c50d891fe77204b5193747891a9bff5913ad0ebffe89dd51422",
+   "generator_git": {
+    "commit": "9dccf1f44253f6d7090f6076a43d464dcb203c19",
+    "dirty": false
+   }
+  },
+  "mode": "restored",
+  "workers": 6,
+  "budgets": {
+   "s200": {
+    "factor": 4,
+    "budget": {
+     "simulations": 200,
+     "tactical_simulations": 400
+    }
+   },
+   "s400": {
+    "factor": 8,
+    "budget": {
+     "simulations": 400,
+     "tactical_simulations": 800
+    }
+   }
+  },
+  "reproduction_sample": {
+   "salt": "r2-s400-pre-v1",
+   "games": 100
+  },
+  "reproduction_games": 5,
+  "reproduction_rule": "the first 5 games of the R2-S400-PRE sample re-searched at S200 against the c2 S200 records (the G0 rule of h7c_retarget; mean values within 1e-5, everything else exact; every eligible ply compared)",
+  "scope": "every eligible ply of the kept train-split games of the c2 rows (936 games)",
+  "scope_eligible": 18965,
+  "records": "runs/h7r/R2-S400-TRAIN/s400.jsonl, purpose r2-s400-train (the label step refuses it); resumed records get the same checks as new ones",
+  "time_reference": {
+   "c2_s200_wall_seconds": 8857.0,
+   "eligible": 20910,
+   "workers": 6,
+   "source": "docs/h7c/c2/retarget_s200.json (the whole c2 re-search)"
+  },
+  "estimate": "about 4.0 hours for the train scope (R2-S400-PRE ratio method)"
+ },
+ "rows": {
+  "rule": "the c2 rows file with each train visit row's target replaced by h7c_retarget.retarget_target of its S400 record; no S400 mass keeps the S200 target (marked s200_kept, counted); no row added (S400-only targets counted); val, proof and masked rows, row order and every other field unchanged",
+  "file": "runs/h7r/R2-S400-TRAIN/policy_rows_s400.jsonl.gz (deterministic gzip)",
+  "checks": "before training: the file is its recorded SHA-256 and passes the row check again (every field but target / s400 equal to the c2 row; every replaced target recomputed from the S400 records)",
+  "provenance": "run records and checkpoint metadata carry the c2 rows, candidate rows and S400 record SHA-256"
+ },
+ "stages": {
+  "prepare": "every input against the contract",
+  "gate": "section gate",
+  "search": "section search, then rows",
+  "train": "3 seeds of S through h7r_p1a1.execute (kind T) with the gate's numeric settings; each committed alone",
+  "arena": "the v2 Arena contract, play, judge"
+ },
+ "arena": {
+  "champion": "H3 policy + c5 value, S50",
+  "tested": [
+   "S(20261024) + c5 value, S50",
+   "T(20261024) (A1) + c5 value, S50"
+  ],
+  "suites": [
+   {
+    "name": "O1-dev-a",
+    "path": "docs/h7r/suites/O1-dev-a.json",
+    "sha256": "07179bcd0bdeac037553674cf2dddaa9f5c70017d406e8f952bb206baf440b5b",
+    "pairs": 300,
+    "seed": 9101
+   },
+   {
+    "name": "O1-dev-b",
+    "path": "docs/h7r/suites/O1-dev-b.json",
+    "sha256": "5c94ee7a043d130d5a97c954b67ce1416890bed9d532fd5f196082cc2dc10d79",
+    "pairs": 300,
+    "seed": 9102
+   }
+  ],
+  "pairing": "per suite, S and T play the same openings with the same seed",
+  "auxiliary": "none",
+  "contract": "docs/h7r/contracts-v2/R2-S400-TRAIN-ARENA-1.json (h7r-eval-contract-v2)"
+ },
+ "reading": {
+  "statistics": {
+   "alpha_one_sided": 0.025,
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261141,
+    "method": "percentile",
+    "unit": "opening pair"
+   },
+   "stratified": "resample openings within each development suite (300 and 300); the S and T results of a drawn opening move together",
+   "combined": "0.5 x O1-dev-a mean + 0.5 x O1-dev-b mean (fixed weights)",
+   "per_suite": "h7r_eval.arm_summary reported too",
+   "sensitivity": "class-level stratified bootstrap (classes resampled within a suite, all their openings together, the same 50:50 weights); reported, not read"
+  },
+  "D'": {
+   "what": "S - T pair-score differences on the same openings: the effect of the target change",
+   "BETTER": "one-sided lower bound > 0",
+   "WORSE": "one-sided upper bound < 0",
+   "else": "NOT_ESTABLISHED"
+  },
+  "P'": {
+   "what": "S vs champion: combined score - 0.5: the entry rule of the next stage",
+   "STRONGER": "one-sided lower bound > 0",
+   "WEAKER": "one-sided upper bound < 0",
+   "else": "NOT_ESTABLISHED"
+  },
+  "next": "P' STRONGER: the candidate goes to the independent confirmation stage; no champion change here",
+  "planning_values": "SE about 1.04%p, +2.05%p observed and +2.93%p true effect at 80% power: planning values, never thresholds"
+ },
+ "data_rule": "RenjuNet-derived data, caches and models stay under data/ or runs/; only hashes and numbers are committed",
+ "identity": {
+  "experiment_sha256": "sha256 of the canonical JSON of this contract without \"approved\"; links prepare, train, link and Arena records",
+  "contract_file_sha256": "recorded separately by every run (changes with approval commits)"
+ },
+ "invariance": "every command records HEAD (clean), the contract file, the sources and the files it reads at its start and checks them again right before it publishes; a change publishes nothing",
+ "sources": [
+  {
+   "path": "scripts/h7r_s400_train.py",
+   "sha256": "f48b6c5495c76a7c7e85cd3f3470d9ab1f5de9c7d790a1de1a176fb8de445615"
+  },
+  {
+   "path": "scripts/h7r_p1a1.py",
+   "sha256": "d9fe10f895bdc2ebc6cb95c67aac92f671fdda22509ab22b926b7aca8fb907c6"
+  },
+  {
+   "path": "scripts/h7r_p1.py",
+   "sha256": "4796f49f7d12a402a447554abe5b5f5fbfb568569a56892a78ea71debfcd4f12"
+  },
+  {
+   "path": "scripts/h7r_p1_diag.py",
+   "sha256": "62dd3fe4cfc6346c61be3f9f07ea26235ebbdd63e28aa6ec4f29689ae7e48c0d"
+  },
+  {
+   "path": "scripts/h7r_s400_pre.py",
+   "sha256": "655900de0b9071f05cb633cba11dd930baa1efad0e0da7defe60c2d11c9dd872"
+  },
+  {
+   "path": "src/hybrid/h7r_p1_train.py",
+   "sha256": "3b4b74d4fb49277df89caf6005173386884870d89adea08c2663dfb4f80e852c"
+  },
+  {
+   "path": "src/hybrid/h7c_train.py",
+   "sha256": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488"
+  },
+  {
+   "path": "scripts/h7c_train_policy.py",
+   "sha256": "ae76b4ed3119b775413688a6f0e371d1496b28acc49dd1942a8cd7ed7dbd4b89"
+  },
+  {
+   "path": "src/hybrid/h3_cache.py",
+   "sha256": "958867fe121155c037284492a855a4ae102de979dd550d049f2a7a9af0ceb25c"
+  },
+  {
+   "path": "src/hybrid/h3_train.py",
+   "sha256": "0110271d4191d1722c9d091b97d7c5a8f331cee9af7b38e9e3a0b9c0fa4e1a79"
+  },
+  {
+   "path": "src/hybrid/h7r_d1.py",
+   "sha256": "b062c9ac7d0dc1f2b7805fe274b754a658b2e325c385a153bef96282fc5cb545"
+  },
+  {
+   "path": "scripts/h7c_retarget.py",
+   "sha256": "64c962ac43764f92d41560b834d82d786bdeef788389a4025ae3a7687a8879b5"
+  },
+  {
+   "path": "src/hybrid/h7c_retarget.py",
+   "sha256": "75d9824c5bf83a46c6385081ceebfedf8e09fcd4b4e3de019d059072f74dfa02"
+  },
+  {
+   "path": "src/hybrid/h7c_targets.py",
+   "sha256": "509a2ae8c25b0678044f92035670cf8a88292b9c75fc9b008009d75adc576e78"
+  },
+  {
+   "path": "scripts/h7c_labels.py",
+   "sha256": "f90a3eb364c53e97eb61563359df6cd516e079046df1d5165d778217b979c996"
+  },
+  {
+   "path": "scripts/h7c_selfplay.py",
+   "sha256": "eeca66c1edcbdedefaeaa3c7800163475b368cc9b1356f3d558a1b8136257f6a"
+  },
+  {
+   "path": "src/hybrid/h6_labels.py",
+   "sha256": "971e89cf422410ffb632802d4496b49cbf140a9fa878e5a9232520938c775d63"
+  },
+  {
+   "path": "src/hybrid/h7r_eval.py",
+   "sha256": "6b7b197babdff170a27948d697c60728693681429627127d258f5d002ff27d1e"
+  },
+  {
+   "path": "src/hybrid/h7r_eval_v2.py",
+   "sha256": "046c07abb9231ea2591e91ed8bb4c431d33fe79bcf7cb13e660d2a7084fb52dd"
+  },
+  {
+   "path": "src/hybrid/h7r_seeds.py",
+   "sha256": "265a99e4bc6647a9e086635af175dc2bedaf1483d29efc022168815d790bdea7"
+  },
+  {
+   "path": "src/hybrid/h7r_openings.py",
+   "sha256": "d97eba732ded4fb58422e63317147f213c8724b22d4469da4cfd828626cfd09e"
+  },
+  {
+   "path": "src/hybrid/h7r_ledger.py",
+   "sha256": "660dcc30307331b8fe59cdc3001189c21f8687c7ec9165416b2763bcc57da349"
+  },
+  {
+   "path": "src/hybrid/h7c_nmask.py",
+   "sha256": "9a960a9aae4495ee73e00d3edc1ba75409117e4b7c53cd54ea0b302e1238afaf"
+  },
+  {
+   "path": "src/hybrid/progress.py",
+   "sha256": "6529dba76210cc68c0feafe8ca20f179daa9a28b684d2e8ed1a11b5fa9c34d02"
+  },
+  {
+   "path": "src/analysis/tb_v3_net.py",
+   "sha256": "f973597c1f4858a4f161702369dc3788cdf9a4cd4f0d84de4779354c64a5f52b"
+  },
+  {
+   "path": "docs/h7r/suites/O1-dev-a.json",
+   "sha256": "07179bcd0bdeac037553674cf2dddaa9f5c70017d406e8f952bb206baf440b5b"
+  },
+  {
+   "path": "docs/h7r/suites/O1-dev-b.json",
+   "sha256": "5c94ee7a043d130d5a97c954b67ce1416890bed9d532fd5f196082cc2dc10d79"
+  }
+ ],
+ "draft": {
+  "path": "docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.draft.json",
+  "sha256": "803fc6e46e9e08b6ef60862ca71bb71a1bf0513f414e16a4a50826d72f0b5c3b"
+ }
+}

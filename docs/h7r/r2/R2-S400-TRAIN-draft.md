@@ -1,6 +1,6 @@
 # R2-S400-TRAIN: S400 목표 후보의 학습·평가 계약 설계 (초안, 결정 전)
 
-- 상태: **설계 초안**(검토 반영 3차). seed 예약 v2와 새 개발 suite는 준비했다(§8). 학습 계약 JSON과 학습 도구는 아직 없다.
+- 상태: seed 예약 v2·새 개발 suite 준비(§8.1), 학습 도구·테스트·계약 준비(§8.2). **모든 단계 미승인**. 데스크톱 블록과 v2 Arena 실행·판독은 아직 없다.
 - 채택된 결정(검토 2026-11-13): 재탐색 방식 B, 행 집합 고정, 새 개발 opening으로 평가, 보조 arm 생략, T 재현 gate를 재탐색 앞으로. 근거와 세부는 §2–§6.
 - 근거
   - R2-P1-POLICY-REPLAY-A1(`faeb72b0f625`): T(정책 보존, S200 목표)는 champion 대비 NOT_ESTABLISHED, C 대비 BETTER_THAN_CONTROL
@@ -154,4 +154,33 @@
 - `scripts/h7r_dev_suites.py check`가 커밋된 파일에서 제외 목록, 두 suite의 재생성 결과, 겹침을 모두 다시 계산해 기록과 대조한다.
   - 출처는 생성 당시 기록된 경로와 SHA로 다시 읽는다. 생성 뒤에 추가된 계약(이 suite를 쓰는 Arena 계약 등)은 생성 출처가 아니다. 기록된 출처 파일이 바뀌면 멈춘다(검토 반영).
   - 새 suite를 쓰는 v2 Arena 계약이 함께 있는 상태에서도 suite 검사와 계약 검사가 함께 통과함을 테스트로 확인했다.
+
+### 8.2 학습 도구·테스트·계약 (미승인)
+
+- 도구 `scripts/h7r_s400_train.py`, 테스트 `tests/test_h7r_s400_train.py`
+- 계약 `docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json`(초안 `s400-train-contract.draft.json`), 실험 SHA `6c579b5ba682…`. 단계 prepare → gate → search → train → arena, 모두 false
+- 그대로 가져온 것(테스트가 A1 계약과 같음을 확인): 입력, arm T 정의와 replay, 학습량, 결정론 설정, step 구조, 학습 seed 3개. 대조군 T는 A1 seed 기록이 이름 붙인 checkpoint를 SHA로 쓴다.
+
+| 명령 | 단계 | 하는 일 |
+|---|---|---|
+| `prepare` | prepare | A1 입력(`h7r_p1.check_inputs`), c2 self-play·S200 기록·탐색 모델, A1 T checkpoint 대조 |
+| `gate` | gate | T(20261024)를 A1 gate의 수치 설정으로 A1과 같은 진입점(`h7r_p1a1.execute`)에서 다시 학습해, 커밋된 A1 seed 기록과 정확히 같아야 한다(지문, 학습 기록, P1 기록, 설정, state·log-확률 해시). S400 탐색보다 먼저 |
+| `search` | search | S400-PRE 표본의 처음 5게임으로 S200 재현(G0 규칙) → 통과하면 train 범위(936게임, 18,965국면) S400 탐색. 기록 purpose `r2-s400-train`(label 단계가 거부), 이어받은 기록도 같은 검사 |
+| `rows` | search | 후보 행 파일 생성(§2 규칙)과 검사. 교체 통계(교체 수·비율, S200 유지 수·비율, 추가하지 않은 S400 전용 목표 수) |
+| `train --seed S` | train | 커밋된 gate와 rows를 다시 판정하고, 후보 파일 SHA와 행 검사를 다시 확인한 뒤 학습. 기록과 checkpoint 메타데이터에 c2 행·후보 행·S400 기록 SHA |
+| `arena-contract` | arena | v2 Arena 계약(O1-dev-a·b, 300쌍, seed 9101·9102, suite마다 S와 T 한 pairing) |
+
+- 후보 행 파일은 gzip mtime을 0으로 고정해, 같은 행이면 같은 SHA가 나온다.
+- 테스트(11개)
+  - 행 규칙: train 방문 목표만 바뀜, S400 질량이 없으면 S200 유지, 행 추가 없음, 다른 변경은 모두 거부(행 수·순서·마스크·val·증명 행·목표 값·fallback 표시)
+  - 실제 파일로 rows → 학습 전 재검사 → 후보 파일 변조 거부, 빈 S400 기록 거부
+  - gate: 정확 일치만 통과(손실 1e-12 차이, 스레드 수 차이도 거부), 통과 기록이라도 내용이 A1과 다르면 재판정에서 거부, A1 gate 수치 설정 요구
+  - search: S200 재현이 다르면 S400을 시작하지 않고 기록
+  - train: 후보 행으로 학습하고 세 SHA를 기록
+  - Arena 계약: v2 검사기 통과, 새 suite 검사와 함께 통과
+- 학습과 엔진 탐색은 테스트에서 대체했다. 실제 학습 경로는 A1 gate(`b3eb145`)에서, 실제 탐색 경로는 S400-PRE(`3608bb8`)와 그 엔진 테스트에서 이미 확인한 함수를 그대로 쓴다.
+
+**남은 준비** (해당 단계 승인 전에)
+- 단계별 데스크톱 블록(prepare, gate, search+rows, train, Arena)
+- v2 Arena 실행 진입점과 판독(D′, P′): v2 검사를 거친 계약으로 기존 대국·arm 검증 함수를 재사용
 
