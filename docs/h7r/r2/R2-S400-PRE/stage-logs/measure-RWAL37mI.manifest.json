@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "measure-RWAL37mI.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRE/logs/measure-RWAL37mI.log",
+   "copy": "docs/h7r/r2/R2-S400-PRE/stage-logs/measure-RWAL37mI.log",
+   "bytes": 6084,
+   "sha256": "5a0d9d8c23ad5aa4917394224ebc295d7fa75b74fec426744b5fcd9c1e555611"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

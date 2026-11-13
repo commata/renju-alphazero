@@ -1,0 +1,142 @@
+[s400-pre] S200 early reproduction check: 5 games
+[h7c-retarget] factor 4 ({'simulations': 200, 'tactical_simulations': 400}), modes restored: 5 games, 0 already done, 74 rows to search, workers 6
+[h7c-retarget] 74/74 rows  100.0%  0.9 min  ETA 0 min  5/5 games
+[s400-pre] S200 rest of the sample: 95 games
+[h7c-retarget] factor 4 ({'simulations': 200, 'tactical_simulations': 400}), modes restored: 100 games, 5 already done, 2,363 rows to search, workers 6
+[h7c-retarget] 108/2,363 rows  4.6%  1.2 min  ETA 24 min  12/95 games
+[h7c-retarget] 218/2,363 rows  9.2%  2.2 min  ETA 22 min  19/95 games
+[h7c-retarget] 336/2,363 rows  14.2%  3.2 min  ETA 19 min  27/95 games
+[h7c-retarget] 408/2,363 rows  17.3%  4.5 min  ETA 21 min  33/95 games
+[h7c-retarget] 474/2,363 rows  20.1%  5.6 min  ETA 22 min  39/95 games
+[h7c-retarget] 661/2,363 rows  28.0%  6.9 min  ETA 18 min  45/95 games
+[h7c-retarget] 887/2,363 rows  37.5%  8.0 min  ETA 13 min  49/95 games
+[h7c-retarget] 1,175/2,363 rows  49.7%  9.0 min  ETA 9 min  58/95 games
+[h7c-retarget] 1,461/2,363 rows  61.8%  10.2 min  ETA 6 min  68/95 games
+[h7c-retarget] 1,608/2,363 rows  68.0%  11.3 min  ETA 5 min  79/95 games
+[h7c-retarget] 1,647/2,363 rows  69.7%  12.4 min  ETA 5 min  83/95 games
+[h7c-retarget] 1,773/2,363 rows  75.0%  13.4 min  ETA 4 min  88/95 games
+[h7c-retarget] 2,034/2,363 rows  86.1%  15.0 min  ETA 2 min  93/95 games
+[h7c-retarget] 2,034/2,363 rows  86.1%  16.0 min  ETA 3 min  93/95 games, 2 pending
+[h7c-retarget] 2,206/2,363 rows  93.4%  17.2 min  ETA 1 min  94/95 games, 1 pending
+[h7c-retarget] 2,206/2,363 rows  93.4%  18.2 min  ETA 1 min  94/95 games, 1 pending
+[h7c-retarget] 2,363/2,363 rows  100.0%  18.5 min  ETA 0 min  95/95 games
+[s400-pre] S400 on the sample: 100 games
+[h7c-retarget] factor 8 ({'simulations': 400, 'tactical_simulations': 800}), modes restored: 100 games, 0 already done, 2,437 rows to search, workers 6
+[h7c-retarget] 53/2,437 rows  2.2%  1.1 min  ETA 49 min  4/100 games
+[h7c-retarget] 104/2,437 rows  4.3%  2.1 min  ETA 47 min  9/100 games
+[h7c-retarget] 187/2,437 rows  7.7%  3.2 min  ETA 38 min  17/100 games
+[h7c-retarget] 261/2,437 rows  10.7%  4.2 min  ETA 35 min  23/100 games
+[h7c-retarget] 323/2,437 rows  13.3%  5.4 min  ETA 35 min  27/100 games
+[h7c-retarget] 368/2,437 rows  15.1%  6.8 min  ETA 38 min  32/100 games
+[h7c-retarget] 467/2,437 rows  19.2%  7.9 min  ETA 34 min  36/100 games
+[h7c-retarget] 499/2,437 rows  20.5%  9.2 min  ETA 36 min  39/100 games
+[h7c-retarget] 531/2,437 rows  21.8%  10.6 min  ETA 38 min  43/100 games
+[h7c-retarget] 710/2,437 rows  29.1%  11.8 min  ETA 29 min  48/100 games
+[h7c-retarget] 745/2,437 rows  30.6%  13.1 min  ETA 30 min  51/100 games
+[h7c-retarget] 745/2,437 rows  30.6%  14.1 min  ETA 32 min  51/100 games, 49 pending
+[h7c-retarget] 968/2,437 rows  39.7%  15.5 min  ETA 23 min  55/100 games
+[h7c-retarget] 1,243/2,437 rows  51.0%  16.5 min  ETA 16 min  62/100 games
+[h7c-retarget] 1,441/2,437 rows  59.1%  17.6 min  ETA 12 min  66/100 games
+[h7c-retarget] 1,526/2,437 rows  62.6%  18.6 min  ETA 11 min  72/100 games
+[h7c-retarget] 1,604/2,437 rows  65.8%  19.7 min  ETA 10 min  78/100 games
+[h7c-retarget] 1,682/2,437 rows  69.0%  20.9 min  ETA 9 min  84/100 games
+[h7c-retarget] 1,721/2,437 rows  70.6%  22.9 min  ETA 10 min  88/100 games
+[h7c-retarget] 1,787/2,437 rows  73.3%  24.7 min  ETA 9 min  92/100 games
+[h7c-retarget] 1,916/2,437 rows  78.6%  25.9 min  ETA 7 min  96/100 games
+[h7c-retarget] 2,108/2,437 rows  86.5%  27.5 min  ETA 4 min  98/100 games
+[h7c-retarget] 2,108/2,437 rows  86.5%  28.5 min  ETA 4 min  98/100 games, 2 pending
+[h7c-retarget] 2,108/2,437 rows  86.5%  29.5 min  ETA 5 min  98/100 games, 2 pending
+[h7c-retarget] 2,280/2,437 rows  93.6%  30.7 min  ETA 2 min  99/100 games, 1 pending
+[h7c-retarget] 2,280/2,437 rows  93.6%  31.7 min  ETA 2 min  99/100 games, 1 pending
+[h7c-retarget] 2,280/2,437 rows  93.6%  32.7 min  ETA 2 min  99/100 games, 1 pending
+[h7c-retarget] 2,437/2,437 rows  100.0%  33.6 min  ETA 0 min  100/100 games
+{
+ "status": "MEASURED",
+ "s200_reproduction": {
+  "early": {
+   "expected": 74,
+   "compared": 74,
+   "differing_fields": {},
+   "examples": [],
+   "reproduced": true
+  },
+  "sample": {
+   "expected": 2437,
+   "compared": 2437,
+   "differing_fields": {},
+   "examples": [],
+   "reproduced": true
+  }
+ },
+ "denominators": {
+  "positions": 2437,
+  "masked": 16,
+  "no_c2_row": 0,
+  "unmasked": 2421,
+  "target_none": {
+   "s50": 0,
+   "s200": 0,
+   "s400": 0
+  },
+  "pair_positions": {
+   "s50_s200": 2421,
+   "s200_s400": 2421
+  },
+  "s200_only_target": 0,
+  "s400_only_target_unmasked": 0,
+  "s400_only_target_mask_unknown": 0,
+  "common_positions": 2421,
+  "note": "no_c2_row: positions without a c2 row (S200 gave no target), so their mask is unknown; they are counted only in s400_only_target_mask_unknown and the raw tables, never as rows a training set would gain"
+ },
+ "timing": {
+  "per_budget": {
+   "s200": {
+    "rows": 2437,
+    "search_seconds": 5687.9,
+    "search_seconds_mean": 2.334,
+    "wall_seconds_this_session": 1164.9,
+    "resumed_games": 0
+   },
+   "s400": {
+    "rows": 2437,
+    "search_seconds": 10125.6,
+    "search_seconds_mean": 4.155,
+    "wall_seconds_this_session": 2019.1,
+    "resumed_games": 0
+   }
+  },
+  "s400_over_s200_search_seconds": 1.7802,
+  "workers": 6,
+  "reference": {
+   "c2_s200_wall_seconds": 8857.0,
+   "eligible": 20910,
+   "workers": 6,
+   "source": "docs/h7c/c2/retarget_s200.json (the whole c2 re-search)"
+  },
+  "sample_rows": 2437,
+  "scopes": {
+   "full_re_search": 20910,
+   "training_data": 18965
+  },
+  "estimates": {
+   "full_re_search": {
+    "positions": 20910,
+    "ratio_method_seconds": 15767.2,
+    "search_only_seconds": 14480.0,
+    "extrapolated_seconds": 17324.3
+   },
+   "training_data": {
+    "positions": 18965,
+    "ratio_method_seconds": 14300.6,
+    "search_only_seconds": 13133.1,
+    "extrapolated_seconds": 15712.9
+   }
+  },
+  "extrapolation_check": {
+   "s200_full_extrapolated_seconds": 9995.1,
+   "c2_s200_actual_seconds": 8857.0,
+   "ratio": 1.1285
+  }
+ }
+}
+__EXIT__ 0
