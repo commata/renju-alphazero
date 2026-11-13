@@ -1,0 +1,230 @@
+{
+ "format": "h7r-dev-suites-v1",
+ "git": {
+  "commit": "43106d6ffb95bb2914fb36836befa3293544571d",
+  "dirty": false
+ },
+ "rule": "O1",
+ "count": 300,
+ "seed_policy": "h7r-seeds-v2",
+ "sources": [
+  {
+   "path": "docs/h7r/suites/O0.json",
+   "sha256": "f6da0ed5ccff77dc65c3237d7d27ebcce223ed5bd432255392346a244a365ea9",
+   "kind": "suite",
+   "openings": 300,
+   "classes": 75
+  },
+  {
+   "path": "docs/h7r/suites/O1.json",
+   "sha256": "50b0e75ffef87d8111cebe36b350929461e0827a5a4443a7d837aa63a70ecdc9",
+   "kind": "suite",
+   "openings": 300,
+   "classes": 298
+  },
+  {
+   "path": "docs/h7r/suites/O2.json",
+   "sha256": "28b4424b19fe9112e23ef02ede536c76669e6969aa33f74c50116778f657d768",
+   "kind": "suite",
+   "openings": 184,
+   "classes": 26
+  },
+  {
+   "path": "docs/h7r/suites/O1-confirm-main.json",
+   "sha256": "c9530c410771e71006b900ca2965e30fb62fd3d8bd3dd4aa4bcedd652e3af3e5",
+   "kind": "suite",
+   "openings": 560,
+   "classes": 558
+  },
+  {
+   "path": "docs/h7r/suites/O1-confirm-anchor.json",
+   "sha256": "a33ae38b9317738ea20574457fea0ba02101d4a50e2275fc43df38e98979a920",
+   "kind": "suite",
+   "openings": 1040,
+   "classes": 1033
+  },
+  {
+   "path": "docs/h7r/contracts/R1-HDEV-1.json",
+   "sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+   "kind": "contract without arm samples",
+   "openings": 0,
+   "classes": 0
+  },
+  {
+   "path": "docs/h7r/contracts/R1-PILOT-1.json",
+   "sha256": "15293ca9f010159552774cf3df6901da3578608558693857b9ead11dbb406c9f",
+   "kind": "contract arm samples",
+   "openings": 1020,
+   "classes": 261
+  },
+  {
+   "path": "docs/h7r/contracts/R1-SMOKE-1.json",
+   "sha256": "42e9ac6b7b274b2ff72eaa8bd27bf2b220707a2a244a21d3cc444e75fdb6b737",
+   "kind": "contract arm samples",
+   "openings": 3,
+   "classes": 3
+  },
+  {
+   "path": "docs/h7r/contracts/R1-SMOKE-HOLDOUT.json",
+   "sha256": "a56b0ac6ccdf71b49040895f726f32d990b95fcbf6aaa595f6c8a69a0184b6a6",
+   "kind": "contract without arm samples",
+   "openings": 0,
+   "classes": 0
+  },
+  {
+   "path": "docs/h7r/contracts/R2-P1-A1-ARENA-1.json",
+   "sha256": "94b9603d12f378d65f0b3ff858e4735a4cb4be528ef475319dfa4828d69091e6",
+   "kind": "contract arm samples",
+   "openings": 1300,
+   "classes": 373
+  }
+ ],
+ "excluded_classes": {
+  "count": 1949,
+  "sha256": "8837e7ae0de04a84efcae1dc9222e78ddac530aa6686e2ccb1ca430c6dc57632"
+ },
+ "suites": {
+  "a": {
+   "path": "docs/h7r/suites/O1-dev-a.json",
+   "seed": 202611131,
+   "openings_sha256": "2ce0dd32e61c21646cbdb5893e6587b412909a859d9664d096f22ea6c092acbe",
+   "count": 300,
+   "distinct": {
+    "history_id": 300,
+    "position_id": 300,
+    "class_id": 300
+   },
+   "rejected": {
+    "class repeat": 1,
+    "excluded class": 13
+   }
+  },
+  "b": {
+   "path": "docs/h7r/suites/O1-dev-b.json",
+   "seed": 202611132,
+   "openings_sha256": "ba2245f909ddecce98628a7872fd37b50a45202f0ba23648148452a219b19213",
+   "count": 300,
+   "distinct": {
+    "history_id": 300,
+    "position_id": 300,
+    "class_id": 300
+   },
+   "rejected": {
+    "class repeat": 1,
+    "excluded class": 12
+   }
+  }
+ },
+ "overlaps": {
+  "a": {
+   "by_source": {
+    "docs/h7r/suites/O0.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O2.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O1-confirm-main.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O1-confirm-anchor.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/contracts/R1-PILOT-1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/contracts/R1-SMOKE-1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/contracts/R2-P1-A1-ARENA-1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    }
+   },
+   "prefix_of_3_move_openings": {
+    "3": 201
+   }
+  },
+  "b": {
+   "by_source": {
+    "docs/h7r/suites/O0.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O2.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O1-confirm-main.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/suites/O1-confirm-anchor.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/contracts/R1-PILOT-1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/contracts/R1-SMOKE-1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    },
+    "docs/h7r/contracts/R2-P1-A1-ARENA-1.json": {
+     "history_id": 0,
+     "position_id": 0,
+     "class_id": 0
+    }
+   },
+   "prefix_of_3_move_openings": {
+    "3": 207
+   }
+  },
+  "between_a_and_b": {
+   "class_id": 0,
+   "history_id": 0
+  }
+ },
+ "seed_registry_conflicts": {
+  "v1_reserved": [],
+  "training_run_seeds": [],
+  "measure_seed": [],
+  "s1_probe_base_seed": [],
+  "arena_and_suite_seeds": []
+ },
+ "note": "the excluded class list is recomputed from the sources by `check`; 3-move and 5-move openings cannot share a class, so prefix overlap with 3-move openings is counted, not excluded",
+ "suite_files_sha256": {
+  "a": "07179bcd0bdeac037553674cf2dddaa9f5c70017d406e8f952bb206baf440b5b",
+  "b": "5c94ee7a043d130d5a97c954b67ce1416890bed9d532fd5f196082cc2dc10d79"
+ }
+}
