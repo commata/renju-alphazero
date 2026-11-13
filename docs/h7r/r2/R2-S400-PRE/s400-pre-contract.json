@@ -4,7 +4,7 @@
  "status": "fixed",
  "approved": {
   "prepare": true,
-  "measure": false
+  "measure": true
  },
  "question": "on a fixed sample of the c2 train-split games: how much does an S400 re-search change the raw visit distributions and the policy targets of the c2 rule against S200 (beside S50 -> S200), and what does a full re-search cost",
  "scope": "a measurement only: no training, no Arena, no reading or pass rule; the decision on a full re-search and a training contract is the user's",
