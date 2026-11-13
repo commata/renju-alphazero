@@ -207,7 +207,7 @@
  "sources": [
   {
    "path": "scripts/h7r_s400_pre.py",
-   "sha256": "922792cd44de0ec3aa1d1b0b02ddc559c87b97e23d3c267c2fce6496e96163e9"
+   "sha256": "655900de0b9071f05cb633cba11dd930baa1efad0e0da7defe60c2d11c9dd872"
   },
   {
    "path": "scripts/h7r_p1.py",

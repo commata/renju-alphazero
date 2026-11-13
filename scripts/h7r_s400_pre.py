@@ -88,6 +88,17 @@ def load_contract(path=None, root=ROOT, stage=None, *, check_sources=True) -> tu
     return c, file_sha256(path), p1.experiment_sha256(c)
 
 
+def log_field(args) -> dict:
+    """The desktop attempt log's basename (``--log-name``), so a recovery can find the log of this result."""
+    import re
+
+    name = getattr(args, 'log_name', None)
+    if name is None:
+        return {}
+    require(re.fullmatch(rf'{args.command}-[A-Za-z0-9]+\.log', name) is not None, f'--log-name {name!r}')
+    return {'log_name': name}
+
+
 def stamp(sha, eid, git) -> dict:
     return {'contract_id': CONTRACT_ID, 'experiment_sha256': eid, 'contract_file_sha256': sha, 'git': git}
 
@@ -172,7 +183,8 @@ def prepare(args, root=ROOT) -> dict:
     require(inp['scopes']['full_eligible'] == c['time_reference']['eligible'],
             f"{inp['scopes']['full_eligible']} eligible plies, the time reference has {c['time_reference']['eligible']}")
     record = {'format': 'h7r-s400-pre-prepare-v1', **stamp(sha, eid, guard.check()), 'passed': True,
-              'inputs_sha256': {k: c['inputs'][k]['sha256'] for k in INPUTS}, 'sample': sample_record(c, inp)}
+              'inputs_sha256': {k: c['inputs'][k]['sha256'] for k in INPUTS}, 'sample': sample_record(c, inp),
+              **log_field(args)}
     p1.publish(Path(root) / D / 'prepare.json', record)
     return record
 
@@ -203,8 +215,29 @@ def search_games(c: dict, root, games: list, identity: dict, jsonl: Path, device
     finished = rt._execute(args, games, identity, (c['mode'],), identity['factor'], log, validate=True)
     wall = perf_counter() - started
     wanted = {g['game_index'] for g in games}
-    return {'rows': {gi: rec['rows'] for gi, rec in finished.items() if gi in wanted}, 'wall_seconds': round(wall, 1),
-            'resumed_games': len(wanted & before), 'games': len(wanted)}
+    rows = {gi: rec['rows'] for gi, rec in finished.items() if gi in wanted}
+    for g in games:  # resumed records too: _execute checks only the games it searched now
+        check_rows(g, rows.get(g['game_index']))
+    return {'rows': rows, 'wall_seconds': round(wall, 1), 'resumed_games': len(wanted & before), 'games': len(wanted)}
+
+
+def finite(row: dict) -> bool:
+    return all(isinstance(v[2], int) and v[2] >= 0 and math.isfinite(float(v[3])) for v in row.get('visits') or [])
+
+
+def check_rows(game: dict, rows) -> None:
+    """A game's search rows, searched now or read back from the record file: exactly its eligible plies in order,
+    each passing ``h7c_retarget.check_row`` (the same position, route tree, the actor's E4-v2 step, legal moves), with
+    non-negative integer visit counts and finite mean values."""
+    from hybrid import h7c_retarget as hr
+
+    where = f"game {game['game_index']}"
+    plies = hr.eligible_plies(game)
+    require(isinstance(rows, list) and [r.get('ply') for r in rows] == [p['ply'] for p in plies],
+            f'{where}: the search rows are not its eligible plies (missing, empty or extra rows)')
+    for p, row in zip(plies, rows):
+        hr.check_row(game, p, row)
+        require(finite(row), f"{where} ply {p['ply']}: a visit count or mean value is not a finite number")
 
 
 def reproduction_diffs(new: dict, old: dict) -> list[str]:
@@ -213,6 +246,8 @@ def reproduction_diffs(new: dict, old: dict) -> list[str]:
     from hybrid import h7c_retarget as hr
 
     out = [k for k in REPRO_EXACT if new.get(k) != old.get(k)]
+    if not finite(new) or not finite(old):
+        return out + ['non_finite']  # a NaN would pass any tolerance comparison
     a, b = sorted(new['visits']), sorted(old['visits'])
     if [v[:3] for v in a] != [v[:3] for v in b]:
         out.append('visits')
@@ -222,15 +257,27 @@ def reproduction_diffs(new: dict, old: dict) -> list[str]:
 
 
 def check_reproduction(games: list, rows: dict, c2: dict) -> dict:
+    """Every eligible ply of ``games`` against its c2 S200 record; reproduced only when every one was compared
+    (the count is the eligible count) and none differs."""
+    from hybrid import h7c_retarget as hr
+
     counts, examples, compared = {}, [], 0
+    expected = sum(len(hr.eligible_plies(g)) for g in games)
     for g in games:
-        for row in rows[g['game_index']]:
+        for row in rows.get(g['game_index']) or []:
+            key = (g['game_index'], row.get('ply'))
+            if key not in c2:
+                counts['not_a_c2_position'] = counts.get('not_a_c2_position', 0) + 1
+                continue
             compared += 1
-            for field in reproduction_diffs(row, c2[(g['game_index'], row['ply'])]):
+            for field in reproduction_diffs(row, c2[key]):
                 counts[field] = counts.get(field, 0) + 1
                 if len(examples) < 20:
                     examples.append({'game_index': g['game_index'], 'ply': row['ply'], 'field': field})
-    return {'compared': compared, 'differing_fields': counts, 'examples': examples, 'reproduced': not counts}
+    if compared != expected:
+        counts['not_compared'] = expected - compared
+    return {'expected': expected, 'compared': compared, 'differing_fields': counts, 'examples': examples,
+            'reproduced': not counts and compared == expected and expected > 0}
 
 
 # --- metrics ------------------------------------------------------------------------------------------------------
@@ -433,10 +480,12 @@ def aggregate(c: dict, positions: list[dict], game_order: list) -> dict:
         'target_none': {b: sum(not has(x, b) for x in unmasked) for b in BUDGETS},
         'pair_positions': {f'{x}_{y}': sum(has(p, x) and has(p, y) for p in unmasked) for x, y in PAIRS},
         's200_only_target': sum(has(x, 's200') and not has(x, 's400') for x in unmasked),
-        's400_only_target': sum(has(x, 's400') and not has(x, 's200') for x in positions if x['mask'] is not True),
+        's400_only_target_unmasked': sum(has(x, 's400') and not has(x, 's200') for x in unmasked),
+        's400_only_target_mask_unknown': sum(has(x, 's400') for x in positions if x['mask'] is None),
         'common_positions': len(common),
-        'note': 'no_c2_row: positions without a c2 row (S200 gave no target), mask unknown; they enter only '
-                's400_only_target and the raw tables'}
+        'note': 'no_c2_row: positions without a c2 row (S200 gave no target), so their mask is unknown; they are '
+                'counted only in s400_only_target_mask_unknown and the raw tables, never as rows a training '
+                'set would gain'}
     return {'tables': tables, 'denominators': denominators, 'proven_loss_sets': loss}
 
 
@@ -487,7 +536,7 @@ def measure(args, root=ROOT, log=print) -> dict:
     early, rest = inp['sample'][:k], inp['sample'][k:]
     runs_dir = root / RUNS
     ident = {b: search_identity(c, eid, b, sample['sample_sha256'], inp['selfplay']) for b in ('s200', 's400')}
-    body = {'format': 'h7r-s400-pre-measure-v1', 'sample_sha256': sample['sample_sha256'],
+    body = {'format': 'h7r-s400-pre-measure-v1', **log_field(args), 'sample_sha256': sample['sample_sha256'],
             'prepare_sha256': file_sha256(root / D / 'prepare.json'), 'search_identity_sha256':
                 {b: digest(v) for b, v in ident.items()}}
 
@@ -540,6 +589,7 @@ def main(argv=None) -> int:
     for name in ('prepare', 'measure'):
         s = sub.add_parser(name)
         s.add_argument('--device', default='cuda')
+        s.add_argument('--log-name', help='the desktop attempt log basename, kept in the record for a recovery')
     args = parser.parse_args(argv)
     try:
         out = (prepare if args.command == 'prepare' else measure)(args)

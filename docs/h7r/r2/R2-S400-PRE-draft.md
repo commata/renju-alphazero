@@ -1,7 +1,7 @@
 # R2-S400-PRE: S400 정책 목표 사전 측정 계획 (초안, 승인 전)
 
 - 상태: 도구·테스트·계약(**미승인**, `approved` 모두 false) 준비 완료. 측정은 실행하지 않았다. 실행 여부는 이 계획서를 검토한 뒤 결정한다.
-- 도구 `scripts/h7r_s400_pre.py`, 테스트 `tests/test_h7r_s400_pre.py`, 계약 `docs/h7r/r2/R2-S400-PRE/s400-pre-contract.json`(초안 `s400-pre-contract.draft.json`), 실험 SHA `3e1a863799f8…`
+- 도구 `scripts/h7r_s400_pre.py`, 테스트 `tests/test_h7r_s400_pre.py`, 계약 `docs/h7r/r2/R2-S400-PRE/s400-pre-contract.json`(초안 `s400-pre-contract.draft.json`), 실험 SHA `e8ca3049a4ee…`(도구 보완 뒤 다시 고정. 처음 고정본 `3e1a863799f8…`은 실행되지 않았다)
 - 이번 측정에서 하지 않는 것: 학습, Arena, champion 변경, 기존 기록 수정
 - 배경
   - R2-P1-POLICY-REPLAY-A1(`faeb72b0f625`)은 P NOT_ESTABLISHED, D BETTER_THAN_CONTROL로 끝났다.
@@ -75,7 +75,8 @@
 - 표는 두 가지로 낸다.
   - 짝별 표: 각 짝(S50 → S200, S200 → S400)의 두 예산 모두에서 목표가 남는 마스크되지 않은 행
   - **공통 국면 표**: S50, S200, S400 세 예산 모두에서 목표가 남는 마스크되지 않은 행. 두 짝을 같은 국면에서 읽을 수 있으므로, 분모 차이와 분포 변화의 크기를 구분할 수 있다.
-- 함께 적는 건수: 표본 국면 수, 마스크된 행, c2 행이 없는 국면(S200 목표가 없어 c2가 행을 만들지 않음. 마스크 여부를 알 수 없음), 예산별 목표 없음, S200에서만 목표가 남은 국면, S400에서만 목표가 남은 국면, 짝별·공통 국면 수
+- 함께 적는 건수: 표본 국면 수, 마스크된 행, c2 행이 없는 국면(S200 목표가 없어 c2가 행을 만들지 않음. 마스크 여부를 알 수 없음), 예산별 목표 없음, S200에서만 목표가 남은 국면, S400에서만 목표가 남은 국면(마스크되지 않은 c2 행과 마스크 미확인을 나눠 센다), 짝별·공통 국면 수
+  - 마스크 미확인 국면은 c2가 행을 만들지 않은 곳이다. 학습 자료에 추가될 행 수로 읽지 않는다.
 - 원시 방문 분포 표는 표본의 모든 적격 국면에서 낸다.
 
 **집계**
@@ -145,12 +146,17 @@
 - 도구 `scripts/h7r_s400_pre.py`
   - `prepare`(`approved.prepare`): 입력 7개의 SHA, self-play 신원, 엔진·runtime·장치, c2 S200 기록의 신원과 coverage를 대조한다. 표본(게임 id 목록, coverage key SHA)과 두 시간 범위의 국면 수를 `prepare.json`에 남긴다.
   - `measure`(`approved.measure`): 커밋된 표본을 다시 계산해 대조한 뒤 §3의 순서로 탐색한다. 탐색은 `h7c_retarget._execute`를 그대로 쓴다(같은 agent, 예산 규칙, 행 검사, 재개, 진행률 출력). 결과는 `measure.json` 하나이고, 재현 검사에서 멈출 때도 남긴다.
+  - 탐색 기록 파일에서 이어받은 게임도 새로 탐색한 게임과 같은 검사를 거친다: 적격 국면 목록이 정확히 같아야 하고(빈 행·누락·추가 거부), 행마다 `h7c_retarget.check_row`, 방문 수는 음이 아닌 정수, 평균값은 유한해야 한다.
+  - S200 재현 검사는 비교한 국면 수가 기대한 적격 국면 수와 같을 때만 통과한다. 평균값이 유한하지 않으면 차이로 센다.
+  - 결과(`prepare.json`, `measure.json`)에 데스크톱 실행 로그 이름(`log_name`)을 남긴다. 복구할 때 그 로그와 종료 코드를 함께 확인한다.
   - 탐색 기록의 신원은 purpose `r2-s400-pre`다. `h7c_labels --retarget`은 purpose가 `retarget`이 아닌 파일을 거부하므로, 이 기록은 학습 자료로 쓰일 수 없다.
   - 기존 `h7c_retarget.py`, `hybrid/h7c_retarget.py`, `hybrid/h7c_targets.py`, `h7c_labels.py`는 바꾸지 않았다. 계약이 이 파일들의 SHA를 고정한다.
 - 계약: 표본 규칙, 예산(S200 = factor 4, S400 = factor 8), 재현 규칙, 지표, bootstrap(10,000회, seed 20261113), 시간 기준, 입력·근거·source SHA를 고정한다. 단계는 prepare → measure이고 둘 다 미승인이다.
 - 테스트
   - 지표, 표본 순서, bootstrap을 손으로 계산한 값과 대조
   - 임시 저장소에서 stand-in 게임·policy 행·c2 기록으로 prepare → measure 전체: 초기 5게임 불일치 시 즉시 멈춤, 나중 게임 불일치 시 S400 전에 멈춤, G0 허용 범위 안의 평균값 차이는 통과, 커밋된 표본 재대조, 입력 변경 거부, 덮어쓰기 거부
+  - 이어받은 기록의 빈 행·NaN 평균값 거부, 비교 건수 부족 시 재현 실패 (이전 도구에서는 실패하는 회귀 테스트)
+  - 데스크톱 블록: 스테이징 직후 중단된 결과 기록, 로그 없는 결과·종료 코드 불일치 시 멈춤, 종료 코드가 잘린 로그 복구, 관계없는 스테이징 파일 거부
   - 실제 TB-V3 agent(CPU, stand-in 네트워크): `h7c_retarget`의 실제 S200 실행을 c2 기록으로 삼아, 도구의 S200이 그것을 정확히 재현하고 S400이 행 검사를 통과하며 재개가 동작하는지 확인
 - 결과 처리
   - 탐색 기록(`s200.jsonl`, `s400.jsonl`)과 국면별 지표(`positions.jsonl.gz`)는 `runs/h7r/R2-S400-PRE/`에 둔다.
@@ -160,9 +166,12 @@
 
 - s4-1은 `approved.prepare` 뒤, s4-2는 `approved.measure` 뒤에 실행한다.
 - 다시 실행했을 때
-  - 결과가 이미 커밋되어 있으면 멈춘다.
-  - 결과 파일이 있지만 커밋 전이면, 다시 돌리지 않고 남은 로그와 함께 커밋한다.
-  - measure가 결과를 쓰기 전에 끊겼으면 블록을 다시 실행한다. 끝난 게임은 탐색 기록에서 이어받는다.
+  - 결과가 HEAD에 이미 커밋되어 있으면 멈춘다.
+  - 결과 파일이 있지만 커밋 전이면(스테이징만 된 경우 포함) 다시 돌리지 않는다. 결과에 남긴 로그 이름(`log_name`)으로 해당 실행 로그를 찾아, 결과가 뜻하는 종료 코드와 로그의 `__EXIT__`이 같은지 확인한 뒤 함께 커밋한다.
+    - 로그가 없으면 멈춘다. 로그에 종료 코드가 없으면(출력 직후 중단) 결과에서 복구한 값임을 로그에 적고 기록한다. 두 종료 코드가 다르면 멈춘다.
+  - 이 블록이 기록할 파일이 아닌 것이 스테이징되어 있으면 멈춘다. 새 실행은 스테이징이 비어 있을 때만 시작한다.
+  - 커밋은 됐고 push만 실패했다면 `git push origin feat/h7-c1`로 다시 보낸다.
+  - measure가 결과를 쓰기 전에 끊겼으면 블록을 다시 실행한다. 끝난 게임은 탐색 기록에서 이어받고, 이어받은 기록도 새로 탐색한 기록과 같은 검사를 거친다.
 - measure는 표본만으로 약 40분 안팎으로 예상한다(계획값). tmux를 권한다.
 
 s4-1. prepare
@@ -174,26 +183,54 @@ s4-1. prepare
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
-  git pull --ff-only origin feat/h7-c1
-  test -z "$(git status --porcelain --untracked-files=no)"
-  python scripts/check_track_b_frozen.py
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
   N=prepare
   D=docs/h7r/r2/R2-S400-PRE
   L=runs/h7r/R2-S400-PRE/logs
   O="$D/$N.json"
-  tracked(){ git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
   if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
   mkdir -p "$L"
   rc=0
-  if [ -e "$O" ]; then
-    echo "an uncommitted $O exists: recording it (no new run)"
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    set +e
+    python -u scripts/h7r_s400_pre.py "$N" --device cuda --log-name "$(basename "$log")" 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
   else
-    B="$N-$(date +%Y%m%d-%H%M%S)"
-    if [ -e "$L/$B.log" ]; then echo "STOP: $L/$B.log exists"; exit 1; fi
-    python -u scripts/h7r_s400_pre.py "$N" --device cuda 2>&1 | tee "$L/$B.log" || rc=$?
-    echo "__EXIT__ $rc" >> "$L/$B.log"
+    echo "an uncommitted $O exists: recording it (no new run)"
   fi
-  expect=()
+  if [ -f "$O" ]; then
+    result="$(python - "$O" "$N" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+if r.get('format') != 'h7r-s400-pre-prepare-v1' or not re.fullmatch(sys.argv[2] + r'-[A-Za-z0-9]+\.log', name):
+    sys.exit('STOP: invalid result or missing attempt log name')
+print(name, 0 if r.get('passed') is True else 1)
+PY
+)"
+    read -r name rc <<< "$result"
+    log="$L/$name"
+    [ -f "$log" ] || { echo "STOP: the result's log is missing: $log"; exit 1; }
+    last="$(tail -n 1 "$log")"
+    case "$last" in
+      "__EXIT__ $rc") ;;
+      __EXIT__*) echo "STOP: the result and its log disagree on the exit code"; exit 1 ;;
+      *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
+    esac
+  elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+    echo "STOP: $N did not produce a result"; exit 1
+  fi
+  paths=()
   shopt -s nullglob
   for f in "$L/$N"-*.log; do
     [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
@@ -201,11 +238,18 @@ s4-1. prepare
     tracked "$D/stage-logs/$n.log" && continue
     python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
       --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
-    expect+=(--expect "$D/stage-logs/$n.log" --expect "$D/stage-logs/$n.manifest.json")
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
   done
-  if [ -f "$O" ]; then expect+=(--expect "$O"); fi
-  [ "${#expect[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
-  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   git commit -m "H7-R S400-PRE: $N exit $rc (records only)"
   git push origin feat/h7-c1
@@ -223,29 +267,55 @@ s4-2. measure (tmux 권장)
   source .venv/bin/activate
   export PYTHONPATH="$PWD/src:$PWD/scripts"
   [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
-  git pull --ff-only origin feat/h7-c1
-  test -z "$(git status --porcelain --untracked-files=no)"
-  python scripts/check_track_b_frozen.py
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
   N=measure
   D=docs/h7r/r2/R2-S400-PRE
   L=runs/h7r/R2-S400-PRE/logs
   O="$D/$N.json"
-  tracked(){ git ls-files --error-unmatch "$1" >/dev/null 2>&1; }
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
   if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
   tracked "$D/prepare.json" || { echo "STOP: prepare is not recorded (run s4-1 first)"; exit 1; }
   mkdir -p "$L"
   rc=0
-  if [ -e "$O" ]; then
-    echo "an uncommitted $O exists: recording it (no new run)"
-    status="$(python -c "import json, sys; print(json.load(open(sys.argv[1]))['status'])" "$O")"
-    [ "$status" = MEASURED ] || rc=2
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    set +e
+    python -u scripts/h7r_s400_pre.py "$N" --device cuda --log-name "$(basename "$log")" 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
   else
-    B="$N-$(date +%Y%m%d-%H%M%S)"
-    if [ -e "$L/$B.log" ]; then echo "STOP: $L/$B.log exists"; exit 1; fi
-    python -u scripts/h7r_s400_pre.py "$N" --device cuda 2>&1 | tee "$L/$B.log" || rc=$?
-    echo "__EXIT__ $rc" >> "$L/$B.log"
+    echo "an uncommitted $O exists: recording it (no new run)"
   fi
-  expect=()
+  if [ -f "$O" ]; then
+    result="$(python - "$O" "$N" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+if r.get('format') != 'h7r-s400-pre-measure-v1' or not re.fullmatch(sys.argv[2] + r'-[A-Za-z0-9]+\.log', name):
+    sys.exit('STOP: invalid result or missing attempt log name')
+print(name, 0 if r.get('status') == 'MEASURED' else 2)
+PY
+)"
+    read -r name rc <<< "$result"
+    log="$L/$name"
+    [ -f "$log" ] || { echo "STOP: the result's log is missing: $log"; exit 1; }
+    last="$(tail -n 1 "$log")"
+    case "$last" in
+      "__EXIT__ $rc") ;;
+      __EXIT__*) echo "STOP: the result and its log disagree on the exit code"; exit 1 ;;
+      *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
+    esac
+  elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+    echo "STOP: $N did not produce a result"; exit 1
+  fi
+  paths=()
   shopt -s nullglob
   for f in "$L/$N"-*.log; do
     [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
@@ -253,11 +323,18 @@ s4-2. measure (tmux 권장)
     tracked "$D/stage-logs/$n.log" && continue
     python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
       --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
-    expect+=(--expect "$D/stage-logs/$n.log" --expect "$D/stage-logs/$n.manifest.json")
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
   done
-  if [ -f "$O" ]; then expect+=(--expect "$O"); fi
-  [ "${#expect[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
-  for e in "${expect[@]}"; do [ "$e" = --expect ] || git add "$e"; done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
   python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
   git commit -m "H7-R S400-PRE: $N exit $rc (records only)"
   git push origin feat/h7-c1

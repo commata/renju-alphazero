@@ -241,6 +241,8 @@ class FlowTest(unittest.TestCase):
         self.assertEqual(d['positions'], s['coverage']['eligible'])
         self.assertEqual(d['masked'], 1)
         self.assertEqual(d['common_positions'], d['unmasked'])
+        self.assertEqual((d['s400_only_target_unmasked'], d['s400_only_target_mask_unknown']), (0, 0))
+        self.assertNotIn('s400_only_target', d)
         t = out['tables']
         # S50 -> S200 and S200 -> S400 by hand: actor 40/10, S200 150/50, S400 300/300/200 over the actor's move
         self.assertAlmostEqual(t['raw.s50_s200.tv']['mean'], 0.05)
@@ -301,6 +303,52 @@ class FlowTest(unittest.TestCase):
         with mock.patch.object(pre, 'search_games', side_effect=self.fake_search(change)):
             out = pre.measure(self.ns(), self.root, log=lambda *a, **k: None)
         self.assertEqual(out['status'], 'MEASURED')
+
+    def resumed_records(self, change):
+        """A S200 record file holding the early sample games, each changed by ``change(rows)``."""
+        rec = self.through_prepare()
+        c, _, eid = pre.load_contract(None, self.root, check_sources=False)
+        ident = pre.search_identity(c, eid, 's200', rec['sample']['sample_sha256'], hr.selfplay_identity(self.games))
+        path = self.root / pre.RUNS / 's200.jsonl'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = []
+        for gi in rec['sample']['game_indices'][:self.EARLY]:
+            g = self.games[gi]
+            rows = [copy.deepcopy(self.c2[(gi, p['ply'])]) for p in hr.eligible_plies(g)]
+            lines.append(json.dumps({'identity': ident, 'game_index': gi, 'rows': change(rows)}))
+        path.write_text('\n'.join(lines) + '\n')
+        return rec
+
+    def test_a_resumed_record_with_empty_rows_stops_before_any_comparison(self):
+        self.resumed_records(lambda rows: [])
+        with mock.patch('h7c_retarget.ProcessPoolExecutor', side_effect=AssertionError('searched')):
+            with self.assertRaisesRegex(ValueError, 'not its eligible plies'):
+                pre.measure(self.ns(), self.root, log=lambda *a, **k: None)
+        self.assertFalse((self.root / pre.D / 'measure.json').exists())
+        self.assertFalse((self.root / pre.RUNS / 's400.jsonl').exists())
+
+    def test_a_resumed_record_with_a_nan_mean_value_stops(self):
+        def nan(rows):
+            rows[0]['visits'][0][3] = float('nan')
+            return rows
+        self.resumed_records(nan)
+        with mock.patch('h7c_retarget.ProcessPoolExecutor', side_effect=AssertionError('searched')):
+            with self.assertRaisesRegex(ValueError, 'not a finite number'):
+                pre.measure(self.ns(), self.root, log=lambda *a, **k: None)
+
+    def test_the_reproduction_needs_every_position_and_finite_values(self):
+        g = self.games[0]
+        rows = [copy.deepcopy(self.c2[(0, p['ply'])]) for p in hr.eligible_plies(g)]
+        full = pre.check_reproduction([g], {0: rows}, self.c2)
+        self.assertTrue(full['reproduced'])
+        self.assertEqual(full['compared'], full['expected'])
+        empty = pre.check_reproduction([g], {0: []}, self.c2)
+        self.assertFalse(empty['reproduced'])
+        self.assertEqual(empty['differing_fields'], {'not_compared': len(rows)})
+        self.assertFalse(pre.check_reproduction([g], {}, self.c2)['reproduced'])
+        bad = copy.deepcopy(rows)
+        bad[0]['visits'][0][3] = float('nan')
+        self.assertEqual(pre.check_reproduction([g], {0: bad}, self.c2)['differing_fields'], {'non_finite': 1})
 
     def test_the_sample_is_rejudged_and_inputs_are_checked(self):
         self.through_prepare()
@@ -386,15 +434,18 @@ STUB = """import json, os, sys
 from pathlib import Path
 D = 'docs/h7r/r2/R2-S400-PRE'
 cmd = sys.argv[1]
+log = sys.argv[sys.argv.index('--log-name') + 1]
 if os.environ.get('S4_FORBID'):
     print('STOP: must not run again'); sys.exit(9)
 if os.environ.get('S4_FAIL') == cmd:
     print('STOP: ValueError: stand-in failure'); sys.exit(1)
 Path(D).mkdir(parents=True, exist_ok=True)
 if cmd == 'prepare':
-    Path(D, 'prepare.json').write_text(json.dumps({'passed': True})); print('ok prepare'); sys.exit(0)
+    Path(D, 'prepare.json').write_text(json.dumps({'format': 'h7r-s400-pre-prepare-v1', 'passed': True,
+                                                   'log_name': log}))
+    print('ok prepare'); sys.exit(0)
 status = os.environ.get('S4_STATUS', 'MEASURED')
-Path(D, 'measure.json').write_text(json.dumps({'status': status}))
+Path(D, 'measure.json').write_text(json.dumps({'format': 'h7r-s400-pre-measure-v1', 'status': status, 'log_name': log}))
 print('status', status)
 sys.exit(0 if status == 'MEASURED' else 2)
 """
@@ -473,13 +524,65 @@ class BlockTest(unittest.TestCase):
         self.assertTrue(self.files(f'{self.D}/measure.json'))
         self.assertIn('measure exit 2', git(self.work, 'log', '-1', '--format=%s'))
 
+    def result_without_commit(self, status='S200_EARLY_NOT_REPRODUCED', exit_line='__EXIT__ 2', log=True):
+        """A measure run whose result (and log) exist, interrupted before its records commit."""
+        L = self.work / 'runs/h7r/R2-S400-PRE/logs'
+        L.mkdir(parents=True, exist_ok=True)
+        name = 'measure-AbC123xy.log'
+        if log:
+            (L / name).write_text('status ' + status + chr(10) + (exit_line + chr(10) if exit_line else ''))
+        (self.work / self.D / 'measure.json').write_text(json.dumps(
+            {'format': 'h7r-s400-pre-measure-v1', 'status': status, 'log_name': name}))
+        return name
+
     def test_an_uncommitted_result_is_recorded_without_a_rerun(self):
         self.assertEqual(self.bash('s4-1')[0], 0)
-        (self.work / self.D / 'measure.json').write_text('{"status": "S200_EARLY_NOT_REPRODUCED"}')
+        name = self.result_without_commit()
         code, out = self.bash('s4-2', S4_FORBID='1')
         self.assertEqual(code, 2, out)
         self.assertIn('no new run', out)
         self.assertTrue(self.files(f'{self.D}/measure.json'))
+        self.assertTrue(self.files(f'{self.D}/stage-logs/{name}'))
+
+    def test_a_result_staged_before_an_interruption_is_recorded(self):
+        self.assertEqual(self.bash('s4-1')[0], 0)
+        name = self.result_without_commit(status='MEASURED', exit_line='__EXIT__ 0')
+        git(self.work, 'add', f'{self.D}/measure.json')  # interrupted right after staging
+        code, out = self.bash('s4-2', S4_FORBID='1')
+        self.assertEqual(code, 0, out)
+        self.assertTrue(self.files(f'{self.D}/stage-logs/{name}'))
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), git(self.origin, 'rev-parse', 'feat/h7-c1'))
+
+    def test_a_result_without_its_log_or_with_another_exit_code_stops(self):
+        self.assertEqual(self.bash('s4-1')[0], 0)
+        head = git(self.work, 'rev-parse', 'HEAD')
+        self.result_without_commit(log=False)
+        code, out = self.bash('s4-2', S4_FORBID='1')
+        self.assertEqual(code, 1, out)
+        self.assertIn("the result's log is missing", out)
+        self.result_without_commit(exit_line='__EXIT__ 0')  # the result says 2
+        code, out = self.bash('s4-2', S4_FORBID='1')
+        self.assertEqual(code, 1, out)
+        self.assertIn('disagree on the exit code', out)
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), head)  # nothing committed
+
+    def test_a_log_cut_before_its_exit_line_is_recovered_from_the_result(self):
+        self.assertEqual(self.bash('s4-1')[0], 0)
+        name = self.result_without_commit(exit_line=None)
+        code, out = self.bash('s4-2', S4_FORBID='1')
+        self.assertEqual(code, 2, out)
+        text = (self.work / self.D / 'stage-logs' / name).read_text()
+        self.assertIn('Recovered exit code from', text)
+        self.assertTrue(text.rstrip().endswith('__EXIT__ 2'))
+
+    def test_an_unrelated_staged_file_stops(self):
+        self.assertEqual(self.bash('s4-1')[0], 0)
+        self.result_without_commit()
+        (self.work / 'other.txt').write_text('x')
+        git(self.work, 'add', 'other.txt')
+        code, out = self.bash('s4-2', S4_FORBID='1')
+        self.assertEqual(code, 1, out)
+        self.assertIn('unrelated staged path: other.txt', out)
 
 
 if __name__ == '__main__':
