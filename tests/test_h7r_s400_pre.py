@@ -93,7 +93,9 @@ class FixedContractTest(unittest.TestCase):
     def test_the_fixed_contract_is_its_draft_with_sources(self):
         fixed = json.loads((ROOT / pre.CONTRACT).read_text())
         draft = json.loads(DRAFT.read_text())
-        self.assertEqual(fixed['approved'], {'prepare': False, 'measure': False})
+        self.assertEqual(set(fixed['approved']), set(pre.STAGES))  # approvals change over time, never the id
+        self.assertEqual(p1.experiment_sha256(fixed),
+                         'e8ca3049a4ee2386a324bcf8febca8423eb0a54f4ff791ed0e652a466dd323d1')
         self.assertEqual(fixed['draft'], {'path': DRAFT.relative_to(ROOT).as_posix(), 'sha256': p1.file_sha256(DRAFT)})
         self.assertEqual({k: v for k, v in fixed.items() if k not in ('status', 'sources', 'draft', 'approved')},
                          {k: v for k, v in draft.items() if k not in ('status', 'sources', 'approved')})
