@@ -121,14 +121,18 @@ def standard26() -> list[list[list[int]]]:
 
 
 def build_suite(name: str, count: int | None, seed: int | None, max_attempts: int = 200_000,
-                exclude: set | frozenset | None = None) -> dict:
+                exclude: set | frozenset | None = None, exclude_classes: set | frozenset | None = None,
+                distinct_classes: bool = False) -> dict:
     """The suite file body: ``count`` openings (O0 / O1 from ``seed``; O2: all, or refused if ``count`` is larger).
     ``exclude``: history ids (recomputed from moves by ``exclusion``) never taken; the draw sequence is the same, an
     excluded draw is skipped, so the same seed and exclusion give the same suite. A shortfall fails: no repeat fills
-    it."""
+    it. ``exclude_classes`` (optional): symmetry class ids never taken; ``distinct_classes`` (optional): at most one
+    opening per class. Without them the suite is exactly what it was before they existed."""
     spec = SUITES[name]
     rejected, histories, rows = {}, set(), []
     given, exclude = exclude is not None, frozenset(exclude or ())
+    class_given, exclude_classes = exclude_classes is not None, frozenset(exclude_classes or ())
+    classes = set()
     hit = set()  # distinct excluded openings met (a listed suite can meet one more than once)
 
     def add(moves):
@@ -144,10 +148,17 @@ def build_suite(name: str, count: int | None, seed: int | None, max_attempts: in
             rejected['excluded'] = rejected.get('excluded', 0) + 1
             hit.add(i['history_id'])
             return
+        if i['class_id'] in exclude_classes:
+            rejected['excluded class'] = rejected.get('excluded class', 0) + 1
+            return
         if i['history_id'] in histories:
             rejected['exact repeat'] = rejected.get('exact repeat', 0) + 1
             return
+        if distinct_classes and i['class_id'] in classes:
+            rejected['class repeat'] = rejected.get('class repeat', 0) + 1
+            return
         histories.add(i['history_id'])
+        classes.add(i['class_id'])
         rows.append({'index': len(rows), 'moves': moves, **i})
 
     if spec['kind'] == 'random':
@@ -179,6 +190,12 @@ def build_suite(name: str, count: int | None, seed: int | None, max_attempts: in
         ordered = sorted(exclude)
         body['exclusion'] = {'history_ids': ordered, 'history_ids_sha256': _sha(ordered),
                              'excluded_draws': rejected.get('excluded', 0)}
+    if class_given:
+        ordered = sorted(exclude_classes)
+        body['class_exclusion'] = {'class_ids': len(ordered), 'class_ids_sha256': _sha(ordered),
+                                   'excluded_draws': rejected.get('excluded class', 0)}
+    if distinct_classes:
+        body['distinct_classes'] = True
     return body
 
 
@@ -202,6 +219,8 @@ def check_suite(body: dict) -> None:
         ex = body['exclusion']
         if _sha(ex['history_ids']) != ex['history_ids_sha256'] or seen & set(ex['history_ids']):
             raise ValueError('the suite holds an excluded opening or its exclusion list is not its SHA-256')
+    if body.get('distinct_classes') and len({r['class_id'] for r in body['openings']}) != body['count']:
+        raise ValueError('a suite with one opening per class holds two of one class')
 
 
 def pick(body: dict, pairs: int, seed: int) -> list[dict]:
