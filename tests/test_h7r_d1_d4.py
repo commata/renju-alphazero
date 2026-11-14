@@ -2,8 +2,10 @@
 statistics, INVALID policy, sample, budget) with the D1 pairs and factory v2; models are linked from the committed
 full-scale run records; the entry gates (comparable fit, DEVELOPMENT_SIGNAL, time gate on the linked pair); the joint
 reading on the three primary pairs; the replay builds every agent through factory v2."""
+import hashlib
 import json
 from pathlib import Path
+import re
 from tempfile import TemporaryDirectory
 import unittest
 from unittest import mock
@@ -16,6 +18,20 @@ CONTRACT = 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d4/d1-d4-contract.json'
 
 def contract():
     return json.loads((ROOT / CONTRACT).read_text())
+
+
+def as_fixed(c):
+    """The contract as fixed, before any approval: approval commits flip only these flags (the experiment id
+    leaves them out), so tests that walk the stages from the start do not depend on the committed approvals."""
+    return {**c, 'approved': {m: False for m in dd.MODES}}
+
+
+def fixed_file_sha256():
+    """SHA-256 of the committed contract file with its approval flags reset in the text, as it was fixed."""
+    text, n = re.subn(r'("approved": \{\s*"smoke": )(?:true|false)(,\s*"full": )(?:true|false)', r'\1false\2false',
+                      (ROOT / CONTRACT).read_text(encoding='utf-8'), count=1)
+    assert n == 1, 'no approved block in the contract file'
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
 class ContractTest(unittest.TestCase):
@@ -35,7 +51,8 @@ class ContractTest(unittest.TestCase):
         self.assertEqual(c['c5'], base['models']['c5'])
         self.assertEqual(c['comparisons']['primary'], ['wide31001:narrow31001', 'wide31002:narrow31002',
                                                        'wide31003:narrow31003'])
-        self.assertEqual(c['approved'], {'smoke': False, 'full': False})
+        self.assertEqual(set(c['approved']), set(dd.MODES))  # approvals change over time, never the id
+        self.assertEqual(dd.experiment_sha256(c), 'ee06faf80d9b0eda0c11eced10aaf352dda7d869373e5a473e502ab077d2ec74')
         _, _, eid = self.load(c)
         self.assertEqual(eid, dd.experiment_sha256(c))
 
@@ -43,9 +60,10 @@ class ContractTest(unittest.TestCase):
         """Amendment A2: the eligible manifest binds the contract as fixed (approvals false), which equals the
         committed file's SHA while nothing is approved and does not change when an approval is committed."""
         c = contract()
-        self.assertEqual(c['approved'], {'smoke': False, 'full': False})
-        self.assertEqual(dd.contract_base_sha256(c), dd.d4.file_sha256(ROOT / CONTRACT))
-        for approved in ({'smoke': True, 'full': False}, {'smoke': True, 'full': True}):
+        self.assertEqual(dd.contract_base_sha256(c), fixed_file_sha256())
+        manifest = json.loads((ROOT / c['output']['sample']).read_text())
+        self.assertEqual(manifest['contract_sha256'], dd.contract_base_sha256(c))  # committed before any approval
+        for approved in ({'smoke': False, 'full': False}, {'smoke': True, 'full': False}, {'smoke': True, 'full': True}):
             self.assertEqual(dd.contract_base_sha256({**c, 'approved': approved}), dd.contract_base_sha256(c))
         self.assertNotEqual(dd.contract_base_sha256({**c, 'smoke': {'games': 3, 'branches': 8}}),
                             dd.contract_base_sha256(c))
@@ -53,7 +71,7 @@ class ContractTest(unittest.TestCase):
         with mock.patch.object(dd.base, 'inputs', side_effect=lambda cc, sha, cache: seen.append(sha) or ({}, {}, {})):
             dd.inputs({**c, 'approved': {'smoke': True, 'full': False}}, dd.contract_base_sha256(
                 {**c, 'approved': {'smoke': True, 'full': False}}), 'cache')
-        self.assertEqual(seen, [dd.d4.file_sha256(ROOT / CONTRACT)])
+        self.assertEqual(seen, [fixed_file_sha256()])
         self.assertTrue(c['output']['sample'].endswith('/d4/eligible-a2.json'))
 
     def test_prepare_then_approve_then_run_accepts_the_manifest(self):
@@ -101,22 +119,24 @@ class ContractTest(unittest.TestCase):
             'factory v2': lambda c: c['factory'].update(module='analysis.tb_v3_net'),
             'smoke size': lambda c: c['smoke'].update(games=5),
             'hdev: not the baseline': lambda c: c['hdev'].update(rows=1),
-            'smoke before full': lambda c: c['approved'].update(full=True),
+            'smoke before full': lambda c: c['approved'].update(smoke=False, full=True),
             'pinned experiment': lambda c: c['d1_full'].update(experiment_sha256='0' * 64),
             'checkout differs': lambda c: c['sources'][0].update(sha256='0' * 64),
             'keys differ': lambda c: c.update(extra=1),
         }
         for message, change in cases.items():
             with self.subTest(message):
-                c = contract()
+                c = as_fixed(contract())
                 change(c)
                 with self.assertRaisesRegex(ValueError, message):
                     self.load(c)
         with self.assertRaisesRegex(ValueError, 'smoke stage is not approved'):
-            self.load(contract(), 'smoke')
-        c = contract()
+            self.load(as_fixed(contract()), 'smoke')
+        c = as_fixed(contract())
         c['approved']['smoke'] = True
         self.load(c, 'smoke')
+        with self.assertRaisesRegex(ValueError, 'full stage is not approved'):
+            self.load(c, 'full')
 
 
 def write_records(root, c, verdict='CANDIDATE', experiment=None):

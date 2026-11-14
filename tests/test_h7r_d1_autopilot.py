@@ -14,7 +14,7 @@ from unittest import mock
 
 import h7r_d1_autopilot as ap
 import h7r_d1_d4 as dd
-from tests.test_h7r_d1_d4 import write_records
+from tests.test_h7r_d1_d4 import as_fixed, write_records
 
 ROOT = Path(__file__).resolve().parents[1]
 NOW = ap.START + timedelta(hours=8)
@@ -30,8 +30,8 @@ class Sim:
     def __init__(self, root):
         self.root = Path(root)
         (self.root / ap.CONTRACT).parent.mkdir(parents=True)
-        shutil.copy(ROOT / ap.CONTRACT, self.root / ap.CONTRACT)
-        self.c = json.loads((self.root / ap.CONTRACT).read_text())
+        self.c = as_fixed(json.loads((ROOT / ap.CONTRACT).read_text()))  # the delegation starts unapproved
+        (self.root / ap.CONTRACT).write_text(json.dumps(self.c, indent=2, ensure_ascii=False) + '\n')
         write_records(root, self.c)
 
     def decide(self, now=NOW, alive=False):

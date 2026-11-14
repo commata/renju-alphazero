@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import shutil
 from tempfile import TemporaryDirectory
 import unittest
 from unittest import mock
@@ -239,11 +240,24 @@ class ArenaContractTest(unittest.TestCase):
         from hybrid import h7r_eval as ev
         c = draft_contract()
         body = p1.arena_contract_body(c, 'e' * 64, link_record(c), 'l' * 64, ROOT)
+        # Amendment A1 replaced P1 before its Arena and took over P1's Arena seeds (its draft keeps the seeds
+        # section of P1): its committed Arena contract holds exactly these seeds, so it is set aside, and every other
+        # committed contract is still checked.
+        successor = ROOT / 'docs/h7r/contracts/R2-P1-A1-ARENA-1.json'
+        self.assertEqual(ev.contract_seeds(json.loads(successor.read_text())), ev.contract_seeds(body))
         with TemporaryDirectory() as tmp:
             path = Path(tmp) / 'R2-P1-ARENA-1.json'
             ev.check_contract(body, path, ROOT, check_files=False)
             path.write_text(json.dumps(body))
-            ev.load_contract(path, ROOT, check_files=False, contracts_dir=tmp)  # no other contract uses its seeds
+            root = Path(tmp) / 'root'
+            (root / 'docs/h7r/contracts').mkdir(parents=True)
+            for other in (ROOT / 'docs/h7r/contracts').glob('*.json'):
+                if other != successor:
+                    shutil.copy(other, root / 'docs/h7r/contracts' / other.name)
+            for rel in {a['suite']['path'] for a in body['arms']}:  # the suite SHA-256 check reads them
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(ROOT / rel, root / rel)
+            ev.load_contract(path, root, check_files=False, contracts_dir=tmp)  # no other contract uses its seeds
         names = [a['name'] for a in body['arms']]
         self.assertEqual(names[:4], ['O0_T_vs_champion', 'O0_C_vs_champion', 'O1_T_vs_champion', 'O1_C_vs_champion'])
         self.assertEqual(len(names), 8)
