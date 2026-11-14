@@ -1,0 +1,16 @@
+[h7r-p1-policy] step 10/96 val 2.0125 guard top-1 0.5186 (H3 0.5241)
+[h7r-p1-policy] step 19/96 val 2.0014 guard top-1 0.5168 (H3 0.5241)
+[h7r-p1-policy] step 29/96 val 2.0006 guard top-1 0.5177 (H3 0.5241)
+[h7r-p1-policy] step 38/96 val 1.9948 guard top-1 0.5157 (H3 0.5241)
+[h7r-p1-policy] step 48/96 val 1.9901 guard top-1 0.5191 (H3 0.5241)
+[h7r-p1-policy] step 58/96 val 1.9842 guard top-1 0.5183 (H3 0.5241)
+[h7r-p1-policy] step 67/96 val 1.9826 guard top-1 0.5171 (H3 0.5241)
+[h7r-p1-policy] step 77/96 val 1.9842 guard top-1 0.5186 (H3 0.5241)
+[h7r-p1-policy] step 86/96 val 1.9821 guard top-1 0.5178 (H3 0.5241)
+[h7r-p1-policy] step 96/96 val 1.9812 guard top-1 0.5178 (H3 0.5241)
+{
+ "passed": true,
+ "differences": [],
+ "seconds": 108.0
+}
+__EXIT__ 0
