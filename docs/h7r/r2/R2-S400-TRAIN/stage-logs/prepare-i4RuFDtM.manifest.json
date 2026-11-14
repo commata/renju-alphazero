@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "prepare-i4RuFDtM.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-TRAIN/logs/prepare-i4RuFDtM.log",
+   "copy": "docs/h7r/r2/R2-S400-TRAIN/stage-logs/prepare-i4RuFDtM.log",
+   "bytes": 31,
+   "sha256": "23800085dfefee871bcd878fd7f8ce7db82768499f3b6e794cdc541c2dd9f876"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
