@@ -10,11 +10,12 @@ wrote it lives next to the run log instead. One attempt is one run of a desktop 
              file an interrupted run left behind into the interrupted folder (moved, never deleted or overwritten)
              and records its SHA-256 and the attempt that left it.
     finish   after the block wrote ``__EXIT__ <code>`` to the log: the exit code, the log SHA-256, the result's SHA-256
-             (it must be of the attempt's experiment and HEAD and mean that exit code; codes 0 / 2 need a result)
+             (it must be of the attempt's experiment and HEAD and mean that exit code; codes 0 / 2 need a result;
+             every output file the result names by SHA-256 must be an output of the attempt and be that file now)
              and the output files' SHA-256 (with whether each equals the file set aside for it).
     recover  a result exists but is not committed: the attempt that wrote it (finished with its SHA-256, or else the
-             one open attempt of the result's experiment and HEAD, finished now from the exit code the result means).
-             Prints ``<log name> <exit code>``.
+             one open attempt of the result's experiment and HEAD, finished now from the exit code the result means),
+             the output files the result names checked again against their files. Prints ``<log name> <exit code>``.
     copy     a finished attempt into the records folder next to its log copy (whose SHA-256 must be the attempt's).
 
 Nothing here judges a result: the tool's own checks (``verified_gate``, ``verified_rows``) stay the judgement.
@@ -35,6 +36,8 @@ FORMAT = 'h7r-attempt-v1'
 CONTRACT_ID = 'R2-S400-TRAIN'
 CONTRACT = 'docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json'
 NAME = re.compile(r'[a-z]+-[A-Za-z0-9]+')
+RUNS = 'runs/h7r/R2-S400-TRAIN'
+SHA = re.compile(r'[0-9a-f]{64}')
 
 
 def _search_code(r: dict) -> int:
@@ -44,9 +47,20 @@ def _search_code(r: dict) -> int:
     return codes[r['status']]
 
 
-# the stage's result format and the exit code the training tool returns with that result
-STAGES = {'search': ('h7r-s400-train-search-v1', _search_code),
-          'rows': ('h7r-s400-train-rows-v1', lambda r: 0)}
+def _search_named(r: dict) -> dict:
+    if r['status'] != 'SEARCHED':
+        return {}  # S200 not reproduced: no S400 records
+    return {f'{RUNS}/s400.jsonl': (r.get('s400') or {}).get('records_sha256')}
+
+
+def _rows_named(r: dict) -> dict:
+    return {f'{RUNS}/policy_rows_s400.jsonl.gz': r.get('candidate_rows_sha256')}
+
+
+# the stage's result format, the exit code the training tool returns with that result, and the output files the
+# result names by SHA-256 (``h7r_s400_train``: search.json ``s400.records_sha256``, rows.json ``candidate_rows_sha256``)
+STAGES = {'search': ('h7r-s400-train-search-v1', _search_code, _search_named),
+          'rows': ('h7r-s400-train-rows-v1', lambda r: 0, _rows_named)}
 
 
 def sha256(path) -> str:
@@ -105,6 +119,19 @@ def result_view(stage: str, result) -> tuple[dict, int]:
 
 def hashed_outputs(root, a: dict) -> dict:
     return {rel: (sha256(root / rel) if (root / rel).is_file() else None) for rel in a['outputs']}
+
+
+def check_named_outputs(root, a: dict, r: dict) -> None:
+    """Every output file the result names by SHA-256 is an output of the attempt and is that file now."""
+    for rel, want in STAGES[a['stage']][2](r).items():
+        if not (isinstance(want, str) and SHA.fullmatch(want)):
+            raise ValueError(f"{a['result']}: no SHA-256 for {rel}")
+        if rel not in a['outputs']:
+            raise ValueError(f"{a['result']} names {rel}, not an output of attempt {a['name']}")
+        if not (root / rel).is_file():
+            raise ValueError(f"{rel} is missing: {a['result']} records SHA-256 {want[:12]}...")
+        if sha256(root / rel) != want:
+            raise ValueError(f"{rel}: its SHA-256 is not the one {a['result']} records ({want[:12]}...)")
 
 
 def close(root, path: Path, a: dict, by: str) -> None:
@@ -178,6 +205,7 @@ def finish(root: Path, path: Path, code: int, recovered: bool = False) -> dict:
             raise ValueError(f"{a['result']}: not of this attempt's experiment and HEAD")
         if means != code:
             raise ValueError(f"{a['result']} means exit {means}, the run exited {code}")
+        check_named_outputs(root, a, r)
         result_sha = sha256(result)
     elif code in (0, 2):
         raise ValueError(f"exit {code} without {a['result']}: the run did not produce its result")
@@ -198,6 +226,7 @@ def recover(args, root: Path) -> tuple[str, int]:
     if done:
         if done[0]['finish']['exit_code'] != code:
             raise ValueError(f"{args.result} means exit {code}, its attempt recorded {done[0]['finish']['exit_code']}")
+        check_named_outputs(root, done[0], r)  # an output may have changed or gone since the attempt finished
         return done[0]['name'], code
     mine = [(p, a) for p, a in found if a.get('finish') is None and a['result'] == Path(args.result).as_posix()
             and (a['experiment_sha256'], a['head']) == (r.get('experiment_sha256'), (r.get('git') or {}).get('commit'))]

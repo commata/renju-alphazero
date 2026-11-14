@@ -5,6 +5,7 @@ the search order (S200 check, then S400; a difference stops); the provenance of 
 contract. The engine search and the training are stand-ins; the rules and the records are the tool's."""
 import copy
 import gzip
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -542,7 +543,8 @@ elif cmd == 'search':
         body, code = {'status': 'S200_NOT_REPRODUCED'}, 2
     else:
         Path(R, 's400.jsonl').write_text('s400' + chr(10))
-        body, code = {'status': 'SEARCHED'}, 0
+        body, code = {'status': 'SEARCHED',
+                      's400': {'records_sha256': hashlib.sha256(Path(R, 's400.jsonl').read_bytes()).hexdigest()}}, 0
 else:  # rows: the candidate file first, then the record (the order of the real tool)
     cand = Path(R, 'policy_rows_s400.jsonl.gz')
     if cand.exists():
@@ -555,6 +557,9 @@ else:  # rows: the candidate file first, then the record (the order of the real 
         print('STOP: ValueError: a read file changed: nothing is published'); sys.exit(1)
     body, code = {'candidate_rows_sha256': hashlib.sha256(cand.read_bytes()).hexdigest()}, 0
 Path(D, cmd + '.json').write_text(json.dumps({'format': 'h7r-s400-train-' + cmd + '-v1', **stamp, **body}))
+if os.environ.get('S5_TAMPER') == cmd:  # the output the result names changes after the result is written
+    out = Path(R, 's400.jsonl' if cmd == 'search' else 'policy_rows_s400.jsonl.gz')
+    out.write_bytes(out.read_bytes() + b'x')
 if os.environ.get('S5_KILL') == cmd + ':after':
     kill()
 print(cmd, code)
@@ -832,6 +837,53 @@ class BlockTest(unittest.TestCase):
         self.assertEqual((self.work / aside['to']).read_bytes(), b'partial')
         self.assertFalse(tmp.exists())
 
+    OUTPUT = {'search': 'runs/h7r/R2-S400-TRAIN/s400.jsonl',
+              'rows': 'runs/h7r/R2-S400-TRAIN/policy_rows_s400.jsonl.gz'}
+    BLOCK = {'search': 's5-S', 'rows': 's5-R'}
+
+    def before(self, stage):
+        self.through('s5-1', 's5-G', *(('s5-S',) if stage == 'rows' else ()))
+
+    def check_output_changed_after_the_run(self, stage):
+        self.before(stage)
+        before = self.head()
+        code, out = self.bash(self.BLOCK[stage], S5_TAMPER=stage)
+        self.assertEqual(code, 1, out)
+        self.assertIn(f"{self.OUTPUT[stage]}: its SHA-256 is not the one {self.D}/{stage}.json records", out)
+        self.assertEqual((self.head(), git(self.work, 'diff', '--cached', '--name-only')), (before, ''))
+        [a] = [json.loads(p.read_text()) for p in (self.work / self.R / 'logs').glob(f'{stage}-*.attempt.json')]
+        self.assertIsNone(a['finish'])  # no success recorded
+        code, out = self.bash(self.BLOCK[stage], S5_FORBID='1')  # the next run recovers it: refused again
+        self.assertEqual(code, 1, out)
+        self.assertIn('its SHA-256 is not the one', out)
+        self.assertEqual((self.head(), git(self.work, 'diff', '--cached', '--name-only')), (before, ''))
+
+    def test_search_output_changed_after_the_run_is_not_recorded(self):
+        self.check_output_changed_after_the_run('search')
+
+    def test_rows_output_changed_after_the_run_is_not_recorded(self):
+        self.check_output_changed_after_the_run('rows')
+
+    def check_output_gone_before_the_commit(self, stage):
+        self.before(stage)
+        before = self.head()
+        code, out = self.bash(self.BLOCK[stage], S5_KILL_AT_COMMIT='1')
+        self.assertNotEqual(code, 0, out)
+        staged = git(self.work, 'diff', '--cached', '--name-only')
+        self.assertIn(f'{self.D}/{stage}.json', staged)
+        (self.work / self.OUTPUT[stage]).unlink()
+        code, out = self.bash(self.BLOCK[stage], S5_FORBID='1')
+        self.assertEqual(code, 1, out)
+        self.assertIn(f'{self.OUTPUT[stage]} is missing: {self.D}/{stage}.json records SHA-256', out)
+        self.assertEqual((self.head(), git(self.work, 'diff', '--cached', '--name-only')), (before, staged))
+        self.assertEqual(git(self.origin, 'rev-parse', 'feat/h7-c1'), before)
+
+    def test_search_output_gone_before_the_commit_is_not_recovered(self):
+        self.check_output_gone_before_the_commit('search')
+
+    def test_rows_output_gone_before_the_commit_is_not_recovered(self):
+        self.check_output_gone_before_the_commit('rows')
+
     def test_a_running_block_is_refused(self):
         import fcntl
 
@@ -867,8 +919,11 @@ class AttemptToolTest(unittest.TestCase):
         self.log = w / 'logs/search-Ab12Cd34.log'
         self.log.write_text('run' + chr(10))
         self.assertEqual(att.main(['--root', str(w), 'start', '--stage', 'search', '--log', 'logs/search-Ab12Cd34.log',
-                                   '--result', 'search.json', '--contract', 'c.json']), 0)
+                                   '--result', 'search.json', '--contract', 'c.json',
+                                   '--output', f'{st.RUNS}/s200-check.jsonl', '--output', self.S400]), 0)
         self.path = w / 'logs/search-Ab12Cd34.attempt.json'
+
+    S400 = f'{st.RUNS}/s400.jsonl'
 
     def result(self, **over):
         body = {'format': 'h7r-s400-train-search-v1', 'status': 'SEARCHED',
@@ -895,6 +950,68 @@ class AttemptToolTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not of this attempt's experiment and HEAD"):
             self.att.finish(self.root, self.path, 0)
         self.assertIsNone(self.att.load(self.path)['finish'])
+
+    def s400(self, data=b's400'):
+        path = self.root / self.S400
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return hashlib.sha256(data).hexdigest()
+
+    def test_finish_checks_the_outputs_the_result_names(self):
+        with self.log.open('a') as f:
+            f.write('__EXIT__ 0' + chr(10))
+        recorded = self.s400()
+        self.s400(b'changed')
+        self.result(s400={'records_sha256': recorded})
+        with self.assertRaisesRegex(ValueError, f'{self.S400}: its SHA-256 is not the one search.json records'):
+            self.att.finish(self.root, self.path, 0)
+        (self.root / self.S400).unlink()
+        with self.assertRaisesRegex(ValueError, f'{self.S400} is missing'):
+            self.att.finish(self.root, self.path, 0)
+        self.result()  # SEARCHED without the S400 records' SHA-256
+        with self.assertRaisesRegex(ValueError, f'no SHA-256 for {self.S400}'):
+            self.att.finish(self.root, self.path, 0)
+        self.assertIsNone(self.att.load(self.path)['finish'])
+        self.result(s400={'records_sha256': self.s400()})
+        f = self.att.finish(self.root, self.path, 0)['finish']
+        self.assertEqual((f['exit_code'], f['outputs'][self.S400]), (0, recorded))
+
+    def test_a_not_reproduced_search_names_no_output(self):
+        with self.log.open('a') as f:
+            f.write('__EXIT__ 2' + chr(10))
+        self.result(status='S200_NOT_REPRODUCED')
+        self.assertEqual(self.att.finish(self.root, self.path, 2)['finish']['exit_code'], 2)
+
+    def test_a_named_output_must_be_an_output_of_the_attempt(self):
+        log = self.root / 'logs/rows-Ab12Cd34.log'
+        log.write_text('run' + chr(10) + '__EXIT__ 0' + chr(10))
+        self.assertEqual(self.att.main(['--root', str(self.root), 'start', '--stage', 'rows', '--log',
+                                        'logs/rows-Ab12Cd34.log', '--result', 'rows.json', '--contract', 'c.json']), 0)
+        cand = self.root / st.RUNS / 'policy_rows_s400.jsonl.gz'
+        cand.parent.mkdir(parents=True, exist_ok=True)
+        cand.write_bytes(b'rows')
+        (self.root / 'rows.json').write_text(json.dumps({
+            'format': 'h7r-s400-train-rows-v1', 'experiment_sha256': p1.experiment_sha256(self.c),
+            'git': {'commit': git(self.root, 'rev-parse', 'HEAD')}, 'candidate_rows_sha256': p1.file_sha256(cand)}))
+        with self.assertRaisesRegex(ValueError, f'rows.json names {st.RUNS}/policy_rows_s400.jsonl.gz, not an output '
+                                                'of attempt rows-Ab12Cd34'):
+            self.att.finish(self.root, self.root / 'logs/rows-Ab12Cd34.attempt.json', 0)
+
+    def test_recover_checks_the_outputs_of_a_finished_attempt(self):
+        from types import SimpleNamespace
+
+        with self.log.open('a') as f:
+            f.write('__EXIT__ 0' + chr(10))
+        self.result(s400={'records_sha256': self.s400()})
+        self.att.finish(self.root, self.path, 0)
+        args = SimpleNamespace(stage='search', log_dir='logs', result='search.json')
+        self.assertEqual(self.att.recover(args, self.root), ('search-Ab12Cd34', 0))
+        (self.root / self.S400).unlink()
+        with self.assertRaisesRegex(ValueError, f'{self.S400} is missing'):
+            self.att.recover(args, self.root)
+        self.s400(b'changed')
+        with self.assertRaisesRegex(ValueError, 'its SHA-256 is not the one'):
+            self.att.recover(args, self.root)
 
     def test_recover_needs_the_attempt_that_wrote_the_result(self):
         from types import SimpleNamespace
