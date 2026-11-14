@@ -196,6 +196,14 @@
 - 대조군: A1 T 3개(20261024, 20261111, 20261112)의 checkpoint·metadata SHA가 각 A1 seed 기록과 같다.
 - 재탐색 범위: 936게임, 적격 18,965국면(S400-PRE prepare의 학습 범위와 같다). S200 초기 재현 5게임은 S400-PRE 표본의 처음 5게임과 같다.
 
+### 8.4 gate: PASS (`2e894cf`, 2026-11-14)
+
+- 실행 HEAD `5686713`(clean, gate 승인 커밋), 실험 `67c6ba3c8081`(변하지 않음), 계약 파일 SHA `4ff14ab1f695`. 로그 `gate-2HbG6QKO.log`는 manifest SHA(`463bc99ba309`)와 같고 `__EXIT__ 0`, 결과의 `log_name`과 같다.
+- 판정: `passed: true`, `differences: []`. cloud에서 커밋된 A1 T-20261024 seed 기록과 다시 비교해도 차이가 0이다(`a1.differences`). A1 seed 기록 SHA도 계약과 같다.
+- 재현된 값: 초기 상태 `093393…`, 선택 상태 `58429752f6d9`(A1과 같음), 고정 국면 5,519개 log-prob SHA `6540c228a72b`, 96 step 중 step 96 선택(`CANDIDATE`), val objective 1.9812, guard top-1 0.5178(H3 0.5241, 하락 0.0063), 학습 24,077행 / val 1,423행.
+- 실행 설정: A1 gate 설정과 같다(torch 2.14.0+cu130, CUDA 13.0, cuDNN 92400, RTX 5070, deterministic algorithms, cuDNN deterministic, benchmark off, TF32 matmul off, threads 8, `CUBLAS_WORKSPACE_CONFIG=:4096:8`). 시간은 108.0초(A1 91.1초); 시간은 비교 항목이 아니다.
+- cloud에는 `runs/`의 A1 T checkpoint가 없어서 `verified_gate`의 checkpoint 파일 SHA 검사만 계약 SHA로 대신했다. 데스크톱의 search·train은 시작할 때 이 검사를 실제 파일로 다시 한다.
+
 ## 9. 데스크톱 실행 (승인 뒤에만)
 
 - s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤에 실행한다. search, train, Arena 블록은 해당 단계 승인 전에 추가한다.
