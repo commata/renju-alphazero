@@ -510,23 +510,55 @@ class RowsFlowTest(RepoBase):
                     st.s400_records(empty, scope, digest(ident400))
 
 
-STUB = """import json, os, sys
+STUB = """import gzip, hashlib, json, os, signal, subprocess, sys
 from pathlib import Path
 D = 'docs/h7r/r2/R2-S400-TRAIN'
+R = 'runs/h7r/R2-S400-TRAIN'
 cmd = sys.argv[1]
-log = sys.argv[sys.argv.index('--log-name') + 1]
+log = sys.argv[sys.argv.index('--log-name') + 1] if '--log-name' in sys.argv else None
+def kill():  # the whole block dies (power loss, a closed terminal)
+    sys.stdout.flush()
+    os.killpg(os.getpgid(0), signal.SIGKILL)
 if os.environ.get('S5_FORBID'):
     print('STOP: must not run again'); sys.exit(9)
 if cmd == 'gate' and os.environ.get('CUBLAS_WORKSPACE_CONFIG') != ':4096:8':
     print('STOP: CUBLAS_WORKSPACE_CONFIG'); sys.exit(7)
 if os.environ.get('S5_FAIL') == cmd:
     print('STOP: ValueError: stand-in failure'); sys.exit(1)
-Path(D).mkdir(parents=True, exist_ok=True)
-passed = not (cmd == 'gate' and os.environ.get('S5_GATE_FAIL'))
-Path(D, cmd + '.json').write_text(json.dumps({'format': 'h7r-s400-train-' + cmd + '-v1', 'passed': passed,
-                                               'log_name': log}))
-print(cmd, passed)
-sys.exit(0 if passed else 2)
+if os.environ.get('S5_KILL') == cmd + ':before':
+    kill()
+c = json.loads(Path(D, 's400-train-contract.json').read_text())
+eid = hashlib.sha256(json.dumps({k: v for k, v in c.items() if k != 'approved'}, sort_keys=True,
+                                separators=(',', ':')).encode()).hexdigest()
+commit = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
+stamp = {'experiment_sha256': eid, 'git': {'commit': commit, 'dirty': False}}
+if cmd in ('prepare', 'gate'):
+    passed = not (cmd == 'gate' and os.environ.get('S5_GATE_FAIL'))
+    body, code = {'passed': passed, 'log_name': log}, 0 if passed else 2
+elif cmd == 'search':
+    Path(R).mkdir(parents=True, exist_ok=True)
+    Path(R, 's200-check.jsonl').write_text('s200' + chr(10))
+    if os.environ.get('S5_S200_FAIL'):
+        body, code = {'status': 'S200_NOT_REPRODUCED'}, 2
+    else:
+        Path(R, 's400.jsonl').write_text('s400' + chr(10))
+        body, code = {'status': 'SEARCHED'}, 0
+else:  # rows: the candidate file first, then the record (the order of the real tool)
+    cand = Path(R, 'policy_rows_s400.jsonl.gz')
+    if cand.exists():
+        print('STOP: ValueError: ' + str(cand) + ' exists: never overwritten'); sys.exit(1)
+    with gzip.GzipFile(cand, 'wb', mtime=0) as f:
+        f.write(b'{"row": 1}' + bytes([10]))
+    if os.environ.get('S5_ROWS_ABORT') == 'kill':
+        kill()
+    if os.environ.get('S5_ROWS_ABORT') == 'exit':
+        print('STOP: ValueError: a read file changed: nothing is published'); sys.exit(1)
+    body, code = {'candidate_rows_sha256': hashlib.sha256(cand.read_bytes()).hexdigest()}, 0
+Path(D, cmd + '.json').write_text(json.dumps({'format': 'h7r-s400-train-' + cmd + '-v1', **stamp, **body}))
+if os.environ.get('S5_KILL') == cmd + ':after':
+    kill()
+print(cmd, code)
+sys.exit(code)
 """
 
 
@@ -546,7 +578,7 @@ class BlockTest(unittest.TestCase):
         for k, v in (('user.email', 't@t'), ('user.name', 't')):
             git(w, 'config', k, v)
         shutil.copy(ROOT / '.gitignore', w / '.gitignore')
-        for rel in ('scripts/h7r_d4_records.py', 'src/hybrid/h7r_ledger.py'):
+        for rel in ('scripts/h7r_d4_records.py', 'src/hybrid/h7r_ledger.py', 'scripts/h7r_attempts.py'):
             (w / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(ROOT / rel, w / rel)
         (w / 'src/hybrid/__init__.py').write_text('')
@@ -554,22 +586,33 @@ class BlockTest(unittest.TestCase):
         (w / 'scripts/h7r_s400_train.py').write_text(STUB)
         (w / '.venv/bin').mkdir(parents=True)
         (w / '.venv/bin/activate').write_text('')
+        self.contract = {'format': 'stand-in', 'contract_id': 'R2-S400-TRAIN', 'note': 'block test',
+                         'approved': {s: True for s in st.STAGES}}
+        (w / 'docs/h7r/r2/R2-S400-TRAIN').mkdir(parents=True)
+        (w / 'docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json').write_text(json.dumps(self.contract))
+        hook = w / '.git/hooks/pre-commit'  # S5_KILL_AT_COMMIT: the block dies with its records staged
+        hook.write_text('#!/bin/sh' + chr(10) + '[ -z "$S5_KILL_AT_COMMIT" ] || kill -9 0' + chr(10))
+        hook.chmod(0o755)
         git(w, 'add', '-A')
         git(w, 'commit', '-qm', 'init')
         git(w, 'remote', 'add', 'origin', str(self.origin))
         git(w, 'push', '-q', 'origin', 'feat/h7-c1')
         doc = (ROOT / 'docs/h7r/r2/R2-S400-TRAIN-draft.md').read_text()
         blocks = re.findall(r'```bash' + chr(10) + r'(.*?)```', doc, re.S)
-        self.assertEqual(len(blocks), 2)
-        self.blocks = dict(zip(('s5-1', 's5-G'), (b.replace('~/renju-h6', w.as_posix()) for b in blocks)))
+        self.assertEqual(len(blocks), 4)
+        self.blocks = dict(zip(('s5-1', 's5-G', 's5-S', 's5-R'),
+                               (b.replace('~/renju-h6', w.as_posix()) for b in blocks)))
         self.D = 'docs/h7r/r2/R2-S400-TRAIN'
+        self.R = 'runs/h7r/R2-S400-TRAIN'
+        self.cand = f'{self.R}/policy_rows_s400.jsonl.gz'
 
     def bash(self, name, **env):
         import os
         import subprocess
         e = {k: v for k, v in os.environ.items() if k != 'CUBLAS_WORKSPACE_CONFIG'}
         e = {**e, 'PYTHONDONTWRITEBYTECODE': '1', **env}
-        r = subprocess.run(['bash', '-c', self.blocks[name]], cwd=self.work, capture_output=True, text=True, env=e)
+        r = subprocess.run(['bash', '-c', self.blocks[name]], cwd=self.work, capture_output=True, text=True, env=e,
+                           start_new_session=True)  # a stand-in kill takes the block's process group only
         return r.returncode, r.stdout + r.stderr
 
     def files(self, rel):
@@ -619,6 +662,262 @@ class BlockTest(unittest.TestCase):
         code, out = self.bash('s5-G', S5_FORBID='1')
         self.assertEqual(code, 1, out)
         self.assertIn('disagree on the exit code', out)
+
+
+    # --- search and rows: the attempt records (section 9.1) ---------------------------------------------------------
+
+    def attempts(self, stage):
+        """The committed attempt records of a stage, oldest first."""
+        out = [json.loads((self.work / f).read_text()) for f in self.files(f'{self.D}/stage-logs')
+               if f.endswith('.attempt.json') and Path(f).name.startswith(stage + '-')]
+        # a closed attempt comes before the one that closed it (the start times have one-second resolution)
+        return sorted(out, key=lambda a: (a['started'], a['finish'].get('closed_by') is None))
+
+    def sha(self, rel):
+        return p1.file_sha256(self.work / rel)
+
+    def head(self):
+        return git(self.work, 'rev-parse', 'HEAD')
+
+    def through(self, *blocks):
+        for b in blocks:
+            code, out = self.bash(b)
+            self.assertEqual(code, 0, out)
+
+    def assert_pushed(self):
+        self.assertEqual(self.head(), git(self.origin, 'rev-parse', 'feat/h7-c1'))
+        self.assertEqual(git(self.work, 'status', '--porcelain', '--untracked-files=no'), '')
+
+    def test_search_then_rows(self):
+        self.through('s5-1', 's5-G')
+        code, out = self.bash('s5-R')
+        self.assertEqual(code, 1)
+        self.assertIn('search is not recorded', out)
+        before = self.head()
+        self.through('s5-S')
+        [a] = self.attempts('search')
+        self.assertEqual((a['stage'], a['head'], a['experiment_sha256']),
+                         ('search', before, p1.experiment_sha256(self.contract)))
+        self.assertEqual(a['contract_file_sha256'], self.sha(f'{self.D}/s400-train-contract.json'))
+        f = a['finish']
+        self.assertEqual((f['state'], f['exit_code'], f['recovered']), ('exited', 0, False))
+        self.assertEqual(f['result_sha256'], self.sha(f'{self.D}/search.json'))
+        self.assertEqual(f['log_sha256'], self.sha(f"{self.D}/stage-logs/{a['name']}.log"))
+        self.assertEqual(f['outputs'], {f'{self.R}/s200-check.jsonl': self.sha(f'{self.R}/s200-check.jsonl'),
+                                        f'{self.R}/s400.jsonl': self.sha(f'{self.R}/s400.jsonl')})
+        self.assertIn('search exit 0', git(self.work, 'log', '-1', '--format=%s'))
+        self.assert_pushed()
+        code, out = self.bash('s5-S')
+        self.assertEqual(code, 1)
+        self.assertIn('already recorded', out)
+        self.through('s5-R')
+        [r] = self.attempts('rows')
+        self.assertEqual(r['set_aside'], [])
+        self.assertEqual(r['finish']['outputs'], {self.cand: self.sha(self.cand)})
+        self.assertEqual(r['finish']['result_sha256'], self.sha(f'{self.D}/rows.json'))
+        self.assert_pushed()
+
+    def test_s200_not_reproduced_is_recorded_and_rows_refuse(self):
+        self.through('s5-1', 's5-G')
+        code, out = self.bash('s5-S', S5_S200_FAIL='1')
+        self.assertEqual(code, 2, out)
+        self.assertIn('search exit 2', git(self.work, 'log', '-1', '--format=%s'))
+        [a] = self.attempts('search')
+        self.assertEqual(a['finish']['exit_code'], 2)
+        self.assert_pushed()
+        before = self.head()
+        code, out = self.bash('s5-R')
+        self.assertEqual(code, 1)
+        self.assertIn('search ended S200_NOT_REPRODUCED', out)
+        self.assertEqual(self.head(), before)
+        self.assertEqual(list((self.work / self.R / 'logs').glob('rows-*')), [])
+
+    def test_interrupted_after_staging_is_recorded_without_a_new_run(self):
+        self.through('s5-1', 's5-G')
+        before = self.head()
+        code, out = self.bash('s5-S', S5_KILL_AT_COMMIT='1')
+        self.assertNotEqual(code, 0, out)
+        self.assertEqual(self.head(), before)
+        self.assertIn(f'{self.D}/search.json', git(self.work, 'diff', '--cached', '--name-only'))
+        code, out = self.bash('s5-S', S5_FORBID='1')
+        self.assertEqual(code, 0, out)
+        [a] = self.attempts('search')
+        self.assertEqual((a['finish']['exit_code'], a['finish']['recovered']), (0, False))
+        self.assertTrue(self.files(f'{self.D}/search.json'))
+        self.assert_pushed()
+
+    def test_killed_after_the_result_is_recovered_from_the_open_attempt(self):
+        self.through('s5-1', 's5-G')
+        code, out = self.bash('s5-S', S5_KILL='search:after')
+        self.assertNotEqual(code, 0, out)
+        [open_] = [json.loads(p.read_text()) for p in (self.work / self.R / 'logs').glob('search-*.attempt.json')]
+        self.assertIsNone(open_['finish'])
+        code, out = self.bash('s5-S', S5_FORBID='1')
+        self.assertEqual(code, 0, out)
+        [a] = self.attempts('search')
+        self.assertEqual((a['name'], a['finish']['exit_code'], a['finish']['recovered']), (open_['name'], 0, True))
+        log = (self.work / self.D / 'stage-logs' / f"{a['name']}.log").read_text().splitlines()
+        self.assertEqual(log[-2:], [f'Recovered exit code from {self.D}/search.json', '__EXIT__ 0'])
+        self.assert_pushed()
+
+    def test_killed_before_the_result_is_closed_and_recorded_with_the_next_run(self):
+        self.through('s5-1', 's5-G')
+        code, out = self.bash('s5-S', S5_KILL='search:before')
+        self.assertNotEqual(code, 0, out)
+        self.assertFalse((self.work / self.D / 'search.json').exists())
+        self.through('s5-S')
+        old, new = self.attempts('search')
+        self.assertEqual((old['finish']['state'], old['finish']['exit_code'], old['finish']['closed_by']),
+                         ('interrupted', None, new['name']))
+        log = (self.work / self.D / 'stage-logs' / f"{old['name']}.log").read_text().splitlines()
+        self.assertTrue(log[-1].startswith('__INTERRUPTED__'))
+        self.assertEqual((new['finish']['state'], new['finish']['exit_code']), ('exited', 0))
+        self.assert_pushed()
+
+    def candidate_only(self, abort):
+        """An interrupted rows run: the candidate file written, rows.json not."""
+        self.through('s5-1', 's5-G', 's5-S')
+        code, out = self.bash('s5-R', S5_ROWS_ABORT=abort)
+        self.assertNotEqual(code, 0, out)
+        self.assertTrue((self.work / self.cand).exists())
+        self.assertFalse((self.work / self.D / 'rows.json').exists())
+        return self.sha(self.cand)
+
+    def check_set_aside(self, left_sha):
+        before, staged = self.head(), git(self.work, 'diff', '--cached', '--name-only')
+        code, out = self.bash('s5-R')
+        self.assertEqual(code, 1)
+        self.assertIn('an interrupted rows run left', out)
+        self.assertIn(f'export S5_SET_ASIDE={left_sha[:12]}', out)
+        self.assertEqual((self.head(), git(self.work, 'diff', '--cached', '--name-only'), self.sha(self.cand)),
+                         (before, staged, left_sha))  # nothing changed
+        code, out = self.bash('s5-R', S5_SET_ASIDE='0' * 12)
+        self.assertEqual(code, 1)
+        self.assertEqual(self.sha(self.cand), left_sha)
+        code, out = self.bash('s5-R', S5_SET_ASIDE=left_sha[:12])
+        self.assertEqual(code, 0, out)
+        [new] = [a for a in self.attempts('rows') if a['set_aside']]
+        older = [a for a in self.attempts('rows') if not a['set_aside']]
+        [aside] = new['set_aside']
+        self.assertEqual(aside['to'], f"{self.R}/interrupted/{new['name']}.policy_rows_s400.jsonl.gz")
+        self.assertEqual((aside['from'], aside['sha256'], self.sha(aside['to'])), (self.cand, left_sha, left_sha))
+        self.assertEqual(aside['left_by'], older[-1]['name'])
+        self.assertEqual(older[-1]['finish']['outputs'], {self.cand: left_sha})
+        self.assertEqual(new['finish']['same_as_set_aside'], {self.cand: True})
+        self.assertEqual(new['finish']['outputs'], {self.cand: left_sha})
+        self.assertTrue(self.files(f'{self.D}/rows.json'))
+        self.assert_pushed()
+        return older, new
+
+    def test_candidate_only_after_a_kill_is_kept_and_set_aside_on_request(self):
+        left = self.candidate_only('kill')
+        [old], new = self.check_set_aside(left)
+        self.assertEqual((old['finish']['state'], old['finish']['closed_by']), ('interrupted', new['name']))
+
+    def test_candidate_only_after_a_failed_publish_is_kept_and_set_aside_on_request(self):
+        left = self.candidate_only('exit')
+        self.assertIn('rows exit 1', git(self.work, 'log', '-1', '--format=%s'))  # the failure is recorded
+        [old], new = self.check_set_aside(left)
+        self.assertEqual((old['finish']['state'], old['finish']['exit_code']), ('exited', 1))
+
+    def test_a_partial_temporary_file_is_set_aside(self):
+        self.through('s5-1', 's5-G', 's5-S')
+        tmp = self.work / f'{self.cand}.tmp'
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        tmp.write_bytes(b'partial')
+        self.through('s5-R')
+        [r] = self.attempts('rows')
+        [aside] = r['set_aside']
+        self.assertEqual((aside['from'], aside['left_by']), (f'{self.cand}.tmp', None))
+        self.assertEqual((self.work / aside['to']).read_bytes(), b'partial')
+        self.assertFalse(tmp.exists())
+
+    def test_a_running_block_is_refused(self):
+        import fcntl
+
+        self.through('s5-1', 's5-G')
+        lock = self.work / self.R / 'logs/search.lock'
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        with lock.open('w') as held:
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            code, out = self.bash('s5-S')
+        self.assertEqual(code, 1)
+        self.assertIn('another search block is running', out)
+        self.assertFalse((self.work / self.D / 'search.json').exists())
+
+
+class AttemptToolTest(unittest.TestCase):
+    """``scripts/h7r_attempts.py`` refusals the blocks rely on."""
+
+    def setUp(self):
+        import h7r_attempts as att
+
+        self.att = att
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        w = self.root = Path(self.tmp.name)
+        git(w, 'init', '-q')
+        for k, v in (('user.email', 't@t'), ('user.name', 't')):
+            git(w, 'config', k, v)
+        self.c = {'contract_id': 'R2-S400-TRAIN', 'x': 1, 'approved': {'search': True}}
+        (w / 'c.json').write_text(json.dumps(self.c))
+        git(w, 'add', '-A')
+        git(w, 'commit', '-qm', 'init')
+        (w / 'logs').mkdir()
+        self.log = w / 'logs/search-Ab12Cd34.log'
+        self.log.write_text('run' + chr(10))
+        self.assertEqual(att.main(['--root', str(w), 'start', '--stage', 'search', '--log', 'logs/search-Ab12Cd34.log',
+                                   '--result', 'search.json', '--contract', 'c.json']), 0)
+        self.path = w / 'logs/search-Ab12Cd34.attempt.json'
+
+    def result(self, **over):
+        body = {'format': 'h7r-s400-train-search-v1', 'status': 'SEARCHED',
+                'experiment_sha256': p1.experiment_sha256(self.c), 'git': {'commit': git(self.root, 'rev-parse', 'HEAD')}}
+        (self.root / 'search.json').write_text(json.dumps({**body, **over}))
+
+    def test_the_experiment_id_is_the_tool_s(self):
+        real = json.loads((ROOT / st.D / 's400-train-contract.json').read_text(encoding='utf-8'))
+        self.assertEqual(self.att.experiment_sha256(real), p1.experiment_sha256(real))
+        self.assertTrue(self.att.experiment_sha256(real).startswith('67c6ba3c8081'))
+        self.assertEqual(self.att.load(self.path)['experiment_sha256'], p1.experiment_sha256(self.c))
+
+    def test_finish_refuses_inconsistent_ends(self):
+        with self.log.open('a') as f:
+            f.write('__EXIT__ 0' + chr(10))
+        with self.assertRaisesRegex(ValueError, 'did not produce its result'):
+            self.att.finish(self.root, self.path, 0)
+        with self.assertRaisesRegex(ValueError, 'last line is not __EXIT__ 1'):
+            self.att.finish(self.root, self.path, 1)
+        self.result(status='S200_NOT_REPRODUCED')
+        with self.assertRaisesRegex(ValueError, 'means exit 2'):
+            self.att.finish(self.root, self.path, 0)
+        self.result(git={'commit': '0' * 40})
+        with self.assertRaisesRegex(ValueError, "not of this attempt's experiment and HEAD"):
+            self.att.finish(self.root, self.path, 0)
+        self.assertIsNone(self.att.load(self.path)['finish'])
+
+    def test_recover_needs_the_attempt_that_wrote_the_result(self):
+        from types import SimpleNamespace
+
+        args = SimpleNamespace(stage='search', log_dir='logs', result='search.json')
+        self.result(experiment_sha256='f' * 64)
+        with self.assertRaisesRegex(ValueError, '0 open attempts'):
+            self.att.recover(args, self.root)
+        self.result()
+        with self.log.open('a') as f:
+            f.write('__EXIT__ 1' + chr(10))
+        with self.assertRaisesRegex(ValueError, 'disagree on the exit code'):
+            self.att.recover(args, self.root)
+        self.assertIsNone(self.att.load(self.path)['finish'])
+
+    def test_start_never_runs_over_a_result(self):
+        self.result()
+        log = self.root / 'logs/search-Zz99Yy88.log'
+        log.write_text('')
+        self.assertEqual(self.att.main(['--root', str(self.root), 'start', '--stage', 'search', '--log',
+                                        'logs/search-Zz99Yy88.log', '--result', 'search.json', '--contract',
+                                        'c.json']), 1)
+        self.assertIsNone(self.att.load(self.path)['finish'])  # the open attempt is left for recover
 
 
 if __name__ == '__main__':

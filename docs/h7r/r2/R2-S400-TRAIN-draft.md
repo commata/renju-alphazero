@@ -204,9 +204,22 @@
 - 실행 설정: A1 gate 설정과 같다(torch 2.14.0+cu130, CUDA 13.0, cuDNN 92400, RTX 5070, deterministic algorithms, cuDNN deterministic, benchmark off, TF32 matmul off, threads 8, `CUBLAS_WORKSPACE_CONFIG=:4096:8`). 시간은 108.0초(A1 91.1초); 시간은 비교 항목이 아니다.
 - cloud에는 `runs/`의 A1 T checkpoint가 없어서 `verified_gate`의 checkpoint 파일 SHA 검사만 계약 SHA로 대신했다. 데스크톱의 search·train은 시작할 때 이 검사를 실제 파일로 다시 한다.
 
+### 8.5 search·rows 블록 준비 (search 미승인, 2026-11-14)
+
+- 로그 연결 방식: sidecar 실행 기록(§9.1, `scripts/h7r_attempts.py`). 학습 도구와 계약은 바꾸지 않았다. 실험 SHA는 `67c6ba3c8081`로 그대로이고, 기존 prepare·gate 기록이 그대로 이어진다. 승인 플래그는 prepare·gate만 true이다.
+- 블록 테스트(`tests/test_h7r_s400_train.py`의 `BlockTest`, 실제 bash와 임시 저장소, 도구는 대역)가 다루는 경우:
+  - 정상 완료(search 뒤 rows)
+  - S200 재현 실패(exit 2 기록, rows는 아무것도 쓰지 않고 멈춤)
+  - 스테이징 뒤 중단(다시 돌리지 않고 커밋)
+  - 결과를 쓴 뒤 종료 줄 전에 중단(열린 실행 기록에서 복구)
+  - 결과 전에 중단(다음 실행이 닫고 함께 기록)
+  - 후보 gzip만 남은 중단(프로세스 종료, Guard 실패 exit 1 두 경우: 파일 유지, 안내 후 멈춤, 틀린 SHA 거부, 확인 뒤 옮기고 다시 생성, 같은 파일 확인)
+  - 쓰다 만 `.tmp`
+  - 같은 단계 블록의 동시 실행
+
 ## 9. 데스크톱 실행 (승인 뒤에만)
 
-- s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤에 실행한다. search, train, Arena 블록은 해당 단계 승인 전에 추가한다.
+- s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤, s5-S와 s5-R은 `approved.search` 뒤에 실행한다(rows 명령도 search 승인으로 돈다). train, Arena 블록은 해당 단계 승인 전에 추가한다.
 - 블록은 R2-S400-PRE의 블록과 같은 방식이다.
   - 결과(`prepare.json`, `gate.json`)에 실행 로그 이름(`log_name`)을 남긴다.
   - 다시 실행할 때: 결과가 HEAD에 커밋되어 있으면 멈춘다. 결과가 커밋 전이면(스테이징만 된 경우 포함) 다시 돌리지 않고, 결과가 뜻하는 종료 코드와 로그의 `__EXIT__`이 같은지 확인한 뒤 함께 커밋한다. 로그가 없거나 두 종료 코드가 다르면 멈춘다.
@@ -384,3 +397,186 @@ PY
 )
 ```
 
+
+### 9.1 search와 rows: 실행 기록(sidecar)
+
+- search와 rows의 결과(`search.json`, `rows.json`)에는 로그 이름이 없다. 학습 도구의 소스는 계약에 SHA로 고정되어 있어서(실험 SHA `67c6ba3c8081`), 도구를 바꾸지 않고 블록이 로그 옆에 실행 기록을 따로 남긴다(`scripts/h7r_attempts.py`; 계약의 sources가 아니므로 실험 SHA와 기존 prepare·gate 기록은 그대로다).
+  - 실행 전(`start`): 단계, 계약의 실험 SHA와 파일 SHA, HEAD, 로그 경로, 결과 경로, 해시할 출력 파일을 `runs/h7r/R2-S400-TRAIN/logs/<단계>-XXXXXXXX.attempt.json`에 쓴다.
+  - 실행 뒤(`finish`): 로그에 `__EXIT__ <코드>`를 쓴 다음 종료 코드, 로그 SHA, 결과 SHA, 출력 파일 SHA를 더한다. 결과는 그 기록의 실험 SHA·HEAD와 같아야 하고, 결과가 뜻하는 종료 코드(search: `SEARCHED` 0, `S200_NOT_REPRODUCED` 2; rows: 0)가 실제 종료 코드와 같아야 한다. 종료 코드 0이나 2인데 결과가 없으면 멈춘다.
+  - 커밋: 실행 기록은 로그 사본, manifest와 함께 `stage-logs/`에 들어간다. 사본을 만들 때 로그 사본 SHA가 실행 기록의 로그 SHA와 같은지 확인한다.
+- 다시 실행할 때:
+  - 결과가 HEAD에 커밋되어 있으면 멈춘다.
+  - 결과가 커밋 전이면(스테이징만 된 경우 포함) 다시 돌리지 않는다(`recover`). 결과 SHA를 기록한 실행이 있으면 그 기록으로 커밋한다. 없으면 결과와 실험 SHA·HEAD가 같은, 끝나지 않은 실행 기록이 정확히 하나여야 한다. 그 로그에 종료 줄이 없으면 결과가 뜻하는 코드를 `Recovered exit code`와 함께 붙이고, 있으면 두 코드가 같아야 한다. 아니면 멈춘다.
+  - 결과가 없으면 새로 실행한다. 이전의 끝나지 않은 실행(중단)은 먼저 닫는다. 로그에 종료 줄이 없으면 `__INTERRUPTED__` 줄을 붙이고, 그때 남은 출력 파일 SHA를 남긴다. 닫힌 실행의 로그와 기록도 이번 실행과 함께 커밋한다(실패 기록 보존).
+  - search 재탐색은 `runs/h7r/R2-S400-TRAIN/s200-check.jsonl`, `s400.jsonl`에서 이어서 한다(끝난 게임은 다시 돌리지 않고 읽어서 다시 검사한다).
+  - 같은 단계의 블록이 이미 돌고 있으면 `flock`으로 멈춘다.
+- rows 후보 파일만 남은 중단: rows는 후보 행(`runs/h7r/R2-S400-TRAIN/policy_rows_s400.jsonl.gz`)을 쓴 뒤 `rows.json`을 쓴다. 그 사이에 중단되면(프로세스 종료, 또는 Guard가 파일 변경을 잡아 exit 1), 도구는 이미 있는 후보 파일을 덮어쓰지 않으므로 다시 돌지 않는다.
+  - s5-R은 이 상태를 보면 아무것도 바꾸지 않고 멈춘다. 후보 파일의 SHA 앞 12자리와 복구 절차를 출력한다.
+  - 복구: `export S5_SET_ASIDE=<SHA 앞 12자리>` 뒤 s5-R을 다시 실행하고, 끝나면 `unset S5_SET_ASIDE`. 값이 그 파일의 SHA와 다르면 다시 멈춘다.
+  - 블록은 그 파일을 `runs/h7r/R2-S400-TRAIN/interrupted/<새 실행 이름>.policy_rows_s400.jsonl.gz`로 옮긴다(삭제·덮어쓰기 없음). 새 실행 기록에 옮긴 경로, SHA, 그 파일을 남긴 실행 이름을 적고, 커밋된 S400 기록에서 후보 행을 다시 만든다.
+  - gzip mtime이 0이라 같은 행이면 같은 파일이 된다. 새 실행 기록의 `same_as_set_aside`가 옮긴 파일과 같은지 남긴다. 판정은 바꾸지 않고 기록만 한다.
+  - 쓰다 만 `policy_rows_s400.jsonl.gz.tmp`는 결과가 아니므로 확인 없이 같은 폴더로 옮겨 기록한다.
+- s5-R은 search가 커밋되어 있고 그 상태가 `SEARCHED`일 때만 실행한다. `S200_NOT_REPRODUCED`이면 아무것도 쓰지 않고 멈춘다.
+- search 예상 시간: S200 재현 5게임 뒤 S400 936게임(약 4.0시간, R2-S400-PRE 측정). tmux에서 실행한다. search는 R2-S400-PRE measure처럼 `CUBLAS_WORKSPACE_CONFIG`을 정하지 않는다(그 측정의 S200 재현과 같은 조건).
+
+s5-S. S400 재탐색 (tmux 권장)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  N=search
+  D=docs/h7r/r2/R2-S400-TRAIN
+  R=runs/h7r/R2-S400-TRAIN
+  L="$R/logs"
+  O="$D/$N.json"
+  A=scripts/h7r_attempts.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  for f in prepare gate; do tracked "$D/$f.json" || { echo "STOP: $f is not recorded"; exit 1; }; done
+  mkdir -p "$L"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/$N.lock"
+  flock -n 9 || { echo "STOP: another $N block is running"; exit 1; }
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    python "$A" start --stage "$N" --log "$log" --result "$O" --output "$R/s200-check.jsonl" --output "$R/s400.jsonl"
+    set +e
+    python -u scripts/h7r_s400_train.py "$N" --device cuda 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+    python "$A" finish --attempt "${log%.log}.attempt.json" --rc "$rc"
+  else
+    echo "an uncommitted $O exists: recording it (no new run)"
+    result="$(python "$A" recover --stage "$N" --log-dir "$L" --result "$O")"
+    read -r name rc <<< "$result"
+  fi
+  paths=()
+  shopt -s nullglob
+  for a in "$L/$N"-*.attempt.json; do
+    n="$(basename "$a" .attempt.json)"
+    tracked "$D/stage-logs/$n.attempt.json" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    python "$A" copy --attempt "$a" --dest-dir "$D/stage-logs"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json" "$D/stage-logs/$n.attempt.json")
+  done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-TRAIN: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
+
+s5-R. 후보 행
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  N=rows
+  D=docs/h7r/r2/R2-S400-TRAIN
+  R=runs/h7r/R2-S400-TRAIN
+  L="$R/logs"
+  O="$D/$N.json"
+  C="$R/policy_rows_s400.jsonl.gz"
+  A=scripts/h7r_attempts.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  tracked "$D/search.json" || { echo "STOP: search is not recorded (run s5-S first)"; exit 1; }
+  python - "$D/search.json" <<'PY'
+import json, sys
+from pathlib import Path
+status = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8')).get('status')
+if status != 'SEARCHED':
+    sys.exit(f'STOP: the search ended {status}: no candidate rows')
+PY
+  mkdir -p "$L"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/$N.lock"
+  flock -n 9 || { echo "STOP: another $N block is running"; exit 1; }
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    aside=()
+    if [ -e "$C" ]; then
+      sha="$(sha256sum "$C" | cut -c1-12)"
+      if [ "${S5_SET_ASIDE:-}" != "$sha" ]; then
+        echo "STOP: an interrupted rows run left $C (SHA-256 $sha...) without $O."
+        echo "  The file is kept as it is: the rows tool never writes over it, and nothing was changed."
+        echo "  To move it to $R/interrupted/ and build the rows again from the committed S400 records:"
+        echo "    export S5_SET_ASIDE=$sha   # then run this block again, and afterwards: unset S5_SET_ASIDE"
+        echo "  The new attempt records the moved file, the attempt that left it, and whether the new file equals it."
+        exit 1
+      fi
+      aside+=(--set-aside "$C")
+    fi
+    if [ -e "$C.tmp" ]; then aside+=(--set-aside "$C.tmp"); fi
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    python "$A" start --stage "$N" --log "$log" --result "$O" --output "$C" ${aside[@]+"${aside[@]}"}
+    set +e
+    python -u scripts/h7r_s400_train.py "$N" --device cuda 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+    python "$A" finish --attempt "${log%.log}.attempt.json" --rc "$rc"
+  else
+    echo "an uncommitted $O exists: recording it (no new run)"
+    result="$(python "$A" recover --stage "$N" --log-dir "$L" --result "$O")"
+    read -r name rc <<< "$result"
+  fi
+  paths=()
+  shopt -s nullglob
+  for a in "$L/$N"-*.attempt.json; do
+    n="$(basename "$a" .attempt.json)"
+    tracked "$D/stage-logs/$n.attempt.json" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    python "$A" copy --attempt "$a" --dest-dir "$D/stage-logs"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json" "$D/stage-logs/$n.attempt.json")
+  done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-TRAIN: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
