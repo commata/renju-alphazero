@@ -24,6 +24,7 @@ from tests.test_h7c_train import small_model, value_split
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = 'docs/h7r/r2/R2-D1-HEAD-WIDTH-1/d1-1k-v2-contract.json'
 QUIET = lambda *a, **k: None  # noqa: E731
+DEFAULT_THREADS = torch.get_num_threads()  # at import, before any test runs
 
 
 def caches():
@@ -144,6 +145,11 @@ class WidenTest(unittest.TestCase):
         self.assertEqual((bad['finite'], bad['nonfinite'], bad['max']), (False, 2, None))
 
     def test_layer_diagnosis_separates_the_copied_arithmetic(self):
+        # The frozen agent loaders set one torch thread for benchmark workers, and in-process engine tests leave
+        # it set; run at the process default so the exact checks below do not depend on which tests ran first.
+        threads = torch.get_num_threads()
+        self.addCleanup(torch.set_num_threads, threads)
+        torch.set_num_threads(DEFAULT_THREADS)
         parent = small_model()
         cycle, _ = caches()
         wide = d1.widen_value_head(parent, 4, 1)
