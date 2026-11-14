@@ -3,7 +3,7 @@
  "contract_id": "R2-S400-TRAIN",
  "status": "fixed",
  "approved": {
-  "prepare": false,
+  "prepare": true,
   "gate": false,
   "search": false,
   "train": false,
