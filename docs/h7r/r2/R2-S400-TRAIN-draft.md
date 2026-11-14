@@ -188,6 +188,14 @@
 - 단계별 데스크톱 블록(prepare, gate, search+rows, train, Arena)
 - v2 Arena 실행 진입점과 판독(D′, P′): v2 검사를 거친 계약으로 기존 대국·arm 검증 함수를 재사용
 
+### 8.3 prepare: PASS (`bf25f74`, 2026-11-14)
+
+- 실행 HEAD `b4fb0ca`(clean, prepare 승인 커밋), 실험 `67c6ba3c8081`, 계약 파일 SHA `d3f54b5ae740`. 로그는 manifest SHA와 같고 `__EXIT__ 0`, 결과에 로그 이름이 남아 있다.
+- 입력 파일 18개의 SHA: A1 prepare의 입력 8개(c2 행, H3·c5 checkpoint·metadata, RenjuNet cache)와 같고, 탐색 입력 6개(c2 self-play, c2 S200 기록, 탐색 모델)와 A1 T checkpoint·metadata 6개는 계약과 같다.
+- c2 행: 마스크되지 않은 train 24,077행, val 1,423행
+- 대조군: A1 T 3개(20261024, 20261111, 20261112)의 checkpoint·metadata SHA가 각 A1 seed 기록과 같다.
+- 재탐색 범위: 936게임, 적격 18,965국면(S400-PRE prepare의 학습 범위와 같다). S200 초기 재현 5게임은 S400-PRE 표본의 처음 5게임과 같다.
+
 ## 9. 데스크톱 실행 (승인 뒤에만)
 
 - s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤에 실행한다. search, train, Arena 블록은 해당 단계 승인 전에 추가한다.
