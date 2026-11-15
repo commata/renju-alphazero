@@ -1,0 +1,241 @@
+[s400-train] S200 reproduction check: 5 games
+[h7c-retarget] factor 4 ({'simulations': 200, 'tactical_simulations': 400}), modes restored: 5 games, 0 already done, 74 rows to search, workers 6
+[h7c-retarget] 74/74 rows  100.0%  1.2 min  ETA 0 min  5/5 games
+[s400-train] S400 on the train scope: 936 games, 18,965 positions
+[h7c-retarget] factor 8 ({'simulations': 400, 'tactical_simulations': 800}), modes restored: 936 games, 0 already done, 18,965 rows to search, workers 6
+[h7c-retarget] 32/18,965 rows  0.2%  1.9 min  ETA 1127 min  4/936 games, 932 pending
+[h7c-retarget] 110/18,965 rows  0.6%  3.4 min  ETA 577 min  12/936 games
+[h7c-retarget] 163/18,965 rows  0.9%  4.4 min  ETA 510 min  15/936 games
+[h7c-retarget] 196/18,965 rows  1.0%  5.7 min  ETA 549 min  18/936 games
+[h7c-retarget] 275/18,965 rows  1.5%  6.7 min  ETA 458 min  22/936 games
+[h7c-retarget] 320/18,965 rows  1.7%  7.9 min  ETA 462 min  25/936 games
+[h7c-retarget] 334/18,965 rows  1.8%  9.1 min  ETA 507 min  26/936 games, 910 pending
+[h7c-retarget] 378/18,965 rows  2.0%  10.2 min  ETA 502 min  29/936 games
+[h7c-retarget] 378/18,965 rows  2.0%  11.2 min  ETA 551 min  29/936 games, 907 pending
+[h7c-retarget] 378/18,965 rows  2.0%  12.2 min  ETA 600 min  29/936 games, 907 pending
+[h7c-retarget] 454/18,965 rows  2.4%  13.7 min  ETA 559 min  31/936 games, 905 pending
+[h7c-retarget] 525/18,965 rows  2.8%  14.8 min  ETA 519 min  35/936 games
+[h7c-retarget] 740/18,965 rows  3.9%  16.1 min  ETA 397 min  39/936 games
+[h7c-retarget] 908/18,965 rows  4.8%  17.2 min  ETA 342 min  43/936 games
+[h7c-retarget] 959/18,965 rows  5.1%  18.6 min  ETA 349 min  47/936 games
+[h7c-retarget] 997/18,965 rows  5.3%  20.0 min  ETA 360 min  50/936 games
+[h7c-retarget] 1,189/18,965 rows  6.3%  21.9 min  ETA 328 min  54/936 games
+[h7c-retarget] 1,211/18,965 rows  6.4%  23.0 min  ETA 337 min  56/936 games
+[h7c-retarget] 1,342/18,965 rows  7.1%  24.3 min  ETA 319 min  60/936 games
+[h7c-retarget] 1,412/18,965 rows  7.4%  25.8 min  ETA 321 min  65/936 games
+[h7c-retarget] 1,442/18,965 rows  7.6%  27.1 min  ETA 329 min  68/936 games
+[h7c-retarget] 1,620/18,965 rows  8.5%  28.3 min  ETA 303 min  70/936 games
+[h7c-retarget] 1,655/18,965 rows  8.7%  29.4 min  ETA 307 min  71/936 games, 865 pending
+[h7c-retarget] 1,655/18,965 rows  8.7%  30.4 min  ETA 318 min  71/936 games, 865 pending
+[h7c-retarget] 1,739/18,965 rows  9.2%  31.9 min  ETA 315 min  74/936 games
+[h7c-retarget] 1,739/18,965 rows  9.2%  32.9 min  ETA 325 min  74/936 games, 862 pending
+[h7c-retarget] 1,924/18,965 rows  10.1%  34.2 min  ETA 303 min  76/936 games
+[h7c-retarget] 1,992/18,965 rows  10.5%  35.2 min  ETA 300 min  79/936 games
+[h7c-retarget] 2,086/18,965 rows  11.0%  36.3 min  ETA 294 min  83/936 games
+[h7c-retarget] 2,139/18,965 rows  11.3%  37.5 min  ETA 295 min  88/936 games
+[h7c-retarget] 2,189/18,965 rows  11.5%  39.0 min  ETA 299 min  92/936 games
+[h7c-retarget] 2,392/18,965 rows  12.6%  40.0 min  ETA 277 min  96/936 games
+[h7c-retarget] 2,620/18,965 rows  13.8%  41.0 min  ETA 256 min  102/936 games
+[h7c-retarget] 2,673/18,965 rows  14.1%  42.3 min  ETA 258 min  109/936 games
+[h7c-retarget] 2,734/18,965 rows  14.4%  43.3 min  ETA 257 min  116/936 games
+[h7c-retarget] 2,765/18,965 rows  14.6%  44.4 min  ETA 260 min  119/936 games
+[h7c-retarget] 2,866/18,965 rows  15.1%  45.7 min  ETA 256 min  125/936 games
+[h7c-retarget] 2,917/18,965 rows  15.4%  46.8 min  ETA 257 min  130/936 games
+[h7c-retarget] 2,989/18,965 rows  15.8%  47.9 min  ETA 256 min  135/936 games
+[h7c-retarget] 3,019/18,965 rows  15.9%  49.3 min  ETA 261 min  139/936 games
+[h7c-retarget] 3,113/18,965 rows  16.4%  50.4 min  ETA 257 min  143/936 games
+[h7c-retarget] 3,164/18,965 rows  16.7%  51.8 min  ETA 259 min  146/936 games
+[h7c-retarget] 3,239/18,965 rows  17.1%  53.0 min  ETA 257 min  152/936 games
+[h7c-retarget] 3,326/18,965 rows  17.5%  54.7 min  ETA 257 min  159/936 games
+[h7c-retarget] 3,377/18,965 rows  17.8%  56.3 min  ETA 260 min  163/936 games
+[h7c-retarget] 3,444/18,965 rows  18.2%  57.5 min  ETA 259 min  167/936 games
+[h7c-retarget] 3,444/18,965 rows  18.2%  58.5 min  ETA 264 min  167/936 games, 769 pending
+[h7c-retarget] 3,517/18,965 rows  18.5%  59.9 min  ETA 263 min  171/936 games
+[h7c-retarget] 3,635/18,965 rows  19.2%  61.2 min  ETA 258 min  175/936 games
+[h7c-retarget] 3,870/18,965 rows  20.4%  62.3 min  ETA 243 min  182/936 games
+[h7c-retarget] 3,910/18,965 rows  20.6%  63.3 min  ETA 244 min  187/936 games
+[h7c-retarget] 3,970/18,965 rows  20.9%  64.4 min  ETA 243 min  191/936 games
+[h7c-retarget] 4,049/18,965 rows  21.3%  65.7 min  ETA 242 min  197/936 games
+[h7c-retarget] 4,125/18,965 rows  21.8%  66.8 min  ETA 240 min  202/936 games
+[h7c-retarget] 4,183/18,965 rows  22.1%  67.9 min  ETA 240 min  208/936 games
+[h7c-retarget] 4,206/18,965 rows  22.2%  69.2 min  ETA 243 min  211/936 games
+[h7c-retarget] 4,255/18,965 rows  22.4%  70.4 min  ETA 243 min  214/936 games
+[h7c-retarget] 4,324/18,965 rows  22.8%  71.5 min  ETA 242 min  218/936 games
+[h7c-retarget] 4,384/18,965 rows  23.1%  72.8 min  ETA 242 min  222/936 games
+[h7c-retarget] 4,428/18,965 rows  23.3%  74.7 min  ETA 245 min  225/936 games, 711 pending
+[h7c-retarget] 4,428/18,965 rows  23.3%  75.7 min  ETA 248 min  225/936 games, 711 pending
+[h7c-retarget] 4,535/18,965 rows  23.9%  77.0 min  ETA 245 min  231/936 games
+[h7c-retarget] 4,787/18,965 rows  25.2%  78.4 min  ETA 232 min  238/936 games
+[h7c-retarget] 4,848/18,965 rows  25.6%  79.6 min  ETA 232 min  243/936 games
+[h7c-retarget] 4,962/18,965 rows  26.2%  80.6 min  ETA 227 min  248/936 games
+[h7c-retarget] 4,989/18,965 rows  26.3%  81.6 min  ETA 229 min  251/936 games
+[h7c-retarget] 5,073/18,965 rows  26.7%  82.6 min  ETA 226 min  257/936 games
+[h7c-retarget] 5,135/18,965 rows  27.1%  83.7 min  ETA 225 min  263/936 games
+[h7c-retarget] 5,160/18,965 rows  27.2%  84.8 min  ETA 227 min  266/936 games
+[h7c-retarget] 5,249/18,965 rows  27.7%  85.8 min  ETA 224 min  272/936 games
+[h7c-retarget] 5,300/18,965 rows  27.9%  87.1 min  ETA 225 min  278/936 games
+[h7c-retarget] 5,326/18,965 rows  28.1%  88.2 min  ETA 226 min  281/936 games
+[h7c-retarget] 5,326/18,965 rows  28.1%  89.2 min  ETA 228 min  281/936 games, 655 pending
+[h7c-retarget] 5,374/18,965 rows  28.3%  90.3 min  ETA 228 min  285/936 games
+[h7c-retarget] 5,485/18,965 rows  28.9%  92.0 min  ETA 226 min  289/936 games
+[h7c-retarget] 5,542/18,965 rows  29.2%  93.0 min  ETA 225 min  294/936 games
+[h7c-retarget] 5,733/18,965 rows  30.2%  94.3 min  ETA 218 min  299/936 games
+[h7c-retarget] 5,803/18,965 rows  30.6%  95.4 min  ETA 216 min  305/936 games
+[h7c-retarget] 5,823/18,965 rows  30.7%  96.7 min  ETA 218 min  307/936 games
+[h7c-retarget] 5,917/18,965 rows  31.2%  98.4 min  ETA 217 min  311/936 games
+[h7c-retarget] 5,964/18,965 rows  31.4%  99.8 min  ETA 218 min  315/936 games
+[h7c-retarget] 5,964/18,965 rows  31.4%  100.8 min  ETA 220 min  315/936 games, 621 pending
+[h7c-retarget] 6,183/18,965 rows  32.6%  102.2 min  ETA 211 min  318/936 games
+[h7c-retarget] 6,224/18,965 rows  32.8%  103.8 min  ETA 213 min  322/936 games
+[h7c-retarget] 6,300/18,965 rows  33.2%  104.9 min  ETA 211 min  325/936 games
+[h7c-retarget] 6,381/18,965 rows  33.6%  106.2 min  ETA 209 min  330/936 games
+[h7c-retarget] 6,416/18,965 rows  33.8%  107.3 min  ETA 210 min  336/936 games
+[h7c-retarget] 6,437/18,965 rows  33.9%  108.4 min  ETA 211 min  338/936 games
+[h7c-retarget] 6,646/18,965 rows  35.0%  109.5 min  ETA 203 min  342/936 games
+[h7c-retarget] 6,680/18,965 rows  35.2%  111.1 min  ETA 204 min  345/936 games
+[h7c-retarget] 6,738/18,965 rows  35.5%  112.7 min  ETA 204 min  348/936 games
+[h7c-retarget] 6,952/18,965 rows  36.7%  113.9 min  ETA 197 min  353/936 games
+[h7c-retarget] 6,961/18,965 rows  36.7%  115.3 min  ETA 199 min  354/936 games, 582 pending
+[h7c-retarget] 7,010/18,965 rows  37.0%  116.3 min  ETA 198 min  357/936 games
+[h7c-retarget] 7,228/18,965 rows  38.1%  117.6 min  ETA 191 min  362/936 games
+[h7c-retarget] 7,253/18,965 rows  38.2%  118.7 min  ETA 192 min  365/936 games
+[h7c-retarget] 7,437/18,965 rows  39.2%  120.3 min  ETA 186 min  369/936 games
+[h7c-retarget] 7,528/18,965 rows  39.7%  121.4 min  ETA 184 min  375/936 games
+[h7c-retarget] 7,730/18,965 rows  40.8%  122.4 min  ETA 178 min  381/936 games
+[h7c-retarget] 7,793/18,965 rows  41.1%  123.7 min  ETA 177 min  386/936 games
+[h7c-retarget] 7,852/18,965 rows  41.4%  124.8 min  ETA 177 min  391/936 games
+[h7c-retarget] 7,929/18,965 rows  41.8%  126.5 min  ETA 176 min  395/936 games
+[h7c-retarget] 8,184/18,965 rows  43.2%  127.5 min  ETA 168 min  400/936 games
+[h7c-retarget] 8,269/18,965 rows  43.6%  128.8 min  ETA 167 min  407/936 games
+[h7c-retarget] 8,369/18,965 rows  44.1%  129.9 min  ETA 164 min  413/936 games
+[h7c-retarget] 8,420/18,965 rows  44.4%  130.9 min  ETA 164 min  418/936 games
+[h7c-retarget] 8,490/18,965 rows  44.8%  132.1 min  ETA 163 min  423/936 games
+[h7c-retarget] 8,552/18,965 rows  45.1%  133.2 min  ETA 162 min  430/936 games
+[h7c-retarget] 8,652/18,965 rows  45.6%  134.5 min  ETA 160 min  438/936 games
+[h7c-retarget] 8,793/18,965 rows  46.4%  136.1 min  ETA 157 min  444/936 games
+[h7c-retarget] 8,922/18,965 rows  47.0%  137.2 min  ETA 154 min  451/936 games
+[h7c-retarget] 9,003/18,965 rows  47.5%  138.7 min  ETA 153 min  457/936 games
+[h7c-retarget] 9,046/18,965 rows  47.7%  139.9 min  ETA 153 min  461/936 games
+[h7c-retarget] 9,128/18,965 rows  48.1%  140.9 min  ETA 152 min  466/936 games
+[h7c-retarget] 9,259/18,965 rows  48.8%  142.3 min  ETA 149 min  472/936 games
+[h7c-retarget] 9,324/18,965 rows  49.2%  143.4 min  ETA 148 min  476/936 games
+[h7c-retarget] 9,380/18,965 rows  49.5%  144.5 min  ETA 148 min  480/936 games
+[h7c-retarget] 9,455/18,965 rows  49.9%  146.1 min  ETA 147 min  485/936 games
+[h7c-retarget] 9,478/18,965 rows  50.0%  147.4 min  ETA 148 min  487/936 games, 449 pending
+[h7c-retarget] 9,568/18,965 rows  50.5%  148.5 min  ETA 146 min  489/936 games
+[h7c-retarget] 9,634/18,965 rows  50.8%  149.7 min  ETA 145 min  492/936 games
+[h7c-retarget] 9,634/18,965 rows  50.8%  150.7 min  ETA 146 min  492/936 games, 444 pending
+[h7c-retarget] 9,741/18,965 rows  51.4%  151.7 min  ETA 144 min  497/936 games
+[h7c-retarget] 9,973/18,965 rows  52.6%  153.2 min  ETA 138 min  504/936 games
+[h7c-retarget] 10,015/18,965 rows  52.8%  154.4 min  ETA 138 min  509/936 games
+[h7c-retarget] 10,252/18,965 rows  54.1%  155.8 min  ETA 132 min  515/936 games
+[h7c-retarget] 10,425/18,965 rows  55.0%  157.0 min  ETA 129 min  520/936 games
+[h7c-retarget] 10,497/18,965 rows  55.3%  158.2 min  ETA 128 min  523/936 games
+[h7c-retarget] 10,630/18,965 rows  56.1%  159.7 min  ETA 125 min  530/936 games
+[h7c-retarget] 10,693/18,965 rows  56.4%  160.8 min  ETA 124 min  534/936 games
+[h7c-retarget] 10,809/18,965 rows  57.0%  161.8 min  ETA 122 min  542/936 games
+[h7c-retarget] 10,902/18,965 rows  57.5%  162.9 min  ETA 121 min  549/936 games
+[h7c-retarget] 10,971/18,965 rows  57.8%  164.3 min  ETA 120 min  553/936 games
+[h7c-retarget] 11,096/18,965 rows  58.5%  165.4 min  ETA 117 min  560/936 games
+[h7c-retarget] 11,179/18,965 rows  58.9%  166.6 min  ETA 116 min  566/936 games
+[h7c-retarget] 11,211/18,965 rows  59.1%  167.8 min  ETA 116 min  570/936 games
+[h7c-retarget] 11,321/18,965 rows  59.7%  168.8 min  ETA 114 min  575/936 games
+[h7c-retarget] 11,358/18,965 rows  59.9%  170.1 min  ETA 114 min  579/936 games
+[h7c-retarget] 11,491/18,965 rows  60.6%  171.3 min  ETA 111 min  587/936 games
+[h7c-retarget] 11,496/18,965 rows  60.6%  172.4 min  ETA 112 min  588/936 games, 348 pending
+[h7c-retarget] 11,573/18,965 rows  61.0%  173.6 min  ETA 111 min  592/936 games
+[h7c-retarget] 11,631/18,965 rows  61.3%  174.8 min  ETA 110 min  596/936 games
+[h7c-retarget] 11,829/18,965 rows  62.4%  175.8 min  ETA 106 min  599/936 games
+[h7c-retarget] 11,890/18,965 rows  62.7%  176.9 min  ETA 105 min  605/936 games
+[h7c-retarget] 11,975/18,965 rows  63.1%  178.4 min  ETA 104 min  610/936 games
+[h7c-retarget] 12,027/18,965 rows  63.4%  179.5 min  ETA 104 min  616/936 games
+[h7c-retarget] 12,096/18,965 rows  63.8%  180.6 min  ETA 103 min  620/936 games
+[h7c-retarget] 12,292/18,965 rows  64.8%  181.7 min  ETA 99 min  624/936 games
+[h7c-retarget] 12,402/18,965 rows  65.4%  183.2 min  ETA 97 min  631/936 games
+[h7c-retarget] 12,449/18,965 rows  65.6%  184.5 min  ETA 97 min  635/936 games
+[h7c-retarget] 12,633/18,965 rows  66.6%  185.8 min  ETA 93 min  640/936 games
+[h7c-retarget] 12,739/18,965 rows  67.2%  186.9 min  ETA 91 min  646/936 games
+[h7c-retarget] 12,771/18,965 rows  67.3%  188.3 min  ETA 91 min  649/936 games
+[h7c-retarget] 12,804/18,965 rows  67.5%  189.4 min  ETA 91 min  651/936 games
+[h7c-retarget] 12,867/18,965 rows  67.8%  190.9 min  ETA 90 min  654/936 games
+[h7c-retarget] 12,941/18,965 rows  68.2%  192.4 min  ETA 90 min  660/936 games
+[h7c-retarget] 13,129/18,965 rows  69.2%  193.4 min  ETA 86 min  664/936 games
+[h7c-retarget] 13,339/18,965 rows  70.3%  194.4 min  ETA 82 min  670/936 games
+[h7c-retarget] 13,393/18,965 rows  70.6%  195.8 min  ETA 81 min  675/936 games
+[h7c-retarget] 13,475/18,965 rows  71.1%  196.9 min  ETA 80 min  680/936 games
+[h7c-retarget] 13,705/18,965 rows  72.3%  197.9 min  ETA 76 min  687/936 games
+[h7c-retarget] 13,764/18,965 rows  72.6%  199.4 min  ETA 75 min  691/936 games
+[h7c-retarget] 13,845/18,965 rows  73.0%  200.7 min  ETA 74 min  696/936 games
+[h7c-retarget] 13,883/18,965 rows  73.2%  201.9 min  ETA 74 min  698/936 games
+[h7c-retarget] 13,932/18,965 rows  73.5%  202.9 min  ETA 73 min  700/936 games
+[h7c-retarget] 14,027/18,965 rows  74.0%  204.1 min  ETA 72 min  704/936 games
+[h7c-retarget] 14,144/18,965 rows  74.6%  205.2 min  ETA 70 min  709/936 games
+[h7c-retarget] 14,189/18,965 rows  74.8%  206.3 min  ETA 69 min  714/936 games
+[h7c-retarget] 14,436/18,965 rows  76.1%  207.5 min  ETA 65 min  718/936 games
+[h7c-retarget] 14,508/18,965 rows  76.5%  208.7 min  ETA 64 min  724/936 games
+[h7c-retarget] 14,592/18,965 rows  76.9%  209.8 min  ETA 63 min  730/936 games
+[h7c-retarget] 14,628/18,965 rows  77.1%  210.8 min  ETA 63 min  734/936 games
+[h7c-retarget] 14,682/18,965 rows  77.4%  212.0 min  ETA 62 min  738/936 games
+[h7c-retarget] 14,745/18,965 rows  77.7%  213.1 min  ETA 61 min  743/936 games
+[h7c-retarget] 14,868/18,965 rows  78.4%  214.3 min  ETA 59 min  748/936 games
+[h7c-retarget] 14,979/18,965 rows  79.0%  215.8 min  ETA 57 min  753/936 games
+[h7c-retarget] 15,033/18,965 rows  79.3%  217.2 min  ETA 57 min  756/936 games
+[h7c-retarget] 15,127/18,965 rows  79.8%  218.2 min  ETA 55 min  761/936 games
+[h7c-retarget] 15,172/18,965 rows  80.0%  219.5 min  ETA 55 min  766/936 games
+[h7c-retarget] 15,287/18,965 rows  80.6%  220.8 min  ETA 53 min  771/936 games
+[h7c-retarget] 15,392/18,965 rows  81.2%  222.0 min  ETA 52 min  776/936 games
+[h7c-retarget] 15,467/18,965 rows  81.6%  223.0 min  ETA 50 min  782/936 games
+[h7c-retarget] 15,698/18,965 rows  82.8%  224.3 min  ETA 47 min  788/936 games
+[h7c-retarget] 15,756/18,965 rows  83.1%  225.3 min  ETA 46 min  793/936 games
+[h7c-retarget] 15,857/18,965 rows  83.6%  226.6 min  ETA 44 min  798/936 games
+[h7c-retarget] 15,924/18,965 rows  84.0%  227.7 min  ETA 43 min  803/936 games
+[h7c-retarget] 16,001/18,965 rows  84.4%  228.7 min  ETA 42 min  808/936 games
+[h7c-retarget] 16,023/18,965 rows  84.5%  229.8 min  ETA 42 min  811/936 games
+[h7c-retarget] 16,044/18,965 rows  84.6%  231.4 min  ETA 42 min  812/936 games, 124 pending
+[h7c-retarget] 16,044/18,965 rows  84.6%  232.4 min  ETA 42 min  812/936 games, 124 pending
+[h7c-retarget] 16,182/18,965 rows  85.3%  233.7 min  ETA 40 min  816/936 games
+[h7c-retarget] 16,251/18,965 rows  85.7%  234.9 min  ETA 39 min  820/936 games
+[h7c-retarget] 16,513/18,965 rows  87.1%  236.0 min  ETA 35 min  827/936 games
+[h7c-retarget] 16,542/18,965 rows  87.2%  237.2 min  ETA 35 min  830/936 games
+[h7c-retarget] 16,562/18,965 rows  87.3%  238.2 min  ETA 35 min  832/936 games
+[h7c-retarget] 16,793/18,965 rows  88.5%  239.4 min  ETA 31 min  836/936 games
+[h7c-retarget] 16,849/18,965 rows  88.8%  240.5 min  ETA 30 min  841/936 games
+[h7c-retarget] 16,975/18,965 rows  89.5%  241.7 min  ETA 28 min  846/936 games
+[h7c-retarget] 17,005/18,965 rows  89.7%  243.2 min  ETA 28 min  848/936 games, 88 pending
+[h7c-retarget] 17,082/18,965 rows  90.1%  244.3 min  ETA 27 min  853/936 games
+[h7c-retarget] 17,184/18,965 rows  90.6%  245.5 min  ETA 25 min  859/936 games
+[h7c-retarget] 17,393/18,965 rows  91.7%  246.5 min  ETA 22 min  864/936 games
+[h7c-retarget] 17,464/18,965 rows  92.1%  248.0 min  ETA 21 min  869/936 games
+[h7c-retarget] 17,557/18,965 rows  92.6%  249.2 min  ETA 20 min  874/936 games
+[h7c-retarget] 17,618/18,965 rows  92.9%  250.3 min  ETA 19 min  880/936 games
+[h7c-retarget] 17,699/18,965 rows  93.3%  251.6 min  ETA 18 min  886/936 games
+[h7c-retarget] 17,794/18,965 rows  93.8%  252.7 min  ETA 17 min  894/936 games
+[h7c-retarget] 17,857/18,965 rows  94.2%  253.9 min  ETA 16 min  902/936 games
+[h7c-retarget] 17,919/18,965 rows  94.5%  255.3 min  ETA 15 min  910/936 games
+[h7c-retarget] 18,122/18,965 rows  95.6%  256.8 min  ETA 12 min  913/936 games
+[h7c-retarget] 18,232/18,965 rows  96.1%  257.9 min  ETA 10 min  918/936 games
+[h7c-retarget] 18,293/18,965 rows  96.5%  259.1 min  ETA 10 min  923/936 games
+[h7c-retarget] 18,382/18,965 rows  96.9%  260.5 min  ETA 8 min  928/936 games
+[h7c-retarget] 18,414/18,965 rows  97.1%  261.6 min  ETA 8 min  930/936 games
+[h7c-retarget] 18,433/18,965 rows  97.2%  263.0 min  ETA 8 min  932/936 games, 4 pending
+[h7c-retarget] 18,478/18,965 rows  97.4%  264.6 min  ETA 7 min  933/936 games, 3 pending
+[h7c-retarget] 18,478/18,965 rows  97.4%  265.6 min  ETA 7 min  933/936 games, 3 pending
+[h7c-retarget] 18,639/18,965 rows  98.3%  266.8 min  ETA 5 min  934/936 games, 2 pending
+[h7c-retarget] 18,639/18,965 rows  98.3%  267.8 min  ETA 5 min  934/936 games, 2 pending
+[h7c-retarget] 18,965/18,965 rows  100.0%  269.2 min  ETA 0 min  936/936 games
+{
+ "status": "SEARCHED",
+ "scope": {
+  "games": 936,
+  "eligible": 18965,
+  "coverage_sha256": "06f1e4583fcb77860c287e4128a6dfbb7ac7cdf0742093911e8c138e59149f3b"
+ },
+ "s200_reproduction": {
+  "expected": 74,
+  "compared": 74,
+  "differing_fields": {},
+  "examples": [],
+  "reproduced": true
+ }
+}
+__EXIT__ 0

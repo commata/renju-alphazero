@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "search-9Gug9CcO.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-TRAIN/logs/search-9Gug9CcO.log",
+   "copy": "docs/h7r/r2/R2-S400-TRAIN/stage-logs/search-9Gug9CcO.log",
+   "bytes": 18315,
+   "sha256": "f2d0be78fddcee41b4922fe212b64667b9dc6b0b054276512b68475c6803e930"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

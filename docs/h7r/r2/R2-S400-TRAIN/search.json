@@ -1,0 +1,31 @@
+{
+ "format": "h7r-s400-train-search-v1",
+ "scope": {
+  "games": 936,
+  "eligible": 18965,
+  "coverage_sha256": "06f1e4583fcb77860c287e4128a6dfbb7ac7cdf0742093911e8c138e59149f3b"
+ },
+ "contract_id": "R2-S400-TRAIN",
+ "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+ "contract_file_sha256": "5c926907ab9eb0b13101fad490d596cd79a4fcff1414dd2edcb55a0e9e95487f",
+ "git": {
+  "commit": "6eb8122855025a8f127c6461cc2f5d366f243a29",
+  "dirty": false
+ },
+ "status": "SEARCHED",
+ "s200_reproduction": {
+  "expected": 74,
+  "compared": 74,
+  "differing_fields": {},
+  "examples": [],
+  "reproduced": true
+ },
+ "s400": {
+  "records_sha256": "942eb3eb298b9d241617a967e1b55a5d95a4e13f01e00aa99a58bb07922066b2",
+  "identity_sha256": "b98999fbb543fb0d231a9de6957d81bcd4c2290fa8032bf67e0e87007b7b6bb2",
+  "rows": 18965,
+  "search_seconds": 95423.6,
+  "wall_seconds_this_session": 16151.1,
+  "resumed_games": 0
+ }
+}

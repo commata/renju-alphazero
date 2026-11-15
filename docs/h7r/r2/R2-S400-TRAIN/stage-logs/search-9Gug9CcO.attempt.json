@@ -1,0 +1,30 @@
+{
+ "format": "h7r-attempt-v1",
+ "contract_id": "R2-S400-TRAIN",
+ "stage": "search",
+ "name": "search-9Gug9CcO",
+ "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+ "contract_file_sha256": "5c926907ab9eb0b13101fad490d596cd79a4fcff1414dd2edcb55a0e9e95487f",
+ "head": "6eb8122855025a8f127c6461cc2f5d366f243a29",
+ "log": "runs/h7r/R2-S400-TRAIN/logs/search-9Gug9CcO.log",
+ "result": "docs/h7r/r2/R2-S400-TRAIN/search.json",
+ "outputs": [
+  "runs/h7r/R2-S400-TRAIN/s200-check.jsonl",
+  "runs/h7r/R2-S400-TRAIN/s400.jsonl"
+ ],
+ "set_aside": [],
+ "started": "2026-11-15T05:48:11+00:00",
+ "finish": {
+  "state": "exited",
+  "exit_code": 0,
+  "log_sha256": "f2d0be78fddcee41b4922fe212b64667b9dc6b0b054276512b68475c6803e930",
+  "result_sha256": "9e3fc3e8a90e237655d2c66d8d51e5f792c4807bae875f61d30fe67a1b01b528",
+  "outputs": {
+   "runs/h7r/R2-S400-TRAIN/s200-check.jsonl": "050b20a1922bb37270de968bf9d5441f7c00a59e131381cab3f1ef7a55af8223",
+   "runs/h7r/R2-S400-TRAIN/s400.jsonl": "942eb3eb298b9d241617a967e1b55a5d95a4e13f01e00aa99a58bb07922066b2"
+  },
+  "same_as_set_aside": {},
+  "recovered": false,
+  "finished": "2026-11-15T10:21:53+00:00"
+ }
+}
