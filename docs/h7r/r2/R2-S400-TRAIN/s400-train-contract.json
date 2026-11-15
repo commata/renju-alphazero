@@ -5,7 +5,7 @@
  "approved": {
   "prepare": true,
   "gate": true,
-  "search": false,
+  "search": true,
   "train": false,
   "arena": false
  },
