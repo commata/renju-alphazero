@@ -547,6 +547,16 @@ elif cmd == 'search':
         Path(R, 's400.jsonl').write_text('s400' + chr(10))
         body, code = {'status': 'SEARCHED',
                       's400': {'records_sha256': hashlib.sha256(Path(R, 's400.jsonl').read_bytes()).hexdigest()}}, 0
+elif cmd == 'arena-contract':
+    path = Path('docs/h7r/contracts-v2/R2-S400-TRAIN-ARENA-1.json')
+    if path.exists():
+        print('STOP: ValueError: ' + str(path) + ' exists: never overwritten'); sys.exit(1)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    arms = [{'name': s + '_' + m + '_vs_champion'} for s in ('O1-dev-a', 'O1-dev-b') for m in 'ST']
+    path.write_text(json.dumps({'format': 'stand-in arena', 'arms': arms}))
+    if os.environ.get('S5_KILL') == 'arena-contract:after':
+        kill()
+    print('arena contract written'); sys.exit(0)
 elif cmd == 'train':  # the checkpoint files first, then the run record (the order of the real tool)
     seed = int(sys.argv[sys.argv.index('--seed') + 1])
     out = Path(R, 'S-' + str(seed))
@@ -625,8 +635,8 @@ class BlockTest(unittest.TestCase):
         git(w, 'push', '-q', 'origin', 'feat/h7-c1')
         doc = (ROOT / 'docs/h7r/r2/R2-S400-TRAIN-draft.md').read_text()
         blocks = re.findall(r'```bash' + chr(10) + r'(.*?)```', doc, re.S)
-        self.assertEqual(len(blocks), 5)
-        self.blocks = dict(zip(('s5-1', 's5-G', 's5-S', 's5-R', 's5-T'),
+        self.assertEqual(len(blocks), 7)
+        self.blocks = dict(zip(('s5-1', 's5-G', 's5-S', 's5-R', 's5-T', 's5-AC', 's5-A'),
                                (b.replace('~/renju-h6', w.as_posix()) for b in blocks)))
         self.D = 'docs/h7r/r2/R2-S400-TRAIN'
         self.R = 'runs/h7r/R2-S400-TRAIN'

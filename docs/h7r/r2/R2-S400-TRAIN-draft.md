@@ -1,6 +1,6 @@
 # R2-S400-TRAIN: S400 목표 후보의 학습·평가 계약 설계 (초안, 결정 전)
 
-- 상태: prepare PASS(`bf25f74`), gate PASS(`2e894cf`), search 승인(`6eb8122`)·search SEARCHED(`f500fc2`)·rows(`a191fbe`) 기록(§8.6). train 블록 준비(§8.7, §9.2), **train·arena 미승인**. Arena 블록과 v2 Arena 실행·판독은 아직 없다.
+- 상태: prepare PASS(`bf25f74`), gate PASS(`2e894cf`), search 승인(`6eb8122`)·search SEARCHED(`f500fc2`)·rows(`a191fbe`) 기록(§8.6). train 승인(`49792f9`)·3 seed 학습 기록(`14d00ad`, `50fe763`, `3cc7f0e`, §8.8). Arena 도구·블록 준비(§8.9, §9.3), **arena 미승인**.
 - 채택된 결정(검토 2026-11-13): 재탐색 방식 B, 행 집합 고정, 새 개발 opening으로 평가, 보조 arm 생략, T 재현 gate를 재탐색 앞으로. 근거와 세부는 §2–§6.
 - 근거
   - R2-P1-POLICY-REPLAY-A1(`faeb72b0f625`): T(정책 보존, S200 목표)는 champion 대비 NOT_ESTABLISHED, C 대비 BETTER_THAN_CONTROL
@@ -240,9 +240,37 @@
   - 정상 완료 뒤 출력이 바뀐 경우(성공 기록 없이 멈춤, 다음 실행의 복구도 거부)
 - 실제 학습 경로는 gate(§8.4)에서 A1과 비트 단위로 재현된 `h7r_p1a1.execute`를 그대로 쓴다.
 
+### 8.8 train: 후보 3 seed 기록 (`14d00ad`, `50fe763`, `3cc7f0e`, 2026-11-16)
+
+- 실행 HEAD: S 20261024는 `49792f9`(train 승인 커밋), 20261111은 `14d00ad`, 20261112는 `50fe763`(앞 seed의 기록 커밋). 모두 clean, 실험 `67c6ba3c8081`, 계약 파일 SHA `ba913f8acdb9`.
+- 실행 기록 3개 모두 `exited 0`, 복구·옮긴 파일 없음. 로그 사본 SHA가 manifest·실행 기록과 같고 마지막 줄은 `__EXIT__ 0`. seed 기록 사본 SHA가 실행 기록의 결과 SHA와 같고, 실행 기록의 `best.pt`·`best.json` SHA가 학습 기록의 `candidate` SHA와 같다.
+- 출처: 입력 행은 후보 파일(`add6022ca8d4`), c2 행과 S400 기록 SHA는 rows 기록과 같다. gate·rows 기록 SHA가 실제 파일과 같고, 수치 설정이 gate 기록과 같다. 학습 시간 101.9–115.9초.
+- 세 seed 모두 `CANDIDATE`, step 96 선택, 평가 10회 모두 eligible.
+
+| seed | S checkpoint | val objective (S / T) | guard top-1 (S / T) | guard 하락 (S / T) |
+|---|---|---|---|---|
+| 20261024 | `68928bc6ef8c` | 1.9826 / 1.9812 | 0.5168 / 0.5178 | 0.0074 / 0.0063 |
+| 20261111 | `2d9bf8ceb53f` | 1.9844 / 1.9827 | 0.5166 / 0.5174 | 0.0075 / 0.0067 |
+| 20261112 | `17da944854aa` | 1.9859 / 1.9841 | 0.5171 / 0.5178 | 0.0070 / 0.0063 |
+
+- 같은 seed의 A1 T와 학습 조건이 같다: 초기 상태, config, replay 설정(μ 0.5, 생성기 seed), 행 수(train 24,077 / val 1,423), step 구조, 지문 중 batch 순서·D4 대칭·학습률. 다른 지문은 loss뿐이다(목표만 바뀐 짝 비교).
+- S는 세 seed 모두 S200 기준 검증 지표(c2 val의 S200 목표에 대한 objective, guard top-1)에서 T보다 소폭 낮았고(guard top-1 0.07–0.10%p), 세 후보 모두 guard를 통과했다. 이 지표는 판정 항목이 아니며, 기력은 Arena에서 판단한다.
+- Arena 계약은 지정 seed 20261024의 `CANDIDATE`로 만든다. checkpoint 원본 파일은 데스크톱에서 Arena 시작 전에 다시 확인한다(`check-models`, §9.3).
+
+### 8.9 Arena 도구·블록 준비 (arena 미승인, 2026-11-16)
+
+- 도구 `scripts/h7r_s400_arena.py`(계약 sources가 아님): `check-contract`, `check-models`, `play`, `judge`, `verify-judge`(§9.3). 학습 도구·계약·실험 SHA는 그대로다.
+- 블록 s5-AC(Arena 계약), s5-A(대국과 판독).
+- 테스트 `tests/test_h7r_s400_arena.py`
+  - 도구(임시 저장소, 대국은 대역): Arena 계약이 S400 계약에서 만든 것과 다르거나 커밋되지 않았으면 거부, arena 승인 필요, 커밋 전후의 계약 확인. 모델 파일 하나가 다르거나 없으면 대국 전에 거부(journal도 만들지 않음). 4개 arm 대국과 journal 재개(같은 기록), judge의 점추정이 50:50 평균과 같음, 판독 규칙, arm 기록 SHA와 commit, 같은 기록 재판독 거부, verify-judge(같으면 통과, 판독이나 실행 commit이 다르면 거부). 다른 commit의 arm, 없는 arm, 재생과 다른 대국은 판독하지 않음.
+  - 쌍 대응: suite마다 S와 T가 같은 opening·같은 순서·같은 class·300쌍일 때만 계산(순서 뒤바뀜, 다른 opening, 다른 class, 쌍 누락 각각 거부). suite마다 S arm과 T arm이 하나씩이어야 한다.
+  - 블록(실제 bash와 임시 저장소, 도구는 대역): 계약 전 대국 거부, 계약 → 대국 → 판독 커밋, 다시 실행 거부. 계약을 쓴 뒤 중단(확인 후 커밋, 확인 실패 시 커밋 없음). 모델 파일 불일치(대국 없이 멈춤, 고친 뒤 같은 HEAD로 진행). arm 실패(커밋 없음, HEAD가 움직이면 거부, 같은 HEAD에서 이어서 두고 실패 로그도 기록). judge 뒤 중단과 스테이징 뒤 중단(다시 판독하지 않고 verify-judge로 확인 후 커밋, 확인 실패 시 커밋 없음).
+  - 블록 테스트는 모델 확인 생략, HEAD 고정 생략, 복구 때 다시 판독하는 블록을 각각 잡는다.
+- arm 하나의 bootstrap(20,000회)과 판독 계산은 계약의 통계 설정 그대로 테스트에서도 실행한다.
+
 ## 9. 데스크톱 실행 (승인 뒤에만)
 
-- s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤, s5-S와 s5-R은 `approved.search` 뒤에, s5-T는 `approved.train` 뒤에 실행한다(rows 명령도 search 승인으로 돈다). Arena 블록은 arena 승인 전에 추가한다.
+- s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤, s5-S와 s5-R은 `approved.search` 뒤에, s5-T는 `approved.train` 뒤에, s5-AC와 s5-A는 `approved.arena` 뒤에 실행한다(rows 명령도 search 승인으로 돈다).
 - 블록은 R2-S400-PRE의 블록과 같은 방식이다.
   - 결과(`prepare.json`, `gate.json`)에 실행 로그 이름(`log_name`)을 남긴다.
   - 다시 실행할 때: 결과가 HEAD에 커밋되어 있으면 멈춘다. 결과가 커밋 전이면(스테이징만 된 경우 포함) 다시 돌리지 않고, 결과가 뜻하는 종료 코드와 로그의 `__EXIT__`이 같은지 확인한 뒤 함께 커밋한다. 로그가 없거나 두 종료 코드가 다르면 멈춘다.
@@ -722,6 +750,193 @@ s5-T. 후보 3 seed 학습
   for s in 20261024 20261111 20261112; do
     python "$A" verify-train --seed "$s" --record "$D/seed-records/S-$s/record.json"
   done
+  echo "__RECORDED__ 0"
+)
+```
+
+### 9.3 Arena: 계약, 대국, 판독
+
+- `approved.arena` 뒤에 실행한다. 학습 도구(계약 sources)는 Arena 계약만 만든다(`arena-contract`). 대국과 판독은 새 도구 `scripts/h7r_s400_arena.py`가 한다(계약 sources가 아니다. 실험 SHA는 그대로다).
+  - 기존 `scripts/h7r_eval.py play`는 v1 계약만 읽는다(A1 계약이 그 파일을 SHA로 고정했다). 새 도구의 `play`는 같은 대국 루프를 v2 계약에 쓴다. 과제 목록, 대국, journal, arm 기록은 그 파일의 함수(`build_tasks`, `_play_chunk`, `check_games`, `arm_identity`, `load_arm`)를 그대로 쓴다.
+  - 모든 명령은 승인된 S400 계약을 읽고, 커밋된 Arena 계약이 S400 계약과 커밋된 S 20261024 학습 기록으로 다시 만든 계약과 정확히 같아야 진행한다.
+- Arena 계약: seed 20261024의 S와 A1 T, O1-dev-a·b 각 300쌍(seed 9101·9102), suite마다 S와 T가 같은 pairing(같은 opening, 같은 seed). champion은 H3 정책 + c5 value, 모두 S50.
+- 모델 파일 확인(`check-models`): 세 모델(S, T, champion)의 네 파일(정책 checkpoint·metadata, value checkpoint·metadata) SHA가 Arena 계약과 같아야 한다. 블록이 대국 전에 실행하고, `play`도 arm마다 다시 확인한다. 하나라도 다르거나 없으면 대국을 시작하지 않는다.
+- 판독(`judge`)
+  - arm 기록 4개를 다시 검사한다(`load_arm`: 서명, 계약, 모델, suite, opening, 대국 재생, 요약). 모든 쌍이 유효해야 하고(상대 반칙 쌍 없음), 표본은 300쌍 그대로여야 한다. 네 arm은 같은 깨끗한 commit에서 두어야 하고, judge도 그 commit에서 실행한다.
+  - suite마다 S와 T의 쌍이 같은 opening, 같은 순서, 같은 class여야 계산한다. 하나라도 다르면 판독하지 않는다.
+  - D′ = S − T(같은 opening의 쌍 점수 차), P′ = S 대 champion 점수 − 0.5. 두 suite를 50:50으로 합친다. bootstrap 20,000회(seed 20261141), suite 안에서 opening 단위로 다시 뽑는다(S와 T가 함께 움직인다). 단측 α 0.025. class 단위 결과는 민감도로 보고만 한다.
+  - 판독: D′ BETTER(하한 > 0) / WORSE(상한 < 0) / NOT_ESTABLISHED. P′ STRONGER / WEAKER / NOT_ESTABLISHED. P′가 STRONGER이면 후보가 독립 확인 단계로 간다(champion 변경 없음). 아니면 계약이 끝난다. 계획값(표준오차 약 1.04%p 등)은 판정 문턱이 아니다.
+  - 결과는 `judge.json`에 남긴다. 네 arm 기록의 SHA, arm commit, suite별 arm 요약을 함께 기록한다. arm 기록(`runs/h7r/R2-S400-TRAIN/arena/*.json`)은 A1처럼 커밋하지 않는다.
+- 예상 시간: arm 하나에 약 30분(A1 O1 arm 600국 29.2분), 4개 arm 약 2시간. tmux에서 실행한다.
+- 대국 중에는 HEAD를 고정한다(arm 기록의 서명에 실행 HEAD가 들어간다).
+  - 처음 시작할 때 HEAD를 `runs/h7r/R2-S400-TRAIN/arena/HEAD`에 적는다. 그 파일이 있으면 pull하지 않고, HEAD가 그 값과 같아야 진행한다. judge가 커밋될 때까지 그대로다.
+  - arm이 실패하면 아무것도 커밋하지 않고 멈춘다. 같은 블록을 다시 실행하면 같은 HEAD에서 journal로 이어서 둔다. 끝난 arm은 다시 두지 않는다.
+  - 모든 arm이 끝난 뒤에 대국·모델 확인·judge 로그와 `judge.json`을 함께 커밋한다(실패한 시도의 로그 포함).
+- 복구: `judge.json`이 커밋 전에 남아 있으면(judge 뒤 중단, 스테이징 뒤 중단) 다시 판독하지 않는다. `verify-judge`가 arm 기록에서 판독을 다시 계산해 `judge.json`과 같을 때만(실행 commit은 arm commit) 커밋한다.
+- judge 결과를 보고 표본을 보충하거나 다시 두지 않는다.
+
+s5-AC. Arena 계약 (`approved.arena` 뒤)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  D=docs/h7r/r2/R2-S400-TRAIN
+  R=runs/h7r/R2-S400-TRAIN
+  L="$R/logs"
+  A=docs/h7r/contracts-v2/R2-S400-TRAIN-ARENA-1.json
+  T=scripts/h7r_s400_arena.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$A"; then echo "STOP: the Arena contract is already recorded"; exit 1; fi
+  tracked "$D/seed-records/S-20261024/record.json" || { echo "STOP: train S 20261024 is not recorded"; exit 1; }
+  mkdir -p "$L"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/arena-contract.lock"
+  flock -n 9 || { echo "STOP: another arena-contract block is running"; exit 1; }
+  logged(){  # log path, then the command; sets rc; the log ends with __EXIT__
+    local log="$1"; shift
+    set +e
+    "$@" 2>&1 | tee "$log"
+    local codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+  }
+  rc=0
+  if [ ! -e "$A" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    logged "$(mktemp "$L/arena-contract-XXXXXXXX.log")" python -u scripts/h7r_s400_train.py arena-contract
+  else
+    echo "an uncommitted $A exists: checking it (no new run)"
+  fi
+  checked=false
+  if [ "$rc" -eq 0 ]; then
+    logged "$(mktemp "$L/arena-check-XXXXXXXX.log")" python -u "$T" check-contract
+    [ "$rc" -eq 0 ] || { echo "STOP: the Arena contract does not check; nothing committed"; exit 1; }
+    checked=true
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L"/arena-contract-*.log "$L"/arena-check-*.log; do
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  if "$checked"; then paths+=("$A"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-TRAIN: Arena contract exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
+
+s5-A. Arena 대국과 판독 (Arena 계약 커밋 뒤, tmux 권장)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-S400-TRAIN
+  R=runs/h7r/R2-S400-TRAIN
+  L="$R/logs"
+  AR="$R/arena"
+  A=docs/h7r/contracts-v2/R2-S400-TRAIN-ARENA-1.json
+  T=scripts/h7r_s400_arena.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$D/judge.json"; then echo "STOP: the judge is already recorded"; exit 1; fi
+  mkdir -p "$L" "$AR"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/arena.lock"
+  flock -n 9 || { echo "STOP: another Arena block is running"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if [ -f "$AR/HEAD" ]; then
+    if [ "$(git rev-parse HEAD)" != "$(cat "$AR/HEAD")" ]; then
+      echo "STOP: HEAD moved since the Arena started ($(cat "$AR/HEAD")); restore that commit or report"; exit 1
+    fi
+    echo "resuming at $(cat "$AR/HEAD") (no pull until the judge is recorded)"
+  else
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before the Arena"; exit 1; }
+    [ ! -e "$D/judge.json" ] || { echo "STOP: $D/judge.json exists without an Arena HEAD: report it"; exit 1; }
+    git pull --ff-only origin feat/h7-c1
+    tracked "$A" || { echo "STOP: the Arena contract is not recorded (run s5-AC first)"; exit 1; }
+    git rev-parse HEAD > "$AR/HEAD"
+  fi
+  tracked "$A" || { echo "STOP: the Arena contract is not recorded (run s5-AC first)"; exit 1; }
+  STAMP="$(date +%Y%m%d-%H%M%S)-$$"
+  run(){  # log base, then the command; sets rc; the log ends with __EXIT__
+    local b="$1"; shift
+    if [ -e "$L/$b.log" ]; then echo "STOP: $L/$b.log exists"; exit 1; fi
+    set +e
+    "$@" 2>&1 | tee "$L/$b.log"
+    local codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $L/$b.log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$L/$b.log"
+  }
+  if [ ! -e "$D/judge.json" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before playing"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    run "check-models-$STAMP" python -u "$T" check-models
+    [ "$rc" -eq 0 ] || { echo "STOP: the model files are not the Arena contract's; nothing played or committed"; exit 1; }
+    arms="$(python -c "import json, sys; print(' '.join(a['name'] for a in json.load(open(sys.argv[1]))['arms']))" "$A")"
+    for arm in $arms; do
+      if [ -e "$AR/$arm.json" ]; then echo "done: $arm"; continue; fi
+      run "play-$arm-$STAMP" python -u "$T" play --arm "$arm" --device cuda --workers 6 \
+        --jsonl "$AR/$arm.jsonl" --output "$AR/$arm.json"
+      if [ "$rc" -ne 0 ]; then
+        echo "STOP: arm $arm failed (exit $rc); nothing committed, HEAD kept: rerun this block to resume"; exit 1
+      fi
+    done
+    run "judge-$STAMP" python -u "$T" judge --arms-dir "$AR"
+    [ "$rc" -eq 0 ] || { echo "STOP: the judge refused (exit $rc); nothing committed, HEAD kept"; exit 1; }
+  else
+    echo "an uncommitted $D/judge.json exists: verifying it against the arm records (no new judge)"
+    run "verify-judge-$STAMP" python -u "$T" verify-judge --arms-dir "$AR"
+    [ "$rc" -eq 0 ] || { echo "STOP: $D/judge.json is not what the arm records give: report it; nothing committed"; exit 1; }
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L"/check-models-*.log "$L"/play-*.log "$L"/judge-*.log "$L"/verify-judge-*.log; do
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  paths+=("$D/judge.json")
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R S400-TRAIN: Arena and judge (records only)"
+  git push origin feat/h7-c1
   echo "__RECORDED__ 0"
 )
 ```
