@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "arena-check-D1PuWLPy.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-TRAIN/logs/arena-check-D1PuWLPy.log",
+   "copy": "docs/h7r/r2/R2-S400-TRAIN/stage-logs/arena-check-D1PuWLPy.log",
+   "bytes": 129,
+   "sha256": "cde906daa3011cc0a952221d22713d9043626aca4f41eacccd9cd61f0741f9ce"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

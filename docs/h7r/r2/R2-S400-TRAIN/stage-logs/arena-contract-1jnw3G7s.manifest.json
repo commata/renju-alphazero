@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "arena-contract-1jnw3G7s.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-TRAIN/logs/arena-contract-1jnw3G7s.log",
+   "copy": "docs/h7r/r2/R2-S400-TRAIN/stage-logs/arena-contract-1jnw3G7s.log",
+   "bytes": 34,
+   "sha256": "03214bc1228e4407fd4513ceb9d59e300500efab5f4652d2884f69a89bb5edcf"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

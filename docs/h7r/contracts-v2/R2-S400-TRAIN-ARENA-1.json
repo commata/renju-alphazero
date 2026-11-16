@@ -1,0 +1,128 @@
+{
+ "format": "h7r-eval-contract-v2",
+ "seed_policy": "h7r-seeds-v2",
+ "contract_id": "R2-S400-TRAIN-ARENA-1",
+ "purpose": "pilot",
+ "status": "fixed",
+ "meaning": "the Arena of R2-S400-TRAIN (experiment 67c6ba3c8081): development reading; never a promotion",
+ "models": {
+  "champion": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  },
+  "S": {
+   "policy": "runs/h7r/R2-S400-TRAIN/S-20261024/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "68928bc6ef8c94fefa7328c566363408bba1d770194c1250156588eb65da8ada",
+    "policy_metadata_sha256": "ed75576736ca231679bad41e108a38dba852ec1581d83e3ab83ce447f6129a8f",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  },
+  "T": {
+   "policy": "runs/h7r/R2-P1-POLICY-REPLAY-A1/T-20261024/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "ae4e6d9319c280ca25dc58820a0672191eee0253b8e8b9e5a268ef03c29de95d",
+    "policy_metadata_sha256": "89d1dc7b3e13898c104110addaba22b4ab024517d264cb417bc69bf41ff35332",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  }
+ },
+ "arms": [
+  {
+   "name": "O1-dev-a_S_vs_champion",
+   "tested": {
+    "model": "S",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "champion",
+    "budget": 1
+   },
+   "pairs": 300,
+   "seed": 9101,
+   "pairing": "O1-dev-a",
+   "suite": {
+    "path": "docs/h7r/suites/O1-dev-a.json",
+    "sha256": "07179bcd0bdeac037553674cf2dddaa9f5c70017d406e8f952bb206baf440b5b"
+   }
+  },
+  {
+   "name": "O1-dev-a_T_vs_champion",
+   "tested": {
+    "model": "T",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "champion",
+    "budget": 1
+   },
+   "pairs": 300,
+   "seed": 9101,
+   "pairing": "O1-dev-a",
+   "suite": {
+    "path": "docs/h7r/suites/O1-dev-a.json",
+    "sha256": "07179bcd0bdeac037553674cf2dddaa9f5c70017d406e8f952bb206baf440b5b"
+   }
+  },
+  {
+   "name": "O1-dev-b_S_vs_champion",
+   "tested": {
+    "model": "S",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "champion",
+    "budget": 1
+   },
+   "pairs": 300,
+   "seed": 9102,
+   "pairing": "O1-dev-b",
+   "suite": {
+    "path": "docs/h7r/suites/O1-dev-b.json",
+    "sha256": "5c94ee7a043d130d5a97c954b67ce1416890bed9d532fd5f196082cc2dc10d79"
+   }
+  },
+  {
+   "name": "O1-dev-b_T_vs_champion",
+   "tested": {
+    "model": "T",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "champion",
+    "budget": 1
+   },
+   "pairs": 300,
+   "seed": 9102,
+   "pairing": "O1-dev-b",
+   "suite": {
+    "path": "docs/h7r/suites/O1-dev-b.json",
+    "sha256": "5c94ee7a043d130d5a97c954b67ce1416890bed9d532fd5f196082cc2dc10d79"
+   }
+  }
+ ],
+ "stats": {
+  "alpha_one_sided": 0.025,
+  "bootstrap": {
+   "samples": 20000,
+   "seed": 20261141,
+   "method": "percentile",
+   "unit": "opening pair"
+  }
+ },
+ "s400_train": {
+  "contract_id": "R2-S400-TRAIN",
+  "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+  "candidate_record_sha256": "f3d5c6aa82941afdf9d6b41978b52639d89680e86b75e5b7168c509c7cdf3eca"
+ }
+}
