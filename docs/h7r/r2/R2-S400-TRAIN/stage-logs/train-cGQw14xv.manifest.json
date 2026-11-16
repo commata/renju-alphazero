@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "train-cGQw14xv.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-TRAIN/logs/train-cGQw14xv.log",
+   "copy": "docs/h7r/r2/R2-S400-TRAIN/stage-logs/train-cGQw14xv.log",
+   "bytes": 1446,
+   "sha256": "67ddd84b5ca09728c319deb85a5e46209e9e493648ffc3b871f1fc80ab800456"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

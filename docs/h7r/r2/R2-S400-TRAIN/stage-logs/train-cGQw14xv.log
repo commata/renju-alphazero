@@ -1,0 +1,31 @@
+/home/tack/renju-h6/.venv/lib/python3.12/site-packages/torch/_subclasses/functional_tensor.py:368: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at /__w/pytorch/pytorch/torch/csrc/utils/tensor_numpy.cpp:84.)
+  cpu = _conversion_method_template(device=torch.device("cpu"))
+[h7r-p1-policy] step 10/96 val 2.0191 guard top-1 0.5182 (H3 0.5241)
+[h7r-p1-policy] step 19/96 val 2.0023 guard top-1 0.5159 (H3 0.5241)
+[h7r-p1-policy] step 29/96 val 2.0029 guard top-1 0.5165 (H3 0.5241)
+[h7r-p1-policy] step 38/96 val 1.9979 guard top-1 0.5144 (H3 0.5241)
+[h7r-p1-policy] step 48/96 val 1.9902 guard top-1 0.5188 (H3 0.5241)
+[h7r-p1-policy] step 58/96 val 1.9858 guard top-1 0.5179 (H3 0.5241)
+[h7r-p1-policy] step 67/96 val 1.9844 guard top-1 0.5168 (H3 0.5241)
+[h7r-p1-policy] step 77/96 val 1.9850 guard top-1 0.5180 (H3 0.5241)
+[h7r-p1-policy] step 86/96 val 1.9833 guard top-1 0.5170 (H3 0.5241)
+[h7r-p1-policy] step 96/96 val 1.9826 guard top-1 0.5168 (H3 0.5241)
+{
+ "verdict": "CANDIDATE",
+ "best": {
+  "step": 96,
+  "val": {
+   "rows": 1423,
+   "objective": 1.9826298148717498,
+   "ce": 1.952001575676388,
+   "kl": 0.07443867983928,
+   "top1_vs_target_mode": 0.5298664792691496
+  },
+  "guard_top1": 0.5167614439661944,
+  "guard_drop": 0.007351786107009262,
+  "eligible": true
+ },
+ "selected_state_sha256": "106e0ca5cdb6e0702c8892d85b88514b1cd88ad645e9b524e7602891358cca1a",
+ "seconds": 115.9
+}
+__EXIT__ 0
