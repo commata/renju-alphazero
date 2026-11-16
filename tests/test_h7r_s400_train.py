@@ -7,6 +7,7 @@ import copy
 import gzip
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 from tempfile import TemporaryDirectory
@@ -522,7 +523,7 @@ def kill():  # the whole block dies (power loss, a closed terminal)
     os.killpg(os.getpgid(0), signal.SIGKILL)
 if os.environ.get('S5_FORBID'):
     print('STOP: must not run again'); sys.exit(9)
-if cmd == 'gate' and os.environ.get('CUBLAS_WORKSPACE_CONFIG') != ':4096:8':
+if cmd in ('gate', 'train') and os.environ.get('CUBLAS_WORKSPACE_CONFIG') != ':4096:8':
     print('STOP: CUBLAS_WORKSPACE_CONFIG'); sys.exit(7)
 if os.environ.get('S5_FAIL') == cmd:
     print('STOP: ValueError: stand-in failure'); sys.exit(1)
@@ -533,6 +534,7 @@ eid = hashlib.sha256(json.dumps({k: v for k, v in c.items() if k != 'approved'},
                                 separators=(',', ':')).encode()).hexdigest()
 commit = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
 stamp = {'experiment_sha256': eid, 'git': {'commit': commit, 'dirty': False}}
+fmt, dest = 'h7r-s400-train-' + cmd + '-v1', Path(D, cmd + '.json')
 if cmd in ('prepare', 'gate'):
     passed = not (cmd == 'gate' and os.environ.get('S5_GATE_FAIL'))
     body, code = {'passed': passed, 'log_name': log}, 0 if passed else 2
@@ -545,6 +547,22 @@ elif cmd == 'search':
         Path(R, 's400.jsonl').write_text('s400' + chr(10))
         body, code = {'status': 'SEARCHED',
                       's400': {'records_sha256': hashlib.sha256(Path(R, 's400.jsonl').read_bytes()).hexdigest()}}, 0
+elif cmd == 'train':  # the checkpoint files first, then the run record (the order of the real tool)
+    seed = int(sys.argv[sys.argv.index('--seed') + 1])
+    out = Path(R, 'S-' + str(seed))
+    if out.exists() and any(out.iterdir()):
+        print('STOP: ValueError: ' + str(out) + ' holds files of an interrupted run'); sys.exit(1)
+    out.mkdir(parents=True, exist_ok=True)
+    fmt, dest = 'h7r-s400-train-run-v1', out / 'record.json'
+    body, code = {'seed': seed, 'arm': 'S', 'verdict': 'NO_ELIGIBLE_CHECKPOINT'}, 0
+    if os.environ.get('S5_TRAIN_NO_CANDIDATE') != str(seed):
+        for name in ('best.pt', 'best.json', 'logits.pt'):
+            (out / name).write_bytes((name + ' ' + str(seed)).encode())
+        if os.environ.get('S5_TRAIN_ABORT') == str(seed):
+            kill()
+        body = {**body, 'verdict': 'CANDIDATE', 'candidate': {
+            'checkpoint_sha256': hashlib.sha256((out / 'best.pt').read_bytes()).hexdigest(),
+            'metadata_sha256': hashlib.sha256((out / 'best.json').read_bytes()).hexdigest()}}
 else:  # rows: the candidate file first, then the record (the order of the real tool)
     cand = Path(R, 'policy_rows_s400.jsonl.gz')
     if cand.exists():
@@ -556,9 +574,10 @@ else:  # rows: the candidate file first, then the record (the order of the real 
     if os.environ.get('S5_ROWS_ABORT') == 'exit':
         print('STOP: ValueError: a read file changed: nothing is published'); sys.exit(1)
     body, code = {'candidate_rows_sha256': hashlib.sha256(cand.read_bytes()).hexdigest()}, 0
-Path(D, cmd + '.json').write_text(json.dumps({'format': 'h7r-s400-train-' + cmd + '-v1', **stamp, **body}))
+dest.write_text(json.dumps({'format': fmt, **stamp, **body}))
 if os.environ.get('S5_TAMPER') == cmd:  # the output the result names changes after the result is written
-    out = Path(R, 's400.jsonl' if cmd == 'search' else 'policy_rows_s400.jsonl.gz')
+    out = (dest.parent / 'best.pt' if cmd == 'train' else
+           Path(R, 's400.jsonl' if cmd == 'search' else 'policy_rows_s400.jsonl.gz'))
     out.write_bytes(out.read_bytes() + b'x')
 if os.environ.get('S5_KILL') == cmd + ':after':
     kill()
@@ -604,8 +623,8 @@ class BlockTest(unittest.TestCase):
         git(w, 'push', '-q', 'origin', 'feat/h7-c1')
         doc = (ROOT / 'docs/h7r/r2/R2-S400-TRAIN-draft.md').read_text()
         blocks = re.findall(r'```bash' + chr(10) + r'(.*?)```', doc, re.S)
-        self.assertEqual(len(blocks), 4)
-        self.blocks = dict(zip(('s5-1', 's5-G', 's5-S', 's5-R'),
+        self.assertEqual(len(blocks), 5)
+        self.blocks = dict(zip(('s5-1', 's5-G', 's5-S', 's5-R', 's5-T'),
                                (b.replace('~/renju-h6', w.as_posix()) for b in blocks)))
         self.D = 'docs/h7r/r2/R2-S400-TRAIN'
         self.R = 'runs/h7r/R2-S400-TRAIN'
@@ -884,6 +903,138 @@ class BlockTest(unittest.TestCase):
     def test_rows_output_gone_before_the_commit_is_not_recovered(self):
         self.check_output_gone_before_the_commit('rows')
 
+    # --- train: three seeds, one commit each (section 9.2) ---------------------------------------------------------
+
+    SEEDS = (20261024, 20261111, 20261112)
+
+    def run_dir(self, s):
+        return f'{self.R}/S-{s}'
+
+    def train_attempts(self, seed):
+        return [a for a in self.attempts('train') if a['result'] == f'{self.run_dir(seed)}/record.json']
+
+    def assert_seed_recorded(self, s, candidate=True):
+        dst = f'{self.D}/seed-records/S-{s}/record.json'
+        self.assertTrue(self.files(dst))
+        self.assertEqual(self.sha(dst), self.sha(f'{self.run_dir(s)}/record.json'))
+        a = self.train_attempts(s)[-1]
+        f = a['finish']
+        self.assertEqual((f['state'], f['exit_code']), ('exited', 0))
+        self.assertEqual(f['result_sha256'], self.sha(dst))
+        names = ('best.pt', 'best.json', 'logits.pt')
+        self.assertEqual(f['outputs'], {f'{self.run_dir(s)}/{n}': (self.sha(f'{self.run_dir(s)}/{n}') if candidate
+                                                                   else None) for n in names})
+        return a
+
+    def test_train_three_seeds_one_commit_each(self):
+        code, out = self.bash('s5-T')
+        self.assertEqual(code, 1)
+        self.assertIn('rows is not recorded', out)
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        before = self.head()
+        self.through('s5-T')
+        for s in self.SEEDS:
+            [_] = self.train_attempts(s)
+            self.assert_seed_recorded(s)
+        subjects = git(self.work, 'log', '--format=%s', f'{before}..HEAD').splitlines()
+        self.assertEqual(subjects, [f'H7-R S400-TRAIN: train S {s} exit 0 (records only)' for s in reversed(self.SEEDS)])
+        self.assert_pushed()
+        head = self.head()
+        code, out = self.bash('s5-T', S5_FORBID='1')  # every seed recorded: no run, no commit
+        self.assertEqual(code, 0, out)
+        self.assertEqual([line for line in out.splitlines() if line.startswith('done: ')],
+                         [f'done: S-{s}' for s in self.SEEDS])
+        self.assertEqual(self.head(), head)
+
+    def test_train_without_a_candidate_is_recorded_and_the_next_seed_runs(self):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        code, out = self.bash('s5-T', S5_TRAIN_NO_CANDIDATE='20261111')
+        self.assertEqual(code, 0, out)
+        self.assert_seed_recorded(20261111, candidate=False)
+        for s in (20261024, 20261112):
+            self.assert_seed_recorded(s)
+        self.assert_pushed()
+
+    def test_a_failed_train_is_recorded_and_stops_before_the_next_seed(self):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        code, out = self.bash('s5-T', S5_FAIL='train')
+        self.assertEqual(code, 1, out)
+        self.assertIn('STOP: train S 20261024 failed (exit 1)', out)
+        self.assertIn('train S 20261024 exit 1', git(self.work, 'log', '-1', '--format=%s'))
+        [a] = self.attempts('train')
+        self.assertEqual((a['finish']['exit_code'], a['finish']['result_sha256']), (1, None))
+        self.assertFalse(self.files(f'{self.D}/seed-records'))
+        self.assertFalse((self.work / self.run_dir(20261111)).exists())
+        self.assert_pushed()
+
+    def test_train_killed_after_its_record_is_recovered_without_a_new_run(self):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        code, out = self.bash('s5-T', S5_KILL='train:after')
+        self.assertNotEqual(code, 0, out)
+        self.through('s5-T')
+        [a] = self.train_attempts(20261024)
+        self.assertTrue(a['finish']['recovered'])
+        for s in self.SEEDS:
+            self.assert_seed_recorded(s)
+        self.assert_pushed()
+
+    def test_train_interrupted_after_staging_is_recorded_without_a_new_run(self):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        before = self.head()
+        code, out = self.bash('s5-T', S5_KILL_AT_COMMIT='1')
+        self.assertNotEqual(code, 0, out)
+        self.assertEqual(self.head(), before)
+        self.assertIn(f'{self.D}/seed-records/S-20261024/record.json',
+                      git(self.work, 'diff', '--cached', '--name-only'))
+        self.through('s5-T')
+        [a] = self.train_attempts(20261024)
+        self.assertFalse(a['finish']['recovered'])
+        for s in self.SEEDS:
+            self.assert_seed_recorded(s)
+        self.assert_pushed()
+
+    def test_files_left_by_an_interrupted_train_are_kept_and_set_aside_on_request(self):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        code, out = self.bash('s5-T', S5_TRAIN_ABORT='20261024')
+        self.assertNotEqual(code, 0, out)
+        out_dir = self.work / self.run_dir(20261024)
+        left = {p.name: p1.file_sha256(p) for p in out_dir.iterdir()}
+        self.assertEqual(sorted(left), ['best.json', 'best.pt', 'logits.pt'])
+        before = self.head()
+        code, out = self.bash('s5-T')
+        self.assertEqual(code, 1)
+        self.assertIn('an interrupted train run left files', out)
+        [sha] = re.findall(r'export S5_TRAIN_SET_ASIDE=([0-9a-f]{12})', out)
+        self.assertEqual(({p.name: p1.file_sha256(p) for p in out_dir.iterdir()}, self.head()), (left, before))
+        code, out = self.bash('s5-T', S5_TRAIN_SET_ASIDE='0' * 12)
+        self.assertEqual(code, 1)
+        self.assertEqual({p.name: p1.file_sha256(p) for p in out_dir.iterdir()}, left)
+        code, out = self.bash('s5-T', S5_TRAIN_SET_ASIDE=sha)
+        self.assertEqual(code, 0, out)
+        old, new = self.train_attempts(20261024)
+        self.assertEqual((old['finish']['state'], old['finish']['closed_by']), ('interrupted', new['name']))
+        moved = {Path(x['from']).name: x for x in new['set_aside']}
+        self.assertEqual(sorted(moved), sorted(left))
+        for name, x in moved.items():
+            self.assertEqual(x['to'], f"{self.R}/interrupted/{new['name']}.{name}")
+            self.assertEqual((x['sha256'], self.sha(x['to']), x['left_by']), (left[name], left[name], old['name']))
+        self.assertEqual(new['finish']['same_as_set_aside'], {f'{self.run_dir(20261024)}/{n}': True for n in left})
+        for s in self.SEEDS:
+            self.assert_seed_recorded(s)
+        self.assert_pushed()
+
+    def test_a_train_output_changed_after_the_run_is_not_recorded(self):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        before = self.head()
+        code, out = self.bash('s5-T', S5_TAMPER='train')
+        self.assertEqual(code, 1, out)
+        self.assertIn(f'{self.run_dir(20261024)}/best.pt: its SHA-256 is not the one', out)
+        self.assertEqual((self.head(), git(self.work, 'diff', '--cached', '--name-only')), (before, ''))
+        code, out = self.bash('s5-T', S5_FORBID='1')  # recovered on the next run: refused again
+        self.assertEqual(code, 1, out)
+        self.assertIn('its SHA-256 is not the one', out)
+        self.assertEqual(self.head(), before)
+
     def test_a_running_block_is_refused(self):
         import fcntl
 
@@ -1012,6 +1163,32 @@ class AttemptToolTest(unittest.TestCase):
         self.s400(b'changed')
         with self.assertRaisesRegex(ValueError, 'its SHA-256 is not the one'):
             self.att.recover(args, self.root)
+
+    def test_a_train_record_must_be_at_its_seed_s_path(self):
+        out = self.root / st.RUNS / 'S-20261024'
+        out.mkdir(parents=True)
+        log = self.root / 'logs/train-Ab12Cd34.log'
+        log.write_text('run' + chr(10) + '__EXIT__ 0' + chr(10))
+        self.assertEqual(self.att.main(['--root', str(self.root), 'start', '--stage', 'train', '--log',
+                                        'logs/train-Ab12Cd34.log', '--result', f'{st.RUNS}/S-20261024/record.json',
+                                        '--contract', 'c.json', '--output', f'{st.RUNS}/S-20261024/best.pt',
+                                        '--output', f'{st.RUNS}/S-20261024/best.json']), 0)
+        for name in ('best.pt', 'best.json'):
+            (out / name).write_bytes(name.encode())
+        body = {'format': 'h7r-s400-train-run-v1', 'experiment_sha256': p1.experiment_sha256(self.c),
+                'git': {'commit': git(self.root, 'rev-parse', 'HEAD')}, 'seed': 20261111, 'verdict': 'CANDIDATE',
+                'candidate': {'checkpoint_sha256': p1.file_sha256(out / 'best.pt'),
+                              'metadata_sha256': p1.file_sha256(out / 'best.json')}}
+        path = self.root / 'logs/train-Ab12Cd34.attempt.json'
+        (out / 'record.json').write_text(json.dumps(body))
+        with self.assertRaisesRegex(ValueError, 'a run record of seed 20261111'):
+            self.att.finish(self.root, path, 0)
+        (out / 'record.json').write_text(json.dumps({**body, 'seed': 20261024, 'candidate': {
+            **body['candidate'], 'metadata_sha256': '0' * 64}}))
+        with self.assertRaisesRegex(ValueError, 'best.json: its SHA-256 is not the one'):
+            self.att.finish(self.root, path, 0)
+        (out / 'record.json').write_text(json.dumps({**body, 'seed': 20261024}))
+        self.assertEqual(self.att.finish(self.root, path, 0)['finish']['exit_code'], 0)
 
     def test_recover_needs_the_attempt_that_wrote_the_result(self):
         from types import SimpleNamespace

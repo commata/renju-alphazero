@@ -1,4 +1,4 @@
-"""Desktop attempt records (sidecars) for R2-S400-TRAIN stages whose result keeps no log name (search, rows).
+"""Desktop attempt records (sidecars) for R2-S400-TRAIN stages whose result keeps no log name (search, rows, train).
 
 The training tool's records are pinned by the contract (``sources``), so the link between a result and the run that
 wrote it lives next to the run log instead. One attempt is one run of a desktop block; its record
@@ -57,10 +57,23 @@ def _rows_named(r: dict) -> dict:
     return {f'{RUNS}/policy_rows_s400.jsonl.gz': r.get('candidate_rows_sha256')}
 
 
+def _train_named(r: dict) -> dict:
+    if 'candidate' not in r:
+        return {}  # no eligible checkpoint: nothing written but the record
+    out, cand = f"{RUNS}/S-{r['seed']}", r['candidate'] or {}
+    return {f'{out}/best.pt': cand.get('checkpoint_sha256'), f'{out}/best.json': cand.get('metadata_sha256')}
+
+
+def train_result(seed) -> str:
+    return f'{RUNS}/S-{seed}/record.json'
+
+
 # the stage's result format, the exit code the training tool returns with that result, and the output files the
-# result names by SHA-256 (``h7r_s400_train``: search.json ``s400.records_sha256``, rows.json ``candidate_rows_sha256``)
+# result names by SHA-256 (``h7r_s400_train``: search.json ``s400.records_sha256``, rows.json ``candidate_rows_sha256``,
+# a train run record ``candidate.checkpoint_sha256`` / ``metadata_sha256``; the train command exits 0 with any verdict)
 STAGES = {'search': ('h7r-s400-train-search-v1', _search_code, _search_named),
-          'rows': ('h7r-s400-train-rows-v1', lambda r: 0, _rows_named)}
+          'rows': ('h7r-s400-train-rows-v1', lambda r: 0, _rows_named),
+          'train': ('h7r-s400-train-run-v1', lambda r: 0, _train_named)}
 
 
 def sha256(path) -> str:
@@ -123,6 +136,8 @@ def hashed_outputs(root, a: dict) -> dict:
 
 def check_named_outputs(root, a: dict, r: dict) -> None:
     """Every output file the result names by SHA-256 is an output of the attempt and is that file now."""
+    if a['stage'] == 'train' and (type(r.get('seed')) is not int or a['result'] != train_result(r['seed'])):
+        raise ValueError(f"{a['result']}: a run record of seed {r.get('seed')!r} (expected at its own seed's path)")
     for rel, want in STAGES[a['stage']][2](r).items():
         if not (isinstance(want, str) and SHA.fullmatch(want)):
             raise ValueError(f"{a['result']}: no SHA-256 for {rel}")

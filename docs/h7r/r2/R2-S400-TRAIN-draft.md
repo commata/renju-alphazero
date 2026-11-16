@@ -1,6 +1,6 @@
 # R2-S400-TRAIN: S400 목표 후보의 학습·평가 계약 설계 (초안, 결정 전)
 
-- 상태: seed 예약 v2·새 개발 suite 준비(§8.1), 학습 도구·테스트·계약 준비(§8.2). **모든 단계 미승인**. prepare·gate 데스크톱 블록 준비(§9). search·train·Arena 블록과 v2 Arena 실행·판독은 아직 없다.
+- 상태: prepare PASS(`bf25f74`), gate PASS(`2e894cf`), search 승인(`6eb8122`)·search SEARCHED(`f500fc2`)·rows(`a191fbe`) 기록(§8.6). train 블록 준비(§8.7, §9.2), **train·arena 미승인**. Arena 블록과 v2 Arena 실행·판독은 아직 없다.
 - 채택된 결정(검토 2026-11-13): 재탐색 방식 B, 행 집합 고정, 새 개발 opening으로 평가, 보조 arm 생략, T 재현 gate를 재탐색 앞으로. 근거와 세부는 §2–§6.
 - 근거
   - R2-P1-POLICY-REPLAY-A1(`faeb72b0f625`): T(정책 보존, S200 목표)는 champion 대비 NOT_ESTABLISHED, C 대비 BETTER_THAN_CONTROL
@@ -218,9 +218,30 @@
   - 같은 단계 블록의 동시 실행
   - 결과가 SHA로 가리키는 출력 파일 대조(검토 P2 반영, 2026-11-14): 정상 완료 뒤 출력이 바뀐 경우(`finish`가 성공을 기록하지 않고 멈춤, 다음 실행의 복구도 거부), 커밋 전 복구 때 출력이 없어진 경우(`recover`가 멈추고 커밋·푸시하지 않음). search와 rows 각각.
 
+### 8.6 search·rows: 기록 확인 (`f500fc2`, `a191fbe`, 2026-11-16)
+
+- search(`search-9Gug9CcO`): 실행 HEAD `6eb8122`(search 승인 커밋, clean), 실험 `67c6ba3c8081`, 계약 파일 SHA `5c926907ab9e`.
+  - S200 재현: 74/74국면 일치. S400: train 범위 936게임, 18,965국면(계약의 `scope_eligible`과 같음), 탐색 합계 95,423.6초, 이번 세션 벽시계 16,151.1초(약 4.5시간), 이어받은 게임 0.
+  - 실행 기록: `exited 0`, 복구 없음. 로그 사본 SHA와 결과 SHA가 실행 기록과 같고, 출력 `s400.jsonl`의 SHA(`942eb3eb298b`)가 결과의 `s400.records_sha256`과 같다.
+- rows(`rows-JgxHbPrz`): 실행 HEAD `f500fc2`(search 기록 커밋, clean), 같은 실험·계약 파일.
+  - 후보 행 26,000행(c2와 같은 행 수), 행 검사 `passed`. 교체: train 방문 목표 18,965행 모두 S400으로 교체(비율 1.0), S200 유지 0, 추가하지 않은 S400 전용 목표 0.
+  - S400 기록 SHA가 search 기록과 같다. 후보 gzip SHA(`add6022ca8d4`)가 결과의 `candidate_rows_sha256`과 같다. 옮긴 파일 없음.
+
+### 8.7 train 블록 준비 (train 미승인, 2026-11-16)
+
+- 블록 s5-T(§9.2). 학습 도구와 계약은 바꾸지 않았다(실험 SHA `67c6ba3c8081` 그대로). 실행 기록 도구(`scripts/h7r_attempts.py`, 계약의 sources가 아님)에 단계 `train`을 더했다. 결과의 candidate SHA를 `best.pt`·`best.json`과 대조하고, 결과의 seed가 결과 경로의 seed와 같아야 한다.
+- 블록 테스트(`BlockTest`, 실제 bash와 임시 저장소, 도구는 대역)가 다루는 경우:
+  - rows 기록 전에는 멈춤. 정상 완료(3 seed, seed마다 커밋). 다시 실행하면 모두 건너뛰고 커밋 없음
+  - eligible checkpoint가 없는 seed(출력 없이 기록, 다음 seed 진행)
+  - 실패(기록하고 다음 seed 전에 멈춤)
+  - 결과를 쓴 뒤 중단(다시 학습하지 않고 복구), 스테이징 뒤 중단(다시 학습하지 않고 커밋)
+  - 결과 없이 파일만 남은 중단(파일 유지, 안내 후 멈춤, 틀린 값 거부, 확인 뒤 옮기고 다시 학습, 같은 파일 확인)
+  - 정상 완료 뒤 출력이 바뀐 경우(성공 기록 없이 멈춤, 다음 실행의 복구도 거부)
+- 실제 학습 경로는 gate(§8.4)에서 A1과 비트 단위로 재현된 `h7r_p1a1.execute`를 그대로 쓴다.
+
 ## 9. 데스크톱 실행 (승인 뒤에만)
 
-- s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤, s5-S와 s5-R은 `approved.search` 뒤에 실행한다(rows 명령도 search 승인으로 돈다). train, Arena 블록은 해당 단계 승인 전에 추가한다.
+- s5-1은 `approved.prepare` 뒤, s5-G는 `approved.gate` 뒤, s5-S와 s5-R은 `approved.search` 뒤에, s5-T는 `approved.train` 뒤에 실행한다(rows 명령도 search 승인으로 돈다). Arena 블록은 arena 승인 전에 추가한다.
 - 블록은 R2-S400-PRE의 블록과 같은 방식이다.
   - 결과(`prepare.json`, `gate.json`)에 실행 로그 이름(`log_name`)을 남긴다.
   - 다시 실행할 때: 결과가 HEAD에 커밋되어 있으면 멈춘다. 결과가 커밋 전이면(스테이징만 된 경우 포함) 다시 돌리지 않고, 결과가 뜻하는 종료 코드와 로그의 `__EXIT__`이 같은지 확인한 뒤 함께 커밋한다. 로그가 없거나 두 종료 코드가 다르면 멈춘다.
@@ -580,5 +601,115 @@ PY
   git push origin feat/h7-c1
   echo "__RECORDED__ $rc"
   exit "$rc"
+)
+```
+
+### 9.2 train: 후보 3 seed 학습
+
+- `approved.train` 뒤에 실행한다. 학습 도구(`train --seed S`)는 승인된 계약, 커밋된 prepare·gate·search·rows 기록을 다시 판정하고, 후보 행 파일을 rows 기록의 SHA와 행 검사로 다시 확인한 뒤 학습한다(§8.2).
+- seed는 계약 순서대로 20261024, 20261111, 20261112. 실행마다 따로 커밋한다. 커밋된 seed(`seed-records/S-<seed>/record.json`)는 건너뛴다.
+- 수치 설정은 A1과 같다. 블록이 `CUBLAS_WORKSPACE_CONFIG=:4096:8`을 설정하고, 도구가 gate 기록의 설정과 같은지 확인한다.
+- 예상 시간: seed마다 gate와 같은 규모(약 2분).
+- 실행 기록: search·rows와 같은 sidecar(§9.1)를 단계 `train`으로 쓴다. 결과는 `runs/h7r/R2-S400-TRAIN/S-<seed>/record.json`이고, 출력 파일은 `best.pt`, `best.json`, `logits.pt`이다.
+  - 결과가 SHA로 가리키는 출력(`candidate.checkpoint_sha256` → `best.pt`, `candidate.metadata_sha256` → `best.json`)은 `finish`와 `recover`가 실제 파일과 대조한다. 결과의 seed와 결과 경로의 seed가 같아야 한다.
+  - eligible checkpoint가 없는 실행(`candidate` 없음)은 출력 파일 없이 기록만 남고 종료 코드 0이다. Arena 계약은 seed 20261024의 `CANDIDATE`만 받고 다른 seed로 대신하지 않는다.
+- 기록 사본: 결과를 `seed-records/S-<seed>/record.json`으로 복사한다(덮어쓰지 않음, 원본과 바이트 비교). 실행 기록·로그 사본·manifest는 `stage-logs/`에 들어간다. checkpoint는 `runs/`에 남고 커밋하지 않는다.
+- 실패(종료 코드 0이 아님): 로그와 실행 기록을 커밋하고 멈춘다. 다음 seed로 넘어가지 않는다. 원인을 확인한 뒤에만 다시 실행한다.
+- 다시 실행할 때: 결과가 커밋 전이면 다시 학습하지 않고 복구해서 커밋한다(`recover`). 결과 없이 출력 폴더에 파일이 남은 중단은 rows와 같은 방식으로 멈추고 확인을 받는다.
+  - 블록이 남은 파일 목록의 SHA 앞 12자리를 출력한다. `export S5_TRAIN_SET_ASIDE=<그 값>` 뒤 다시 실행하면, 파일을 `runs/h7r/R2-S400-TRAIN/interrupted/<새 실행 이름>.<파일 이름>`으로 옮기고(삭제·덮어쓰기 없음) 다시 학습한다. 끝나면 `unset S5_TRAIN_SET_ASIDE`.
+
+s5-T. 후보 3 seed 학습
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  export CUBLAS_WORKSPACE_CONFIG=:4096:8
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  N=train
+  D=docs/h7r/r2/R2-S400-TRAIN
+  R=runs/h7r/R2-S400-TRAIN
+  L="$R/logs"
+  A=scripts/h7r_attempts.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  tracked "$D/rows.json" || { echo "STOP: rows is not recorded (run s5-R first)"; exit 1; }
+  mkdir -p "$L"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/$N.lock"
+  flock -n 9 || { echo "STOP: another $N block is running"; exit 1; }
+  shopt -s nullglob
+  frozen=false
+  for s in 20261024 20261111 20261112; do
+    out="$R/S-$s"
+    O="$out/record.json"
+    dst="$D/seed-records/S-$s/record.json"
+    if tracked "$dst"; then echo "done: S-$s"; continue; fi
+    if [ ! -e "$O" ]; then
+      git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+      aside=()
+      left=("$out"/*)
+      if [ "${#left[@]}" -gt 0 ]; then
+        sha="$(cd "$out" && sha256sum -- * | sha256sum | cut -c1-12)"
+        if [ "${S5_TRAIN_SET_ASIDE:-}" != "$sha" ]; then
+          echo "STOP: an interrupted train run left files in $out without its record (files SHA-256 $sha...):"
+          (cd "$out" && sha256sum -- *)
+          echo "  The files are kept as they are: the train tool never writes over them, and nothing was changed."
+          echo "  To move them to $R/interrupted/ and train seed $s again:"
+          echo "    export S5_TRAIN_SET_ASIDE=$sha   # then run this block again, and afterwards: unset S5_TRAIN_SET_ASIDE"
+          exit 1
+        fi
+        for f in "${left[@]}"; do aside+=(--set-aside "$f"); done
+      fi
+      if ! "$frozen"; then python scripts/check_track_b_frozen.py; frozen=true; fi
+      log="$(mktemp "$L/$N-XXXXXXXX.log")"
+      python "$A" start --stage "$N" --log "$log" --result "$O" \
+        --output "$out/best.pt" --output "$out/best.json" --output "$out/logits.pt" ${aside[@]+"${aside[@]}"}
+      set +e
+      python -u scripts/h7r_s400_train.py "$N" --seed "$s" --device cuda 2>&1 | tee "$log"
+      codes=("${PIPESTATUS[@]}")
+      set -e
+      rc="${codes[0]}"
+      [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+      echo "__EXIT__ $rc" >> "$log"
+      python "$A" finish --attempt "${log%.log}.attempt.json" --rc "$rc"
+    else
+      echo "an uncommitted $O exists: recording it (no new run)"
+      result="$(python "$A" recover --stage "$N" --log-dir "$L" --result "$O")"
+      read -r name rc <<< "$result"
+    fi
+    paths=()
+    for a in "$L/$N"-*.attempt.json; do
+      n="$(basename "$a" .attempt.json)"
+      tracked "$D/stage-logs/$n.attempt.json" && continue
+      python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+        --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+      python "$A" copy --attempt "$a" --dest-dir "$D/stage-logs"
+      paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json" "$D/stage-logs/$n.attempt.json")
+    done
+    if [ -f "$O" ]; then
+      mkdir -p "$(dirname "$dst")"
+      [ -e "$dst" ] || cp "$O" "$dst"  # an existing copy is never overwritten, only compared
+      cmp "$O" "$dst" || { echo "STOP: $dst differs from $O"; exit 1; }
+      paths+=("$dst")
+    fi
+    [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+    while IFS= read -r -d '' staged; do
+      allowed=false
+      for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+      "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+    done < <(git diff --cached --name-only -z)
+    expect=()
+    for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+    git add -- "${paths[@]}"
+    python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+    git commit -m "H7-R S400-TRAIN: train S $s exit $rc (records only)"
+    git push origin feat/h7-c1
+    if [ "$rc" -ne 0 ]; then echo "__RECORDED__ $rc"; echo "STOP: train S $s failed (exit $rc)"; exit "$rc"; fi
+  done
+  echo "__RECORDED__ 0"
 )
 ```
