@@ -1,0 +1,32 @@
+{
+ "format": "h7r-attempt-v1",
+ "contract_id": "R2-S400-TRAIN",
+ "stage": "train",
+ "name": "train-kFh0hHKG",
+ "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+ "contract_file_sha256": "ba913f8acdb95d88a169d54dcf9b27f065b4e241fb730cf26e5bed1c01e07a80",
+ "head": "50fe7630d6062f70d8c13361cbd2dc0bd59c739e",
+ "log": "runs/h7r/R2-S400-TRAIN/logs/train-kFh0hHKG.log",
+ "result": "runs/h7r/R2-S400-TRAIN/S-20261112/record.json",
+ "outputs": [
+  "runs/h7r/R2-S400-TRAIN/S-20261112/best.pt",
+  "runs/h7r/R2-S400-TRAIN/S-20261112/best.json",
+  "runs/h7r/R2-S400-TRAIN/S-20261112/logits.pt"
+ ],
+ "set_aside": [],
+ "started": "2026-11-16T11:30:07+00:00",
+ "finish": {
+  "state": "exited",
+  "exit_code": 0,
+  "log_sha256": "2bad4353059018b6e8a1ce5aba6039c0f930365a1b8ec7bd1044db013dd3b7d4",
+  "result_sha256": "7261e5685199bd4e801062d0b2c0ce13e4f9ff3c91975e75daeb36df36583703",
+  "outputs": {
+   "runs/h7r/R2-S400-TRAIN/S-20261112/best.pt": "17da944854aaf315d8d36aeb7fb2c11b5b9fd11ebe92f5a8e1e8dfd8d48699ae",
+   "runs/h7r/R2-S400-TRAIN/S-20261112/best.json": "47dfefd51fa465bd4254e5b3dfdf0e9b4d0517311ad2556a82c3fbbac67d7a34",
+   "runs/h7r/R2-S400-TRAIN/S-20261112/logits.pt": "a6a765ad618e1871a44ba64613dfaed8d897edfb570a3a85c18619abfc372743"
+  },
+  "same_as_set_aside": {},
+  "recovered": false,
+  "finished": "2026-11-16T11:32:41+00:00"
+ }
+}
