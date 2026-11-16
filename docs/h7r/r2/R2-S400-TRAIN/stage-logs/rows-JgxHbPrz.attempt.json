@@ -1,0 +1,28 @@
+{
+ "format": "h7r-attempt-v1",
+ "contract_id": "R2-S400-TRAIN",
+ "stage": "rows",
+ "name": "rows-JgxHbPrz",
+ "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+ "contract_file_sha256": "5c926907ab9eb0b13101fad490d596cd79a4fcff1414dd2edcb55a0e9e95487f",
+ "head": "f500fc243b9f10349ab6ff3834b78c2579cfc716",
+ "log": "runs/h7r/R2-S400-TRAIN/logs/rows-JgxHbPrz.log",
+ "result": "docs/h7r/r2/R2-S400-TRAIN/rows.json",
+ "outputs": [
+  "runs/h7r/R2-S400-TRAIN/policy_rows_s400.jsonl.gz"
+ ],
+ "set_aside": [],
+ "started": "2026-11-16T10:26:35+00:00",
+ "finish": {
+  "state": "exited",
+  "exit_code": 0,
+  "log_sha256": "51d59bf145fe45eadc18020cd04ca3330f18c5d42c0beb7398a5e49463e01108",
+  "result_sha256": "e2336e880d39acaa60db4cfb9527e2a73bfd30931419f5f74346d2a33044bc9e",
+  "outputs": {
+   "runs/h7r/R2-S400-TRAIN/policy_rows_s400.jsonl.gz": "add6022ca8d419d9adb9581d4190887a70851380e84868cb63a1cbe7a3090c39"
+  },
+  "same_as_set_aside": {},
+  "recovered": false,
+  "finished": "2026-11-16T10:27:31+00:00"
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "format": "h7r-s400-train-rows-v1",
+ "contract_id": "R2-S400-TRAIN",
+ "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+ "contract_file_sha256": "5c926907ab9eb0b13101fad490d596cd79a4fcff1414dd2edcb55a0e9e95487f",
+ "git": {
+  "commit": "f500fc243b9f10349ab6ff3834b78c2579cfc716",
+  "dirty": false
+ },
+ "c2_rows_sha256": "ba2e1bc912bb6702623c91f4470de5e669f9972c2945052d180d637cbc4d4c71",
+ "candidate_rows_sha256": "add6022ca8d419d9adb9581d4190887a70851380e84868cb63a1cbe7a3090c39",
+ "s400_records_sha256": "942eb3eb298b9d241617a967e1b55a5d95a4e13f01e00aa99a58bb07922066b2",
+ "rows": 26000,
+ "replacement": {
+  "train_visit_rows": 18965,
+  "s400": 18965,
+  "s200_kept_no_s400_mass": 0,
+  "s400_share": 1.0,
+  "s200_kept_share": 0.0
+ },
+ "s400_only_targets_not_added": 0,
+ "check": "passed"
+}

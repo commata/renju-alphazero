@@ -1,0 +1,11 @@
+{
+ "replacement": {
+  "train_visit_rows": 18965,
+  "s400": 18965,
+  "s200_kept_no_s400_mass": 0,
+  "s400_share": 1.0,
+  "s200_kept_share": 0.0
+ },
+ "s400_only_targets_not_added": 0
+}
+__EXIT__ 0
