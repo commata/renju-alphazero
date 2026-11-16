@@ -232,7 +232,8 @@
 - 블록 s5-T(§9.2). 학습 도구와 계약은 바꾸지 않았다(실험 SHA `67c6ba3c8081` 그대로). 실행 기록 도구(`scripts/h7r_attempts.py`, 계약의 sources가 아님)에 단계 `train`을 더했다. 결과의 candidate SHA를 `best.pt`·`best.json`과 대조하고, 결과의 seed가 결과 경로의 seed와 같아야 한다.
 - 블록 테스트(`BlockTest`, 실제 bash와 임시 저장소, 도구는 대역)가 다루는 경우:
   - rows 기록 전에는 멈춤. 정상 완료(3 seed, seed마다 커밋). 다시 실행하면 모두 건너뛰고 커밋 없음
-  - eligible checkpoint가 없는 seed(출력 없이 기록, 다음 seed 진행)
+  - eligible checkpoint가 없는 seed(`NO_CANDIDATE`, 출력 없이 기록, 다음 seed 진행)
+  - 검토 반영(2026-11-16): `CANDIDATE`인데 `candidate`가 없거나 checkpoint가 없으면 성공으로 기록하지 않음, `NO_CANDIDATE`인데 checkpoint가 남아 있으면 거부, 그 밖의 verdict 거부. 재개 때 커밋된 seed의 checkpoint가 없어지거나 바뀌었으면 다음 seed로 넘어가지 않고 멈춤
   - 실패(기록하고 다음 seed 전에 멈춤)
   - 결과를 쓴 뒤 중단(다시 학습하지 않고 복구), 스테이징 뒤 중단(다시 학습하지 않고 커밋)
   - 결과 없이 파일만 남은 중단(파일 유지, 안내 후 멈춤, 틀린 값 거부, 확인 뒤 옮기고 다시 학습, 같은 파일 확인)
@@ -611,8 +612,12 @@ PY
 - 수치 설정은 A1과 같다. 블록이 `CUBLAS_WORKSPACE_CONFIG=:4096:8`을 설정하고, 도구가 gate 기록의 설정과 같은지 확인한다.
 - 예상 시간: seed마다 gate와 같은 규모(약 2분).
 - 실행 기록: search·rows와 같은 sidecar(§9.1)를 단계 `train`으로 쓴다. 결과는 `runs/h7r/R2-S400-TRAIN/S-<seed>/record.json`이고, 출력 파일은 `best.pt`, `best.json`, `logits.pt`이다.
-  - 결과가 SHA로 가리키는 출력(`candidate.checkpoint_sha256` → `best.pt`, `candidate.metadata_sha256` → `best.json`)은 `finish`와 `recover`가 실제 파일과 대조한다. 결과의 seed와 결과 경로의 seed가 같아야 한다.
-  - eligible checkpoint가 없는 실행(`candidate` 없음)은 출력 파일 없이 기록만 남고 종료 코드 0이다. Arena 계약은 seed 20261024의 `CANDIDATE`만 받고 다른 seed로 대신하지 않는다.
+  - verdict는 `CANDIDATE`와 `NO_CANDIDATE` 둘 중 하나여야 한다(그 밖의 값은 거부).
+    - `CANDIDATE`: `candidate`의 두 SHA가 반드시 있어야 하고(`checkpoint_sha256` → `best.pt`, `metadata_sha256` → `best.json`), `finish`와 `recover`가 실제 파일과 대조한다. 하나라도 없거나 다르면 성공으로 기록하지 않는다(검토 반영).
+    - `NO_CANDIDATE`: eligible checkpoint가 없는 실행. `candidate`가 없어야 하고, `best.pt`·`best.json`·`logits.pt`도 없어야 한다. 기록만 남고 종료 코드 0이다.
+    - 결과의 seed와 결과 경로의 seed가 같아야 한다.
+  - Arena 계약은 seed 20261024의 `CANDIDATE`만 받고 다른 seed로 대신하지 않는다.
+- 이미 커밋된 seed: 건너뛰기 전에 커밋된 기록을 기준으로 실제 파일을 다시 대조한다(`verify-train`, 검토 반영). `CANDIDATE`면 `best.pt`·`best.json`이 기록의 SHA와 같아야 하고, `NO_CANDIDATE`면 checkpoint 파일이 없어야 한다. 다르면 다시 학습하지 않고 멈춘다. 블록은 끝에서 세 seed 모두를 한 번 더 대조한 뒤 `__RECORDED__ 0`을 출력한다.
 - 기록 사본: 결과를 `seed-records/S-<seed>/record.json`으로 복사한다(덮어쓰지 않음, 원본과 바이트 비교). 실행 기록·로그 사본·manifest는 `stage-logs/`에 들어간다. checkpoint는 `runs/`에 남고 커밋하지 않는다.
 - 실패(종료 코드 0이 아님): 로그와 실행 기록을 커밋하고 멈춘다. 다음 seed로 넘어가지 않는다. 원인을 확인한 뒤에만 다시 실행한다.
 - 다시 실행할 때: 결과가 커밋 전이면 다시 학습하지 않고 복구해서 커밋한다(`recover`). 결과 없이 출력 폴더에 파일이 남은 중단은 rows와 같은 방식으로 멈추고 확인을 받는다.
@@ -647,7 +652,11 @@ s5-T. 후보 3 seed 학습
     out="$R/S-$s"
     O="$out/record.json"
     dst="$D/seed-records/S-$s/record.json"
-    if tracked "$dst"; then echo "done: S-$s"; continue; fi
+    if tracked "$dst"; then  # recorded: its checkpoint files must still be the ones the record names
+      python "$A" verify-train --seed "$s" --record "$dst"
+      echo "done: S-$s"
+      continue
+    fi
     if [ ! -e "$O" ]; then
       git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
       aside=()
@@ -709,6 +718,9 @@ s5-T. 후보 3 seed 학습
     git commit -m "H7-R S400-TRAIN: train S $s exit $rc (records only)"
     git push origin feat/h7-c1
     if [ "$rc" -ne 0 ]; then echo "__RECORDED__ $rc"; echo "STOP: train S $s failed (exit $rc)"; exit "$rc"; fi
+  done
+  for s in 20261024 20261111 20261112; do
+    python "$A" verify-train --seed "$s" --record "$D/seed-records/S-$s/record.json"
   done
   echo "__RECORDED__ 0"
 )

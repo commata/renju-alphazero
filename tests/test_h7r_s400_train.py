@@ -554,8 +554,10 @@ elif cmd == 'train':  # the checkpoint files first, then the run record (the ord
         print('STOP: ValueError: ' + str(out) + ' holds files of an interrupted run'); sys.exit(1)
     out.mkdir(parents=True, exist_ok=True)
     fmt, dest = 'h7r-s400-train-run-v1', out / 'record.json'
-    body, code = {'seed': seed, 'arm': 'S', 'verdict': 'NO_ELIGIBLE_CHECKPOINT'}, 0
-    if os.environ.get('S5_TRAIN_NO_CANDIDATE') != str(seed):
+    body, code = {'seed': seed, 'arm': 'S', 'verdict': 'NO_CANDIDATE'}, 0
+    if os.environ.get('S5_TRAIN_BARE_CANDIDATE') == str(seed):  # a broken record: CANDIDATE, nothing it names
+        body = {**body, 'verdict': 'CANDIDATE'}
+    elif os.environ.get('S5_TRAIN_NO_CANDIDATE') != str(seed):
         for name in ('best.pt', 'best.json', 'logits.pt'):
             (out / name).write_bytes((name + ' ' + str(seed)).encode())
         if os.environ.get('S5_TRAIN_ABORT') == str(seed):
@@ -1023,6 +1025,45 @@ class BlockTest(unittest.TestCase):
             self.assert_seed_recorded(s)
         self.assert_pushed()
 
+    def test_a_candidate_without_its_checkpoint_is_not_recorded(self):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        before = self.head()
+        code, out = self.bash('s5-T', S5_TRAIN_BARE_CANDIDATE='20261024')
+        self.assertEqual(code, 1, out)
+        self.assertIn('CANDIDATE without its candidate checkpoint and metadata', out)
+        self.assertEqual((self.head(), git(self.work, 'diff', '--cached', '--name-only')), (before, ''))
+        self.assertFalse((self.work / self.run_dir(20261111)).exists())
+
+    def check_resume_with_a_recorded_checkpoint(self, damage):
+        self.through('s5-1', 's5-G', 's5-S', 's5-R')
+        code, out = self.bash('s5-T', S5_TRAIN_ABORT='20261111')  # S-20261024 recorded, S-20261111 interrupted
+        self.assertNotEqual(code, 0, out)
+        self.assert_seed_recorded(20261024)
+        before = self.head()
+        left = sorted(p.name for p in (self.work / self.run_dir(20261111)).iterdir())
+        logs = sorted(p.name for p in (self.work / self.R / 'logs').iterdir())
+        message = damage(self.work / self.run_dir(20261024))
+        code, out = self.bash('s5-T', S5_FORBID='1')
+        self.assertEqual(code, 1, out)
+        self.assertIn(message, out)
+        self.assertNotIn('done: S-20261024', out)
+        self.assertNotIn('__RECORDED__', out)
+        self.assertEqual(self.head(), before)
+        self.assertEqual(sorted(p.name for p in (self.work / self.run_dir(20261111)).iterdir()), left)
+        self.assertEqual(sorted(p.name for p in (self.work / self.R / 'logs').iterdir()), logs)  # no new attempt
+
+    def test_resume_stops_when_a_recorded_checkpoint_is_missing(self):
+        def damage(out):
+            (out / 'best.pt').unlink()
+            return f'{self.run_dir(20261024)}/best.pt is missing'
+        self.check_resume_with_a_recorded_checkpoint(damage)
+
+    def test_resume_stops_when_a_recorded_metadata_file_changed(self):
+        def damage(out):
+            (out / 'best.json').write_text('{}')
+            return f'{self.run_dir(20261024)}/best.json: its SHA-256 is not the one'
+        self.check_resume_with_a_recorded_checkpoint(damage)
+
     def test_a_train_output_changed_after_the_run_is_not_recorded(self):
         self.through('s5-1', 's5-G', 's5-S', 's5-R')
         before = self.head()
@@ -1189,6 +1230,74 @@ class AttemptToolTest(unittest.TestCase):
             self.att.finish(self.root, path, 0)
         (out / 'record.json').write_text(json.dumps({**body, 'seed': 20261024}))
         self.assertEqual(self.att.finish(self.root, path, 0)['finish']['exit_code'], 0)
+
+    def train_attempt(self, body, files=('best.pt', 'best.json')):
+        out = self.root / st.RUNS / 'S-20261024'
+        out.mkdir(parents=True)
+        (self.root / 'logs/train-Qq11Ww22.log').write_text('run' + chr(10) + '__EXIT__ 0' + chr(10))
+        outputs = [x for n in ('best.pt', 'best.json', 'logits.pt') for x in ('--output', f'{st.RUNS}/S-20261024/{n}')]
+        self.assertEqual(self.att.main(['--root', str(self.root), 'start', '--stage', 'train', '--log',
+                                        'logs/train-Qq11Ww22.log', '--result', f'{st.RUNS}/S-20261024/record.json',
+                                        '--contract', 'c.json', *outputs]), 0)
+        for name in files:
+            (out / name).write_bytes(name.encode())
+        rec = {'format': 'h7r-s400-train-run-v1', 'experiment_sha256': p1.experiment_sha256(self.c),
+               'git': {'commit': git(self.root, 'rev-parse', 'HEAD')}, 'seed': 20261024, **body}
+        (out / 'record.json').write_text(json.dumps(rec))
+        return self.root / 'logs/train-Qq11Ww22.attempt.json'
+
+    def test_train_verdicts(self):
+        cases = {
+            'CANDIDATE without its candidate checkpoint and metadata': ({'verdict': 'CANDIDATE'}, ()),
+            "no SHA-256 for runs/h7r/R2-S400-TRAIN/S-20261024/best.json": (
+                {'verdict': 'CANDIDATE', 'candidate': {'checkpoint_sha256': hashlib.sha256(b'best.pt').hexdigest()}},
+                ('best.pt', 'best.json')),
+            'NO_CANDIDATE with a candidate': ({'verdict': 'NO_CANDIDATE', 'candidate': {}}, ()),
+            r"NO_CANDIDATE, yet \['runs/h7r/R2-S400-TRAIN/S-20261024/best.pt'\] exist": (
+                {'verdict': 'NO_CANDIDATE'}, ('best.pt',)),
+            "verdict 'PASS'": ({'verdict': 'PASS'}, ()),
+        }
+        for message, (body, files) in cases.items():
+            with self.subTest(message), TemporaryDirectory() as tmp:
+                self.root = Path(tmp)
+                self.setUp_root()
+                path = self.train_attempt(body, files)
+                with self.assertRaisesRegex(ValueError, message):
+                    self.att.finish(self.root, path, 0)
+                self.assertIsNone(self.att.load(path)['finish'])
+        with TemporaryDirectory() as tmp:
+            self.root = Path(tmp)
+            self.setUp_root()
+            path = self.train_attempt({'verdict': 'NO_CANDIDATE'}, ())
+            self.assertEqual(self.att.finish(self.root, path, 0)['finish']['exit_code'], 0)
+
+    def setUp_root(self):
+        git(self.root, 'init', '-q')
+        for k, v in (('user.email', 't@t'), ('user.name', 't')):
+            git(self.root, 'config', k, v)
+        (self.root / 'c.json').write_text(json.dumps(self.c))
+        git(self.root, 'add', '-A')
+        git(self.root, 'commit', '-qm', 'init')
+        (self.root / 'logs').mkdir()
+
+    def test_verify_train_checks_a_recorded_run_s_files(self):
+        out = self.root / st.RUNS / 'S-20261024'
+        out.mkdir(parents=True)
+        for name in ('best.pt', 'best.json'):
+            (out / name).write_bytes(name.encode())
+        rec = {'format': 'h7r-s400-train-run-v1', 'seed': 20261024, 'verdict': 'CANDIDATE',
+               'candidate': {'checkpoint_sha256': p1.file_sha256(out / 'best.pt'),
+                             'metadata_sha256': p1.file_sha256(out / 'best.json')}}
+        (self.root / 'rec.json').write_text(json.dumps(rec))
+        verify = ['--root', str(self.root), 'verify-train', '--record', 'rec.json']
+        self.assertEqual(self.att.main([*verify, '--seed', '20261024']), 0)
+        self.assertEqual(self.att.main([*verify, '--seed', '20261111']), 1)  # another seed's record
+        (out / 'best.pt').unlink()
+        self.assertEqual(self.att.main([*verify, '--seed', '20261024']), 1)
+        with self.assertRaisesRegex(ValueError, 'best.pt is missing: rec.json records'):
+            self.att.check_train_files(self.root, rec, 'rec.json')
+        (self.root / 'rec.json').write_text(json.dumps({**rec, 'verdict': 'NO_CANDIDATE', 'candidate': None}))
+        self.assertEqual(self.att.main([*verify, '--seed', '20261024']), 1)  # NO_CANDIDATE with a candidate key
 
     def test_recover_needs_the_attempt_that_wrote_the_result(self):
         from types import SimpleNamespace

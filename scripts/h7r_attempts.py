@@ -17,6 +17,8 @@ wrote it lives next to the run log instead. One attempt is one run of a desktop 
              one open attempt of the result's experiment and HEAD, finished now from the exit code the result means),
              the output files the result names checked again against their files. Prints ``<log name> <exit code>``.
     copy     a finished attempt into the records folder next to its log copy (whose SHA-256 must be the attempt's).
+    verify-train  a committed train run record (a seed skipped on a resumed block): a ``CANDIDATE`` names its
+             checkpoint and metadata, which must be those files now; a ``NO_CANDIDATE`` wrote no checkpoint.
 
 Nothing here judges a result: the tool's own checks (``verified_gate``, ``verified_rows``) stay the judgement.
 """
@@ -57,15 +59,37 @@ def _rows_named(r: dict) -> dict:
     return {f'{RUNS}/policy_rows_s400.jsonl.gz': r.get('candidate_rows_sha256')}
 
 
+TRAIN_FILES = ('best.pt', 'best.json', 'logits.pt')  # written only with an eligible checkpoint
+
+
 def _train_named(r: dict) -> dict:
-    if 'candidate' not in r:
-        return {}  # no eligible checkpoint: nothing written but the record
-    out, cand = f"{RUNS}/S-{r['seed']}", r['candidate'] or {}
+    """A ``CANDIDATE`` record names its checkpoint and metadata; a ``NO_CANDIDATE`` record names none and has no
+    ``candidate`` (the training tool writes the files only for an eligible checkpoint); any other verdict is refused."""
+    out = f"{RUNS}/S-{r.get('seed')}"
+    if r.get('verdict') == 'NO_CANDIDATE':
+        if 'candidate' in r:
+            raise ValueError(f'{out}/record.json: NO_CANDIDATE with a candidate')
+        return {}
+    if r.get('verdict') != 'CANDIDATE':
+        raise ValueError(f"{out}/record.json: verdict {r.get('verdict')!r} (CANDIDATE or NO_CANDIDATE)")
+    cand = r.get('candidate')
+    if not isinstance(cand, dict):
+        raise ValueError(f'{out}/record.json: CANDIDATE without its candidate checkpoint and metadata')
     return {f'{out}/best.pt': cand.get('checkpoint_sha256'), f'{out}/best.json': cand.get('metadata_sha256')}
 
 
 def train_result(seed) -> str:
     return f'{RUNS}/S-{seed}/record.json'
+
+
+def check_train_files(root, r: dict, what: str) -> None:
+    """The files a train run record says exist (CANDIDATE) are those files; a NO_CANDIDATE run left none."""
+    named = _train_named(r)
+    check_files(root, named, what)
+    if not named:
+        left = [f"{RUNS}/S-{r['seed']}/{n}" for n in TRAIN_FILES if (Path(root) / RUNS / f"S-{r['seed']}" / n).exists()]
+        if left:
+            raise ValueError(f'{what} is NO_CANDIDATE, yet {left} exist')
 
 
 # the stage's result format, the exit code the training tool returns with that result, and the output files the
@@ -134,19 +158,28 @@ def hashed_outputs(root, a: dict) -> dict:
     return {rel: (sha256(root / rel) if (root / rel).is_file() else None) for rel in a['outputs']}
 
 
+def check_files(root, named: dict, what: str) -> None:
+    for rel, want in named.items():
+        if not (isinstance(want, str) and SHA.fullmatch(want)):
+            raise ValueError(f'{what}: no SHA-256 for {rel}')
+        if not (Path(root) / rel).is_file():
+            raise ValueError(f'{rel} is missing: {what} records SHA-256 {want[:12]}...')
+        if sha256(Path(root) / rel) != want:
+            raise ValueError(f"{rel}: its SHA-256 is not the one {what} records ({want[:12]}...)")
+
+
 def check_named_outputs(root, a: dict, r: dict) -> None:
     """Every output file the result names by SHA-256 is an output of the attempt and is that file now."""
     if a['stage'] == 'train' and (type(r.get('seed')) is not int or a['result'] != train_result(r['seed'])):
         raise ValueError(f"{a['result']}: a run record of seed {r.get('seed')!r} (expected at its own seed's path)")
-    for rel, want in STAGES[a['stage']][2](r).items():
-        if not (isinstance(want, str) and SHA.fullmatch(want)):
-            raise ValueError(f"{a['result']}: no SHA-256 for {rel}")
+    named = STAGES[a['stage']][2](r)
+    for rel in named:
         if rel not in a['outputs']:
             raise ValueError(f"{a['result']} names {rel}, not an output of attempt {a['name']}")
-        if not (root / rel).is_file():
-            raise ValueError(f"{rel} is missing: {a['result']} records SHA-256 {want[:12]}...")
-        if sha256(root / rel) != want:
-            raise ValueError(f"{rel}: its SHA-256 is not the one {a['result']} records ({want[:12]}...)")
+    if a['stage'] == 'train':
+        check_train_files(root, r, a['result'])
+    else:
+        check_files(root, named, a['result'])
 
 
 def close(root, path: Path, a: dict, by: str) -> None:
@@ -277,6 +310,15 @@ def copy(args, root: Path) -> None:
         out.write_bytes(data)
 
 
+def verify_train(args, root: Path) -> None:
+    rel = Path(args.record).as_posix()
+    r = json.loads((root / rel).read_text(encoding='utf-8'))
+    if r.get('format') != STAGES['train'][0] or r.get('seed') != args.seed:
+        raise ValueError(f'{rel}: not the train run record of seed {args.seed}')
+    check_train_files(root, r, rel)
+    print(f"S-{args.seed}: {r['verdict']}, files checked", flush=True)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--root', default='.')
@@ -299,6 +341,9 @@ def main(argv=None) -> int:
     c = sub.add_parser('copy')
     c.add_argument('--attempt', required=True)
     c.add_argument('--dest-dir', required=True)
+    v = sub.add_parser('verify-train')
+    v.add_argument('--seed', required=True, type=int)
+    v.add_argument('--record', required=True)
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
     try:
@@ -308,6 +353,8 @@ def main(argv=None) -> int:
             finish(root, Path(args.attempt), args.rc)
         elif args.command == 'recover':
             print(*recover(args, root))
+        elif args.command == 'verify-train':
+            verify_train(args, root)
         else:
             copy(args, root)
     except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as exc:
