@@ -7,7 +7,7 @@
   "gate": true,
   "search": true,
   "train": true,
-  "arena": false
+  "arena": true
  },
  "goal": "Track B strongest play: a policy candidate stronger than the research champion (H3 policy + c5 value) at the same S50 budget",
  "question": "with every other condition of A1 T kept, do train visit targets re-searched at S400 make the S50 policy stronger (than A1 T, and than the champion)",
