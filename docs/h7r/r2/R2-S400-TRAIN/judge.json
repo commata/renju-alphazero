@@ -1,0 +1,196 @@
+{
+ "format": "h7r-s400-train-judge-v1",
+ "contract_id": "R2-S400-TRAIN",
+ "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+ "contract_file_sha256": "7f4a5c00a126600702d2ed661478c987f3a4870b64eb4b408a58de35bcb73cb2",
+ "arena_contract_id": "R2-S400-TRAIN-ARENA-1",
+ "arena_contract_sha256": "71c7fb43fb95e8bbd024d8516207835d55d308cad4609fda6959622ef1961136",
+ "arm_records_sha256": {
+  "O1-dev-a_S_vs_champion": "c1a0bd353e60d9ab2225b7f2383b3127bc7e9e8232aea55d39e11ef4be78854f",
+  "O1-dev-a_T_vs_champion": "e041c15ab914b756421ad6ee3d04f4a3b8266d4017412fa99bd10e42a53458f3",
+  "O1-dev-b_S_vs_champion": "061b1fe13a2dc236fa73ed5b1fa321556e82db83e017e10ee1711cfb3ffc4c70",
+  "O1-dev-b_T_vs_champion": "5a1ff4dd5ad72611bf7339507d15d8f95133a826a81f510de0fc17ec1f5bab94"
+ },
+ "arms_commit": "358c188480ec1a73f9c92dc75d9365a51df3e5ab",
+ "readings": {
+  "P'": "WEAKER",
+  "D'": "NOT_ESTABLISHED"
+ },
+ "bounds": {
+  "P'": {
+   "estimate": -0.02,
+   "lower_one_sided": -0.03917,
+   "upper_one_sided": -0.00083
+  },
+  "D'": {
+   "estimate": 0.004583,
+   "lower_one_sided": -0.00917,
+   "upper_one_sided": 0.01833
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-a": 300,
+   "O1-dev-b": 300
+  }
+ },
+ "definitions": {
+  "D'": "S - T pair scores on the same openings, suites weighted 50:50",
+  "P'": "S vs champion pair score - 0.5, suites weighted 50:50"
+ },
+ "sensitivity_class_level": {
+  "bounds": {
+   "P'": {
+    "estimate": -0.02,
+    "lower_one_sided": -0.03917,
+    "upper_one_sided": -0.00083
+   },
+   "D'": {
+    "estimate": 0.004583,
+    "lower_one_sided": -0.00917,
+    "upper_one_sided": 0.01833
+   },
+   "unit": "class",
+   "units": {
+    "O1-dev-a": 300,
+    "O1-dev-b": 300
+   }
+  },
+  "readings": {
+   "P'": "WEAKER",
+   "D'": "NOT_ESTABLISHED"
+  },
+  "same_as_main": true
+ },
+ "per_suite": {
+  "O1-dev-a": {
+   "S": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 204,
+    "score_split": 74,
+    "score_split_positive": 33,
+    "score_split_negative": 41,
+    "distinct_classes": 300,
+    "score": 0.48667,
+    "improvement": -0.01333,
+    "ci95": [
+     -0.03917,
+     0.01333
+    ],
+    "lower_one_sided": -0.03917,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.22965,
+    "score_by_tested_colour": {
+     "black": 0.51,
+     "white": 0.46333
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261141,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   },
+   "T": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 199,
+    "score_split": 68,
+    "score_split_positive": 32,
+    "score_split_negative": 36,
+    "distinct_classes": 300,
+    "score": 0.49167,
+    "improvement": -0.00833,
+    "ci95": [
+     -0.03333,
+     0.01667
+    ],
+    "lower_one_sided": -0.03333,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.22158,
+    "score_by_tested_colour": {
+     "black": 0.50667,
+     "white": 0.47667
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261141,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   }
+  },
+  "O1-dev-b": {
+   "S": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 205,
+    "score_split": 83,
+    "score_split_positive": 34,
+    "score_split_negative": 49,
+    "distinct_classes": 300,
+    "score": 0.47333,
+    "improvement": -0.02667,
+    "ci95": [
+     -0.05583,
+     0.00167
+    ],
+    "lower_one_sided": -0.05583,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.2519,
+    "score_by_tested_colour": {
+     "black": 0.48667,
+     "white": 0.46
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261141,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   },
+   "T": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 194,
+    "score_split": 78,
+    "score_split_positive": 26,
+    "score_split_negative": 52,
+    "distinct_classes": 300,
+    "score": 0.45917,
+    "improvement": -0.04083,
+    "ci95": [
+     -0.0675,
+     -0.01333
+    ],
+    "lower_one_sided": -0.0675,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.24022,
+    "score_by_tested_colour": {
+     "black": 0.46167,
+     "white": 0.45667
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261141,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   }
+  }
+ },
+ "next": "P' is not STRONGER: the contract ends",
+ "note": "development reading of one contract seed (20261024); never a promotion",
+ "git": {
+  "commit": "358c188480ec1a73f9c92dc75d9365a51df3e5ab",
+  "dirty": false
+ }
+}

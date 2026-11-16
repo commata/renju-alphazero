@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "play-O1-dev-a_T_vs_champion-20261116-231502-3786.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-TRAIN/logs/play-O1-dev-a_T_vs_champion-20261116-231502-3786.log",
+   "copy": "docs/h7r/r2/R2-S400-TRAIN/stage-logs/play-O1-dev-a_T_vs_champion-20261116-231502-3786.log",
+   "bytes": 2756,
+   "sha256": "d5a933b702f432452c92cb835577df599886a4ff0bd987de5e8f199db35d356e"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

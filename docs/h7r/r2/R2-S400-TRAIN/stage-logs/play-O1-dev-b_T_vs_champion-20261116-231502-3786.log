@@ -1,0 +1,40 @@
+[s400-arena] R2-S400-TRAIN-ARENA-1 O1-dev-b_T_vs_champion: 600 games (0 done), workers 6, signature de1d5a669f8a
+[s400-arena] 17/600 games  2.8%  1.0 min  ETA 35 min  17/600 games
+[s400-arena] 36/600 games  6.0%  2.2 min  ETA 34 min  36/600 games
+[s400-arena] 47/600 games  7.8%  3.3 min  ETA 38 min  47/600 games
+[s400-arena] 63/600 games  10.5%  4.3 min  ETA 37 min  63/600 games
+[s400-arena] 87/600 games  14.5%  5.4 min  ETA 32 min  87/600 games
+[s400-arena] 120/600 games  20.0%  6.4 min  ETA 25 min  120/600 games
+[s400-arena] 136/600 games  22.7%  7.4 min  ETA 25 min  136/600 games
+[s400-arena] 147/600 games  24.5%  8.4 min  ETA 26 min  147/600 games
+[s400-arena] 157/600 games  26.2%  9.5 min  ETA 27 min  157/600 games
+[s400-arena] 184/600 games  30.7%  10.5 min  ETA 24 min  184/600 games
+[s400-arena] 204/600 games  34.0%  11.5 min  ETA 22 min  204/600 games
+[s400-arena] 232/600 games  38.7%  12.6 min  ETA 20 min  232/600 games
+[s400-arena] 254/600 games  42.3%  13.7 min  ETA 19 min  254/600 games
+[s400-arena] 272/600 games  45.3%  14.7 min  ETA 18 min  272/600 games
+[s400-arena] 290/600 games  48.3%  15.7 min  ETA 17 min  290/600 games
+[s400-arena] 306/600 games  51.0%  16.7 min  ETA 16 min  306/600 games
+[s400-arena] 326/600 games  54.3%  17.8 min  ETA 15 min  326/600 games
+[s400-arena] 344/600 games  57.3%  18.9 min  ETA 14 min  344/600 games
+[s400-arena] 362/600 games  60.3%  19.9 min  ETA 13 min  362/600 games
+[s400-arena] 382/600 games  63.7%  21.0 min  ETA 12 min  382/600 games
+[s400-arena] 405/600 games  67.5%  22.1 min  ETA 11 min  405/600 games
+[s400-arena] 426/600 games  71.0%  23.1 min  ETA 9 min  426/600 games
+[s400-arena] 450/600 games  75.0%  24.1 min  ETA 8 min  450/600 games
+[s400-arena] 464/600 games  77.3%  25.1 min  ETA 7 min  464/600 games
+[s400-arena] 489/600 games  81.5%  26.2 min  ETA 6 min  489/600 games
+[s400-arena] 508/600 games  84.7%  27.2 min  ETA 5 min  508/600 games
+[s400-arena] 523/600 games  87.2%  28.2 min  ETA 4 min  523/600 games
+[s400-arena] 546/600 games  91.0%  29.3 min  ETA 3 min  546/600 games
+[s400-arena] 575/600 games  95.8%  30.3 min  ETA 1 min  575/600 games
+[s400-arena] 600/600 games  100.0%  31.2 min  ETA 0 min  600/600 games
+{
+ "arm": "O1-dev-b_T_vs_champion",
+ "summary": {
+  "pairs": 300,
+  "score": 0.45917,
+  "valid": true
+ }
+}
+__EXIT__ 0

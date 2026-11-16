@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "judge-20261116-231502-3786.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-TRAIN/logs/judge-20261116-231502-3786.log",
+   "copy": "docs/h7r/r2/R2-S400-TRAIN/stage-logs/judge-20261116-231502-3786.log",
+   "bytes": 423,
+   "sha256": "20978e56b60fab1ee2221c563012afa63b14c016dce00fa67fded7507fba65c0"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

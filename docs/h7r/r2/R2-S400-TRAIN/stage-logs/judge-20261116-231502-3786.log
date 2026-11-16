@@ -1,0 +1,25 @@
+{
+ "readings": {
+  "P'": "WEAKER",
+  "D'": "NOT_ESTABLISHED"
+ },
+ "bounds": {
+  "P'": {
+   "estimate": -0.02,
+   "lower_one_sided": -0.03917,
+   "upper_one_sided": -0.00083
+  },
+  "D'": {
+   "estimate": 0.004583,
+   "lower_one_sided": -0.00917,
+   "upper_one_sided": 0.01833
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-a": 300,
+   "O1-dev-b": 300
+  }
+ },
+ "next": "P' is not STRONGER: the contract ends"
+}
+__EXIT__ 0

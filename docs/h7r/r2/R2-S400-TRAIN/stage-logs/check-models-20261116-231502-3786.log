@@ -1,0 +1,12 @@
+[s400-arena] S: policy 68928bc6ef8c / ed75576736ca, value 4e28a62a4a31 / 1fcb49ead057: as contracted
+[s400-arena] T: policy ae4e6d9319c2 / 89d1dc7b3e13, value 4e28a62a4a31 / 1fcb49ead057: as contracted
+[s400-arena] champion: policy efee483284df / 5648b7fbe71d, value 4e28a62a4a31 / 1fcb49ead057: as contracted
+{
+ "models_checked": [
+  "S",
+  "T",
+  "champion"
+ ],
+ "arena_contract_sha256": "71c7fb43fb95e8bbd024d8516207835d55d308cad4609fda6959622ef1961136"
+}
+__EXIT__ 0
