@@ -3,7 +3,7 @@
  "contract_id": "R2-S400-VT-MEASURE-1",
  "status": "fixed",
  "approved": {
-  "prepare": false,
+  "prepare": true,
   "smoke": false,
   "full": false
  },
