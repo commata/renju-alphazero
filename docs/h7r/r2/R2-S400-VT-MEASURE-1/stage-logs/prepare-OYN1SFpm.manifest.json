@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "prepare-OYN1SFpm.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-VT-MEASURE-1/logs/prepare-OYN1SFpm.log",
+   "copy": "docs/h7r/r2/R2-S400-VT-MEASURE-1/stage-logs/prepare-OYN1SFpm.log",
+   "bytes": 105,
+   "sha256": "33e16b26341acefd3e27abb0111b3738944d0bc3b368362ea1a4f99cdfc38fcc"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

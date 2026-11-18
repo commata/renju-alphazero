@@ -1,0 +1,9 @@
+{
+ "passed": true,
+ "eligible": {
+  "games": 396,
+  "rows": 15985,
+  "warmup_plies": 792
+ }
+}
+__EXIT__ 0
