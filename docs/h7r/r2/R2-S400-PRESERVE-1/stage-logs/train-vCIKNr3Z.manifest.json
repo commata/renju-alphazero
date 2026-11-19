@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "train-vCIKNr3Z.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRESERVE-1/logs/train-vCIKNr3Z.log",
+   "copy": "docs/h7r/r2/R2-S400-PRESERVE-1/stage-logs/train-vCIKNr3Z.log",
+   "bytes": 136,
+   "sha256": "667ecb1cff24f524b8086885278dce40b0883b37596f371e44573ae5592a575d"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
