@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "gate-zjy5Hq5n.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRESERVE-1/logs/gate-zjy5Hq5n.log",
+   "copy": "docs/h7r/r2/R2-S400-PRESERVE-1/stage-logs/gate-zjy5Hq5n.log",
+   "bytes": 778,
+   "sha256": "719e87799d6af2f8faf14279e71515de3088421a1cf8f82012778dd5478b18dc"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
