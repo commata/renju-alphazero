@@ -7,7 +7,7 @@
   "suites": true,
   "gate": true,
   "train": true,
-  "arena": false
+  "arena": true
  },
  "purpose": "development: on the same S400 rows, is a stronger H3 preservation (mu 2.0 against 0.5) a better candidate (D'') and does it beat the champion (P'')? Seed 20261024; never a promotion",
  "draft": {
