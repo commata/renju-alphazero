@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "train-DGhos9mF.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRESERVE-1/logs/train-DGhos9mF.log",
+   "copy": "docs/h7r/r2/R2-S400-PRESERVE-1/stage-logs/train-DGhos9mF.log",
+   "bytes": 1155,
+   "sha256": "bb3941e504323a5b48a1bc96c1b3d523a7177f96e6d68eb73e5db3abe70a5083"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
