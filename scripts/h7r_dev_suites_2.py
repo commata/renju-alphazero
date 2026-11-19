@@ -5,11 +5,12 @@ from every earlier suite and evaluation sample and from each other, one opening 
 ``scripts/h7r_dev_suites.py`` (O1-dev-a / b) is kept as it is and keeps checking its suites; this tool reuses its
 source reading and class functions with its own suites, generation seeds (``hybrid.h7r_suite_seeds_dev2``) and record.
 
-    build  the exclusion (symmetry classes of the H7-R suites O0, O1, O2, O1-confirm-main, O1-confirm-anchor, O1-dev-a,
-           O1-dev-b and of every arm sample of the committed v1 / v2 evaluation contracts), then suite c (seed 202611191)
-           and suite d (seed 202611192, also excluding suite c's classes); the overlaps with every source (history,
-           position, class) and the prefix overlap with 3-move openings; writes the two suites and the record (never
-           over a file)
+    build  only as the approved ``suites`` stage of R2-S400-PRESERVE-1 (its committed contract, the prepare record
+           committed); the exclusion (symmetry classes of the H7-R suites O0, O1, O2, O1-confirm-main,
+           O1-confirm-anchor, O1-dev-a, O1-dev-b and of every arm sample of the committed v1 / v2 evaluation
+           contracts), then suite c (seed 202611191) and suite d (seed 202611192, also excluding suite c's classes);
+           the overlaps with every source (history, position, class) and the prefix overlap with 3-move openings;
+           writes the two suites and the record (never over a file)
     check  everything recomputed from the committed files: the build's sources read again from their recorded paths
            and SHA-256 (contracts added later, such as the Arena that plays these suites, are not build sources), the
            exclusion, both suites rebuilt from their seeds and equal to the files, no class shared with any source or
@@ -116,8 +117,18 @@ def body_of(srcs, built, ov, git) -> dict:
                     'cannot share a class, so prefix overlap with 3-move openings is counted, not excluded'}
 
 
+def approved(args, root) -> dict:
+    """The committed R2-S400-PRESERVE-1 contract with its ``suites`` stage approved and its prepare record committed:
+    the suites are built only as that stage."""
+    import h7r_preserve as pv
+    c, _, eid = pv.load_contract(getattr(args, 'contract', None), root, 'suites')
+    pv.committed_record(root, c['output']['prepare'], 'prepare record', eid)
+    return c
+
+
 def build(args, root=ROOT, log=print) -> dict:
     root = Path(root)
+    approved(args, root)
     git = ds.git_state(root)
     require(not git['dirty'] or getattr(args, 'allow_dirty', False), 'the tree is dirty: suites must name a clean commit')
     targets = [root / suite_path(label) for label, _ in SUITES] + [root / RECORD]
@@ -168,6 +179,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest='command', required=True)
     b = sub.add_parser('build')
+    b.add_argument('--contract', default=None, help='the R2-S400-PRESERVE-1 contract (default: its committed path)')
     b.add_argument('--allow-dirty', action='store_true', help='tests only')
     sub.add_parser('check')
     args = parser.parse_args(argv)

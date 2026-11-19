@@ -44,33 +44,6 @@ class SuiteTest(unittest.TestCase):
         git(root, 'add', '-A')
         git(root, 'commit', '-qm', 'sources')
 
-    def test_registry_build_and_check(self):
-        self.assertEqual(seeds2.conflicts(), {k: [] for k in seeds2.conflicts()})
-        self.assertEqual(sorted(seeds2.SUITE_SEEDS), [202611191, 202611192])
-        rec = ds2.build(argparse.Namespace(allow_dirty=False), self.root, log=QUIET)
-        self.assertEqual({k: v['seed'] for k, v in rec['suites'].items()}, {'c': 202611191, 'd': 202611192})
-        self.assertEqual(rec['overlaps']['between_c_and_d'], {'class_id': 0, 'history_id': 0})
-        paths = {s['path'] for s in rec['sources']}
-        self.assertTrue({'docs/h7r/suites/O1-dev-a.json', 'docs/h7r/suites/O1-dev-b.json',
-                         'docs/h7r/contracts-v2/R2-S400-TRAIN-ARENA-1.json'} <= paths)
-        for label in ('c', 'd'):
-            body = json.loads((self.root / ds2.suite_path(label)).read_text())
-            self.assertEqual((body['count'], len({o['class_id'] for o in body['openings']})), (300, 300))
-            self.assertEqual(body['seed_policy'], seeds2.POLICY)
-            for src, counts in rec['overlaps'][label]['by_source'].items():
-                self.assertEqual(counts['class_id'], 0, src)
-        git(self.root, 'add', '-A')
-        git(self.root, 'commit', '-qm', 'suites')
-        self.assertTrue(ds2.check(None, self.root, log=QUIET)['passed'])
-        self.assertTrue(ds.check(None, self.root, log=QUIET)['passed'])  # O1-dev-a / b still check beside them
-        with self.assertRaisesRegex(ValueError, 'exist: never overwritten'):
-            ds2.build(argparse.Namespace(allow_dirty=False), self.root, log=QUIET)
-        body = json.loads((self.root / ds2.suite_path('d')).read_text())
-        body['git'] = {**body['git'], 'commit': '0' * 40}  # a valid suite, not the recorded file
-        (self.root / ds2.suite_path('d')).write_text(json.dumps(body, indent=1) + '\n')
-        with self.assertRaisesRegex(ValueError, 'suite d: the file is not the recorded one'):
-            ds2.check(None, self.root, log=QUIET)
-
     def test_an_unregistered_seed_is_refused(self):
         with mock.patch.object(ds2, 'SUITES', (('c', 202611131), ('d', 202611192))):
             with self.assertRaisesRegex(ValueError, 'not a registered h7r-suite-seeds-dev2 suite seed'):
@@ -115,6 +88,9 @@ class PreserveBase(RepoBase):
                    **st.gate_view(self.view_source(run)), 'inputs': pv.run_inputs(run, self.rows_rec),
                    'candidate': {'checkpoint_sha256': files[0], 'metadata_sha256': files[1]}}
             self.commit_record(st.run_record_path(s), rec)
+        shutil.copytree(ROOT / 'docs/h7r/contracts-v2', root / 'docs/h7r/contracts-v2')  # suite sources
+        for rel in (ds2.RECORD, ds2.suite_path('c'), ds2.suite_path('d'), pv.ARENA_CONTRACT):  # not made yet
+            (root / rel).unlink(missing_ok=True)
         self.c = pv.contract_body(root, sources=())
         self.write_preserve(self.c)
         git(root, 'add', '-A')
@@ -170,10 +146,16 @@ class PreserveBase(RepoBase):
     def ns(self, **k):
         return argparse.Namespace(contract=None, device='cpu', log_name=None, **k)
 
-    def through_gate(self):
+    def through_suites(self):
         self.approve_preserve('prepare', 'suites', 'gate')
         pv.prepare(self.ns(), self.root)
         self.commit(self.c['output']['prepare'])
+        ds2.build(argparse.Namespace(allow_dirty=False), self.root, log=QUIET)
+        git(self.root, 'add', 'docs/h7r/suites')
+        git(self.root, 'commit', '-qm', 'suites')
+
+    def through_gate(self):
+        self.through_suites()
         rec = pv.gate(self.ns(), self.root, log=QUIET)
         self.commit(self.c['output']['gate'])
         return rec
@@ -249,9 +231,7 @@ class FlowTest(PreserveBase):
             pv.verify_run(self.ns(seed=20261024), self.root)
 
     def test_the_gate_is_exact(self):
-        self.approve_preserve('prepare', 'suites', 'gate')
-        pv.prepare(self.ns(), self.root)
-        self.commit(self.c['output']['prepare'])
+        self.through_suites()
         self.change = lambda r: r['evaluations'][0]['val'].update(ce=r['evaluations'][0]['val']['ce'] + 1e-12)
         rec = pv.gate(self.ns(), self.root, log=QUIET)
         self.assertFalse(rec['passed'])
@@ -279,12 +259,77 @@ class FlowTest(PreserveBase):
                 pv.train(self.ns(seed=20261111), self.root, log=QUIET)
         self.assertFalse((self.root / pv.RUNS / 'S2-20261111' / 'record.json').exists())
 
+    def test_the_gate_needs_the_committed_suites(self):
+        self.approve_preserve('prepare', 'suites', 'gate')
+        pv.prepare(self.ns(), self.root)
+        self.commit(self.c['output']['prepare'])
+        with self.assertRaisesRegex(ValueError, 'O1-dev-cd-record.json: not committed'):
+            pv.gate(self.ns(), self.root, log=QUIET)
+        self.assertEqual(self.calls, [])  # nothing trained
+        self.assertFalse((self.root / self.c['output']['gate']).exists())
+
+    def test_a_run_with_other_draws_publishes_nothing(self):
+        self.through_gate()
+        self.approve_preserve('train')
+        for key in pv.DRAWS:
+            with self.subTest(key):
+                def other(c, *a, key=key, **k):
+                    run = self.preserve_run(20261111, pv.MU)
+                    fp = run['summary']['fingerprints']
+                    fp[key] = fp[key] + 1 if key == 'steps' else '0' * 64
+                    return run
+                with mock.patch.object(a1, 'execute', other):
+                    with self.assertRaisesRegex(ValueError, rf"\['{key}'\] differ from the mu 0.5 run"):
+                        pv.train(self.ns(seed=20261111), self.root, log=QUIET)
+                out = self.root / pv.RUNS / 'S2-20261111'
+                self.assertFalse(out.exists() and any(out.iterdir()))
+
     def test_prepare_checks_the_arena_base_checkpoint(self):
         self.approve_preserve('prepare')
         (self.root / st.RUNS / 'S-20261024' / 'best.pt').write_text('another checkpoint')
         with self.assertRaisesRegex(ValueError, 'the checkpoint files differ from its record'):
             pv.prepare(self.ns(), self.root)
         self.assertFalse((self.root / self.c['output']['prepare']).exists())
+
+
+class SuiteFlowTest(PreserveBase):
+    def test_registry_build_and_check(self):
+        self.assertEqual(seeds2.conflicts(), {k: [] for k in seeds2.conflicts()})
+        self.assertEqual(sorted(seeds2.SUITE_SEEDS), [202611191, 202611192])
+        for stages, message in (((), 'the suites stage is not approved'),
+                                (('prepare', 'suites'), 'the prepare record is not committed')):
+            with self.subTest(stages):
+                if stages:
+                    self.approve_preserve(*stages)
+                with self.assertRaisesRegex(ValueError, message):
+                    ds2.build(argparse.Namespace(allow_dirty=False), self.root, log=QUIET)
+                self.assertFalse((self.root / ds2.RECORD).exists() or (self.root / ds2.suite_path('c')).exists())
+        pv.prepare(self.ns(), self.root)
+        self.commit(self.c['output']['prepare'])
+        rec = ds2.build(argparse.Namespace(allow_dirty=False), self.root, log=QUIET)
+        self.assertEqual({k: v['seed'] for k, v in rec['suites'].items()}, {'c': 202611191, 'd': 202611192})
+        self.assertEqual(rec['overlaps']['between_c_and_d'], {'class_id': 0, 'history_id': 0})
+        paths = {s['path'] for s in rec['sources']}
+        self.assertTrue({'docs/h7r/suites/O1-dev-a.json', 'docs/h7r/suites/O1-dev-b.json',
+                         'docs/h7r/contracts-v2/R2-S400-TRAIN-ARENA-1.json'} <= paths)
+        for label in ('c', 'd'):
+            body = json.loads((self.root / ds2.suite_path(label)).read_text())
+            self.assertEqual((body['count'], len({o['class_id'] for o in body['openings']})), (300, 300))
+            self.assertEqual(body['seed_policy'], seeds2.POLICY)
+            for src, counts in rec['overlaps'][label]['by_source'].items():
+                self.assertEqual(counts['class_id'], 0, src)
+        git(self.root, 'add', 'docs/h7r/suites')
+        git(self.root, 'commit', '-qm', 'suites')
+        self.assertTrue(ds2.check(None, self.root, log=QUIET)['passed'])
+        self.assertTrue(ds.check(None, self.root, log=QUIET)['passed'])  # O1-dev-a / b still check beside them
+        with self.assertRaisesRegex(ValueError, 'exist: never overwritten'):
+            ds2.build(argparse.Namespace(allow_dirty=False), self.root, log=QUIET)
+        body = json.loads((self.root / ds2.suite_path('d')).read_text())
+        body['git'] = {**body['git'], 'commit': '0' * 40}  # a valid suite, not the recorded file
+        (self.root / ds2.suite_path('d')).write_text(json.dumps(body, indent=1) + '\n')
+        with self.assertRaisesRegex(ValueError, 'suite d: the file is not the recorded one'):
+            ds2.check(None, self.root, log=QUIET)
+
 
 
 def fake_play_game(task, make_tested=None, make_opponent=None, max_plies=None):
@@ -317,9 +362,6 @@ class ArenaTest(PreserveBase):
         (self.root / dst).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(self.root / pv.RUNS / 'S2-20261024' / 'record.json', self.root / dst)
         self.commit(dst)
-        ds2.build(argparse.Namespace(allow_dirty=False), self.root, log=QUIET)
-        git(self.root, 'add', 'docs/h7r/suites')
-        git(self.root, 'commit', '-qm', 'suites')
         self.approve_preserve('arena')
 
     def head(self):
@@ -393,15 +435,23 @@ class RuleTest(unittest.TestCase):
         lab = lambda p, d: {"P''": p, "D''": d}  # noqa: E731
         out = pv.use(lab('STRONGER', 'BETTER'))
         self.assertEqual(out['decision'], 'MAY_OPEN_CONFIRMATION')
-        self.assertIn('improvement over the old candidate', out['note'])
+        self.assertIn('improvement over the old mu 0.5 candidate', out['note'])
         out = pv.use(lab('STRONGER', 'NOT_ESTABLISHED'))
         self.assertEqual(out['decision'], 'MAY_OPEN_CONFIRMATION')
         self.assertIn('undetermined', out['note'])
         out = pv.use(lab('NOT_ESTABLISHED', 'BETTER'))
         self.assertEqual((out['decision'], out['note']),
-                         ('END', 'recorded as an improvement over the old candidate; the contract ends'))
+                         ('END', 'the stronger preservation is recorded as an improvement over the old mu 0.5 '
+                                 'candidate; the contract ends'))
+        out = pv.use(lab('STRONGER', 'WORSE'))
+        self.assertEqual((out['decision'], out['worse']), ('MAY_OPEN_CONFIRMATION', ["D''"]))
+        self.assertIn('worse than the old mu 0.5 candidate', out['note'])
+        self.assertNotIn('undetermined', out['note'])
         out = pv.use(lab('WEAKER', 'WORSE'))
         self.assertEqual((out['decision'], out['worse']), ('END', ["P''", "D''"]))
+        self.assertEqual(out['note'], 'the stronger preservation is recorded as worse than the old mu 0.5 candidate; '
+                                      'the contract ends')
+        self.assertEqual(pv.use(lab('NOT_ESTABLISHED', 'NOT_ESTABLISHED'))['note'], 'the contract ends')
 
 
 class FixedContractTest(unittest.TestCase):
@@ -413,7 +463,7 @@ class FixedContractTest(unittest.TestCase):
         self.assertEqual([s['path'] for s in c['sources']], list(pv.SOURCES))
         self.assertEqual(c['s400_train']['experiment_sha256'],
                          '67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731')
-        self.assertEqual(eid, 'f02f72303f270104217b27086e77c1312356f41a0febf5afc5c128e7a8117f89')
+        self.assertEqual(eid, 'd832623f66ec616005b5b4a78dd8516328373deef21ba32124993953f39b3fc1')
 
 
 # --- the desktop blocks ----------------------------------------------------------------------------------------------
@@ -446,11 +496,16 @@ if cmd == 'train':
     (out / 'record.json').write_text(json.dumps({'format': 'h7r-preserve-run-v1', 'seed': seed, 'mu': 2.0,
         'log_name': log, 'verdict': 'CANDIDATE', 'candidate': {'checkpoint_sha256': sha(out / 'best.pt'),
                                                                'metadata_sha256': sha(out / 'best.json')}}))
+    if os.environ.get('PV_TAMPER') == str(seed):  # the checkpoint changes after its record is written
+        (out / 'best.pt').write_bytes(b'replaced')
     print('train', seed); sys.exit(0)
 if cmd == 'verify-run':
     seed = sys.argv[sys.argv.index('--seed') + 1]
     rec = json.loads(Path(D, 'seed-records', 'S2-' + seed, 'record.json').read_text())
-    if sha(Path(R, 'S2-' + seed, 'best.pt')) != rec['candidate']['checkpoint_sha256']:
+    f = Path(R, 'S2-' + seed, 'best.pt')
+    if not f.is_file():
+        print('STOP: ValueError: best.pt is missing'); sys.exit(1)
+    if sha(f) != rec['candidate']['checkpoint_sha256']:
         print('STOP: ValueError: best.pt: its SHA-256 is not the one the record records'); sys.exit(1)
     print('verified', seed); sys.exit(0)
 if cmd == 'arena-contract':
@@ -588,6 +643,22 @@ class BlockTest(unittest.TestCase):
         code, out = self.bash('pv-T', PV_FORBID='1')
         self.assertEqual(code, 1, out)
         self.assertIn('its SHA-256 is not the one', out)
+
+    def test_checkpoint_files_are_checked_before_the_record_is_staged(self):
+        self.through('pv-P', 'pv-G')
+        head = git(self.work, 'rev-parse', 'HEAD')
+        code, out = self.bash('pv-T', PV_TAMPER='20261024')
+        self.assertEqual(code, 1, out)
+        self.assertIn('the files of S2-20261024 are not the ones its record names; nothing committed', out)
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), head)  # nothing committed or pushed
+        self.assertEqual(git(self.origin, 'rev-parse', 'feat/h7-c1'), head)
+        self.assertEqual(git(self.work, 'diff', '--cached', '--name-only'), '')
+        (self.work / pv.RUNS / 'S2-20261024' / 'best.pt').unlink()  # the recovery path checks them too
+        code, out = self.bash('pv-T', PV_FORBID='1')
+        self.assertEqual(code, 1, out)
+        self.assertIn('an uncommitted', out)
+        self.assertIn('nothing committed', out)
+        self.assertEqual(git(self.work, 'rev-parse', 'HEAD'), head)
 
     def test_files_without_a_record_stop_the_train_block(self):
         self.through('pv-P', 'pv-G')

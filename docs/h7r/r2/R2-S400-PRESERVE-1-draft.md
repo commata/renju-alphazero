@@ -51,6 +51,7 @@
 ## 4. 학습
 
 - `μ = 2.0`으로 세 seed를 학습한다. 실행마다 따로 커밋한다(R2-S400-TRAIN s5-T와 같은 방식: 실행 기록 sidecar, 기록 사본, checkpoint 대조, 재개 시 커밋된 seed의 파일 재대조).
+- μ 하나의 효과만 보도록, 같은 seed의 S(μ 0.5) 기록과 step 수·batch·대칭·학습률 지문이 모두 같은 실행만 저장한다. 하나라도 다르면 후보도 기록도 남기지 않는다(손실과 선택 state는 μ에 따라 달라진다).
 - 학습 전에 후보 행 파일을 R2-S400-TRAIN rows 기록의 SHA와 행 검사로 다시 확인하고(`verified_rows`), 커밋된 gate 기록을 다시 판정한다.
 - 기록과 checkpoint 메타데이터에 남길 것: μ, 후보 행·c2 행·S400 기록 SHA, gate 기록 SHA, R2-S400-TRAIN 계약과 실험 SHA, 같은 seed의 S(μ 0.5) 기록 SHA.
 - Arena 진입: 사전 지정 seed 20261024의 S(μ 2.0)가 `CANDIDATE`여야 한다. 아니면 다른 seed로 대신하지 않고 계약을 끝낸다.
@@ -85,11 +86,12 @@
 | P″ | D″ | 기록과 다음 |
 |---|---|---|
 | STRONGER | BETTER | 독립 확인 계약을 연다(새 표본·새 seed). 보존 강화가 기존 후보 대비 개선으로 기록된다 |
-| STRONGER | 그 밖 | 독립 확인 계약을 열 수 있다. 보존 강도를 높인 효과는 미확정으로 기록한다 |
+| STRONGER | WORSE | 독립 확인 계약을 열 수 있다. 보존 강화는 기존 μ 0.5 후보 대비 악화로 기록한다 |
+| STRONGER | NOT_ESTABLISHED | 독립 확인 계약을 열 수 있다. 보존 강도를 높인 효과는 미확정으로 기록한다 |
 | 그 밖 | BETTER | 기존 후보 대비 개선으로 기록하고 이 계약을 끝낸다. champion을 넘지 못했으므로 확인으로 가지 않는다 |
 | 그 밖 | 그 밖 | 이 계약을 끝낸다 |
 
-- WORSE는 따로 적는다. 진입 여부는 위 표대로다.
+- P″가 STRONGER가 아닐 때 D″ WORSE는 기존 μ 0.5 후보 대비 악화로 기록하고 계약을 끝낸다. WEAKER·WORSE는 따로 적는다. 진입 여부는 위 표대로다.
 - 개발 Arena에서 champion을 넘은 후보만 독립 확인으로 보낸다. 독립 확인의 통과 여부는 이후 강화학습 재개를 검토할 때 쓴다.
 - 결과를 보고 μ, suite, seed, 판독 설정을 바꾸지 않는다. 바꾸려면 새 계약이다.
 
@@ -114,27 +116,27 @@
 
 ## 10. 구현 (2026-11-19, 미승인)
 
-- 계약 `docs/h7r/r2/R2-S400-PRESERVE-1/preserve-contract.json`(fixed, 모든 승인 false, 실험 SHA `f02f72303f27`). R2-S400-TRAIN 계약의 파일 SHA(`7f4a5c00a126`)와 실험 SHA(`67c6ba3c8081`), rows 기록 SHA, 후보 행 SHA, μ 0.5 seed 기록 세 개와 20261024 checkpoint SHA를 고정한다. 도구와 재사용 파일 12개를 sources로 고정한다.
+- 계약 `docs/h7r/r2/R2-S400-PRESERVE-1/preserve-contract.json`(fixed, 모든 승인 false, 실험 SHA `d832623f66ec`). R2-S400-TRAIN 계약의 파일 SHA(`7f4a5c00a126`)와 실험 SHA(`67c6ba3c8081`), rows 기록 SHA, 후보 행 SHA, μ 0.5 seed 기록 세 개와 20261024 checkpoint SHA를 고정한다. 도구와 재사용 파일 12개를 sources로 고정한다.
 - 도구 `scripts/h7r_preserve.py`(R2-S400-TRAIN의 고정 도구·계약·기록은 바꾸지 않고 읽어서 재사용)
 
 | 명령 | 단계 | 하는 일 |
 |---|---|---|
 | `prepare` | prepare | R2-S400-TRAIN 계약(고정 SHA)과 gate·rows 기록, 후보 행(SHA와 행 검사), μ 0.5 seed 기록, Arena에 쓸 20261024 checkpoint 파일, A1 입력 대조 |
-| `gate` | gate | S(μ 0.5, 20261024)를 `h7r_p1a1.execute`로 다시 학습해 커밋된 R2-S400-TRAIN 기록과 정확히 비교(`h7r_s400_train.gate_view`의 지문·평가곡선·선택·state·log-확률·설정, 입력 SHA). 이 checkpoint는 쓰지 않는다. FAIL은 종료 코드 2 |
-| `train --seed S` | train | 커밋된 gate를 다시 판정한 뒤 S(μ 2.0) 학습. R2-S400-TRAIN 계약의 사본에서 replay 계수만 2.0으로 바꿔 같은 진입점에 넘긴다(`with_mu`). 기록에 μ, 입력, gate 기록 SHA, 같은 seed의 μ 0.5 기록 SHA, 지문(batch·sym·lr) 일치 여부 |
+| `gate` | gate | 커밋된 두 suite와 생성 기록을 다시 계산해 확인한 뒤(`h7r_dev_suites_2.check`) S(μ 0.5, 20261024)를 `h7r_p1a1.execute`로 다시 학습해 커밋된 R2-S400-TRAIN 기록과 정확히 비교(`h7r_s400_train.gate_view`의 지문·평가곡선·선택·state·log-확률·설정, 입력 SHA). 이 checkpoint는 쓰지 않는다. FAIL은 종료 코드 2 |
+| `train --seed S` | train | 커밋된 gate를 다시 판정한 뒤 S(μ 2.0) 학습. R2-S400-TRAIN 계약의 사본에서 replay 계수만 2.0으로 바꿔 같은 진입점에 넘긴다(`with_mu`). 같은 seed의 μ 0.5 기록과 step 수·batch·대칭·학습률 지문이 다르면 아무것도 쓰지 않는다. 기록에 μ, 입력, gate 기록 SHA, 같은 seed의 μ 0.5 기록 SHA, 지문 일치 |
 | `verify-run --seed S` | train | 커밋된 run 기록의 checkpoint 파일 대조(CANDIDATE) 또는 파일 없음(NO_CANDIDATE) |
 | `arena-contract`, `check-contract` | arena | 커밋된 새 suite(재계산 검사 통과)와 S2 20261024 기록으로 v2 Arena 계약, seed·id 중복 검사 뒤 기록 |
 | `check-models`, `play`, `judge`, `verify-judge` | arena | R2-S400-TRAIN Arena와 같은 방식. 판독은 D″·P″, 표는 §7 |
 
 - suite: `src/hybrid/h7r_suite_seeds_dev2.py`(생성 seed 202611191·202611192 등록과 충돌 검사), `scripts/h7r_dev_suites_2.py`(`build` / `check`, `h7r_dev_suites.py`의 출처 읽기·동치류 함수 재사용, 기록 `docs/h7r/suites/O1-dev-cd-record.json`). 미리 계산한 결과(쓰지 않음): 제외 동치류 2,549개, 두 묶음 모두 서로 다른 300개 동치류, 출처·두 묶음 사이 겹침 0.
-- suites 단계는 데이터가 필요 없어 승인 뒤 클라우드에서 `build`로 만들고 깨끗한 commit에서 커밋한다(O1-dev-a·b와 같은 방식). 데스크톱 블록은 없다.
+- suites 단계는 데이터가 필요 없어 `approved.suites` 뒤 클라우드에서 `build`로 만들고(`build`가 커밋된 계약의 suites 승인과 prepare 기록 커밋을 확인한다) 깨끗한 commit에서 커밋한다(O1-dev-a·b와 같은 방식). 데스크톱 블록은 없다.
 - 테스트 `tests/test_h7r_preserve.py`: §9의 항목.
 
 ## 11. 데스크톱 실행 (승인 뒤에만)
 
 - pv-P는 `approved.prepare` 뒤, pv-G는 `approved.gate` 뒤, pv-T는 `approved.train` 뒤, pv-AC와 pv-A는 `approved.arena` 뒤에 실행한다. suite는 그 전에 커밋돼 있어야 한다(arena-contract가 확인한다).
 - pv-P·pv-G·pv-T는 결과에 로그 이름을 남긴다. 결과가 커밋 전이면 다시 돌리지 않고, 로그의 종료 줄을 확인한 뒤(없으면 `Recovered exit code`) 함께 커밋한다.
-- pv-T: seed마다 따로 커밋한다. 커밋된 seed는 파일을 다시 대조하고 건너뛴다. 실패하면 기록하고 다음 seed 전에 멈춘다. 결과 없이 파일만 남은 중단은 멈추고 보고한다(덮어쓰지 않는다).
+- pv-T: seed마다 따로 커밋한다. 각 seed의 기록을 스테이징하기 전에 checkpoint·메타데이터를 기록과 대조한다(`verify-run`, 정상 실행과 복구 모두). 다르면 아무것도 커밋하지 않고 멈춘다. 커밋된 seed는 파일을 다시 대조하고 건너뛴다. 실패하면 기록하고 다음 seed 전에 멈춘다. 결과 없이 파일만 남은 중단은 멈추고 보고한다(덮어쓰지 않는다).
 - pv-A: R2-S400-TRAIN s5-A와 같다(대국 전 모델 확인, HEAD 고정, 실패 시 커밋 없음과 재개, judge 뒤 중단은 verify-judge로 확인 후 커밋).
 
 pv-P. prepare
@@ -380,6 +382,7 @@ PY
       mkdir -p "$(dirname "$dst")"
       [ -e "$dst" ] || cp "$O" "$dst"  # an existing copy is never overwritten, only compared
       cmp "$O" "$dst" || { echo "STOP: $dst differs from $O"; exit 1; }
+      python "$T" verify-run --seed "$s" || { echo "STOP: the files of S2-$s are not the ones its record names; nothing committed"; exit 1; }
     elif [ "$rc" -eq 0 ]; then
       echo "STOP: train S2 $s did not produce its record"; exit 1
     fi

@@ -119,17 +119,19 @@
   "combined": "0.5 x each suite (fixed weights), stratified opening bootstrap; class level reported",
   "use": {
    "P'' STRONGER and D'' BETTER": "a separate confirmation contract may open; the stronger preservation is recorded as an improvement over the old candidate",
+   "P'' STRONGER and D'' WORSE": "a separate confirmation contract may open; the stronger preservation is recorded as worse than the old mu 0.5 candidate",
    "P'' STRONGER otherwise": "a separate confirmation contract may open; the effect of the stronger preservation stays undetermined",
    "D'' BETTER otherwise": "recorded as an improvement over the old candidate; the contract ends",
+   "D'' WORSE otherwise": "recorded as worse than the old mu 0.5 candidate; the contract ends",
    "otherwise": "the contract ends"
   },
   "scope": "the pre-designated training seed 20261024; training-seed variation is not in the bounds"
  },
  "stages": {
   "prepare": "every input and record checked",
-  "suites": "the two new suites built and checked",
-  "gate": "S(mu 0.5, 20261024) reproduced exactly",
-  "train": "S(mu 2.0) for the three seeds, one commit each",
+  "suites": "the two new suites built (after this approval only) and committed with their record",
+  "gate": "the committed suites rechecked, then S(mu 0.5, 20261024) reproduced exactly",
+  "train": "S(mu 2.0) for the three seeds, kept only with the step count and the batch, symmetry and learning-rate fingerprints of the mu 0.5 run of the seed; one commit each, its checkpoint files checked before the record is staged",
   "arena": "the Arena contract, the models checked, four arms, the judge"
  },
  "output": {
@@ -143,11 +145,11 @@
  "sources": [
   {
    "path": "scripts/h7r_preserve.py",
-   "sha256": "0d87ddd54d9409d4af96c0ec5ce34d0dc2c7abfd513bcb1b759cb4898f412a7b"
+   "sha256": "85536b815b4b3a6913b70fdbd95a04800bfff19a85a92786b72c7b2d26e0f537"
   },
   {
    "path": "scripts/h7r_dev_suites_2.py",
-   "sha256": "bd7ac7af98de2698718807b4297d0ad6d0e008d702a1b043785b1373f5cc1f8c"
+   "sha256": "66530194a834b57b58f14d1c25db8db218349ecd000c48e45d68fe73892bce2d"
   },
   {
    "path": "src/hybrid/h7r_suite_seeds_dev2.py",

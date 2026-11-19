@@ -9,11 +9,13 @@ numeric settings. The mu 0.5 candidates are the committed R2-S400-TRAIN runs (ne
     prepare           the R2-S400-TRAIN contract (pinned file SHA-256 and experiment id) and its committed records, the
                       candidate rows (SHA-256 and the row check), the mu 0.5 seed records and the 20261024 checkpoint
                       files, the A1 inputs; the prepare record
-    gate              S(mu 0.5, 20261024) trained again and compared exactly with its committed R2-S400-TRAIN record
-                      (fingerprints, every evaluation, selection, selected state, fixed-position log-probabilities,
-                      settings, inputs); a reproduction check only, its checkpoint is never used
-    train --seed S    S(mu 2.0) for one contract seed after the gate; the run record (log name, mu, inputs, the
-                      mu 0.5 record of the seed) and the checkpoint files under runs/
+    gate              the committed suites rechecked (``h7r_dev_suites_2.check``); S(mu 0.5, 20261024) trained again
+                      and compared exactly with its committed R2-S400-TRAIN record (fingerprints, every evaluation,
+                      selection, selected state, fixed-position log-probabilities, settings, inputs); a reproduction
+                      check only, its checkpoint is never used
+    train --seed S    S(mu 2.0) for one contract seed after the gate, kept only when its step count and batch,
+                      symmetry and learning-rate fingerprints are those of the mu 0.5 run of the seed; the run record
+                      (log name, mu, inputs, the mu 0.5 record of the seed) and the checkpoint files under runs/
     verify-run        a committed run record's checkpoint files are the ones it names (CANDIDATE) or absent
     arena-contract    the v2 development Arena contract on the committed new suites (O1-dev-c / d, game seeds 9103 /
                       9104): S(mu 2.0) and S(mu 0.5) of seed 20261024 each against the champion, one pairing per suite
@@ -22,9 +24,9 @@ numeric settings. The mu 0.5 candidates are the committed R2-S400-TRAIN runs (ne
                       any game, the v2 play loop of ``scripts/h7r_s400_arena.py``, and the judge: D'' = S(2.0) - S(0.5)
                       and P'' = S(2.0) - 0.5, read only when both candidates played the same openings in each suite
 
-Readings (section 7): P'' STRONGER (with D'' BETTER or not) may open a separate confirmation contract; D'' BETTER alone is
-recorded as an improvement over the old candidate and ends the contract; otherwise the contract ends. The scope is the
-pre-designated training seed 20261024.
+Readings (section 7): P'' STRONGER may open a separate confirmation contract; D'' BETTER / WORSE records the stronger
+preservation as an improvement over / worse than the old mu 0.5 candidate (otherwise its effect stays undetermined);
+without P'' STRONGER the contract ends. The scope is the pre-designated training seed 20261024.
 """
 from __future__ import annotations
 
@@ -126,14 +128,20 @@ def contract_body(root=ROOT, sources=SOURCES) -> dict:
                     'combined': '0.5 x each suite (fixed weights), stratified opening bootstrap; class level reported',
                     'use': {'P\'\' STRONGER and D\'\' BETTER': 'a separate confirmation contract may open; the stronger '
                             'preservation is recorded as an improvement over the old candidate',
+                            'P\'\' STRONGER and D\'\' WORSE': 'a separate confirmation contract may open; the '
+                            'stronger preservation is recorded as worse than the old mu 0.5 candidate',
                             'P\'\' STRONGER otherwise': 'a separate confirmation contract may open; the effect of the '
                             'stronger preservation stays undetermined',
                             'D\'\' BETTER otherwise': 'recorded as an improvement over the old candidate; the contract '
-                            'ends', 'otherwise': 'the contract ends'},
+                            'ends', 'D\'\' WORSE otherwise': 'recorded as worse than the old mu 0.5 candidate; the '
+                            'contract ends', 'otherwise': 'the contract ends'},
                     'scope': 'the pre-designated training seed 20261024; training-seed variation is not in the bounds'},
-        'stages': {'prepare': 'every input and record checked', 'suites': 'the two new suites built and checked',
-                   'gate': 'S(mu 0.5, 20261024) reproduced exactly', 'train': 'S(mu 2.0) for the three seeds, one '
-                   'commit each', 'arena': 'the Arena contract, the models checked, four arms, the judge'},
+        'stages': {'prepare': 'every input and record checked', 'suites': 'the two new suites built (after this '
+                   'approval only) and committed with their record',
+                   'gate': 'the committed suites rechecked, then S(mu 0.5, 20261024) reproduced exactly',
+                   'train': 'S(mu 2.0) for the three seeds, kept only with the step count and the batch, symmetry and '
+                   'learning-rate fingerprints of the mu 0.5 run of the seed; one commit each, its checkpoint files '
+                   'checked before the record is staged', 'arena': 'the Arena contract, the models checked, four arms, the judge'},
         'output': {'prepare': f'{D}/prepare.json', 'gate': f'{D}/gate.json', 'runs': RUNS + '/S2-{seed}',
                    'seed_records': SEED_RECORDS + '/S2-{seed}/record.json', 'judge': JUDGE, 'arms': ARMS_DIR},
         'sources': [{'path': rel, 'sha256': file_sha256(root / rel)} for rel in sources],
@@ -270,6 +278,7 @@ def gate(args, root=ROOT, log=print) -> dict:
     root = Path(root)
     c, sha, eid = load_contract(args.contract, root, 'gate')
     committed_record(root, c['output']['prepare'], 'prepare record', eid)
+    committed_suites(c, root)  # the suites stage comes before the gate
     out = root / c['output']['gate']
     require(not out.exists(), f'{out} exists: never overwritten')
     s4, s4sha, s4eid = s400(c, root)
@@ -304,6 +313,15 @@ def verified_gate(c: dict, eid: str, root=ROOT) -> dict:
 
 # --- train --------------------------------------------------------------------------------------------------------
 
+DRAWS = ('steps', 'batch_sha256', 'sym_sha256', 'lr_sha256')
+
+
+def same_draws(fp: dict, base_fp: dict) -> dict:
+    """Step count, batch, symmetry and learning-rate fingerprints of a mu 2.0 run against the mu 0.5 run of its seed:
+    each must be equal (and recorded in the base) for the run to be kept (the losses and the selected state move)."""
+    return {k: base_fp.get(k) is not None and fp.get(k) == base_fp.get(k) for k in DRAWS}
+
+
 def train(args, root=ROOT, log=print) -> dict:
     import torch
     from hybrid import h7c_train as tr
@@ -331,14 +349,16 @@ def train(args, root=ROOT, log=print) -> dict:
             and [e['step'] for e in r['evaluations']] == exp['evaluation_steps'],
             'the step structure is not the contract\'s; nothing is published')
     require(result['p1']['replay']['mu'] == MU, 'the run did not use the contract mu')
+    same = same_draws(run['summary']['fingerprints'], base['fingerprints'])
+    require(all(same.values()), f'S2 {args.seed}: {[k for k, v in same.items() if not v]} differ from the mu 0.5 run of '
+                                f'the seed (only mu may change); nothing is published')
     inputs = run_inputs(run, rows_rec)
     git = guard.start['git']
     record = {'format': 'h7r-preserve-run-v1', **log_field(args, 'train'), **stamp(sha, eid, git), 'arm': 'S2',
               'mu': MU, 'seed': args.seed, 'config': tr.config_dict(cfg), 'inputs': inputs, 'settings': run['settings'],
               'gate_sha256': file_sha256(root / c['output']['gate']),
               'base_record_sha256': c['base_runs'][str(args.seed)]['record_sha256'],
-              'base_fingerprints_same': {k: run['summary']['fingerprints'].get(k) == base['fingerprints'].get(k)
-                                         for k in ('steps', 'batch_sha256', 'sym_sha256', 'lr_sha256')},
+              'base_fingerprints_same': same,
               **run['summary'], **r, 'p1': result['p1'], 'seconds': run['seconds']}
     out.mkdir(parents=True, exist_ok=True)
     files = {}
@@ -594,15 +614,16 @@ def bounds_of(strata: dict, unit: str) -> dict:
 
 def use(lab: dict) -> dict:
     """The section 7 table (fixed before any result)."""
-    p, d = lab["P''"] == 'STRONGER', lab["D''"] == 'BETTER'
+    p = lab["P''"] == 'STRONGER'
+    effect = {'BETTER': 'the stronger preservation is recorded as an improvement over the old mu 0.5 candidate',
+              'WORSE': 'the stronger preservation is recorded as worse than the old mu 0.5 candidate'}.get(lab["D''"])
     worse = [k for k, v in lab.items() if v in ('WEAKER', 'WORSE')]
     if p:
         return {'decision': 'MAY_OPEN_CONFIRMATION', 'worse': worse,
                 'note': 'a separate confirmation contract (new sample and seeds) may open; ' +
-                        ('the stronger preservation is recorded as an improvement over the old candidate' if d else
-                         'the effect of the stronger preservation stays undetermined')}
+                        (effect or 'the effect of the stronger preservation stays undetermined')}
     return {'decision': 'END', 'worse': worse,
-            'note': 'recorded as an improvement over the old candidate; the contract ends' if d else 'the contract ends'}
+            'note': (effect + '; ' if effect else '') + 'the contract ends'}
 
 
 def compute(a: dict, arms_dir, root) -> dict:
