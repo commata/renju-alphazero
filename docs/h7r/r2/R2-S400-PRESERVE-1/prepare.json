@@ -1,0 +1,46 @@
+{
+ "format": "h7r-preserve-prepare-v1",
+ "log_name": "prepare-EMLT0cmx.log",
+ "contract_id": "R2-S400-PRESERVE-1",
+ "experiment_sha256": "d832623f66ec616005b5b4a78dd8516328373deef21ba32124993953f39b3fc1",
+ "contract_file_sha256": "51ce1e7ab3ea7c5a1cd30c06b67c31fb5819b374b01991ffca892ae21303e1f2",
+ "git": {
+  "commit": "c68e973773abe3fa5c4819bfffdbd9b772d8b4a5",
+  "dirty": false
+ },
+ "passed": true,
+ "s400_train": {
+  "contract": "docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json",
+  "contract_file_sha256": "7f4a5c00a126600702d2ed661478c987f3a4870b64eb4b408a58de35bcb73cb2",
+  "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+  "gate": "docs/h7r/r2/R2-S400-TRAIN/gate.json",
+  "rows_record": "docs/h7r/r2/R2-S400-TRAIN/rows.json",
+  "rows_record_sha256": "e2336e880d39acaa60db4cfb9527e2a73bfd30931419f5f74346d2a33044bc9e"
+ },
+ "rows": {
+  "sha256": "add6022ca8d419d9adb9581d4190887a70851380e84868cb63a1cbe7a3090c39",
+  "rows": 26000,
+  "train": 24077
+ },
+ "base_runs": {
+  "20261024": {
+   "verdict": "CANDIDATE",
+   "selected_state_sha256": "106e0ca5cdb6e0702c8892d85b88514b1cd88ad645e9b524e7602891358cca1a",
+   "best_step": 96
+  },
+  "20261111": {
+   "verdict": "CANDIDATE",
+   "selected_state_sha256": "78e308bd26f274281e59604372ed24edfaa52ff7cf39a259e87fc06b5c6c6993",
+   "best_step": 96
+  },
+  "20261112": {
+   "verdict": "CANDIDATE",
+   "selected_state_sha256": "59dbc7515bd2226d5e5288c5e34d8267adc8aaf84512c164c6977536693fef76",
+   "best_step": 96
+  }
+ },
+ "arena_base_checkpoint": {
+  "checkpoint": "68928bc6ef8c94fefa7328c566363408bba1d770194c1250156588eb65da8ada",
+  "metadata": "ed75576736ca231679bad41e108a38dba852ec1581d83e3ab83ce447f6129a8f"
+ }
+}
