@@ -3,7 +3,7 @@
  "contract_id": "R2-S400-PRESERVE-1",
  "status": "fixed",
  "approved": {
-  "prepare": false,
+  "prepare": true,
   "suites": false,
   "gate": false,
   "train": false,
