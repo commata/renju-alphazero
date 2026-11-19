@@ -17,7 +17,8 @@ from hybrid.h6_labels import RESERVED_SEEDS
 
 ROOT = Path(__file__).resolve().parents[1]
 V1_BLOCK = range(8781, 8800)
-V2_USERS = ('docs/h7r/r2/R2-S400-TRAIN/', 'docs/h7r/contracts-v2/')  # the only places a v2 seed may appear
+V2_USERS = ('docs/h7r/r2/R2-S400-TRAIN/', 'docs/h7r/r2/R2-S400-PRESERVE-1/',  # the only places a v2 seed
+            'docs/h7r/contracts-v2/')  # may appear
 
 
 class RegistryTest(unittest.TestCase):
