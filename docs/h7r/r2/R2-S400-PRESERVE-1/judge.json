@@ -1,0 +1,202 @@
+{
+ "format": "h7r-preserve-judge-v1",
+ "contract_id": "R2-S400-PRESERVE-1",
+ "experiment_sha256": "d832623f66ec616005b5b4a78dd8516328373deef21ba32124993953f39b3fc1",
+ "contract_file_sha256": "b21aa67176a6600bb0f08c84ee0075b069f9808887ac1a699ec4e9bc8b99ec8c",
+ "arena_contract_id": "R2-S400-PRESERVE-ARENA-1",
+ "arena_contract_sha256": "31676204d9c9633c1445e4a8c5b21369e09011a9ff23caf84e801c0384b6d9c0",
+ "arm_records_sha256": {
+  "O1-dev-c_S2_vs_champion": "d1256a41a1eaffad72e1404bb0301416a0187f8dd044145ca4d4924ccc8696ce",
+  "O1-dev-c_S05_vs_champion": "320e7b49a65883de43d5f14104b4dfe11be140477cec755ad1d5b96b593b574d",
+  "O1-dev-d_S2_vs_champion": "2b77919808c4f47b44e9d0fa91f523a85a9fa716e4fe911e8a4c40e0085f4b61",
+  "O1-dev-d_S05_vs_champion": "f25af7ea27aca69464656b6a837789e7218cb4b197d5eb12cec97c68a6b43213"
+ },
+ "arms_commit": "f40bb14cd2484d1362d7cb9588d25118d5b132b3",
+ "readings": {
+  "P''": "WEAKER",
+  "D''": "NOT_ESTABLISHED"
+ },
+ "bounds": {
+  "P''": {
+   "estimate": -0.0375,
+   "lower_one_sided": -0.05708,
+   "upper_one_sided": -0.01833
+  },
+  "D''": {
+   "estimate": -0.002083,
+   "lower_one_sided": -0.02,
+   "upper_one_sided": 0.01583
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  }
+ },
+ "definitions": {
+  "D''": "S(mu 2.0) - S(mu 0.5) pair scores on the same openings, suites 50:50",
+  "P''": "S(mu 2.0) vs champion pair score - 0.5, suites 50:50"
+ },
+ "sensitivity_class_level": {
+  "bounds": {
+   "P''": {
+    "estimate": -0.0375,
+    "lower_one_sided": -0.05708,
+    "upper_one_sided": -0.01833
+   },
+   "D''": {
+    "estimate": -0.002083,
+    "lower_one_sided": -0.02,
+    "upper_one_sided": 0.01583
+   },
+   "unit": "class",
+   "units": {
+    "O1-dev-c": 300,
+    "O1-dev-d": 300
+   }
+  },
+  "readings": {
+   "P''": "WEAKER",
+   "D''": "NOT_ESTABLISHED"
+  },
+  "same_as_main": true
+ },
+ "per_suite": {
+  "O1-dev-c": {
+   "S2": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 173,
+    "score_split": 81,
+    "score_split_positive": 27,
+    "score_split_negative": 54,
+    "distinct_classes": 300,
+    "score": 0.4625,
+    "improvement": -0.0375,
+    "ci95": [
+     -0.065,
+     -0.01
+    ],
+    "lower_one_sided": -0.065,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.24077,
+    "score_by_tested_colour": {
+     "black": 0.46333,
+     "white": 0.46167
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261161,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   },
+   "S05": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 209,
+    "score_split": 87,
+    "score_split_positive": 34,
+    "score_split_negative": 53,
+    "distinct_classes": 300,
+    "score": 0.475,
+    "improvement": -0.025,
+    "ci95": [
+     -0.05333,
+     0.00417
+    ],
+    "lower_one_sided": -0.05333,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.25125,
+    "score_by_tested_colour": {
+     "black": 0.48667,
+     "white": 0.46333
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261161,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   }
+  },
+  "O1-dev-d": {
+   "S2": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 189,
+    "score_split": 85,
+    "score_split_positive": 32,
+    "score_split_negative": 53,
+    "distinct_classes": 300,
+    "score": 0.4625,
+    "improvement": -0.0375,
+    "ci95": [
+     -0.065,
+     -0.01083
+    ],
+    "lower_one_sided": -0.065,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.2399,
+    "score_by_tested_colour": {
+     "black": 0.44167,
+     "white": 0.48333
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261161,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   },
+   "S05": {
+    "pairs": 300,
+    "valid": true,
+    "opponent_illegal_pairs": [],
+    "tested_illegal": 0,
+    "move_split": 208,
+    "score_split": 88,
+    "score_split_positive": 30,
+    "score_split_negative": 58,
+    "distinct_classes": 300,
+    "score": 0.45417,
+    "improvement": -0.04583,
+    "ci95": [
+     -0.07417,
+     -0.01833
+    ],
+    "lower_one_sided": -0.07417,
+    "alpha_one_sided": 0.025,
+    "pair_sd": 0.24871,
+    "score_by_tested_colour": {
+     "black": 0.44333,
+     "white": 0.465
+    },
+    "bootstrap": {
+     "samples": 20000,
+     "seed": 20261161,
+     "method": "percentile",
+     "unit": "opening pair"
+    }
+   }
+  }
+ },
+ "use": {
+  "decision": "END",
+  "worse": [
+   "P''"
+  ],
+  "note": "the contract ends"
+ },
+ "scope": "the pre-designated training seed 20261024; never a promotion",
+ "git": {
+  "commit": "f40bb14cd2484d1362d7cb9588d25118d5b132b3",
+  "dirty": false
+ }
+}

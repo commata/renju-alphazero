@@ -1,0 +1,38 @@
+[preserve-arena] R2-S400-PRESERVE-ARENA-1 O1-dev-d_S05_vs_champion: 600 games (0 done), workers 6, signature 4b45b6736ca0
+[preserve-arena] 26/600 games  4.3%  1.0 min  ETA 23 min  26/600 games
+[preserve-arena] 52/600 games  8.7%  2.0 min  ETA 22 min  52/600 games
+[preserve-arena] 78/600 games  13.0%  3.1 min  ETA 20 min  78/600 games
+[preserve-arena] 95/600 games  15.8%  4.1 min  ETA 22 min  95/600 games
+[preserve-arena] 128/600 games  21.3%  5.1 min  ETA 19 min  128/600 games
+[preserve-arena] 152/600 games  25.3%  6.1 min  ETA 18 min  152/600 games
+[preserve-arena] 171/600 games  28.5%  7.1 min  ETA 18 min  171/600 games
+[preserve-arena] 194/600 games  32.3%  8.2 min  ETA 17 min  194/600 games
+[preserve-arena] 233/600 games  38.8%  9.2 min  ETA 14 min  233/600 games
+[preserve-arena] 256/600 games  42.7%  10.2 min  ETA 14 min  256/600 games
+[preserve-arena] 279/600 games  46.5%  11.3 min  ETA 13 min  279/600 games
+[preserve-arena] 298/600 games  49.7%  12.3 min  ETA 12 min  298/600 games
+[preserve-arena] 323/600 games  53.8%  13.3 min  ETA 11 min  323/600 games
+[preserve-arena] 343/600 games  57.2%  14.5 min  ETA 11 min  343/600 games
+[preserve-arena] 358/600 games  59.7%  15.6 min  ETA 11 min  358/600 games
+[preserve-arena] 379/600 games  63.2%  16.7 min  ETA 10 min  379/600 games
+[preserve-arena] 391/600 games  65.2%  17.7 min  ETA 9 min  391/600 games
+[preserve-arena] 410/600 games  68.3%  18.7 min  ETA 9 min  410/600 games
+[preserve-arena] 424/600 games  70.7%  19.8 min  ETA 8 min  424/600 games
+[preserve-arena] 442/600 games  73.7%  20.9 min  ETA 7 min  442/600 games
+[preserve-arena] 471/600 games  78.5%  21.9 min  ETA 6 min  471/600 games
+[preserve-arena] 497/600 games  82.8%  22.9 min  ETA 5 min  497/600 games
+[preserve-arena] 514/600 games  85.7%  24.0 min  ETA 4 min  514/600 games
+[preserve-arena] 538/600 games  89.7%  25.0 min  ETA 3 min  538/600 games
+[preserve-arena] 558/600 games  93.0%  26.0 min  ETA 2 min  558/600 games
+[preserve-arena] 573/600 games  95.5%  27.0 min  ETA 1 min  573/600 games
+[preserve-arena] 588/600 games  98.0%  28.2 min  ETA 1 min  588/600 games
+[preserve-arena] 600/600 games  100.0%  29.3 min  ETA 0 min  600/600 games
+{
+ "arm": "O1-dev-d_S05_vs_champion",
+ "summary": {
+  "pairs": 300,
+  "score": 0.45417,
+  "valid": true
+ }
+}
+__EXIT__ 0

@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "check-models-20261120-034619-16644.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRESERVE-1/logs/check-models-20261120-034619-16644.log",
+   "copy": "docs/h7r/r2/R2-S400-PRESERVE-1/stage-logs/check-models-20261120-034619-16644.log",
+   "bytes": 443,
+   "sha256": "c4ce3f0414dbbefa7b74e00ddf06677101babcee6da2a0b6731d5555b91bd94f"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

@@ -1,0 +1,32 @@
+{
+ "readings": {
+  "P''": "WEAKER",
+  "D''": "NOT_ESTABLISHED"
+ },
+ "bounds": {
+  "P''": {
+   "estimate": -0.0375,
+   "lower_one_sided": -0.05708,
+   "upper_one_sided": -0.01833
+  },
+  "D''": {
+   "estimate": -0.002083,
+   "lower_one_sided": -0.02,
+   "upper_one_sided": 0.01583
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  }
+ },
+ "use": {
+  "decision": "END",
+  "worse": [
+   "P''"
+  ],
+  "note": "the contract ends"
+ },
+ "arena_contract_sha256": "31676204d9c9633c1445e4a8c5b21369e09011a9ff23caf84e801c0384b6d9c0"
+}
+__EXIT__ 0

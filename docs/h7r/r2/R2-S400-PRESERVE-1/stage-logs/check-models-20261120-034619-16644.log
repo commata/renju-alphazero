@@ -1,0 +1,12 @@
+[preserve-arena] S05: policy 68928bc6ef8c / ed75576736ca, value 4e28a62a4a31: as contracted
+[preserve-arena] S2: policy ce8939e0c7a9 / d35431d483b0, value 4e28a62a4a31: as contracted
+[preserve-arena] champion: policy efee483284df / 5648b7fbe71d, value 4e28a62a4a31: as contracted
+{
+ "models_checked": [
+  "S05",
+  "S2",
+  "champion"
+ ],
+ "arena_contract_sha256": "31676204d9c9633c1445e4a8c5b21369e09011a9ff23caf84e801c0384b6d9c0"
+}
+__EXIT__ 0
