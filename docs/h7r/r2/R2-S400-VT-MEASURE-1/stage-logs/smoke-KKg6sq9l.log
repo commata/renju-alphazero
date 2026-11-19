@@ -1,0 +1,10 @@
+[vt-preflight] H-dev, D4 manifest, model, runtime, Rapfi
+[vt-preflight] PASS 396 games / 15985 rows; identity 45d1954bbf0a
+[vt-replay] resume 0/2, remaining 2
+[vt-replay] 43/43 units  100.0%  0.7 min  ETA 0 min  2/2 chunks
+[vt-move-branches] resume 0/2, remaining 2
+[vt-move-branches] 2/2 units  100.0%  0.0 min  ETA 0 min  2/2 chunks
+[vt-position-branches] resume 0/1, remaining 1
+[vt-position-branches] 1/1 units  100.0%  0.0 min  ETA 0 min  1/1 chunks
+{"reading": "SMOKE", "summary": "/home/tack/renju-h6/docs/h7r/r2/R2-S400-VT-MEASURE-1/smoke/summary.json"}
+__EXIT__ 0

@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "smoke-dNz29aat.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-VT-MEASURE-1/logs/smoke-dNz29aat.log",
+   "copy": "docs/h7r/r2/R2-S400-VT-MEASURE-1/stage-logs/smoke-dNz29aat.log",
+   "bytes": 61,
+   "sha256": "d701e267832c419f12e60c3d1c2505f0a851a8c67893904dadd95d48cfa641d7"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
