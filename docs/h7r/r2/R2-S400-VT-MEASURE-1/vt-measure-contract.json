@@ -4,7 +4,7 @@
  "status": "fixed",
  "approved": {
   "prepare": true,
-  "smoke": false,
+  "smoke": true,
   "full": false
  },
  "purpose": "development measurement: on the S50 search-contest positions of H-dev, are the S400 moves better (Q1) and is the S400 root value closer to a fixed Rapfi result than c5's value (Q2)?",
