@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "gate-WAzAFvUW.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRESERVE-1/logs/gate-WAzAFvUW.log",
+   "copy": "docs/h7r/r2/R2-S400-PRESERVE-1/stage-logs/gate-WAzAFvUW.log",
+   "bytes": 135,
+   "sha256": "29356c1634b3a49ca5c435647b3242cdd01c6be344fd3ac6eef32ca54a2c8b65"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
