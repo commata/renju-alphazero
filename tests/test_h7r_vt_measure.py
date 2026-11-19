@@ -254,15 +254,28 @@ class StatsTest(unittest.TestCase):
 class FixedContractTest(unittest.TestCase):
     def test_the_committed_contract(self):
         c, _, eid = vt.load_contract(None, ROOT)
-        self.assertEqual(c['approved'], {'prepare': False, 'smoke': False, 'full': False})
-        self.assertEqual({k: v for k, v in c.items() if k != 'sources'},
-                         {k: v for k, v in vt.contract_body(ROOT).items() if k != 'sources'})
+        self.assertEqual(list(c['approved']), list(vt.STAGES))  # approvals change over time, never the id
+        self.assertEqual(eid, '46d3ec68a3e06a997c420d2f55d4162f496e27bc71ccfd4c910be04314db7eeb')
+        self.assertEqual({k: v for k, v in c.items() if k not in ('sources', 'approved')},
+                         {k: v for k, v in vt.contract_body(ROOT).items() if k not in ('sources', 'approved')})
         self.assertEqual((c['stats']['seed'], c['classification']['contest_visit_gap'], c['stats']['min_observations'],
                           c['stats']['min_games'], c['stats']['max_unresolved_share']), (20261151, '1/5', 100, 30, '1/20'))
         self.assertEqual([s['path'] for s in c['sources']], list(vt.SOURCES))
-        with self.assertRaisesRegex(ValueError, 'the smoke stage is not approved'):
-            vt.load_contract(None, ROOT, 'smoke')
         self.assertEqual(eid, vt.experiment_sha256(c))
+        with TemporaryDirectory() as tmp:  # an unapproved stage is refused (the committed approvals aside)
+            for rel in (vt.BASELINE, vt.SAMPLE):
+                (Path(tmp) / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(ROOT / rel, Path(tmp) / rel)
+            git(tmp, 'init', '-q')
+            for k, v in (('user.email', 't@t'), ('user.name', 't')):
+                git(tmp, 'config', k, v)
+            path = Path(tmp) / vt.CONTRACT
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps({**c, 'approved': {s: False for s in vt.STAGES}}))
+            git(tmp, 'add', '-A')
+            git(tmp, 'commit', '-qm', 'c')
+            with self.assertRaisesRegex(ValueError, 'the smoke stage is not approved'):
+                vt.load_contract(None, tmp, 'smoke', check_sources=False)
 
 
 # --- the run on a temporary repository ------------------------------------------------------------------------------
