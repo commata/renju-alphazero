@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "full-Nwb1q8g9.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-VT-MEASURE-1/logs/full-Nwb1q8g9.log",
+   "copy": "docs/h7r/r2/R2-S400-VT-MEASURE-1/stage-logs/full-Nwb1q8g9.log",
+   "bytes": 13714,
+   "sha256": "9402c858827ecaf7f90ce63a4a43eec50c983e9772781767107ce9efc01a86c0"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

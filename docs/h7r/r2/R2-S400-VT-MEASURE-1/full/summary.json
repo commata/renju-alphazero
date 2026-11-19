@@ -1,0 +1,497 @@
+{
+ "format": "h7r-vt-measure-summary-v1",
+ "identity": {
+  "format": "h7r-vt-measure-run-v1",
+  "experiment_sha256": "46d3ec68a3e06a997c420d2f55d4162f496e27bc71ccfd4c910be04314db7eeb",
+  "contract_sha256": "cc47036f5bbfa879dc3afa6c773a0949e38acd74f37a20008b359dff00885ccb",
+  "git": {
+   "commit": "b8bcbdcf11818ee27b798cc36703244667a129da",
+   "dirty": false
+  },
+  "prior_record": {
+   "path": "docs/h7r/r2/R2-S400-VT-MEASURE-1/smoke/summary.json",
+   "sha256": "1751f80ed8fe0c04a3b7e83749c3c7d7dfabd72496a65c6219b23c6a83644254"
+  },
+  "hdev": {
+   "contract_sha256": "348fecda98c4122dd45abc918c6203683873837cdd5f5c8219f7ac9c187a68b0",
+   "cache_binding_sha256": "9724d878eed46c9b2a803d212671bc1bebb2c024ed7ba44398468dfd243d4886",
+   "games_sha256": "93b05a037f20c60104268bc11fa572dc999496ec966bbede482394a3c4bab3f6",
+   "rows_sha256": "ed0e4be2a212d7bcce72c501e4674d4376c1c8293fd1f079c7e17b4d99897131",
+   "cache_labels_sha256": "c903d285f1e5e447a4053407edbb57bbc83ecdc61dd140657b1388e6502aa2ef",
+   "test_sha256": "c3b389dad321b82ea98670d7effb1a717d3642abc95718d53b2692dfa5e556fd"
+  },
+  "sample_sha256": "93aaa113f86723bd79c2d082563d3cbac9d0137dc147138a7e057e2288aa0760",
+  "model": {
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1",
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "policy_loaded": false,
+   "frozen_state_sha256": {
+    "recomputed": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+    "declared": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d",
+    "contract": "c2fbaac3597185a6ab751f08819ddc9e44644e873f68361036f7cbdb22e1b41d"
+   },
+   "value_head_sha256": "2da4e30601c6e0e4f38c8e96491c1939aa0b09603e824321361b1c2f88424bef"
+  },
+  "runtime": {
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e"
+  },
+  "rapfi": {
+   "registered": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "actual": {
+    "executable_sha256": "1e02497433fb765626f954c895b0b92e057ac12a76c76318abe74d4050914e8e",
+    "files": {
+     "config.toml": "32b9180c91247541d399ceef62906d5ffeb48e34eb5f261612987633820d5d3c",
+     "model210901.bin": "2fa08cb15cf240d9533548c3e011b03d46809f6858362e97ee873d0632aa2015",
+     "mix9svqfreestyle_bsmix.bin.lz4": "6bc0d1b0ff8e1d857f7f412923cd458f38f1a435087c91ae71fec3676c23ef62",
+     "mix9svqstandard_bs15.bin.lz4": "84334f5db96f45b3e36ebdde06d2259d878ae1eb347b7cf74574ac908b8d9e7d",
+     "mix9svqrenju_bs15_black.bin.lz4": "7ab8c974c30da07717ce6a504616a62ac8c981500503f0ced0fadefd3f46c5ec",
+     "mix9svqrenju_bs15_white.bin.lz4": "a31f318518d3b5630489054d9eb013fd5353c553999640c2bcfd8d95e6fe4e4e"
+    },
+    "info": [
+     "max_node=300",
+     "thread_num=1",
+     "timeout_turn=600000",
+     "timeout_match=1000000000"
+    ]
+   },
+   "rule": 4,
+   "arguments": [],
+   "move_timeout": 600.0,
+   "registered_engine": true
+  },
+  "mode": "full",
+  "device": "cuda",
+  "environment": {
+   "python": "3.12.3",
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "gpu": "NVIDIA GeForce RTX 5070"
+  }
+ },
+ "identity_sha256": "10e18ac14455e44e70605a50998bff00fb5cac0ccca387ee2dd84505abd0b6ae",
+ "log_name": "full-Nwb1q8g9.log",
+ "actor_check": {
+  "model_set": "S50",
+  "plies": 16777,
+  "same_move": 16777,
+  "same_route": 16777,
+  "same_visits": 16777,
+  "reproduced": true
+ },
+ "games": 396,
+ "eligible_plies": 15985,
+ "warmup_plies": 792,
+ "classes": {
+  "E": {
+   "positions": 15985,
+   "games": 396,
+   "move_diff": 2188,
+   "move_diff_share": 0.13687832342821396,
+   "tree_final_diff": {
+    "S50": 189,
+    "S400": 188
+   }
+  },
+  "T": {
+   "positions": 7252,
+   "games": 396,
+   "move_diff": 2188,
+   "move_diff_share": 0.30170987313844455,
+   "tree_final_diff": {
+    "S50": 189,
+    "S400": 188
+   }
+  },
+  "V": {
+   "positions": 3333,
+   "games": 381,
+   "move_diff": 1510,
+   "move_diff_share": 0.45304530453045305,
+   "tree_final_diff": {
+    "S50": 162,
+    "S400": 144
+   }
+  },
+  "V-A": {
+   "positions": 2162,
+   "games": 342,
+   "move_diff": 930,
+   "move_diff_share": 0.4301572617946346,
+   "tree_final_diff": {
+    "S50": 146,
+    "S400": 119
+   }
+  },
+  "V-B": {
+   "positions": 2206,
+   "games": 361,
+   "move_diff": 1172,
+   "move_diff_share": 0.5312783318223028,
+   "tree_final_diff": {
+    "S50": 61,
+    "S400": 61
+   }
+  },
+  "V-A and V-B": {
+   "positions": 1035,
+   "games": 274,
+   "move_diff": 592,
+   "move_diff_share": 0.5719806763285025,
+   "tree_final_diff": {
+    "S50": 45,
+    "S400": 36
+   }
+  }
+ },
+ "branches": {
+  "move": 4322,
+  "position": 7150
+ },
+ "branch_outcomes": {
+  "move": {
+   "resolved": 4276,
+   "structural": 46,
+   "unresolved": 0
+  },
+  "position": {
+   "resolved": 7109,
+   "structural": 41,
+   "unresolved": 0
+  }
+ },
+ "files": {
+  "replay.jsonl": "a3cba9d10618ca952574ff2a179c619ea45b2ff2ce56269359fc80b6f426ff8b",
+  "move_branches.jsonl": "f3ecac2e5d064221332264bc1be99c1bcabc296a05c156845bc600cafb974973",
+  "position_branches.jsonl": "61118478fadf44275056068a2cee293ff63141f99d43aa9eef9cad7c064df43a"
+ },
+ "seconds": 11530.7,
+ "scope": "development measurement: no training, Arena, strength, promotion, champion or V9 ruling",
+ "Q1": {
+  "V": {
+   "observations": 1510,
+   "resolved": 1510,
+   "resolved_games": 310,
+   "decisive": 460,
+   "decisive_games": 198,
+   "unresolved": 0,
+   "structural_observations": 31,
+   "failures": [],
+   "mean_delta_bounds": [
+    0.0076158940397350995,
+    0.0076158940397350995
+   ],
+   "resolved_mean_delta": 0.0076158940397350995,
+   "resolved_game_macro": 0.029162622009232482,
+   "game_macro_bounds": [
+    0.029162622009232482,
+    0.029162622009232482
+   ],
+   "better": 238,
+   "worse": 222,
+   "equal": 1050,
+   "both": {
+    "win": 292,
+    "draw": 416,
+    "loss": 342
+   },
+   "better_share": 0.5173913043478261,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.4779270633397313,
+     0.5579399141630901
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.01683920140963437,
+     0.07482815598550284
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.014084507042253521,
+       0.030050735510532275
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.014084507042253521,
+       0.030050735510532275
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "games": 310,
+   "label": "INCONCLUSIVE"
+  },
+  "T": {
+   "observations": 2188,
+   "resolved": 2188,
+   "resolved_games": 341,
+   "decisive": 684,
+   "decisive_games": 224,
+   "unresolved": 0,
+   "structural_observations": 43,
+   "failures": [],
+   "mean_delta_bounds": [
+    -0.0013711151736745886,
+    -0.0013711151736745886
+   ],
+   "resolved_mean_delta": -0.0013711151736745886,
+   "resolved_game_macro": 0.0035794862286892505,
+   "game_macro_bounds": [
+    0.0035794862286892505,
+    0.0035794862286892505
+   ],
+   "better": 345,
+   "worse": 339,
+   "equal": 1504,
+   "both": {
+    "win": 456,
+    "draw": 560,
+    "loss": 488
+   },
+   "better_share": 0.5043859649122807,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.46919431279620855,
+     0.5397059419391743
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.035042080478252635,
+     0.04241221497031649
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.021313046074753005,
+       0.017979067788681535
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.021313046074753005,
+       0.017979067788681535
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "games": 341,
+   "label": "INCONCLUSIVE"
+  },
+  "E": {
+   "observations": 2188,
+   "resolved": 2188,
+   "resolved_games": 341,
+   "decisive": 684,
+   "decisive_games": 224,
+   "unresolved": 0,
+   "structural_observations": 43,
+   "failures": [],
+   "mean_delta_bounds": [
+    -0.0013711151736745886,
+    -0.0013711151736745886
+   ],
+   "resolved_mean_delta": -0.0013711151736745886,
+   "resolved_game_macro": 0.0035794862286892505,
+   "game_macro_bounds": [
+    0.0035794862286892505,
+    0.0035794862286892505
+   ],
+   "better": 345,
+   "worse": 339,
+   "equal": 1504,
+   "both": {
+    "win": 456,
+    "draw": 560,
+    "loss": 488
+   },
+   "better_share": 0.5043859649122807,
+   "better_share_ci95": {
+    "level": 0.95,
+    "ci": [
+     0.46919431279620855,
+     0.5397059419391743
+    ],
+    "undefined": 0
+   },
+   "resolved_game_macro_ci95": {
+    "level": 0.95,
+    "ci": [
+     -0.035042080478252635,
+     0.04241221497031649
+    ],
+    "undefined": 0
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.021313046074753005,
+       0.017979067788681535
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.021313046074753005,
+       0.017979067788681535
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "games": 341,
+   "label": "INCONCLUSIVE"
+  }
+ },
+ "Q2": {
+  "V": {
+   "positions": 3333,
+   "games": 381,
+   "resolved": 3333,
+   "unresolved": 0,
+   "structural": 17,
+   "failures": [],
+   "mean_d_bounds": [
+    0.0067775301572341505,
+    0.0067775301572341505
+   ],
+   "resolved_mse": {
+    "c5": 0.20773964791223212,
+    "S400": 0.2009621177549972,
+    "S50": 0.19718589786895396
+   },
+   "resolved_mean_d_s50": 0.010553750043277218,
+   "mean_abs_s400_minus_c5": 0.16583971604929154,
+   "hdev_label_mse": {
+    "c5": 0.19544883178795272,
+    "S400": 0.194908514869646,
+    "S50": 0.18777031210687764,
+    "rows": 3333,
+    "note": "reference only: the H-dev labels come from the c5 actor games"
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.0010172840112986706,
+       0.014482362714207393
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.0010172840112986706,
+       0.014482362714207393
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "label": "INCONCLUSIVE"
+  },
+  "T": {
+   "positions": 7252,
+   "games": 396,
+   "resolved": 7252,
+   "unresolved": 0,
+   "structural": 41,
+   "failures": [],
+   "mean_d_bounds": [
+    0.0024645512470535843,
+    0.0024645512470535843
+   ],
+   "resolved_mse": {
+    "c5": 0.2058795538900987,
+    "S400": 0.20341500264304357,
+    "S50": 0.19961434766168618
+   },
+   "resolved_mean_d_s50": 0.00626520622841125,
+   "mean_abs_s400_minus_c5": 0.1541465290352483,
+   "hdev_label_mse": {
+    "c5": 0.19521561582629854,
+    "S400": 0.19153464584578028,
+    "S50": 0.18718395365658397,
+    "rows": 7252,
+    "note": "reference only: the H-dev labels come from the c5 actor games"
+   },
+   "intervals": {
+    "0.95": {
+     "lower": {
+      "level": 0.95,
+      "ci": [
+       -0.003368395447148244,
+       0.00816435859122323
+      ],
+      "undefined": 0
+     },
+     "upper": {
+      "level": 0.95,
+      "ci": [
+       -0.003368395447148244,
+       0.00816435859122323
+      ],
+      "undefined": 0
+     }
+    }
+   },
+   "label": "INCONCLUSIVE"
+  }
+ },
+ "readings": {
+  "Q1": "INCONCLUSIVE",
+  "Q2": "INCONCLUSIVE"
+ },
+ "reading": "Q1 INCONCLUSIVE / Q2 INCONCLUSIVE",
+ "entry": {
+  "decision": "NO_TRAINING_CONTRACT",
+  "worse": [],
+  "note": "the S400 value-target direction stops"
+ }
+}
