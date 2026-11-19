@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "train-c0gLpgXa.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R2-S400-PRESERVE-1/logs/train-c0gLpgXa.log",
+   "copy": "docs/h7r/r2/R2-S400-PRESERVE-1/stage-logs/train-c0gLpgXa.log",
+   "bytes": 1155,
+   "sha256": "fe40d212f6b16015119fa88544d4591313b5a5d5fed9b672522a16cbeca321bd"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

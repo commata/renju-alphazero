@@ -1,0 +1,30 @@
+[h7r-p1-policy] step 10/96 val 2.0280 guard top-1 0.5212 (H3 0.5241)
+[h7r-p1-policy] step 19/96 val 2.0320 guard top-1 0.5213 (H3 0.5241)
+[h7r-p1-policy] step 29/96 val 2.0165 guard top-1 0.5220 (H3 0.5241)
+[h7r-p1-policy] step 38/96 val 2.0114 guard top-1 0.5219 (H3 0.5241)
+[h7r-p1-policy] step 48/96 val 2.0117 guard top-1 0.5226 (H3 0.5241)
+[h7r-p1-policy] step 58/96 val 2.0079 guard top-1 0.5228 (H3 0.5241)
+[h7r-p1-policy] step 67/96 val 2.0036 guard top-1 0.5224 (H3 0.5241)
+[h7r-p1-policy] step 77/96 val 2.0053 guard top-1 0.5226 (H3 0.5241)
+[h7r-p1-policy] step 86/96 val 2.0010 guard top-1 0.5222 (H3 0.5241)
+[h7r-p1-policy] step 96/96 val 2.0009 guard top-1 0.5223 (H3 0.5241)
+{
+ "verdict": "CANDIDATE",
+ "best": {
+  "step": 96,
+  "val": {
+   "rows": 1423,
+   "objective": 2.000949111691848,
+   "ce": 1.9819342800202038,
+   "kl": 0.04621294316422929,
+   "top1_vs_target_mode": 0.5228390723822909
+  },
+  "guard_top1": 0.5223459737974803,
+  "guard_drop": 0.0017672562757233834,
+  "eligible": true
+ },
+ "selected_state_sha256": "6cf19301d3c4eef87a65f58e7ecdd13035b792e1a536cf73741b29053ac4dfb3",
+ "seconds": 93.1,
+ "seed": 20261024
+}
+__EXIT__ 0
