@@ -1,0 +1,194 @@
+{
+ "format": "h7r-preserve-contract-v1",
+ "contract_id": "R2-S400-PRESERVE-1",
+ "status": "fixed",
+ "approved": {
+  "prepare": false,
+  "suites": false,
+  "gate": false,
+  "train": false,
+  "arena": false
+ },
+ "purpose": "development: on the same S400 rows, is a stronger H3 preservation (mu 2.0 against 0.5) a better candidate (D'') and does it beat the champion (P'')? Seed 20261024; never a promotion",
+ "draft": {
+  "path": "docs/h7r/r2/R2-S400-PRESERVE-1-draft.md"
+ },
+ "s400_train": {
+  "contract": "docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json",
+  "contract_file_sha256": "7f4a5c00a126600702d2ed661478c987f3a4870b64eb4b408a58de35bcb73cb2",
+  "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+  "gate": "docs/h7r/r2/R2-S400-TRAIN/gate.json",
+  "rows_record": "docs/h7r/r2/R2-S400-TRAIN/rows.json",
+  "rows_record_sha256": "e2336e880d39acaa60db4cfb9527e2a73bfd30931419f5f74346d2a33044bc9e"
+ },
+ "rows": {
+  "path": "runs/h7r/R2-S400-TRAIN/policy_rows_s400.jsonl.gz",
+  "sha256": "add6022ca8d419d9adb9581d4190887a70851380e84868cb63a1cbe7a3090c39"
+ },
+ "base_runs": {
+  "20261024": {
+   "record": "docs/h7r/r2/R2-S400-TRAIN/seed-records/S-20261024/record.json",
+   "record_sha256": "f3d5c6aa82941afdf9d6b41978b52639d89680e86b75e5b7168c509c7cdf3eca",
+   "verdict": "CANDIDATE",
+   "checkpoint": "runs/h7r/R2-S400-TRAIN/S-20261024/best.pt",
+   "metadata": "runs/h7r/R2-S400-TRAIN/S-20261024/best.json",
+   "checkpoint_sha256": "68928bc6ef8c94fefa7328c566363408bba1d770194c1250156588eb65da8ada",
+   "metadata_sha256": "ed75576736ca231679bad41e108a38dba852ec1581d83e3ab83ce447f6129a8f"
+  },
+  "20261111": {
+   "record": "docs/h7r/r2/R2-S400-TRAIN/seed-records/S-20261111/record.json",
+   "record_sha256": "a42465c7c1a81b57fe54d85fbf50024ebff5bbd2329613da22519439d2453103",
+   "verdict": "CANDIDATE",
+   "checkpoint": "runs/h7r/R2-S400-TRAIN/S-20261111/best.pt",
+   "metadata": "runs/h7r/R2-S400-TRAIN/S-20261111/best.json",
+   "checkpoint_sha256": "2d9bf8ceb53f14163b234c7a0c18298e902be7ff395b7f8766fa4129d17c015e",
+   "metadata_sha256": "8a08aa14ff42303b96258d2c185279128a2603424addb5befa5c1b09417540a4"
+  },
+  "20261112": {
+   "record": "docs/h7r/r2/R2-S400-TRAIN/seed-records/S-20261112/record.json",
+   "record_sha256": "7261e5685199bd4e801062d0b2c0ce13e4f9ff3c91975e75daeb36df36583703",
+   "verdict": "CANDIDATE",
+   "checkpoint": "runs/h7r/R2-S400-TRAIN/S-20261112/best.pt",
+   "metadata": "runs/h7r/R2-S400-TRAIN/S-20261112/best.json",
+   "checkpoint_sha256": "17da944854aaf315d8d36aeb7fb2c11b5b9fd11ebe92f5a8e1e8dfd8d48699ae",
+   "metadata_sha256": "47dfefd51fa465bd4254e5b3dfdf0e9b4d0517311ad2556a82c3fbbac67d7a34"
+  }
+ },
+ "replay": {
+  "mu": 2.0,
+  "base_mu": 0.5,
+  "note": "mu is the replay KL coefficient (loss = cycle batch mean + mu x replay KL mean); 2.0 is a pre-chosen value, four times the old coefficient, tested once; every other replay setting (batch 512, generator seed = training seed + 1000003, draws) is the R2-S400-TRAIN one"
+ },
+ "seeds": {
+  "training": [
+   20261024,
+   20261111,
+   20261112
+  ],
+  "gate": 20261024,
+  "arena_candidate_training_seed": 20261024,
+  "arena_games": {
+   "O1-dev-c": 9103,
+   "O1-dev-d": 9104
+  },
+  "suite_generation": {
+   "O1-dev-c": 202611191,
+   "O1-dev-d": 202611192
+  },
+  "bootstrap": 20261161
+ },
+ "suites": {
+  "tool": "scripts/h7r_dev_suites_2.py",
+  "record": "docs/h7r/suites/O1-dev-cd-record.json",
+  "registry": "src/hybrid/h7r_suite_seeds_dev2.py",
+  "rule": "O1",
+  "count": 300,
+  "specs": [
+   {
+    "name": "O1-dev-c",
+    "path": "docs/h7r/suites/O1-dev-c.json",
+    "seed": 9103,
+    "pairs": 300
+   },
+   {
+    "name": "O1-dev-d",
+    "path": "docs/h7r/suites/O1-dev-d.json",
+    "seed": 9104,
+    "pairs": 300
+   }
+  ]
+ },
+ "arena": {
+  "contract": "docs/h7r/contracts-v2/R2-S400-PRESERVE-ARENA-1.json",
+  "id": "R2-S400-PRESERVE-ARENA-1",
+  "models": "champion (H3 policy + c5 value), S2 = S(mu 2.0, 20261024), S05 = S(mu 0.5, 20261024) of R2-S400-TRAIN; all with c5 value at S50",
+  "arms": "per suite S2 vs champion and S05 vs champion, the same openings and seed (one pairing)",
+  "stats": {
+   "alpha_one_sided": 0.025,
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261161,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  }
+ },
+ "reading": {
+  "D''": "S2 - S05 pair scores on the same openings: BETTER (lower > 0) / WORSE (upper < 0) / NOT_ESTABLISHED",
+  "P''": "S2 vs champion - 0.5: STRONGER / WEAKER / NOT_ESTABLISHED",
+  "combined": "0.5 x each suite (fixed weights), stratified opening bootstrap; class level reported",
+  "use": {
+   "P'' STRONGER and D'' BETTER": "a separate confirmation contract may open; the stronger preservation is recorded as an improvement over the old candidate",
+   "P'' STRONGER otherwise": "a separate confirmation contract may open; the effect of the stronger preservation stays undetermined",
+   "D'' BETTER otherwise": "recorded as an improvement over the old candidate; the contract ends",
+   "otherwise": "the contract ends"
+  },
+  "scope": "the pre-designated training seed 20261024; training-seed variation is not in the bounds"
+ },
+ "stages": {
+  "prepare": "every input and record checked",
+  "suites": "the two new suites built and checked",
+  "gate": "S(mu 0.5, 20261024) reproduced exactly",
+  "train": "S(mu 2.0) for the three seeds, one commit each",
+  "arena": "the Arena contract, the models checked, four arms, the judge"
+ },
+ "output": {
+  "prepare": "docs/h7r/r2/R2-S400-PRESERVE-1/prepare.json",
+  "gate": "docs/h7r/r2/R2-S400-PRESERVE-1/gate.json",
+  "runs": "runs/h7r/R2-S400-PRESERVE-1/S2-{seed}",
+  "seed_records": "docs/h7r/r2/R2-S400-PRESERVE-1/seed-records/S2-{seed}/record.json",
+  "judge": "docs/h7r/r2/R2-S400-PRESERVE-1/judge.json",
+  "arms": "runs/h7r/R2-S400-PRESERVE-1/arena"
+ },
+ "sources": [
+  {
+   "path": "scripts/h7r_preserve.py",
+   "sha256": "0d87ddd54d9409d4af96c0ec5ce34d0dc2c7abfd513bcb1b759cb4898f412a7b"
+  },
+  {
+   "path": "scripts/h7r_dev_suites_2.py",
+   "sha256": "bd7ac7af98de2698718807b4297d0ad6d0e008d702a1b043785b1373f5cc1f8c"
+  },
+  {
+   "path": "src/hybrid/h7r_suite_seeds_dev2.py",
+   "sha256": "1b94708447d2e40e86b176ed5db0a8dcfa0179a6941da78490cfe24948ea101c"
+  },
+  {
+   "path": "scripts/h7r_dev_suites.py",
+   "sha256": "2c05710a1417c6b5da3735ac3b37a6616fa8e62cd9e5584bd0bb49a5202d9573"
+  },
+  {
+   "path": "scripts/h7r_s400_train.py",
+   "sha256": "e21c87bbf2136b5c4a0994fcd807d43b8f481c642a65717798a69298f933963f"
+  },
+  {
+   "path": "scripts/h7r_s400_arena.py",
+   "sha256": "8dd7b617b96a24ce4311ae0eedad8a42082ce665ef975fd9e0467683e97ef887"
+  },
+  {
+   "path": "scripts/h7r_eval.py",
+   "sha256": "2a59def2413ff4ab87bfe85c09c24e8d0aeaddd920310ed1f2b61822bfcab19c"
+  },
+  {
+   "path": "scripts/h7r_p1a1.py",
+   "sha256": "d9fe10f895bdc2ebc6cb95c67aac92f671fdda22509ab22b926b7aca8fb907c6"
+  },
+  {
+   "path": "scripts/h7r_p1.py",
+   "sha256": "4796f49f7d12a402a447554abe5b5f5fbfb568569a56892a78ea71debfcd4f12"
+  },
+  {
+   "path": "src/hybrid/h7r_p1_train.py",
+   "sha256": "3b4b74d4fb49277df89caf6005173386884870d89adea08c2663dfb4f80e852c"
+  },
+  {
+   "path": "src/hybrid/h7r_eval_v2.py",
+   "sha256": "049559de567eea991938864de2f5edf1b1c98598d10f46aec2d4ef75e976a0f0"
+  },
+  {
+   "path": "src/hybrid/h7r_openings.py",
+   "sha256": "d97eba732ded4fb58422e63317147f213c8724b22d4469da4cfd828626cfd09e"
+  }
+ ],
+ "scope": "development reading only: no champion change, confirmation, promotion or loop restart"
+}

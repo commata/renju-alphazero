@@ -1,6 +1,6 @@
 # R2-S400-PRESERVE-1: 같은 S400 학습 자료에서 H3 보존을 강하게 하면 후보가 좋아지는가 (초안)
 
-- 작성 2026-11-19. 상태: **초안, 결정 전. 모든 단계 미승인. 도구·계약 JSON·suite 없음.**
+- 작성 2026-11-19. 상태: **계약 고정(fixed), 모든 단계 미승인**(prepare·suites·gate·train·arena 모두 false). 도구·테스트·데스크톱 블록 준비(§10, §11). suite는 아직 만들지 않았다(suites 단계).
 - 결정(2026-11-19 검토): 보존 계수 `μ = 0.5` 대 `μ = 2.0`, 새 O1 계열 개발 suite 두 묶음, 독립 확인은 별도 계약.
 - 이 계약은 개발 판독까지다. champion 변경, 독립 확인, 강화학습 루프 재개는 하지 않는다.
 
@@ -111,3 +111,471 @@
 - 도구(새 파일): R2-S400-TRAIN의 고정 도구(`scripts/h7r_s400_train.py`, 계약 sources)를 바꾸지 않고 재사용한다(`verified_rows`, `a1.execute`, 실행 기록 sidecar, Arena 도구의 대국·판독 경로). 새로 만들 부분은 μ 2.0 학습과 gate 비교, 새 suite 생성 경로와 별도 seed 등록, μ 0.5 checkpoint의 SHA 연결, 판독 정의(D″, P″).
 - 테스트: gate의 정확 일치(지문·평가곡선·state·log-확률 하나라도 다르면 거부), μ만 다르고 replay 표본과 지문이 같음, 기존 고정 파일과 기존 suite 검사 유지, 새 suite의 제외·겹침·재생성, Arena 계약의 seed 중복 검사, 판독 표, 데스크톱 블록(실제 bash, 도구는 대역).
 - 계약 JSON 고정(fixed, 모든 승인 false)과 데스크톱 블록.
+
+## 10. 구현 (2026-11-19, 미승인)
+
+- 계약 `docs/h7r/r2/R2-S400-PRESERVE-1/preserve-contract.json`(fixed, 모든 승인 false, 실험 SHA `f02f72303f27`). R2-S400-TRAIN 계약의 파일 SHA(`7f4a5c00a126`)와 실험 SHA(`67c6ba3c8081`), rows 기록 SHA, 후보 행 SHA, μ 0.5 seed 기록 세 개와 20261024 checkpoint SHA를 고정한다. 도구와 재사용 파일 12개를 sources로 고정한다.
+- 도구 `scripts/h7r_preserve.py`(R2-S400-TRAIN의 고정 도구·계약·기록은 바꾸지 않고 읽어서 재사용)
+
+| 명령 | 단계 | 하는 일 |
+|---|---|---|
+| `prepare` | prepare | R2-S400-TRAIN 계약(고정 SHA)과 gate·rows 기록, 후보 행(SHA와 행 검사), μ 0.5 seed 기록, Arena에 쓸 20261024 checkpoint 파일, A1 입력 대조 |
+| `gate` | gate | S(μ 0.5, 20261024)를 `h7r_p1a1.execute`로 다시 학습해 커밋된 R2-S400-TRAIN 기록과 정확히 비교(`h7r_s400_train.gate_view`의 지문·평가곡선·선택·state·log-확률·설정, 입력 SHA). 이 checkpoint는 쓰지 않는다. FAIL은 종료 코드 2 |
+| `train --seed S` | train | 커밋된 gate를 다시 판정한 뒤 S(μ 2.0) 학습. R2-S400-TRAIN 계약의 사본에서 replay 계수만 2.0으로 바꿔 같은 진입점에 넘긴다(`with_mu`). 기록에 μ, 입력, gate 기록 SHA, 같은 seed의 μ 0.5 기록 SHA, 지문(batch·sym·lr) 일치 여부 |
+| `verify-run --seed S` | train | 커밋된 run 기록의 checkpoint 파일 대조(CANDIDATE) 또는 파일 없음(NO_CANDIDATE) |
+| `arena-contract`, `check-contract` | arena | 커밋된 새 suite(재계산 검사 통과)와 S2 20261024 기록으로 v2 Arena 계약, seed·id 중복 검사 뒤 기록 |
+| `check-models`, `play`, `judge`, `verify-judge` | arena | R2-S400-TRAIN Arena와 같은 방식. 판독은 D″·P″, 표는 §7 |
+
+- suite: `src/hybrid/h7r_suite_seeds_dev2.py`(생성 seed 202611191·202611192 등록과 충돌 검사), `scripts/h7r_dev_suites_2.py`(`build` / `check`, `h7r_dev_suites.py`의 출처 읽기·동치류 함수 재사용, 기록 `docs/h7r/suites/O1-dev-cd-record.json`). 미리 계산한 결과(쓰지 않음): 제외 동치류 2,549개, 두 묶음 모두 서로 다른 300개 동치류, 출처·두 묶음 사이 겹침 0.
+- suites 단계는 데이터가 필요 없어 승인 뒤 클라우드에서 `build`로 만들고 깨끗한 commit에서 커밋한다(O1-dev-a·b와 같은 방식). 데스크톱 블록은 없다.
+- 테스트 `tests/test_h7r_preserve.py`: §9의 항목.
+
+## 11. 데스크톱 실행 (승인 뒤에만)
+
+- pv-P는 `approved.prepare` 뒤, pv-G는 `approved.gate` 뒤, pv-T는 `approved.train` 뒤, pv-AC와 pv-A는 `approved.arena` 뒤에 실행한다. suite는 그 전에 커밋돼 있어야 한다(arena-contract가 확인한다).
+- pv-P·pv-G·pv-T는 결과에 로그 이름을 남긴다. 결과가 커밋 전이면 다시 돌리지 않고, 로그의 종료 줄을 확인한 뒤(없으면 `Recovered exit code`) 함께 커밋한다.
+- pv-T: seed마다 따로 커밋한다. 커밋된 seed는 파일을 다시 대조하고 건너뛴다. 실패하면 기록하고 다음 seed 전에 멈춘다. 결과 없이 파일만 남은 중단은 멈추고 보고한다(덮어쓰지 않는다).
+- pv-A: R2-S400-TRAIN s5-A와 같다(대국 전 모델 확인, HEAD 고정, 실패 시 커밋 없음과 재개, judge 뒤 중단은 verify-judge로 확인 후 커밋).
+
+pv-P. prepare
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  N=prepare
+  D=docs/h7r/r2/R2-S400-PRESERVE-1
+  L=runs/h7r/R2-S400-PRESERVE-1/logs
+  O="$D/$N.json"
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  mkdir -p "$L"
+  rc=0
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    set +e
+    python -u scripts/h7r_preserve.py "$N" --log-name "$(basename "$log")" 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+  else
+    echo "an uncommitted $O exists: recording it (no new run)"
+  fi
+  if [ -f "$O" ]; then
+    result="$(python - "$O" "$N" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+if r.get('format') != 'h7r-preserve-prepare-v1' or not re.fullmatch(sys.argv[2] + r'-[A-Za-z0-9]+\.log', name):
+    sys.exit('STOP: invalid result or missing attempt log name')
+print(name, 0 if r.get('passed') is True else 2)
+PY
+)"
+    read -r name rc <<< "$result"
+    log="$L/$name"
+    [ -f "$log" ] || { echo "STOP: the result's log is missing: $log"; exit 1; }
+    last="$(tail -n 1 "$log")"
+    case "$last" in
+      "__EXIT__ $rc") ;;
+      __EXIT__*) echo "STOP: the result and its log disagree on the exit code"; exit 1 ;;
+      *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
+    esac
+  elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+    echo "STOP: $N did not produce a result"; exit 1
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L/$N"-*.log; do
+    [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R PRESERVE: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
+
+pv-G. 재현 gate
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  export CUBLAS_WORKSPACE_CONFIG=:4096:8
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  N=gate
+  D=docs/h7r/r2/R2-S400-PRESERVE-1
+  L=runs/h7r/R2-S400-PRESERVE-1/logs
+  O="$D/$N.json"
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$O"; then echo "STOP: $N is already recorded"; exit 1; fi
+  tracked "$D/prepare.json" || { echo "STOP: prepare is not recorded (run pv-P first)"; exit 1; }
+  mkdir -p "$L"
+  rc=0
+  if [ ! -e "$O" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    log="$(mktemp "$L/$N-XXXXXXXX.log")"
+    set +e
+    python -u scripts/h7r_preserve.py "$N" --device cuda --log-name "$(basename "$log")" 2>&1 | tee "$log"
+    codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+  else
+    echo "an uncommitted $O exists: recording it (no new run)"
+  fi
+  if [ -f "$O" ]; then
+    result="$(python - "$O" "$N" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+if r.get('format') != 'h7r-preserve-gate-v1' or not re.fullmatch(sys.argv[2] + r'-[A-Za-z0-9]+\.log', name):
+    sys.exit('STOP: invalid result or missing attempt log name')
+print(name, 0 if r.get('passed') is True else 2)
+PY
+)"
+    read -r name rc <<< "$result"
+    log="$L/$name"
+    [ -f "$log" ] || { echo "STOP: the result's log is missing: $log"; exit 1; }
+    last="$(tail -n 1 "$log")"
+    case "$last" in
+      "__EXIT__ $rc") ;;
+      __EXIT__*) echo "STOP: the result and its log disagree on the exit code"; exit 1 ;;
+      *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
+    esac
+  elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
+    echo "STOP: $N did not produce a result"; exit 1
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L/$N"-*.log; do
+    [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  if [ -f "$O" ]; then paths+=("$O"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R PRESERVE: $N exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
+
+pv-T. S(μ 2.0) 세 seed 학습
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  export CUBLAS_WORKSPACE_CONFIG=:4096:8
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  D=docs/h7r/r2/R2-S400-PRESERVE-1
+  R=runs/h7r/R2-S400-PRESERVE-1
+  L="$R/logs"
+  T=scripts/h7r_preserve.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  tracked "$D/gate.json" || { echo "STOP: the gate is not recorded (run pv-G first)"; exit 1; }
+  mkdir -p "$L"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/train.lock"
+  flock -n 9 || { echo "STOP: another train block is running"; exit 1; }
+  shopt -s nullglob
+  frozen=false
+  for s in 20261024 20261111 20261112; do
+    out="$R/S2-$s"
+    O="$out/record.json"
+    dst="$D/seed-records/S2-$s/record.json"
+    if tracked "$dst"; then  # recorded: its checkpoint files must still be the ones the record names
+      python "$T" verify-run --seed "$s"
+      echo "done: S2-$s"
+      continue
+    fi
+    rc=0
+    if [ ! -e "$O" ]; then
+      git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+      left=("$out"/*)
+      [ "${#left[@]}" -eq 0 ] || { echo "STOP: an interrupted run left files in $out without its record: report it (nothing is overwritten)"; exit 1; }
+      if ! "$frozen"; then python scripts/check_track_b_frozen.py; frozen=true; fi
+      log="$(mktemp "$L/train-XXXXXXXX.log")"
+      set +e
+      python -u "$T" train --seed "$s" --device cuda --log-name "$(basename "$log")" 2>&1 | tee "$log"
+      codes=("${PIPESTATUS[@]}")
+      set -e
+      rc="${codes[0]}"
+      [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+      echo "__EXIT__ $rc" >> "$log"
+    else
+      echo "an uncommitted $O exists: recording it (no new run)"
+    fi
+    if [ -f "$O" ]; then
+      name="$(python - "$O" "$s" <<'PY'
+import json, re, sys
+from pathlib import Path
+r = json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+name = r.get('log_name', '')
+if r.get('format') != 'h7r-preserve-run-v1' or r.get('seed') != int(sys.argv[2]) \
+        or not re.fullmatch(r'train-[A-Za-z0-9]+\.log', name):
+    sys.exit('STOP: invalid run record or missing attempt log name')
+print(name)
+PY
+)"
+      log="$L/$name"
+      [ -f "$log" ] || { echo "STOP: the record's log is missing: $log"; exit 1; }
+      case "$(tail -n 1 "$log")" in
+        "__EXIT__ 0") ;;
+        __EXIT__*) echo "STOP: the record and its log disagree on the exit code"; exit 1 ;;
+        *) printf '\n%s\n__EXIT__ 0\n' "Recovered exit code from $O" >> "$log" ;;
+      esac
+      rc=0
+      mkdir -p "$(dirname "$dst")"
+      [ -e "$dst" ] || cp "$O" "$dst"  # an existing copy is never overwritten, only compared
+      cmp "$O" "$dst" || { echo "STOP: $dst differs from $O"; exit 1; }
+    elif [ "$rc" -eq 0 ]; then
+      echo "STOP: train S2 $s did not produce its record"; exit 1
+    fi
+    paths=()
+    for f in "$L"/train-*.log; do
+      [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
+      n="$(basename "$f" .log)"
+      tracked "$D/stage-logs/$n.log" && continue
+      python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+        --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+      paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+    done
+    if [ -f "$dst" ]; then paths+=("$dst"); fi
+    [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+    while IFS= read -r -d '' staged; do
+      allowed=false
+      for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+      "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+    done < <(git diff --cached --name-only -z)
+    expect=()
+    for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+    git add -- "${paths[@]}"
+    python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+    git commit -m "H7-R PRESERVE: train S2 $s exit $rc (records only)"
+    git push origin feat/h7-c1
+    if [ "$rc" -ne 0 ]; then echo "__RECORDED__ $rc"; echo "STOP: train S2 $s failed (exit $rc)"; exit "$rc"; fi
+  done
+  for s in 20261024 20261111 20261112; do
+    python "$T" verify-run --seed "$s"
+  done
+  echo "__RECORDED__ 0"
+)
+```
+
+pv-AC. Arena 계약
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  D=docs/h7r/r2/R2-S400-PRESERVE-1
+  R=runs/h7r/R2-S400-PRESERVE-1
+  L="$R/logs"
+  A=docs/h7r/contracts-v2/R2-S400-PRESERVE-ARENA-1.json
+  T=scripts/h7r_preserve.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$A"; then echo "STOP: the Arena contract is already recorded"; exit 1; fi
+  tracked "$D/seed-records/S2-20261024/record.json" || { echo "STOP: train S2 20261024 is not recorded"; exit 1; }
+  mkdir -p "$L"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/arena-contract.lock"
+  flock -n 9 || { echo "STOP: another arena-contract block is running"; exit 1; }
+  logged(){  # log path, then the command; sets rc; the log ends with __EXIT__
+    local log="$1"; shift
+    set +e
+    "$@" 2>&1 | tee "$log"
+    local codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$log"
+  }
+  rc=0
+  if [ ! -e "$A" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+    logged "$(mktemp "$L/arena-contract-XXXXXXXX.log")" python -u "$T" arena-contract
+  else
+    echo "an uncommitted $A exists: checking it (no new run)"
+  fi
+  checked=false
+  if [ "$rc" -eq 0 ]; then
+    logged "$(mktemp "$L/arena-check-XXXXXXXX.log")" python -u "$T" check-contract
+    [ "$rc" -eq 0 ] || { echo "STOP: the Arena contract does not check; nothing committed"; exit 1; }
+    checked=true
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L"/arena-contract-*.log "$L"/arena-check-*.log; do
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  if "$checked"; then paths+=("$A"); fi
+  [ "${#paths[@]}" -gt 0 ] || { echo "STOP: nothing to record"; exit 1; }
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R PRESERVE: Arena contract exit $rc (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ $rc"
+  exit "$rc"
+)
+```
+
+pv-A. Arena 대국과 판독 (tmux, 약 2.5시간)
+
+```bash
+(
+  set -euo pipefail
+  cd ~/renju-h6
+  source .venv/bin/activate
+  export PYTHONPATH="$PWD/src:$PWD/scripts"
+  [ "$(git branch --show-current)" = feat/h7-c1 ] || { echo "STOP: wrong branch"; exit 1; }
+  D=docs/h7r/r2/R2-S400-PRESERVE-1
+  R=runs/h7r/R2-S400-PRESERVE-1
+  L="$R/logs"
+  AR="$R/arena"
+  A=docs/h7r/contracts-v2/R2-S400-PRESERVE-ARENA-1.json
+  T=scripts/h7r_preserve.py
+  tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
+  if tracked "$D/judge.json"; then echo "STOP: the judge is already recorded"; exit 1; fi
+  mkdir -p "$L" "$AR"
+  command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
+  exec 9> "$L/arena.lock"
+  flock -n 9 || { echo "STOP: another Arena block is running"; exit 1; }
+  git diff --quiet || { echo "STOP: unstaged tracked changes"; exit 1; }
+  if [ -f "$AR/HEAD" ]; then
+    if [ "$(git rev-parse HEAD)" != "$(cat "$AR/HEAD")" ]; then
+      echo "STOP: HEAD moved since the Arena started ($(cat "$AR/HEAD")); restore that commit or report"; exit 1
+    fi
+    echo "resuming at $(cat "$AR/HEAD") (no pull until the judge is recorded)"
+  else
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before the Arena"; exit 1; }
+    [ ! -e "$D/judge.json" ] || { echo "STOP: $D/judge.json exists without an Arena HEAD: report it"; exit 1; }
+    git pull --ff-only origin feat/h7-c1
+    tracked "$A" || { echo "STOP: the Arena contract is not recorded (run pv-AC first)"; exit 1; }
+    git rev-parse HEAD > "$AR/HEAD"
+  fi
+  tracked "$A" || { echo "STOP: the Arena contract is not recorded (run pv-AC first)"; exit 1; }
+  STAMP="$(date +%Y%m%d-%H%M%S)-$$"
+  run(){  # log base, then the command; sets rc; the log ends with __EXIT__
+    local b="$1"; shift
+    if [ -e "$L/$b.log" ]; then echo "STOP: $L/$b.log exists"; exit 1; fi
+    set +e
+    "$@" 2>&1 | tee "$L/$b.log"
+    local codes=("${PIPESTATUS[@]}")
+    set -e
+    rc="${codes[0]}"
+    [ "${codes[1]}" -eq 0 ] || { echo "STOP: tee failed; log: $L/$b.log"; exit 1; }
+    echo "__EXIT__ $rc" >> "$L/$b.log"
+  }
+  if [ ! -e "$D/judge.json" ]; then
+    git diff --cached --quiet || { echo "STOP: resolve staged changes before playing"; exit 1; }
+    python scripts/check_track_b_frozen.py
+    run "check-models-$STAMP" python -u "$T" check-models
+    [ "$rc" -eq 0 ] || { echo "STOP: the model files are not the Arena contract's; nothing played or committed"; exit 1; }
+    arms="$(python -c "import json, sys; print(' '.join(a['name'] for a in json.load(open(sys.argv[1]))['arms']))" "$A")"
+    for arm in $arms; do
+      if [ -e "$AR/$arm.json" ]; then echo "done: $arm"; continue; fi
+      run "play-$arm-$STAMP" python -u "$T" play --arm "$arm" --device cuda --workers 6 \
+        --jsonl "$AR/$arm.jsonl" --output "$AR/$arm.json"
+      if [ "$rc" -ne 0 ]; then
+        echo "STOP: arm $arm failed (exit $rc); nothing committed, HEAD kept: rerun this block to resume"; exit 1
+      fi
+    done
+    run "judge-$STAMP" python -u "$T" judge --arms-dir "$AR"
+    [ "$rc" -eq 0 ] || { echo "STOP: the judge refused (exit $rc); nothing committed, HEAD kept"; exit 1; }
+  else
+    echo "an uncommitted $D/judge.json exists: verifying it against the arm records (no new judge)"
+    run "verify-judge-$STAMP" python -u "$T" verify-judge --arms-dir "$AR"
+    [ "$rc" -eq 0 ] || { echo "STOP: $D/judge.json is not what the arm records give: report it; nothing committed"; exit 1; }
+  fi
+  paths=()
+  shopt -s nullglob
+  for f in "$L"/check-models-*.log "$L"/play-*.log "$L"/judge-*.log "$L"/verify-judge-*.log; do
+    n="$(basename "$f" .log)"
+    tracked "$D/stage-logs/$n.log" && continue
+    python scripts/h7r_d4_records.py copy-logs --resume --src-dir "$L" --pattern "$n.log" \
+      --dest-dir "$D/stage-logs" --manifest "$D/stage-logs/$n.manifest.json"
+    paths+=("$D/stage-logs/$n.log" "$D/stage-logs/$n.manifest.json")
+  done
+  paths+=("$D/judge.json")
+  while IFS= read -r -d '' staged; do
+    allowed=false
+    for f in "${paths[@]}"; do if [ "$f" = "$staged" ]; then allowed=true; break; fi; done
+    "$allowed" || { echo "STOP: unrelated staged path: $staged"; exit 1; }
+  done < <(git diff --cached --name-only -z)
+  expect=()
+  for f in "${paths[@]}"; do expect+=(--expect "$f"); done
+  git add -- "${paths[@]}"
+  python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
+  git commit -m "H7-R PRESERVE: Arena and judge (records only)"
+  git push origin feat/h7-c1
+  echo "__RECORDED__ 0"
+)
+```
