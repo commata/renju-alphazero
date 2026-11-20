@@ -1,0 +1,131 @@
+{
+ "format": "h7r-r3-loop-judge-v1",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "cycle": 2,
+ "arena_contract_id": "R3-POLICY-LOOP-ARENA-2",
+ "arena_contract_sha256": "560dcb1e39ef81f4cba6507541a4af88e8dc381f409840645cebf1a121e068be",
+ "arm_records_sha256": {
+  "O1-dev-c_L2_vs_champion": "7689e5ab5598e193485f25d7a04fe775d81b6e40b7ff7d8360ce2d0e5fe41366",
+  "O1-dev-d_L2_vs_champion": "962edf333f5235c057d2607d58abf097b87c9cda8859d4f6186e21631d61c2af"
+ },
+ "arms_commit": "3c89d309cb4bde9047996b9ccc1b49e476121db6",
+ "models": {
+  "L": {
+   "policy_checkpoint_sha256": "4d5b6795ba76c87ca3f29f6a57e5180328da03f821175f7f235c1f4ff1ea1ea8",
+   "policy_metadata_sha256": "56b277692d98c6e298860529c8bac0c122465d4270fb4b66b5ceb07c750e18f4",
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "champion": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  }
+ },
+ "bounds": {
+  "P": {
+   "estimate": -0.034167,
+   "lower_one_sided": -0.055,
+   "upper_one_sided": -0.01375
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  }
+ },
+ "reading": "WEAKER",
+ "sensitivity_class_level": {
+  "P": {
+   "estimate": -0.034167,
+   "lower_one_sided": -0.055,
+   "upper_one_sided": -0.01375
+  },
+  "reading": "WEAKER",
+  "same_as_main": true
+ },
+ "per_suite": {
+  "O1-dev-c": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 231,
+   "score_split": 102,
+   "score_split_positive": 44,
+   "score_split_negative": 58,
+   "distinct_classes": 300,
+   "score": 0.47333,
+   "improvement": -0.02667,
+   "ci95": [
+    -0.0575,
+    0.00333
+   ],
+   "lower_one_sided": -0.0575,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.27026,
+   "score_by_tested_colour": {
+    "black": 0.47667,
+    "white": 0.47
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261211,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O1-dev-d": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 222,
+   "score_split": 83,
+   "score_split_positive": 29,
+   "score_split_negative": 54,
+   "distinct_classes": 300,
+   "score": 0.45833,
+   "improvement": -0.04167,
+   "ci95": [
+    -0.06917,
+    -0.01417
+   ],
+   "lower_one_sided": -0.06917,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.24481,
+   "score_by_tested_colour": {
+    "black": 0.435,
+    "white": 0.48167
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261211,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  }
+ },
+ "change_from_previous_cycle": {
+  "estimate": -0.000833,
+  "lower_one_sided": -0.01958,
+  "upper_one_sided": 0.01833,
+  "paired_by": "opening id",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  },
+  "note": "described only, never a decision"
+ },
+ "decision": "CONTINUE",
+ "rule": "lower > 0: END_STRONGER; upper < -0.02: STOP_REGRESSION; otherwise CONTINUE (cycle 2 of 3)",
+ "scope": "development reading; END_STRONGER only names a candidate for an independent confirmation",
+ "log_name": "c2-arena-RlezSlLc.log",
+ "git": {
+  "commit": "3c89d309cb4bde9047996b9ccc1b49e476121db6",
+  "dirty": false
+ }
+}
