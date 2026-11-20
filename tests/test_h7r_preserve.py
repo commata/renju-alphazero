@@ -29,6 +29,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # --- the new suites --------------------------------------------------------------------------------------------------
 
+def before_the_suites(root):
+    """The copied checkout as it was before O1-dev-c / d: the two suites, their record and every later v2 contract that
+    plays them (the PRESERVE and R3 Arenas; they name suite files that do not exist yet) are removed."""
+    root = Path(root)
+    suites = {ds2.suite_path('c'), ds2.suite_path('d')}
+    for rel in (ds2.RECORD, *suites):
+        (root / rel).unlink(missing_ok=True)
+    for path in sorted((root / 'docs/h7r/contracts-v2').glob('*.json')):
+        arms = json.loads(path.read_text(encoding='utf-8')).get('arms') or []
+        if any((a.get('suite') or {}).get('path') in suites for a in arms):
+            path.unlink()
+
+
 class SuiteTest(unittest.TestCase):
     def setUp(self):
         self.tmp = TemporaryDirectory()
@@ -39,8 +52,7 @@ class SuiteTest(unittest.TestCase):
             git(root, 'config', k, v)
         for rel in ('docs/h7r/suites', 'docs/h7r/contracts', 'docs/h7r/contracts-v2'):
             shutil.copytree(ROOT / rel, root / rel)
-        for rel in (ds2.RECORD, ds2.suite_path('c'), ds2.suite_path('d')):  # not built yet in the checkout
-            (root / rel).unlink(missing_ok=True)
+        before_the_suites(root)
         git(root, 'add', '-A')
         git(root, 'commit', '-qm', 'sources')
 
@@ -89,8 +101,7 @@ class PreserveBase(RepoBase):
                    'candidate': {'checkpoint_sha256': files[0], 'metadata_sha256': files[1]}}
             self.commit_record(st.run_record_path(s), rec)
         shutil.copytree(ROOT / 'docs/h7r/contracts-v2', root / 'docs/h7r/contracts-v2')  # suite sources
-        for rel in (ds2.RECORD, ds2.suite_path('c'), ds2.suite_path('d'), pv.ARENA_CONTRACT):  # not made yet
-            (root / rel).unlink(missing_ok=True)
+        before_the_suites(root)
         self.c = pv.contract_body(root, sources=())
         self.write_preserve(self.c)
         git(root, 'add', '-A')
