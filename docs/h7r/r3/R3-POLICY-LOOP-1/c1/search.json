@@ -1,0 +1,41 @@
+{
+ "format": "h7r-r3-loop-search-v1",
+ "log_name": "c1-search-XguUYZ9F.log",
+ "cycle": 1,
+ "actor": {
+  "path": "runs/h3_policy_64x4/best.pt",
+  "checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "state_sha256": "09339351e9101e37f5c8368557145ac9ab23377714d70c96a03496476ae83fa8",
+  "cycle": 0
+ },
+ "s50_reproduction": {
+  "expected": 109,
+  "compared": 109,
+  "differing_fields": {},
+  "examples": [],
+  "reproduced": true,
+  "records_sha256": "2cdc044dd384ff84f263d11dc65f429711066d6718212e5decae86205a01cd54",
+  "identity_sha256": "dda845e177ddc8014adfc2aedcb5d336ebd5ef47f58fa810df1a5c03abf4b101"
+ },
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "git": {
+  "commit": "24377ff30c399e2896f89cd1c11e9328a4777290",
+  "dirty": false
+ },
+ "status": "SEARCHED",
+ "s400": {
+  "records_sha256": "de9b1d1938241c98f04a0ccea2ceaf90c1af9365b683d0b1310d494917a77b4e",
+  "identity_sha256": "b7ea0b39ef67011eda9714709ba6a79fe1011cadd90ef68a580f7c26a4073193",
+  "rows": 21606,
+  "coverage": {
+   "eligible": 21606,
+   "games": 1000,
+   "coverage_sha256": "b5ed2658b9b438af6e56c30e17a4e8f94b60d7750e1e7205acf1fc5be22e7af1"
+  },
+  "search_seconds": 99835.2,
+  "wall_seconds_this_session": 17030.1
+ }
+}
