@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "c3-rows-6iXvpJjV.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R3-POLICY-LOOP-1/logs/c3-rows-6iXvpJjV.log",
+   "copy": "docs/h7r/r3/R3-POLICY-LOOP-1/stage-logs/c3-rows-6iXvpJjV.log",
+   "bytes": 438,
+   "sha256": "d4fce12e215b61e19dba6bd3c536f2b1dd60a6c84d0cf552cc48fc5361cd4277"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
