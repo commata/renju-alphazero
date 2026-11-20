@@ -1,0 +1,41 @@
+{
+ "format": "h7r-r3-loop-search-v1",
+ "log_name": "c2-search-0u8wBikZ.log",
+ "cycle": 2,
+ "actor": {
+  "path": "runs/h7r/R3-POLICY-LOOP-1/c1/model/best.pt",
+  "checkpoint_sha256": "d7ebb40bdb2176f9ccd4662e8ddcb93f5dce6183c4eedd5ef3265641dd77caa0",
+  "metadata_sha256": "acf2b244dd134e8cfbce7e61f143c4ce1f30ac377624989a21d601b269dd2d32",
+  "state_sha256": "c620a869035d6e6f0edc0db5bfa90cb403a61b083da936109446278f0ce6991e",
+  "cycle": 1
+ },
+ "s50_reproduction": {
+  "expected": 41,
+  "compared": 41,
+  "differing_fields": {},
+  "examples": [],
+  "reproduced": true,
+  "records_sha256": "f5962bd0a70910186d47f98eab4a786fa3346d0e23d53f85849927abdb7645de",
+  "identity_sha256": "84a03c8efcac22141c0d99b7d64e448d180002b6d1517af2d42da3e0b1a33348"
+ },
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "git": {
+  "commit": "fd7e93e1fd84d37a598f256d2026a02bc773f492",
+  "dirty": false
+ },
+ "status": "SEARCHED",
+ "s400": {
+  "records_sha256": "945ca8192a0e09e0f119899ce3e43431b2aad4d4e6e65b65e4db62aa86f92baf",
+  "identity_sha256": "c6e6e7fc6e2c60a1c2f222c6a1879b6c781b38de9780952732e9ba38665416a5",
+  "rows": 16566,
+  "coverage": {
+   "eligible": 16566,
+   "games": 1000,
+   "coverage_sha256": "1591b66953ffef4926c645c814ac5c22f6f80924299cebe02af695498a1e3d70"
+  },
+  "search_seconds": 84584.0,
+  "wall_seconds_this_session": 14409.3
+ }
+}
