@@ -1,0 +1,19 @@
+[h7c-proofs] 989 games (11 dropped: probe), 35,385 positions, 12 worker(s)
+[h7c-proofs] 35,385/35,385 positions  100.0%  0.5 min  ETA 0 min  248/248 chunks
+{
+ "replacement_by_split": {
+  "train": {
+   "visit_rows": 15567,
+   "s400": 15567,
+   "s50_kept_no_s400_mass": 0,
+   "unmasked_visit_rows": 15416
+  },
+  "val": {
+   "visit_rows": 869,
+   "s400": 869,
+   "s50_kept_no_s400_mass": 0,
+   "unmasked_visit_rows": 618
+  }
+ }
+}
+__EXIT__ 0

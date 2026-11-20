@@ -1,0 +1,193 @@
+{
+ "format": "h7r-r3-loop-rows-v1",
+ "log_name": "c2-rows-Tt2xn5qj.log",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "git": {
+  "commit": "51abee9b5dbebb44c8743a13953f974f83e5b9e2",
+  "dirty": false
+ },
+ "cycle": 2,
+ "labels": {
+  "from_ply": 5,
+  "outcome_weight": 0.1,
+  "proof_weight": 1.0,
+  "prove_losses": false,
+  "vct1": false,
+  "probe_game_min_ply": 4,
+  "fast": "fast4",
+  "workers": 12
+ },
+ "labels_summary": {
+  "identity": {
+   "cycle": 2,
+   "engine_hash": "d0ef0da6b8b922cf3020acf6ff6090424a3f321079b658abd88833dd4ce5f85b",
+   "runtime_hash": "7c727150922dc87207e61447e26f9348cec4a19d15a61d16d00e6f209d98ad0e",
+   "model_hash": "222534a86342fd06d89b67da5c9d74ce35467c3be79ab4d37e9ba6b79d9379f5",
+   "frozen_models": false
+  },
+  "games_in": 1000,
+  "games_kept": 989,
+  "dropped": {
+   "probe_game": 11
+  },
+  "results": {
+   "black": 588,
+   "white": 377,
+   "draw": 24
+  },
+  "value": {
+   "cross_split_masked": {
+    "train": 0,
+    "val": 346,
+    "test": 0
+   },
+   "rows": 35385,
+   "labelled": 35039,
+   "by_split": {
+    "train": 33665,
+    "val": 1720
+   },
+   "by_kind": {
+    "outcome": 29739,
+    "proof_vcf": 2450,
+    "proof_unstoppable_four": 934,
+    "proof_forced_loss": 958,
+    "proof_immediate_win": 958
+   },
+   "by_depth": {
+    "0": 5300
+   },
+   "sign": {
+    "-1": 14698,
+    "+1": 15073,
+    "0": 5268
+   },
+   "sign_by_side": {
+    "white": {
+     "-1": 8285,
+     "+1": 6783,
+     "0": 2634
+    },
+    "black": {
+     "+1": 8290,
+     "-1": 6413,
+     "0": 2634
+    }
+   },
+   "masked_by_flag": {
+    "cross_split_duplicate": 346
+   }
+  },
+  "policy": {
+   "rows": 22034,
+   "unmasked_by_kind": {
+    "visits": 16034,
+    "proof_one_hot": 5573
+   },
+   "unmasked_by_split": {
+    "train": 20805,
+    "val": 802
+   },
+   "masked": {
+    "probe_position": 157,
+    "cross_split_duplicate": 270
+   }
+  }
+ },
+ "s50_rows": {
+  "path": "runs/h7r/R3-POLICY-LOOP-1/c2/policy_rows_s50.jsonl.gz",
+  "sha256": "e9c4127a1dc4503b94a2ddeb508d52d4408cbe3b7fe823f91f68113b01b67715",
+  "rows": 22034
+ },
+ "s400_rows": {
+  "path": "runs/h7r/R3-POLICY-LOOP-1/c2/policy_rows_s400.jsonl.gz",
+  "sha256": "0c6462f2b8ed6a160e92b467d06fc2f3e90d364a8ce63f1cc731423510b900c9",
+  "rows": 22034
+ },
+ "s400_records_sha256": "945ca8192a0e09e0f119899ce3e43431b2aad4d4e6e65b65e4db62aa86f92baf",
+ "replacement_by_split": {
+  "train": {
+   "visit_rows": 15567,
+   "s400": 15567,
+   "s50_kept_no_s400_mass": 0,
+   "unmasked_visit_rows": 15416
+  },
+  "val": {
+   "visit_rows": 869,
+   "s400": 869,
+   "s50_kept_no_s400_mass": 0,
+   "unmasked_visit_rows": 618
+  }
+ },
+ "files": {
+  "policy_rows_s50.jsonl.gz": "written",
+  "policy_rows_s400.jsonl.gz": "written"
+ },
+ "unmasked": {
+  "train": 20805,
+  "val": 802
+ },
+ "source_models": {
+  "policy_checkpoint_sha256": "d7ebb40bdb2176f9ccd4662e8ddcb93f5dce6183c4eedd5ef3265641dd77caa0",
+  "policy_metadata_sha256": "acf2b244dd134e8cfbce7e61f143c4ce1f30ac377624989a21d601b269dd2d32",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "probe_files": [
+  {
+   "path": "tests/fixtures/stage7_probes_defense_v1.json",
+   "sha256": "fe1a292fdef0a8c5204cecc3e8223f38099f4e98b992e0729e69197c5ee4cd7d"
+  },
+  {
+   "path": "tests/fixtures/stage7_probes_v1.json",
+   "sha256": "865ead9c3ffa5e407765da9b611b57ef95b9eb7a8834e559182ae0faf0815eae"
+  },
+  {
+   "path": "tests/fixtures/v8_budget_probes_v1.json",
+   "sha256": "55bbbab598a34eeeaad767553f3a9b4e0ca5413c439df37c14c1c4b6b0e94535"
+  },
+  {
+   "path": "tests/fixtures/v8c_divergence_probes_v1.json",
+   "sha256": "0d6b70065fcb24cbd3b4b6292918cfc3f6a79b8447ea87f16f86c66aa445a3dc"
+  },
+  {
+   "path": "tests/fixtures/v8c_root_probes_v1.json",
+   "sha256": "9901ea09c67ed78ac310a8d314d5b79ac8060a0a519f081eaaeb34d5451b5bcd"
+  },
+  {
+   "path": "tests/fixtures/vct_probes_v1.json",
+   "sha256": "bcd6235e7aa8194e315a6899b9ac24d2f939791b1e55bf1d9eac58b970c786e5"
+  },
+  {
+   "path": "docs/mcts-v8-results/probe_web_v8_loss_20261007.json",
+   "sha256": "87a2b1d7acfff018dbbe6aef1f659d774a0e0a8c82fac49a12a07c9a106110b5"
+  },
+  {
+   "path": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "sha256": "da6c9dbe0fe4eac6809efba7dc86f668ba13b7aa52db9070f47d593c1f378dc4"
+  },
+  {
+   "path": "docs/mcts-v8-results/e1h/e1h_manifest.json",
+   "sha256": "77dd7eec2f31336ac5cbc46477c29e91412783ee14971d66d118499f129868f2"
+  },
+  {
+   "path": "docs/mcts-v8-results/e1s/e1s_manifest.json",
+   "sha256": "bb4666dfb39bf8a1444a26474688c465c06f87eb20fcada4cf27adf0d31a8fca"
+  },
+  {
+   "path": "docs/h6/h6_fresh_dev_probes_v1.json",
+   "sha256": "af3b46a50b7713667d0c68f314b1c59ad247080bbb4988b018522f0c67b64ce0"
+  },
+  {
+   "path": "docs/h6/h6_fresh_dev_probes_v2.json",
+   "sha256": "96407fb0cae50dcf10b3d064f23b286cda49b8adfd7b36155b7aaf60222abcc9"
+  },
+  {
+   "path": "docs/h6/h6_fresh_final_probes_v1.json",
+   "sha256": "f123e7a5af355df5894a85e411d41eacac85c9a9093419d40bcf09c915a724a8"
+  }
+ ],
+ "check": "passed"
+}
