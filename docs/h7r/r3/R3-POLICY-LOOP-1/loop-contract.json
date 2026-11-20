@@ -4,7 +4,7 @@
  "status": "fixed",
  "approved": {
   "prepare": true,
-  "gate": false,
+  "gate": true,
   "loop": false
  },
  "purpose": "R3 development experiment: from H3 + c5, update the policy only and let it play the next self-play for at most three cycles; is the development Arena score against the fixed champion recovered or above it? Never a promotion",
