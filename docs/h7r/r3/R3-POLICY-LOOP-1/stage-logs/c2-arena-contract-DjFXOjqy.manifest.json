@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "c2-arena-contract-DjFXOjqy.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R3-POLICY-LOOP-1/logs/c2-arena-contract-DjFXOjqy.log",
+   "copy": "docs/h7r/r3/R3-POLICY-LOOP-1/stage-logs/c2-arena-contract-DjFXOjqy.log",
+   "bytes": 108,
+   "sha256": "24c76b0aacb6c322a956947806549b8905d8bbd96a8e38bb1fb401e95982e165"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
