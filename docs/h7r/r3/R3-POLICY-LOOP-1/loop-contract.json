@@ -1,0 +1,236 @@
+{
+ "format": "h7r-r3-loop-contract-v1",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "status": "fixed",
+ "approved": {
+  "prepare": false,
+  "gate": false,
+  "loop": false
+ },
+ "purpose": "R3 development experiment: from H3 + c5, update the policy only and let it play the next self-play for at most three cycles; is the development Arena score against the fixed champion recovered or above it? Never a promotion",
+ "draft": {
+  "path": "docs/h7r/r3/R3-POLICY-LOOP-1-draft.md"
+ },
+ "start": {
+  "policy": {
+   "path": "runs/h3_policy_64x4/best.pt",
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+  },
+  "value": {
+   "path": "runs/h7c/c5/value/best.pt",
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "champion": "H3 policy + c5 value (also the fixed Arena opponent of every cycle)"
+ },
+ "s400_train": {
+  "contract": "docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json",
+  "contract_file_sha256": "7f4a5c00a126600702d2ed661478c987f3a4870b64eb4b408a58de35bcb73cb2",
+  "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+  "gate": "docs/h7r/r2/R2-S400-TRAIN/gate.json",
+  "gate_sha256": "5fc1746ba20e6d787bf2e4dab4132b72139c4f19bb04e921e1254a733e1d2b5e",
+  "rows_record": "docs/h7r/r2/R2-S400-TRAIN/rows.json",
+  "rows_record_sha256": "e2336e880d39acaa60db4cfb9527e2a73bfd30931419f5f74346d2a33044bc9e",
+  "gate_reference": {
+   "seed": 20261024,
+   "record": "docs/h7r/r2/R2-S400-TRAIN/seed-records/S-20261024/record.json",
+   "record_sha256": "f3d5c6aa82941afdf9d6b41978b52639d89680e86b75e5b7168c509c7cdf3eca"
+  },
+  "use": "the training settings (training, arms.T.replay, determinism) and the gate comparison"
+ },
+ "training": {
+  "trainer": "hybrid.h7r_p1_train.train_policy",
+  "settings": "R2-S400-TRAIN training and arms.T.replay unchanged (batch 512, lr 2e-4, wd 1e-4, min lr 0.05, kl_lambda 0.5, D4, 10 evaluations, guard_drop 0.02, BN eval; replay RenjuNet train split, batch 512, mu 0.5)",
+  "epochs": 2.0,
+  "steps": "round(2 x ceil(train rows / 512)), recorded per cycle",
+  "initial_model": "the policy selected in cycle k - 1 (cycle 1: H3)",
+  "teacher": "H3 (KL, replay and guard), every cycle",
+  "value": "c5, never trained",
+  "selection": "guard (RenjuNet val top-1 within 0.02 of H3), lowest cycle val objective; none: NO_CANDIDATE",
+  "val_targets": "S400, as the train targets"
+ },
+ "cycles": {
+  "max": 3,
+  "games": 1000,
+  "selfplay_workers": 6,
+  "search": {
+   "factor": 8,
+   "mode": "restored",
+   "workers": 6,
+   "reproduction_games": 5,
+   "reproduction_factor": 1
+  },
+  "labels": {
+   "from_ply": 5,
+   "outcome_weight": 0.1,
+   "proof_weight": 1.0,
+   "prove_losses": false,
+   "vct1": false,
+   "probe_game_min_ply": 4,
+   "fast": "fast4",
+   "workers": 12
+  },
+  "data": "each cycle trains on its own self-play only",
+  "rows": "every visit row (train and val) takes its S400 target (h7c_retarget.retarget_target); no S400 mass keeps the S50 target, counted per split; no row added; the split is per game (h7c_labels split_for, val 5%), later-split duplicates masked"
+ },
+ "seeds": {
+  "selfplay_run": [
+   8809,
+   8810,
+   8811
+  ],
+  "training": [
+   20261201,
+   20261202,
+   20261203
+  ],
+  "arena": {
+   "1": {
+    "O1-dev-c": 9105,
+    "O1-dev-d": 9106
+   },
+   "2": {
+    "O1-dev-c": 9107,
+    "O1-dev-d": 9108
+   },
+   "3": {
+    "O1-dev-c": 9109,
+    "O1-dev-d": 9110
+   }
+  },
+  "bootstrap": 20261211,
+  "gate": 20261024
+ },
+ "suites": {
+  "record": "docs/h7r/suites/O1-dev-cd-record.json",
+  "record_sha256": "6b49fbad5158ac7283c9bc3ae8f4350edff28279e34b61d4535a0bd026590c60",
+  "specs": [
+   {
+    "name": "O1-dev-c",
+    "path": "docs/h7r/suites/O1-dev-c.json",
+    "sha256": "309178135227a2a2435da764be67436dabc2477635d0271e2aad75d68d474357",
+    "pairs": 300
+   },
+   {
+    "name": "O1-dev-d",
+    "path": "docs/h7r/suites/O1-dev-d.json",
+    "sha256": "bb12745be2846e155c4f8388338d07329635fa9e5bbe7cf23104e80322076427",
+    "pairs": 300
+   }
+  ],
+  "use": "development only (already read by R2-S400-PRESERVE-1); never a confirmation"
+ },
+ "arena": {
+  "models": "L<k> = the cycle-k candidate + c5 value against champion = H3 + c5, S50",
+  "stats": {
+   "alpha_one_sided": 0.025,
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261211,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "arms": "one per suite and cycle, 300 pairs",
+  "reading": "P_k = score - 0.5, suites 50:50, stratified opening bootstrap; STRONGER (lower > 0) / WEAKER (upper < 0) / NOT_ESTABLISHED; the class level reported",
+  "change": "P_k - P_(k-1) paired by opening id, described only"
+ },
+ "rules": {
+  "delta": 0.02,
+  "max_cycles": 3,
+  "table": [
+   "train NO_CANDIDATE: END_NO_CANDIDATE",
+   "search S50_NOT_REPRODUCED: STOP_S50_NOT_REPRODUCED",
+   "lower > 0: END_STRONGER (a separate confirmation contract)",
+   "upper < -0.02: STOP_REGRESSION (no self-play with that model)",
+   "otherwise, k < 3: CONTINUE",
+   "otherwise, k = 3: END_BUDGET"
+  ],
+  "multiplicity": "at most three STRONGER readings, each at a nominal one-sided 2.5%: at most about 7.5% together (an upper bound, assuming each test holds its level); END_STRONGER only picks a candidate for an independent confirmation"
+ },
+ "stages": {
+  "prepare": "every input checked",
+  "gate": "the new training path reproduces S(20261024) exactly",
+  "loop": "one approval for at most three cycles under the rules; every step recorded and committed on its own; the next self-play only after a committed CONTINUE and the candidate files checked; an interrupted step resumes from its records"
+ },
+ "output": {
+  "prepare": "docs/h7r/r3/R3-POLICY-LOOP-1/prepare.json",
+  "gate": "docs/h7r/r3/R3-POLICY-LOOP-1/gate.json",
+  "cycle": "docs/h7r/r3/R3-POLICY-LOOP-1/c{k}/<step>.json",
+  "judge": "docs/h7r/r3/R3-POLICY-LOOP-1/c{k}/judge.json",
+  "runs": "runs/h7r/R3-POLICY-LOOP-1/c{k}",
+  "arena_contract": "docs/h7r/contracts-v2/R3-POLICY-LOOP-ARENA-{k}.json"
+ },
+ "sources": [
+  {
+   "path": "scripts/h7r_r3_loop.py",
+   "sha256": "aadd76e6e57ee1f66442dc832640f2a9e1193b6c49cabe6d781d45f15a7ddd95"
+  },
+  {
+   "path": "scripts/h7r_s400_train.py",
+   "sha256": "e21c87bbf2136b5c4a0994fcd807d43b8f481c642a65717798a69298f933963f"
+  },
+  {
+   "path": "scripts/h7r_s400_arena.py",
+   "sha256": "8dd7b617b96a24ce4311ae0eedad8a42082ce665ef975fd9e0467683e97ef887"
+  },
+  {
+   "path": "scripts/h7r_eval.py",
+   "sha256": "2a59def2413ff4ab87bfe85c09c24e8d0aeaddd920310ed1f2b61822bfcab19c"
+  },
+  {
+   "path": "scripts/h7r_p1a1.py",
+   "sha256": "d9fe10f895bdc2ebc6cb95c67aac92f671fdda22509ab22b926b7aca8fb907c6"
+  },
+  {
+   "path": "scripts/h7r_p1.py",
+   "sha256": "4796f49f7d12a402a447554abe5b5f5fbfb568569a56892a78ea71debfcd4f12"
+  },
+  {
+   "path": "scripts/h7r_p1_diag.py",
+   "sha256": "62dd3fe4cfc6346c61be3f9f07ea26235ebbdd63e28aa6ec4f29689ae7e48c0d"
+  },
+  {
+   "path": "src/hybrid/h7r_p1_train.py",
+   "sha256": "3b4b74d4fb49277df89caf6005173386884870d89adea08c2663dfb4f80e852c"
+  },
+  {
+   "path": "src/hybrid/h7c_train.py",
+   "sha256": "ceaea83320ef2fad92e85f0072a9a4c440e34c1b0d607255d26f3a5388c5c488"
+  },
+  {
+   "path": "scripts/h7c_selfplay.py",
+   "sha256": "eeca66c1edcbdedefaeaa3c7800163475b368cc9b1356f3d558a1b8136257f6a"
+  },
+  {
+   "path": "scripts/h7c_retarget.py",
+   "sha256": "64c962ac43764f92d41560b834d82d786bdeef788389a4025ae3a7687a8879b5"
+  },
+  {
+   "path": "src/hybrid/h7c_retarget.py",
+   "sha256": "75d9824c5bf83a46c6385081ceebfedf8e09fcd4b4e3de019d059072f74dfa02"
+  },
+  {
+   "path": "scripts/h7c_labels.py",
+   "sha256": "f90a3eb364c53e97eb61563359df6cd516e079046df1d5165d778217b979c996"
+  },
+  {
+   "path": "scripts/h7r_s400_pre.py",
+   "sha256": "655900de0b9071f05cb633cba11dd930baa1efad0e0da7defe60c2d11c9dd872"
+  },
+  {
+   "path": "scripts/h7r_dev_suites_2.py",
+   "sha256": "66530194a834b57b58f14d1c25db8db218349ecd000c48e45d68fe73892bce2d"
+  },
+  {
+   "path": "src/hybrid/h7r_eval_v2.py",
+   "sha256": "049559de567eea991938864de2f5edf1b1c98598d10f46aec2d4ef75e976a0f0"
+  },
+  {
+   "path": "src/hybrid/h7r_openings.py",
+   "sha256": "d97eba732ded4fb58422e63317147f213c8724b22d4469da4cfd828626cfd09e"
+  }
+ ],
+ "scope": "development only: no champion change, confirmation, promotion or formal R4"
+}
