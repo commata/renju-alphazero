@@ -1,0 +1,73 @@
+{
+ "format": "h7r-r3-loop-selfplay-v1",
+ "log_name": "c1-selfplay-c8rr4DwY.log",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "git": {
+  "commit": "53bff76471480a4259f7c122d9e7ac6cdf4fc3a2",
+  "dirty": false
+ },
+ "cycle": 1,
+ "actor": {
+  "path": "runs/h3_policy_64x4/best.pt",
+  "checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "state_sha256": "09339351e9101e37f5c8368557145ac9ab23377714d70c96a03496476ae83fa8",
+  "cycle": 0
+ },
+ "value": {
+  "path": "runs/h7c/c5/value/best.pt",
+  "checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "run_seed": 8809,
+ "jsonl": "runs/h7r/R3-POLICY-LOOP-1/c1/selfplay.jsonl",
+ "jsonl_sha256": "405ba10f6c46d77019ef352a81e2f1de59727fb271b71e6bb22a3a0469de62e8",
+ "identity_sha256": "f98e3b6bfb4e699e5f43fe275bc20e1a83bf88851e1b404373b09b661662a5b5",
+ "models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "games": 1000,
+ "summary": {
+  "games": 1000,
+  "results": {
+   "black": 562,
+   "white": 391,
+   "draw": 47
+  },
+  "moves": 43685,
+  "routes": {
+   "tree": 21724,
+   "stage4": 7611,
+   "stage5": 820,
+   "stage2": 7933,
+   "own_vct2": 443,
+   "own_vct": 776,
+   "own_vcf": 2495,
+   "stage3": 930,
+   "stage1": 953
+  },
+  "events": {
+   "sampled": 3835,
+   "engine": 39685,
+   "no_distribution": 165
+  },
+  "target_kinds": {
+   "visits": 21606,
+   "none": 16482,
+   "proof_one_hot": 5597
+  },
+  "length_mean": 46.69,
+  "move_seconds": {
+   "mean": 0.5556,
+   "p99": 2.7002,
+   "max": 6.49
+  },
+  "game_minutes": 405.2
+ },
+ "wall_seconds": 4124.2
+}
