@@ -3,7 +3,7 @@
  "contract_id": "R3-POLICY-LOOP-1",
  "status": "fixed",
  "approved": {
-  "prepare": false,
+  "prepare": true,
   "gate": false,
   "loop": false
  },
