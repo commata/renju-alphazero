@@ -45,6 +45,7 @@ import math
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -672,13 +673,17 @@ def step_search(ctx, args, root, log) -> tuple[dict, int]:
     return record, 0
 
 
-def s400_index(path, games: list[dict], identity_sha: str) -> dict:
-    """The S400 rows by (game index, ply): every game once, no other, each game's rows its eligible plies, checked."""
+def s400_index(path, games: list[dict], identity_sha: str, want_sha256: str) -> dict:
+    """The S400 rows by (game index, ply): the file is ``want_sha256`` (hashed from the bytes that are parsed: no
+    window between check and read); every game once, no other, each game's rows its eligible plies, checked."""
+    import hashlib
     import h7r_s400_pre as pre
 
+    data = Path(path).read_bytes()
+    require(hashlib.sha256(data).hexdigest() == want_sha256, f'{path}: not the recorded S400 records')
     scope = {g['game_index'] for g in games}
     by = {}
-    for line in Path(path).read_text(encoding='utf-8').splitlines():
+    for line in data.decode('utf-8').splitlines():
         if line.strip():
             rec = json.loads(line)
             require(digest(rec['identity']) == identity_sha, 'an S400 record of another search identity')
@@ -740,12 +745,9 @@ def step_rows(ctx, args, root, log) -> tuple[dict, int]:
     require(srec['status'] == 'SEARCHED', f"the search ended {srec['status']}")
     games, ident, sp_rec = load_cycle_games(ctx, root, k)
     s400p = cdir(k) + '/s400.jsonl'
-    require(file_sha256(root / s400p) == srec['s400']['records_sha256'], f'{s400p}: not the recorded S400 records')
     base_p, cand_p = root / cdir(k) / 'policy_rows_s50.jsonl.gz', root / cdir(k) / 'policy_rows_s400.jsonl.gz'
-    for p in (base_p, cand_p):
-        require(not p.exists(), f'{p} exists: never overwritten')
     guard = Guard(root, contract_path(args.contract, root), c, [sp_rec['jsonl'], s400p, record_path(k, 'search')])
-    s400 = s400_index(root / s400p, games, srec['s400']['identity_sha256'])
+    s400 = s400_index(root / s400p, games, srec['s400']['identity_sha256'], srec['s400']['records_sha256'])
     labels = c['cycles']['labels']
     probes = lab.probe_positions(lab.default_probe_files(root), root)
     _, base, summary = lab.build(games, probes=probes, **{k2: v for k2, v in labels.items()})
@@ -753,8 +755,9 @@ def step_rows(ctx, args, root, log) -> tuple[dict, int]:
     cand, counts = replace_targets(base, by_id, s400)
     bad = check_replacement(base, cand, by_id, s400)
     require(not bad, f'the S400 rows fail their check: {bad}')
-    st.write_rows(base_p, base)
-    st.write_rows(cand_p, cand)
+    recovered = {}
+    for path, rows in ((base_p, base), (cand_p, cand)):
+        recovered[path.name] = keep_or_write_rows(path, rows)
     source = tr.policy_rows_source(cand_p, k)
     act = actor(c, ctx['eid'], k, root)
     require(source['models'] == models_of(act, value_files(c)), 'the rows are not of the actor\'s self-play')
@@ -767,11 +770,25 @@ def step_rows(ctx, args, root, log) -> tuple[dict, int]:
               's400_rows': {'path': cdir(k) + '/policy_rows_s400.jsonl.gz', 'sha256': file_sha256(cand_p),
                             'rows': len(cand)},
               's400_records_sha256': srec['s400']['records_sha256'], 'replacement_by_split': counts,
+              'files': recovered,
               'unmasked': {s: len(v) for s, v in by_split.items()}, 'source_models': source['models'],
               'probe_files': [{'path': Path(f).resolve().relative_to(root.resolve()).as_posix(), 'sha256': file_sha256(f)}
                               for f in lab.default_probe_files(root)], 'check': 'passed'}
     p1.publish(root / record_path(k, 'rows'), record)
     return record, 0
+
+
+def keep_or_write_rows(path: Path, rows: list[dict]) -> str:
+    """Write ``rows``; a file an interrupted attempt left is kept only when it holds exactly these rows (refused
+    otherwise: nothing is overwritten); a leftover temporary file is never final and is removed."""
+    path.with_name(path.name + '.tmp').unlink(missing_ok=True)
+    if path.exists():
+        found, _ = st.read_rows_hashed(path)
+        require(found == rows, f'{path}: an earlier attempt left other rows than the recomputed ones: report it '
+                               '(nothing is overwritten)')
+        return 'kept (equal to the recomputed rows)'
+    st.write_rows(path, rows)
+    return 'written'
 
 
 def verified_rows(ctx, root, k: int, rec: dict | None = None) -> tuple[dict, list[dict]]:
@@ -785,11 +802,17 @@ def verified_rows(ctx, root, k: int, rec: dict | None = None) -> tuple[dict, lis
     require(base_sha == rec['s50_rows']['sha256'] and cand_sha == rec['s400_rows']['sha256'],
             f'c{k}: the rows files are not the recorded ones')
     srec = committed_record(root, record_path(k, 'search'), f'c{k} search record', ctx['eid'])
+    require(rec['s400_records_sha256'] == srec['s400']['records_sha256'], f'c{k}: the rows record names other S400 '
+                                                                        'records than the search record')
     games, _, _ = load_cycle_games(ctx, root, k)
-    s400 = s400_index(root / cdir(k) / 's400.jsonl', games, srec['s400']['identity_sha256'])
+    s400 = s400_index(root / cdir(k) / 's400.jsonl', games, srec['s400']['identity_sha256'],
+                      srec['s400']['records_sha256'])
     bad = check_replacement(base, cand, {lab.game_id(g): g for g in games}, s400)
     require(not bad, f'c{k}: the S400 rows fail their check: {bad}')
     return rec, cand
+
+
+TRAIN_FILES = ('best.pt', 'best.json', 'logits.pt')
 
 
 def steps_rule(train_rows: int, batch: int) -> int:
@@ -806,7 +829,11 @@ def step_train(ctx, args, root, log) -> tuple[dict, int]:
     act, value, h3 = actor(c, ctx['eid'], k, root), value_files(c), h3_files(c)
     rrec, cand = verified_rows(ctx, root, k)
     out = root / model_dir(k)
-    st.fresh_dir(out)
+    for tmp in out.glob('*.tmp') if out.is_dir() else []:  # never final: an interrupted write
+        tmp.unlink()
+    leftover = sorted(n for n in TRAIN_FILES if (out / n).exists())
+    others = sorted(p.name for p in out.iterdir() if p.name not in TRAIN_FILES) if out.is_dir() else []
+    require(not others, f'{model_dir(k)} holds other files: {others} (nothing is overwritten)')
     guard = Guard(root, contract_path(args.contract, root), c,
                   [*st.input_files(s4), rrec['s400_rows']['path'], act['path'], meta_of(act['path']), h3['path'],
                    record_path(k, 'rows'), c['output']['gate']])
@@ -855,7 +882,24 @@ def step_train(ctx, args, root, log) -> tuple[dict, int]:
         files['best.json'] = lambda f: f.write_text(json.dumps(meta, indent=1) + '\n', encoding='utf-8')
         files['logits.pt'] = lambda f: torch.save(run['logits'], f)
     out.mkdir(parents=True, exist_ok=True)
-    a1.write_temporary(out, files, guard)
+    if leftover:  # an attempt died between its files and its record: the same run must give the same files
+        require(result['state'] is not None, f'{model_dir(k)} holds {leftover}, the run has no candidate')
+        again = out / 'recheck'
+        shutil.rmtree(again, ignore_errors=True)
+        again.mkdir()
+        a1.write_temporary(again, files, guard)
+        differ = [n for n in leftover if file_sha256(out / n) != file_sha256(again / n)]
+        if differ:
+            shutil.rmtree(again)
+            raise ValueError(f'{model_dir(k)}: {differ} of an earlier attempt differ from this run: report it '
+                             '(nothing is overwritten)')
+        for n in TRAIN_FILES:
+            if not (out / n).exists():
+                (again / n).replace(out / n)
+        shutil.rmtree(again)
+        record['recovered_files'] = leftover
+    else:
+        a1.write_temporary(out, files, guard)
     if result['state'] is not None:
         record['candidate'] = {'checkpoint_sha256': file_sha256(out / 'best.pt'),
                                'metadata_sha256': file_sha256(out / 'best.json')}
@@ -904,16 +948,22 @@ def step_arena_contract(ctx, args, root, log) -> tuple[dict, int]:
     c, k = ctx['c'], args.cycle
     committed_suites(c, root)
     path = root / arena_contract_path(k)
-    require(not path.exists(), f'{path} exists: never overwritten')
+    require(not (path.exists() and committed(path, root)), f'{path} is committed without its step record: report it')
     guard = Guard(root, contract_path(args.contract, root), c, [record_path(k, 'train'), c['suites']['record']])
     body = arena_contract_body(ctx, root, k)
     ev2.check_contract(body, path, root, check_files=False)
     ev2.check_unique(body, path, root)
     git = guard.check()
-    p1.publish(path, body)
+    kept = path.exists()
+    if kept:  # written by an attempt that died before its record
+        require(json.loads(path.read_text(encoding='utf-8')) == json.loads(json.dumps(body)),
+                f'{path}: an earlier attempt wrote another contract: report it (nothing is overwritten)')
+    else:
+        p1.publish(path, body)
     record = {'format': 'h7r-r3-loop-arena-contract-v1', **log_field(args, f'c{k}-arena-contract'),
               **stamp(ctx['sha'], ctx['eid'], git), 'cycle': k, 'arena_contract': arena_contract_path(k),
-              'arena_contract_sha256': file_sha256(path), 'arms': [a['name'] for a in body['arms']]}
+              'arena_contract_sha256': file_sha256(path), 'arms': [a['name'] for a in body['arms']],
+              'contract_file': 'kept (equal to the body the records give)' if kept else 'written'}
     p1.publish(root / record_path(k, 'arena-contract'), record)
     return record, 0
 

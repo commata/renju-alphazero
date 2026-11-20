@@ -165,7 +165,7 @@
  "sources": [
   {
    "path": "scripts/h7r_r3_loop.py",
-   "sha256": "aadd76e6e57ee1f66442dc832640f2a9e1193b6c49cabe6d781d45f15a7ddd95"
+   "sha256": "c99dfa459904e5777c5a2593882c9bb23204e148f9eb81dffd8d0fb18e7ed0bd"
   },
   {
    "path": "scripts/h7r_s400_train.py",

@@ -67,6 +67,7 @@
 - 학습량: 기존 2 epoch 규칙을 고정한다. step 수 = round(2 × ceil(train 행 / 512))이고, 평가 시점 10회와 warmup은 함수가 그 step 수에서 정한다. 사이클마다 실제 step 수를 기록한다(자료마다 행 수가 달라 step 수는 미리 정하지 않는다).
 - 선택: c2 규칙 그대로. guard(RenjuNet val top-1이 H3보다 0.02 이내)를 통과한 평가 중 cycle val objective가 가장 낮은 것. 없으면 NO_CANDIDATE.
 - val 목표: train과 같이 S400으로 바꾼다(2026-11-20 결정, R2-S400-TRAIN과 다른 점). split은 대국 단위라 같은 대국의 행이 train과 val에 함께 들어가지 않는다. S400 질량이 없는 방문 행은 S50 목표를 유지하고 그 건수를 split별로 기록한다. R2-S400-TRAIN은 대조군과 val을 같게 두려고 S200 val을 유지했지만, 이 루프에는 대조군이 없고 자가대국 S50 방문 val로 고르면 actor 자신의 탐색에 가까운 checkpoint를 고르게 된다.
+- 학습 직전 검사: S50·S400 행 파일이 rows 기록의 SHA와 같고, S400 원본(`s400.jsonl`)을 읽은 바이트의 SHA가 search 기록과 rows 기록 양쪽에 일치하며, S400 행이 그 원본으로 규칙대로 다시 만들어져야 학습한다.
 - 학습 seed는 사이클마다 하나(§8)다. 결정론 설정(CUBLAS workspace, cuDNN deterministic, threads)은 R2-S400-TRAIN gate와 같아야 시작한다.
 
 ## 5. 학습 경로 gate (사이클 전에 한 번)
@@ -141,7 +142,7 @@ judge-k가 기록한 구간으로 도구가 기계적으로 정한다.
 
 ## 11. 구현 (2026-11-20, 미승인)
 
-- 계약 `docs/h7r/r3/R3-POLICY-LOOP-1/loop-contract.json`(fixed, 모든 승인 false, 실험 SHA `d464e0447642`).
+- 계약 `docs/h7r/r3/R3-POLICY-LOOP-1/loop-contract.json`(fixed, 모든 승인 false, 실험 SHA `977bb1da7b55`).
   - 고정하는 것: H3·c5 파일 SHA, R2-S400-TRAIN 계약(파일 SHA `7f4a5c00a126`, 실험 SHA `67c6ba3c8081`)과 gate·rows 기록, gate 비교 대상인 S(20261024) 기록, 두 suite와 생성 기록, §8 seed, 규칙·통계·재탐색·label 설정.
   - 도구와 재사용 파일 17개를 sources로 고정한다.
 - 도구 `scripts/h7r_r3_loop.py`. 고정된 기존 도구(`h7r_p1a1`, `h7r_s400_train`, `h7r_preserve`, `h7c_*`)는 바꾸지 않고 불러 쓴다.
@@ -175,10 +176,19 @@ judge-k가 기록한 구간으로 도구가 기계적으로 정한다.
 - r3-L(tmux, 최대 약 23시간)
   - `next`가 가리키는 단계를 하나씩 실행한다. 단계마다 기록을 `verify`로 대조한 뒤 스테이징해 커밋·push한다.
   - 결정(done)이 나오면 `__DONE__ <결정>`을 출력하고 끝난다.
-  - `git pull`은 시작할 때 한 번이고, 중단된 단계가 없을 때만 한다. 중단된 단계는 시작한 commit에서 이어간다.
+  - 실행 HEAD 고정: 단계를 시작할 때 `runs/.../attempt.HEAD`에 사이클·단계·HEAD를 적고, 그 단계 기록을 커밋한 뒤 지운다.
+    - 자가대국은 생성 당시 HEAD를, Arena는 HEAD가 든 서명을 중단 기록에 보관하므로, 진행 중인 단계는 시작한 commit에서만 이어간다.
+    - 다시 실행했을 때 HEAD가 바뀌었으면 멈춘다.
+  - 결과 없이 실패한 단계는 아무것도 커밋하지 않고 멈춘다(`__FAILED__`, HEAD 유지). 실패한 시도의 로그는 그 단계가 끝날 때 결과와 함께 커밋된다.
+  - `git pull`은 진행 중인 단계가 없을 때만, `next`보다 먼저 한다. 그래서 첫 실행은 원격의 loop 승인 커밋을 받은 뒤 시작한다.
+  - 중단 지점별 복구(도구):
+    - 자가대국·재탐색·Arena arm: 이어서 한다.
+    - rows: 남은 행 파일을 다시 계산한 행과 대조해 같으면 쓰고, 빠진 파일과 기록을 만든다.
+    - Arena 계약: 커밋 전 계약 파일이 기록들로 만든 본문과 같으면 쓴다.
+    - train: 같은 학습을 다시 돌려 남은 파일과 SHA가 같을 때만 쓴다.
+    - 다르면 아무것도 덮어쓰지 않고 멈춘다.
   - `CUBLAS_WORKSPACE_CONFIG`는 train 단계에만 설정한다. 자가대국·탐색·Arena는 지금까지의 엔진 실행과 같은 조건이고, 도구가 확인한다.
-  - 단계가 결과 없이 실패하면 로그만 커밋하고 멈춘다. 기록이 파일과 맞지 않으면 아무것도 커밋하지 않고 멈춘다.
-  - 같은 블록을 다시 실행하면 이어간다.
+  - 기록이 파일과 맞지 않으면 아무것도 커밋하지 않고 멈춘다.
 
 r3-P. prepare
 
@@ -365,18 +375,26 @@ r3-L. 루프 (tmux)
   R=runs/h7r/R3-POLICY-LOOP-1
   L="$R/logs"
   T=scripts/h7r_r3_loop.py
+  PIN="$R/attempt.HEAD"  # "cycle step commit" of the step in progress: it resumes at that commit only
   tracked(){ git cat-file -e "HEAD:$1" 2>/dev/null; }
   field(){ python -c 'import json, sys; v = json.loads(sys.argv[1]).get(sys.argv[2]); print("" if v is None else str(v).lower() if isinstance(v, bool) else v)' "$1" "$2"; }
   mkdir -p "$L"
   command -v flock > /dev/null || { echo "STOP: flock is missing (util-linux)"; exit 1; }
   exec 9> "$L/loop.lock"
   flock -n 9 || { echo "STOP: another loop block is running"; exit 1; }
-  tracked "$D/gate.json" || { echo "STOP: the gate is not recorded (run r3-G first)"; exit 1; }
-  nxt="$(python "$T" next)"
-  # pull only between steps: an interrupted step resumes at the commit it started on
-  if git diff --cached --quiet && { [ "$(field "$nxt" action)" != run ] || [ "$(field "$nxt" partial)" = false ]; }; then
-    git pull --ff-only origin feat/h7-c1
+  if [ -f "$PIN" ]; then
+    read -r pk ps phead < "$PIN"
+    if tracked "$(python "$T" files --cycle "$pk" --name "$ps" | head -n 1)"; then
+      rm -f "$PIN"  # its record was committed (the block ended before removing the pin)
+    elif [ "$(git rev-parse HEAD)" != "$phead" ]; then
+      echo "STOP: HEAD moved since c$pk $ps started at $phead: restore that commit or report"; exit 1
+    else
+      echo "resuming c$pk $ps at $phead (no pull)"
+    fi
   fi
+  # no step in progress: take the remote commits first (the loop approval among them), then ask for the next step
+  if [ ! -f "$PIN" ] && git diff --cached --quiet; then git pull --ff-only origin feat/h7-c1; fi
+  tracked "$D/gate.json" || { echo "STOP: the gate is not recorded (run r3-G first)"; exit 1; }
   frozen=false
   shopt -s nullglob
   while :; do
@@ -389,6 +407,13 @@ r3-L. 루프 (tmux)
     rc=0
     if [ "$action" = run ]; then
       git diff --cached --quiet || { echo "STOP: resolve staged changes before a new run"; exit 1; }
+      if [ -f "$PIN" ]; then
+        read -r pk ps phead < "$PIN"
+        [ "$pk $ps" = "$k $s" ] || { echo "STOP: c$pk $ps is in progress, the next step is c$k $s: report it"; exit 1; }
+        [ "$(git rev-parse HEAD)" = "$phead" ] || { echo "STOP: HEAD moved since c$k $s started at $phead"; exit 1; }
+      else
+        echo "$k $s $(git rev-parse HEAD)" > "$PIN"
+      fi
       if ! "$frozen"; then python scripts/check_track_b_frozen.py; frozen=true; fi
       log="$(mktemp "$L/c$k-$s-XXXXXXXX.log")"
       set +e
@@ -421,8 +446,13 @@ r3-L. 루프 (tmux)
         *) printf '\n%s\n__EXIT__ %s\n' "Recovered exit code from $O" "$rc" >> "$log" ;;
       esac
       while IFS= read -r f; do paths+=("$f"); done < <(python "$T" files --cycle "$k" --name "$s")
-    elif [ "$rc" -eq 0 ] || [ "$rc" -eq 2 ]; then
-      echo "STOP: c$k $s did not produce its record"; exit 1
+    else
+      # no result: nothing is committed (a commit would move HEAD and the self-play / Arena records could not
+      # resume); the logs stay under $L and go with the step's record
+      echo "__FAILED__ $rc"
+      echo "STOP: c$k $s ended without its record (exit $rc); HEAD $(git rev-parse HEAD) kept: fix the cause or report,"
+      echo "then rerun this block to resume the step at that commit"
+      exit 1
     fi
     for f in "$L"/c"$k"-"$s"-*.log; do
       [[ "$(tail -n 1 "$f")" =~ ^__EXIT__\ [0-9]+$ ]] || continue
@@ -443,8 +473,8 @@ r3-L. 루프 (tmux)
     git add -- "${paths[@]}"
     python scripts/h7r_d4_records.py verify-staged "${expect[@]}"
     git commit -m "H7-R R3 LOOP: c$k $s exit $rc (records only)"
+    rm -f "$PIN"
     git push origin feat/h7-c1
-    if [ ! -f "$O" ]; then echo "__RECORDED__ $rc"; echo "STOP: c$k $s failed (exit $rc)"; exit "$rc"; fi
   done
 )
 ```

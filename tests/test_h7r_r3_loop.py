@@ -511,6 +511,80 @@ class LoopTest(LoopBase):
         with self.assertRaisesRegex(ValueError, 'the training-path gate did not pass'):
             r3.next_step(self.args(), self.root)
 
+    def test_partial_outputs_are_recovered_only_when_equal(self):
+        self.through_gate()
+        self.approve_loop('loop')
+        for name in r3.STEPS[:2]:
+            self.step(1, name)
+        rows, _ = self.step(1, 'rows', commit=False)
+        base_p = self.root / rows['s50_rows']['path']
+        # died after the S50 rows file: the rerun keeps it (equal) and writes the rest
+        (self.root / rows['s400_rows']['path']).unlink()
+        (self.root / r3.record_path(1, 'rows')).unlink()
+        self.assertTrue(r3.next_step(self.args(), self.root)['partial'])
+        again, _ = self.step(1, 'rows', commit=False)
+        self.assertEqual((again['files'], again['s400_rows']['sha256']),
+                         ({'policy_rows_s50.jsonl.gz': 'kept (equal to the recomputed rows)',
+                           'policy_rows_s400.jsonl.gz': 'written'}, rows['s400_rows']['sha256']))
+        # another S50 file: refused, nothing overwritten
+        (self.root / r3.record_path(1, 'rows')).unlink()
+        found, _ = st.read_rows_hashed(base_p)
+        st.write_rows(base_p, found[1:])
+        before = p1.file_sha256(base_p)
+        with self.assertRaisesRegex(ValueError, 'an earlier attempt left other rows'):
+            self.step(1, 'rows', commit=False)
+        self.assertEqual(p1.file_sha256(base_p), before)
+        st.write_rows(base_p, found)
+        self.step(1, 'rows')
+        # train: files of an attempt that died before its record are kept when the same run gives them again
+        rec, _ = self.step(1, 'train', commit=False)
+        (self.root / r3.record_path(1, 'train')).unlink()
+        (self.root / r3.model_dir(1) / 'logits.pt').unlink()
+        self.selected.clear()
+        self.trained.clear()
+        again, _ = self.step(1, 'train', commit=False)
+        self.assertEqual((again['recovered_files'], again['candidate']), (['best.json', 'best.pt'], rec['candidate']))
+        (self.root / r3.record_path(1, 'train')).unlink()
+        (self.root / r3.model_dir(1) / 'best.json').write_text('{}')
+        self.selected.clear()
+        self.trained.clear()
+        with self.assertRaisesRegex(ValueError, r"\['best.json'\] of an earlier attempt differ"):
+            self.step(1, 'train', commit=False)
+        self.assertEqual((self.root / r3.model_dir(1) / 'best.json').read_text(), '{}')
+
+    def test_an_arena_contract_without_its_record(self):
+        self.through_gate()
+        self.approve_loop('loop')
+        for name in r3.STEPS[:4]:
+            self.step(1, name)
+        rec, _ = self.step(1, 'arena-contract', commit=False)
+        (self.root / r3.record_path(1, 'arena-contract')).unlink()
+        again, _ = self.step(1, 'arena-contract', commit=False)
+        self.assertEqual((again['contract_file'], again['arena_contract_sha256']),
+                         ('kept (equal to the body the records give)', rec['arena_contract_sha256']))
+        (self.root / r3.record_path(1, 'arena-contract')).unlink()
+        path = self.root / r3.arena_contract_path(1)
+        body = json.loads(path.read_text())
+        path.write_text(json.dumps({**body, 'meaning': 'another'}, indent=1))
+        with self.assertRaisesRegex(ValueError, 'an earlier attempt wrote another contract'):
+            self.step(1, 'arena-contract', commit=False)
+
+    def test_training_needs_the_recorded_s400_source(self):
+        self.through_gate()
+        self.approve_loop('loop')
+        for name in r3.STEPS[:3]:
+            self.step(1, name)
+        path = self.root / r3.cdir(1) / 's400.jsonl'
+        lines = path.read_text().splitlines()
+        rec = json.loads(lines[0])
+        rec['rows'][0]['seconds'] += 1  # one field the targets do not read
+        path.write_text('\n'.join([json.dumps(rec, separators=(',', ':')), *lines[1:]]) + '\n')
+        with self.assertRaisesRegex(ValueError, 's400.jsonl: not the recorded S400 records'):
+            r3.verify(self.args(cycle=1, name='rows'), self.root)
+        with self.assertRaisesRegex(ValueError, 's400.jsonl: not the recorded S400 records'):
+            self.step(1, 'train')
+        self.assertEqual(self.trained, [])
+
     def test_prepare_refusals(self):
         with self.assertRaisesRegex(ValueError, 'the prepare stage is not approved'):
             r3.prepare(self.args(), self.root)
@@ -545,7 +619,7 @@ class FixedContractTest(unittest.TestCase):
         self.assertEqual({k: v for k, v in c.items() if k not in ('sources', 'approved')},
                          {k: v for k, v in r3.contract_body(ROOT).items() if k not in ('sources', 'approved')})
         self.assertEqual([s['path'] for s in c['sources']], list(r3.SOURCES))
-        self.assertEqual(eid, 'd464e0447642aacb83934c1a00b8a7958832a91f1d7aa807eac3f5a0d3b09fc3')
+        self.assertEqual(eid, '977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a')
 
 
 # --- the desktop blocks ----------------------------------------------------------------------------------------------
@@ -591,6 +665,7 @@ if cmd in ('prepare', 'gate'):
                                                   'log_name': log}))
     print(cmd, passed); sys.exit(0 if passed else 2)
 if cmd == 'next':
+    if not Path(D, 'loop-approved').exists(): stop('the loop stage is not approved')
     print(json.dumps(state())); sys.exit(0)
 k = int(arg('--cycle')); s = arg('--name')
 if cmd == 'files':
@@ -678,6 +753,23 @@ class BlockTest(unittest.TestCase):
     def subjects(self):
         return git(self.work, 'log', '--format=%s').splitlines()
 
+    def approve_remote(self):
+        """The loop approval reaches origin from another clone (the desktop has not pulled it yet)."""
+        other = Path(self.tmp.name) / 'other'
+        shutil.rmtree(other, ignore_errors=True)
+        git(Path(self.tmp.name), 'clone', '-q', '-b', 'feat/h7-c1', str(self.origin), str(other))
+        for k, v in (('user.email', 't@t'), ('user.name', 't')):
+            git(other, 'config', k, v)
+        (other / r3.D / 'loop-approved').write_text('yes')
+        git(other, 'add', '-A')
+        git(other, 'commit', '-qm', 'approve loop')
+        git(other, 'push', '-q', 'origin', 'feat/h7-c1')
+        self.assertFalse((self.work / r3.D / 'loop-approved').exists())
+
+    def pin(self):
+        path = self.work / r3.RUNS / 'attempt.HEAD'
+        return path.read_text().split() if path.exists() else None
+
     def through(self, *blocks, **env):
         for b in blocks:
             code, out = self.bash(b, **env)
@@ -706,9 +798,11 @@ class BlockTest(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn('the gate is not recorded', out)
         self.through('r3-P', 'r3-G')
-        code, out = self.bash('r3-L')
+        self.approve_remote()
+        code, out = self.bash('r3-L')  # the first run pulls the approval before it asks for the next step
         self.assertEqual(code, 0, out)
         self.assertIn('__DONE__ END_BUDGET (cycle 3, arena)', out)
+        self.assertIsNone(self.pin())
         want = [f'H7-R R3 LOOP: c{k} {s} exit 0 (records only)' for k in (1, 2, 3) for s in r3.STEPS]
         self.assertEqual(self.step_commits()[::-1], want)
         self.assertEqual(len([f for f in self.files(f'{r3.D}/stage-logs') if f.endswith('.log') and '/c' in f]), 18)
@@ -721,6 +815,7 @@ class BlockTest(unittest.TestCase):
 
     def test_a_decision_ends_the_loop(self):
         self.through('r3-P', 'r3-G')
+        self.approve_remote()
         code, out = self.bash('r3-L', R3_DECISION_1='STOP_REGRESSION')
         self.assertEqual(code, 0, out)
         self.assertIn('__DONE__ STOP_REGRESSION (cycle 1, arena)', out)
@@ -729,6 +824,7 @@ class BlockTest(unittest.TestCase):
 
     def test_s50_not_reproduced_is_recorded_and_ends(self):
         self.through('r3-P', 'r3-G')
+        self.approve_remote()
         code, out = self.bash('r3-L', R3_S50_FAIL='1')
         self.assertEqual(code, 0, out)
         self.assertIn('__DONE__ STOP_S50_NOT_REPRODUCED (cycle 1, search)', out)
@@ -736,6 +832,7 @@ class BlockTest(unittest.TestCase):
 
     def test_a_checkpoint_changed_before_staging_is_not_committed(self):
         self.through('r3-P', 'r3-G')
+        self.approve_remote()
         code, out = self.bash('r3-L', R3_TAMPER='1')
         self.assertEqual(code, 1, out)
         self.assertIn('c1 train: the record does not check against its files; nothing committed', out)
@@ -743,20 +840,52 @@ class BlockTest(unittest.TestCase):
         self.assertEqual(git(self.work, 'diff', '--cached', '--name-only'), '')
         self.assert_pushed()
 
-    def test_a_failed_step_commits_its_log_and_the_rerun_resumes(self):
+    def test_a_failed_step_commits_nothing_and_resumes_at_its_head(self):
         self.through('r3-P', 'r3-G')
+        self.approve_remote()
         code, out = self.bash('r3-L', R3_FAIL='c1-rows')
         self.assertEqual(code, 1, out)
-        self.assertIn('STOP: c1 rows failed (exit 1)', out)
-        self.assertEqual(self.step_commits()[0], 'H7-R R3 LOOP: c1 rows exit 1 (records only)')
-        self.assertFalse(self.files(r3.record_path(1, 'rows')))
+        self.assertIn('__FAILED__ 1', out)
+        self.assertEqual(self.step_commits()[0], 'H7-R R3 LOOP: c1 search exit 0 (records only)')  # nothing for rows
+        head = git(self.work, 'rev-parse', 'HEAD')
+        self.assertEqual(self.pin(), ['1', 'rows', head])
+        self.assertEqual(git(self.work, 'diff', '--cached', '--name-only'), '')
+        self.assertEqual(len(list((self.work / r3.RUNS / 'logs').glob('c1-rows-*.log'))), 1)
         code, out = self.bash('r3-L', R3_DECISION_1='END_STRONGER')
         self.assertEqual(code, 0, out)
+        self.assertIn('resuming c1 rows at ' + head, out)
         self.assertIn('__DONE__ END_STRONGER (cycle 1, arena)', out)
         self.assertEqual(self.step_commits()[3], 'H7-R R3 LOOP: c1 rows exit 0 (records only)')
+        rows_logs = [f for f in self.files(f'{r3.D}/stage-logs') if '/c1-rows-' in f and f.endswith('.log')]
+        self.assertEqual(len(rows_logs), 2)  # the failed attempt's log went with the record
+        self.assertEqual(git(self.work, 'show', '--name-only', '--format=', 'HEAD~3').count('c1-rows-'), 4)
+        self.assertIsNone(self.pin())
+
+    def test_a_moved_head_stops_the_resume(self):
+        self.through('r3-P', 'r3-G')
+        self.approve_remote()
+        self.assertEqual(self.bash('r3-L', R3_FAIL='c1-train')[0], 1)
+        (self.work / 'note.txt').write_text('a commit made while the step was in progress')
+        git(self.work, 'add', 'note.txt')
+        git(self.work, 'commit', '-qm', 'note')
+        code, out = self.bash('r3-L')
+        self.assertEqual(code, 1, out)
+        self.assertIn('STOP: HEAD moved since c1 train started', out)
+        self.assertFalse(self.files(r3.record_path(1, 'train')))
+
+    def test_a_pin_left_after_its_commit_is_cleared(self):
+        self.through('r3-P', 'r3-G')
+        self.approve_remote()
+        self.assertEqual(self.bash('r3-L', R3_DECISION_1='STOP_REGRESSION')[0], 0)
+        (self.work / r3.RUNS / 'attempt.HEAD').write_text('1 arena ' + '0' * 40 + chr(10))  # recorded already
+        code, out = self.bash('r3-L')
+        self.assertEqual(code, 0, out)
+        self.assertIn('__DONE__ STOP_REGRESSION', out)
+        self.assertIsNone(self.pin())
 
     def test_an_interrupted_step_is_recorded_without_a_new_run(self):
         self.through('r3-P', 'r3-G')
+        self.approve_remote()
         L = self.work / r3.RUNS / 'logs'
         L.mkdir(parents=True, exist_ok=True)
         name = 'c1-selfplay-AbC123xy.log'
