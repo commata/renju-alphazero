@@ -1,0 +1,35 @@
+{
+ "format": "h7r-budget-diag-prepare-v1",
+ "log_name": "prepare-nJb1DJ74.log",
+ "contract_id": "TB-V3-BUDGET-DIAG-1",
+ "experiment_sha256": "7b3016f0dc16340f94e8de14ce1f6fddceae063f749b7429f3a2cd01c343dce6",
+ "contract_file_sha256": "fe73492b6a0c2fe99fca3afe66c9215ceb4ff52f48db9da517d79ed80750b13b",
+ "git": {
+  "commit": "b3ed954e058b765793dc1561efe5cdd7fda9348d",
+  "dirty": false
+ },
+ "passed": true,
+ "models": {
+  "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+  "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+  "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+  "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+ },
+ "positions": [
+  "8401-p4-white/11",
+  "8401-p16-white/11",
+  "8411-p8-white/11",
+  "8411-p22-white/13",
+  "8412-p4-white/11"
+ ],
+ "confirm_tactical": {
+  "budget": {
+   "value": 0.8,
+   "n": "12/15"
+  },
+  "s50": {
+   "value": 1.0,
+   "n": "15/15"
+  }
+ }
+}
