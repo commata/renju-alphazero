@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "replay-mi4SLAzA.log",
+ "logs": [
+  {
+   "original": "runs/h7r/TB-V3-BUDGET-DIAG-1/logs/replay-mi4SLAzA.log",
+   "copy": "docs/h7r/budget/TB-V3-BUDGET-DIAG-1/stage-logs/replay-mi4SLAzA.log",
+   "bytes": 524,
+   "sha256": "aca58a9fa3491b00c5108354463d4d831853791c8715d93696019ed2655a5b97"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

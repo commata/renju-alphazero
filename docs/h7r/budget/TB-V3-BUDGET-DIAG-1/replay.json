@@ -1,0 +1,1387 @@
+{
+ "format": "h7r-budget-diag-replay-v1",
+ "log_name": "replay-mi4SLAzA.log",
+ "contract_id": "TB-V3-BUDGET-DIAG-1",
+ "experiment_sha256": "7b3016f0dc16340f94e8de14ce1f6fddceae063f749b7429f3a2cd01c343dce6",
+ "contract_file_sha256": "182beb618204aca188546fb7292a25ed61fc240cac4739e3aa136b34268f303a",
+ "git": {
+  "commit": "1ea803ff41fac0afdd9be3c9a09518fff6493467",
+  "dirty": false
+ },
+ "device": "cuda",
+ "jsonl": "runs/h7r/TB-V3-BUDGET-DIAG-1/replay.jsonl",
+ "jsonl_sha256": "ff118c93bb1fdb5b718c6904c0d5007320fd28d84e87b48ec3642899904e7a67",
+ "identity_sha256": "c63bd4c671787050afe212eb72c4ba52f6468e0d500e27fbcb5bd07f0b729267",
+ "outcomes": {
+  "1": {
+   "TREE_AVOIDED": 15
+  },
+  "8": {
+   "TREE_AVOIDED": 12,
+   "TRUTH_UNRESOLVED": 3
+  }
+ },
+ "expected": {
+  "1": {
+   "TREE_AVOIDED": 15
+  },
+  "8": {
+   "TREE_AVOIDED": 12,
+   "TRUTH_UNRESOLVED": 3
+  }
+ },
+ "judgement": "AGGREGATE_REPRODUCED",
+ "note": "an aggregate judgement only: the original runs kept no per-run record",
+ "runs": [
+  {
+   "position": "8401-p4-white/11",
+   "factor": 1,
+   "seed": 566537556,
+   "route": "tree",
+   "simulation_mode": "tactical",
+   "selected_simulations": 100,
+   "root_tactical_score": 2368,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p4-white/11",
+   "factor": 1,
+   "seed": 765351560,
+   "route": "tree",
+   "simulation_mode": "tactical",
+   "selected_simulations": 100,
+   "root_tactical_score": 2368,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p4-white/11",
+   "factor": 1,
+   "seed": 208500933,
+   "route": "tree",
+   "simulation_mode": "tactical",
+   "selected_simulations": 100,
+   "root_tactical_score": 2368,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p16-white/11",
+   "factor": 1,
+   "seed": 1475659799,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 976,
+   "pre": [
+    9,
+    7
+   ],
+   "played": [
+    9,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p16-white/11",
+   "factor": 1,
+   "seed": 1168034525,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 976,
+   "pre": [
+    9,
+    7
+   ],
+   "played": [
+    9,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p16-white/11",
+   "factor": 1,
+   "seed": 1280172362,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 976,
+   "pre": [
+    9,
+    7
+   ],
+   "played": [
+    9,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p8-white/11",
+   "factor": 1,
+   "seed": 1379659660,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1540,
+   "pre": [
+    8,
+    8
+   ],
+   "played": [
+    8,
+    8
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 295433,
+     "vcf_calls": 39984,
+     "vcf_cut_calls": 2,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 295433,
+     "vcf_calls": 39984,
+     "vcf_cut_calls": 2,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p8-white/11",
+   "factor": 1,
+   "seed": 1166999880,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1540,
+   "pre": [
+    8,
+    8
+   ],
+   "played": [
+    8,
+    8
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 295433,
+     "vcf_calls": 39984,
+     "vcf_cut_calls": 2,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 295433,
+     "vcf_calls": 39984,
+     "vcf_cut_calls": 2,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p8-white/11",
+   "factor": 1,
+   "seed": 1111490531,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1540,
+   "pre": [
+    8,
+    8
+   ],
+   "played": [
+    8,
+    8
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 295433,
+     "vcf_calls": 39984,
+     "vcf_cut_calls": 2,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 295433,
+     "vcf_calls": 39984,
+     "vcf_cut_calls": 2,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p22-white/13",
+   "factor": 1,
+   "seed": 1283725259,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1676,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p22-white/13",
+   "factor": 1,
+   "seed": 1639990810,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1676,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p22-white/13",
+   "factor": 1,
+   "seed": 331333967,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1676,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8412-p4-white/11",
+   "factor": 1,
+   "seed": 211031864,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1028,
+   "pre": [
+    8,
+    7
+   ],
+   "played": [
+    8,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8412-p4-white/11",
+   "factor": 1,
+   "seed": 1847446979,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1028,
+   "pre": [
+    8,
+    7
+   ],
+   "played": [
+    8,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8412-p4-white/11",
+   "factor": 1,
+   "seed": 435799944,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 50,
+   "root_tactical_score": 1028,
+   "pre": [
+    8,
+    7
+   ],
+   "played": [
+    8,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p4-white/11",
+   "factor": 8,
+   "seed": 566537556,
+   "route": "tree",
+   "simulation_mode": "tactical",
+   "selected_simulations": 800,
+   "root_tactical_score": 2368,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p4-white/11",
+   "factor": 8,
+   "seed": 765351560,
+   "route": "tree",
+   "simulation_mode": "tactical",
+   "selected_simulations": 800,
+   "root_tactical_score": 2368,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p4-white/11",
+   "factor": 8,
+   "seed": 208500933,
+   "route": "tree",
+   "simulation_mode": "tactical",
+   "selected_simulations": 800,
+   "root_tactical_score": 2368,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 33699,
+     "vcf_calls": 24671,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p16-white/11",
+   "factor": 8,
+   "seed": 1475659799,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 976,
+   "pre": [
+    9,
+    7
+   ],
+   "played": [
+    9,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p16-white/11",
+   "factor": 8,
+   "seed": 1168034525,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 976,
+   "pre": [
+    9,
+    7
+   ],
+   "played": [
+    9,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8401-p16-white/11",
+   "factor": 8,
+   "seed": 1280172362,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 976,
+   "pre": [
+    9,
+    7
+   ],
+   "played": [
+    9,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 81389,
+     "vcf_calls": 28360,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p8-white/11",
+   "factor": 8,
+   "seed": 1379659660,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1540,
+   "pre": [
+    8,
+    9
+   ],
+   "played": [
+    8,
+    9
+   ],
+   "switched": false,
+   "outcome": "TRUTH_UNRESOLVED",
+   "labels": {
+    "pre": "UNKNOWN",
+    "played": "UNKNOWN"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "UNKNOWN",
+     "lost_depth": null,
+     "nodes_used": 10000000,
+     "vcf_calls": 95361,
+     "vcf_cut_calls": 14,
+     "budget_exhausted": true
+    },
+    "played": {
+     "status": "UNKNOWN",
+     "lost_depth": null,
+     "nodes_used": 10000000,
+     "vcf_calls": 95361,
+     "vcf_cut_calls": 14,
+     "budget_exhausted": true
+    }
+   }
+  },
+  {
+   "position": "8411-p8-white/11",
+   "factor": 8,
+   "seed": 1166999880,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1540,
+   "pre": [
+    8,
+    9
+   ],
+   "played": [
+    8,
+    9
+   ],
+   "switched": false,
+   "outcome": "TRUTH_UNRESOLVED",
+   "labels": {
+    "pre": "UNKNOWN",
+    "played": "UNKNOWN"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "UNKNOWN",
+     "lost_depth": null,
+     "nodes_used": 10000000,
+     "vcf_calls": 95361,
+     "vcf_cut_calls": 14,
+     "budget_exhausted": true
+    },
+    "played": {
+     "status": "UNKNOWN",
+     "lost_depth": null,
+     "nodes_used": 10000000,
+     "vcf_calls": 95361,
+     "vcf_cut_calls": 14,
+     "budget_exhausted": true
+    }
+   }
+  },
+  {
+   "position": "8411-p8-white/11",
+   "factor": 8,
+   "seed": 1111490531,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1540,
+   "pre": [
+    8,
+    9
+   ],
+   "played": [
+    8,
+    9
+   ],
+   "switched": false,
+   "outcome": "TRUTH_UNRESOLVED",
+   "labels": {
+    "pre": "UNKNOWN",
+    "played": "UNKNOWN"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "UNKNOWN",
+     "lost_depth": null,
+     "nodes_used": 10000000,
+     "vcf_calls": 95361,
+     "vcf_cut_calls": 14,
+     "budget_exhausted": true
+    },
+    "played": {
+     "status": "UNKNOWN",
+     "lost_depth": null,
+     "nodes_used": 10000000,
+     "vcf_calls": 95361,
+     "vcf_cut_calls": 14,
+     "budget_exhausted": true
+    }
+   }
+  },
+  {
+   "position": "8411-p22-white/13",
+   "factor": 8,
+   "seed": 1283725259,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1676,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p22-white/13",
+   "factor": 8,
+   "seed": 1639990810,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1676,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8411-p22-white/13",
+   "factor": 8,
+   "seed": 331333967,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1676,
+   "pre": [
+    7,
+    6
+   ],
+   "played": [
+    7,
+    6
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 640522,
+     "vcf_calls": 34351,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8412-p4-white/11",
+   "factor": 8,
+   "seed": 211031864,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1028,
+   "pre": [
+    8,
+    7
+   ],
+   "played": [
+    8,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8412-p4-white/11",
+   "factor": 8,
+   "seed": 1847446979,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1028,
+   "pre": [
+    8,
+    7
+   ],
+   "played": [
+    8,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  },
+  {
+   "position": "8412-p4-white/11",
+   "factor": 8,
+   "seed": 435799944,
+   "route": "tree",
+   "simulation_mode": "normal",
+   "selected_simulations": 400,
+   "root_tactical_score": 1028,
+   "pre": [
+    8,
+    7
+   ],
+   "played": [
+    8,
+    7
+   ],
+   "switched": false,
+   "outcome": "TREE_AVOIDED",
+   "labels": {
+    "pre": "VCT2_CLEAR",
+    "played": "VCT2_CLEAR"
+   },
+   "label_source": {
+    "pre": "manifest",
+    "played": "manifest"
+   },
+   "b0_recheck": {
+    "pre": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    },
+    "played": {
+     "status": "VCT2_CLEAR",
+     "lost_depth": null,
+     "nodes_used": 67056,
+     "vcf_calls": 32114,
+     "vcf_cut_calls": 0,
+     "budget_exhausted": false
+    }
+   }
+  }
+ ]
+}

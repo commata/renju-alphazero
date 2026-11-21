@@ -1,0 +1,17 @@
+[budget-diag-replay] 0/10 positions  0.0%  1.0 min  ETA nan min  0/10 positions, 10 pending
+[budget-diag-replay] 0/10 positions  0.0%  2.0 min  ETA nan min  0/10 positions, 10 pending
+[budget-diag-replay] 6/10 positions  60.0%  3.5 min  ETA 2 min  6/10 positions, 4 pending
+[budget-diag-replay] 10/10 positions  100.0%  4.6 min  ETA 0 min  10/10 positions
+{
+ "outcomes": {
+  "1": {
+   "TREE_AVOIDED": 15
+  },
+  "8": {
+   "TREE_AVOIDED": 12,
+   "TRUTH_UNRESOLVED": 3
+  }
+ },
+ "judgement": "AGGREGATE_REPRODUCED"
+}
+__EXIT__ 0
