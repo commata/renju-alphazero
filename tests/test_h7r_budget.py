@@ -85,6 +85,19 @@ class RuleTest(unittest.TestCase):
         self.assertIsNone(b.select({8: self.t(6, 6), 4: self.t(6, 6), 2: self.t(6, 6)}))  # END_NO_BUDGET
         self.assertIsNone(b.select({8: self.t(6, 6)}))  # never a factor that was not measured
 
+    def test_the_cap_uses_the_unrounded_ratios(self):
+        def games(tested, s50):
+            return [{'move_times': [{'side': 'tested', 'seconds': tested}, {'side': 'opponent', 'seconds': s50}]}]
+        at = b.times_of(games(5.5, 1.0))
+        over = b.times_of(games(5.50004, 1.0))
+        self.assertEqual((at['ratio'], over['ratio']), ({'mean': 5.5, 'p95': 5.5}, {'mean': 5.5, 'p95': 5.5}))
+        self.assertTrue(b.within_cap(at))
+        self.assertFalse(b.within_cap(over))  # shown as 5.5, over the cap
+        self.assertEqual(b.select({8: over, 4: at}), 4)
+        self.assertEqual(b.select({8: at}), 8)
+        json_round = json.loads(json.dumps(over))  # what the record keeps decides the same way
+        self.assertFalse(b.within_cap(json_round))
+
     def test_percentile_and_ratios(self):
         self.assertEqual(b.percentile([float(i) for i in range(1, 101)], 0.95), 95.0)
         self.assertEqual(b.percentile([1.0, 2.0], 0.95), 2.0)
@@ -274,7 +287,7 @@ class StageTest(StageBase):
         self.assertEqual(len(self.played), 2 * b.PAIRS)
         self.assertEqual((rec['pairs'], rec['reading'], rec['verdict'], rec['failed']), (300, 'STRONGER', 'PASS', []))
         self.assertEqual(rec['tactical']['gate']['verdict'], 'PASS')
-        self.assertEqual(set(rec['times']), {'tested', 'opponent_s50', 'ratio'})
+        self.assertEqual(set(rec['times']), {'tested', 'opponent_s50', 'ratio', 'ratio_exact', 'note'})
         self.assertGreater(rec['times']['tested']['mean_seconds'], rec['times']['opponent_s50']['mean_seconds'])
 
     def test_s400_over_the_cap_selects_s200(self):
@@ -318,6 +331,77 @@ class StageTest(StageBase):
         with self.assertRaisesRegex(ValueError, 'not the one the timing record fixed'):
             b.confirm_openings(self.c, t, self.root)
 
+    def test_confirm_plays_only_the_recomputed_selection(self):
+        self.through_timing()
+        self.approve('confirm')
+        path = self.root / self.c['output']['timing']
+        good = path.read_text()
+        for change in (lambda t: t.update(selected_factor=2),  # the review's case: only selected_factor changed
+                       lambda t: t.update(selected_factor=2, selected='S100'),
+                       lambda t: t['confirmation'].update(factor=2)):
+            with self.subTest(change):
+                t = json.loads(good)
+                change(t)
+                path.write_text(json.dumps(t))
+                self.commit(self.c['output']['timing'])
+                self.played.clear()
+                with self.assertRaisesRegex(ValueError, 'the timing record is not what its games give|more than one '
+                                                        'budget'):
+                    self.run_stage('confirm', commit=False)
+                self.assertEqual(self.played, [])  # refused before any confirmation game
+        path.write_text(good)
+        self.commit(self.c['output']['timing'])
+        rec = self.run_stage('confirm', commit=False)
+        self.assertEqual((rec['factor'], rec['device']), (8, 'cuda'))
+        rec2 = json.loads((self.root / self.c['output']['confirm']).read_text())
+        rec2['factor'] = 4
+        (self.root / self.c['output']['confirm']).write_text(json.dumps(rec2))
+        with self.assertRaisesRegex(ValueError, 'another timing record, budget or device'):
+            b.verify(argparse.Namespace(contract=None, stage='confirm'), self.root)
+
+    def test_only_the_contract_device(self):
+        self.approve('prepare', 'timing')
+        self.run_stage('prepare')
+        args = self.args()
+        args.device = 'cpu'
+        with mock.patch.object(b, 'play_game', side_effect=AssertionError('played')):
+            with self.assertRaisesRegex(ValueError, "--device 'cpu': TB-V3-BUDGET-1 timing runs on 'cuda' only"):
+                b.timing(args, self.root, log=QUIET)
+
+    def test_a_prepare_record_without_its_grounds_is_refused(self):
+        self.approve('prepare')
+        rec = self.run_stage('prepare', commit=False)
+        self.assertTrue(rec['passed'])
+        path = self.root / self.c['output']['prepare']
+        full = json.loads(path.read_text())
+        for drop in ({'passed', 'models', 'confirmation_sample', 'git', 'format', 'contract_file_sha256'},
+                     {'passed'}, {'confirmation_sample'}):
+            with self.subTest(drop):
+                path.write_text(json.dumps({k: v for k, v in full.items() if k not in drop}))
+                with self.assertRaises(ValueError):
+                    b.verify(argparse.Namespace(contract=None, stage='prepare'), self.root)
+        path.write_text(json.dumps({**full, 'git': {**full['git'], 'commit': '0' * 40}}))
+        with self.assertRaisesRegex(ValueError, 'has no contract'):
+            b.verify(argparse.Namespace(contract=None, stage='prepare'), self.root)
+        path.write_text(json.dumps(full))
+        self.assertEqual(b.verify(argparse.Namespace(contract=None, stage='prepare'), self.root)['exit_code'], 0)
+
+    def test_the_block_pin_of_this_commit_is_no_leftover(self):
+        self.approve('prepare')
+        pin = self.root / b.pin_path('prepare')
+        pin.parent.mkdir(parents=True, exist_ok=True)
+        pin.write_text('0' * 40 + chr(10))  # another commit's pin
+        with self.assertRaisesRegex(ValueError, 'holds files of another attempt'):
+            b.prepare(self.args(), self.root)
+        pin.write_text(git(self.root, 'rev-parse', 'HEAD') + chr(10))  # what b-P writes before prepare
+        (self.root / b.RUNS / 'logs').mkdir(exist_ok=True)
+        (self.root / b.RUNS / 'logs' / 'prepare.lock').write_text('')
+        self.assertTrue(b.prepare(self.args(), self.root)['passed'])
+        (self.root / self.c['output']['prepare']).unlink()
+        (self.root / b.RUNS / 'stray.jsonl').write_text('{}')
+        with self.assertRaisesRegex(ValueError, r"holds files of another attempt: \['runs/h7r/TB-V3-BUDGET-1/stray"):
+            b.prepare(self.args(), self.root)
+
     def test_verify_recomputes_the_records(self):
         self.through_timing()
         jsonl = self.root / b.RUNS / 'timing-S400.jsonl'
@@ -357,10 +441,73 @@ class FixedContractTest(unittest.TestCase):
         self.assertEqual({k: v for k, v in c.items() if k not in ('sources', 'approved')},
                          {k: v for k, v in b.contract_body(ROOT).items() if k not in ('sources', 'approved')})
         self.assertEqual([s['path'] for s in c['sources']], list(b.SOURCES))
-        self.assertEqual(eid, 'd18016933e9816d03982090dfa6cfc7d167089e815815105af043e5cb7df948d')
+        self.assertEqual(eid, '5a25248ed4bbce6faf9ead611147c4dbd0b5b5cd35a2a489bbf219011f84cb60')
 
 
 # --- the desktop blocks ----------------------------------------------------------------------------------------------
+
+SITE = '''import json, os
+_models = os.environ.get('B_TEST_MODELS')
+if _models:  # the stand-in model files of the test repository stand for the canonical pair
+    from analysis import tb_v3
+    tb_v3.MODELS.update(json.loads(_models))
+'''
+
+
+class RealPrepareBlockTest(unittest.TestCase):
+    """The draft's b-P block with the real tool (``scripts/h7r_budget.py`` prepare and verify), the real record tool
+    and git: the block's own pin must not stop ``prepare``. Only the frozen checker is a stand-in, and the canonical
+    model SHA-256 are those of stand-in files (``sitecustomize``)."""
+
+    def test_b_p_records_a_verified_prepare(self):
+        import os
+        import re
+        from analysis import tb_v3_net
+
+        tmp = TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        base = Path(tmp.name)
+        origin, w = base / 'origin.git', base / 'work'
+        git(base, 'init', '-q', '--bare', str(origin))
+        git(base, 'init', '-q', '-b', 'feat/h7-c1', str(w))
+        for k, v in (('user.email', 't@t'), ('user.name', 't')):
+            git(w, 'config', k, v)
+        shutil.copy(ROOT / '.gitignore', w / '.gitignore')
+        ignore = shutil.ignore_patterns('__pycache__', '*.pyc')
+        for rel in ('src', 'scripts', 'docs/h7r/suites', 'docs/h7r/contracts', 'docs/h7r/contracts-v2',
+                    'docs/mcts-v8-results/e1'):
+            shutil.copytree(ROOT / rel, w / rel, ignore=ignore)
+        (w / 'src/sitecustomize.py').write_text(SITE)
+        (w / 'scripts/check_track_b_frozen.py').write_text('print("frozen PASS")' + chr(10))
+        stand_in(w, b.MODELS['policy'], 'H3 policy', 'policy')
+        stand_in(w, b.MODELS['value'], 'H6 v3 value', 'value')
+        ident = tb_v3_net.model_identity(w / b.MODELS['policy'], w / b.MODELS['value'])
+        with mock.patch.dict('analysis.tb_v3.MODELS', ident):
+            c = b.contract_body(w)
+        c['approved']['prepare'] = True
+        (w / b.D).mkdir(parents=True)
+        (w / b.CONTRACT).write_text(json.dumps(c, indent=1) + chr(10))
+        (w / '.venv/bin').mkdir(parents=True)
+        (w / '.venv/bin/activate').write_text('')
+        git(w, 'add', '-A')
+        git(w, 'commit', '-qm', 'the tool and the approved contract')
+        git(w, 'remote', 'add', 'origin', str(origin))
+        git(w, 'push', '-q', 'origin', 'feat/h7-c1')
+        doc = (ROOT / 'docs/h7r/budget/TB-V3-BUDGET-1-draft.md').read_text()
+        block = re.findall(r'```bash' + chr(10) + r'(.*?)```', doc, re.S)[0].replace('~/renju-h6', w.as_posix())
+        env = {k: v for k, v in os.environ.items() if k not in ('CUBLAS_WORKSPACE_CONFIG', 'PYTHONPATH')}
+        r = subprocess.run(['bash', '-c', block], cwd=w, capture_output=True, text=True, start_new_session=True,
+                           env={**env, 'PYTHONDONTWRITEBYTECODE': '1', 'B_TEST_MODELS': json.dumps(ident)})
+        out = r.stdout + r.stderr
+        self.assertEqual(r.returncode, 0, out)
+        self.assertIn('__RECORDED__ 0', out)
+        rec = json.loads((w / b.D / 'prepare.json').read_text())
+        self.assertEqual((rec['passed'], rec['models']), (True, ident))
+        self.assertEqual(len(rec['confirmation_sample']['opening_ids']), 300)
+        self.assertEqual(git(w, 'log', '-1', '--format=%s'), 'H7-R BUDGET: prepare exit 0 (records only)')
+        self.assertFalse((w / b.pin_path('prepare')).exists())
+        self.assertEqual(git(w, 'rev-parse', 'HEAD'), git(origin, 'rev-parse', 'feat/h7-c1'))
+
 
 B_STUB = r'''import json, os, sys
 from pathlib import Path

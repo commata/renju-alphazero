@@ -128,7 +128,7 @@
  "sources": [
   {
    "path": "scripts/h7r_budget.py",
-   "sha256": "6f76fbe0f3c6e71d451521324fc0400c7f11c9f0ec0cb8a3b108abd6e30226a4"
+   "sha256": "f644f15504661fe0eb13fea0a93ba7b3e74ede0287d64358b93ac839359ae696"
   },
   {
    "path": "scripts/h7c_budget.py",

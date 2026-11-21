@@ -120,7 +120,7 @@
 
 ## 10. 구현 (2026-11-21, 미승인)
 
-- 계약 `docs/h7r/budget/TB-V3-BUDGET-1/budget-contract.json`(fixed, 모든 승인 false, 실험 SHA `d18016933e98`). 모델 SHA, 세 suite의 파일 SHA, 예산 순서, 상한, 표본 크기, seed, 통계, 전술 gate, 판독표, 도구와 재사용 파일 8개(sources)를 고정한다.
+- 계약 `docs/h7r/budget/TB-V3-BUDGET-1/budget-contract.json`(fixed, 모든 승인 false, 실험 SHA `5a25248ed4bb`). 모델 SHA, 세 suite의 파일 SHA, 예산 순서, 상한, 표본 크기, seed, 통계, 전술 gate, 판독표, 도구와 재사용 파일 8개(sources)를 고정한다.
 - 도구 `scripts/h7r_budget.py`(기존 v2 검사기와 확인 계약 규칙은 쓰지 않는 이 계약 전용 검사. 대국 작업 생성·쌍 집계·bootstrap·E1 요약·예산 agent는 재사용)
 
 | 명령 | 단계 | 하는 일 |
@@ -128,7 +128,14 @@
 | `prepare` | prepare | 모델 파일 = canonical(`tb_v3.MODELS`), suite 파일 SHA·커밋·`check_suite`, 확인 표본 계산(opening ID, 동치류 수, anchor·개발 suite와 겹치는 동치류), seed 미사용, 빈 runs 폴더 |
 | `timing` | timing | S400 → S200 → S100 순서로 O1-dev-c 20쌍(seed 9112 / 9113 / 9114), 양쪽 모든 착수 시간, §4 선택. 기록이 선택한 예산과 확인 표본(opening ID 300개, seed, 모델 SHA)을 첫 확인 대국 전에 고정한다. 점수는 판독하지 않는다 |
 | `confirm` | confirm | 고정된 표본만(다시 계산한 `pick`이 기록과 같아야 시작), 고른 예산 대 S50 300쌍(이어하기는 같은 서명·같은 표본만), E1을 예산 agent와 S50 agent로, §6 판독 |
-| `verify --stage S` | — | 단계 기록을 대국 파일·E1 결과로 다시 계산해 대조(스테이징 전) |
+| `verify --stage S` | — | 단계 기록의 근거를 대조한다(스테이징 전). 모든 단계는 실험 SHA, clean 실행 commit, 그 commit의 계약 파일 SHA와 그 단계 승인. prepare는 `passed`, 모델 식별값, 다시 계산한 확인 표본. timing·confirm은 대국 파일·E1 결과로 다시 계산 |
+
+- 2026-11-21 검토 반영(`fdb60cb` 뒤)
+  - b-P가 먼저 쓰는 `prepare.HEAD`가 현재 HEAD를 가리키면 잔여 파일로 보지 않는다. 다른 commit의 pin이나 다른 파일은 그대로 거부한다.
+  - confirm은 첫 대국 전에 timing 원본으로 선택을 다시 계산하고, `selected_factor`·`selected`·`confirmation.factor`가 같은 예산이어야 시작한다. `verify confirm`도 대국 배수, timing 기록 SHA, 장치를 대조한다.
+  - timing·confirm은 계약 장치(`cuda`)만 받고, 기록에 장치를 적는다.
+  - 상한은 반올림 전 비율(`ratio_exact`)로 판정한다. 5.5는 통과, 5.50004는 탈락이다. 표시값만 반올림한다.
+  - 문서의 b-P를 실제 도구로 실행하는 테스트를 추가했다(대역은 frozen checker와 모델 파일뿐).
 
 - 테스트 `tests/test_h7r_budget.py`
   - 선택 규칙: 순서, 경계값 5.5, p95만 넘는 경우, 모두 실패.

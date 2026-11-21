@@ -209,6 +209,13 @@ def load_suite(root, ref: dict) -> dict:
     return body
 
 
+def check_device(c: dict, stage: str, device: str) -> str:
+    """The device the contract fixes for the stage (desktop CUDA): times measured elsewhere never select a budget."""
+    want = c[stage]['device']
+    require(device == want, f'--device {device!r}: {CONTRACT_ID} {stage} runs on {want!r} only')
+    return device
+
+
 def no_cublas() -> None:
     import os
     require(os.environ.get('CUBLAS_WORKSPACE_CONFIG') is None, 'CUBLAS_WORKSPACE_CONFIG is set: the engine games keep '
@@ -255,6 +262,28 @@ def confirmation_sample(c: dict, root) -> dict:
             'note': 'later confirmations that claim independence leave the shared anchor classes out'}
 
 
+def pin_path(stage: str) -> str:
+    return f'{RUNS}/{stage}.HEAD'  # the desktop block's record of the commit a stage started on
+
+
+def leftovers(root, head: str) -> list[str]:
+    """Files under runs/ that an earlier attempt left: everything but the logs and a stage pin of the block that names
+    this very commit (``b-P`` writes ``prepare.HEAD`` before it runs ``prepare``)."""
+    root = Path(root)
+    if not (root / RUNS).exists():
+        return []
+    pins = {pin_path(s) for s in STAGES}
+    out = []
+    for p in sorted((root / RUNS).rglob('*')):
+        rel = p.relative_to(root).as_posix()
+        if not p.is_file() or 'logs' in p.relative_to(root / RUNS).parts:
+            continue
+        if rel in pins and p.read_text(encoding='utf-8').strip() == head:
+            continue
+        out.append(rel)
+    return out
+
+
 def prepare(args, root=ROOT) -> dict:
     root = Path(root)
     c, sha, eid = load_contract(args.contract, root, 'prepare')
@@ -268,8 +297,7 @@ def prepare(args, root=ROOT) -> dict:
     sample = confirmation_sample(c, root)
     hits = used_seeds(root)
     require(not hits, f'the contract seeds are already used: {hits}')
-    left = [p.relative_to(root).as_posix() for p in (root / RUNS).rglob('*') if p.is_file() and 'logs' not in p.parts] \
-        if (root / RUNS).exists() else []
+    left = leftovers(root, guard.start['git']['commit'])
     require(not left, f'{RUNS} holds files of another attempt: {left[:5]}')
     record = {'format': 'h7r-budget-prepare-v1', **log_field(args, 'prepare'), **stamp(sha, eid, guard.check()),
               'passed': True, 'models': models, 'confirmation_sample': sample, 'seeds_unused': True}
@@ -418,13 +446,17 @@ def times_of(games: list[dict]) -> dict:
     mean_t, mean_o = sum(tested) / len(tested), sum(opponent) / len(opponent)
     p95_t, p95_o = percentile(tested, 0.95), percentile(opponent, 0.95)
     require(mean_o > 0 and p95_o > 0, 'the S50 moves took no time')
+    exact = {'mean': mean_t / mean_o, 'p95': p95_t / p95_o}
     return {'tested': {'moves': len(tested), 'mean_seconds': round(mean_t, 4), 'p95_seconds': round(p95_t, 4)},
             'opponent_s50': {'moves': len(opponent), 'mean_seconds': round(mean_o, 4), 'p95_seconds': round(p95_o, 4)},
-            'ratio': {'mean': round(mean_t / mean_o, 4), 'p95': round(p95_t / p95_o, 4)}}
+            'ratio': {k: round(v, 4) for k, v in exact.items()}, 'ratio_exact': exact,
+            'note': 'the cap is applied to ratio_exact (unrounded); ratio and the seconds are rounded for display'}
 
 
 def within_cap(t: dict) -> bool:
-    return t['ratio']['mean'] <= CAP and t['ratio']['p95'] <= CAP
+    """Both unrounded ratios at most the cap (a ratio of 5.50004 is over 5.5)."""
+    exact = t.get('ratio_exact', t['ratio'])
+    return exact['mean'] <= CAP and exact['p95'] <= CAP
 
 
 def select(measured: dict) -> int | None:
@@ -451,6 +483,7 @@ def timing(args, root=ROOT, log=print) -> dict:
     guard = Guard(root, contract_path(args.contract, root), c, [MODELS['policy'], MODELS['value'],
                                                                 c['timing']['suite']['path'], c['output']['prepare']])
     check_models(c, root)
+    device = check_device(c, 'timing', args.device)
     suite = load_suite(root, c['timing']['suite'])
     measured, files = {}, {}
     for f in FACTORS:
@@ -458,7 +491,7 @@ def timing(args, root=ROOT, log=print) -> dict:
         openings = op.pick(suite, TIMING_PAIRS, seed)
         jsonl = root / RUNS / f'timing-S{50 * f}.jsonl'
         games, ident = play_games(c, eid, root, 'timing', f, c['timing']['suite'], openings, seed, jsonl,
-                                  args.device, log, getattr(args, 'threads_for_tests', False))
+                                  device, log, getattr(args, 'threads_for_tests', False))
         measured[f] = times_of(games)
         files[str(f)] = {'jsonl': jsonl.relative_to(root).as_posix(), 'sha256': file_sha256(jsonl),
                          'identity_sha256': digest(ident), 'games': len(games)}
@@ -470,7 +503,7 @@ def timing(args, root=ROOT, log=print) -> dict:
     require(sample == prep['confirmation_sample'], 'the confirmation sample is not the one prepare recorded')
     record = {'format': 'h7r-budget-timing-v1', **log_field(args, 'timing'), **stamp(sha, eid, guard.check()),
               'measured': {f'S{50 * f}': {**m, 'factor': f, 'within_cap': within_cap(m)} for f, m in measured.items()},
-              'files': files, 'cap': CAP, 'selected_factor': chosen,
+              'files': files, 'cap': CAP, 'device': device, 'selected_factor': chosen,
               'selected': None if chosen is None else f'S{50 * chosen}',
               'decision': 'SELECTED' if chosen is not None else 'END_NO_BUDGET',
               'confirmation': None if chosen is None else {
@@ -609,6 +642,19 @@ def judge_of(c: dict, games: list[dict], openings: list[dict], tactical: dict) -
             'verdict': 'PASS' if all(items.values()) else 'END', 'failed': [k for k, v in items.items() if not v]}
 
 
+def selected_factor(c: dict, eid: str, trec: dict, root) -> int:
+    """The budget to confirm: the timing record recomputed from its games (``timing_again``), and its selected
+    factor, its name and the factor of the fixed confirmation sample all that one budget."""
+    timing_again(c, eid, trec, root)
+    f = trec['selected_factor']
+    fixed = trec.get('confirmation') or {}
+    require(f in FACTORS and trec['selected'] == f'S{50 * f}' and fixed.get('factor') == f
+            and trec['device'] == c['timing']['device'],
+            f"the timing record names more than one budget or device: selected_factor {f}, selected "
+            f"{trec.get('selected')}, confirmation.factor {fixed.get('factor')}, device {trec.get('device')}")
+    return f
+
+
 def confirm_openings(c: dict, trec: dict, root) -> list[dict]:
     """Exactly the sample the timing record fixed (and ``pick`` gives it again)."""
     from hybrid import h7r_openings as op
@@ -650,19 +696,19 @@ def confirm(args, root=ROOT, log=print) -> dict:
     guard = Guard(root, contract_path(args.contract, root), c, [MODELS['policy'], MODELS['value'],
                                                                 c['confirm']['suite']['path'], c['output']['timing']])
     check_models(c, root)
-    factor = trec['selected_factor']
+    device = check_device(c, 'confirm', args.device)
+    factor = selected_factor(c, eid, trec, root)
     openings = confirm_openings(c, trec, root)
     jsonl = root / RUNS / 'confirm.jsonl'
     threads = getattr(args, 'threads_for_tests', False)
     games, ident = play_games(c, eid, root, 'confirm', factor, c['confirm']['suite'], openings, CONFIRM_SEED, jsonl,
-                              args.device, log, threads)
-    e1 = {'budget': e1_cached(factor, root, args.device, log, threads), 's50': e1_cached(1, root, args.device, log,
-                                                                                         threads)}
+                              device, log, threads)
+    e1 = {'budget': e1_cached(factor, root, device, log, threads), 's50': e1_cached(1, root, device, log, threads)}
     tactical = {'budget': e1['budget']['metrics'], 's50': e1['s50']['metrics'],
                 'gate': tactical_gate(e1['budget'], e1['s50'])}
     body = judge_of(c, games, openings, tactical)
     record = {'format': 'h7r-budget-confirm-v1', **log_field(args, 'confirm'), **stamp(sha, eid, guard.check()),
-              'selected': trec['selected'], 'factor': factor,
+              'selected': trec['selected'], 'factor': factor, 'device': device,
               'timing_record_sha256': file_sha256(root / c['output']['timing']),
               'games': {'jsonl': jsonl.relative_to(root).as_posix(), 'sha256': file_sha256(jsonl),
                         'identity_sha256': digest(ident), 'games': len(games)},
@@ -681,6 +727,10 @@ def confirm_again(c: dict, eid: str, rec: dict, root) -> dict:
 
     root = Path(root)
     trec = committed_record(root, c['output']['timing'], 'timing record', eid)
+    require(rec['timing_record_sha256'] == file_sha256(root / c['output']['timing'])
+            and rec['factor'] == selected_factor(c, eid, trec, root) and rec['selected'] == trec['selected']
+            and rec['device'] == c['confirm']['device'],
+            'the confirmation record names another timing record, budget or device than the committed selection')
     openings = confirm_openings(c, trec, root)
     path = root / rec['games']['jsonl']
     require(file_sha256(path) == rec['games']['sha256'], 'the confirmation games changed')
@@ -707,17 +757,42 @@ def confirm_again(c: dict, eid: str, rec: dict, root) -> dict:
 
 # --- verify / main ------------------------------------------------------------------------------------------------
 
+def check_stamp(c: dict, eid: str, rec: dict, stage: str, root) -> None:
+    """A stage record names this experiment and a clean commit whose contract file is the one it records, with the
+    stage approved there."""
+    rel = c['output'][stage]
+    git = rec.get('git') or {}
+    require(rec.get('format') == f'h7r-budget-{stage}-v1' and rec.get('contract_id') == CONTRACT_ID
+            and rec.get('experiment_sha256') == eid and git.get('dirty') is False and git.get('commit'),
+            f'{rel}: not a {stage} record of this experiment from a clean commit')
+    try:
+        text = subprocess.check_output(['git', 'show', f"{git['commit']}:{CONTRACT}"], cwd=root, text=True)
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(f"{rel}: its commit {git['commit'][:12]} has no contract") from exc
+    import hashlib
+    require(hashlib.sha256(text.encode('utf-8')).hexdigest() == rec.get('contract_file_sha256'),
+            f'{rel}: the contract file of its commit is not the one it records')
+    then = json.loads(text)
+    require(experiment_sha256(then) == eid and then['approved'].get(stage) is True,
+            f'{rel}: the {stage} stage was not approved at its commit')
+
+
 def verify(args, root=ROOT) -> dict:
     root = Path(root)
     c, sha, eid = load_contract(args.contract, root)
     rel = c['output'][args.stage]
     rec = json.loads((root / rel).read_text(encoding='utf-8'))
-    require(rec.get('experiment_sha256') == eid, f'{rel}: another experiment')
-    if args.stage == 'timing':
+    check_stamp(c, eid, rec, args.stage, root)
+    if args.stage == 'prepare':
+        require(rec.get('passed') is True and rec.get('seeds_unused') is True
+                and rec.get('models') == c['models']['identity'] == check_models(c, root)
+                and rec.get('confirmation_sample') == confirmation_sample(c, root),
+                f'{rel}: not a passed prepare record of these models and this confirmation sample')
+    elif args.stage == 'timing':
         timing_again(c, eid, rec, root)
     elif args.stage == 'confirm':
         confirm_again(c, eid, rec, root)
-    code = 0 if rec.get('passed', True) else 2
+    code = 0
     return {'stage': args.stage, 'log_name': rec.get('log_name'), 'exit_code': code, 'stage_files': [rel]}
 
 
