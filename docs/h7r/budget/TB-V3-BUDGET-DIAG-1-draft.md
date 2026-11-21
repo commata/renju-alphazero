@@ -109,7 +109,7 @@
 
 ## 8. 계약
 
-- `docs/h7r/budget/TB-V3-BUDGET-DIAG-1/diag-contract.json`(fixed, 모든 승인 false, 실험 SHA `74c8b77a0f96`). 모델 SHA, 커밋된 E1 manifest와 TB-V3-BUDGET-1 confirm 기록의 SHA, B0–B3, 시간 상한, 기대 집계, 도구와 재사용 파일 7개(sources)를 고정한다.
+- `docs/h7r/budget/TB-V3-BUDGET-DIAG-1/diag-contract.json`(fixed, 모든 승인 false, 실험 SHA `7b3016f0dc16`). 모델 SHA, 커밋된 E1 manifest와 TB-V3-BUDGET-1 confirm 기록의 SHA, B0–B3, 시간 상한, 기대 집계, 도구와 재사용 파일 7개(sources)를 고정한다.
 
 ## 9. 구현 (2026-11-21, 미승인)
 
@@ -128,6 +128,13 @@
   - 실제 `evaluate_position`으로 라벨 규칙과 `b0_recheck` 분리
   - prepare → replay → deepen → verify 흐름, NOT_REPRODUCED에서도 deepen
   - 데스크톱 블록(실제 bash, 도구는 대역)과 실제 도구로 d-P 실행
+
+- 2026-11-21 검토 반영(`7789dd6` 뒤)
+  - `verify deepen`은 요약이 아니라 원본 journal에서 예산별 결과, `NOT_RUN`, 사용 시간, 원인 읽기, 최종 판정, 보고를 다시 만들어 요약 전체와 대조한다. deepen도 같은 함수로 기록을 만든다.
+  - journal의 마지막 줄이 쓰다 잘렸으면 잘라 내고 이어간다(그 앞 줄이 깨졌으면 거부).
+  - 진행 중 작업은 30초마다 경과 시간을 journal에 남긴다. 끝나지 못한 작업은 마지막 경과 시간 + 30초(그 작업의 상한 이내)를 사용 시간에 넣고, 다시 할 때는 남은 시간으로만 기다린다.
+  - 같은 `(국면, 착수)`는 한 번만 계산하되, 그 수를 고른 모든 실행(seed, 첫 후보·최종 착수 구분, 결과, `simulation_mode`, `selected_simulations`)을 남긴다. 후속 비교의 근거(`tactical_800_final_move_with_proven_loss`)는 패배가 증명된 수를 **최종 착수**로 둔 S400 실행 중 전술 800이 실제 적용된 것이 있는지로 정한다.
+  - 예산끼리 확정 판정이 엇갈리면(어느 예산은 PROVEN_LOSS, 다른 예산은 VCT2_CLEAR) 최종 상태를 `CONFLICT`로 두고, 원본 결과를 읽도록 보고한다.
 
 ## 10. 데스크톱 실행 (승인 뒤에만)
 

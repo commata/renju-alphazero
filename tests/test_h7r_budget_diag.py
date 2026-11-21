@@ -72,9 +72,10 @@ class RuleTest(unittest.TestCase):
         rows = [{**r, 'position': r['key']} for r in synthetic_rows()]
         rows[0]['runs'][0]['labels']['pre'] = 'UNKNOWN'  # an S50 UNKNOWN first candidate too (same position)
         items = dg.items_of(rows, ROOT)
-        self.assertEqual(len(items), 2)  # the S400 failure move once (three runs), then the S50 one
-        self.assertEqual((items[0]['from']['factor'], items[0]['from']['outcome']), (8, 'TRUTH_UNRESOLVED'))
-        self.assertEqual(items[1]['from']['factor'], 1)
+        self.assertEqual(len(items), 2)  # the S400 failure move once, then the S50 one
+        self.assertTrue(dg.is_failure_item(items[0]) and not dg.is_failure_item(items[1]))
+        self.assertEqual(len(items[0]['runs']), 6)  # three runs, as first candidate and as final move: all kept
+        self.assertEqual({(x['factor'], x['as']) for x in items[0]['runs']}, {(8, 'pre'), (8, 'played')})
 
     def test_the_reading(self):
         r = lambda *s: {b: {'status': x} for b, x in zip(dg.BUDGETS, s)}  # noqa: E731
@@ -85,15 +86,27 @@ class RuleTest(unittest.TestCase):
         self.assertEqual(dg.resolved_by(r('UNKNOWN', 'UNKNOWN', 'UNKNOWN')), 'none')
         self.assertEqual(dg.resolved_by(r('UNKNOWN', 'TIMEOUT', 'VCT2_CLEAR')), 'incomplete')
         self.assertEqual(dg.final_status(r('UNKNOWN', 'TIMEOUT', 'NOT_RUN')), 'INCOMPLETE')
-        item = lambda res, mode='tactical': {'from': {'factor': 8, 'outcome': 'TRUTH_UNRESOLVED',  # noqa: E731
-                                                      'simulation_mode': mode}, 'results': res}
+        def item(res, *runs):
+            runs = runs or (('played', 'tactical', 800),)
+            return {'runs': [{'factor': 8, 'seed': i, 'as': a, 'outcome': 'TRUTH_UNRESOLVED', 'simulation_mode': m,
+                              'selected_simulations': n} for i, (a, m, n) in enumerate(runs)], 'results': res}
         rep = dg.report([item(r('PROVEN_LOSS', 'PROVEN_LOSS', 'PROVEN_LOSS')),
-                         item(r('UNKNOWN', 'UNKNOWN', 'UNKNOWN'), 'normal')])
+                         item(r('UNKNOWN', 'UNKNOWN', 'UNKNOWN'), ('played', 'normal', 400))])
         self.assertEqual(rep['failure_final'], {'PROVEN_LOSS': 1, 'UNKNOWN': 1})  # mixed: both counts
-        self.assertTrue(rep['tactical_800_with_proven_loss'])
+        self.assertTrue(rep['tactical_800_final_move_with_proven_loss'])
         self.assertEqual(len(rep['use']), 2)
+        # the same move chosen once at normal 400 and twice at tactical 800: every run kept, the 800 ones count
+        mixed = dg.report([item(r('PROVEN_LOSS', 'UNKNOWN', 'PROVEN_LOSS'), ('played', 'normal', 400),
+                                ('played', 'tactical', 800), ('played', 'tactical', 800))])
+        self.assertTrue(mixed['tactical_800_final_move_with_proven_loss'])
+        first_only = dg.report([item(r('PROVEN_LOSS', 'UNKNOWN', 'PROVEN_LOSS'), ('pre', 'tactical', 800),
+                                     ('played', 'normal', 400))])
+        self.assertFalse(first_only['tactical_800_final_move_with_proven_loss'])  # 800 only on a first candidate
         clear = dg.report([item(r('VCT2_CLEAR', 'UNKNOWN', 'VCT2_CLEAR'))])
         self.assertIn('all VCT2_CLEAR', clear['use'][0])
+        conflict = r('VCT2_CLEAR', 'PROVEN_LOSS', 'PROVEN_LOSS')
+        self.assertEqual((dg.final_status(conflict), dg.resolved_by(conflict)), ('CONFLICT', 'conflict'))
+        self.assertIn('CONFLICT: 1', ' '.join(dg.report([item(conflict)])['use']))
 
 
 class TimeoutTest(unittest.TestCase):
@@ -220,7 +233,7 @@ class StageTest(StageBase):
         calls = []
         answers = {'B1': 'UNKNOWN', 'B2': 'PROVEN_LOSS', 'B3': 'PROVEN_LOSS'}
 
-        def runner(item, budget, seconds):
+        def runner(item, budget, seconds, beat):
             calls.append((item['position'], budget, seconds))
             return {'status': answers[budget], 'lost_depth': 2, 'nodes_used': 5, 'vcf_calls': 3, 'vcf_cut_calls': 0,
                     'budget_exhausted': False}, 60.0
@@ -230,7 +243,19 @@ class StageTest(StageBase):
         self.assertEqual((item['resolved_by'], item['final'], item['b0']['vcf_cut_calls']), ('B2 only', 'PROVEN_LOSS', 1))
         self.assertEqual(set(item['results']), set(dg.BUDGETS))
         self.assertEqual(out['report']['failure_final'], {'PROVEN_LOSS': 1})
-        self.assertTrue(out['report']['tactical_800_with_proven_loss'])
+        self.assertTrue(out['report']['tactical_800_final_move_with_proven_loss'])
+        dg.verify(argparse.Namespace(contract=None, stage='deepen'), self.root)
+        # a summary changed against its journal (the report made to match) is refused
+        path = self.root / self.c['output']['deepen']
+        good = json.loads(path.read_text())
+        bad = json.loads(path.read_text())
+        bad['items'][0]['results']['B1']['status'] = 'PROVEN_LOSS'
+        bad['items'][0]['resolved_by'] = dg.resolved_by(bad['items'][0]['results'])
+        bad['report'] = dg.report(bad['items'])
+        path.write_text(json.dumps(bad))
+        with self.assertRaisesRegex(ValueError, 'not what its journal gives'):
+            dg.verify(argparse.Namespace(contract=None, stage='deepen'), self.root)
+        path.write_text(json.dumps(good))
         dg.verify(argparse.Namespace(contract=None, stage='deepen'), self.root)
 
     def test_deepen_after_not_reproduced(self):
@@ -238,7 +263,7 @@ class StageTest(StageBase):
         rec = self.through_replay()
         self.assertEqual(rec['judgement'], 'NOT_REPRODUCED')
         self.approve('deepen')
-        out = dg.deepen(self.args(), self.root, log=QUIET, runner=lambda i, b, s: (
+        out = dg.deepen(self.args(), self.root, log=QUIET, runner=lambda i, b, s, beat: (
             {'status': 'VCT2_CLEAR', 'lost_depth': None, 'nodes_used': 1, 'vcf_calls': 1, 'vcf_cut_calls': 0,
              'budget_exhausted': False}, 1.0))
         self.assertEqual((out['replay_judgement'], out['report']['failure_final']), ('NOT_REPRODUCED',
@@ -251,7 +276,7 @@ class StageTest(StageBase):
         unknown = {'status': 'UNKNOWN', 'lost_depth': None, 'nodes_used': 9, 'vcf_calls': 9, 'vcf_cut_calls': 3,
                    'budget_exhausted': True}
 
-        def runner(item, budget, seconds):
+        def runner(item, budget, seconds, beat):
             limits.append(seconds)
             return (unknown, 4000.0) if budget == 'B1' else ('TIMEOUT', float(seconds))
         out = dg.deepen(self.args(), self.root, log=QUIET, runner=runner)
@@ -268,7 +293,7 @@ class StageTest(StageBase):
         self.approve('deepen')
         calls = []
 
-        def runner(item, budget, seconds):
+        def runner(item, budget, seconds, beat):
             calls.append(budget)
             return {'status': 'UNKNOWN', 'lost_depth': None, 'nodes_used': 1, 'vcf_calls': 1, 'vcf_cut_calls': 1,
                     'budget_exhausted': False}, float(dg.TOTAL_SECONDS)
@@ -280,6 +305,37 @@ class StageTest(StageBase):
         calls.clear()
         again = dg.deepen(self.args(), self.root, log=QUIET, runner=runner)
         self.assertEqual((calls, again['items'][0]['results']['B2']['status']), ([], 'NOT_RUN'))
+
+    def test_an_interrupted_deepen_resumes_with_the_time_it_used(self):
+        self.through_replay()
+        self.approve('deepen')
+        limits = []
+        clear = {'status': 'VCT2_CLEAR', 'lost_depth': None, 'nodes_used': 1, 'vcf_calls': 1, 'vcf_cut_calls': 0,
+                 'budget_exhausted': False}
+
+        def dying(item, budget, seconds, beat):
+            limits.append(seconds)
+            if budget == 'B1':
+                return clear, 5000.0
+            beat(600.0)
+            beat(1000.0)
+            raise KeyboardInterrupt('the block died during B2')
+        with self.assertRaises(KeyboardInterrupt):
+            dg.deepen(self.args(), self.root, log=QUIET, runner=dying)
+        jsonl = self.root / dg.RUNS / 'deepen.jsonl'
+        with jsonl.open('a') as fh:
+            fh.write('{"event": "beat", "key": ["cut')  # an append cut by the crash
+        limits.clear()
+
+        def runner(item, budget, seconds, beat):
+            limits.append((budget, seconds))
+            return clear, 10.0
+        out = dg.deepen(self.args(), self.root, log=QUIET, runner=runner)
+        # B2 was charged 1000 + 30 s: 7200 - 5000 - 1030 = 1170 s left for its retry
+        self.assertEqual(limits, [('B2', 1170.0), ('B3', 1160.0)])
+        self.assertEqual(out['interrupted'][0]['charged_seconds'], 1030.0)
+        self.assertEqual(out['seconds_used'], round(5000 + 1030 + 10 + 10, 1))
+        dg.verify(argparse.Namespace(contract=None, stage='deepen'), self.root)
 
     def test_refusals(self):
         with self.assertRaisesRegex(ValueError, 'the prepare stage is not approved'):
@@ -311,7 +367,7 @@ class FixedContractTest(unittest.TestCase):
         self.assertEqual({k: v for k, v in c.items() if k not in ('sources', 'approved')},
                          {k: v for k, v in dg.contract_body(ROOT).items() if k not in ('sources', 'approved')})
         self.assertEqual([s['path'] for s in c['sources']], list(dg.SOURCES))
-        self.assertEqual(eid, '74c8b77a0f96372d91c5fe43307a3d54e4f44219909522540d842d6eae550f64')
+        self.assertEqual(eid, '7b3016f0dc16340f94e8de14ce1f6fddceae063f749b7429f3a2cd01c343dce6')
 
 
 # --- the desktop blocks ----------------------------------------------------------------------------------------------

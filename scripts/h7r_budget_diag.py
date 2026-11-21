@@ -335,52 +335,124 @@ def replay_rows(c: dict, eid: str, rec: dict, root) -> list[dict]:
 
 # --- deepen -------------------------------------------------------------------------------------------------------
 
+BEAT_SECONDS = 30  # a running task writes its elapsed time this often (an interrupted task is charged from it)
+
+
 def items_of(rows: list[dict], root) -> list[dict]:
-    """Every (position, move) the replay labelled UNKNOWN, once, S400's unresolved runs first."""
+    """Every (position, move) the replay labelled UNKNOWN, once, with every run that chose it (seed, first candidate
+    or final move, outcome, simulation mode and simulations); the moves of S400's unresolved runs first."""
     hist = {p['key']: p['history'] for p in positions(root)}
-    first, rest, seen = [], [], set()
-    runs = [(r, run) for r in rows for run in r['runs']]
-    for r, run in sorted(runs, key=lambda x: (not (x[0]['factor'] == 8 and x[1]['outcome'] == 'TRUTH_UNRESOLVED'),
-                                              -x[0]['factor'], x[0]['position'], x[1]['seed'])):
-        for which in ('pre', 'played'):
-            if run['labels'][which] != UNKNOWN:
-                continue
-            key = (r['position'], tuple(run[which]))
-            if key in seen:
-                continue
-            seen.add(key)
-            item = {'position': r['position'], 'move': list(run[which]), 'history': hist[r['position']],
-                    'from': {'factor': r['factor'], 'seed': run['seed'], 'as': which, 'outcome': run['outcome'],
-                             'simulation_mode': run['simulation_mode']}}
-            (first if r['factor'] == 8 and run['outcome'] == 'TRUTH_UNRESOLVED' else rest).append(item)
-    return first + rest
+    by = {}
+    for r in rows:
+        for run in r['runs']:
+            for which in ('pre', 'played'):
+                if run['labels'][which] != UNKNOWN:
+                    continue
+                key = (r['position'], tuple(run[which]))
+                item = by.setdefault(key, {'position': r['position'], 'move': list(run[which]),
+                                           'history': hist[r['position']], 'runs': []})
+                item['runs'].append({'factor': r['factor'], 'seed': run['seed'], 'as': which,
+                                     'outcome': run['outcome'], 'simulation_mode': run['simulation_mode'],
+                                     'selected_simulations': run['selected_simulations']})
+    failure = lambda i: any(x['factor'] == 8 and x['outcome'] == 'TRUTH_UNRESOLVED' for x in i['runs'])  # noqa: E731
+    return sorted(by.values(), key=lambda i: (not failure(i), -max(x['factor'] for x in i['runs']), i['position'],
+                                              i['move']))
+
+
+def is_failure_item(item: dict) -> bool:
+    return any(x['factor'] == 8 and x['outcome'] == 'TRUTH_UNRESOLVED' for x in item['runs'])
 
 
 def _child(fn, args, queue):
     queue.put(fn(*args))
 
 
-def run_with_timeout(fn, args: tuple, seconds: float):
-    """``fn(*args)`` in its own process; killed at ``seconds`` (returns ('TIMEOUT', elapsed))."""
+def run_with_timeout(fn, args: tuple, seconds: float, beat=None):
+    """``fn(*args)`` in its own process; killed at ``seconds`` (returns ('TIMEOUT', elapsed)). ``beat(elapsed)`` is
+    called about every ``BEAT_SECONDS`` while it runs."""
     from multiprocessing import get_context
     ctx = get_context('spawn')
     queue = ctx.Queue()
     proc = ctx.Process(target=_child, args=(fn, args, queue))
     started = time.perf_counter()
     proc.start()
-    proc.join(seconds)
-    if proc.is_alive():
-        proc.kill()
-        proc.join()
-        return 'TIMEOUT', round(time.perf_counter() - started, 2)
+    while proc.is_alive():
+        elapsed = time.perf_counter() - started
+        if elapsed >= seconds:
+            proc.kill()
+            proc.join()
+            return 'TIMEOUT', round(time.perf_counter() - started, 2)
+        proc.join(min(BEAT_SECONDS, seconds - elapsed))
+        if beat is not None and proc.is_alive():
+            beat(round(time.perf_counter() - started, 2))
     require(proc.exitcode == 0 and not queue.empty(), f'the task process failed (exit {proc.exitcode})')
     return queue.get(), round(time.perf_counter() - started, 2)
+
+
+def read_journal(path: Path, replay_sha: str, log=print) -> list[dict]:
+    """The deepen journal; an unreadable last line (an append cut by a crash) is cut off, one before it refuses."""
+    if not path.exists():
+        return []
+    offset, content = 0, []
+    for raw in path.read_bytes().split(b'\n'):
+        if raw.strip():
+            content.append((offset, raw))
+        offset += len(raw) + 1
+    rows = []
+    for n, (start, raw) in enumerate(content):
+        try:
+            row = json.loads(raw)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            require(n == len(content) - 1, f'{path}: unreadable line at byte {start} before the end ({exc})')
+            log(f'[budget-diag] {path}: the last line is incomplete: cut', flush=True)
+            with path.open('r+b') as fh:
+                fh.truncate(start)
+            break
+        require(row.get('replay_sha256') == replay_sha, f'{path}: rows of another replay')
+        rows.append(row)
+    return rows
+
+
+def account(journal: list[dict]) -> dict:
+    """Results by task and the seconds used: every result's seconds, and each task started but never finished (an
+    interrupted run) charged its last heartbeat plus one interval, at most its limit."""
+    results, used, interrupted, open_ = {}, 0.0, [], None
+
+    def close_interrupted():
+        nonlocal used
+        if open_ is not None:
+            charge = min(open_['limit'], open_['beat'] + BEAT_SECONDS)
+            used += charge
+            interrupted.append({'key': open_['key'], 'charged_seconds': round(charge, 2)})
+    for row in journal:
+        key = tuple(row['key'][:1]) + (tuple(row['key'][1]),) + tuple(row['key'][2:])
+        if row['event'] == 'start':
+            close_interrupted()
+            open_ = {'key': row['key'], 'limit': row['limit'], 'beat': 0.0}
+        elif row['event'] == 'beat':
+            require(open_ is not None and open_['key'] == row['key'], 'a heartbeat of a task that is not running')
+            open_['beat'] = row['elapsed']
+        elif row['event'] == 'result':
+            require(open_ is not None and open_['key'] == row['key'], 'a result of a task that is not running')
+            results[key] = {k: v for k, v in row.items() if k not in ('event', 'key', 'replay_sha256')}
+            used += row['seconds']
+            open_ = None
+        else:
+            raise ValueError(f"journal event {row['event']!r}")
+    close_interrupted()
+    return {'results': results, 'used': used, 'interrupted': interrupted}
+
+
+def task_key(item: dict, budget: str) -> tuple:
+    return item['position'], tuple(item['move']), budget
 
 
 def resolved_by(per: dict) -> str:
     st = {b: per[b]['status'] for b in BUDGETS}
     if any(v in ('TIMEOUT', 'NOT_RUN') for v in st.values()):
         return 'incomplete'
+    if PROVEN_LOSS in st.values() and CLEAR in st.values():
+        return 'conflict'
     solved = {b for b, v in st.items() if v in (PROVEN_LOSS, CLEAR)}
     if {'B1', 'B2'} <= solved:
         return 'B1 and B2'
@@ -392,30 +464,64 @@ def resolved_by(per: dict) -> str:
 
 
 def final_status(per: dict) -> str:
+    """PROVEN_LOSS or VCT2_CLEAR when the budgets that decided agree; CONFLICT when one proved a loss and another
+    no loss (the raw results are to be read); UNKNOWN when all three ran and none decided; else INCOMPLETE."""
     st = [per[b]['status'] for b in BUDGETS]
-    for s in (PROVEN_LOSS, CLEAR):
-        if s in st:
-            return s
-    return 'UNKNOWN' if all(s == UNKNOWN for s in st) else 'INCOMPLETE'
+    decided = {s for s in st if s in (PROVEN_LOSS, CLEAR)}
+    if len(decided) == 2:
+        return 'CONFLICT'
+    if decided:
+        return decided.pop()
+    return UNKNOWN if all(s == UNKNOWN for s in st) else 'INCOMPLETE'
 
 
 def report(items: list[dict]) -> dict:
-    failure = [i for i in items if i['from']['factor'] == 8 and i['from']['outcome'] == 'TRUTH_UNRESOLVED']
+    failure = [i for i in items if is_failure_item(i)]
     count = lambda xs: dict(sorted(Counter(final_status(i['results']) for i in xs).items()))  # noqa: E731
     lost = [i for i in failure if final_status(i['results']) == PROVEN_LOSS]
+    tactical = [i for i in lost if any(x['factor'] == 8 and x['as'] == 'played' and x['simulation_mode'] == 'tactical'
+                                       and x['selected_simulations'] == 800 for x in i['runs'])]
+    c = count(failure)
     use = []
     if lost:
-        use.append(f"PROVEN_LOSS among S400's failure moves: {len(lost)} (simulation modes "
-                   f"{sorted({i['from']['simulation_mode'] or 'unknown' for i in lost})})")
-    c = count(failure)
+        use.append(f"PROVEN_LOSS among S400's failure moves: {len(lost)}; played as the final move with tactical 800 "
+                   f"applied: {len(tactical)}")
     if failure and c.get(CLEAR) == len(failure):
         use.append('all VCT2_CLEAR: the B0 limits made them UNKNOWN; no loss within depth 2 only')
-    if c.get('UNKNOWN') or c.get('INCOMPLETE'):
-        use.append(f"left open: {c.get('UNKNOWN', 0)} UNKNOWN, {c.get('INCOMPLETE', 0)} INCOMPLETE")
+    if c.get('CONFLICT'):
+        use.append(f"CONFLICT: {c['CONFLICT']} (one budget proved a loss, another none): read the raw results")
+    if c.get(UNKNOWN) or c.get('INCOMPLETE'):
+        use.append(f"left open: {c.get(UNKNOWN, 0)} UNKNOWN, {c.get('INCOMPLETE', 0)} INCOMPLETE")
     return {'failure_moves': len(failure), 'failure_final': c, 'all_moves_final': count(items),
             'resolved_by': dict(sorted(Counter(resolved_by(i['results']) for i in items).items())),
-            'tactical_800_with_proven_loss': any(i['from']['simulation_mode'] == 'tactical' for i in lost),
+            'tactical_800_final_move_with_proven_loss': len(tactical) > 0,
             'use': use or ['no S400 failure move in this replay']}
+
+
+def assemble(items: list[dict], acc: dict, rows: list[dict]) -> dict:
+    """The deepen record's findings from the journal alone: each move's B1 / B2 / B3 (NOT_RUN where no result, only
+    once the total was used), its B0 recheck, reading and final status, the report and the seconds used."""
+    out = []
+    missing = False
+    for item in items:
+        res = {}
+        for b in BUDGETS:
+            r = acc['results'].get(task_key(item, b))
+            if r is None:
+                missing = True
+                r = {'status': 'NOT_RUN', 'seconds': 0.0, 'reason': 'the 2 hour total was reached'}
+            res[b] = r
+        first = item['runs'][0]
+        b0 = next(run['b0_recheck'][first['as']] for r in rows for run in r['runs']
+                  if r['position'] == item['position'] and r['factor'] == first['factor']
+                  and run['seed'] == first['seed'])
+        out.append({**{k: v for k, v in item.items() if k != 'history'}, 'results': res,
+                    'b0': {k: b0[k] for k in ('status', 'lost_depth', 'nodes_used', 'vcf_calls', 'vcf_cut_calls',
+                                              'budget_exhausted')},
+                    'resolved_by': resolved_by(res), 'final': final_status(res)})
+    require(not missing or acc['used'] >= TOTAL_SECONDS, 'a task without a result before the total was used')
+    return {'items': out, 'report': report(out), 'seconds_used': round(acc['used'], 1),
+            'interrupted': acc['interrupted']}
 
 
 def deepen(args, root=ROOT, log=print, runner=None) -> dict:
@@ -427,52 +533,41 @@ def deepen(args, root=ROOT, log=print, runner=None) -> dict:
     guard = Guard(root, contract_path(args.contract, root), c, [c['output']['replay'], rrec['jsonl'], E1_MANIFEST])
     rows = replay_rows(c, eid, rrec, root)
     items = items_of(rows, root)
-    runner = runner or (lambda item, budget, seconds: run_with_timeout(recheck, (item['history'], item['move'],
-                                                                                 BUDGETS[budget]), seconds))
+    runner = runner or (lambda item, budget, seconds, beat: run_with_timeout(
+        recheck, (item['history'], item['move'], BUDGETS[budget]), seconds, beat))
     jsonl = root / RUNS / 'deepen.jsonl'
-    done = {}
-    if jsonl.exists():
-        for line in jsonl.read_text(encoding='utf-8').splitlines():
-            if line.strip():
-                row = json.loads(line)
-                require(row.get('replay_sha256') == rrec['jsonl_sha256'], f'{jsonl}: rows of another replay')
-                done[(row['position'], tuple(row['move']), row['budget'])] = row
-    used = sum(r['seconds'] for r in done.values())
+    acc = account(read_journal(jsonl, rrec['jsonl_sha256'], log))
+    used = acc['used']
     jsonl.parent.mkdir(parents=True, exist_ok=True)
     with jsonl.open('a', encoding='utf-8') as fh:
+        def write(row):
+            fh.write(json.dumps({**row, 'replay_sha256': rrec['jsonl_sha256']}, separators=(',', ':')) + '\n')
+            fh.flush()
         for item in items:
             for budget in BUDGETS:
-                key = (item['position'], tuple(item['move']), budget)
-                if key in done:
+                key = task_key(item, budget)
+                if key in acc['results']:
                     continue
                 left = TOTAL_SECONDS - used
                 if left <= 0:
-                    row = {'status': 'NOT_RUN', 'seconds': 0.0, 'reason': 'the 2 hour total was reached'}
-                else:
-                    limit = min(TASK_SECONDS, left)
-                    result, seconds = runner(item, budget, limit)
-                    used += seconds
-                    row = {'status': 'TIMEOUT', 'seconds': seconds,
-                           'reason': 'killed at the task limit' if limit == TASK_SECONDS else
-                           'killed at the remaining total'} if result == 'TIMEOUT' else {**result, 'seconds': seconds}
-                row = {'position': item['position'], 'move': item['move'], 'budget': budget,
-                       'replay_sha256': rrec['jsonl_sha256'], **row}
-                if row['status'] != 'NOT_RUN':  # NOT_RUN is never journaled: a rerun after the cap tries nothing
-                    fh.write(json.dumps(row, separators=(',', ':')) + '\n')
-                    fh.flush()
-                done[key] = row
+                    log(f"[budget-diag] {item['position']} {item['move']} {budget}: NOT_RUN", flush=True)
+                    continue
+                limit = min(TASK_SECONDS, left)
+                jkey = [item['position'], item['move'], budget]
+                write({'event': 'start', 'key': jkey, 'limit': limit})
+                result, seconds = runner(item, budget, limit,
+                                         lambda elapsed, k=jkey: write({'event': 'beat', 'key': k, 'elapsed': elapsed}))
+                used += seconds
+                row = {'status': 'TIMEOUT', 'seconds': seconds,
+                       'reason': 'killed at the task limit' if limit == TASK_SECONDS else
+                       'killed at the remaining total'} if result == 'TIMEOUT' else {**result, 'seconds': seconds}
+                write({'event': 'result', 'key': jkey, **row})
+                acc['results'][key] = row
                 log(f"[budget-diag] {item['position']} {item['move']} {budget}: {row['status']}", flush=True)
-    for item in items:
-        item['results'] = {b: {k: v for k, v in done[(item['position'], tuple(item['move']), b)].items()
-                               if k not in ('position', 'move', 'budget', 'replay_sha256')} for b in BUDGETS}
-        item['b0'] = next(run['b0_recheck'][item['from']['as']] for r in rows for run in r['runs']
-                          if r['position'] == item['position'] and list(run[item['from']['as']]) == item['move'])
-        item['resolved_by'] = resolved_by(item['results'])
-        item['final'] = final_status(item['results'])
+    found = assemble(items, account(read_journal(jsonl, rrec['jsonl_sha256'], log)), rows)
     record = {'format': 'h7r-budget-diag-deepen-v1', **log_field(args, 'deepen'), **stamp(sha, eid, guard.check()),
               'replay_judgement': rrec['judgement'], 'jsonl': jsonl.relative_to(root).as_posix(),
-              'jsonl_sha256': file_sha256(jsonl), 'seconds_used': round(used, 1),
-              'items': [{k: v for k, v in i.items() if k != 'history'} for i in items], 'report': report(items),
+              'jsonl_sha256': file_sha256(jsonl), **found,
               'scope': 'VCT2_CLEAR is no loss within depth 2 only; the END of TB-V3-BUDGET-1 stays'}
     p1.publish(out, record)
     return record
@@ -507,15 +602,15 @@ def verify(args, root=ROOT) -> dict:
         rows = replay_rows(c, eid, rec, root)
         require({k: v for k, v in replay_summary(rows).items()} == {k: rec[k] for k in replay_summary(rows)},
                 f'{rel}: not what its replay file gives')
-    else:
+    else:  # every finding rebuilt from the journal, never from the summary
         rrec = committed_record(root, c['output']['replay'], 'replay record', eid)
         rows = replay_rows(c, eid, rrec, root)
-        items = items_of(rows, root)
-        require([(i['position'], i['move']) for i in items] == [(i['position'], i['move']) for i in rec['items']],
-                f'{rel}: not the UNKNOWN moves of the replay')
         path = root / rec['jsonl']
-        require(file_sha256(path) == rec['jsonl_sha256'], f"{rec['jsonl']} changed")
-        require(report(rec['items']) == rec['report'], f'{rel}: the report is not what its items give')
+        require(path.is_file() and file_sha256(path) == rec['jsonl_sha256'], f"{rec['jsonl']} changed")
+        found = assemble(items_of(rows, root), account(read_journal(path, rrec['jsonl_sha256'])), rows)
+        found = json.loads(json.dumps(found))
+        require(rec.get('replay_judgement') == rrec['judgement'] and all(rec.get(k) == v for k, v in found.items()),
+                f'{rel}: not what its journal gives (items, results, report or seconds)')
     return {'stage': args.stage, 'log_name': rec.get('log_name'), 'exit_code': 0, 'stage_files': [rel]}
 
 
