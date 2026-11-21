@@ -3,7 +3,7 @@
  "contract_id": "TB-V3-BUDGET-DIAG-1",
  "status": "fixed",
  "approved": {
-  "prepare": false,
+  "prepare": true,
   "replay": false,
   "deepen": false
  },
