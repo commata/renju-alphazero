@@ -1,0 +1,23 @@
+[budget-diag] 8411-p8-white/11 [8, 9] B1: TIMEOUT
+[budget-diag] 8411-p8-white/11 [8, 9] B2: TIMEOUT
+[budget-diag] 8411-p8-white/11 [8, 9] B3: TIMEOUT
+{
+ "report": {
+  "failure_moves": 1,
+  "failure_final": {
+   "INCOMPLETE": 1
+  },
+  "all_moves_final": {
+   "INCOMPLETE": 1
+  },
+  "resolved_by": {
+   "incomplete": 1
+  },
+  "tactical_800_final_move_with_proven_loss": false,
+  "use": [
+   "left open: 0 UNKNOWN, 1 INCOMPLETE"
+  ]
+ },
+ "seconds_used": 5400.1
+}
+__EXIT__ 0

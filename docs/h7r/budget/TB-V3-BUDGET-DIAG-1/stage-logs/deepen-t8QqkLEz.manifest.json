@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "deepen-t8QqkLEz.log",
+ "logs": [
+  {
+   "original": "runs/h7r/TB-V3-BUDGET-DIAG-1/logs/deepen-t8QqkLEz.log",
+   "copy": "docs/h7r/budget/TB-V3-BUDGET-DIAG-1/stage-logs/deepen-t8QqkLEz.log",
+   "bytes": 471,
+   "sha256": "147419f26c52b8b6b999f271d7187fea41cf1e459069593c1e45f8cd48140c38"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

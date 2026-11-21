@@ -1,0 +1,119 @@
+{
+ "format": "h7r-budget-diag-deepen-v1",
+ "log_name": "deepen-t8QqkLEz.log",
+ "contract_id": "TB-V3-BUDGET-DIAG-1",
+ "experiment_sha256": "7b3016f0dc16340f94e8de14ce1f6fddceae063f749b7429f3a2cd01c343dce6",
+ "contract_file_sha256": "9e289f6411d30aaa5cea3d7cd41b3c91529c615a9246087b5fc5321496ba4454",
+ "git": {
+  "commit": "a9e7b8a79d7c3e5e62577fd0aabcf2ae54c1a5fa",
+  "dirty": false
+ },
+ "replay_judgement": "AGGREGATE_REPRODUCED",
+ "jsonl": "runs/h7r/TB-V3-BUDGET-DIAG-1/deepen.jsonl",
+ "jsonl_sha256": "324281a48cdf55bcfb006168b989b7b8a057ebcbe25ce89d85e90a5347b16428",
+ "items": [
+  {
+   "position": "8411-p8-white/11",
+   "move": [
+    8,
+    9
+   ],
+   "runs": [
+    {
+     "factor": 8,
+     "seed": 1379659660,
+     "as": "pre",
+     "outcome": "TRUTH_UNRESOLVED",
+     "simulation_mode": "normal",
+     "selected_simulations": 400
+    },
+    {
+     "factor": 8,
+     "seed": 1379659660,
+     "as": "played",
+     "outcome": "TRUTH_UNRESOLVED",
+     "simulation_mode": "normal",
+     "selected_simulations": 400
+    },
+    {
+     "factor": 8,
+     "seed": 1166999880,
+     "as": "pre",
+     "outcome": "TRUTH_UNRESOLVED",
+     "simulation_mode": "normal",
+     "selected_simulations": 400
+    },
+    {
+     "factor": 8,
+     "seed": 1166999880,
+     "as": "played",
+     "outcome": "TRUTH_UNRESOLVED",
+     "simulation_mode": "normal",
+     "selected_simulations": 400
+    },
+    {
+     "factor": 8,
+     "seed": 1111490531,
+     "as": "pre",
+     "outcome": "TRUTH_UNRESOLVED",
+     "simulation_mode": "normal",
+     "selected_simulations": 400
+    },
+    {
+     "factor": 8,
+     "seed": 1111490531,
+     "as": "played",
+     "outcome": "TRUTH_UNRESOLVED",
+     "simulation_mode": "normal",
+     "selected_simulations": 400
+    }
+   ],
+   "results": {
+    "B1": {
+     "status": "TIMEOUT",
+     "seconds": 1800.02,
+     "reason": "killed at the task limit"
+    },
+    "B2": {
+     "status": "TIMEOUT",
+     "seconds": 1800.03,
+     "reason": "killed at the task limit"
+    },
+    "B3": {
+     "status": "TIMEOUT",
+     "seconds": 1800.04,
+     "reason": "killed at the task limit"
+    }
+   },
+   "b0": {
+    "status": "UNKNOWN",
+    "lost_depth": null,
+    "nodes_used": 10000000,
+    "vcf_calls": 95361,
+    "vcf_cut_calls": 14,
+    "budget_exhausted": true
+   },
+   "resolved_by": "incomplete",
+   "final": "INCOMPLETE"
+  }
+ ],
+ "report": {
+  "failure_moves": 1,
+  "failure_final": {
+   "INCOMPLETE": 1
+  },
+  "all_moves_final": {
+   "INCOMPLETE": 1
+  },
+  "resolved_by": {
+   "incomplete": 1
+  },
+  "tactical_800_final_move_with_proven_loss": false,
+  "use": [
+   "left open: 0 UNKNOWN, 1 INCOMPLETE"
+  ]
+ },
+ "seconds_used": 5400.1,
+ "interrupted": [],
+ "scope": "VCT2_CLEAR is no loss within depth 2 only; the END of TB-V3-BUDGET-1 stays"
+}
