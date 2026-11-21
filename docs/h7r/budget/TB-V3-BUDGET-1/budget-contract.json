@@ -3,7 +3,7 @@
  "contract_id": "TB-V3-BUDGET-1",
  "status": "fixed",
  "approved": {
-  "prepare": false,
+  "prepare": true,
   "timing": false,
   "confirm": false
  },
