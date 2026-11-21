@@ -1,0 +1,147 @@
+{
+ "format": "h7r-budget-diag-contract-v1",
+ "contract_id": "TB-V3-BUDGET-DIAG-1",
+ "status": "fixed",
+ "approved": {
+  "prepare": false,
+  "replay": false,
+  "deepen": false
+ },
+ "purpose": "diagnosis of the E1-P moves S400 played that the depth-2 truth check left UNKNOWN in TB-V3-BUDGET-1; no games, no deployment decision; the END of TB-V3-BUDGET-1 stays",
+ "draft": {
+  "path": "docs/h7r/budget/TB-V3-BUDGET-DIAG-1-draft.md"
+ },
+ "models": {
+  "policy": "runs/h3_policy_64x4/best.pt",
+  "value": "runs/h6_value_head_v3/best.pt",
+  "identity": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+   "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  }
+ },
+ "inputs": {
+  "e1_manifest": {
+   "path": "docs/mcts-v8-results/e1/e1_manifest.json",
+   "sha256": "da6c9dbe0fe4eac6809efba7dc86f668ba13b7aa52db9070f47d593c1f378dc4"
+  },
+  "budget_confirm": {
+   "path": "docs/h7r/budget/TB-V3-BUDGET-1/confirm.json",
+   "sha256": "d49e66ed19f4d09b6cbfe3639cac0b0c16f3f0003b3b60578198e80367df6cfc"
+  }
+ },
+ "replay": {
+  "class": "E1-P",
+  "factors": [
+   1,
+   8
+  ],
+  "seeds": "each position's e1_seeds (3)",
+  "engine": "h7c_budget.make_budget_agent (canonical models, cuda)",
+  "workers": 6,
+  "label_rule": "e1_evaluate.evaluate_position: a truth of the manifest first, a missing move at B0",
+  "diagnostic_recheck": "the first candidate and the final move of every run at B0 again (lost_depth_info), kept apart from the labels",
+  "expected_aggregate": {
+   "1": {
+    "TREE_AVOIDED": 15
+   },
+   "8": {
+    "TREE_AVOIDED": 12,
+    "TRUTH_UNRESOLVED": 3
+   }
+  },
+  "judgement": "AGGREGATE_REPRODUCED when the E1-P outcome counts equal the expected ones, else NOT_REPRODUCED; never a claim about the same position, seed or move",
+  "not_reproduced": "deepen goes on with this replay's UNKNOWN moves"
+ },
+ "deepen": {
+  "b0": {
+   "node_limit": 20000,
+   "call_limit": 100000,
+   "node_budget": 10000000
+  },
+  "budgets": {
+   "B1": {
+    "node_limit": 200000,
+    "call_limit": 100000,
+    "node_budget": 10000000
+   },
+   "B2": {
+    "node_limit": 20000,
+    "call_limit": 1000000,
+    "node_budget": 100000000
+   },
+   "B3": {
+    "node_limit": 200000,
+    "call_limit": 1000000,
+    "node_budget": 100000000
+   }
+  },
+  "depth": 2,
+  "order": "S400 unresolved runs first (first candidate, then final move), then every other UNKNOWN move; per move B1, B2, B3",
+  "dedup": "(position, move) once",
+  "task_seconds": 1800,
+  "total_seconds": 7200,
+  "timeout": "the task runs in its own process, killed at the limit: TIMEOUT (apart from a solver UNKNOWN); past the total: NOT_RUN"
+ },
+ "reading": {
+  "per_move": "B1 / B2 / B3 each: PROVEN_LOSS, VCT2_CLEAR, UNKNOWN, TIMEOUT or NOT_RUN, with the stop reasons",
+  "resolved_by": {
+   "B1 only": "raising the single VCF call limit was enough",
+   "B2 only": "raising the per-move totals was enough",
+   "B3 only": "only with both raised (of the tested combinations)",
+   "B1 and B2": "either raise was enough: no single cause",
+   "none": "no budget resolved it",
+   "incomplete": "a TIMEOUT or NOT_RUN: no cause"
+  },
+  "use": [
+   "PROVEN_LOSS among S400's failure moves: a real loss within depth 2; with its run's simulation mode (tactical 800 grounds a separate normal 400 / tactical 100 comparison)",
+   "all VCT2_CLEAR: the B0 limits made them UNKNOWN; no loss within depth 2 only",
+   "UNKNOWN left: open",
+   "mixed: every count reported"
+  ],
+  "scope": "VCT2_CLEAR means no loss within depth 2, never a good move; the END of TB-V3-BUDGET-1 stays; a deployment review is a new contract with a pre-fixed tactical rule and a new tactical sample"
+ },
+ "stages": {
+  "prepare": "inputs",
+  "replay": "the paired replay",
+  "deepen": "the larger budgets and the report"
+ },
+ "output": {
+  "prepare": "docs/h7r/budget/TB-V3-BUDGET-DIAG-1/prepare.json",
+  "replay": "docs/h7r/budget/TB-V3-BUDGET-DIAG-1/replay.json",
+  "deepen": "docs/h7r/budget/TB-V3-BUDGET-DIAG-1/deepen.json",
+  "runs": "runs/h7r/TB-V3-BUDGET-DIAG-1"
+ },
+ "sources": [
+  {
+   "path": "scripts/h7r_budget_diag.py",
+   "sha256": "ec3d08b5c0920acc147c44286686aec8ed9439fff0261c8479abbe35a62627ae"
+  },
+  {
+   "path": "scripts/e1_evaluate.py",
+   "sha256": "cc1b53cb21ac5912846bacc23dd93a2f09208f590ae72e0ea4e64ed348c387de"
+  },
+  {
+   "path": "scripts/e1_build_suite.py",
+   "sha256": "a11ec7f5e1cfc4f895c16a194a9d409dad3d0bc5be19800822ac3998579eb86b"
+  },
+  {
+   "path": "scripts/s1_loss_analysis.py",
+   "sha256": "931131b7d96a195230000d3ea1794ef2995615e04fdaf03b76627c69a1c6e8e0"
+  },
+  {
+   "path": "scripts/h7c_budget.py",
+   "sha256": "4a9adbd26379a19a097fa8c9648834ad87a9f4cec38af79d22e655fbb5f36117"
+  },
+  {
+   "path": "scripts/h7r_budget.py",
+   "sha256": "f644f15504661fe0eb13fea0a93ba7b3e74ede0287d64358b93ac839359ae696"
+  },
+  {
+   "path": "scripts/h7r_p1.py",
+   "sha256": "4796f49f7d12a402a447554abe5b5f5fbfb568569a56892a78ea71debfcd4f12"
+  }
+ ],
+ "scope": "diagnosis only"
+}
