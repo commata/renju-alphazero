@@ -5,7 +5,7 @@
  "approved": {
   "prepare": true,
   "timing": true,
-  "confirm": false
+  "confirm": true
  },
  "purpose": "confirmation: within 5.5x the per-move time of S50 on the desktop GPU, does the largest budget beat the canonical S50 with the same canonical models on fresh openings? A pass names a canonical candidate only; no training, no promotion",
  "draft": {
