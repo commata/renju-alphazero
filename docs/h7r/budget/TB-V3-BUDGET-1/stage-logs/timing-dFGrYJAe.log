@@ -1,0 +1,43 @@
+[budget] timing_S400_vs_S50: 40 games (0 done), workers 6
+[budget] 8/40 games  20.0%  1.0 min  ETA 4 min  8/40 games
+[budget] 16/40 games  40.0%  2.1 min  ETA 3 min  16/40 games
+[budget] 23/40 games  57.5%  3.2 min  ETA 2 min  23/40 games
+[budget] 25/40 games  62.5%  4.3 min  ETA 3 min  25/40 games
+[budget] 29/40 games  72.5%  5.4 min  ETA 2 min  29/40 games
+[budget] 33/40 games  82.5%  6.4 min  ETA 1 min  33/40 games
+[budget] 37/40 games  92.5%  7.5 min  ETA 1 min  37/40 games
+[budget] 37/40 games  92.5%  8.5 min  ETA 1 min  37/40 games, 3 pending
+[budget] 39/40 games  97.5%  9.7 min  ETA 0 min  39/40 games, 1 pending
+[budget] 39/40 games  97.5%  10.7 min  ETA 0 min  39/40 games, 1 pending
+[budget] 40/40 games  100.0%  11.4 min  ETA 0 min  40/40 games
+[budget] S400: mean x4.8086, p95 x4.5253
+{
+ "measured": {
+  "S400": {
+   "tested": {
+    "moves": 1072,
+    "mean_seconds": 2.3126,
+    "p95_seconds": 7.0877
+   },
+   "opponent_s50": {
+    "moves": 1071,
+    "mean_seconds": 0.4809,
+    "p95_seconds": 1.5662
+   },
+   "ratio": {
+    "mean": 4.8086,
+    "p95": 4.5253
+   },
+   "ratio_exact": {
+    "mean": 4.808571948731705,
+    "p95": 4.52532178976402
+   },
+   "note": "the cap is applied to ratio_exact (unrounded); ratio and the seconds are rounded for display",
+   "factor": 8,
+   "within_cap": true
+  }
+ },
+ "selected": "S400",
+ "decision": "SELECTED"
+}
+__EXIT__ 0

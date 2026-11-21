@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "timing-dFGrYJAe.log",
+ "logs": [
+  {
+   "original": "runs/h7r/TB-V3-BUDGET-1/logs/timing-dFGrYJAe.log",
+   "copy": "docs/h7r/budget/TB-V3-BUDGET-1/stage-logs/timing-dFGrYJAe.log",
+   "bytes": 1381,
+   "sha256": "6800129e7c387aec1ec92906c9a3dd545855823d54c887f565a2024ade63cae5"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}
