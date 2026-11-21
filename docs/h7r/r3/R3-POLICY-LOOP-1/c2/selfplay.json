@@ -1,0 +1,73 @@
+{
+ "format": "h7r-r3-loop-selfplay-v1",
+ "log_name": "c2-selfplay-OyD46RDL.log",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "git": {
+  "commit": "e17d23dd95211479cbdf8055af18702e90dc7d6d",
+  "dirty": false
+ },
+ "cycle": 2,
+ "actor": {
+  "path": "runs/h7r/R3-POLICY-LOOP-1/c1/model/best.pt",
+  "checkpoint_sha256": "d7ebb40bdb2176f9ccd4662e8ddcb93f5dce6183c4eedd5ef3265641dd77caa0",
+  "metadata_sha256": "acf2b244dd134e8cfbce7e61f143c4ce1f30ac377624989a21d601b269dd2d32",
+  "state_sha256": "c620a869035d6e6f0edc0db5bfa90cb403a61b083da936109446278f0ce6991e",
+  "cycle": 1
+ },
+ "value": {
+  "path": "runs/h7c/c5/value/best.pt",
+  "checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "run_seed": 8810,
+ "jsonl": "runs/h7r/R3-POLICY-LOOP-1/c2/selfplay.jsonl",
+ "jsonl_sha256": "7babb0616d64a90df1fcdcf6a892885e78ce4a6efbf19d29003b1be6fe844b01",
+ "identity_sha256": "d9a58059559d7bdee98cf3e3d6cbe4f404e1c243cbaf92b8acce0956f6e98f9c",
+ "models": {
+  "policy_checkpoint_sha256": "d7ebb40bdb2176f9ccd4662e8ddcb93f5dce6183c4eedd5ef3265641dd77caa0",
+  "policy_metadata_sha256": "acf2b244dd134e8cfbce7e61f143c4ce1f30ac377624989a21d601b269dd2d32",
+  "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+  "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+ },
+ "games": 1000,
+ "summary": {
+  "games": 1000,
+  "results": {
+   "black": 595,
+   "white": 381,
+   "draw": 24
+  },
+  "moves": 37687,
+  "routes": {
+   "tree": 16664,
+   "stage4": 7221,
+   "own_vct2": 457,
+   "own_vct": 806,
+   "own_vcf": 2464,
+   "stage2": 7442,
+   "stage3": 949,
+   "stage1": 976,
+   "stage5": 708
+  },
+  "events": {
+   "sampled": 3774,
+   "engine": 33687,
+   "no_distribution": 226
+  },
+  "target_kinds": {
+   "visits": 16566,
+   "none": 15469,
+   "proof_one_hot": 5652
+  },
+  "length_mean": 40.69,
+  "move_seconds": {
+   "mean": 0.5143,
+   "p99": 2.6875,
+   "max": 5.9031
+  },
+  "game_minutes": 323.6
+ },
+ "wall_seconds": 3318.9
+}

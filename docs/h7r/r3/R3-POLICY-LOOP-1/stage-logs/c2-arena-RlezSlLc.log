@@ -1,0 +1,87 @@
+[r3-loop] R3-POLICY-LOOP-ARENA-2 O1-dev-c_L2_vs_champion: 600 games (0 done), workers 6, signature de963d2aa492
+[r3-arena] 19/600 games  3.2%  1.0 min  ETA 31 min  19/600 games
+[r3-arena] 28/600 games  4.7%  2.0 min  ETA 41 min  28/600 games
+[r3-arena] 48/600 games  8.0%  3.1 min  ETA 35 min  48/600 games
+[r3-arena] 70/600 games  11.7%  4.1 min  ETA 31 min  70/600 games
+[r3-arena] 94/600 games  15.7%  5.1 min  ETA 28 min  94/600 games
+[r3-arena] 112/600 games  18.7%  6.2 min  ETA 27 min  112/600 games
+[r3-arena] 132/600 games  22.0%  7.2 min  ETA 26 min  132/600 games
+[r3-arena] 151/600 games  25.2%  8.3 min  ETA 25 min  151/600 games
+[r3-arena] 175/600 games  29.2%  9.4 min  ETA 23 min  175/600 games
+[r3-arena] 190/600 games  31.7%  10.4 min  ETA 22 min  190/600 games
+[r3-arena] 216/600 games  36.0%  11.5 min  ETA 20 min  216/600 games
+[r3-arena] 233/600 games  38.8%  12.5 min  ETA 20 min  233/600 games
+[r3-arena] 255/600 games  42.5%  13.6 min  ETA 18 min  255/600 games
+[r3-arena] 279/600 games  46.5%  14.7 min  ETA 17 min  279/600 games
+[r3-arena] 302/600 games  50.3%  15.7 min  ETA 15 min  302/600 games
+[r3-arena] 321/600 games  53.5%  16.8 min  ETA 15 min  321/600 games
+[r3-arena] 335/600 games  55.8%  18.0 min  ETA 14 min  335/600 games
+[r3-arena] 354/600 games  59.0%  19.0 min  ETA 13 min  354/600 games
+[r3-arena] 382/600 games  63.7%  20.1 min  ETA 11 min  382/600 games
+[r3-arena] 391/600 games  65.2%  21.2 min  ETA 11 min  391/600 games
+[r3-arena] 413/600 games  68.8%  22.2 min  ETA 10 min  413/600 games
+[r3-arena] 435/600 games  72.5%  23.2 min  ETA 9 min  435/600 games
+[r3-arena] 452/600 games  75.3%  24.2 min  ETA 8 min  452/600 games
+[r3-arena] 473/600 games  78.8%  25.4 min  ETA 7 min  473/600 games
+[r3-arena] 502/600 games  83.7%  26.5 min  ETA 5 min  502/600 games
+[r3-arena] 527/600 games  87.8%  27.5 min  ETA 4 min  527/600 games
+[r3-arena] 547/600 games  91.2%  28.6 min  ETA 3 min  547/600 games
+[r3-arena] 570/600 games  95.0%  29.6 min  ETA 2 min  570/600 games
+[r3-arena] 594/600 games  99.0%  30.6 min  ETA 0 min  594/600 games
+[r3-arena] 600/600 games  100.0%  31.1 min  ETA 0 min  600/600 games
+[r3-loop] R3-POLICY-LOOP-ARENA-2 O1-dev-d_L2_vs_champion: 600 games (0 done), workers 6, signature ca5386d7e50c
+[r3-arena] 19/600 games  3.2%  1.0 min  ETA 32 min  19/600 games
+[r3-arena] 47/600 games  7.8%  2.2 min  ETA 26 min  47/600 games
+[r3-arena] 60/600 games  10.0%  3.2 min  ETA 29 min  60/600 games
+[r3-arena] 76/600 games  12.7%  4.2 min  ETA 29 min  76/600 games
+[r3-arena] 94/600 games  15.7%  5.3 min  ETA 28 min  94/600 games
+[r3-arena] 119/600 games  19.8%  6.3 min  ETA 25 min  119/600 games
+[r3-arena] 146/600 games  24.3%  7.3 min  ETA 23 min  146/600 games
+[r3-arena] 169/600 games  28.2%  8.3 min  ETA 21 min  169/600 games
+[r3-arena] 194/600 games  32.3%  9.4 min  ETA 20 min  194/600 games
+[r3-arena] 211/600 games  35.2%  10.4 min  ETA 19 min  211/600 games
+[r3-arena] 228/600 games  38.0%  11.4 min  ETA 19 min  228/600 games
+[r3-arena] 247/600 games  41.2%  12.5 min  ETA 18 min  247/600 games
+[r3-arena] 276/600 games  46.0%  13.5 min  ETA 16 min  276/600 games
+[r3-arena] 312/600 games  52.0%  14.5 min  ETA 13 min  312/600 games
+[r3-arena] 342/600 games  57.0%  15.9 min  ETA 12 min  342/600 games
+[r3-arena] 361/600 games  60.2%  16.9 min  ETA 11 min  361/600 games
+[r3-arena] 393/600 games  65.5%  18.0 min  ETA 9 min  393/600 games
+[r3-arena] 418/600 games  69.7%  19.0 min  ETA 8 min  418/600 games
+[r3-arena] 441/600 games  73.5%  20.0 min  ETA 7 min  441/600 games
+[r3-arena] 475/600 games  79.2%  21.0 min  ETA 6 min  475/600 games
+[r3-arena] 493/600 games  82.2%  22.1 min  ETA 5 min  493/600 games
+[r3-arena] 520/600 games  86.7%  23.2 min  ETA 4 min  520/600 games
+[r3-arena] 549/600 games  91.5%  24.2 min  ETA 2 min  549/600 games
+[r3-arena] 573/600 games  95.5%  25.2 min  ETA 1 min  573/600 games
+[r3-arena] 599/600 games  99.8%  26.2 min  ETA 0 min  599/600 games
+[r3-arena] 600/600 games  100.0%  26.3 min  ETA 0 min  600/600 games
+{
+ "reading": "WEAKER",
+ "bounds": {
+  "P": {
+   "estimate": -0.034167,
+   "lower_one_sided": -0.055,
+   "upper_one_sided": -0.01375
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  }
+ },
+ "decision": "CONTINUE",
+ "change_from_previous_cycle": {
+  "estimate": -0.000833,
+  "lower_one_sided": -0.01958,
+  "upper_one_sided": 0.01833,
+  "paired_by": "opening id",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  },
+  "note": "described only, never a decision"
+ },
+ "arena_contract_sha256": "560dcb1e39ef81f4cba6507541a4af88e8dc381f409840645cebf1a121e068be"
+}
+__EXIT__ 0

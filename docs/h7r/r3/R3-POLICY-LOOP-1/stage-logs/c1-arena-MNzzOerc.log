@@ -1,0 +1,86 @@
+[r3-loop] R3-POLICY-LOOP-ARENA-1 O1-dev-c_L1_vs_champion: 600 games (0 done), workers 6, signature e970c17c7bca
+[r3-arena] 16/600 games  2.7%  1.1 min  ETA 39 min  16/600 games
+[r3-arena] 36/600 games  6.0%  2.1 min  ETA 32 min  36/600 games
+[r3-arena] 55/600 games  9.2%  3.1 min  ETA 30 min  55/600 games
+[r3-arena] 72/600 games  12.0%  4.1 min  ETA 30 min  72/600 games
+[r3-arena] 93/600 games  15.5%  5.1 min  ETA 28 min  93/600 games
+[r3-arena] 111/600 games  18.5%  6.3 min  ETA 28 min  111/600 games
+[r3-arena] 136/600 games  22.7%  7.3 min  ETA 25 min  136/600 games
+[r3-arena] 151/600 games  25.2%  8.4 min  ETA 25 min  151/600 games
+[r3-arena] 164/600 games  27.3%  9.4 min  ETA 25 min  164/600 games
+[r3-arena] 184/600 games  30.7%  10.5 min  ETA 24 min  184/600 games
+[r3-arena] 194/600 games  32.3%  11.5 min  ETA 24 min  194/600 games
+[r3-arena] 202/600 games  33.7%  12.6 min  ETA 25 min  202/600 games
+[r3-arena] 223/600 games  37.2%  13.6 min  ETA 23 min  223/600 games
+[r3-arena] 241/600 games  40.2%  14.6 min  ETA 22 min  241/600 games
+[r3-arena] 259/600 games  43.2%  15.6 min  ETA 21 min  259/600 games
+[r3-arena] 289/600 games  48.2%  16.7 min  ETA 18 min  289/600 games
+[r3-arena] 310/600 games  51.7%  17.8 min  ETA 17 min  310/600 games
+[r3-arena] 319/600 games  53.2%  18.8 min  ETA 17 min  319/600 games
+[r3-arena] 325/600 games  54.2%  19.9 min  ETA 17 min  325/600 games
+[r3-arena] 341/600 games  56.8%  21.0 min  ETA 16 min  341/600 games
+[r3-arena] 354/600 games  59.0%  22.1 min  ETA 15 min  354/600 games
+[r3-arena] 368/600 games  61.3%  23.1 min  ETA 15 min  368/600 games
+[r3-arena] 389/600 games  64.8%  24.2 min  ETA 13 min  389/600 games
+[r3-arena] 415/600 games  69.2%  25.2 min  ETA 11 min  415/600 games
+[r3-arena] 437/600 games  72.8%  26.3 min  ETA 10 min  437/600 games
+[r3-arena] 461/600 games  76.8%  27.3 min  ETA 8 min  461/600 games
+[r3-arena] 478/600 games  79.7%  28.3 min  ETA 7 min  478/600 games
+[r3-arena] 494/600 games  82.3%  29.4 min  ETA 6 min  494/600 games
+[r3-arena] 511/600 games  85.2%  30.5 min  ETA 5 min  511/600 games
+[r3-arena] 525/600 games  87.5%  31.5 min  ETA 4 min  525/600 games
+[r3-arena] 545/600 games  90.8%  32.5 min  ETA 3 min  545/600 games
+[r3-arena] 566/600 games  94.3%  33.5 min  ETA 2 min  566/600 games
+[r3-arena] 571/600 games  95.2%  35.0 min  ETA 2 min  571/600 games
+[r3-arena] 589/600 games  98.2%  36.1 min  ETA 1 min  589/600 games
+[r3-arena] 600/600 games  100.0%  37.0 min  ETA 0 min  600/600 games
+[r3-loop] R3-POLICY-LOOP-ARENA-1 O1-dev-d_L1_vs_champion: 600 games (0 done), workers 6, signature 3a4f6f6a3cb5
+[r3-arena] 21/600 games  3.5%  1.1 min  ETA 29 min  21/600 games
+[r3-arena] 42/600 games  7.0%  2.1 min  ETA 28 min  42/600 games
+[r3-arena] 63/600 games  10.5%  3.2 min  ETA 27 min  63/600 games
+[r3-arena] 82/600 games  13.7%  4.3 min  ETA 27 min  82/600 games
+[r3-arena] 98/600 games  16.3%  5.3 min  ETA 27 min  98/600 games
+[r3-arena] 117/600 games  19.5%  6.3 min  ETA 26 min  117/600 games
+[r3-arena] 141/600 games  23.5%  7.3 min  ETA 24 min  141/600 games
+[r3-arena] 160/600 games  26.7%  8.4 min  ETA 23 min  160/600 games
+[r3-arena] 193/600 games  32.2%  9.4 min  ETA 20 min  193/600 games
+[r3-arena] 218/600 games  36.3%  10.4 min  ETA 18 min  218/600 games
+[r3-arena] 244/600 games  40.7%  11.5 min  ETA 17 min  244/600 games
+[r3-arena] 266/600 games  44.3%  12.5 min  ETA 16 min  266/600 games
+[r3-arena] 290/600 games  48.3%  13.5 min  ETA 14 min  290/600 games
+[r3-arena] 310/600 games  51.7%  14.6 min  ETA 14 min  310/600 games
+[r3-arena] 320/600 games  53.3%  15.6 min  ETA 14 min  320/600 games
+[r3-arena] 333/600 games  55.5%  16.7 min  ETA 13 min  333/600 games
+[r3-arena] 352/600 games  58.7%  17.7 min  ETA 12 min  352/600 games
+[r3-arena] 376/600 games  62.7%  18.7 min  ETA 11 min  376/600 games
+[r3-arena] 398/600 games  66.3%  19.7 min  ETA 10 min  398/600 games
+[r3-arena] 416/600 games  69.3%  20.7 min  ETA 9 min  416/600 games
+[r3-arena] 434/600 games  72.3%  21.8 min  ETA 8 min  434/600 games
+[r3-arena] 460/600 games  76.7%  22.8 min  ETA 7 min  460/600 games
+[r3-arena] 480/600 games  80.0%  23.8 min  ETA 6 min  480/600 games
+[r3-arena] 498/600 games  83.0%  24.8 min  ETA 5 min  498/600 games
+[r3-arena] 528/600 games  88.0%  25.9 min  ETA 4 min  528/600 games
+[r3-arena] 544/600 games  90.7%  26.9 min  ETA 3 min  544/600 games
+[r3-arena] 562/600 games  93.7%  28.0 min  ETA 2 min  562/600 games
+[r3-arena] 577/600 games  96.2%  29.0 min  ETA 1 min  577/600 games
+[r3-arena] 599/600 games  99.8%  30.9 min  ETA 0 min  599/600 games
+[r3-arena] 600/600 games  100.0%  31.0 min  ETA 0 min  600/600 games
+{
+ "reading": "WEAKER",
+ "bounds": {
+  "P": {
+   "estimate": -0.033333,
+   "lower_one_sided": -0.05333,
+   "upper_one_sided": -0.01375
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  }
+ },
+ "decision": "CONTINUE",
+ "change_from_previous_cycle": null,
+ "arena_contract_sha256": "42615a2530bc14b26e2304cf228737a75e95f89adf1181f7f832ab15f9e3b95f"
+}
+__EXIT__ 0

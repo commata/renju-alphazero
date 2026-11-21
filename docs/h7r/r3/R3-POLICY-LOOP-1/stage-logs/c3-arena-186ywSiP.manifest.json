@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "c3-arena-186ywSiP.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R3-POLICY-LOOP-1/logs/c3-arena-186ywSiP.log",
+   "copy": "docs/h7r/r3/R3-POLICY-LOOP-1/stage-logs/c3-arena-186ywSiP.log",
+   "bytes": 4362,
+   "sha256": "761b6391ea7a5e6162b93979aa42e06f3908d0b16565c22fdb4b7a12bfac73f2"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

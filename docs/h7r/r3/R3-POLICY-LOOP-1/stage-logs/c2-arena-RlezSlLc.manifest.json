@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "c2-arena-RlezSlLc.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R3-POLICY-LOOP-1/logs/c2-arena-RlezSlLc.log",
+   "copy": "docs/h7r/r3/R3-POLICY-LOOP-1/stage-logs/c2-arena-RlezSlLc.log",
+   "bytes": 4632,
+   "sha256": "3ca8629501547f11387833202e7cf41272f953f4336bba7499d52cfdec8af752"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

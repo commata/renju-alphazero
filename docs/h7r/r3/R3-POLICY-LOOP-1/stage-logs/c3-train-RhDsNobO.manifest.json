@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "c3-train-RhDsNobO.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R3-POLICY-LOOP-1/logs/c3-train-RhDsNobO.log",
+   "copy": "docs/h7r/r3/R3-POLICY-LOOP-1/stage-logs/c3-train-RhDsNobO.log",
+   "bytes": 1154,
+   "sha256": "b6b267a8c2924b3af5282d3fffd6f20af057ed0c885a97419f4c606466882da5"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

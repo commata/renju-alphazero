@@ -1,0 +1,19 @@
+{
+ "format": "h7r-r3-loop-arena-contract-v1",
+ "log_name": "c1-arena-contract-dzRNjOKV.log",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "git": {
+  "commit": "756606d209209bd2027a130808d03b9fdf9dba9c",
+  "dirty": false
+ },
+ "cycle": 1,
+ "arena_contract": "docs/h7r/contracts-v2/R3-POLICY-LOOP-ARENA-1.json",
+ "arena_contract_sha256": "42615a2530bc14b26e2304cf228737a75e95f89adf1181f7f832ab15f9e3b95f",
+ "arms": [
+  "O1-dev-c_L1_vs_champion",
+  "O1-dev-d_L1_vs_champion"
+ ],
+ "contract_file": "written"
+}

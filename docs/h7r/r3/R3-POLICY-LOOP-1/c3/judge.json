@@ -1,0 +1,131 @@
+{
+ "format": "h7r-r3-loop-judge-v1",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "dbd41c2a4a1561e031677aaed9cf4ed81f573bcd6a28def0494caf3b20148a64",
+ "cycle": 3,
+ "arena_contract_id": "R3-POLICY-LOOP-ARENA-3",
+ "arena_contract_sha256": "6abdc13780bda6f06813cab55165da8bd18379ed76f021a7c52d2bf1ff9d257a",
+ "arm_records_sha256": {
+  "O1-dev-c_L3_vs_champion": "ca6c54904ecc7a185b3ac7e710d2ad12c2cfa74885bd282f92e5f082cc41c3eb",
+  "O1-dev-d_L3_vs_champion": "a26922bbf05d59dea3284686fb21d429d3da7e4ed414fecc84a54f9723ca8d73"
+ },
+ "arms_commit": "a2913a5c8933fc537653d1ef8340c6a70a0be172",
+ "models": {
+  "L": {
+   "policy_checkpoint_sha256": "842682673a6aae14439f9312b7b7970a351a5c8d8224c027d05718bab08b1cae",
+   "policy_metadata_sha256": "a2eb8c4dd509d0fd95fd4fde0aaeff1a233c6dd65943622e1b34aaed70dfbfdd",
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  },
+  "champion": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  }
+ },
+ "bounds": {
+  "P": {
+   "estimate": -0.035833,
+   "lower_one_sided": -0.0575,
+   "upper_one_sided": -0.01417
+  },
+  "unit": "opening",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  }
+ },
+ "reading": "WEAKER",
+ "sensitivity_class_level": {
+  "P": {
+   "estimate": -0.035833,
+   "lower_one_sided": -0.0575,
+   "upper_one_sided": -0.01417
+  },
+  "reading": "WEAKER",
+  "same_as_main": true
+ },
+ "per_suite": {
+  "O1-dev-c": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 232,
+   "score_split": 100,
+   "score_split_positive": 41,
+   "score_split_negative": 59,
+   "distinct_classes": 300,
+   "score": 0.46917,
+   "improvement": -0.03083,
+   "ci95": [
+    -0.06167,
+    0.0
+   ],
+   "lower_one_sided": -0.06167,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.2725,
+   "score_by_tested_colour": {
+    "black": 0.47,
+    "white": 0.46833
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261211,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "O1-dev-d": {
+   "pairs": 300,
+   "valid": true,
+   "opponent_illegal_pairs": [],
+   "tested_illegal": 0,
+   "move_split": 229,
+   "score_split": 96,
+   "score_split_positive": 35,
+   "score_split_negative": 61,
+   "distinct_classes": 300,
+   "score": 0.45917,
+   "improvement": -0.04083,
+   "ci95": [
+    -0.07083,
+    -0.01083
+   ],
+   "lower_one_sided": -0.07083,
+   "alpha_one_sided": 0.025,
+   "pair_sd": 0.26732,
+   "score_by_tested_colour": {
+    "black": 0.44,
+    "white": 0.47833
+   },
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261211,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  }
+ },
+ "change_from_previous_cycle": {
+  "estimate": -0.001667,
+  "lower_one_sided": -0.01917,
+  "upper_one_sided": 0.01625,
+  "paired_by": "opening id",
+  "units": {
+   "O1-dev-c": 300,
+   "O1-dev-d": 300
+  },
+  "note": "described only, never a decision"
+ },
+ "decision": "END_BUDGET",
+ "rule": "lower > 0: END_STRONGER; upper < -0.02: STOP_REGRESSION; otherwise END_BUDGET (cycle 3 of 3)",
+ "scope": "development reading; END_STRONGER only names a candidate for an independent confirmation",
+ "log_name": "c3-arena-186ywSiP.log",
+ "git": {
+  "commit": "a2913a5c8933fc537653d1ef8340c6a70a0be172",
+  "dirty": false
+ }
+}

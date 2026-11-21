@@ -1,0 +1,102 @@
+{
+ "format": "h7r-r3-loop-prepare-v1",
+ "log_name": "prepare-54EMhZoM.log",
+ "contract_id": "R3-POLICY-LOOP-1",
+ "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+ "contract_file_sha256": "913eafeaa184bfa2a44c31f37d4c729a94c09013d532f351f30a048c11d9e613",
+ "git": {
+  "commit": "fa3348482480b5e889685eeeb27d6ad2d0579550",
+  "dirty": false
+ },
+ "passed": true,
+ "s400_train": {
+  "contract": "docs/h7r/r2/R2-S400-TRAIN/s400-train-contract.json",
+  "contract_file_sha256": "7f4a5c00a126600702d2ed661478c987f3a4870b64eb4b408a58de35bcb73cb2",
+  "experiment_sha256": "67c6ba3c8081da661eb1cd0330a325499f62f52d03ff61f9597dd496eca4d731",
+  "gate": "docs/h7r/r2/R2-S400-TRAIN/gate.json",
+  "gate_sha256": "5fc1746ba20e6d787bf2e4dab4132b72139c4f19bb04e921e1254a733e1d2b5e",
+  "rows_record": "docs/h7r/r2/R2-S400-TRAIN/rows.json",
+  "rows_record_sha256": "e2336e880d39acaa60db4cfb9527e2a73bfd30931419f5f74346d2a33044bc9e",
+  "gate_reference": {
+   "seed": 20261024,
+   "record": "docs/h7r/r2/R2-S400-TRAIN/seed-records/S-20261024/record.json",
+   "record_sha256": "f3d5c6aa82941afdf9d6b41978b52639d89680e86b75e5b7168c509c7cdf3eca"
+  },
+  "use": "the training settings (training, arms.T.replay, determinism) and the gate comparison"
+ },
+ "start": {
+  "policy": {
+   "path": "runs/h3_policy_64x4/best.pt",
+   "checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609"
+  },
+  "value": {
+   "path": "runs/h7c/c5/value/best.pt",
+   "checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+   "metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+  }
+ },
+ "gate_reference": {
+  "selected_state_sha256": "106e0ca5cdb6e0702c8892d85b88514b1cd88ad645e9b524e7602891358cca1a",
+  "initial_state_sha256": {
+   "parent": "09339351e9101e37f5c8368557145ac9ab23377714d70c96a03496476ae83fa8",
+   "teacher": "09339351e9101e37f5c8368557145ac9ab23377714d70c96a03496476ae83fa8"
+  },
+  "gate_settings": {
+   "torch": "2.14.0+cu130",
+   "cuda": "13.0",
+   "cudnn": 92400,
+   "device_name": "NVIDIA GeForce RTX 5070",
+   "cudnn_enabled": true,
+   "cudnn_benchmark": false,
+   "cudnn_deterministic": true,
+   "cudnn_allow_tf32": true,
+   "matmul_allow_tf32": false,
+   "float32_matmul_precision": "highest",
+   "deterministic_algorithms": true,
+   "threads": 8,
+   "environment": {
+    "CUBLAS_WORKSPACE_CONFIG": ":4096:8"
+   }
+  },
+  "rows": 26000,
+  "candidate_rows_sha256": "add6022ca8d419d9adb9581d4190887a70851380e84868cb63a1cbe7a3090c39"
+ },
+ "renjunet_cache": {
+  "train": 3178091,
+  "val": 127316
+ },
+ "suites": {
+  "c": {
+   "path": "docs/h7r/suites/O1-dev-c.json",
+   "seed": 202611191,
+   "openings_sha256": "e254af790af7bac9461eda5d5c49a58d64071a0f1d32fe73cde78aea922ee4e6",
+   "count": 300,
+   "distinct": {
+    "history_id": 300,
+    "position_id": 300,
+    "class_id": 300
+   },
+   "rejected": {
+    "class repeat": 3,
+    "excluded class": 15
+   }
+  },
+  "d": {
+   "path": "docs/h7r/suites/O1-dev-d.json",
+   "seed": 202611192,
+   "openings_sha256": "81c64471c81847f3a329c6e51211ebb7c4e57411719caa3cb6d4a55c6fc20181",
+   "count": 300,
+   "distinct": {
+    "history_id": 300,
+    "position_id": 300,
+    "class_id": 300
+   },
+   "rejected": {
+    "class repeat": 1,
+    "excluded class": 15
+   }
+  }
+ },
+ "seeds_unused": true
+}

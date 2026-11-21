@@ -1,0 +1,58 @@
+h7c self-play: cycle 2, run seed 8810, games 1000 (0 already done), workers 6, model 222534a86342
+[h7c-selfplay] 27/1,000 games  2.7%  1.0 min  ETA 36 min  27/1,000 games
+[h7c-selfplay] 46/1,000 games  4.6%  2.0 min  ETA 42 min  46/1,000 games
+[h7c-selfplay] 65/1,000 games  6.5%  3.1 min  ETA 45 min  65/1,000 games
+[h7c-selfplay] 87/1,000 games  8.7%  4.2 min  ETA 44 min  87/1,000 games
+[h7c-selfplay] 108/1,000 games  10.8%  5.2 min  ETA 43 min  108/1,000 games
+[h7c-selfplay] 127/1,000 games  12.7%  6.3 min  ETA 43 min  127/1,000 games
+[h7c-selfplay] 154/1,000 games  15.4%  7.3 min  ETA 40 min  154/1,000 games
+[h7c-selfplay] 167/1,000 games  16.7%  8.3 min  ETA 41 min  167/1,000 games
+[h7c-selfplay] 196/1,000 games  19.6%  9.3 min  ETA 38 min  196/1,000 games
+[h7c-selfplay] 216/1,000 games  21.6%  10.4 min  ETA 38 min  216/1,000 games
+[h7c-selfplay] 232/1,000 games  23.2%  11.4 min  ETA 38 min  232/1,000 games
+[h7c-selfplay] 252/1,000 games  25.2%  12.5 min  ETA 37 min  252/1,000 games
+[h7c-selfplay] 275/1,000 games  27.5%  13.5 min  ETA 36 min  275/1,000 games
+[h7c-selfplay] 295/1,000 games  29.5%  14.6 min  ETA 35 min  295/1,000 games
+[h7c-selfplay] 307/1,000 games  30.7%  15.6 min  ETA 35 min  307/1,000 games
+[h7c-selfplay] 320/1,000 games  32.0%  16.7 min  ETA 35 min  320/1,000 games
+[h7c-selfplay] 337/1,000 games  33.7%  17.8 min  ETA 35 min  337/1,000 games
+[h7c-selfplay] 360/1,000 games  36.0%  18.8 min  ETA 33 min  360/1,000 games
+[h7c-selfplay] 381/1,000 games  38.1%  19.8 min  ETA 32 min  381/1,000 games
+[h7c-selfplay] 392/1,000 games  39.2%  20.8 min  ETA 32 min  392/1,000 games
+[h7c-selfplay] 414/1,000 games  41.4%  21.9 min  ETA 31 min  414/1,000 games
+[h7c-selfplay] 441/1,000 games  44.1%  22.9 min  ETA 29 min  441/1,000 games
+[h7c-selfplay] 462/1,000 games  46.2%  23.9 min  ETA 28 min  462/1,000 games
+[h7c-selfplay] 479/1,000 games  47.9%  24.9 min  ETA 27 min  479/1,000 games
+[h7c-selfplay] 501/1,000 games  50.1%  26.0 min  ETA 26 min  501/1,000 games
+[h7c-selfplay] 521/1,000 games  52.1%  27.1 min  ETA 25 min  521/1,000 games
+[h7c-selfplay] 535/1,000 games  53.5%  28.3 min  ETA 25 min  535/1,000 games
+[h7c-selfplay] 562/1,000 games  56.2%  29.4 min  ETA 23 min  562/1,000 games
+[h7c-selfplay] 578/1,000 games  57.8%  30.4 min  ETA 22 min  578/1,000 games
+[h7c-selfplay] 593/1,000 games  59.3%  31.4 min  ETA 22 min  593/1,000 games
+[h7c-selfplay] 605/1,000 games  60.5%  32.5 min  ETA 21 min  605/1,000 games
+[h7c-selfplay] 629/1,000 games  62.9%  33.5 min  ETA 20 min  629/1,000 games
+[h7c-selfplay] 652/1,000 games  65.2%  34.6 min  ETA 18 min  652/1,000 games
+[h7c-selfplay] 668/1,000 games  66.8%  35.6 min  ETA 18 min  668/1,000 games
+[h7c-selfplay] 690/1,000 games  69.0%  36.7 min  ETA 16 min  690/1,000 games
+[h7c-selfplay] 713/1,000 games  71.3%  37.7 min  ETA 15 min  713/1,000 games
+[h7c-selfplay] 729/1,000 games  72.9%  38.7 min  ETA 14 min  729/1,000 games
+[h7c-selfplay] 748/1,000 games  74.8%  39.7 min  ETA 13 min  748/1,000 games
+[h7c-selfplay] 761/1,000 games  76.1%  40.9 min  ETA 13 min  761/1,000 games
+[h7c-selfplay] 778/1,000 games  77.8%  42.0 min  ETA 12 min  778/1,000 games
+[h7c-selfplay] 797/1,000 games  79.7%  43.0 min  ETA 11 min  797/1,000 games
+[h7c-selfplay] 812/1,000 games  81.2%  44.0 min  ETA 10 min  812/1,000 games
+[h7c-selfplay] 835/1,000 games  83.5%  45.1 min  ETA 9 min  835/1,000 games
+[h7c-selfplay] 856/1,000 games  85.6%  46.1 min  ETA 8 min  856/1,000 games
+[h7c-selfplay] 874/1,000 games  87.4%  47.1 min  ETA 7 min  874/1,000 games
+[h7c-selfplay] 893/1,000 games  89.3%  48.1 min  ETA 6 min  893/1,000 games
+[h7c-selfplay] 916/1,000 games  91.6%  49.2 min  ETA 5 min  916/1,000 games
+[h7c-selfplay] 937/1,000 games  93.7%  50.2 min  ETA 3 min  937/1,000 games
+[h7c-selfplay] 957/1,000 games  95.7%  51.3 min  ETA 2 min  957/1,000 games
+[h7c-selfplay] 972/1,000 games  97.2%  52.3 min  ETA 2 min  972/1,000 games
+[h7c-selfplay] 993/1,000 games  99.3%  53.4 min  ETA 0 min  993/1,000 games
+[h7c-selfplay] 999/1,000 games  99.9%  55.0 min  ETA 0 min  999/1,000 games, 1 pending
+[h7c-selfplay] 1,000/1,000 games  100.0%  55.3 min  ETA 0 min  1,000/1,000 games
+{
+ "wall_seconds": 3318.9
+}
+__EXIT__ 0

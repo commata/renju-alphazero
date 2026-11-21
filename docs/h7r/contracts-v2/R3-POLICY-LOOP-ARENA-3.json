@@ -1,0 +1,83 @@
+{
+ "format": "h7r-eval-contract-v2",
+ "seed_policy": "h7r-seeds-v2",
+ "contract_id": "R3-POLICY-LOOP-ARENA-3",
+ "purpose": "pilot",
+ "status": "fixed",
+ "meaning": "the cycle 3 Arena of R3-POLICY-LOOP-1 (experiment 977bb1da7b55): development reading; never a promotion",
+ "models": {
+  "champion": {
+   "policy": "runs/h3_policy_64x4/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+    "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  },
+  "L": {
+   "policy": "runs/h7r/R3-POLICY-LOOP-1/c3/model/best.pt",
+   "value": "runs/h7c/c5/value/best.pt",
+   "identity": {
+    "policy_checkpoint_sha256": "842682673a6aae14439f9312b7b7970a351a5c8d8224c027d05718bab08b1cae",
+    "policy_metadata_sha256": "a2eb8c4dd509d0fd95fd4fde0aaeff1a233c6dd65943622e1b34aaed70dfbfdd",
+    "value_checkpoint_sha256": "4e28a62a4a31e462ea116a28d625a80bf2833fdcb30dccbd308b7271c2803024",
+    "value_metadata_sha256": "1fcb49ead057881e964c4fac81f99968ee86f7494701343c6083eb82516008f1"
+   }
+  }
+ },
+ "arms": [
+  {
+   "name": "O1-dev-c_L3_vs_champion",
+   "tested": {
+    "model": "L",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "champion",
+    "budget": 1
+   },
+   "pairs": 300,
+   "seed": 9109,
+   "pairing": "O1-dev-c",
+   "suite": {
+    "path": "docs/h7r/suites/O1-dev-c.json",
+    "sha256": "309178135227a2a2435da764be67436dabc2477635d0271e2aad75d68d474357"
+   }
+  },
+  {
+   "name": "O1-dev-d_L3_vs_champion",
+   "tested": {
+    "model": "L",
+    "budget": 1
+   },
+   "opponent": {
+    "model": "champion",
+    "budget": 1
+   },
+   "pairs": 300,
+   "seed": 9110,
+   "pairing": "O1-dev-d",
+   "suite": {
+    "path": "docs/h7r/suites/O1-dev-d.json",
+    "sha256": "bb12745be2846e155c4f8388338d07329635fa9e5bbe7cf23104e80322076427"
+   }
+  }
+ ],
+ "stats": {
+  "alpha_one_sided": 0.025,
+  "bootstrap": {
+   "samples": 20000,
+   "seed": 20261211,
+   "method": "percentile",
+   "unit": "opening pair"
+  }
+ },
+ "r3_loop": {
+  "contract_id": "R3-POLICY-LOOP-1",
+  "experiment_sha256": "977bb1da7b55dacda7356ceac6fb3c5dea00d639f537a765b94e656b1990864a",
+  "cycle": 3,
+  "train_record_sha256": "0d3e75055bfd302426e3a244c988ab89b6d27d0910c806c27f0b7e06d8d96304"
+ }
+}

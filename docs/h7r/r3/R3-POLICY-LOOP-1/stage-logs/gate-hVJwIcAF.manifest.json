@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "gate-hVJwIcAF.log",
+ "logs": [
+  {
+   "original": "runs/h7r/R3-POLICY-LOOP-1/logs/gate-hVJwIcAF.log",
+   "copy": "docs/h7r/r3/R3-POLICY-LOOP-1/stage-logs/gate-hVJwIcAF.log",
+   "bytes": 759,
+   "sha256": "dd60f5482cafbdec5811f27e89e71977513d4842fefb5a72095999b42505290d"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

@@ -3,9 +3,9 @@
  "contract_id": "R3-POLICY-LOOP-1",
  "status": "fixed",
  "approved": {
-  "prepare": false,
-  "gate": false,
-  "loop": false
+  "prepare": true,
+  "gate": true,
+  "loop": true
  },
  "purpose": "R3 development experiment: from H3 + c5, update the policy only and let it play the next self-play for at most three cycles; is the development Arena score against the fixed champion recovered or above it? Never a promotion",
  "draft": {
