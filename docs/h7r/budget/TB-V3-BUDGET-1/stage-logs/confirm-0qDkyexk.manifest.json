@@ -1,0 +1,13 @@
+{
+ "format": "h7r-d4-log-manifest-v1",
+ "pattern": "confirm-0qDkyexk.log",
+ "logs": [
+  {
+   "original": "runs/h7r/TB-V3-BUDGET-1/logs/confirm-0qDkyexk.log",
+   "copy": "docs/h7r/budget/TB-V3-BUDGET-1/stage-logs/confirm-0qDkyexk.log",
+   "bytes": 6176,
+   "sha256": "dca2665c58a473599007945c0e66de828d10114b7937cc2a8ab3622a07acc4c3"
+  }
+ ],
+ "note": "copies of the desktop run logs; the originals stay in place, SHA256SUMS is not changed"
+}

@@ -1,0 +1,256 @@
+{
+ "format": "h7r-budget-confirm-v1",
+ "log_name": "confirm-0qDkyexk.log",
+ "contract_id": "TB-V3-BUDGET-1",
+ "experiment_sha256": "5a25248ed4bbce6faf9ead611147c4dbd0b5b5cd35a2a489bbf219011f84cb60",
+ "contract_file_sha256": "8d1e961aec05625100bd2060a4bc29de29ee7ffabcee497f371622a592900e33",
+ "git": {
+  "commit": "abf1e5ef5e4d710d5b29ac8af58235526d24c9e1",
+  "dirty": false
+ },
+ "selected": "S400",
+ "factor": 8,
+ "device": "cuda",
+ "timing_record_sha256": "15f74e16a34ee3090664aa1f139e5aeab9958d0a132e0f751c6d5763a01fba32",
+ "games": {
+  "jsonl": "runs/h7r/TB-V3-BUDGET-1/confirm.jsonl",
+  "sha256": "aa2c9dd23d522ea54f46d7a14327ed24ecdeb8d16494f18f96ba5fb9784340e9",
+  "identity_sha256": "52605c6eec3f92a61531742e37ae338ef0d58eb89957b3df8de42574140d4bc0",
+  "games": 600
+ },
+ "e1_files": {
+  "budget": {
+   "path": "runs/h7r/TB-V3-BUDGET-1/e1-S400.json",
+   "sha256": "f084633dec5e458a376cd2e1c9fca755671dea1f319683096b2b7115a105e2e3"
+  },
+  "s50": {
+   "path": "runs/h7r/TB-V3-BUDGET-1/e1-S50.json",
+   "sha256": "5f29256358f524f420a67b12c6f1840d1ae08f141ec25ad82ba8864cfde864ff"
+  }
+ },
+ "tactical": {
+  "budget": {
+   "rescue_rate": {
+    "value": 0.8,
+    "n": "12/15"
+   },
+   "veto_recall": {
+    "value": null,
+    "n": "0/0"
+   },
+   "rescue_pool_coverage": {
+    "value": 1.0,
+    "n": "15/15"
+   },
+   "rescue_k4_coverage": {
+    "value": 1.0,
+    "n": "15/15"
+   },
+   "conditional_escape_rate": {
+    "value": null,
+    "n": "0/0"
+   },
+   "unknown_replacement_rate": {
+    "value": null,
+    "n": "0/0"
+   },
+   "false_veto": 0,
+   "unsound_witness": 0,
+   "inconsistent_runs": 55
+  },
+  "s50": {
+   "rescue_rate": {
+    "value": 1.0,
+    "n": "15/15"
+   },
+   "veto_recall": {
+    "value": null,
+    "n": "0/0"
+   },
+   "rescue_pool_coverage": {
+    "value": 1.0,
+    "n": "15/15"
+   },
+   "rescue_k4_coverage": {
+    "value": 1.0,
+    "n": "15/15"
+   },
+   "conditional_escape_rate": {
+    "value": null,
+    "n": "0/0"
+   },
+   "unknown_replacement_rate": {
+    "value": null,
+    "n": "0/0"
+   },
+   "false_veto": 0,
+   "unsound_witness": 0,
+   "inconsistent_runs": 49
+  },
+  "gate": {
+   "items": {
+    "unsound_witness == 0": true,
+    "rescue_rate >= S50": false,
+    "veto_recall: no data on either side": true,
+    "false_veto <= S50": true
+   },
+   "verdict": "FAIL",
+   "compare": {
+    "rescue_rate": {
+     "budget": {
+      "value": 0.8,
+      "n": "12/15"
+     },
+     "s50": {
+      "value": 1.0,
+      "n": "15/15"
+     }
+    },
+    "veto_recall": {
+     "budget": {
+      "value": null,
+      "n": "0/0"
+     },
+     "s50": {
+      "value": null,
+      "n": "0/0"
+     }
+    },
+    "false_veto": {
+     "budget": 0,
+     "s50": 0
+    }
+   },
+   "reported": {
+    "rescue_pool_coverage": {
+     "budget": {
+      "value": 1.0,
+      "n": "15/15"
+     },
+     "s50": {
+      "value": 1.0,
+      "n": "15/15"
+     }
+    },
+    "rescue_k4_coverage": {
+     "budget": {
+      "value": 1.0,
+      "n": "15/15"
+     },
+     "s50": {
+      "value": 1.0,
+      "n": "15/15"
+     }
+    },
+    "conditional_escape_rate": {
+     "budget": {
+      "value": null,
+      "n": "0/0"
+     },
+     "s50": {
+      "value": null,
+      "n": "0/0"
+     }
+    },
+    "unknown_replacement_rate": {
+     "budget": {
+      "value": null,
+      "n": "0/0"
+     },
+     "s50": {
+      "value": null,
+      "n": "0/0"
+     }
+    },
+    "unsound_witness": {
+     "budget": 0,
+     "s50": 0
+    },
+    "inconsistent_runs": {
+     "budget": 55,
+     "s50": 49
+    }
+   }
+  }
+ },
+ "pairs": 300,
+ "score": 0.57,
+ "P": {
+  "estimate": 0.07,
+  "lower_one_sided": 0.04,
+  "upper_one_sided": 0.1
+ },
+ "reading": "STRONGER",
+ "sensitivity_class_level": {
+  "P": {
+   "estimate": 0.07,
+   "lower_one_sided": 0.04,
+   "upper_one_sided": 0.1
+  },
+  "reading": "STRONGER"
+ },
+ "summary": {
+  "pairs": 300,
+  "valid": true,
+  "opponent_illegal_pairs": [],
+  "tested_illegal": 0,
+  "move_split": 267,
+  "score_split": 97,
+  "score_split_positive": 71,
+  "score_split_negative": 26,
+  "distinct_classes": 299,
+  "score": 0.57,
+  "improvement": 0.07,
+  "ci95": [
+   0.04,
+   0.1
+  ],
+  "lower_one_sided": 0.04,
+  "alpha_one_sided": 0.025,
+  "pair_sd": 0.26398,
+  "score_by_tested_colour": {
+   "black": 0.6,
+   "white": 0.54
+  },
+  "bootstrap": {
+   "samples": 20000,
+   "seed": 20261221,
+   "method": "percentile",
+   "unit": "opening pair"
+  }
+ },
+ "times": {
+  "tested": {
+   "moves": 10556,
+   "mean_seconds": 2.3083,
+   "p95_seconds": 7.7537
+  },
+  "opponent_s50": {
+   "moves": 10515,
+   "mean_seconds": 0.519,
+   "p95_seconds": 1.8385
+  },
+  "ratio": {
+   "mean": 4.4478,
+   "p95": 4.2173
+  },
+  "ratio_exact": {
+   "mean": 4.447843046539764,
+   "p95": 4.217274482608578
+  },
+  "note": "the cap is applied to ratio_exact (unrounded); ratio and the seconds are rounded for display"
+ },
+ "tested_illegal": 0,
+ "opponent_illegal_pairs": [],
+ "items": {
+  "P STRONGER": true,
+  "no illegal move (tested 0, opponent illegal pairs 0)": true,
+  "E1 gate": false,
+  "time ratios <= 5.5 (mean and p95)": true
+ },
+ "verdict": "END",
+ "failed": [
+  "E1 gate"
+ ],
+ "scope": "the selected budget against S50 with the canonical models on the desktop GPU; never which budget is strongest; a PASS names a canonical candidate only"
+}
