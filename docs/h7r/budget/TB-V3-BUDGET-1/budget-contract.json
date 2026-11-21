@@ -1,0 +1,163 @@
+{
+ "format": "h7r-budget-contract-v1",
+ "contract_id": "TB-V3-BUDGET-1",
+ "status": "fixed",
+ "approved": {
+  "prepare": false,
+  "timing": false,
+  "confirm": false
+ },
+ "purpose": "confirmation: within 5.5x the per-move time of S50 on the desktop GPU, does the largest budget beat the canonical S50 with the same canonical models on fresh openings? A pass names a canonical candidate only; no training, no promotion",
+ "draft": {
+  "path": "docs/h7r/budget/TB-V3-BUDGET-1-draft.md"
+ },
+ "models": {
+  "policy": "runs/h3_policy_64x4/best.pt",
+  "value": "runs/h6_value_head_v3/best.pt",
+  "identity": {
+   "policy_checkpoint_sha256": "efee483284dfdd87eb6caa59d0ea3fd015c9dd5862e5e26925b9a23095d0ce61",
+   "policy_metadata_sha256": "5648b7fbe71dfa4ab92f6c9bc505ee9ec0af68414f86b97ea22744c9fc022609",
+   "value_checkpoint_sha256": "a0fcccc401a833a08994e21cd7e963d5e7adc7a7cff715de14259bbed733ceca",
+   "value_metadata_sha256": "51fd3fa4623314d415e1c75140c048a88daf9526098bd38ef771e11929d306ea"
+  },
+  "note": "the canonical pair (original H3 + H6 v3) on both sides"
+ },
+ "budgets": {
+  "factors_in_order": [
+   8,
+   4,
+   2
+  ],
+  "names": {
+   "8": "S400",
+   "4": "S200",
+   "2": "S100"
+  },
+  "opponent_factor": 1,
+  "scaled": "simulations and tactical_simulations (h7c_budget.budget)"
+ },
+ "timing": {
+  "suite": {
+   "name": "O1-dev-c",
+   "path": "docs/h7r/suites/O1-dev-c.json",
+   "sha256": "309178135227a2a2435da764be67436dabc2477635d0271e2aad75d68d474357"
+  },
+  "pairs": 20,
+  "seeds": {
+   "8": 9112,
+   "4": 9113,
+   "2": 9114
+  },
+  "cap": 5.5,
+  "workers": 6,
+  "device": "cuda",
+  "ratios": {
+   "mean": "mean seconds of the tested moves / mean seconds of the S50 moves, the same games",
+   "p95": "95th percentile of the tested moves / that of the S50 moves, the same games"
+  },
+  "rule": "the first of S400, S200, S100 with both ratios <= 5.5 is selected; none: END_NO_BUDGET; every move must carry its time and side; the scores are not read"
+ },
+ "confirm": {
+  "suite": {
+   "name": "O1-confirm-main",
+   "path": "docs/h7r/suites/O1-confirm-main.json",
+   "sha256": "c9530c410771e71006b900ca2965e30fb62fd3d8bd3dd4aa4bcedd652e3af3e5"
+  },
+  "pairs": 300,
+  "seed": 9111,
+  "workers": 6,
+  "device": "cuda",
+  "anchor_suite": {
+   "name": "O1-confirm-anchor",
+   "path": "docs/h7r/suites/O1-confirm-anchor.json",
+   "sha256": "a33ae38b9317738ea20574457fea0ba02101d4a50e2275fc43df38e98979a920"
+  },
+  "sample_rule": "h7r_openings.pick(O1-confirm-main, 300, 9111), fixed in the timing record before any confirmation game; a resumed confirmation plays only that sample"
+ },
+ "tactical": {
+  "suite": "the E1 dev manifest (h7c_arena.E1_MANIFEST), the budget agent and the S50 agent",
+  "gate": {
+   "unsound_witness": "the budget agent: exactly 0",
+   "rescue_rate": "not lower than S50",
+   "veto_recall": "not lower than S50",
+   "false_veto": "not higher than S50"
+  },
+  "comparison": "exact fractions (num/den); a rate with no denominator on both sides is no regression; on one side only it is not comparable and the gate fails",
+  "not_measured": "value and policy probes: the models are the same on both sides",
+  "why_not_tactical_judge": "h7c_arena.tactical_judge reports E1 regressions without failing and its command refuses two sides with the same models"
+ },
+ "reading": {
+  "statistics": {
+   "alpha_one_sided": 0.025,
+   "bootstrap": {
+    "samples": 20000,
+    "seed": 20261221,
+    "method": "percentile",
+    "unit": "opening pair"
+   }
+  },
+  "P": "score - 0.5 over the 300 pairs: STRONGER (lower > 0) / WEAKER (upper < 0) / NOT_ESTABLISHED; the class level reported",
+  "table": [
+   "all of P STRONGER, no illegal move (tested 0, opponent illegal pairs 0), the E1 gate, both time ratios <= 5.5 in the confirmation games: PASS (a canonical candidate)",
+   "otherwise: END (the failed items recorded), canonical unchanged",
+   "no budget within the cap: END_NO_BUDGET"
+  ],
+  "scope": "the selected budget against S50 only: never which budget is strongest"
+ },
+ "seeds": {
+  "confirm": 9111,
+  "timing": {
+   "8": 9112,
+   "4": 9113,
+   "2": 9114
+  },
+  "bootstrap": 20261221,
+  "registry": "v2 Arena seeds (hybrid.h7r_seeds.ARENA_SEEDS 9101-9140; 9101-9110 used before)"
+ },
+ "stages": {
+  "prepare": "inputs and the confirmation sample",
+  "timing": "the budget selected by time only",
+  "confirm": "the confirmation games, the E1 gate and the judge"
+ },
+ "output": {
+  "prepare": "docs/h7r/budget/TB-V3-BUDGET-1/prepare.json",
+  "timing": "docs/h7r/budget/TB-V3-BUDGET-1/timing.json",
+  "confirm": "docs/h7r/budget/TB-V3-BUDGET-1/confirm.json",
+  "runs": "runs/h7r/TB-V3-BUDGET-1"
+ },
+ "sources": [
+  {
+   "path": "scripts/h7r_budget.py",
+   "sha256": "6f76fbe0f3c6e71d451521324fc0400c7f11c9f0ec0cb8a3b108abd6e30226a4"
+  },
+  {
+   "path": "scripts/h7c_budget.py",
+   "sha256": "4a9adbd26379a19a097fa8c9648834ad87a9f4cec38af79d22e655fbb5f36117"
+  },
+  {
+   "path": "scripts/h7c_arena.py",
+   "sha256": "f34f2207820e1e6b10f466f60157326053517dc3438e07b7ce2b8bf7914785de"
+  },
+  {
+   "path": "scripts/h7r_eval.py",
+   "sha256": "2a59def2413ff4ab87bfe85c09c24e8d0aeaddd920310ed1f2b61822bfcab19c"
+  },
+  {
+   "path": "src/hybrid/h7r_eval.py",
+   "sha256": "6b7b197babdff170a27948d697c60728693681429627127d258f5d002ff27d1e"
+  },
+  {
+   "path": "src/hybrid/h7r_openings.py",
+   "sha256": "d97eba732ded4fb58422e63317147f213c8724b22d4469da4cfd828626cfd09e"
+  },
+  {
+   "path": "scripts/e1_evaluate.py",
+   "sha256": "cc1b53cb21ac5912846bacc23dd93a2f09208f590ae72e0ea4e64ed348c387de"
+  },
+  {
+   "path": "scripts/h7r_p1.py",
+   "sha256": "4796f49f7d12a402a447554abe5b5f5fbfb568569a56892a78ea71debfcd4f12"
+  }
+ ],
+ "scope": "desktop GPU; the web SER5 CPU time, certification and the canonical change are a separate promotion"
+}
