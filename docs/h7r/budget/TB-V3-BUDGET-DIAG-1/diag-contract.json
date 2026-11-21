@@ -4,7 +4,7 @@
  "status": "fixed",
  "approved": {
   "prepare": true,
-  "replay": false,
+  "replay": true,
   "deepen": false
  },
  "purpose": "diagnosis of the E1-P moves S400 played that the depth-2 truth check left UNKNOWN in TB-V3-BUDGET-1; no games, no deployment decision; the END of TB-V3-BUDGET-1 stays",
