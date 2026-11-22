@@ -1,0 +1,93 @@
+{
+  "diagnostic": "TB-V3-BUDGET-DIAG-FAST5-1",
+  "position": "8411-p8-white/11",
+  "move": [
+    8,
+    9
+  ],
+  "inputs": {
+    "commit": "863f808fa494693147cfefe2926563f7ec2f36d3",
+    "manifest_sha256": "da6c9dbe0fe4eac6809efba7dc86f668ba13b7aa52db9070f47d593c1f378dc4",
+    "deepen_sha256": "94f35a318b35eaacb5214344b55343a260c873d7883193ac6ae303e0c50cea2d",
+    "contract_sha256": "9e289f6411d30aaa5cea3d7cd41b3c91529c615a9246087b5fc5321496ba4454"
+  },
+  "expected_b0": {
+    "status": "UNKNOWN",
+    "lost_depth": null,
+    "nodes_used": 10000000,
+    "vcf_calls": 95361,
+    "vcf_cut_calls": 14,
+    "budget_exhausted": true
+  },
+  "tool_sha256": "3f2294ef1da40d520f04a7f505cb7a3fc20200a0faa7933dfdde47ddafbec8a3",
+  "calibration_sha256": "e3ef2e4a7de1fac7c11e9904048638545bf01382f65503cb0862f48ac2c229fd",
+  "limits_seconds": {
+    "B1": 60,
+    "B2": 347,
+    "B3": 347
+  },
+  "budget": {
+    "node_limit": 20000,
+    "call_limit": 1000000,
+    "node_budget": 100000000
+  },
+  "limit_seconds": 347,
+  "wall_seconds": 54.23,
+  "result": {
+    "status": "VCT2_CLEAR",
+    "lost_depth": null,
+    "budget_exhausted": false,
+    "vcf_cut_calls": 37,
+    "vcf_calls": 264696,
+    "nodes_used": 22635670,
+    "seconds": 53.68
+  },
+  "runtime": {
+    "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "vcf_binding": "rt30.fast5.find_vcf_with_stats",
+    "native_build": {
+      "python": "3.12.3",
+      "soabi": "cpython-312-x86_64-linux-gnu",
+      "ext_suffix": ".cpython-312-x86_64-linux-gnu.so",
+      "flags": [
+        "-O2",
+        "-shared",
+        "-fPIC"
+      ],
+      "sources": {
+        "threat_windows.c": "2a1e309ca5d34b2d313cd86d3adc412613fc8b5ae671181a055315f8400fefe5",
+        "forbidden.c": "211fd89d65db9963b8d1c31f09c4d235f927ad6744010672b0ae6c70d3435822"
+      },
+      "executable": "/usr/bin/python3",
+      "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "compiler": "x86_64-linux-gnu-gcc",
+      "compiler_version": "x86_64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "modules": {
+        "_threat_windows.cpython-312-x86_64-linux-gnu.so": "e79e7e378bac8d56b8ec065582435a87db5ed4feb0b8f96380682ab8fbd94d1f",
+        "_forbidden.cpython-312-x86_64-linux-gnu.so": "dafa12c92b5238524593c33daae46cd032b2530e1fc922543c7b487d8e7a04fb"
+      }
+    },
+    "vcf_build": {
+      "python": "3.12.3",
+      "soabi": "cpython-312-x86_64-linux-gnu",
+      "ext_suffix": ".cpython-312-x86_64-linux-gnu.so",
+      "flags": [
+        "-O2",
+        "-shared",
+        "-fPIC"
+      ],
+      "sources": {
+        "vcf_core.c": "c9fcfec0751b6f3b8286d694f925a854b6c5e307e2ab47d4ea1149ac46d474d5",
+        "forbidden.c": "211fd89d65db9963b8d1c31f09c4d235f927ad6744010672b0ae6c70d3435822"
+      },
+      "executable": "/usr/bin/python3",
+      "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "compiler": "x86_64-linux-gnu-gcc",
+      "compiler_version": "x86_64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "modules": {
+        "_vcf_core.cpython-312-x86_64-linux-gnu.so": "faa8928c02b940a23898d175362dddfd6f2b43d744cd79d8840f8b26f1aa5239"
+      }
+    }
+  }
+}

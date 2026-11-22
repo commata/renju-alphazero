@@ -1,0 +1,54 @@
+{
+  "format": "h7r-budget-diag-fast5-evidence-v1",
+  "checkout_base_commit": "db251c8472abc0f178c73d177d658893245aa1a9",
+  "execution_sources": "two local diagnostic scripts, identified by SHA-256 below",
+  "reference_inputs": {
+    "commit": "863f808fa494693147cfefe2926563f7ec2f36d3",
+    "manifest_sha256": "da6c9dbe0fe4eac6809efba7dc86f668ba13b7aa52db9070f47d593c1f378dc4",
+    "deepen_sha256": "94f35a318b35eaacb5214344b55343a260c873d7883193ac6ae303e0c50cea2d",
+    "contract_sha256": "9e289f6411d30aaa5cea3d7cd41b3c91529c615a9246087b5fc5321496ba4454"
+  },
+  "environment": {
+    "device": "cpu",
+    "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "vcf_binding": "rt30.fast5.find_vcf_with_stats",
+    "vcf_build": {
+      "python": "3.12.3",
+      "soabi": "cpython-312-x86_64-linux-gnu",
+      "ext_suffix": ".cpython-312-x86_64-linux-gnu.so",
+      "flags": [
+        "-O2",
+        "-shared",
+        "-fPIC"
+      ],
+      "sources": {
+        "vcf_core.c": "c9fcfec0751b6f3b8286d694f925a854b6c5e307e2ab47d4ea1149ac46d474d5",
+        "forbidden.c": "211fd89d65db9963b8d1c31f09c4d235f927ad6744010672b0ae6c70d3435822"
+      },
+      "executable": "/usr/bin/python3",
+      "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+      "compiler": "x86_64-linux-gnu-gcc",
+      "compiler_version": "x86_64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "modules": {
+        "_vcf_core.cpython-312-x86_64-linux-gnu.so": "faa8928c02b940a23898d175362dddfd6f2b43d744cd79d8840f8b26f1aa5239"
+      }
+    }
+  },
+  "result": "VCT2_CLEAR",
+  "interrupted_attempt": {
+    "budget": "B3",
+    "reason": "Linux session exited without a result"
+  },
+  "files": {
+    "docs/h7r/budget/TB-V3-BUDGET-DIAG-FAST5-1.md": "4ae92cc07394427983f9dde92dbbdf6c55f94bbc0562184bd77ca0c82d9adb95",
+    "docs/h7r/budget/TB-V3-BUDGET-DIAG-FAST5-1/B1.json": "7bcf55b53a24cf2c792d8e27e58aec8e249223f14584ee2c0e9dfc1867a53fd7",
+    "docs/h7r/budget/TB-V3-BUDGET-DIAG-FAST5-1/B2.json": "16f462fa6d67f14ba7fa6fcf43bb82a94e979f7a6625bad4489f4991c7b2d7c1",
+    "docs/h7r/budget/TB-V3-BUDGET-DIAG-FAST5-1/B3.json": "069c0aadff73cf0afd93d12a1d88254d39bfc523f2e0397779ef06ce4906201d",
+    "docs/h7r/budget/TB-V3-BUDGET-DIAG-FAST5-1/calibrate.json": "e3ef2e4a7de1fac7c11e9904048638545bf01382f65503cb0862f48ac2c229fd",
+    "docs/h7r/budget/TB-V3-BUDGET-DIAG-FAST5-1/deepen-plan.json": "2e6fb82cc9450d7dcbb0ce929214c0180badcfb6ec4b0cb0ce2b885d92f2ab16",
+    "docs/h7r/budget/TB-V3-BUDGET-DIAG-FAST5-1/deepen.json": "72975563131b3c38c6a21c28b667e6029b548913e230922c3910d16c1106134d",
+    "scripts/h7r_budget_diag_fast5.py": "3f2294ef1da40d520f04a7f505cb7a3fc20200a0faa7933dfdde47ddafbec8a3",
+    "scripts/h7r_budget_diag_fast5_resume.py": "f56c7b84e553e72b42e31b5d42f31b76904da0b4a072b37e5a6cad905cd28803"
+  }
+}

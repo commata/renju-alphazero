@@ -1,0 +1,29 @@
+{
+  "diagnostic": "TB-V3-BUDGET-DIAG-FAST5-1",
+  "position": "8411-p8-white/11",
+  "move": [
+    8,
+    9
+  ],
+  "inputs": {
+    "commit": "863f808fa494693147cfefe2926563f7ec2f36d3",
+    "manifest_sha256": "da6c9dbe0fe4eac6809efba7dc86f668ba13b7aa52db9070f47d593c1f378dc4",
+    "deepen_sha256": "94f35a318b35eaacb5214344b55343a260c873d7883193ac6ae303e0c50cea2d",
+    "contract_sha256": "9e289f6411d30aaa5cea3d7cd41b3c91529c615a9246087b5fc5321496ba4454"
+  },
+  "expected_b0": {
+    "status": "UNKNOWN",
+    "lost_depth": null,
+    "nodes_used": 10000000,
+    "vcf_calls": 95361,
+    "vcf_cut_calls": 14,
+    "budget_exhausted": true
+  },
+  "tool_sha256": "3f2294ef1da40d520f04a7f505cb7a3fc20200a0faa7933dfdde47ddafbec8a3",
+  "calibration_sha256": "e3ef2e4a7de1fac7c11e9904048638545bf01382f65503cb0862f48ac2c229fd",
+  "limits_seconds": {
+    "B1": 60,
+    "B2": 347,
+    "B3": 347
+  }
+}
